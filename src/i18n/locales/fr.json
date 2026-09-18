@@ -20557,6 +20557,200 @@
       "empty": "Vide",
       "partial": "Partiel",
       "set": "Rempli"
+    },
+    "style": {
+      "create": {
+        "hint": "Facultatif. Choisissez comment ce twin s'exprime pour commencer. Vous pouvez le modifier à tout moment dans Configuration.",
+        "skip": "Passer",
+        "skipHint": "Définir le style plus tard.",
+        "surprise": "Surprenez-moi",
+        "surpriseHint": "Trois nouveaux styles sont tirés à l'ouverture de Configuration.",
+        "title": "Style de départ"
+      },
+      "dimLevel": "{dim} : {level}",
+      "dims": {
+        "detail": {
+          "l1": "Titre",
+          "l2": "Points clés",
+          "l3": "Expliqué",
+          "l4": "Approfondi",
+          "l5": "Exhaustif",
+          "label": "Détail"
+        },
+        "directness": {
+          "l1": "Abrupt",
+          "l2": "Direct",
+          "l3": "Équilibré",
+          "l4": "Atténué",
+          "l5": "Indirect",
+          "label": "Franchise"
+        },
+        "energy": {
+          "l1": "Factuel",
+          "l2": "Calme",
+          "l3": "Impliqué",
+          "l4": "Enjoué",
+          "l5": "Exubérant",
+          "label": "Énergie"
+        },
+        "expressiveness": {
+          "l1": "Aucune",
+          "l2": "Rare",
+          "l3": "Occasionnelle",
+          "l4": "Fréquente",
+          "l5": "Marquée",
+          "label": "Expressivité"
+        },
+        "formality": {
+          "l1": "Intime",
+          "l2": "Décontracté",
+          "l3": "Consultatif",
+          "l4": "Formel",
+          "l5": "Cérémonieux",
+          "label": "Formalité"
+        },
+        "humor": {
+          "l1": "Aucun",
+          "l2": "Sec",
+          "l3": "Léger",
+          "l4": "Taquin",
+          "l5": "Irrévérencieux",
+          "label": "Humour"
+        },
+        "length": {
+          "l1": "Une ligne",
+          "l2": "Bref",
+          "l3": "Moyen",
+          "l4": "Complet",
+          "l5": "Étendu",
+          "label": "Longueur"
+        },
+        "warmth": {
+          "l1": "Distant",
+          "l2": "Neutre",
+          "l3": "Cordial",
+          "l4": "Chaleureux",
+          "l5": "Affectueux",
+          "label": "Chaleur"
+        }
+      },
+      "dimsLabel": "Dimensions du style",
+      "gallery": {
+        "loading": "Rédaction de ce style pour vos canaux",
+        "presetBadge": "Préréglage",
+        "rollHint": "Trois styles contrastés créés pour ce twin. Les dimensions épinglées restent fixes.",
+        "rollTitle": "Tirer 3 styles",
+        "sampleLabel": "Exemple de réponse",
+        "sampleQuestion": "Bonjour, pourrions-nous déplacer la réunion de jeudi à la semaine prochaine ?",
+        "title": "Préréglages",
+        "use": "Utiliser {name}"
+      },
+      "origin": {
+        "preset": "Basé sur {name}",
+        "rolled": "Tiré : {name}"
+      },
+      "panel": {
+        "dismiss": "Fermer",
+        "errorApply": "Impossible d'enregistrer les nouveaux tons. Votre aperçu est toujours là.",
+        "errorMaterialize": "Impossible d'écrire ce style pour vos canaux. Réessayez.",
+        "errorRoll": "Impossible de tirer de nouveaux styles. Tout ce que vous aviez tiré avant est toujours là.",
+        "hint": "Partez d'un préréglage sélectionné, ou tirez trois nouveaux styles. Chaque canal est prévisualisé avant que quoi que ce soit ne soit enregistré.",
+        "title": "Style de communication"
+      },
+      "pins": {
+        "clear": "Effacer les épingles",
+        "hint": "Épinglez une dimension pour qu'elle reste fixe après un nouveau tirage.",
+        "pin": "Épingler {dim} à {level}",
+        "pinned": "{count} épinglées",
+        "unpin": "Désépingler {dim}"
+      },
+      "presets": {
+        "close-informal": {
+          "avoid": "Jamais formel ni distant.",
+          "name": "Proche et décontracté",
+          "sample": "haha carrément 😅 la semaine prochaine c'est mieux de toute façon. mar ? 🙌",
+          "summary": "Parle comme un ami proche : décontracté, joueur et plein de personnalité."
+        },
+        "consultative-expert": {
+          "avoid": "Jamais approximatif, jamais un verdict sans le pourquoi.",
+          "name": "Expert-conseil",
+          "sample": "Je le déplace avec plaisir. La semaine prochaine nous laisse aussi le temps de relire le brouillon avant, donc je proposerais mercredi à 14h00. Cela laisse lundi et mardi pour les commentaires, et nous pourrons régler les questions en suspens en une seule séance. Est-ce que cela vous convient ?",
+          "summary": "Réfléchi et rigoureux, avec le raisonnement derrière chaque recommandation."
+        },
+        "empathic-listener": {
+          "avoid": "Jamais expéditif, ne se précipite jamais vers la solution.",
+          "name": "Empathique et à l'écoute",
+          "sample": "Bien sûr, c'est tout à fait normal. On dirait que votre semaine s'est bien remplie. De mon côté, la semaine prochaine convient, alors dites-moi simplement quel jour vous arrange le plus.",
+          "summary": "Patient et bienveillant, il reconnaît d'abord l'autre personne avant de répondre."
+        },
+        "executive-brief": {
+          "avoid": "Jamais de bavardage ni de contexte inutile dans une réponse.",
+          "name": "Concision de dirigeant",
+          "sample": "La semaine prochaine convient. Mardi 10h00 ?",
+          "summary": "Net et formel, va droit à la décision et rien d'autre."
+        },
+        "friendly-casual": {
+          "avoid": "Jamais guindé ni corporate.",
+          "name": "Amical et décontracté",
+          "sample": "Avec plaisir ! La semaine prochaine convient. Mardi ou mercredi ? 🙂",
+          "summary": "Détendu et facile à vivre, comme un message à un collègue avec qui on s'entend bien."
+        },
+        "plainspoken-direct": {
+          "avoid": "Ne tourne jamais autour du pot et n'enterre jamais l'essentiel.",
+          "name": "Franc et direct",
+          "sample": "Entendu. Mardi à 10h me convient. Est-ce que cela vous convient aussi ?",
+          "summary": "Dit ce qu'il pense en mots simples et va droit au but."
+        },
+        "polished-professional": {
+          "avoid": "Jamais familier, jamais sec.",
+          "name": "Professionnel soigné",
+          "sample": "Bien sûr, la semaine prochaine ne pose aucun problème. Mardi ou mercredi après-midi vous conviendrait-il mieux ?",
+          "summary": "Courtois, mesuré et clair, comme écrit un collègue de confiance."
+        },
+        "upbeat-cheerleader": {
+          "avoid": "Jamais terne ni sarcastique.",
+          "name": "Enthousiaste et motivant",
+          "sample": "Absolument, aucun souci ! 🎉 La semaine prochaine, c'est parfait. Mardi ou mercredi ? J'ai hâte !",
+          "summary": "Énergique et encourageant, il apporte de l'enthousiasme à chaque échange."
+        },
+        "warm-helpful": {
+          "avoid": "Jamais froid ni purement transactionnel.",
+          "name": "Chaleureux et serviable",
+          "sample": "Bien sûr, aucun souci ! La semaine prochaine me convient. Je suis libre mardi ou jeudi après-midi, choisissez ce qui vous arrange le plus.",
+          "summary": "Gentil et arrangeant, pour que l'autre personne se sente bien prise en charge."
+        },
+        "witty-wry": {
+          "avoid": "Jamais méchant, ne s'en prend jamais aux plus faibles.",
+          "name": "Spirituel et pince-sans-rire",
+          "sample": "Jeudi l'a bien cherché. Va donc pour la semaine prochaine. Mardi à 10h ?",
+          "summary": "Humour pince-sans-rire tout en légèreté, incisif sans jamais être méchant."
+        }
+      },
+      "preview": {
+        "accept": "Accepter le style",
+        "applyTo": "Appliquer à {channel}",
+        "applying": "Enregistrement",
+        "back": "Retour",
+        "constraints": "Contraintes",
+        "current": "Actuel",
+        "examples": "Exemples",
+        "hint": "Cochez les canaux à mettre à jour. Rien n'est enregistré tant que vous n'avez pas accepté.",
+        "length": "Longueur",
+        "noCurrent": "Aucun ton encore écrit pour ce canal.",
+        "noneSelected": "Cochez au moins un canal pour accepter.",
+        "proposed": "Proposé",
+        "title": "Aperçu : {name}"
+      },
+      "roll": {
+        "back": "Retour aux préréglages",
+        "badge": "Tiré",
+        "hint": "Choisissez-en un à prévisualiser, ou tirez à nouveau. Un nouveau tirage ne répète jamais un style déjà vu.",
+        "loading": "Tirage de trois styles en cours",
+        "reroll": "Tirer à nouveau",
+        "rerolling": "Tirage en cours",
+        "title": "Styles tirés",
+        "use": "Utiliser ce style"
+      }
     }
   },
   "vault": {

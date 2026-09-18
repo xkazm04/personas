@@ -20865,6 +20865,200 @@
       "genderMale": "Male",
       "genderFemale": "Female",
       "genderNeutral": "Neutral"
+    },
+    "style": {
+      "panel": {
+        "title": "Communication style",
+        "hint": "Start from a curated preset or roll three fresh styles. Every channel is previewed before anything is saved.",
+        "errorRoll": "Could not roll new styles. Anything you rolled before is still here.",
+        "errorMaterialize": "Could not write this style for your channels. Try again.",
+        "errorApply": "Could not save the new tones. Your preview is still here.",
+        "dismiss": "Dismiss"
+      },
+      "gallery": {
+        "title": "Presets",
+        "sampleQuestion": "Hi, could we move Thursday's meeting to next week?",
+        "sampleLabel": "Sample reply",
+        "use": "Use {name}",
+        "presetBadge": "Preset",
+        "rollTitle": "Roll 3 styles",
+        "rollHint": "Three contrasting styles made for this twin. Pinned dimensions hold.",
+        "loading": "Writing this style for your channels"
+      },
+      "roll": {
+        "title": "Rolled styles",
+        "hint": "Pick one to preview, or reroll. A reroll never repeats a style you have already seen.",
+        "badge": "Rolled",
+        "use": "Use this style",
+        "reroll": "Reroll",
+        "rerolling": "Rolling",
+        "back": "Back to presets",
+        "loading": "Rolling three styles"
+      },
+      "pins": {
+        "pinned": "{count} pinned",
+        "clear": "Clear pins",
+        "pin": "Pin {dim} at {level}",
+        "unpin": "Unpin {dim}",
+        "hint": "Pin a dimension to keep it through a reroll."
+      },
+      "dimsLabel": "Style dimensions",
+      "dimLevel": "{dim}: {level}",
+      "preview": {
+        "title": "Preview: {name}",
+        "hint": "Tick the channels to update. Nothing is saved until you accept.",
+        "current": "Current",
+        "proposed": "Proposed",
+        "noCurrent": "No tone written for this channel yet.",
+        "examples": "Examples",
+        "constraints": "Constraints",
+        "length": "Length",
+        "applyTo": "Apply to {channel}",
+        "accept": "Accept style",
+        "applying": "Saving",
+        "back": "Back",
+        "noneSelected": "Tick at least one channel to accept."
+      },
+      "origin": {
+        "preset": "Based on {name}",
+        "rolled": "Rolled: {name}"
+      },
+      "create": {
+        "title": "Starting style",
+        "hint": "Optional. Choose how this twin talks to begin with. You can change it any time in Setup.",
+        "surprise": "Surprise me",
+        "surpriseHint": "Roll three fresh styles when Setup opens.",
+        "skip": "Skip",
+        "skipHint": "Set the style later."
+      },
+      "dims": {
+        "formality": {
+          "label": "Formality",
+          "l1": "Intimate",
+          "l2": "Casual",
+          "l3": "Consultative",
+          "l4": "Formal",
+          "l5": "Ceremonial"
+        },
+        "warmth": {
+          "label": "Warmth",
+          "l1": "Detached",
+          "l2": "Neutral",
+          "l3": "Cordial",
+          "l4": "Warm",
+          "l5": "Affectionate"
+        },
+        "humor": {
+          "label": "Humor",
+          "l1": "None",
+          "l2": "Dry",
+          "l3": "Light",
+          "l4": "Playful",
+          "l5": "Irreverent"
+        },
+        "energy": {
+          "label": "Energy",
+          "l1": "Matter-of-fact",
+          "l2": "Calm",
+          "l3": "Engaged",
+          "l4": "Upbeat",
+          "l5": "Exuberant"
+        },
+        "length": {
+          "label": "Length",
+          "l1": "One-liner",
+          "l2": "Brief",
+          "l3": "Medium",
+          "l4": "Full",
+          "l5": "Expansive"
+        },
+        "directness": {
+          "label": "Directness",
+          "l1": "Blunt",
+          "l2": "Direct",
+          "l3": "Balanced",
+          "l4": "Softened",
+          "l5": "Indirect"
+        },
+        "expressiveness": {
+          "label": "Expressiveness",
+          "l1": "None",
+          "l2": "Rare",
+          "l3": "Occasional",
+          "l4": "Frequent",
+          "l5": "Heavy"
+        },
+        "detail": {
+          "label": "Detail",
+          "l1": "Headline",
+          "l2": "Key points",
+          "l3": "Explained",
+          "l4": "Thorough",
+          "l5": "Exhaustive"
+        }
+      },
+      "presets": {
+        "executive-brief": {
+          "name": "Executive brief",
+          "summary": "Crisp and formal, leading with the decision and nothing else.",
+          "avoid": "Never pads a reply with small talk or backstory.",
+          "sample": "Next week works. Tuesday 10:00?"
+        },
+        "polished-professional": {
+          "name": "Polished professional",
+          "summary": "Courteous, measured and clear, the way a trusted colleague writes.",
+          "avoid": "Never slangy, never curt.",
+          "sample": "Of course, next week is no problem. Would Tuesday or Wednesday afternoon suit you better?"
+        },
+        "consultative-expert": {
+          "name": "Consultative expert",
+          "summary": "Thoughtful and thorough, with the reasoning behind every recommendation.",
+          "avoid": "Never hand-wavy, never a verdict without the why.",
+          "sample": "Happy to move it. Next week also gives us time to review the draft first, so I would suggest Wednesday at 14:00. That leaves Monday and Tuesday for comments, and we can close the open questions in one session. Does that work on your side?"
+        },
+        "plainspoken-direct": {
+          "name": "Plainspoken and direct",
+          "summary": "Says what it means in plain words and gets straight to the point.",
+          "avoid": "Never hedges or buries the point.",
+          "sample": "Sure. Tuesday at 10 works for me. Does it work for you?"
+        },
+        "warm-helpful": {
+          "name": "Warm and helpful",
+          "summary": "Kind and accommodating, so the other person feels looked after.",
+          "avoid": "Never cold or transactional.",
+          "sample": "Of course, no trouble at all! Next week is fine. I am free Tuesday or Thursday afternoon, so pick whichever is easiest for you."
+        },
+        "friendly-casual": {
+          "name": "Friendly and casual",
+          "summary": "Relaxed and easygoing, like messaging a colleague you get along with.",
+          "avoid": "Never stiff or corporate.",
+          "sample": "Sure thing! Next week works. Tuesday or Wednesday? 🙂"
+        },
+        "empathic-listener": {
+          "name": "Empathic listener",
+          "summary": "Patient and gentle, acknowledging the other person before answering.",
+          "avoid": "Never dismissive, never rushes to fix.",
+          "sample": "Of course, that is completely fine. It sounds like this week has filled up for you. Next week works on my end, so just let me know which day feels easiest."
+        },
+        "upbeat-cheerleader": {
+          "name": "Upbeat cheerleader",
+          "summary": "Energetic and encouraging, bringing enthusiasm to every exchange.",
+          "avoid": "Never flat or sarcastic.",
+          "sample": "Absolutely, no problem at all! 🎉 Next week works great. Tuesday or Wednesday? Looking forward to it!"
+        },
+        "witty-wry": {
+          "name": "Witty and wry",
+          "summary": "Dry humor with a light touch, sharp without ever being mean.",
+          "avoid": "Never mean, never punches down.",
+          "sample": "Thursday had it coming. Next week it is. Tuesday at 10?"
+        },
+        "close-informal": {
+          "name": "Close and informal",
+          "summary": "Talks like a close friend: loose, playful and full of personality.",
+          "avoid": "Never formal or distant.",
+          "sample": "haha yes totally 😅 next week is way better anyway. tues? 🙌"
+        }
+      }
     }
   },
   "radio": {

@@ -488,5 +488,199 @@
     "empty": "Leer",
     "partial": "Teilweise",
     "set": "Gesetzt"
+  },
+  "style": {
+    "create": {
+      "hint": "Optional. Wählen Sie, wie dieser Twin anfangs spricht. Sie können das jederzeit in der Einrichtung ändern.",
+      "skip": "Überspringen",
+      "skipHint": "Stil später festlegen.",
+      "surprise": "Überraschen Sie mich",
+      "surpriseHint": "Beim Öffnen der Einrichtung werden drei neue Stile gewürfelt.",
+      "title": "Ausgangsstil"
+    },
+    "dimLevel": "{dim}: {level}",
+    "dims": {
+      "detail": {
+        "l1": "Überschrift",
+        "l2": "Kernpunkte",
+        "l3": "Erklärt",
+        "l4": "Ausführlich",
+        "l5": "Erschöpfend",
+        "label": "Detailgrad"
+      },
+      "directness": {
+        "l1": "Unverblümt",
+        "l2": "Direkt",
+        "l3": "Ausgewogen",
+        "l4": "Abgemildert",
+        "l5": "Indirekt",
+        "label": "Direktheit"
+      },
+      "energy": {
+        "l1": "Sachlich",
+        "l2": "Ruhig",
+        "l3": "Engagiert",
+        "l4": "Munter",
+        "l5": "Überschwänglich",
+        "label": "Energie"
+      },
+      "expressiveness": {
+        "l1": "Keine",
+        "l2": "Selten",
+        "l3": "Gelegentlich",
+        "l4": "Häufig",
+        "l5": "Stark",
+        "label": "Ausdrucksstärke"
+      },
+      "formality": {
+        "l1": "Vertraut",
+        "l2": "Locker",
+        "l3": "Beratend",
+        "l4": "Formell",
+        "l5": "Feierlich",
+        "label": "Formalität"
+      },
+      "humor": {
+        "l1": "Keiner",
+        "l2": "Trocken",
+        "l3": "Leicht",
+        "l4": "Verspielt",
+        "l5": "Respektlos",
+        "label": "Humor"
+      },
+      "length": {
+        "l1": "Einzeiler",
+        "l2": "Kurz",
+        "l3": "Mittel",
+        "l4": "Vollständig",
+        "l5": "Umfangreich",
+        "label": "Länge"
+      },
+      "warmth": {
+        "l1": "Distanziert",
+        "l2": "Neutral",
+        "l3": "Herzlich",
+        "l4": "Warm",
+        "l5": "Liebevoll",
+        "label": "Wärme"
+      }
+    },
+    "dimsLabel": "Stildimensionen",
+    "gallery": {
+      "loading": "Dieser Stil wird für Ihre Kanäle geschrieben",
+      "presetBadge": "Voreinstellung",
+      "rollHint": "Drei gegensätzliche Stile für diesen Twin. Angeheftete Dimensionen bleiben erhalten.",
+      "rollTitle": "3 Stile würfeln",
+      "sampleLabel": "Beispielantwort",
+      "sampleQuestion": "Hallo, könnten wir das Meeting am Donnerstag auf nächste Woche verschieben?",
+      "title": "Voreinstellungen",
+      "use": "{name} verwenden"
+    },
+    "origin": {
+      "preset": "Basierend auf {name}",
+      "rolled": "Gewürfelt: {name}"
+    },
+    "panel": {
+      "dismiss": "Schließen",
+      "errorApply": "Die neuen Töne konnten nicht gespeichert werden. Ihre Vorschau ist weiterhin vorhanden.",
+      "errorMaterialize": "Dieser Stil konnte nicht für Ihre Kanäle geschrieben werden. Versuchen Sie es erneut.",
+      "errorRoll": "Es konnten keine neuen Stile gewürfelt werden. Alles, was Sie zuvor gewürfelt haben, ist weiterhin vorhanden.",
+      "hint": "Beginnen Sie mit einer kuratierten Voreinstellung, oder würfeln Sie drei neue Stile. Jeder Kanal wird in der Vorschau angezeigt, bevor etwas gespeichert wird.",
+      "title": "Kommunikationsstil"
+    },
+    "pins": {
+      "clear": "Anheftungen aufheben",
+      "hint": "Heften Sie eine Dimension an, damit sie über einen neuen Wurf hinweg erhalten bleibt.",
+      "pin": "{dim} bei {level} anheften",
+      "pinned": "{count} angeheftet",
+      "unpin": "{dim} lösen"
+    },
+    "presets": {
+      "close-informal": {
+        "avoid": "Nie förmlich oder distanziert.",
+        "name": "Vertraut und unkompliziert",
+        "sample": "haha ja klar 😅 nächste Woche passt sowieso viel besser. Di.? 🙌",
+        "summary": "Spricht wie ein enger Freund: locker, verspielt und voller Persönlichkeit."
+      },
+      "consultative-expert": {
+        "avoid": "Nie oberflächlich, nie ein Urteil ohne das Warum.",
+        "name": "Beratender Experte",
+        "sample": "Ich verschiebe den Termin gerne. Nächste Woche gibt uns außerdem Zeit, den Entwurf vorher noch durchzusehen, daher würde ich Mittwoch, 14:00 Uhr vorschlagen. So bleiben Montag und Dienstag für Anmerkungen, und wir können die offenen Fragen in einer Sitzung klären. Passt das bei Ihnen?",
+        "summary": "Durchdacht und gründlich, mit der Begründung hinter jeder Empfehlung."
+      },
+      "empathic-listener": {
+        "avoid": "Nie abweisend, stürzt sich nie sofort auf die Lösung.",
+        "name": "Einfühlsamer Zuhörer",
+        "sample": "Natürlich, das ist völlig in Ordnung. Es klingt, als wäre Ihre Woche schon ziemlich voll. Bei mir passt nächste Woche, sagen Sie mir also einfach, welcher Tag Ihnen am leichtesten fällt.",
+        "summary": "Geduldig und sanft, geht zuerst auf die andere Person ein, bevor er antwortet."
+      },
+      "executive-brief": {
+        "avoid": "Streckt eine Antwort nie mit Small Talk oder Vorgeschichte.",
+        "name": "Kurz und bündig",
+        "sample": "Nächste Woche passt. Dienstag, 10:00 Uhr?",
+        "summary": "Knapp und förmlich, beginnt mit der Entscheidung und sonst nichts."
+      },
+      "friendly-casual": {
+        "avoid": "Nie steif oder wie aus dem Konzernhandbuch.",
+        "name": "Freundlich und locker",
+        "sample": "Klar! Nächste Woche passt. Dienstag oder Mittwoch? 🙂",
+        "summary": "Entspannt und locker, wie eine Nachricht an eine Kollegin oder einen Kollegen, mit der oder dem man gut auskommt."
+      },
+      "plainspoken-direct": {
+        "avoid": "Windet sich nie und verschleiert nie den Kernpunkt.",
+        "name": "Klar und direkt",
+        "sample": "Klar. Dienstag um 10 passt mir. Passt es Ihnen auch?",
+        "summary": "Sagt in einfachen Worten, was gemeint ist, und kommt direkt zum Punkt."
+      },
+      "polished-professional": {
+        "avoid": "Nie umgangssprachlich, nie schroff.",
+        "name": "Geschliffen professionell",
+        "sample": "Natürlich, nächste Woche ist kein Problem. Würde Ihnen Dienstag- oder Mittwochnachmittag besser passen?",
+        "summary": "Höflich, überlegt und klar, so wie eine vertraute Kollegin oder ein vertrauter Kollege schreibt."
+      },
+      "upbeat-cheerleader": {
+        "avoid": "Nie lahm oder sarkastisch.",
+        "name": "Begeistert und anfeuernd",
+        "sample": "Auf jeden Fall, überhaupt kein Problem! 🎉 Nächste Woche passt super. Dienstag oder Mittwoch? Ich freue mich schon!",
+        "summary": "Energiegeladen und ermutigend, bringt Begeisterung in jeden Austausch."
+      },
+      "warm-helpful": {
+        "avoid": "Nie kühl oder rein zweckmäßig.",
+        "name": "Warmherzig und hilfsbereit",
+        "sample": "Natürlich, überhaupt kein Aufwand! Nächste Woche passt gut. Ich habe Dienstag- oder Donnerstagnachmittag Zeit, suchen Sie sich also aus, was Ihnen am besten passt.",
+        "summary": "Freundlich und entgegenkommend, damit sich die andere Person gut aufgehoben fühlt."
+      },
+      "witty-wry": {
+        "avoid": "Nie gemein, tritt nie nach unten.",
+        "name": "Trocken und witzig",
+        "sample": "Der Donnerstag hatte es kommen sehen. Also dann nächste Woche. Dienstag um 10?",
+        "summary": "Trockener Humor mit leichter Hand, pointiert, ohne je gemein zu sein."
+      }
+    },
+    "preview": {
+      "accept": "Stil übernehmen",
+      "applyTo": "Auf {channel} anwenden",
+      "applying": "Wird gespeichert",
+      "back": "Zurück",
+      "constraints": "Einschränkungen",
+      "current": "Aktuell",
+      "examples": "Beispiele",
+      "hint": "Wählen Sie die Kanäle aus, die aktualisiert werden sollen. Es wird nichts gespeichert, bis Sie es übernehmen.",
+      "length": "Länge",
+      "noCurrent": "Für diesen Kanal ist noch kein Ton geschrieben.",
+      "noneSelected": "Wählen Sie mindestens einen Kanal aus, um zu übernehmen.",
+      "proposed": "Vorgeschlagen",
+      "title": "Vorschau: {name}"
+    },
+    "roll": {
+      "back": "Zurück zu den Voreinstellungen",
+      "badge": "Gewürfelt",
+      "hint": "Wählen Sie einen zur Vorschau aus, oder würfeln Sie neu. Ein neuer Wurf wiederholt nie einen Stil, den Sie bereits gesehen haben.",
+      "loading": "Drei Stile werden gewürfelt",
+      "reroll": "Neu würfeln",
+      "rerolling": "Wird gewürfelt",
+      "title": "Gewürfelte Stile",
+      "use": "Diesen Stil verwenden"
+    }
   }
 }
