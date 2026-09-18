@@ -1,0 +1,38 @@
+{
+ "spec": "claude:claude-sonnet-5@low",
+ "n": 120,
+ "parsed": 120,
+ "strict_yes": 80,
+ "lenient_yes": 85,
+ "disagreements": 7,
+ "floor_agree_with_strict": 0.975,
+ "auroc_borderline": 0.8242730720606827,
+ "p_hist": {
+  "0-.05": 24,
+  ".05-.2": 8,
+  ".2-.8": 8,
+  ".8-.95": 35,
+  ".95-1": 45
+ },
+ "recorded_vs_rerun_strict_flip": 20,
+ "tout_A": 4.0,
+ "tout_B": 14.0,
+ "band_0.2_0.8": {
+  "flagged": 9,
+  "flagged_share": 0.075,
+  "disagreements_caught": 4,
+  "of": 7
+ },
+ "band_0.1_0.9": {
+  "flagged": 27,
+  "flagged_share": 0.225,
+  "disagreements_caught": 6,
+  "of": 7
+ },
+ "band_0.05_0.95": {
+  "flagged": 58,
+  "flagged_share": 0.483,
+  "disagreements_caught": 6,
+  "of": 7
+ }
+}
