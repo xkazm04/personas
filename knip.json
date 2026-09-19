@@ -6,14 +6,18 @@
     "src/**/*.test.{ts,tsx}",
     "src/**/__tests__/**/*.{ts,tsx}",
     "tests/playwright/**/*.{ts,tsx}",
-    "scripts/**/*.{mjs,js,ts}",
     "vite.config.ts",
     "vitest.config.ts",
     "vitest.e2e.config.ts",
     "playwright.config.ts",
-    "eslint.config.{js,mjs,ts}"
+    "eslint.config.{js,mjs,ts}",
+    "scripts/**/*.test.{mjs,js,ts}",
+    "scripts/**/__tests__/**/*.{mjs,js,ts}"
   ],
-  "project": ["src/**/*.{ts,tsx}"],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.{mjs,js,ts}"
+  ],
   "ignore": [
     "src/lib/bindings/**",
     "src/lib/commandNames.generated.ts",
@@ -23,12 +27,20 @@
     "src/i18n/section-locales/**",
     "src/lib/harness/**"
   ],
-  "ignoreBinaries": ["tauri", "cargo"],
+  "ignoreBinaries": [
+    "tauri",
+    "cargo"
+  ],
   "ignoreDependencies": [],
   "vite": {
-    "config": ["vite.config.ts"]
+    "config": [
+      "vite.config.ts"
+    ]
   },
   "vitest": {
-    "config": ["vitest.config.ts", "vitest.e2e.config.ts"]
+    "config": [
+      "vitest.config.ts",
+      "vitest.e2e.config.ts"
+    ]
   }
 }
