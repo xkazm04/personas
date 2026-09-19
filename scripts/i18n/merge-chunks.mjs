@@ -140,8 +140,13 @@ if (problems.length && !partial) {
   process.exit(1);
 }
 
+const UNSAFE_KEY = new Set(['__proto__', 'constructor', 'prototype']);
+
 function deepSet(obj, dotted, value) {
   const parts = dotted.split('.');
+  if (parts.some((p) => UNSAFE_KEY.has(p))) {
+    throw new Error(`refusing to set a prototype-reaching key: ${dotted}`);
+  }
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];

@@ -34,8 +34,13 @@ const nonEn = fs
   .filter((f) => f.endsWith('.json') && f !== 'en.json')
   .map((f) => f.replace(/\.json$/, ''));
 
+const UNSAFE_KEY = new Set(['__proto__', 'constructor', 'prototype']);
+
 function deepSet(obj, dotkey, value) {
   const parts = dotkey.split('.');
+  if (parts.some((p) => UNSAFE_KEY.has(p))) {
+    throw new Error(`refusing to set a prototype-reaching key: ${dotkey}`);
+  }
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];
