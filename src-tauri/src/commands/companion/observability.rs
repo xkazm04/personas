@@ -555,13 +555,28 @@ fn spend_rollup_rows(
 
     // Newest day first, then a stable order within the day. Sorting here
     // rather than in SQL is what lets the two ledgers interleave correctly.
-    out.sort_by(|a, b| {
-        b.day
-            .cmp(&a.day)
-            .then(a.ledger.cmp(&b.ledger))
-            .then(a.origin.cmp(&b.origin))
-    });
+    out.sort_by(spend_row_order);
     Ok(out)
+}
+
+/// The rollup's emitted order: newest day first, then ledger, then origin.
+///
+/// **Total on purpose.** `(day, ledger, origin)` is the full grouping key
+/// across both queries, so every row is uniquely placed and the emitted order
+/// owes nothing to the order the SQL engine happened to return groups in —
+/// neither query carries an `ORDER BY`, and `GROUP BY` order is a property of
+/// the chosen plan, not of the statement.
+///
+/// Named rather than inlined because weakening it is the quiet kind of change:
+/// drop either tiebreak and the row count, the values and the multiset all stay
+/// correct, every keyed (`.iter().find(...)`) assertion in this module still
+/// passes, and only the sequence moves. `the_emitted_order_is_total` is the one
+/// thing that would go red.
+fn spend_row_order(a: &AthenaSpendRow, b: &AthenaSpendRow) -> std::cmp::Ordering {
+    b.day
+        .cmp(&a.day)
+        .then(a.ledger.cmp(&b.ledger))
+        .then(a.origin.cmp(&b.origin))
 }
 
 /// Athena's total spend over the last `days`, per day and origin, with the
@@ -798,6 +813,60 @@ mod spend_rollup_tests {
             "the 90-day-old turn is outside a 7-day window"
         );
         assert!(rows[0].day >= rows[1].day, "newest day first");
+    }
+
+    /// Neither rollup query carries an `ORDER BY`; `GROUP BY` order is a
+    /// property of the plan SQLite picks, not of the statement. So the emitted
+    /// order has to come from [`spend_row_order`] ALONE — feed it any
+    /// permutation and it must land on the same sequence.
+    ///
+    /// Every other test in this module looks rows up by key
+    /// (`.iter().find(...)`) or reads a single row, so all of them stay green
+    /// if a tiebreak is dropped: the count, the values and the multiset are
+    /// untouched and only the sequence moves. Measured on 2026-09-20 against a
+    /// standalone copy of this function — removing the `origin` tiebreak, or
+    /// the `ledger` one, changed the emitted sequence and failed **0 of 6** of
+    /// the tests above. This is the one that fails instead.
+    #[test]
+    fn the_emitted_order_is_total() {
+        let row = |day: &str, ledger: &str, origin: &str| AthenaSpendRow {
+            day: day.to_string(),
+            origin: origin.to_string(),
+            ledger: ledger.to_string(),
+            ..Default::default()
+        };
+        // One pair differing only by `origin`, one only by `ledger`, one only
+        // by `day` — so each comparator term is load-bearing for some pair.
+        let canonical = vec![
+            row("2026-09-20", "dev_spend", "cycle"),
+            row("2026-09-20", "turn", "chat"),
+            row("2026-09-20", "turn", "headless"),
+            row("2026-09-19", "turn", "chat"),
+        ];
+        let key = |rs: &[AthenaSpendRow]| {
+            rs.iter()
+                .map(|r| format!("{}|{}|{}", r.day, r.ledger, r.origin))
+                .collect::<Vec<_>>()
+        };
+        let expected = key(&canonical);
+
+        // Reversed, and rotated: two permutations a different query plan could
+        // plausibly hand back.
+        for mut permutation in [
+            canonical.iter().rev().cloned().collect::<Vec<_>>(),
+            canonical[2..]
+                .iter()
+                .chain(canonical[..2].iter())
+                .cloned()
+                .collect::<Vec<_>>(),
+        ] {
+            permutation.sort_by(spend_row_order);
+            assert_eq!(
+                key(&permutation),
+                expected,
+                "the emitted order must not depend on the order rows arrived in"
+            );
+        }
     }
 
     /// Resolve a SQLite datetime modifier (`"-0 days"`, `"-3 days"`, …) to the
