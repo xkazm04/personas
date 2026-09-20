@@ -49,6 +49,7 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
   const error = useCouncilStore((s) => s.galaxyError);
   const focus = useCouncilStore((s) => s.focus);
   const fixtureOn = useCouncilStore((s) => s.fixtureOn);
+  const benchOpen = useCouncilStore((s) => s.benchOpen);
   const load = useCouncilStore((s) => s.load);
   const loadFixture = useCouncilStore((s) => s.loadFixture);
   const setLens = useCouncilStore((s) => s.setLens);
@@ -74,7 +75,14 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
     [publishEngine],
   );
 
-  useHudReservations(stageRef, hudCards, engine);
+  /* The two HUD cards stand DOWN while the bench is up. They are opaque and
+     they sit at the top of the stage, so with a drawer over the bottom two
+     thirds they become clipped slivers that carry no information - and their
+     content is already on screen twice over: the reading order is in the
+     rail's heading and footer, the counts are in the bench header. Hiding
+     them also gives the drawer the height they were occupying. */
+  const hudVisible = !benchOpen;
+  useHudReservations(stageRef, hudCards, engine, hudVisible);
 
   useAppKeyboard(
     useCallback(
@@ -143,8 +151,8 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
         <div ref={stageRef} className="relative min-w-0 flex-1 bg-background">
           {/* Chrome always renders; the ghost sits UNDER it and never replaces it. */}
           <GalaxyCanvas describedBy={LIST_ID} onEngine={setEngine} />
-          <ReadingOrder cardRef={legendRef} />
-          <CountsPanel cardRef={countsRef} />
+          {hudVisible ? <ReadingOrder cardRef={legendRef} /> : null}
+          {hudVisible ? <CountsPanel cardRef={countsRef} /> : null}
           {status === 'loading' && !layout ? <GalaxyGhost /> : null}
           {status === 'failed' ? (
             <div

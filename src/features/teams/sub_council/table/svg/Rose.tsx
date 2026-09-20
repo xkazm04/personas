@@ -66,7 +66,17 @@ export function Rose({
 }: RoseProps) {
   const uid = useId().replace(/:/g, '');
   const c = size / 2;
-  const R = mini ? c - 3 : c - Math.max(52, Math.round(size * 0.21));
+  /**
+   * The gutter the wedge labels live in SCALES with the figure.
+   *
+   * A flat 52 px is most of the radius at 150 px and none of it at 400, so a
+   * rose asked to be small collapsed to a ring with nothing drawn inside it
+   * while its labels sat far out in empty space. Proportional with a floor
+   * and a cap keeps the drawn area a real fraction of the figure at every
+   * size the table asks for.
+   */
+  const gutter = Math.max(30, Math.min(56, Math.round(size * 0.26)));
+  const R = mini ? c - 3 : c - gutter;
   const weighted = seats.reduce((n, s) => n + s.weight, 0) || 1;
 
   let angle = -Math.PI / 2;
@@ -90,7 +100,9 @@ export function Rose({
    * clamped to sit inside the ring, so the ring, the floors and every wedge
    * are always drawn on top of nothing.
    */
-  const hubR = Math.max(18, Math.min(size > 300 ? 46 : 34, threshold * R - 6));
+  const hubR = Math.min(size > 300 ? 46 : 34, threshold * R - 6);
+  /** Below this the hub is a dot, not a label: drop it and let the ring read. */
+  const hubFits = hubR >= 12;
   // Same reason as the wedge labels: an SVG `<text>` cannot host a span.
   const overallText = overall == null ? '' : overall.toFixed(2);
 
@@ -199,7 +211,7 @@ export function Rose({
         strokeWidth={mini ? 1.2 : 2}
       />
 
-      {!mini ? (
+      {!mini && hubFits ? (
         <>
           <circle
             cx={c}

@@ -14,10 +14,17 @@ export function useHudReservations(
   stageRef: RefObject<HTMLElement | null>,
   cardRefs: Array<RefObject<HTMLElement | null>>,
   engine: GalaxyEngine | null,
+  /** False while the cards are unmounted: nothing is reserved, and the
+   *  occupancy pass gets the whole stage back. */
+  enabled = true,
 ): void {
   useEffect(() => {
     const stage = stageRef.current;
     if (!engine || !stage) return;
+    if (!enabled) {
+      engine.setReservedRects([]);
+      return;
+    }
 
     const measure = () => {
       const base = stage.getBoundingClientRect();
@@ -42,5 +49,5 @@ export function useHudReservations(
     // `cardRefs` is a stable array of stable refs owned by the caller; the
     // cards themselves are re-measured by the observer, not by a re-run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engine, stageRef]);
+  }, [enabled, engine, stageRef]);
 }

@@ -142,8 +142,13 @@ export default function CouncilPage() {
           </button>
         }
       />
-      <ContentBody>
-        <div data-testid="council-stage" className="relative h-full min-h-0">
+      {/* `flex`, not the default body: the default wraps its children in a
+          PADDED, `min-h-full` box inside a scroller, so a stage asking for
+          `h-full` got the scroller's height MINUS the padding and the page
+          ended short of the window with the field clipped inside it. The flex
+          branch is `h-full` with no padding, which is what a stage needs. */}
+      <ContentBody flex>
+        <div data-testid="council-stage" className="relative flex min-h-0 flex-1 flex-col">
           <GalaxyStage
             bench={
               benchOpen ? (
@@ -151,20 +156,21 @@ export default function CouncilPage() {
                   ref={benchRef}
                   data-testid="council-bench"
                   aria-label={tx(b.headline_many, { count: waiting })}
-                  className="absolute inset-x-0 bottom-0 z-30 flex min-h-0 flex-col border-t border-border bg-background shadow-[0_-18px_44px_rgba(0,0,0,0.34)]"
-                  /* Two heights, as the reference has: the queue leaves a
-                     band of sky, the round table takes the room it needs and
-                     leaves a thinner one. A SHARE OF THE STAGE, not of the
-                     viewport - the reference's bench is fixed to a window
-                     whose whole height is field, while this one sits inside a
-                     page that already spent ~290 px on its own header and the
-                     galaxy's HUD. `68vh` there is most of the sky; here it was
-                     all of it, leaving an 11 px strip. */
-                  style={{
-                    height: tableOpen ? '84%' : '62%',
-                    minHeight: tableOpen ? 380 : 300,
-                    maxHeight: tableOpen ? 780 : 520,
-                  }}
+                  className={`absolute inset-x-0 bottom-0 z-30 flex min-h-0 flex-col border-t border-border bg-background shadow-[0_-18px_44px_rgba(0,0,0,0.34)] ${
+                    tableOpen ? 'top-0' : ''
+                  }`}
+                  /* Two shapes, and both are a share of the STAGE rather than
+                     of the viewport - the reference's drawer is fixed to a
+                     window whose whole height is field, while this one sits
+                     inside a page that already spent its own header.
+                     THE QUEUE keeps a band of sky: the whole point of council
+                     focus is that the stars the selected subject lands on are
+                     in view while you read its row.
+                     THE ROUND TABLE takes the field entirely. It has a fixed
+                     frame to fit - header, rose, reading, gate - and a
+                     half-height table is a clipped table; the galaxy is still
+                     alive behind it and the rail still lists its stars. */
+                  style={tableOpen ? undefined : { height: '66%', minHeight: 300 }}
                 >
                   <CouncilBench onFocusSubject={aim} />
                 </section>

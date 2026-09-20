@@ -1,11 +1,19 @@
 // Hand the engine the app's live tokens, and re-read them when the theme flips.
 //
-// Subscribed through the theme STORE rather than by watching `data-theme` on
-// the root: the store is the one owner of every appearance attribute
-// (`themeStore.applyThemeToDOM` writes theme, brightness, density and contrast
-// from the same place), and brightness alone re-declares every status colour.
-// The read is deferred past the 250 ms cross-fade `applyThemeToDOM` starts, or
-// the canvas would capture the colours mid-transition.
+// TWO sources, because the store is the usual writer but not the only thing
+// that can be true. `themeStore.applyThemeToDOM` owns every appearance
+// attribute in normal use (theme, brightness, density, contrast - brightness
+// alone re-declares every status colour), so the store subscription is the
+// primary signal. But the tokens live on `document.documentElement`, and
+// ANYTHING that sets those attributes changes what the canvas should paint
+// with: a harness, a dev tool, a future writer, a restore that runs before
+// this component mounts. A canvas that is dark inside a white page is not a
+// theme bug, it is a canvas that was never told - so the attributes
+// themselves are observed too, and the observer is the backstop that makes
+// "the engine is showing the wrong theme" unreachable rather than unlikely.
+//
+// The read is deferred past the 250 ms cross-fade `applyThemeToDOM` starts,
+// or the canvas would capture the colours mid-transition.
 import { useEffect } from 'react';
 
 import { useThemeStore } from '@/stores/themeStore';
@@ -26,8 +34,14 @@ export function useCanvasTheme(apply: (theme: CanvasTheme) => void): void {
     };
     read();
     const unsubscribe = useThemeStore.subscribe(read);
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'data-brightness', 'data-contrast', 'data-density', 'class'],
+    });
     return () => {
       window.clearTimeout(timer);
+      observer.disconnect();
       unsubscribe();
     };
   }, [apply]);
