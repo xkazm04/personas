@@ -13,6 +13,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   Object.freeze({
   "monitor": {},
   "common": {},
+  "council": {
+    "galaxy": {}
+  },
   "chrome": {
     "system_load": {},
     "shortcuts": {}

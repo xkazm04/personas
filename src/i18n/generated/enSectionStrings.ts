@@ -1,8 +1,8 @@
 // AUTO-GENERATED FROM src/i18n/locales/en.json — DO NOT EDIT BY HAND.
 // Regenerate with: node scripts/i18n/split-locales.mjs
 
-// Every top-level section name (all 64). Cheap — names only, no content.
-export const EN_ALL_SECTIONS = ["monitor","common","chrome","sidebar","home","agents","director","vault","deliberation","deployment","sharing","overview","matrix_v3","templates","triggers","remote_approval","settings","design","onboarding","system_health","errors","error_registry","empty_states","consent","schedules","recipes_catalog","explore","foundry","recipes","recipe_shared","agent_lab","execution_status","status_tokens","project_overview","plugins","media_studio","research_lab","event_types","connector_roles","connector_licensing","alerts","deploy_errors","tiers","models","process_labels","eval_strategies","feedback_labels","execution","gitlab","pipeline","shared","releases","twin","radio","cockpit","kpis","planner","auth","debt","mastermind","ship","studio","notepad","browser"] as const;
+// Every top-level section name (all 65). Cheap — names only, no content.
+export const EN_ALL_SECTIONS = ["monitor","common","council","chrome","sidebar","home","agents","director","vault","deliberation","deployment","sharing","overview","matrix_v3","templates","triggers","remote_approval","settings","design","onboarding","system_health","errors","error_registry","empty_states","consent","schedules","recipes_catalog","explore","foundry","recipes","recipe_shared","agent_lab","execution_status","status_tokens","project_overview","plugins","media_studio","research_lab","event_types","connector_roles","connector_licensing","alerts","deploy_errors","tiers","models","process_labels","eval_strategies","feedback_labels","execution","gitlab","pipeline","shared","releases","twin","radio","cockpit","kpis","planner","auth","debt","mastermind","ship","studio","notepad","browser"] as const;
 
 // Eager English "core" (~28 sections, extracted from routeSections.ts's
 // BASE_SECTIONS): the only English content still resident in the main bundle.
