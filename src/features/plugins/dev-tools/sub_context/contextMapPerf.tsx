@@ -25,6 +25,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 import { ContextCoverage, type GoalCoverage, type TDevTools } from './contextLedgerShared';
+import { FeatureChip } from './FeatureChip';
 import type { FeatureChipContext } from './featureChipContext';
 import { KIND_DOT, kindMeta } from './useCaseKind';
 import {
@@ -288,7 +289,19 @@ export interface RosterTileProps {
   status: ContextKpiStatus;
   selected: boolean;
   dimmed: boolean;
+  /** Only read when the board has no feature chip to hand (see below). */
   featureCount: number;
+  /**
+   * The features slicing THIS context, and the board-wide chip inputs.
+   *
+   * Present turns the tile's feature indicator into the same council chip
+   * the crosstab ledger row carries: the popover, the glyphs, the tier
+   * toggle and the "not scanned" wording when the project has features but
+   * none of them reaches a context. Absent keeps the old plain count, which
+   * is what a caller with no project active can honestly show.
+   */
+  contextUseCases?: DevUseCase[];
+  chip?: FeatureChipContext | null;
   goalCount: number;
   kpiCount: number;
   scanning: boolean;
@@ -304,6 +317,8 @@ export const RosterTile = memo(function RosterTile({
   selected,
   dimmed,
   featureCount,
+  contextUseCases,
+  chip,
   goalCount,
   kpiCount,
   scanning,
@@ -334,7 +349,11 @@ export const RosterTile = memo(function RosterTile({
 
       {/* the divider, then the indicators */}
       <div className="border-t border-foreground/10 flex items-center gap-2.5 px-2 py-1">
-        <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-sky-300" label={t.uc_title} />
+        {contextUseCases && chip?.project && (contextUseCases.length > 0 || chip.featuresUnlinked) ? (
+          <FeatureChip contextName={ctx.name} useCases={contextUseCases} chip={chip} t={t} />
+        ) : (
+          <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-sky-300" label={t.uc_title} />
+        )}
         <Indicator
           icon={<Target className="w-3 h-3" />}
           n={goalCount}

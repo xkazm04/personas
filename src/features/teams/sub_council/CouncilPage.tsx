@@ -13,6 +13,7 @@ import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/compon
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 
 import { CouncilBench } from './bench/CouncilBench';
 import { effectiveSubject } from './bench/queueModel';
@@ -28,6 +29,9 @@ export default function CouncilPage() {
   const focusCouncil = useCouncilStore((s) => s.focusCouncil);
   const rawSubjects = useCouncilStore((s) => s.subjects);
   const fixtureDecisions = useCouncilStore((s) => s.fixtureDecisions);
+  const subjectsStatus = useCouncilStore((s) => s.subjectsStatus);
+  const pendingSubjectId = useSystemStore((s) => s.pendingCouncilSubjectId);
+  const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
 
   const waiting = useMemo(
     () => decidableCount(rawSubjects.map((s) => effectiveSubject(s, fixtureDecisions))),
@@ -52,6 +56,24 @@ export default function CouncilPage() {
   // Leaving the page drops the bench, so a return lands on the sky rather
   // than inside a drawer the reader does not remember opening.
   useEffect(() => () => setBenchOpen(false), [setBenchOpen]);
+
+  /* The ledger's `ready` row hands off here. The intent waits for the
+     councils to arrive rather than being dropped on an empty list, and is
+     cleared the moment it is honoured OR the moment the rows land without
+     it, so a later visit opens the queue rather than re-opening a council
+     the person has since decided. A subject id that no longer resolves is
+     cleared too: a stale hand-off must not leave the page waiting forever. */
+  useEffect(() => {
+    if (!pendingSubjectId) return;
+    if (subjectsStatus !== 'loaded') return;
+    const s = useCouncilStore.getState();
+    const found = s.subjects.find((row) => row.id === pendingSubjectId);
+    setPendingCouncilSubjectId(null);
+    if (!found) return;
+    s.setBenchOpen(true);
+    s.setTableSubject(found.id);
+    s.focusCouncil(found, null);
+  }, [pendingSubjectId, subjectsStatus, setPendingCouncilSubjectId]);
 
   const aim = useCallback(
     (subject: CouncilSubjectState) => focusCouncil(subject, null),

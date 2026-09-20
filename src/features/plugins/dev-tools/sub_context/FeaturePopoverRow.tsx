@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { setUseCaseTier, type UseCaseTier } from '@/api/devTools/council';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import Button from '@/features/shared/components/buttons/Button';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
@@ -42,12 +43,15 @@ export function FeaturePopoverRow({
   row,
   t,
   onDispatch,
+  onOpenCouncil,
   onTierChanged,
 }: {
   row: FeatureRowModel;
   t: TDevTools;
   /** Open the consent surface for this subject's next round. */
   onDispatch: (row: FeatureRowModel) => void;
+  /** Leave for the Council page's gate, focused on this subject. */
+  onOpenCouncil: (subjectId: string) => void;
   onTierChanged: () => void;
 }) {
   const kind = rowGlyphKind(row);
@@ -101,15 +105,27 @@ export function FeaturePopoverRow({
         </span>
       </Tooltip>
 
-      {/* Stage 1 has no decision surface, so `ready` points at the report the
-          skill wrote rather than offering a gate that does not exist yet. */}
-      {cta === 'awaiting' && (
+      {/* The decision surface exists now: `ready` leaves for the Council
+          page's round table, focused on THIS subject, rather than naming the
+          report path the person would have to open by hand. The id is the
+          subject row's own, typed straight off the binding, so nothing is
+          asserted at the navigation door. */}
+      {cta === 'awaiting' && row.subject && (
         <Tooltip
           content={interpolate(t.council_report_path, {
-            path: row.subject?.runDir ?? t.council_report_path_unknown,
+            path: row.subject.runDir ?? t.council_report_path_unknown,
           })}
         >
-          <span className="shrink-0 typo-caption text-primary">{councilCtaLabel(cta, t)}</span>
+          <Button
+            variant="accent"
+            accentColor="amber"
+            size="sm"
+            className="shrink-0"
+            data-testid="council-open-gate"
+            onClick={() => onOpenCouncil(row.subject!.id)}
+          >
+            {councilCtaLabel(cta, t)}
+          </Button>
         </Tooltip>
       )}
 

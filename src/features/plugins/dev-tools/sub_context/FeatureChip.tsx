@@ -11,6 +11,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { interpolate } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 
 import type { TDevTools } from './contextLedgerShared';
 import { buildCouncilDispatch } from './councilDispatch';
@@ -32,6 +33,9 @@ export function FeatureChip({
   t: TDevTools;
 }) {
   const [open, setOpen] = useState(false);
+  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
   const [request, setRequest] = useState<DispatchRequest | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const count = useCases.length;
@@ -53,6 +57,18 @@ export function FeatureChip({
       }),
     );
   }, [chip.project]);
+
+  /* The `ready` row leaves for the gate. The intent is seeded BEFORE the
+     navigation, the way `jumpToIdeas` does it on the ledger row, so the
+     Council page reads it on the mount this click causes. The id is a
+     `CouncilSubjectState['id']` all the way down: nothing is asserted at
+     the door and nothing is parsed out of a label. */
+  const openCouncil = useCallback((subjectId: string) => {
+    setOpen(false);
+    setPendingCouncilSubjectId(subjectId);
+    setSidebarSection('teams');
+    setTeamsTab('council');
+  }, [setPendingCouncilSubjectId, setSidebarSection, setTeamsTab]);
 
   // The project has features, none of them reaches a context. Saying "0" here
   // would report an unscanned link layer as a measured absence.
@@ -100,6 +116,7 @@ export function FeatureChip({
           t={t}
           onClose={close}
           onDispatch={dispatch}
+          onOpenCouncil={openCouncil}
         />
       )}
 

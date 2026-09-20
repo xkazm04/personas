@@ -58,6 +58,7 @@ export function FeaturePopover({
   t,
   onClose,
   onDispatch,
+  onOpenCouncil,
 }: {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
   contextName: string;
@@ -66,6 +67,8 @@ export function FeaturePopover({
   t: TDevTools;
   onClose: () => void;
   onDispatch: (row: FeatureRowModel) => void;
+  /** Leave for the Council page's gate, focused on one subject. */
+  onOpenCouncil: (subjectId: string) => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const project = chip.project;
@@ -148,6 +151,7 @@ export function FeaturePopover({
             row={row}
             t={t}
             onDispatch={onDispatch}
+            onOpenCouncil={onOpenCouncil}
             onTierChanged={refresh}
           />
         ))}

@@ -157,6 +157,17 @@ export interface UiSlice {
   /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
   pendingGoalSpotlightId: string | null;
   /**
+   * A council subject the Council page should open on next mount, set by the
+   * feature ledger's `ready` row handing off to the gate.
+   *
+   * It carries the SUBJECT ID rather than a slug, because the Council page
+   * resolves it against the rows it already holds and a slug is only unique
+   * within one project. Consumed once and cleared, like every other pending
+   * here, so a later visit lands on the queue rather than re-opening a
+   * council the person has since decided.
+   */
+  pendingCouncilSubjectId: string | null;
+  /**
    * A context the LLM Overview should open filtered to, set by the cost chip on
    * a Context Map ledger row. Carries the NAME as well as the id because the
    * destination has no context map loaded and must be able to say what it is
@@ -304,6 +315,7 @@ export interface UiSlice {
   setPendingTaskFocusId: (id: string | null) => void;
   setPendingApprovalsMode: (mode: ApprovalsMode | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
+  setPendingCouncilSubjectId: (id: string | null) => void;
   setPendingLlmContextFilter: (filter: { contextId: string; contextName: string } | null) => void;
   setPendingFactoryFocus: (focus: { projectId: string; l2Tab: FactoryL2Tab } | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
@@ -453,6 +465,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingTaskFocusId: null,
   pendingApprovalsMode: null,
   pendingGoalSpotlightId: null,
+  pendingCouncilSubjectId: null,
   pendingLlmContextFilter: null,
   pendingFactoryFocus: null,
   canvasEdgeFocus: null,
@@ -572,6 +585,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
   setPendingApprovalsMode: (mode) => set({ pendingApprovalsMode: mode }),
   setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
+  setPendingCouncilSubjectId: (id) => set({ pendingCouncilSubjectId: id }),
   setPendingLlmContextFilter: (filter) => set({ pendingLlmContextFilter: filter }),
   setPendingFactoryFocus: (focus) => set({ pendingFactoryFocus: focus }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
