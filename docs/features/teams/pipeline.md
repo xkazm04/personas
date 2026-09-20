@@ -243,6 +243,30 @@ command `list_team_slack_bridges`, **not** from the persona roster —
 `list_personas` is a lean projection that returns `notification_channels` blank,
 so a frontend-derived index would always read "unbridged".
 
+## A team can be a workspace's cross-project group
+
+Alongside the kinds of team above, `persona_teams` carries `workspace_id`: set on
+exactly one project-less team per workspace (enforced by the partial unique index
+`idx_persona_teams_workspace_group`, not by convention), and null on every team that
+is a project's roster. That team is the workspace's **cross-project group** — where a
+persona is filed when it works across all of the workspace's projects rather than
+inside one of them. It is created with the workspace, renamed with it, and unbound
+rather than deleted if the workspace goes away.
+
+Two consequences for anything that reads teams:
+
+- **Membership is still `personas.home_team_id`.** `persona_team_members` is a
+  different fact ("works with the team"), and the surfaces that show a group's roster
+  — Fleet ▸ Activity among them — read the first, not the second.
+- **The ts-rs binding spells the column `workspace_id?: string`, not `string | null`.**
+  That is deliberate: a required nullable field breaks every TypeScript object literal
+  that builds a whole `PersonaTeam`, and those live in other features' files. Consumers
+  normalise it (`tm.workspace_id ?? null`) at the door and keep their own model
+  two-valued; do not "fix" the binding to a bare `Option`.
+
+Renaming a group is an ordinary `update_team` with `{ name }` — the same partial-update
+semantics as any other team.
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.
