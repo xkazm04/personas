@@ -12,6 +12,7 @@ import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
 import { decidable, pressureRamp } from '../councilRules';
 import { fitToSet, sameCamera, tweenCamera, type Viewport } from '../galaxy/engine/camera';
 import { allocateLabels, MIN_LABEL_PX, type LabelRequest } from '../galaxy/engine/labels';
+import { normaliseFixtureTitle } from '../galaxy/fixture';
 import { buildLayout, markOf } from '../galaxy/engine/layout';
 import { applyLens, LENS_M, LENS_R } from '../galaxy/engine/lens';
 
@@ -164,28 +165,70 @@ describe('tweenCamera', () => {
   });
 });
 
-describe('allocateLabels — labels are an allocation, and it counts what it drops', () => {
+describe('allocateLabels — labels are an allocation, and it counts what it hid', () => {
   const measure = (text: string, size: number) => text.length * size * 0.5;
+  const at = (x: number, y: number, text: string, priority = 5): LabelRequest => ({
+    x,
+    y,
+    text,
+    size: 15,
+    color: '#fff',
+    weight: 600,
+    align: 'center',
+    priority,
+  });
 
   it('places the higher priority and drops the collision, counting it', () => {
-    const requests: LabelRequest[] = [
-      { x: 100, y: 100, text: 'winner', size: 15, color: '#fff', weight: 600, align: 'center', priority: 0 },
-      { x: 100, y: 100, text: 'loser', size: 15, color: '#fff', weight: 600, align: 'center', priority: 5 },
-    ];
-    const { placed, dropped } = allocateLabels(requests, measure, 1280, 800);
+    const { placed, dropped } = allocateLabels([at(100, 100, 'winner', 0), at(100, 100, 'loser', 5)], measure, 1280, 800);
     expect(placed.map((p) => p.text)).toEqual(['winner']);
     expect(dropped).toBe(1);
   });
 
-  it('drops what falls outside the stage', () => {
-    const { placed, dropped } = allocateLabels(
-      [{ x: 100, y: 5000, text: 'below', size: 15, color: '#fff', weight: 600, align: 'center', priority: 0 }],
+  it('hidden is always candidates minus placed, for any N and K', () => {
+    // Six candidates in view, stacked on three anchors: three can be placed.
+    const requests = [
+      at(200, 100, 'a', 0),
+      at(200, 100, 'b', 1),
+      at(600, 300, 'c', 0),
+      at(600, 300, 'd', 1),
+      at(900, 600, 'e', 0),
+      at(900, 600, 'f', 1),
+    ];
+    const { placed, dropped, candidates } = allocateLabels(requests, measure, 1280, 800);
+    expect(candidates).toBe(requests.length);
+    expect(placed).toHaveLength(3);
+    expect(dropped).toBe(candidates - placed.length);
+  });
+
+  it('never counts an off-stage candidate: the view could not have named it', () => {
+    const { placed, dropped, candidates } = allocateLabels(
+      [
+        at(100, 100, 'visible', 0),
+        at(100, 5000, 'far below'),
+        at(-4000, 100, 'far left'),
+        at(9000, 100, 'far right'),
+        at(100, -900, 'far above'),
+      ],
       measure,
       1280,
       800,
     );
-    expect(placed).toHaveLength(0);
+    expect(placed.map((p) => p.text)).toEqual(['visible']);
+    expect(candidates).toBe(1);
+    expect(dropped).toBe(0);
+  });
+
+  it('reserves the chrome BEFORE placing, so a caption moves out from under a HUD card', () => {
+    const card = { a: 0, b: 0, c: 400, d: 200 };
+    const underTheCard = at(200, 100, 'under the card', 0);
+    const clear = at(900, 600, 'in the open', 1);
+    const { placed, dropped, candidates } = allocateLabels([underTheCard, clear], measure, 1280, 800, [card]);
+    expect(placed.map((p) => p.text)).toEqual(['in the open']);
+    expect(candidates).toBe(2);
     expect(dropped).toBe(1);
+    // Without the reservation the same caption is placed, and painted behind
+    // the card — which is the defect the reservation exists to remove.
+    expect(allocateLabels([underTheCard, clear], measure, 1280, 800).placed).toHaveLength(2);
   });
 
   it('never renders below the type floor', () => {
@@ -196,6 +239,20 @@ describe('allocateLabels — labels are an allocation, and it counts what it dro
       800,
     );
     expect(placed[0]!.size).toBe(MIN_LABEL_PX);
+  });
+});
+
+describe('normaliseFixtureTitle — the fixture only', () => {
+  it('upper-cases the initialisms the Rust reader upper-cases for real data', () => {
+    expect(normaliseFixtureTitle('Llm Agent')).toBe('LLM Agent');
+    expect(normaliseFixtureTitle('Ui Surfaces')).toBe('UI Surfaces');
+    expect(normaliseFixtureTitle('Api And Sql')).toBe('API And SQL');
+    expect(normaliseFixtureTitle('P2p Networking')).toBe('P2P Networking');
+  });
+
+  it('leaves every other word exactly as the fixture wrote it', () => {
+    expect(normaliseFixtureTitle('Backend Platform')).toBe('Backend Platform');
+    expect(normaliseFixtureTitle('Civic Source Adapters')).toBe('Civic Source Adapters');
   });
 });
 

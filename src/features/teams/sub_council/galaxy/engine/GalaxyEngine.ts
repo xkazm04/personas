@@ -20,7 +20,7 @@ import {
   viewportCentre,
   type Viewport,
 } from './camera';
-import { LabelQueue } from './labels';
+import { LabelQueue, type Rect } from './labels';
 import { LENS_R, type LensState } from './lens';
 import { paintFrame, type CanvasCaptions, type PickTarget } from './paint';
 import type { CanvasTheme } from './theme';
@@ -93,6 +93,8 @@ export class GalaxyEngine {
   private labels = new LabelQueue();
 
   private picks: PickTarget[] = [];
+
+  private reserved: Rect[] = [];
 
   private labelsHidden = 0;
 
@@ -183,6 +185,24 @@ export class GalaxyEngine {
   setBenchHeight(px: number): void {
     if (this.benchHeight === px) return;
     this.benchHeight = px;
+    this.invalidate();
+  }
+
+  /**
+   * The HUD cards are opaque, so the occupancy pass has to know where they
+   * are: a caption laid under one is hidden by furniture, not by density.
+   * Rects are in stage pixels, fed from a ResizeObserver on the cards.
+   */
+  setReservedRects(rects: Array<{ x: number; y: number; width: number; height: number }>): void {
+    const next = rects.map((r) => ({ a: r.x, b: r.y, c: r.x + r.width, d: r.y + r.height }));
+    const same =
+      next.length === this.reserved.length &&
+      next.every((r, i) => {
+        const p = this.reserved[i];
+        return p !== undefined && p.a === r.a && p.b === r.b && p.c === r.c && p.d === r.d;
+      });
+    if (same) return;
+    this.reserved = next;
     this.invalidate();
   }
 
@@ -414,6 +434,7 @@ export class GalaxyEngine {
       thread: this.thread,
       labels: this.labels,
       picks: this.picks,
+      reserved: this.reserved,
     });
     this.callbacks.onCounts(this.counts());
   }

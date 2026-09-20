@@ -5,7 +5,7 @@
 // other number (radii, alphas, thresholds, the rim arc, the sunflower) is the
 // reference's, unchanged, because those numbers ARE the approved design.
 import { applyLens, LENS_NAME_AT_DEPTH, LENS_NAME_AT_SKY, LENS_R, lensShadows, type LensState } from './lens';
-import { LabelQueue } from './labels';
+import { LabelQueue, type Rect } from './labels';
 import { TAU } from './layout';
 import { withAlpha, type CanvasTheme } from './theme';
 import type { Viewport } from './camera';
@@ -57,6 +57,8 @@ export interface FrameInput {
   thread: Set<string> | null;
   labels: LabelQueue;
   picks: PickTarget[];
+  /** Chrome boxes, taken by the occupancy pass before any label is placed. */
+  reserved: Rect[];
 }
 
 function markColour(theme: CanvasTheme, mark: CouncilMark): string {
@@ -170,7 +172,9 @@ function drawTechniques(f: FrameInput, p: Projector, s: SubjectNode): void {
         color: shared ? theme.purple : theme.ink2,
         weight: 580,
         align: 'center',
-        priority: shared ? 2 : 7,
+        // At subject altitude the technique names ARE the content. They yield
+        // to the subject's own title (priority 0) and to nothing else.
+        priority: 1,
       });
     }
   }
@@ -235,7 +239,13 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
   }
 
   const lensed = m > LENS_NAME_AT_DEPTH;
-  const wantName = isSelected || threaded || f.hover === s || lensed || (inCategory && r > 5.6);
+  // A subject dimmed because a SIBLING is open is context, not content: it is
+  // drawn at a fifth of the ink and its name would compete with the open
+  // subject's techniques for the same space. Not queued at all, so it can
+  // neither win a slot nor be counted as a label the view withheld.
+  const dimmedBySibling = f.subject !== null && !isSelected;
+  const wantName =
+    isSelected || threaded || f.hover === s || lensed || (inCategory && r > 5.6 && !dimmedBySibling);
   if (isSelected) {
     f.labels.push({ x, y: y - r * 2.9, text: `${s.rank}. ${s.title}`, size: 20, color: theme.ink1, weight: 670, align: 'center', priority: 0 });
   } else if (wantName) {
@@ -445,5 +455,5 @@ export function paintFrame(f: FrameInput): number {
   for (const d of f.layout.domains) drawDomain(f, p, d);
   if (f.thread) drawThreads(f, p, f.thread);
   drawLensCircle(f);
-  return f.labels.flush(ctx, theme, width, f.viewport.y1);
+  return f.labels.flush(ctx, theme, width, f.viewport.y1, f.reserved);
 }

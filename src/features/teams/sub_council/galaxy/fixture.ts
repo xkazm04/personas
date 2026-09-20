@@ -53,6 +53,24 @@ function parseAssignment(source: string, name: string): unknown {
   throw new Error(`reference fixture: ${name} is not balanced`);
 }
 
+/**
+ * Initialisms the Rust reader upper-cases when it derives a title from a
+ * slug. The fixture files carry titles that were pre-cased WITHOUT that step,
+ * so `llm-agent` reads as "Llm Agent" here and "LLM Agent" in the product.
+ * Applied to the FIXTURE ONLY, so the comparison view does not show a defect
+ * the product does not have. Real data arrives already normalised and is
+ * never passed through this.
+ */
+const INITIALISMS = new Set([
+  'llm', 'ui', 'ci', 'cd', 'api', 'sql', 'mcp', 'p2p', 'ipc', 'pii', 'hitl', 'kpi', 'cx', 'ux', 'rtl',
+]);
+
+export function normaliseFixtureTitle(title: string): string {
+  return title.replace(/[A-Za-z0-9]+/g, (word) =>
+    INITIALISMS.has(word.toLowerCase()) ? word.toUpperCase() : word,
+  );
+}
+
 /** The reference's `topology.js` is the same shape the Rust reader emits. */
 interface FixtureTopology {
   totals: RegistryGalaxy['totals'];
@@ -126,7 +144,18 @@ export async function loadReferenceFixture(): Promise<FixtureBundle> {
       registryRoot: FIXTURE_ROOT,
       headSha: null,
       totals: topology.totals,
-      domains: topology.domains,
+      domains: topology.domains.map((domain) => ({
+        ...domain,
+        title: normaliseFixtureTitle(domain.title),
+        categories: domain.categories.map((category) => ({
+          ...category,
+          title: normaliseFixtureTitle(category.title),
+          subjects: category.subjects.map((subject) => ({
+            ...subject,
+            title: normaliseFixtureTitle(subject.title),
+          })),
+        })),
+      })),
     },
     overlay: {
       subjects: Object.entries(council.overlay.subjects).map(([slug, row]) => ({

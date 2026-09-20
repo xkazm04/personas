@@ -1,6 +1,8 @@
 // The counts panel. Whatever the field is hiding, it says so: the dimmed
 // count under council focus and the labels the occupancy pass had to drop are
 // printed beside the totals, never swallowed.
+import type { RefObject } from 'react';
+
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { Translations } from '@/i18n/en';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -50,7 +52,8 @@ function altitudeRows(layout: GalaxyLayout | null, focus: GalaxyFocus, g: Galaxy
   ];
 }
 
-export function CountsPanel() {
+/** The panel's box is reserved by the label pass, so it needs a ref out. */
+export function CountsPanel({ cardRef }: { cardRef?: RefObject<HTMLDivElement | null> }) {
   const { t } = useTranslation();
   const g = t.council.galaxy;
   const layout = useCouncilStore((s) => s.layout);
@@ -69,6 +72,7 @@ export function CountsPanel() {
 
   return (
     <div
+      ref={cardRef}
       className="pointer-events-none absolute right-4 top-4 z-10 flex max-w-[calc(100%-330px)] flex-wrap justify-end gap-x-3.5 gap-y-1 rounded-card border border-card-border bg-card-bg px-4 py-2.5 shadow-elevation-2"
       data-testid="council-counts"
     >

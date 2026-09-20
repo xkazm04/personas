@@ -4,7 +4,7 @@
 // The bench is WP8's. It mounts in the `bench` slot below the field and never
 // hides the sky; the engine already takes its height so the camera can frame
 // what is left.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link2, TriangleAlert } from 'lucide-react';
 
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -24,6 +24,7 @@ import { CountsPanel } from './hud/CountsPanel';
 import { ReadingOrder } from './hud/ReadingOrder';
 import { IS_DEV } from './fixture';
 import type { GalaxyEngine } from './engine/GalaxyEngine';
+import { useHudReservations } from './useHudReservations';
 import { useRegistryRoot } from './useRegistryRoot';
 
 const LIST_ID = 'council-galaxy-list';
@@ -34,6 +35,10 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
   const registryRoot = useRegistryRoot();
   const [engine, setEngine] = useState<GalaxyEngine | null>(null);
   const filterRef = useRef<HTMLInputElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const legendRef = useRef<HTMLDivElement | null>(null);
+  const countsRef = useRef<HTMLDivElement | null>(null);
+  const hudCards = useMemo(() => [legendRef, countsRef], []);
 
   const layout = useCouncilStore((s) => s.layout);
   const status = useCouncilStore((s) => s.galaxyStatus);
@@ -50,6 +55,8 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
     if (fixtureOn) return;
     void load(registryRoot);
   }, [fixtureOn, load, registryRoot]);
+
+  useHudReservations(stageRef, hudCards, engine);
 
   useAppKeyboard(
     useCallback(
@@ -115,11 +122,11 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
       <GalaxyHud engine={engine} />
       <div className="flex min-h-0 flex-1">
         <GalaxyRail engine={engine} filterRef={filterRef} describedById={LIST_ID} />
-        <div className="relative min-w-0 flex-1 bg-background">
+        <div ref={stageRef} className="relative min-w-0 flex-1 bg-background">
           {/* Chrome always renders; the ghost sits UNDER it and never replaces it. */}
           <GalaxyCanvas describedBy={LIST_ID} onEngine={setEngine} />
-          <ReadingOrder />
-          <CountsPanel />
+          <ReadingOrder cardRef={legendRef} />
+          <CountsPanel cardRef={countsRef} />
           {status === 'loading' && !layout ? <GalaxyGhost /> : null}
           {status === 'failed' ? (
             <div
