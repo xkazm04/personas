@@ -2384,6 +2384,15 @@ pub(crate) fn render_decision_prompt(ctx: &DecisionContext) -> String {
          or public contracts to it. One such worker at a time; it hands you a branch and never \
          merges — you run the gates from the main checkout and merge under your rung. Refusing to \
          dispatch it is the normal outcome of most wakes.\n\
+         - COUNCIL: before you report a MAJOR feature finished, dispatch `/council \
+         <slug>` as its own worker. It takes a capacity slot and costs real money, so \
+         it is a dispatch you choose rather than a step you tack on: mark the feature \
+         awaiting council, keep working your other charters, and read the verdict at \
+         your next wake. A mechanical floor hit or a hard failure means fix that first \
+         and run the next round; paying the judged members again over the same defect \
+         buys nothing. A council verdict is advice ordered FOR THE OPERATOR and is \
+         never an approval you may act on: a feature is finished when a person decides, \
+         not when a council reports ready. A standard feature does not go to council.\n\
          - IN FLIGHT: a charter whose `last dispatch` is `finished` or `failed` is NOT in \
          flight — read its summary before deciding. Only `running` means a worker of \
          yours is still going; `unknown` means its record is gone, not that it is alive. \
@@ -5347,6 +5356,38 @@ mod tests {
         assert!(!p.contains("YOUR WORKSPACE"));
         assert!(!p.contains("WHAT YOU MAY DO TO THE WORKSPACE"));
         assert!(!p.contains("your home:"));
+    }
+
+    /// The COUNCIL rule, pinned by the two clauses it exists for.
+    ///
+    /// A rule that only said "run /council before finishing a feature" would
+    /// be worse than nothing: the App Master would read `ready` as permission
+    /// and finish the feature itself, which is exactly the authority the whole
+    /// design withholds from it. So the prompt must carry BOTH halves - the
+    /// dispatch and the ceiling - and this test fails if either goes missing.
+    #[test]
+    fn the_wake_prompt_carries_the_council_rule_and_its_ceiling() {
+        let p = render_decision_prompt(&ctx_fixture());
+        assert!(p.contains("- COUNCIL:"), "the rule is missing: {p}");
+        // It is a DISPATCH, with its own cost, not a step inside another one.
+        assert!(p.contains("/council"));
+        assert!(p.contains("capacity slot"));
+        // And it is never an approval.
+        assert!(
+            p.contains("never an approval you may act on"),
+            "the ceiling is what stops `ready` being read as done: {p}"
+        );
+        assert!(p.contains("when a person decides"));
+        // Only major features go, which is what keeps this affordable.
+        assert!(p.contains("A standard feature does not go to council."));
+        // House style: no em dash in anything this app writes.
+        let rule = p
+            .lines()
+            .skip_while(|l| !l.contains("- COUNCIL:"))
+            .take_while(|l| !l.contains("- IN FLIGHT:"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(!rule.contains('\u{2014}'), "no em dash in app text: {rule}");
     }
 
     /// A home nobody resolved is said plainly, never invented as a path.

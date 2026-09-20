@@ -150,6 +150,28 @@
     "status": "draft"
   },
   {
+    "id": "0bd3f5a1-7c42-4f8e-9a6d-2f1b84c7e530",
+    "name": "A major feature escorted to a person's decision by an evidence-first council",
+    "description": "An autonomous team reports a feature finished on its own word. The gates it ran answer whether the code does what its authors meant; none of them answers whether the thing was worth building, whether it holds up against what a competitor already ships, or whether it fails the first time something goes wrong. So a project accumulates finished features nobody chose, and the person who would have chosen differently finds out a month later. The two failures are opposite and both common: a team that admits its own work, and a review so expensive that it is run once and then never again. Run the bounded members over the feature's own evidence, cheapest first, and stop early when a mechanical member finds a floor breach or a hard failure. Never admit the feature: a clean run is escorted to the person who decides, with what was measured, what could not be measured and why, and what the next round would have to address. Re-run only what the span's movement invalidates, and refuse a fourth round rather than paying for the same argument again.",
+    "category": "development",
+    "domain": "software_engineering",
+    "path": "software_engineering/delivery",
+    "sourceTemplateId": "app-master",
+    "tags": [
+      "app-master",
+      "software_engineering"
+    ],
+    "toolCount": 0,
+    "connectorTypes": [
+      "source_control",
+      "web_search",
+      "project_management"
+    ],
+    "recommendedTrigger": "manual",
+    "version": null,
+    "status": "draft"
+  },
+  {
     "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
     "name": "Issue source coverage and triage",
     "description": "A reported issue that nobody looked at again is indistinguishable from one that was handled. Over time the tracker fills with things that are old rather than things that are open, and nobody trusts it enough to read it. Judge whether each issue holds real work, attach a solution already known to work rather than restating the problem, and decide which issues need a person, reading tone and priority together rather than priority alone.",

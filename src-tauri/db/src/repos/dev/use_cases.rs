@@ -428,8 +428,20 @@ pub fn snapshot_context_links(
 /// (which never deletes contexts) is a cheap no-op. Links whose context
 /// genuinely disappeared are dropped honestly and counted.
 ///
+/// **Matching is on the SLUGIFIED name, not the lowercased one**, and that is
+/// the difference between this working and this quietly losing everything. A
+/// rescan re-emits a context under a formatting variant of the same name -
+/// `Checkout UI` becomes `checkout-ui`, `Agent Execution` becomes
+/// `agent_execution` - and `to_lowercase` reads those as three different
+/// contexts. Personas' own twelve features carry ZERO context links today for
+/// exactly this reason: the names survived the rescan, the comparison did not.
+/// `slugify_use_case` is the same normalisation the feature slug itself uses,
+/// so a context the operator would call the same thing resolves the same way.
+///
 /// Restores are conservative: `primary_context_id` / `dev_kpis.context_id` are
 /// only written when currently NULL, so a user edit made during the scan wins.
+/// This function NEVER writes NULL into either - a name that still resolves can
+/// only ever gain a link here, never lose one.
 pub fn reconcile_context_links(
     pool: &DbPool,
     project_id: &str,
@@ -440,12 +452,17 @@ pub fn reconcile_context_links(
     }
     timed_query!("dev_use_cases", "dev_use_cases::reconcile_context_links", {
         let conn = pool.get()?;
-        let by_name: HashMap<String, String> = {
+        // Keyed by slug. Two contexts whose names slugify to the same key
+        // would collide, and the LAST one read wins - which is the same answer
+        // `to_lowercase` gave for exact duplicates and is not a new hazard:
+        // `dev_contexts` names are kebab-emitted by the scanner, and a project
+        // with two of them has a map problem this function cannot fix.
+        let by_slug: HashMap<String, String> = {
             let mut stmt =
                 conn.prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")?;
             let rows = stmt.query_map(params![project_id], |r| {
                 Ok((
-                    r.get::<_, String>(1)?.to_lowercase(),
+                    slugify_use_case(&r.get::<_, String>(1)?),
                     r.get::<_, String>(0)?,
                 ))
             })?;
@@ -454,7 +471,7 @@ pub fn reconcile_context_links(
         let mut report = ReconcileReport::default();
 
         for (uc_id, ctx_name) in &snap.use_case_contexts {
-            match by_name.get(&ctx_name.to_lowercase()) {
+            match by_slug.get(&slugify_use_case(ctx_name)) {
                 Some(ctx_id) => {
                     let n = conn.execute(
                         "INSERT OR IGNORE INTO dev_use_case_contexts (use_case_id, context_id)
@@ -467,16 +484,25 @@ pub fn reconcile_context_links(
             }
         }
         for (uc_id, ctx_name) in &snap.use_case_primary {
-            if let Some(ctx_id) = by_name.get(&ctx_name.to_lowercase()) {
-                report.relinked += conn.execute(
-                    "UPDATE dev_use_cases SET primary_context_id = ?1
-                      WHERE id = ?2 AND primary_context_id IS NULL",
-                    params![ctx_id, uc_id],
-                )?;
+            match by_slug.get(&slugify_use_case(ctx_name)) {
+                // The `IS NULL` guard is what makes this a RESTORE rather than
+                // an overwrite: a primary the operator set during the scan
+                // wins, and a name that still resolves never nulls anything.
+                Some(ctx_id) => {
+                    report.relinked += conn.execute(
+                        "UPDATE dev_use_cases SET primary_context_id = ?1
+                          WHERE id = ?2 AND primary_context_id IS NULL",
+                        params![ctx_id, uc_id],
+                    )?;
+                }
+                // Counted, and still not nulled: the column is already NULL
+                // (the rescan's ON DELETE SET NULL did that) and writing NULL
+                // over NULL would only make the report lie about a write.
+                None => report.dropped += 1,
             }
         }
         for (kpi_id, ctx_name) in &snap.kpi_contexts {
-            match by_name.get(&ctx_name.to_lowercase()) {
+            match by_slug.get(&slugify_use_case(ctx_name)) {
                 Some(ctx_id) => {
                     // Restoring the context also restores the documented
                     // invariant that context_group_id is its parent group.
@@ -637,5 +663,121 @@ mod use_case_tests {
         let again = reconcile_context_links(&pool, &project.id, &snapshot).unwrap();
         assert_eq!(again.relinked, 0);
         assert_eq!(get_use_case(&pool, &uc.id).unwrap().context_ids.len(), 2);
+    }
+
+    /// The case that lost Personas its own twelve feature slices: the contexts
+    /// came back under FORMATTING VARIANTS of the same names - title case,
+    /// underscores, punctuation - and a `to_lowercase` comparison read every
+    /// one of them as a different context. Slugified matching is what makes
+    /// "the same context, spelled differently" resolve.
+    #[test]
+    fn reconcile_survives_case_and_punctuation_drift_in_context_names() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+
+        let ui = ctx(&pool, &project.id, "Checkout UI", r#"["a.tsx"]"#);
+        let api = ctx(&pool, &project.id, "checkout_api", r#"["b.rs"]"#);
+        let uc = create_use_case(
+            &pool,
+            &project.id,
+            "Checkout conversion",
+            None,
+            "user_flow",
+            Some(&ui.id),
+            &[ui.id.clone(), api.id.clone()],
+            Some("active"),
+            "user",
+            None,
+        )
+        .unwrap();
+
+        let snapshot = snapshot_context_links(&pool, &project.id).unwrap();
+        assert_eq!(snapshot.use_case_contexts.len(), 2);
+        clear_project_context_map(&pool, &project.id).unwrap();
+        assert!(get_use_case(&pool, &uc.id).unwrap().context_ids.is_empty());
+        assert!(get_use_case(&pool, &uc.id)
+            .unwrap()
+            .primary_context_id
+            .is_none());
+
+        // The rescan re-emits the SAME two contexts under new ids and a
+        // different spelling of each name. Nothing about the codebase moved.
+        let new_ui = ctx(&pool, &project.id, "checkout-ui", r#"["a.tsx"]"#);
+        let new_api = ctx(&pool, &project.id, "Checkout API!", r#"["b.rs"]"#);
+        assert_ne!(new_ui.id, ui.id);
+
+        let report = reconcile_context_links(&pool, &project.id, &snapshot).unwrap();
+        assert_eq!(
+            report.dropped, 0,
+            "a context that came back under another spelling is not a loss"
+        );
+
+        let healed = get_use_case(&pool, &uc.id).unwrap();
+        assert_eq!(healed.context_ids.len(), 2);
+        assert!(healed.context_ids.contains(&new_ui.id));
+        assert!(healed.context_ids.contains(&new_api.id));
+        assert_eq!(
+            healed.primary_context_id.as_deref(),
+            Some(new_ui.id.as_str()),
+            "the primary follows the name, not the id"
+        );
+
+        // And a second pass neither re-links nor NULLS anything back out.
+        let again = reconcile_context_links(&pool, &project.id, &snapshot).unwrap();
+        assert_eq!(again.relinked, 0);
+        let still = get_use_case(&pool, &uc.id).unwrap();
+        assert_eq!(still.context_ids.len(), 2);
+        assert_eq!(
+            still.primary_context_id.as_deref(),
+            Some(new_ui.id.as_str())
+        );
+    }
+
+    /// A primary the operator set while the scan ran must survive the restore:
+    /// the snapshot is a repair, not an authority.
+    #[test]
+    fn reconcile_never_overwrites_a_primary_someone_set_during_the_scan() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let ui = ctx(&pool, &project.id, "checkout-ui", r#"["a.tsx"]"#);
+        let api = ctx(&pool, &project.id, "checkout-api", r#"["b.rs"]"#);
+        let uc = create_use_case(
+            &pool,
+            &project.id,
+            "Checkout conversion",
+            None,
+            "user_flow",
+            Some(&ui.id),
+            &[ui.id.clone(), api.id.clone()],
+            Some("active"),
+            "user",
+            None,
+        )
+        .unwrap();
+        let snapshot = snapshot_context_links(&pool, &project.id).unwrap();
+
+        // The operator re-points the primary while the scan is in flight.
+        update_use_case(
+            &pool,
+            &uc.id,
+            None,
+            None,
+            None,
+            Some(Some(&api.id)),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        reconcile_context_links(&pool, &project.id, &snapshot).unwrap();
+        assert_eq!(
+            get_use_case(&pool, &uc.id)
+                .unwrap()
+                .primary_context_id
+                .as_deref(),
+            Some(api.id.as_str()),
+            "the human's edit wins over the snapshot"
+        );
     }
 }
