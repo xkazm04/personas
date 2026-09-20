@@ -136,15 +136,17 @@ export function buildLayout(galaxy: RegistryGalaxy, overlay: CouncilOverlay | nu
   const sortedDomains = galaxy.domains.slice().sort(byTitle);
   const subjects: SubjectNode[] = [];
 
+  // Paired with its domain rather than parked in a side array: a positional
+  // lookup here would have to default its miss, and a count that defaults to
+  // zero cannot tell "this cluster is empty" from "we did not look".
   let maxSubjects = 0;
-  const subjectTotals = sortedDomains.map((d) => {
-    const n = d.categories.reduce((acc, c) => acc + c.subjects.length, 0);
-    maxSubjects = Math.max(maxSubjects, n);
-    return n;
+  const counted = sortedDomains.map((raw) => {
+    const count = raw.categories.reduce((acc, c) => acc + c.subjects.length, 0);
+    maxSubjects = Math.max(maxSubjects, count);
+    return { raw, count };
   });
 
-  const domains: DomainNode[] = sortedDomains.map((raw, i) => {
-    const count = subjectTotals[i] ?? 0;
+  const domains: DomainNode[] = counted.map(({ raw, count }, i) => {
     const rr = 520 * Math.sqrt((i + 0.6) / sortedDomains.length) * 1.9;
     const a = i * GOLDEN_ANGLE;
     return {

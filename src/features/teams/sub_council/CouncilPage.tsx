@@ -2,12 +2,15 @@
 // councils waiting on a person, to one council's round table and its gate.
 //
 // The visual contract is `docs/design/council-reference/index.html`: every
-// build of this page is compared against it. This shell only owns the header;
-// the galaxy canvas and the bench mount inside the body.
+// build of this page is compared against it. This shell owns the header and
+// the stage; the galaxy layer mounts inside, and WP8's bench takes the
+// `bench` slot below the field without ever hiding it.
 import { Scale } from 'lucide-react';
 
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
+
+import { GalaxyStage } from './galaxy/GalaxyStage';
 
 export default function CouncilPage() {
   const { t } = useTranslation();
@@ -20,7 +23,9 @@ export default function CouncilPage() {
         fitWidth
       />
       <ContentBody>
-        <div data-testid="council-stage" className="relative h-full min-h-0" />
+        <div data-testid="council-stage" className="relative h-full min-h-0">
+          <GalaxyStage />
+        </div>
       </ContentBody>
     </ContentBox>
   );
