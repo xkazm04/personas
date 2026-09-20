@@ -13,7 +13,9 @@ import { useEffect, useMemo } from 'react';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { Scale } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Scale, TriangleAlert } from 'lucide-react';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCouncilStore } from '../councilStore';
@@ -34,6 +36,8 @@ export function CouncilBench({ onFocusSubject }: { onFocusSubject: (s: CouncilSu
   const fixtureDecisions = useCouncilStore((s) => s.fixtureDecisions);
   const fixtureOn = useCouncilStore((s) => s.fixtureOn);
   const status = useCouncilStore((s) => s.subjectsStatus);
+  const error = useCouncilStore((s) => s.subjectsError);
+  const refreshCouncils = useCouncilStore((s) => s.refreshCouncils);
   const queueIndex = useCouncilStore((s) => s.queueIndex);
   const setQueueIndex = useCouncilStore((s) => s.setQueueIndex);
   const tableSubjectId = useCouncilStore((s) => s.tableSubjectId);
@@ -110,7 +114,29 @@ export function CouncilBench({ onFocusSubject }: { onFocusSubject: (s: CouncilSu
               </div>
             ),
           )}
-          {status !== 'loading' && flat.length === 0 ? (
+          {/* A read that FAILED is not an empty queue. Saying "no council has
+              run yet" here would render the app's own blindness as a fact
+              about the councils. */}
+          {status === 'failed' && flat.length === 0 ? (
+            <div
+              data-testid="council-queue-error"
+              className="m-2 rounded-card border border-status-error/40 bg-card-bg p-4"
+            >
+              <div className="flex items-start gap-3">
+                <TriangleAlert className="mt-0.5 h-5 w-5 flex-none text-status-error" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="typo-heading text-foreground">{b.failed_title}</p>
+                  <p className="mt-1 typo-caption text-muted">
+                    {resolveErrorTranslated(t, error instanceof Error ? error.message : String(error ?? '')).message}
+                  </p>
+                  <Button size="sm" className="mt-3" onClick={() => void refreshCouncils()}>
+                    {b.failed_retry}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {status === 'loaded' && flat.length === 0 ? (
             <EmptyState icon={Scale} title={b.empty_title} description={b.empty_description} />
           ) : null}
         </div>
