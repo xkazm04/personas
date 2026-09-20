@@ -122,7 +122,7 @@ export function FeaturePopover({
       className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden focus:outline-none"
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/15">
-        <span className="typo-caption font-medium text-foreground truncate">{title}</span>
+        <span className="typo-caption text-foreground truncate">{title}</span>
         <button
           type="button"
           onClick={onClose}

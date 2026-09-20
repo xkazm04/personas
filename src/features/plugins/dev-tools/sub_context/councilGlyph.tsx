@@ -52,7 +52,7 @@ interface GlyphVisual {
 
 /** Kind → visual. Total over `CouncilGlyphKind`; the compiler enforces that. */
 const COUNCIL_VISUAL: Record<CouncilGlyphKind, GlyphVisual> = {
-  none: { icon: Circle, tone: 'text-foreground/45' },
+  none: { icon: Circle, tone: 'text-foreground/60' },
   running: { icon: Activity, tone: 'text-primary' },
   fail: { icon: AlertTriangle, tone: 'text-status-error' },
   incomplete: { icon: AlertTriangle, tone: 'text-status-warning' },
@@ -72,7 +72,7 @@ const COUNCIL_VISUAL: Record<CouncilGlyphKind, GlyphVisual> = {
   rejected: { icon: CircleSlash, tone: 'text-status-error' },
 };
 
-const UNKNOWN_VISUAL: GlyphVisual = { icon: CircleHelp, tone: 'text-foreground/45' };
+const UNKNOWN_VISUAL: GlyphVisual = { icon: CircleHelp, tone: 'text-foreground/60' };
 
 export function councilVisual(kind: CouncilGlyphKind | null): GlyphVisual {
   if (kind === null) return UNKNOWN_VISUAL;

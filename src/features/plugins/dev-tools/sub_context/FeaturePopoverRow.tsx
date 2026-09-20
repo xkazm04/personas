@@ -75,7 +75,7 @@ export function FeaturePopoverRow({
       <CouncilGlyph kind={kind} t={t} />
 
       <span className="flex flex-col min-w-0 flex-1">
-        <span className="typo-body font-medium text-foreground truncate">{row.uc.name}</span>
+        <span className="typo-body text-foreground truncate">{row.uc.name}</span>
         <span className="typo-caption text-foreground tabular-nums">
           {interpolate(t.council_span, {
             contexts: row.uc.context_ids.length,

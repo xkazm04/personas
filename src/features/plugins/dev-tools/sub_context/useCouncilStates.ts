@@ -59,7 +59,7 @@ export interface CouncilStatesResult {
   /** A fetch is in flight and nothing warm is on screen yet. */
   loading: boolean;
   /** Non-null when the READ failed. Never conflated with an empty list. */
-  error: string | null;
+  error: boolean;
   refresh: () => void;
 }
 
@@ -71,7 +71,7 @@ export function useCouncilStates(
 ): CouncilStatesResult {
   const cached = useModuleSubscription(councilCache, projectId ?? '');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [nonce, setNonce] = useState(0);
   const [runningKeys, setRunningKeys] = useState<Set<string>>(() => new Set(EMPTY_KEYS));
   const prevRunning = useRef<Set<string>>(new Set<string>());
@@ -80,7 +80,7 @@ export function useCouncilStates(
 
   useEffect(() => {
     if (!projectId) {
-      setError(null);
+      setError(false);
       return;
     }
     let cancelled = false;
@@ -90,11 +90,13 @@ export function useCouncilStates(
         if (cancelled) return;
         councilCache.set(projectId, rows);
         councilCache.notify();
-        setError(null);
+        setError(false);
       })
       .catch((err: unknown) => {
         silentCatch('useCouncilStates:listCouncilSubjects')(err);
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        // The popover renders its own translated sentence, so only the FACT of the
+        // failure is kept; the raw error went to Sentry through silentCatch above.
+        if (!cancelled) setError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
