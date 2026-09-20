@@ -47,6 +47,7 @@ fn row_to_use_case(row: &Row) -> rusqlite::Result<DevUseCase> {
         status: row.get("status")?,
         created_by: row.get("created_by")?,
         pinned: row.get::<_, i64>("pinned").unwrap_or(0) != 0,
+        tier: row.get("tier")?,
         rationale: row.get("rationale")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -308,6 +309,33 @@ pub fn update_use_case(
         }
         if let Some(ids) = context_ids {
             write_use_case_contexts(&conn, id, ids)?;
+        }
+        drop(conn);
+        get_use_case(pool, id)
+    })
+}
+
+/// Promote or demote a feature. Separate from [`update_use_case`] on purpose:
+/// the tier is not an editorial field, it decides whether the feature reaches
+/// the council's human gate at all, and a caller that wanted to rename
+/// something should not be able to change that by passing one extra argument.
+///
+/// Checks the affected-row count rather than trusting the UPDATE, so "no such
+/// use case" is an error rather than a silent success.
+pub fn set_use_case_tier(pool: &DbPool, id: &str, tier: &str) -> Result<DevUseCase, AppError> {
+    if !personas_core::models::USE_CASE_TIERS.contains(&tier) {
+        return Err(AppError::Validation(format!(
+            "Unknown tier `{tier}` (expected major or standard)"
+        )));
+    }
+    timed_query!("dev_use_cases", "dev_use_cases::set_use_case_tier", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE dev_use_cases SET tier = ?2, updated_at = datetime('now') WHERE id = ?1",
+            params![id, tier],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("Use case {id} not found")));
         }
         drop(conn);
         get_use_case(pool, id)

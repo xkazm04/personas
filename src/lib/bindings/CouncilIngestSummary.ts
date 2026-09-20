@@ -4,7 +4,7 @@
  * What one pass through the council ingest door did. The door refuses rather
  * than partially applies, so `refused` carries the whole reason per run dir.
  */
-export type CouncilIngestSummary = { projectId: string, runsIngested: number, runsSkipped: number, subjectsCreated: number,
+export type CouncilIngestSummary = { projectId: string, runsIngested: number, runsSkipped: number, subjectsCreated: number, 
 /**
  * `<run dir>: <reason>` for every result the door refused. Nothing was
  * written for these.

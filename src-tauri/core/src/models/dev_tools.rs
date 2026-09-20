@@ -280,6 +280,13 @@ pub struct DevGoalItem {
 // Use cases (behavioral slice layer — docs/plans/use-case-slice-layer.md)
 // ============================================================================
 
+/// The tier an import or an older row that predates the column gets. Stated as
+/// a function rather than left to `Default` so the value a deserializer
+/// supplies is the same one the DDL's DEFAULT supplies, in one place.
+fn default_use_case_tier() -> String {
+    "standard".to_string()
+}
+
 /// A **use case** is a behavioral unit that slices *through* contexts rather
 /// than subdividing one: "checkout conversion" spans a UI context, an API
 /// context and a data context. It is the narrowest scope a KPI can own, and the
@@ -308,6 +315,9 @@ pub struct DevUseCase {
     /// Human-curated: a use-case scan must not re-propose or replace it.
     #[serde(default)]
     pub pinned: bool,
+    /// 'major' | 'standard' - only a major feature reaches the council's human gate.
+    #[serde(default = "default_use_case_tier")]
+    pub tier: String,
     pub rationale: Option<String>,
     pub created_at: String,
     pub updated_at: String,

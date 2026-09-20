@@ -479,6 +479,11 @@ fn tick_once(app: &AppHandle) {
     // is a milestone's brief: a `/ship-milestone` run's `result.json` lands in
     // the repo and this is the only path from it into the cut.
     crate::commands::infrastructure::dev_tools::ship_ingest::sweep_pending_ship_ingests(app);
+    // Council watcher -- the `/council` skill's one gated door, plus the drift
+    // re-check on standing approvals. Same two rules as its siblings: it never
+    // panics and it never fails the tick. The drift half is cheap by
+    // construction: a repo whose HEAD has not moved is not re-hashed.
+    crate::commands::infrastructure::dev_tools::council_ingest::sweep_pending_council_ingests(app);
     let now = now_ms();
     let stale_secs = effective_secs(
         "PERSONAS_FLEET_STALE_SECS",
