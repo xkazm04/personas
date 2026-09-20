@@ -593,6 +593,11 @@ export type Translations = {
     grid_rail_scoped_to: string;
     grid_rail_scope_clear: string;
     grid_column_scope: string;
+    grid_column_workspace_badge: string;
+    grid_column_workspace_hint: string;
+    grid_column_workspace_empty: string;
+    grid_column_workspace_open: string;
+    grid_column_workspace_rename: string;
     grid_rail_empty_reviews: string;
     grid_rail_empty_reviews_sub: string;
     grid_rail_empty_messages_sub: string;

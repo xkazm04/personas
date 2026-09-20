@@ -67,6 +67,20 @@ export interface TeamGroup {
   teamId: string;
   teamName: string;
   teamColor: string;
+  /**
+   * The workspace this team is the cross-project group OF, or `null` for an
+   * ordinary project roster. One such group per workspace, enforced in the
+   * schema by a partial unique index (`personas_db::workspace_team`).
+   *
+   * A PLAIN NULLABLE, deliberately. The binding spells it `workspace_id?:
+   * string` because a required nullable field would break every TypeScript
+   * object literal that builds a whole `PersonaTeam` — `simulation/simFleet.ts`
+   * is one, in this very folder. That optionality is a ts-rs artefact of where
+   * the literals live, not a fact about the board, so it is normalised away at
+   * the one door it enters through and the board's own vocabulary stays
+   * two-valued.
+   */
+  workspaceId: string | null;
   cards: PersonaCardModel[];
 }
 
@@ -78,9 +92,14 @@ export interface GroupedFleet {
 
 /**
  * Group the fleet's cards by persona `home_team_id`. Teams keep their roster
- * order from `teams`; only non-empty teams appear. Cards keep their incoming
- * order (already urgency-sorted by buildMonitorModel), so the most-urgent
- * persona sits first inside each group.
+ * order from `teams`; only non-empty teams appear — EXCEPT a workspace's
+ * cross-project group, which appears whether or not anyone is filed in it.
+ * Cards keep their incoming order (already urgency-sorted by
+ * buildMonitorModel), so the most-urgent persona sits first inside each group.
+ *
+ * Membership is `personas.home_team_id`, never `persona_team_members`: the
+ * first is "is filed here", the second is "works with", and the board is a
+ * roster of the first.
  */
 export function groupFleet(cards: PersonaCardModel[], personas: Persona[], teams: PersonaTeam[]): GroupedFleet {
   const teamOf = new Map<string, string>();
@@ -103,8 +122,22 @@ export function groupFleet(cards: PersonaCardModel[], personas: Persona[], teams
   const teamGroups: TeamGroup[] = [];
   for (const tm of teams) {
     const cs = byTeam.get(tm.id);
-    if (cs && cs.length > 0) {
-      teamGroups.push({ teamId: tm.id, teamName: tm.name, teamColor: tm.color, cards: cs });
+    // An EMPTY PROJECT TEAM IS NOISE and stays off the board. An empty
+    // workspace group is the opposite: it is the standing invitation for
+    // personas that work across every project in the workspace, and a
+    // freshly-created one holds nobody by definition — hiding it until
+    // somebody moves in would make the feature unreachable from the board it
+    // belongs to. So the emptiness rule is kept for teams and lifted for
+    // groups, which is the whole of the exemption.
+    const workspaceId = tm.workspace_id ?? null;
+    if (workspaceId !== null || (cs && cs.length > 0)) {
+      teamGroups.push({
+        teamId: tm.id,
+        teamName: tm.name,
+        teamColor: tm.color,
+        workspaceId,
+        cards: cs ?? [],
+      });
     }
   }
   return { teams: teamGroups, ungrouped };

@@ -18,6 +18,14 @@
 // column and a column that stretched would make every row the height of the
 // display. Its body is capped instead — one large team scrolls inside its own
 // column rather than pushing its four neighbours off the screen.
+//
+// TWO KINDS OF COLUMN. `column.workspaceId` makes one a workspace's
+// cross-project group rather than a project's roster: it is framed, it renders
+// while empty (`fleetGridModel`) and pinned first (`useBoardModel`), and its
+// right-click opens its own menu instead of a project switch it could never
+// have. The per-workspace accent stays on the header rule — the frame says
+// WHAT kind of column this is and the rule says WHICH workspace, and neither
+// substitutes for the other. See `WorkspaceGroup`.
 
 import { useCallback, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -35,6 +43,10 @@ import { ColumnBody } from '../ColumnBody';
 import { ColumnGhost } from '../BoardGhost';
 import { COLUMN_BODY_MAX_H, type ColumnRow } from '../gridGeometry';
 import type { BoardColumn } from '../useBoardModel';
+import {
+  useWorkspaceName, WorkspaceBadge, WorkspaceFrame, WorkspaceGroupMenu, WorkspaceInvitation,
+  type ColumnMenuAnchor,
+} from './WorkspaceGroup';
 
 export function TeamColumn({
   column, scoped, onToggleScope, width, renderRow, focusKey, staged, reducedMotion,
@@ -54,31 +66,43 @@ export function TeamColumn({
 }) {
   const { t, tx } = useTranslation();
   const name = cleanName(column.teamName);
+  const workspaceId = column.workspaceId;
+  // Falls back to the group's own name while the workspace store hydrates —
+  // the migration seeded one from the other, so it is never an empty sentence.
+  const spaceName = useWorkspaceName(workspaceId) ?? name;
   // THE PROJECT SWITCH lives on the header's right-click. Off overrules every
   // persona in the column: the backend starts none of them, and the column
   // steps back so the board says so without opening anything.
   const project = useProjectForTeam(column.teamId);
   const projectOff = project !== null && !project.enabled;
   const toggleProject = useToggleProject();
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [menu, setMenu] = useState<ColumnMenuAnchor | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
   const onContextMenu = (e: MouseEvent<HTMLButtonElement>) => {
-    if (!project) return; // a team with no project has no switch
+    // A group has no project, so the old guard left its right-click dead.
+    if (workspaceId === null && !project) return;
     e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY });
+    setMenu({ x: e.clientX, y: e.clientY, anchor: e.currentTarget.getBoundingClientRect() });
   };
 
   return (
+    // `relative isolate` only where there IS a frame — it keeps the decoration
+    // behind this column's content and inside this column's stacking order,
+    // and an ordinary column stays exactly the box it has always been.
     <section
-      className="flex min-h-0 flex-shrink-0 flex-col gap-1.5"
+      className={`flex min-h-0 flex-shrink-0 flex-col gap-1.5${workspaceId !== null ? ' relative isolate' : ''}`}
       style={{ width }}
+      data-workspace-group={workspaceId !== null || undefined}
       data-testid="fleet-grid-column"
     >
-      <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
+      {workspaceId !== null && <WorkspaceFrame />}
+      <div className="relative z-10 flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
         <Tooltip
-          content={projectOff
-            ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
-            : tx(t.monitor.grid_column_scope, { project: name })}
+          content={workspaceId !== null
+            ? tx(t.monitor.grid_column_workspace_hint, { workspace: spaceName })
+            : projectOff
+              ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
+              : tx(t.monitor.grid_column_scope, { project: name })}
         >
           <button
             type="button"
@@ -92,6 +116,7 @@ export function TeamColumn({
             }`}
           >
             <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
+            {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
             {projectOff && (
               <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
                 <PowerOff className="h-2.5 w-2.5" aria-hidden />
@@ -113,10 +138,15 @@ export function TeamColumn({
       {/* Roster + sessions — one windowed stack of rows. On the session's first
           paint the rows wait one frame behind their own geometry-matched ghost,
           then arrive with a short rise: data landing reads as data landing, not
-          as a ghost being swapped for a board. Reduced motion opts out. */}
-      {staged ? (
+          as a ghost being swapped for a board. Reduced motion opts out.
+
+          An EMPTY WORKSPACE GROUP skips both: a ghost row standing in for a
+          roster that is genuinely empty promises a tile that never comes. */}
+      {workspaceId !== null && column.rows.length === 0 ? (
+        <WorkspaceInvitation text={tx(t.monitor.grid_column_workspace_empty, { workspace: spaceName })} />
+      ) : staged ? (
         <motion.div
-          className="flex min-h-0 flex-col"
+          className="relative z-10 flex min-h-0 flex-col"
           initial={reducedMotion ? false : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: 'easeOut' }}
@@ -132,9 +162,21 @@ export function TeamColumn({
           </div>
         </motion.div>
       ) : (
-        <ColumnGhost rows={column.rows.length} maxHeight={COLUMN_BODY_MAX_H} width={width} />
+        // Wrapped to join the frame's positioned layer.
+        <div className="relative z-10 flex min-h-0 flex-col">
+          <ColumnGhost rows={column.rows.length} maxHeight={COLUMN_BODY_MAX_H} width={width} />
+        </div>
       )}
-      {menu && project && createPortal(
+      {workspaceId !== null && (
+        <WorkspaceGroupMenu
+          menu={menu}
+          onCloseMenu={closeMenu}
+          teamId={column.teamId}
+          teamName={name}
+          workspaceId={workspaceId}
+        />
+      )}
+      {workspaceId === null && menu && project && createPortal(
         <ContextMenu
           x={menu.x}
           y={menu.y}

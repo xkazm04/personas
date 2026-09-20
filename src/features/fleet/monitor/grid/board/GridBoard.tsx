@@ -19,6 +19,16 @@
 // to ten, each spread to fill the row. The wrap point and its measurement live
 // in `useBoardRows`; `gridGeometry`'s "board's own wrap" and "width ladder"
 // carry the reasoning and the costs they had to pay.
+//
+// TWO KINDS OF COLUMN, and the order is the model's. A workspace's
+// cross-project group is pinned to the front of `model.columns` and draws
+// itself framed (`TeamColumn` / `WorkspaceGroup`); this file treats it as any
+// other column, which is the point — it is one column list, not two.
+//
+// `model.empty` still wins over a board of groups. Those columns render while
+// they are empty, so a machine with workspaces and no personas has columns and
+// nothing to put in them; `useBoardModel` answers emptiness from the ROWS, so
+// the settled empty state below is still reachable there.
 
 import { Fragment, useCallback, type ReactNode } from 'react';
 import { Users } from 'lucide-react';
