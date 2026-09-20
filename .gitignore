@@ -82,6 +82,7 @@ recordings/
 !.claude/rules/
 !.claude/perfect/
 !.claude/contest/
+!.claude/council/
 !.claude/friend/
 !.claude/architect/
 !.claude/explorer/
