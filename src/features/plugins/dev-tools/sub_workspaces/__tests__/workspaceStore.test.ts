@@ -10,15 +10,18 @@ const api = vi.hoisted(() => ({
   listProjects: vi.fn(),
   assignProjectToWorkspace: vi.fn(),
   installSystemSkill: vi.fn(async () => undefined),
+  mirrorActiveWorkspace: vi.fn(async () => undefined),
+  deleteWorkspace: vi.fn(async () => true),
 }));
 
 vi.mock('@/api/devTools/workspaces', () => ({
   listWorkspaces: api.listWorkspaces,
   assignProjectToWorkspace: api.assignProjectToWorkspace,
   createWorkspace: vi.fn(),
-  deleteWorkspace: vi.fn(),
+  deleteWorkspace: api.deleteWorkspace,
   updateWorkspace: vi.fn(),
   importLocalWorkspaces: vi.fn(),
+  mirrorActiveWorkspace: api.mirrorActiveWorkspace,
 }));
 
 vi.mock('@/api/devTools/devTools', () => ({
@@ -87,5 +90,51 @@ describe('assignProject reconciliation', () => {
       expect(ws.find((w) => w.id === 'w2')!.projectIds).toEqual(['p1']);
     });
     await vi.waitFor(() => expect(api.installSystemSkill).toHaveBeenCalled());
+  });
+});
+
+describe('the active-workspace mirror', () => {
+  // localStorage is the source of truth for the selection; the app setting is
+  // a one-way mirror so Rust can read it. What is pinned here: it follows every
+  // set and every clear, it never blocks the switch, and it does not rewrite
+  // the same value on unrelated commits.
+  it('writes on select, clears on deselect, and clears when the active workspace is deleted', async () => {
+    serverRows('w1');
+    const store = await freshStore();
+    api.mirrorActiveWorkspace.mockClear();
+
+    store.setActiveWorkspace('w2');
+    expect(store.workspacesSnapshot().activeId).toBe('w2');
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenCalledWith('w2'));
+
+    // An unrelated mutation must not re-write the same value.
+    api.mirrorActiveWorkspace.mockClear();
+    store.assignProject('p2', 'w1');
+    expect(api.mirrorActiveWorkspace).not.toHaveBeenCalled();
+
+    store.setActiveWorkspace(null);
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenCalledWith(null));
+
+    // Deleting the active workspace clears the selection — and the mirror.
+    store.setActiveWorkspace('w1');
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenLastCalledWith('w1'));
+    store.deleteWorkspace('w1');
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenLastCalledWith(null));
+  });
+
+  it('a failed mirror write never reaches the user and is retried on the next switch', async () => {
+    serverRows('w1');
+    const store = await freshStore();
+    api.mirrorActiveWorkspace.mockClear();
+    api.mirrorActiveWorkspace.mockRejectedValueOnce(new Error('settings door closed'));
+
+    store.setActiveWorkspace('w2');
+    // The switch itself is unaffected — the mirror is fire-and-forget.
+    expect(store.workspacesSnapshot().activeId).toBe('w2');
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenCalledWith('w2'));
+
+    store.setActiveWorkspace('w1');
+    store.setActiveWorkspace('w2');
+    await vi.waitFor(() => expect(api.mirrorActiveWorkspace).toHaveBeenLastCalledWith('w2'));
   });
 });

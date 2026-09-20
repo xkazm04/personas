@@ -6,6 +6,99 @@
 #[allow(unused_imports)]
 use super::*;
 
+/// The team a persona created with no project context is filed under: the
+/// cross-project group of the workspace the operator is currently looking at.
+///
+/// Athena's two hiring doors below (`execute_build_oneshot` and
+/// `execute_kp_hire_request`) create a persona from a sentence — there is no
+/// project, no workspace and no team anywhere in the payload. Left as it was,
+/// the persona's `home_team_id` stayed NULL and it rendered in the Fleet
+/// Monitor's ungrouped tray (five of the sixteen personas on this install got
+/// there this way). The active workspace is a frontend selection, mirrored
+/// into `app_settings` by `workspaceStore.ts` precisely so this side can read
+/// it.
+///
+/// **Returns `None` on every doubt, and that is the point.** No mirror, an
+/// empty mirror, a workspace that has since been deleted, or a workspace with
+/// no group all mean "pass no team" — exactly the behaviour these doors had
+/// before. A persona filed into the wrong organisation is worse than one in
+/// the tray, so there is no "first workspace" fallback and no guess. The
+/// misses log at debug so a puzzled operator can see which one happened.
+fn active_workspace_group(db: &crate::db::DbPool) -> Option<String> {
+    let workspace_id = match crate::db::repos::core::settings::get(
+        db,
+        crate::db::settings_keys::DEVTOOLS_ACTIVE_WORKSPACE,
+    ) {
+        Ok(Some(v)) => v.trim().to_string(),
+        Ok(None) => {
+            tracing::debug!(
+                "no active workspace is mirrored — the new persona is filed under no team"
+            );
+            return None;
+        }
+        Err(e) => {
+            tracing::debug!(
+                error = %e,
+                "could not read the active-workspace mirror — the new persona is filed under no team"
+            );
+            return None;
+        }
+    };
+    if workspace_id.is_empty() {
+        tracing::debug!("the active-workspace mirror is empty — filed under no team");
+        return None;
+    }
+    match crate::db::workspace_team::group_for_workspace(db, &workspace_id) {
+        Ok(Some(group)) => Some(group.id),
+        Ok(None) => {
+            // Both "the workspace was deleted" and "it somehow has no group"
+            // land here, and both are the same refusal.
+            tracing::debug!(
+                workspace_id = %workspace_id,
+                "the mirrored workspace has no cross-project group (deleted?) — filed under no team"
+            );
+            None
+        }
+        Err(e) => {
+            tracing::debug!(
+                workspace_id = %workspace_id,
+                error = %e,
+                "could not resolve the workspace's cross-project group — filed under no team"
+            );
+            None
+        }
+    }
+}
+
+/// Stamp a just-created, context-free persona with the active workspace's
+/// group, if there is one to stamp.
+///
+/// Best-effort by construction: the persona is already real and its build is
+/// about to start, so a filing problem becomes a log line, never a failed
+/// hire. Called immediately after `personas::create` and therefore BEFORE any
+/// more specific binding (`app_master_hire::bind_app_master` files an App
+/// master under its project's team) — the specific home wins by running last,
+/// which is the order that matches what the operator means.
+fn file_under_active_workspace(db: &crate::db::DbPool, persona_id: &str) {
+    let Some(team_id) = active_workspace_group(db) else {
+        return;
+    };
+    match crate::db::repos::core::personas::set_home_team(db, persona_id, &team_id) {
+        Ok(()) => tracing::debug!(
+            persona_id = %persona_id,
+            team_id = %team_id,
+            "filed the new persona under the active workspace's cross-project group"
+        ),
+        Err(e) => tracing::warn!(
+            persona_id = %persona_id,
+            team_id = %team_id,
+            error = %e,
+            "could not file the new persona under the active workspace's group — \
+             it will render in the Fleet Monitor's ungrouped tray"
+        ),
+    }
+}
+
 // ── action executors ────────────────────────────────────────────────────
 
 pub(crate) async fn execute_run_persona(
@@ -807,6 +900,12 @@ pub(crate) async fn execute_build_oneshot(
         },
     )?;
 
+    // 1b. File it where the operator is standing. This door has no project and
+    //     no team in its payload, so without this the persona's home stays NULL
+    //     and it lands in the Monitor's ungrouped tray. No active workspace ⇒
+    //     no team, exactly as before.
+    file_under_active_workspace(&state.db, &persona.id);
+
     // 2. Start the one-shot build headlessly. No-op Channel: events fire on the
     //    global emit stream, exactly like start_build_session_headless.
     let session_id = uuid::Uuid::new_v4().to_string();
@@ -1050,6 +1149,13 @@ pub(crate) async fn execute_kp_hire_request(
             lifecycle: Some("draft".to_string()),
         },
     )?;
+
+    // 1b. File it where the operator is standing, exactly like build_oneshot.
+    //     A KP hire that carries an App master is re-filed under its project's
+    //     team by `bind_app_master` further down — the specific home wins by
+    //     running last. A hire that carries none keeps this one instead of
+    //     landing in the Monitor's ungrouped tray.
+    file_under_active_workspace(&state.db, &persona.id);
 
     // 2. Start the one-shot build headlessly, exactly like build_oneshot.
     let session_id = uuid::Uuid::new_v4().to_string();
@@ -1741,4 +1847,112 @@ pub(crate) fn execute_post_team_message(
         &team_id[..team_id.len().min(8)],
         &msg.id[..msg.id.len().min(12)],
     )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personas_db::init_test_db;
+    use personas_db::repos::core::settings as settings_repo;
+    use personas_db::repos::dev_workspaces as workspaces_repo;
+    use personas_db::settings_keys::DEVTOOLS_ACTIVE_WORKSPACE;
+
+    /// The success case: the mirror names a live workspace, so a context-free
+    /// persona is filed into that workspace's cross-project group.
+    #[test]
+    fn the_mirror_resolves_to_the_workspaces_group() {
+        let pool = init_test_db().expect("test db");
+        let ws = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let group = personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+            .unwrap()
+            .unwrap();
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &ws.id).unwrap();
+
+        assert_eq!(active_workspace_group(&pool), Some(group.id));
+    }
+
+    /// Absent, empty, and stale all mean the same thing: pass no team. Never
+    /// "the first workspace" — a persona filed into the wrong organisation is
+    /// worse than one in the ungrouped tray.
+    #[test]
+    fn an_absent_empty_or_stale_mirror_files_the_persona_nowhere() {
+        let pool = init_test_db().expect("test db");
+        // A workspace exists, and WITH IT a group — so a "first workspace"
+        // fallback would have something to wrongly return here.
+        let ws = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        assert!(
+            personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+                .unwrap()
+                .is_some()
+        );
+
+        // Absent.
+        assert_eq!(active_workspace_group(&pool), None);
+
+        // Empty.
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, "   ").unwrap();
+        assert_eq!(active_workspace_group(&pool), None);
+
+        // Stale — names a workspace that no longer exists.
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, "ws-deleted").unwrap();
+        assert_eq!(active_workspace_group(&pool), None);
+    }
+
+    /// The stamp itself, and its refusal: with a mirror the persona gets a
+    /// home, without one it keeps the NULL it had.
+    #[test]
+    fn filing_stamps_the_home_only_when_the_mirror_resolves() {
+        let pool = init_test_db().expect("test db");
+        let ws = workspaces_repo::create_workspace(&pool, "Bank", None, None, false).unwrap();
+        let group = personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+            .unwrap()
+            .unwrap();
+
+        let make = |name: &str| {
+            personas_db::repos::core::personas::create(
+                &pool,
+                personas_db::models::CreatePersonaInput {
+                    name: name.to_string(),
+                    system_prompt: "You are a helpful AI assistant.".to_string(),
+                    project_id: None,
+                    description: None,
+                    structured_prompt: None,
+                    icon: None,
+                    color: None,
+                    enabled: Some(true),
+                    max_concurrent: None,
+                    timeout_ms: None,
+                    model_profile: None,
+                    max_budget_usd: None,
+                    max_turns: None,
+                    design_context: None,
+                    notification_channels: None,
+                    lifecycle: Some("draft".to_string()),
+                },
+            )
+            .expect("create persona")
+        };
+
+        // No mirror: unchanged behaviour, home stays NULL.
+        let orphan = make("Unfiled");
+        file_under_active_workspace(&pool, &orphan.id);
+        assert_eq!(
+            personas_db::repos::core::personas::get_by_id(&pool, &orphan.id)
+                .unwrap()
+                .home_team_id,
+            None
+        );
+
+        // Mirror set: the new persona lands in the workspace's group.
+        settings_repo::set(&pool, DEVTOOLS_ACTIVE_WORKSPACE, &ws.id).unwrap();
+        let filed = make("Filed");
+        file_under_active_workspace(&pool, &filed.id);
+        assert_eq!(
+            personas_db::repos::core::personas::get_by_id(&pool, &filed.id)
+                .unwrap()
+                .home_team_id
+                .as_deref(),
+            Some(group.id.as_str())
+        );
+    }
 }

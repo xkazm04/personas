@@ -1583,6 +1583,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_update,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_delete,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_assign_project,
+            commands::infrastructure::dev_workspaces::dev_tools_workspace_set_active,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_import_local,
             // Dev Tools -- Goals
             commands::infrastructure::dev_tools::dev_tools_list_goals,

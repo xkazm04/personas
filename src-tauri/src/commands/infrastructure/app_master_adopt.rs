@@ -1017,7 +1017,7 @@ pub(crate) fn adopt_bound(
         &mut notes,
     );
 
-    file_under_a_team(pool, role, binding, &persona.id, &mut notes);
+    file_under_a_team(pool, binding, &persona.id, &mut notes);
 
     Ok(BoundAdoption {
         persona_id: persona.id,
@@ -1227,16 +1227,20 @@ fn apply_worker_engine(slug: &str, spec: &mut crate::db::models::ResponsibilityS
         spec.model_override = Some(CODEX_LANE_DEFAULT_MODEL.to_string());
     }
 }
-/// The team a workspace-bound persona is filed under.
+/// The team role an adopted holder takes in its group.
 ///
-/// An Architect holds charters across every project in its workspace, so it
-/// belongs to no project's team and filing it under one would misread it as
-/// that project's App Master. It gets a team of its own instead, named for the
-/// workspace, which is what makes the Monitor's grid answer the operator's
-/// actual question: which agents are app-specific and which are cross-project.
-fn cross_project_team_name(workspace_name: &str) -> String {
-    format!("{workspace_name} — cross-project")
-}
+/// `persona_team_members.role` carries a **CHECK constraint**
+/// (`orchestrator | worker | reviewer | router`, `db/src/migrations/schema.rs:477`),
+/// so this is not a free-text label. Until 2026-09-20 the workspace arm below
+/// passed `role.name_prefix()` — "Architect" / "App Master" — which compiles
+/// perfectly and fails the INSERT every single time, so the membership row
+/// this door believed it was writing has never existed on any install; the
+/// failure became a note nobody reads and the home team alone carried the
+/// filing. `orchestrator` is the value `app_master_hire::ensure_team` files
+/// its App master under, for the reason it gives there: the holder ranks the
+/// work and dispatches it. (Its constant is private to that module, so this is
+/// a second spelling of one literal — worth sharing if a third appears.)
+const HOLDER_TEAM_ROLE: &str = "orchestrator";
 
 /// Put the adopted persona in the Monitor's grid.
 ///
@@ -1247,13 +1251,12 @@ fn cross_project_team_name(workspace_name: &str) -> String {
 /// tray. Best-effort by construction, like the manifest above: the persona and
 /// its charters are already real, and a grid that groups badly is not a reason
 /// to fail an adoption that otherwise succeeded.
-fn file_under_a_team(
-    pool: &DbPool,
-    role: AdoptedRole,
-    binding: &Binding,
-    persona_id: &str,
-    notes: &mut Vec<String>,
-) {
+///
+/// The holder's ROLE is not a parameter: `persona_team_members.role` is a
+/// four-value enum about how a member participates, not a label for who the
+/// member is (see [`HOLDER_TEAM_ROLE`]). Which holder this is stays on the
+/// persona — its name prefix, its charters and its home.
+fn file_under_a_team(pool: &DbPool, binding: &Binding, persona_id: &str, notes: &mut Vec<String>) {
     use crate::db::repos::resources::teams as team_repo;
 
     match binding {
@@ -1265,45 +1268,39 @@ fn file_under_a_team(
                 pool, &p.id, persona_id, &p.name, notes,
             );
         }
-        // A workspace-bound holder (the Architect) gets the cross-project team.
+        // A workspace-bound holder (the Architect) gets the workspace's
+        // cross-project group — an Architect holds charters across every
+        // project in its workspace, so filing it under one project's team
+        // would misread it as that project's App Master.
+        //
+        // **The bug this fixes.** Until 2026-09-20 this arm FORMATTED a name
+        // ("{workspace} — cross-project") and then scanned every team looking
+        // for that exact string. Keyed by a formatted name, a workspace rename
+        // orphaned its group and the very next adoption silently minted a
+        // second one beside it — two half-populated groups for one workspace,
+        // with no error anywhere. Keyed by `persona_teams.workspace_id` (and
+        // backed by the partial unique index `idx_persona_teams_workspace_group`)
+        // it cannot: `ensure_workspace_team` resolves the existing group by id
+        // whatever the workspace is called now, and the database refuses a
+        // duplicate rather than leaving it to a convention. The name lives in
+        // exactly one place, `workspace_team::workspace_group_name`, so this
+        // door and the migration's backfill cannot drift apart again.
         Binding::Workspace(w) => {
-            let name = cross_project_team_name(&w.name);
-            let existing = team_repo::get_all(pool)
-                .ok()
-                .and_then(|ts| ts.into_iter().find(|t| t.name == name));
-            let team_id = match existing {
-                Some(t) => t.id,
-                None => match team_repo::create(
-                    pool,
-                    crate::db::models::CreateTeamInput {
-                        name: name.clone(),
-                        // Deliberately no project: this team's whole meaning is
-                        // that its members answer to the workspace instead.
-                        project_id: None,
-                        parent_team_id: None,
-                        description: Some(format!(
-                            "Personas whose charters span every project in the {} workspace.",
-                            w.name
-                        )),
-                        canvas_data: None,
-                        team_config: None,
-                        icon: None,
-                        color: None,
-                        enabled: Some(true),
-                    },
-                ) {
-                    Ok(t) => t.id,
+            let team_id =
+                match crate::db::workspace_team::ensure_workspace_team(pool, &w.id, &w.name) {
+                    Ok(id) => id,
                     Err(e) => {
-                        notes.push(format!("could not create the cross-project team: {e}"));
+                        notes.push(format!(
+                            "could not resolve the workspace's cross-project group: {e}"
+                        ));
                         return;
                     }
-                },
-            };
+                };
             if let Err(e) = team_repo::add_member(
                 pool,
                 &team_id,
                 persona_id,
-                Some(role.name_prefix().to_string()),
+                Some(HOLDER_TEAM_ROLE.to_string()),
                 None,
                 None,
                 None,
@@ -2043,5 +2040,124 @@ mod tests {
             personas_db::settings_keys::MAX_ACTIVE_PERSONAS_DEFAULT
         );
         assert_eq!(state.active_personas.free(), 9);
+    }
+
+    fn seed_persona(pool: &DbPool, name: &str) -> crate::db::models::Persona {
+        personas_repo::create(
+            pool,
+            crate::db::models::CreatePersonaInput {
+                name: name.to_string(),
+                system_prompt: "You are a test persona.".to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .expect("seed persona")
+    }
+
+    fn team_count(pool: &DbPool) -> usize {
+        crate::db::repos::resources::teams::get_all(pool)
+            .expect("list teams")
+            .len()
+    }
+
+    /// **The duplicate-minting bug, exercised.** This door used to find the
+    /// workspace's group by FORMATTING a name and scanning every team for that
+    /// exact string, so the first rename orphaned the group and the next
+    /// adoption minted a second one beside it. Keyed by `workspace_id` the
+    /// rename is irrelevant: the same group is adopted, the team count does
+    /// not move, and the Architect is filed into the group that already holds
+    /// the workspace's members.
+    #[test]
+    fn filing_a_renamed_workspace_adopts_its_group_instead_of_minting_a_second() {
+        let pool = init_test_db().expect("test db");
+        let ws = workspaces_repo::create_workspace(&pool, "Bank", None, None, false)
+            .expect("seed workspace");
+        let group = personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+            .expect("read the group")
+            .expect("the live door gave the workspace its group");
+
+        // The rename the old name key could not survive.
+        let renamed = workspaces_repo::update_workspace(&pool, &ws.id, Some("Banka"), None, None)
+            .expect("rename");
+        assert_eq!(
+            personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+                .unwrap()
+                .unwrap()
+                .name,
+            "Banka — cross-project",
+            "the rename door renamed the group too"
+        );
+
+        let before = team_count(&pool);
+        let persona = seed_persona(&pool, "Architect — Banka");
+        let mut notes = Vec::new();
+        file_under_a_team(&pool, &Binding::Workspace(renamed), &persona.id, &mut notes);
+
+        assert_eq!(
+            team_count(&pool),
+            before,
+            "a second group must not be minted — notes: {notes:?}"
+        );
+        let filed = personas_repo::get_by_id(&pool, &persona.id).expect("persona");
+        assert_eq!(
+            filed.home_team_id.as_deref(),
+            Some(group.id.as_str()),
+            "the Architect is filed into the workspace's one group"
+        );
+        let members =
+            crate::db::repos::resources::teams::get_members(&pool, &group.id).expect("members");
+        assert!(
+            members.iter().any(|m| m.persona_id == persona.id),
+            "membership and home are two different facts — both are wanted; notes: {notes:?}"
+        );
+    }
+
+    /// A workspace that has never been through the live door (a row written
+    /// before `e39_workspace_team_binding`, or by a raw INSERT) still gets its
+    /// group here: `ensure_workspace_team` is a door, not a lookup.
+    #[test]
+    fn filing_a_groupless_workspace_creates_its_group_once() {
+        let pool = init_test_db().expect("test db");
+        let now = chrono::Utc::now().to_rfc3339();
+        personas_db::PoolExt::conn(&pool, "test:raw_workspace")
+            .unwrap()
+            .execute(
+                "INSERT INTO dev_workspaces (id, name, color, description, created_at, updated_at)
+                 VALUES (?1, ?2, NULL, NULL, ?3, ?3)",
+                rusqlite::params!["ws-legacy", "Legacy", now],
+            )
+            .unwrap();
+        let ws = workspaces_repo::get_workspace_by_id(&pool, "ws-legacy").unwrap();
+        assert!(
+            personas_db::workspace_team::group_for_workspace(&pool, &ws.id)
+                .unwrap()
+                .is_none()
+        );
+
+        let before = team_count(&pool);
+        let a = seed_persona(&pool, "Architect — Legacy");
+        let b = seed_persona(&pool, "Second — Legacy");
+        let mut notes = Vec::new();
+        file_under_a_team(&pool, &Binding::Workspace(ws.clone()), &a.id, &mut notes);
+        file_under_a_team(&pool, &Binding::Workspace(ws), &b.id, &mut notes);
+
+        assert_eq!(
+            team_count(&pool),
+            before + 1,
+            "two filings, one group — notes: {notes:?}"
+        );
     }
 }

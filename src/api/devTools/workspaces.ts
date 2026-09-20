@@ -54,3 +54,24 @@ export async function importLocalWorkspaces(
 ): Promise<DevWorkspace[]> {
   return invoke<DevWorkspace[]>("dev_tools_workspace_import_local", { items });
 }
+
+// ============================================================================
+// The active-workspace mirror
+// ============================================================================
+
+/**
+ * Record which workspace the operator is standing in, or clear it with `null`.
+ *
+ * The selection itself stays in `localStorage` — it is a per-device UI
+ * preference — and this is the one-way copy the BACKEND reads: a hiring door
+ * with no project in its payload has no other way to learn which organisation
+ * a new persona belongs to. Nothing reads it back into the UI, so callers fire
+ * it and forget it; a failed write costs a filing, never a switch.
+ *
+ * Deliberately a command rather than a `setAppSetting` call with a key string:
+ * the key name then exists once, in the backend registry that owns it, instead
+ * of twice with a comment between them.
+ */
+export async function mirrorActiveWorkspace(workspaceId: string | null): Promise<void> {
+  return invoke<void>("dev_tools_workspace_set_active", { workspaceId });
+}
