@@ -144,15 +144,20 @@ pub(crate) fn decide_council(
             "Unknown decision `{decision}` (expected approved or rejected)"
         )));
     }
-    let reason = match reason.map(str::trim).filter(|r| !r.is_empty()) {
-        Some(r) if r.chars().count() > MAX_REASON => {
+    // A blank reason and an absent one are the same thing here, and both are
+    // refused on a rejection - so the emptiness test lives in the shared
+    // vocabulary and this code only decides whether a reason was required.
+    let reason: Option<String> = reason
+        .map(str::trim)
+        .filter(|r| personas_core::validation::require_non_empty("reason", r).is_ok())
+        .map(str::to_string);
+    if let Some(r) = reason.as_deref() {
+        if r.chars().count() > MAX_REASON {
             return Err(AppError::Validation(format!(
                 "A reason longer than {MAX_REASON} characters is a document, not a reason"
-            )))
+            )));
         }
-        Some(r) => Some(r.to_string()),
-        None => None,
-    };
+    }
     if decision == "rejected" && reason.is_none() {
         return Err(AppError::Validation(
             "A rejection needs a reason: it is the only thing the next round has to work from"

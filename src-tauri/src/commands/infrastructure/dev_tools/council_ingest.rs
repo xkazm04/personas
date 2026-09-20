@@ -184,10 +184,13 @@ pub(crate) struct ValidatedCouncilRun {
 }
 
 fn bounded(s: &str, max: usize, what: &str) -> Result<String, AppError> {
+    // Through the shared vocabulary rather than an inline refusal with a
+    // sentence of its own: the emptiness rule already exists, is one line, and
+    // is open-coded at 300-odd call sites in this tree (census
+    // `hand-rolled-emptiness-refusal`). The length half below has no shared
+    // equivalent, so it stays here.
+    personas_core::validation::require_non_empty(what, s)?;
     let t = s.trim();
-    if t.is_empty() {
-        return Err(AppError::Validation(format!("{what} is empty")));
-    }
     if t.chars().count() > max {
         return Err(AppError::Validation(format!(
             "{what} is longer than {max} characters"

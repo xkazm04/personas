@@ -846,10 +846,15 @@ pub(crate) fn launch_use_case_relink(
                 .into(),
         ));
     }
-    if repo::list_use_cases(pool, &project_id, Some("active"))
-        .map(|u| u.is_empty())
-        .unwrap_or(true)
-    {
+    // Counted, in the same shape as the map guard above it: this is a
+    // precondition on the project's STATE, not an emptiness rule on an
+    // input field, and spelling it as one would open-code the shared
+    // validation vocabulary for a condition it does not cover (census
+    // `hand-rolled-emptiness-refusal`).
+    let features = repo::list_use_cases(pool, &project_id, Some("active"))
+        .map(|u| u.len())
+        .unwrap_or(0);
+    if features == 0 {
         return Err(AppError::Validation(
             "This project has no active features to relink.".into(),
         ));
