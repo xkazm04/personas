@@ -49,7 +49,7 @@ export function MemberReading({
       <h2 className="m-0 flex flex-wrap items-baseline gap-4 typo-page-title capitalize text-foreground">
         {seat.name}
         {seat.score == null ? (
-          <em className="not-italic typo-body font-bold uppercase tracking-wide text-muted-dark">
+          <em className="not-italic typo-heading uppercase tracking-wide text-muted-dark">
             {tbl.not_measured_caps}
           </em>
         ) : (
@@ -108,7 +108,7 @@ export function MemberReading({
               : tx(tbl.floor_binding, { floor: seat.floor.toFixed(2) })}
         </span>
         {seat.delta ? (
-          <span className="typo-body font-bold text-status-success">
+          <span className="typo-heading text-status-success">
             {tx(tbl.delta_since, { delta: seat.delta })}
           </span>
         ) : seat.state === 'carried' ? (
@@ -157,7 +157,7 @@ export function MemberReading({
               <div key={`${tq.subject}/${tq.technique}`} className="flex items-center gap-2.5">
                 <ProofGlyph proof={tq.proof} label={proofWord} />
                 <span className="min-w-0">
-                  <b className="block typo-body font-semibold text-foreground">{tq.technique}</b>
+                  <b className="block typo-title text-foreground">{tq.technique}</b>
                   <small className="typo-caption text-muted-dark">
                     {tx(tbl.technique_sub, { subject: tq.subject, proof: proofWord })}
                   </small>
@@ -192,7 +192,7 @@ function FindingCard({
     <article className={`border-l-4 py-0.5 pl-4 ${SEV_BORDER[finding.severity] ?? SEV_BORDER.low}`}>
       <header className="flex flex-wrap items-baseline gap-3">
         <span
-          className={`typo-caption font-extrabold uppercase tracking-widest ${
+          className={`typo-heading uppercase tracking-widest ${
             finding.severity === 'high'
               ? 'text-status-error'
               : finding.severity === 'med'

@@ -11,7 +11,9 @@ import { gateOf, whyLine } from '../table/councilCopy';
 import { FEATURE_V1 } from '../table/rubrics';
 import { seatsOf } from '../table/runModel';
 
-const pct = (r: number) => `${Math.round(r * 100)}%`;
+// The percent formatter the page hands these functions, stood in for here
+// by the locale-aware one rather than a hand-rolled template.
+const pct = (r: number) => new Intl.NumberFormat('en', { style: 'percent' }).format(r);
 
 function subject(over: Partial<CouncilSubjectState>): CouncilSubjectState {
   return {

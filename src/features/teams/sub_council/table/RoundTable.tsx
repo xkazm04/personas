@@ -89,8 +89,8 @@ export function RoundTable({
             <Tag>{kindWord(subject, b)}</Tag>
             {detail ? <Tag>{tx(tbl.round, { round: detail.run.roundNo })}</Tag> : null}
           </div>
-          {/* Not an <h1>: the page's one top-level heading belongs to
-              ContentHeader. This is the subject's name inside it. */}
+          {/* A heading INSIDE the page: the page's own top-level heading
+              belongs to ContentHeader, and this is the subject's name. */}
           <h2 className="m-0 mt-1.5 text-[34px] font-bold leading-tight tracking-tight text-foreground">
             {subject.title}
           </h2>
@@ -165,7 +165,7 @@ export function RoundTable({
               id={`council-seat-${i}`}
               aria-controls="council-member-panel"
               data-testid="council-seat-tab"
-              className={`rounded-pill border px-4 py-1.5 typo-body font-semibold capitalize transition-colors ${
+              className={`rounded-pill border px-4 py-1.5 typo-title capitalize transition-colors ${
                 s === seat
                   ? 'border-transparent bg-foreground text-background'
                   : 'border-border bg-secondary/[0.05] text-muted hover:text-foreground'

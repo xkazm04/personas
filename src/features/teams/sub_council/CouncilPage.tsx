@@ -93,7 +93,7 @@ export default function CouncilPage() {
             onClick={() => setBenchOpen(!benchOpen)}
             aria-pressed={benchOpen}
             data-testid="council-bench-toggle"
-            className={`inline-flex items-center gap-2 rounded-interactive border px-3 py-1.5 typo-body font-semibold focus-ring ${
+            className={`inline-flex items-center gap-2 rounded-interactive border px-3 py-1.5 typo-title focus-ring ${
               benchOpen
                 ? 'border-primary/60 bg-primary/15 text-primary'
                 : 'border-border text-muted hover:text-foreground'

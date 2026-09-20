@@ -70,7 +70,8 @@ export function CouncilBench({ onFocusSubject }: { onFocusSubject: (s: CouncilSu
   return (
     <>
       <header className="grid flex-none grid-cols-[1fr_auto] gap-x-[18px] gap-y-1 border-b border-border px-6 pb-3 pt-4">
-        {/* Not an <h1>: ContentHeader owns this page's top-level heading. */}
+        {/* A heading INSIDE the page, not the page's own: ContentHeader owns
+            the top-level one, and this surface must not declare a second. */}
         <h2 className="m-0 text-[27px] font-bold leading-tight tracking-tight text-foreground">
           {waiting === 0 ? b.headline_none : waiting === 1 ? b.headline_one : tx(b.headline_many, { count: waiting })}
         </h2>
@@ -133,7 +134,7 @@ function GroupHeading({ groupKey, count }: { groupKey: QueueGroupKey; count: num
   return (
     <div className="mx-2 mb-1.5 mt-4 flex flex-wrap items-baseline gap-2">
       <span
-        className={`typo-caption font-extrabold uppercase tracking-widest ${
+        className={`typo-heading uppercase tracking-widest ${
           groupKey === 'yours' ? 'text-status-pending' : 'text-muted'
         }`}
       >

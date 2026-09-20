@@ -40,7 +40,7 @@ export function StateChip({ state }: { state: string }) {
   return (
     <span
       data-testid="council-state-chip"
-      className={`inline-flex items-center gap-2 rounded-pill border px-2.5 py-1 typo-body font-semibold ${
+      className={`inline-flex items-center gap-2 rounded-pill border px-2.5 py-1 typo-title ${
         TONE[state] ?? TONE.none
       }`}
     >

@@ -151,7 +151,7 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
 
       {rejecting ? (
         <div className="col-span-full">
-          <label htmlFor="council-reject-reason" className="mb-2 block typo-body font-semibold text-foreground">
+          <label htmlFor="council-reject-reason" className="mb-2 block typo-title text-foreground">
             {g.reason_label}
           </label>
           <textarea
