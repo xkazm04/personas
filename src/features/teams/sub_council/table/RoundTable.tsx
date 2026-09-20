@@ -5,7 +5,7 @@
 // lands on), the rose and the council's one-line reading on the left, the
 // five member seats and the chosen member's reading on the right, and the
 // gate pinned in the footer where it is always in view.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
@@ -46,6 +46,8 @@ export function RoundTable({
   const tbl = t.council.table;
   const percent = usePercent();
   const layout = useCouncilStore((s) => s.layout);
+  const roundStep = useCouncilStore((s) => s.roundStep);
+  const clearRoundStep = useCouncilStore((s) => s.clearRoundStep);
 
   const detail = run.detail;
   const { rubric, matched } = resolveRubric(detail?.run.rubricVersion ?? null, subject.kind);
@@ -59,6 +61,17 @@ export function RoundTable({
   const overall = detail ? detail.run.overall : subject.overall;
   const coverage = detail ? detail.run.coverage : subject.coverage;
   const why = whyLine(seats, overall, coverage, rubric, percent);
+
+  // `[` and `]` walk the chain the table already holds, and stop at its ends
+  // rather than wrapping: a reader pressing `[` twice on round 1 should not
+  // land on the latest round.
+  useEffect(() => {
+    if (roundStep === 0 || run.chain.length === 0) return;
+    const at = run.chain.findIndex((d) => d.run.id === detail?.run.id);
+    const next = run.chain[Math.max(0, Math.min(run.chain.length - 1, (at < 0 ? 0 : at) + roundStep))];
+    if (next) run.showRound(next.run.id);
+    clearRoundStep();
+  }, [roundStep, run, detail, clearRoundStep]);
 
   const stars = useMemo(
     () =>

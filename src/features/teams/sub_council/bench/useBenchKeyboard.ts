@@ -56,6 +56,11 @@ export function useBenchKeyboard({
           if (i < seatCount) setSeatIndex(i);
           return true;
         }
+        if (e.key === '[' || e.key === ']') {
+          // The table owns the chain; the key only says which way.
+          s.stepRound(e.key === ']' ? 1 : -1);
+          return true;
+        }
         if (e.key === 'g' || e.key === 'G') {
           s.focusGate();
           return true;

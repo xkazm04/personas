@@ -100,6 +100,14 @@ export interface CouncilStore {
    * changes and does nothing else: no key in this app commits a decision.
    */
   gateFocusNonce: number;
+  /**
+   * `[` and `]` at the round table, as a signed step the table consumes.
+   *
+   * The chain of rounds lives in the table's own fetch, not here, so the key
+   * handler cannot know which round is next - it says WHICH WAY, and the
+   * table, which holds the chain, decides where that lands.
+   */
+  roundStep: number;
 
   load: (registryRoot: string | null) => Promise<void>;
   loadFixture: () => Promise<void>;
@@ -118,6 +126,10 @@ export interface CouncilStore {
   setQueueIndex: (index: number) => void;
   /** Move the keyboard focus to the gate. It never commits. */
   focusGate: () => void;
+  /** Ask the table for the previous (-1) or next (+1) round. */
+  stepRound: (delta: number) => void;
+  /** The table has honoured the step. */
+  clearRoundStep: () => void;
   /** Re-read the councils and the overlay after a decision lands. */
   refreshCouncils: () => Promise<void>;
   /** Fixture mode only: hold the decision in memory so the page can show it. */
@@ -175,6 +187,7 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   queueIndex: 0,
   fixtureDecisions: {},
   gateFocusNonce: 0,
+  roundStep: 0,
 
   loadFixture: async () => {
     if (!IS_DEV) return;
@@ -277,6 +290,8 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   setTableSubject: (tableSubjectId) => set({ tableSubjectId }),
   setQueueIndex: (queueIndex) => set({ queueIndex }),
   focusGate: () => set((s) => ({ gateFocusNonce: s.gateFocusNonce + 1 })),
+  stepRound: (delta) => set({ roundStep: delta }),
+  clearRoundStep: () => set({ roundStep: 0 }),
 
   recordFixtureDecision: (subjectId, decision, reason) =>
     set((s) => {
