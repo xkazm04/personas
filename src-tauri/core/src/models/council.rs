@@ -366,10 +366,49 @@ pub struct CouncilSubjectState {
     pub hard_failures: i32,
     /// 'none' | 'grown' | 'changed' | 'unknown'
     pub drift: String,
+    /// The project's display name, for a queue that spans every project.
+    pub project_name: String,
+    /// Registry subject slugs this council lands on: named by its members, else
+    /// matched from the feature's contexts. This is what council focus flies to.
+    pub registry_subjects: Vec<String>,
     pub run_dir: Option<String>,
     pub finished_at: Option<String>,
     pub decided_at: Option<String>,
     pub rejection_reason: Option<String>,
+}
+
+/// Council signal on ONE registry subject, across every project in the local
+/// store. A subject with no row has never been councilled, which is NOT the
+/// same as zero.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilOverlaySubject {
+    pub slug: String,
+    pub approved: i32,
+    pub rejected: i32,
+    pub pending: i32,
+    /// Distinct techniques named with execution-grade proof in approved councils.
+    pub techniques_proven: i32,
+    pub projects: Vec<String>,
+    pub last: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilOverlay {
+    pub subjects: Vec<CouncilOverlaySubject>,
+}
+
+/// One evidence file read from inside a run directory. Path-confined by the
+/// door; the frontend turns the bytes into an object URL.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CouncilMedia {
+    pub mime: String,
+    pub bytes: Vec<u8>,
 }
 
 /// One run with everything the human gate needs to look at, including the

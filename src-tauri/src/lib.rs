@@ -1168,6 +1168,7 @@ pub fn run() {
             // Registry coverage (docs/plans/registry-coverage-ui.md R1, read-only)
             commands::infrastructure::registry_coverage::dev_tools_registry_probe,
             commands::infrastructure::registry_coverage::dev_tools_registry_coverage,
+            commands::infrastructure::registry_galaxy::dev_tools_registry_galaxy,
             // Doc-rot telemetry (Brainiac-adoption P2)
             commands::infrastructure::doc_rot::doc_rot_scan,
             commands::infrastructure::doc_rot::doc_rot_overview,
@@ -1649,7 +1650,6 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_council_decide,
             commands::infrastructure::dev_tools::dev_tools_council_overlay,
             commands::infrastructure::dev_tools::dev_tools_council_read_media,
-            commands::infrastructure::dev_tools::dev_tools_registry_galaxy,
             commands::infrastructure::dev_tools::dev_tools_set_use_case_tier,
             // Lives beside the scan whose plumbing it shares, not in the
             // dev_tools tree: one background lane for use-case work.

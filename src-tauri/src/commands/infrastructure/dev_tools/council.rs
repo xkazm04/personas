@@ -22,7 +22,10 @@ use serde_json::json;
 use tauri::{AppHandle, State};
 
 use super::council_ingest::emit_council_changed;
-use crate::db::models::{CouncilDecision, CouncilRunDetail, CouncilSubjectState, DevUseCase};
+use crate::db::models::{
+    CouncilDecision, CouncilMedia, CouncilOverlay, CouncilRunDetail, CouncilSubjectState,
+    DevUseCase,
+};
 use crate::db::repos::dev::council as council_repo;
 use crate::db::repos::dev::use_cases as use_case_repo;
 use crate::db::repos::dev_tools as repo;
@@ -40,6 +43,23 @@ const MAX_REASON: usize = 2000;
 const COUNCILS_JSONL: [&str; 2] = [".ai", "councils.jsonl"];
 const STATE_JSON: [&str; 3] = [".personas", "council", "state.json"];
 
+/// Extensions the evidence canvas can render, and the mime each is served as.
+/// An ALLOWLIST: the sniffing is by extension, so anything not named here is
+/// refused rather than guessed at.
+const MEDIA_TYPES: [(&str, &str); 7] = [
+    ("png", "image/png"),
+    ("jpg", "image/jpeg"),
+    ("jpeg", "image/jpeg"),
+    ("webp", "image/webp"),
+    ("gif", "image/gif"),
+    ("mp4", "video/mp4"),
+    ("webm", "video/webm"),
+];
+
+/// Largest evidence file handed to the renderer. The bytes cross IPC as a JSON
+/// array, so this cap is a renderer-memory decision, not a disk one.
+const MAX_MEDIA_BYTES: u64 = 25 * 1024 * 1024;
+
 #[tauri::command]
 pub async fn dev_tools_council_list_subjects(
     state: State<'_, Arc<AppState>>,
@@ -56,6 +76,106 @@ pub async fn dev_tools_council_get_run(
 ) -> Result<CouncilRunDetail, AppError> {
     require_auth(&state).await?;
     council_repo::get_run_detail(&state.db, &run_id)
+}
+
+/// Council signal per registry subject, across every project in the store.
+///
+/// The galaxy's overlay. A registry subject no council has landed on has no
+/// row at all - the page must be able to say "never councilled", which a zero
+/// row cannot.
+#[tauri::command]
+pub async fn dev_tools_council_overlay(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CouncilOverlay, AppError> {
+    require_auth(&state).await?;
+    council_repo::council_overlay(&state.db)
+}
+
+/// Read ONE evidence file from inside a run's own directory.
+///
+/// The same door discipline as [`super::council_ingest`], for the same reason:
+/// `run_id` and `rel_path` both arrive from the renderer, and the run dir is an
+/// arbitrary absolute path in a managed repo that Tauri's asset protocol
+/// deliberately cannot reach. Five refusals, and every one of them is a way a
+/// path can leave the directory it was supposed to stay in:
+///
+/// 1. `rel_path` must be relative. An absolute path ignores the base entirely.
+/// 2. Both sides are canonicalized before they are compared, so `..`, a
+///    symlink out, and Windows' short names all resolve to the real location
+///    BEFORE the prefix test - a textual check would pass all three.
+/// 3. The resolved path must still be inside the run dir.
+/// 4. The extension must be one this surface can actually render. An allowlist,
+///    not a denylist: a new dangerous extension must be added to be refused,
+///    and that is backwards.
+/// 5. The file must be under [`MAX_MEDIA_BYTES`]. The bytes cross IPC as JSON
+///    numbers, so an unbounded read is an unbounded renderer allocation.
+#[tauri::command]
+pub async fn dev_tools_council_read_media(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+    rel_path: String,
+) -> Result<CouncilMedia, AppError> {
+    require_auth(&state).await?;
+    let run = council_repo::get_run(&state.db, &run_id)?
+        .ok_or_else(|| AppError::NotFound(format!("Council run {run_id} not found")))?;
+    // The handle is bound and awaited: a panic inside the read surfaces as
+    // this command's error rather than as a request that never answers.
+    let read =
+        tokio::task::spawn_blocking(move || read_run_media(Path::new(&run.run_dir), &rel_path))
+            .await;
+    read.map_err(|e| AppError::Internal(format!("council media join error: {e}")))?
+}
+
+/// Body of [`dev_tools_council_read_media`], minus the IPC envelope - so the
+/// five refusals can be driven without a Tauri runtime.
+pub(crate) fn read_run_media(run_dir: &Path, rel_path: &str) -> Result<CouncilMedia, AppError> {
+    personas_core::validation::require_non_empty("Evidence path", rel_path)?;
+    let rel = PathBuf::from(rel_path);
+    if rel.is_absolute() {
+        return Err(AppError::Validation(
+            "Evidence is addressed by a path relative to its own run directory".into(),
+        ));
+    }
+    let canon_root = run_dir.canonicalize().map_err(|e| {
+        AppError::NotFound(format!(
+            "This run's directory is no longer readable ({e}) - re-ingest the run"
+        ))
+    })?;
+    let canon = canon_root
+        .join(&rel)
+        .canonicalize()
+        .map_err(|e| AppError::NotFound(format!("No such evidence file: {e}")))?;
+    if !canon.starts_with(&canon_root) {
+        return Err(AppError::Forbidden(
+            "Evidence must live inside the run's own directory".into(),
+        ));
+    }
+
+    let ext = canon
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_lowercase)
+        .unwrap_or_default();
+    let Some((_, mime)) = MEDIA_TYPES.iter().find(|(e, _)| *e == ext) else {
+        return Err(AppError::Validation(format!(
+            "`.{ext}` is not evidence this surface can show (png, jpg, jpeg, webp, gif, mp4, webm)"
+        )));
+    };
+
+    let meta = std::fs::metadata(&canon)
+        .map_err(|e| AppError::NotFound(format!("Evidence file not readable: {e}")))?;
+    if meta.len() > MAX_MEDIA_BYTES {
+        return Err(AppError::Validation(format!(
+            "That evidence file is {} bytes (cap {MAX_MEDIA_BYTES}) - too large to hand to the renderer",
+            meta.len()
+        )));
+    }
+    let bytes = std::fs::read(&canon)
+        .map_err(|e| AppError::Internal(format!("Evidence file could not be read: {e}")))?;
+    Ok(CouncilMedia {
+        mime: (*mime).to_string(),
+        bytes,
+    })
 }
 
 /// Promote or demote a feature. Only a `major` feature reaches the human gate;
@@ -633,6 +753,85 @@ mod tests {
         assert_eq!(jsonl.trim().lines().count(), 2);
 
         let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    // ----- the evidence reader -----
+
+    /// A run directory with one screenshot, one text file and a sibling
+    /// directory OUTSIDE it holding a secret.
+    fn media_tree() -> (PathBuf, PathBuf) {
+        let base = tmp_root("media");
+        let run_dir = base.join("runs").join("r1");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        std::fs::write(run_dir.join("shot.png"), b"\x89PNG\r\n\x1a\nfake").unwrap();
+        std::fs::write(run_dir.join("notes.md"), b"# notes").unwrap();
+        std::fs::write(base.join("secret.png"), b"not yours").unwrap();
+        (base, run_dir)
+    }
+
+    #[test]
+    fn evidence_is_served_only_from_inside_the_run_directory() {
+        let (base, run_dir) = media_tree();
+
+        let ok = read_run_media(&run_dir, "shot.png").unwrap();
+        assert_eq!(ok.mime, "image/png");
+        assert_eq!(ok.bytes.len(), 12);
+
+        // Escape by traversal - canonicalized before the prefix test, so the
+        // file that exists one level up is still refused.
+        let err = read_run_media(&run_dir, "../secret.png")
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("inside the run's own directory") || err.contains("No such evidence"),
+            "{err}"
+        );
+
+        // An absolute path ignores the base entirely.
+        let absolute = base.join("secret.png").to_string_lossy().into_owned();
+        let err = read_run_media(&run_dir, &absolute).unwrap_err().to_string();
+        assert!(err.contains("relative to its own run directory"), "{err}");
+        let err = read_run_media(&run_dir, "  ").unwrap_err().to_string();
+        assert!(err.contains("Evidence path cannot be empty"), "{err}");
+
+        // An allowlist, so a file this surface cannot render is refused even
+        // though it is right there in the run dir.
+        let err = read_run_media(&run_dir, "notes.md")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("not evidence this surface can show"), "{err}");
+
+        // A file that is not there is absent, not forbidden.
+        let err = read_run_media(&run_dir, "missing.png")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("No such evidence"), "{err}");
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn an_oversized_evidence_file_is_refused_before_it_is_read() {
+        let base = tmp_root("bigmedia");
+        let run_dir = base.join("r");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        let path = run_dir.join("huge.mp4");
+        let f = std::fs::File::create(&path).unwrap();
+        f.set_len(MAX_MEDIA_BYTES + 1).unwrap();
+        drop(f);
+
+        let err = read_run_media(&run_dir, "huge.mp4")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("too large to hand to the renderer"), "{err}");
+
+        // The same extension under the cap is served.
+        std::fs::write(run_dir.join("small.webm"), b"clip").unwrap();
+        assert_eq!(
+            read_run_media(&run_dir, "small.webm").unwrap().mime,
+            "video/webm"
+        );
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]

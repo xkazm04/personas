@@ -12,9 +12,12 @@
 //! be written (round numbering, recomputed arithmetic, the compare-and-swap on
 //! a decision) lives at those two doors, where there is a caller to refuse.
 
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, Mutex, OnceLock};
+
 use crate::models::{
-    CouncilDecision, CouncilRun, CouncilRunDetail, CouncilSubject, CouncilSubjectState,
-    CouncilVerdict,
+    CouncilDecision, CouncilOverlay, CouncilOverlaySubject, CouncilRun, CouncilRunDetail,
+    CouncilSubject, CouncilSubjectState, CouncilVerdict,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -518,6 +521,291 @@ pub fn list_decisions(pool: &DbPool, subject_id: &str) -> Result<Vec<CouncilDeci
 }
 
 // ---------------------------------------------------------------------------
+// Which registry subjects a council lands on
+// ---------------------------------------------------------------------------
+//
+// Two sources, in order, and they are NOT the same claim:
+//
+// 1. What the council's own members named. A verdict payload carries
+//    `techniques: [{ subject, technique, proof }]`; the `subject` of each
+//    entry, at ANY proof grade, is a registry subject this council actually
+//    reasoned about. That is evidence.
+// 2. Failing that, what `.ai/registry-map.json` already pairs the feature's
+//    contexts with. That is a MATCH, not a claim any member made - it is the
+//    weaker source and is only consulted when the stronger one is silent.
+//
+// Neither yielding anything returns an empty vec. The UI says "no registry
+// subjects named"; it never invents one.
+
+/// Every `techniques[].subject` a run's verdicts name, distinct and sorted.
+/// Any proof grade: naming a subject is reasoning about it, which is what the
+/// galaxy's focus follows. (Proof grade decides `techniques_proven`, below.)
+fn named_registry_subjects(verdicts: &[CouncilVerdict]) -> Vec<String> {
+    let mut out: BTreeSet<String> = BTreeSet::new();
+    for v in verdicts {
+        for t in technique_entries(v) {
+            if let Some(s) = t.get("subject").and_then(|x| x.as_str()) {
+                if !s.trim().is_empty() {
+                    out.insert(s.to_string());
+                }
+            }
+        }
+    }
+    out.into_iter().collect()
+}
+
+/// `(subject, technique)` pairs a run's verdicts claim EXECUTION proof for.
+/// A technique a member merely inspected or was told about is an opinion -
+/// the same filter `append_registry_line` applies at the registry boundary.
+fn proven_technique_pairs(verdicts: &[CouncilVerdict]) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for v in verdicts {
+        for t in technique_entries(v) {
+            if t.get("proof").and_then(|p| p.as_str()) != Some("execution") {
+                continue;
+            }
+            let (Some(subject), Some(technique)) = (
+                t.get("subject").and_then(|s| s.as_str()),
+                t.get("technique").and_then(|s| s.as_str()),
+            ) else {
+                continue;
+            };
+            let pair = (subject.to_string(), technique.to_string());
+            if !out.contains(&pair) {
+                out.push(pair);
+            }
+        }
+    }
+    out
+}
+
+/// The `techniques[]` array of one verdict payload. A payload that does not
+/// parse, or carries no such array, contributes nothing - a verdict is read as
+/// a document and a malformed one is not a reason to fail the whole ledger.
+fn technique_entries(v: &CouncilVerdict) -> Vec<serde_json::Value> {
+    serde_json::from_str::<serde_json::Value>(&v.payload_json)
+        .ok()
+        .as_ref()
+        .and_then(|p| p.get("techniques"))
+        .and_then(|t| t.as_array())
+        .cloned()
+        .unwrap_or_default()
+}
+
+/// Consumer-side artifact: the knowledge join `/conform` writes back into.
+const REGISTRY_MAP_REL: [&str; 2] = [".ai", "registry-map.json"];
+/// Cap on the registry map read. Personas' own is ~1.5 MB; 16 MiB is the
+/// refusal point, not the expectation (census `unbounded-foreign-decode`).
+const MAX_REGISTRY_MAP_BYTES: u64 = 16 * 1024 * 1024;
+/// The confidences `build-registry-map.mjs` emits. A pair below the map's own
+/// threshold is never written to the file at all, so accepting both grades is
+/// accepting everything the generator published - the ladder exists so a third,
+/// weaker grade added upstream would be REFUSED here rather than silently
+/// widening this fallback.
+const ACCEPTED_MAP_CONFIDENCES: [&str; 2] = ["strong", "probable"];
+
+/// `context id | context name` -> registry subject slugs, from one project's
+/// `.ai/registry-map.json`. Both keys are inserted because the council's link
+/// is to `dev_contexts` rows and the map keys on the context-map id; a project
+/// whose map predates a rescan still joins by name.
+type RegistryMapIndex = BTreeMap<String, Vec<String>>;
+
+/// (map path, mtime) -> parsed index. One slot: a queue read walks one
+/// project's map many times, and the file only moves when `/conform` or a
+/// rescan rewrites it. Overwritten on the next distinct key, so it cannot grow.
+type MapCacheSlot = Option<(String, Arc<RegistryMapIndex>)>;
+static REGISTRY_MAP_CACHE: OnceLock<Mutex<MapCacheSlot>> = OnceLock::new();
+
+fn registry_map_index(project_root: &str) -> Option<Arc<RegistryMapIndex>> {
+    if project_root.trim().is_empty() {
+        return None;
+    }
+    let path = REGISTRY_MAP_REL
+        .iter()
+        .fold(std::path::PathBuf::from(project_root), |p, seg| p.join(seg));
+    let meta = std::fs::metadata(&path).ok()?;
+    if !meta.is_file() {
+        return None;
+    }
+    if meta.len() > MAX_REGISTRY_MAP_BYTES {
+        tracing::warn!(
+            path = %path.display(),
+            bytes = meta.len(),
+            cap = MAX_REGISTRY_MAP_BYTES,
+            "council: registry-map.json is over the cap - the context fallback is skipped for this project"
+        );
+        return None;
+    }
+    let key = format!(
+        "{}\u{0}{}",
+        path.to_string_lossy(),
+        meta.modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_millis())
+            .unwrap_or_default()
+    );
+
+    let cache = REGISTRY_MAP_CACHE.get_or_init(|| Mutex::new(None));
+    {
+        let guard = cache.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some((k, v)) = guard.as_ref() {
+            if *k == key {
+                return Some(Arc::clone(v));
+            }
+        }
+    }
+
+    let raw = std::fs::read_to_string(&path).ok()?;
+    let parsed: serde_json::Value = match serde_json::from_str(&raw) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(path = %path.display(), error = %e, "council: registry-map.json could not be parsed - no context fallback");
+            return None;
+        }
+    };
+    let built = Arc::new(parse_registry_map(&parsed));
+    let mut guard = cache.lock().unwrap_or_else(|p| p.into_inner());
+    *guard = Some((key, Arc::clone(&built)));
+    Some(built)
+}
+
+fn parse_registry_map(v: &serde_json::Value) -> RegistryMapIndex {
+    let mut out: RegistryMapIndex = BTreeMap::new();
+    for row in v
+        .get("contexts")
+        .and_then(|x| x.as_array())
+        .into_iter()
+        .flatten()
+    {
+        let mut subjects: Vec<String> = Vec::new();
+        for pair in row
+            .get("subjects")
+            .and_then(|x| x.as_array())
+            .into_iter()
+            .flatten()
+        {
+            let confidence = pair
+                .get("confidence")
+                .and_then(|x| x.as_str())
+                .unwrap_or_default();
+            if !ACCEPTED_MAP_CONFIDENCES.contains(&confidence) {
+                continue;
+            }
+            // `not-applicable` is a judged verdict that this subject does NOT
+            // govern the context. Carrying it into a council's focus would fly
+            // the camera to a star somebody already ruled out.
+            if pair.get("state").and_then(|x| x.as_str()) == Some("not-applicable") {
+                continue;
+            }
+            let Some(slug) = pair.get("subject").and_then(|x| x.as_str()) else {
+                continue;
+            };
+            if !subjects.iter().any(|s| s == slug) {
+                subjects.push(slug.to_string());
+            }
+        }
+        if subjects.is_empty() {
+            continue;
+        }
+        for key in ["context", "name"] {
+            if let Some(k) = row.get(key).and_then(|x| x.as_str()) {
+                out.entry(k.to_string())
+                    .or_default()
+                    .extend(subjects.iter().cloned());
+            }
+        }
+    }
+    for v in out.values_mut() {
+        v.sort();
+        v.dedup();
+    }
+    out
+}
+
+/// The context keys (ids AND names) one use case's slice covers.
+fn use_case_context_keys(pool: &DbPool, use_case_id: &str) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT c.id AS id, c.name AS name
+           FROM dev_use_case_contexts ucc
+           JOIN dev_contexts c ON c.id = ucc.context_id
+          WHERE ucc.use_case_id = ?1",
+    )?;
+    let rows = stmt.query_map(params![use_case_id], |r| {
+        Ok((r.get::<_, String>("id")?, r.get::<_, String>("name")?))
+    })?;
+    let mut out = Vec::new();
+    for row in rows {
+        let (id, name) = row?;
+        out.push(id);
+        out.push(name);
+    }
+    Ok(out)
+}
+
+/// Source 2: the map fallback. Empty whenever the map is missing, unreadable,
+/// or pairs nothing with this feature's contexts.
+fn mapped_registry_subjects(
+    pool: &DbPool,
+    project_root: &str,
+    use_case_id: Option<&str>,
+) -> Result<Vec<String>, AppError> {
+    let Some(uc) = use_case_id else {
+        return Ok(Vec::new());
+    };
+    let Some(index) = registry_map_index(project_root) else {
+        return Ok(Vec::new());
+    };
+    let keys = use_case_context_keys(pool, uc)?;
+    let mut out: BTreeSet<String> = BTreeSet::new();
+    for k in keys {
+        if let Some(subjects) = index.get(&k) {
+            out.extend(subjects.iter().cloned());
+        }
+    }
+    Ok(out.into_iter().collect())
+}
+
+/// One project's identity as the queue shows it.
+#[derive(Debug, Clone, Default)]
+struct ProjectIdentity {
+    name: String,
+    root_path: String,
+}
+
+/// The tier of the feature a subject reports on. `None` for an architecture
+/// subject, which has no tier at all - not "standard".
+fn use_case_tier(pool: &DbPool, use_case_id: Option<&str>) -> Result<Option<String>, AppError> {
+    let Some(uc) = use_case_id else {
+        return Ok(None);
+    };
+    let conn = pool.get()?;
+    Ok(conn
+        .query_row(
+            "SELECT tier FROM dev_use_cases WHERE id = ?1",
+            params![uc],
+            |r| r.get::<_, String>("tier"),
+        )
+        .ok())
+}
+
+fn project_identities(pool: &DbPool) -> Result<BTreeMap<String, ProjectIdentity>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare("SELECT id, name, root_path FROM dev_projects")?;
+    let rows = stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, String>("id")?,
+            ProjectIdentity {
+                name: r.get::<_, String>("name")?,
+                root_path: r.get::<_, Option<String>>("root_path")?.unwrap_or_default(),
+            },
+        ))
+    })?;
+    Ok(rows.collect::<Result<BTreeMap<_, _>, _>>()?)
+}
+
+// ---------------------------------------------------------------------------
 // Read models
 // ---------------------------------------------------------------------------
 
@@ -544,30 +832,24 @@ pub fn list_subject_states(
         };
         drop(conn);
 
+        let projects = project_identities(pool)?;
         let mut out = Vec::with_capacity(subjects.len());
         for s in subjects {
             let run = latest_run(pool, &s.id)?;
             let decision = standing_decision(pool, &s.id)?;
-            let tier = match s.use_case_id.as_deref() {
-                Some(uc) => {
-                    let conn = pool.get()?;
-                    conn.query_row(
-                        "SELECT tier FROM dev_use_cases WHERE id = ?1",
-                        params![uc],
-                        |r| r.get::<_, String>("tier"),
-                    )
-                    .ok()
-                }
-                None => None,
-            };
+            let tier = use_case_tier(pool, s.use_case_id.as_deref())?;
             // i32, not i64: the binding these reach is `number` on the TS
             // side, and a `bigint` field would break every arithmetic use of
             // it (census `bigint-binding-field`). A rubric has six dimensions
             // and a run a handful of hard failures, so the narrower type is
             // also the honest one.
+            let verdicts = match run.as_ref() {
+                Some(r) => list_verdicts(pool, &r.id)?,
+                None => Vec::new(),
+            };
             let (floor_hits, hard_failures): (i32, i32) = match run.as_ref() {
                 Some(r) => {
-                    let hits = list_verdicts(pool, &r.id)?
+                    let hits = verdicts
                         .iter()
                         // An ADVISORY floor hit is recorded but does not sink
                         // the run; counting it here anyway is deliberate -- the
@@ -583,6 +865,15 @@ pub fn list_subject_states(
                 }
                 None => (0, 0),
             };
+
+            let identity = projects.get(&s.project_id).cloned().unwrap_or_default();
+            // Named first, matched second - never both, so the stronger claim
+            // is not diluted by the weaker one.
+            let mut registry_subjects = named_registry_subjects(&verdicts);
+            if registry_subjects.is_empty() {
+                registry_subjects =
+                    mapped_registry_subjects(pool, &identity.root_path, s.use_case_id.as_deref())?;
+            }
 
             let state = derive_council_state(&CouncilStateInputs {
                 latest_outcome: run.as_ref().map(|r| r.outcome.as_str()),
@@ -625,6 +916,8 @@ pub fn list_subject_states(
                 floor_hits,
                 hard_failures,
                 drift: s.drift.clone(),
+                project_name: identity.name,
+                registry_subjects,
                 run_dir: run.as_ref().map(|r| r.run_dir.clone()),
                 finished_at: run.as_ref().and_then(|r| r.finished_at.clone()),
                 decided_at,
@@ -632,6 +925,139 @@ pub fn list_subject_states(
             });
         }
         Ok(out)
+    })
+}
+
+/// What one registry subject has accumulated across every council in the
+/// store, before it becomes a row.
+#[derive(Debug, Default)]
+struct OverlayAcc {
+    approved: i32,
+    rejected: i32,
+    pending: i32,
+    proven: BTreeSet<(String, String)>,
+    projects: BTreeSet<String>,
+    last: Option<String>,
+}
+
+impl OverlayAcc {
+    fn saw(&mut self, stamp: Option<&str>) {
+        let Some(stamp) = stamp else { return };
+        if self.last.as_deref().is_none_or(|l| stamp > l) {
+            self.last = Some(stamp.to_string());
+        }
+    }
+}
+
+/// Council signal per REGISTRY SUBJECT, across every project in the store.
+///
+/// The join is the one the galaxy needs and nothing else has: a star in the
+/// registry, and how many councils in this machine's projects have landed on
+/// it. Three properties are load-bearing:
+///
+/// 1. **A subject with no council signal has NO row.** Not a zero row - zero
+///    approvals and never-councilled are opposite facts and a row spells them
+///    the same (census `unmeasured-honesty`, `absent-entity-count-as-zero`).
+///    Only a subject some council's members actually NAMED is counted; the
+///    `.ai/registry-map.json` fallback that fills a single subject's
+///    `registry_subjects` is deliberately NOT consulted here, because a match
+///    nobody made a claim about is not signal.
+/// 2. **The counts are derived, never stored.** `approved`/`rejected` read
+///    the same [`derive_council_state`] the ledger does, so a run landing
+///    after a rejection returns the subject to pending here too - one
+///    derivation, not two.
+/// 3. **`techniques_proven` counts only EXECUTION proof inside APPROVED
+///    councils.** A claim is an opinion, and an opinion inside a council a
+///    human refused is not evidence of anything.
+pub fn council_overlay(pool: &DbPool) -> Result<CouncilOverlay, AppError> {
+    timed_query!("dev_council_subjects", "council::overlay", {
+        let projects = project_identities(pool)?;
+        let subjects: Vec<CouncilSubject> = {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {SUBJECT_COLUMNS} FROM dev_council_subjects"
+            ))?;
+            let rows = stmt.query_map([], row_to_subject)?;
+            rows.collect::<Result<Vec<_>, _>>()?
+        };
+
+        let mut acc: BTreeMap<String, OverlayAcc> = BTreeMap::new();
+        for s in subjects {
+            let Some(run) = latest_run(pool, &s.id)? else {
+                continue;
+            };
+            let verdicts = list_verdicts(pool, &run.id)?;
+            let named = named_registry_subjects(&verdicts);
+            if named.is_empty() {
+                continue;
+            }
+            let decision = standing_decision(pool, &s.id)?;
+            let state = derive_council_state(&CouncilStateInputs {
+                latest_outcome: Some(run.outcome.as_str()),
+                latest_run_id: Some(run.id.as_str()),
+                decision: decision.as_ref().map(|d| d.decision.as_str()),
+                decision_run_id: decision.as_ref().map(|d| d.run_id.as_str()),
+                tier: use_case_tier(pool, s.use_case_id.as_deref())?.as_deref(),
+                drift: &s.drift,
+            });
+            let decided = matches!(state.as_str(), "approved" | "approved_drifted" | "rejected");
+            let approved = matches!(state.as_str(), "approved" | "approved_drifted");
+            let proven = if approved {
+                proven_technique_pairs(&verdicts)
+            } else {
+                Vec::new()
+            };
+            let project_name = projects.get(&s.project_id).map(|p| p.name.clone());
+            let decided_at = if decided {
+                decision.as_ref().map(|d| d.decided_at.as_str())
+            } else {
+                None
+            };
+
+            for slug in named {
+                let e = acc.entry(slug).or_default();
+                if approved {
+                    e.approved += 1;
+                } else if state == "rejected" {
+                    e.rejected += 1;
+                } else if state == "ready" {
+                    e.pending += 1;
+                }
+                if let Some(p) = project_name.as_deref() {
+                    if !p.is_empty() {
+                        e.projects.insert(p.to_string());
+                    }
+                }
+                e.saw(decided_at);
+                e.saw(run.finished_at.as_deref());
+            }
+
+            // A technique's own `subject` decides which star it lands on, so a
+            // pair is credited only to the row it names - never to every
+            // subject the same council happened to touch. Every such subject
+            // was named by that entry, so this can create no orphan row.
+            for (subject, technique) in proven {
+                acc.entry(subject.clone())
+                    .or_default()
+                    .proven
+                    .insert((subject, technique));
+            }
+        }
+
+        Ok(CouncilOverlay {
+            subjects: acc
+                .into_iter()
+                .map(|(slug, a)| CouncilOverlaySubject {
+                    slug,
+                    approved: a.approved,
+                    rejected: a.rejected,
+                    pending: a.pending,
+                    techniques_proven: a.proven.len() as i32,
+                    projects: a.projects.into_iter().collect(),
+                    last: a.last,
+                })
+                .collect(),
+        })
     })
 }
 
@@ -1129,6 +1555,338 @@ mod tests {
             approved_subjects_for_drift(&pool).unwrap().is_empty(),
             "an approval the next round superseded is not a standing approval"
         );
+    }
+
+    // ----- the galaxy overlay and the registry-subject join -----
+
+    /// A verdict whose payload names registry techniques at the given proof
+    /// grades. `(subject, technique, proof)`.
+    fn a_verdict_naming(pairs: &[(&str, &str, &str)]) -> NewVerdict {
+        let techniques: Vec<serde_json::Value> = pairs
+            .iter()
+            .map(|(s, t, p)| serde_json::json!({ "subject": s, "technique": t, "proof": p }))
+            .collect();
+        NewVerdict {
+            payload_json: serde_json::json!({ "techniques": techniques }).to_string(),
+            ..a_verdict("value", Some(0.8), false)
+        }
+    }
+
+    /// Two projects, six councils, every state the overlay distinguishes.
+    fn overlay_fixture() -> DbPool {
+        let pool = crate::init_test_db().unwrap();
+        let alpha =
+            create_project(&pool, "Alpha", "/tmp/alpha", None, None, None, None, None).unwrap();
+        let beta =
+            create_project(&pool, "Beta", "/tmp/beta", None, None, None, None, None).unwrap();
+
+        let major = |project: &str, slug: &str| {
+            let uc = create_use_case(
+                &pool,
+                project,
+                slug,
+                None,
+                "capability",
+                None,
+                &[],
+                Some("active"),
+                "scan",
+                None,
+            )
+            .unwrap();
+            crate::repos::dev::use_cases::set_use_case_tier(&pool, &uc.id, "major").unwrap();
+            upsert_subject(&pool, project, "use_case", slug, slug, Some(&uc.id))
+                .unwrap()
+                .0
+        };
+        let arch = |project: &str, slug: &str| {
+            upsert_subject(&pool, project, "architecture", slug, slug, None)
+                .unwrap()
+                .0
+        };
+
+        // Approved: two subjects named, two execution proofs, one mere claim.
+        let s = major(&alpha.id, "approved-one");
+        let r = insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/approved-one"),
+            &[a_verdict_naming(&[
+                ("quality-gates", "gating-floors", "execution"),
+                ("quality-gates", "wishful-thinking", "claim"),
+                ("retry-backoff", "jittered-backoff", "execution"),
+            ])],
+        )
+        .unwrap();
+        insert_decision(&pool, &s.id, &r.id, "approved", None, "d").unwrap();
+
+        // Rejected, and still rejected: no newer run.
+        let s = arch(&alpha.id, "rejected-one");
+        let r = insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/rejected-one"),
+            &[a_verdict_naming(&[(
+                "quality-gates",
+                "gating-floors",
+                "execution",
+            )])],
+        )
+        .unwrap();
+        insert_decision(&pool, &s.id, &r.id, "rejected", Some("not yet"), "d").unwrap();
+
+        // Rejected THEN re-run: the newer run returns it to pending.
+        let s = arch(&alpha.id, "rerun-one");
+        let r1 = insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/rerun-1"),
+            &[a_verdict_naming(&[(
+                "quality-gates",
+                "gating-floors",
+                "execution",
+            )])],
+        )
+        .unwrap();
+        insert_decision(&pool, &s.id, &r1.id, "rejected", Some("no"), "d").unwrap();
+        insert_run(
+            &pool,
+            &a_run(&s.id, 2, "ready", "/runs/rerun-2"),
+            &[a_verdict_naming(&[(
+                "quality-gates",
+                "gating-floors",
+                "execution",
+            )])],
+        )
+        .unwrap();
+
+        // Ready, undecided.
+        let s = arch(&beta.id, "ready-one");
+        insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/ready-one"),
+            &[a_verdict_naming(&[(
+                "retry-backoff",
+                "jittered-backoff",
+                "execution",
+            )])],
+        )
+        .unwrap();
+
+        // machine_pass: a standard feature never reaches the gate, so it is
+        // neither approved nor pending - but it IS signal on the subject.
+        let uc = create_use_case(
+            &pool,
+            &beta.id,
+            "machine-one",
+            None,
+            "capability",
+            None,
+            &[],
+            Some("active"),
+            "scan",
+            None,
+        )
+        .unwrap();
+        let (s, _) = upsert_subject(
+            &pool,
+            &beta.id,
+            "use_case",
+            "machine-one",
+            "machine-one",
+            Some(&uc.id),
+        )
+        .unwrap();
+        insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/machine-one"),
+            &[a_verdict_naming(&[(
+                "retry-backoff",
+                "jittered-backoff",
+                "execution",
+            )])],
+        )
+        .unwrap();
+
+        // A council that named no registry subject at all contributes nothing.
+        let s = arch(&alpha.id, "silent-one");
+        insert_run(
+            &pool,
+            &a_run(&s.id, 1, "ready", "/runs/silent-one"),
+            &[a_verdict("value", Some(0.9), false)],
+        )
+        .unwrap();
+
+        pool
+    }
+
+    #[test]
+    fn the_overlay_counts_derived_states_per_registry_subject() {
+        let pool = overlay_fixture();
+        let overlay = council_overlay(&pool).unwrap();
+        let by_slug: BTreeMap<&str, &CouncilOverlaySubject> = overlay
+            .subjects
+            .iter()
+            .map(|s| (s.slug.as_str(), s))
+            .collect();
+
+        assert_eq!(
+            by_slug.keys().collect::<Vec<_>>(),
+            vec![&"quality-gates", &"retry-backoff"],
+            "a subject no council named has NO row - not a zero row"
+        );
+
+        let qg = by_slug["quality-gates"];
+        assert_eq!(qg.approved, 1);
+        assert_eq!(qg.rejected, 1);
+        assert_eq!(
+            qg.pending, 1,
+            "a run newer than a rejection returns the subject to pending"
+        );
+        assert_eq!(
+            qg.techniques_proven, 1,
+            "only execution proof, and only inside an APPROVED council"
+        );
+        assert_eq!(qg.projects, vec!["Alpha".to_string()]);
+        assert!(qg.last.is_some());
+
+        let rb = by_slug["retry-backoff"];
+        assert_eq!(rb.approved, 1);
+        assert_eq!(rb.rejected, 0);
+        assert_eq!(rb.pending, 1, "machine_pass is not pending - it is done");
+        assert_eq!(rb.techniques_proven, 1);
+        assert_eq!(
+            rb.projects,
+            vec!["Alpha".to_string(), "Beta".to_string()],
+            "projects are distinct NAMES across the whole store"
+        );
+    }
+
+    /// An empty store produces an empty overlay and no invented rows.
+    #[test]
+    fn an_uncouncilled_store_has_no_overlay_rows() {
+        let pool = crate::init_test_db().unwrap();
+        assert!(council_overlay(&pool).unwrap().subjects.is_empty());
+    }
+
+    #[test]
+    fn registry_subjects_are_named_first_and_matched_second() {
+        let pool = crate::init_test_db().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "council-map-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+        ));
+        std::fs::create_dir_all(root.join(".ai")).unwrap();
+        let project = create_project(
+            &pool,
+            "Mapped",
+            &root.to_string_lossy(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let context = crate::repos::dev::contexts::create_context(
+            &pool,
+            &project.id,
+            "agent-health",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join(".ai").join("registry-map.json"),
+            serde_json::json!({
+                "contexts": [{
+                    "context": context.id,
+                    "name": "agent-health",
+                    "subjects": [
+                        { "subject": "health-checks", "confidence": "strong", "state": "unknown" },
+                        { "subject": "quality-gates", "confidence": "probable", "state": "deviation" },
+                        { "subject": "ruled-out", "confidence": "strong", "state": "not-applicable" },
+                        { "subject": "too-weak", "confidence": "speculative", "state": "unknown" }
+                    ]
+                }]
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        let uc = create_use_case(
+            &pool,
+            &project.id,
+            "Health",
+            None,
+            "capability",
+            None,
+            &[context.id.clone()],
+            Some("active"),
+            "scan",
+            None,
+        )
+        .unwrap();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project.id,
+            "use_case",
+            "health",
+            "Health",
+            Some(&uc.id),
+        )
+        .unwrap();
+
+        // No run at all: the map is the only source.
+        let states = list_subject_states(&pool, Some(&project.id)).unwrap();
+        assert_eq!(states[0].project_name, "Mapped");
+        assert_eq!(
+            states[0].registry_subjects,
+            vec!["health-checks".to_string(), "quality-gates".to_string()],
+            "a not-applicable verdict and a confidence below the map's own \
+             grades are both left out"
+        );
+
+        // A run that names subjects wins outright - the map is not merged in.
+        insert_run(
+            &pool,
+            &a_run(&subject.id, 1, "ready", "/runs/named"),
+            &[a_verdict_naming(&[("retry-backoff", "jitter", "claim")])],
+        )
+        .unwrap();
+        let states = list_subject_states(&pool, Some(&project.id)).unwrap();
+        assert_eq!(
+            states[0].registry_subjects,
+            vec!["retry-backoff".to_string()],
+            "what the members named is not diluted by what the map matched"
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// No map, no run, no invention.
+    #[test]
+    fn a_subject_with_neither_source_names_nothing() {
+        let (pool, project_id, uc_id) = seeded();
+        let (_s, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "checkout",
+            "Checkout",
+            Some(&uc_id),
+        )
+        .unwrap();
+        let states = list_subject_states(&pool, Some(&project_id)).unwrap();
+        assert!(states[0].registry_subjects.is_empty());
+        assert_eq!(states[0].project_name, "P");
     }
 
     #[test]
