@@ -31,7 +31,7 @@
     "dev": "vite",
     "dev:inspect": "cross-env PERSONAS_INSPECTOR=1 npm run dev",
     "prebuild": "node scripts/run-codegen.mjs prebuild",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run typecheck:native && vite build",
     "preview": "vite preview",
     "check:dead": "knip",
     "check:dead:files": "knip --include files",
@@ -53,7 +53,7 @@
     "census:check": "node scripts/census/run-census.mjs --check",
     "census:test": "node scripts/census/self-test.mjs",
     "gp:index": "node scripts/census/build-golden-path-index.mjs",
-    "check": "npm run check:contracts && npm run check:command-registration && npm run check:command-features && npm run check:test-cells && npm run check:bindings && npm run check:glyphs && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:recipe-index && npm run check:evidence && npm run check:doc-map && npm run check:promise-pins && npm run check:i18n:escapes && npm run census:check && tsc --noEmit && eslint --cache --cache-location node_modules/.cache/eslint/full/ src/",
+    "check": "npm run check:contracts && npm run check:command-registration && npm run check:command-features && npm run check:test-cells && npm run check:bindings && npm run check:glyphs && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:recipe-index && npm run check:evidence && npm run check:doc-map && npm run check:promise-pins && npm run check:i18n:escapes && npm run census:check && npm run typecheck:native && eslint --cache --cache-location node_modules/.cache/eslint/full/ src/",
     "check:fast": "npm run check:contracts && npm run check:command-registration && npm run check:command-features && npm run check:test-cells && npm run check:bindings && npm run check:glyphs && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:recipe-index && npm run check:evidence && npm run check:doc-map && npm run check:promise-pins && npm run check:i18n:escapes && node scripts/gate/gate.mjs --gates tsc,eslint,census",
     "gate": "node scripts/gate/gate.mjs",
     "gate:status": "node scripts/gate/gate.mjs --status",
@@ -203,6 +203,7 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
+    "typescript-native": "npm:typescript@7.0.2",
     "vite": "^8.0.11",
     "vitest": "^4.1.5"
   }
