@@ -5,8 +5,16 @@ time, five bounded members, a security hard-fail, and a rule the skill cannot
 bend: *it never admits on its own*. A clean run is escorted to a human decision,
 never converted into one.
 
-This page documents what ships today (stage 1). The Council page and its human
-gate are stage 2 and are marked **planned** below.
+This page documents what ships today. The review reaches a person through the
+**Council page**: a galaxy of the organisation's knowledge registry, a bench of
+councils waiting on a decision, and one council's round table with the gate
+pinned in its footer.
+
+The page is built against one artifact the owner approved and kept:
+`docs/design/council-reference/` (open `index.html` from `file://`, no build, no
+server). Every build of this surface is compared against it side by side, and
+the shots the comparison was made from live in `shots/` (the reference) and
+`shots-app/` (the app).
 
 ---
 
@@ -53,7 +61,7 @@ summarises.
 | `fail` | a floor was hit or a member failed hard | Run next round |
 | `incomplete` | coverage fell under the floor | Run next round |
 | `stalled` | three rounds ran and it is still not clean; there is no round 4 | nothing until the operator opens the report |
-| `ready` | clean, waiting on a human | Awaiting your decision (stage 1 points at the report) |
+| `ready` | clean, waiting on a human | Awaiting your decision, which opens the Council page on that subject's round table |
 | `machine_pass` | clean, tier `standard`, so it never reaches a human | Promote to major |
 | `approved` | a human approved it | nothing |
 | `approved_drifted` | approved, and the reviewed code has changed since | Run next round |
@@ -95,12 +103,108 @@ If the review state cannot be read, the popover says so above the list. The
 features are still real; only their review state is unknown. A read failure is
 never rendered as "nothing has been councilled".
 
-## Planned (stage 2)
+## The Council page
 
-- A **Council** page: the registry as a zoomable galaxy, with the council queue
-  and an evidence canvas inside it.
-- The **human gate** itself, which lives only on that evidence canvas, next to
-  the comparison object the decision is made against. No list anywhere in the
-  app gets an approve button.
-- Media from a run (screenshots, demo video) read through a path-confined
-  command.
+Teams -> Council. Three layers, one state, and the layer below is never hidden
+by the layer above.
+
+### The galaxy
+
+The knowledge registry drawn as a field: one globular cluster per domain,
+categories as sub-discs, subjects as stars, techniques on a sunflower spiral
+around their subject. A star's rim arc is its council state. `L` turns on a
+lens that magnifies under the pointer without changing the zoom, `/` filters
+the level you are standing at, `0` frames the whole field, and `Esc` climbs one
+layer with the camera returning exactly where it was.
+
+Opening a council puts the whole field in **council focus**: the stars that
+council lands on are lit and named, everything else is dimmed rather than
+hidden, and the count of what was dimmed is printed rather than implied.
+
+### The bench
+
+`Q` raises the queue over the field without hiding it. It spans **every
+project**, so a person who works across repositories has one queue; each row
+carries its project's name for that reason.
+
+Three groups, each with its one-line note:
+
+- **Yours to decide** — the decidable rows, and the only ones the headline
+  counts. Ordered by hard failures, then floor hits, then the thinnest
+  coverage, then the latest round.
+- **Not waiting on you** — machine passes and anything sent back to the
+  builders. A `machine_pass` is deliberately here and deliberately not in the
+  count.
+- **Decided** — your past decisions, and whether the code has moved since.
+
+The sentence *"the instrument is uncalibrated, so judged floors are advisory;
+mechanical floors bind"* is said **once**, in the bench header. Everywhere else
+an advisory floor is simply drawn dotted.
+
+Each row carries a 54 px **rose**, and selecting one aims the sky behind the
+bench at that council's stars. `Enter` sits at the round table.
+
+### The round table
+
+A fixed frame the reader never loses:
+
+- the header names where it came from, what it is, how its rounds went against
+  the threshold (`[` and `]` move between rounds) and the constellation of
+  stars it lands on;
+- the left column holds the **rose**, the council's one-line reading, and the
+  **coverage ring** against the floor below which there is no overall at all;
+- the right column holds the five member seats (`1`..`5`, or the arrows; the
+  weakest is marked) and the chosen member's reading: its score against its
+  threshold and its floor on a rail, its kind and weight, its findings with
+  severity and recurrence, and its **evidence well**;
+- the footer holds the gate, always in view.
+
+**The rose** is the whole council in one figure. A wedge's width is its
+member's weight, its reach is the score, the ring is the threshold, an arc is
+the floor (dotted when the floor is advisory), a striped wedge was carried from
+the previous round, and a member that was never measured is **hatched at full
+reach**. That last one is the rule the whole design rests on: absence of a
+measurement is not a low score, and it contributes nothing to the overall.
+
+**The evidence well** is composed by the app, deterministically, from that
+member's own `evidence[]` and `findings[]`, and rendered through the cockpit
+widget registry. The skill never authors it and no model is ever asked to. A
+metric becomes figures, a URL becomes a followable row, a file becomes an
+excerpt, findings become a list, and a screenshot or recording becomes the
+`council_media` widget, which reads its bytes through the path-confined
+`dev_tools_council_read_media` door and turns them into an object URL. A file
+the run recorded but that is not on disk renders a labelled placeholder frame,
+never a broken image. `council_media` is app-composed only: it is deliberately
+absent from Athena's constitution and from every Rust op allowlist.
+
+### The gate
+
+The gate opens **only** when the subject is `ready` **and** (`tier: major`
+**or** `kind: architecture`). Every other state is a closed gate carrying one
+sentence that says why, and a rejection shows back the reason that was written.
+
+- Approve is **armed and then confirmed**: the first press changes the label and
+  nothing else.
+- Reject opens a box that stays disabled until at least twelve characters are
+  written, with a live count of what is still owed.
+- **No key commits anything.** `G` moves the focus to Approve and stops there.
+- The write carries the digest of the round **on screen**. If the council moved
+  since the person looked, the door refuses, the page refetches and says so, and
+  nothing is retried behind their back.
+
+After a decision the row moves into Decided, the headline count drops, and the
+stars it touches repaint in the field above the bench.
+
+### The dev fixture
+
+In a development build the page offers **Load the reference fixture**: the
+checked-in topology and council fixture the design artifact was built against,
+with no backend behind it. Approve and reject work in memory and the gate says
+so out loud. With the fixture off and no backend, every read fails into the
+page's own honest error and empty states rather than into a blank field.
+
+### What is not there yet
+
+Dropping the bench restores the **focus** the reader was standing in, not the
+exact camera. The bench cannot reach the canvas engine, which the galaxy stage
+owns; restoring the camera byte for byte needs one seam there.

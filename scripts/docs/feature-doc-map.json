@@ -621,6 +621,8 @@
         "src/features/plugins/dev-tools/sub_context/council*",
         "src/features/plugins/dev-tools/sub_context/Feature*",
         "src/api/devTools/council.ts",
+        "src/features/teams/sub_council/**",
+        "src/features/home/sub_cockpit/widgets/CouncilMediaWidget.tsx",
         "src-tauri/src/commands/infrastructure/dev_tools/council*.rs",
         "src-tauri/db/src/repos/dev/council.rs",
         "src-tauri/core/src/models/council.rs"
