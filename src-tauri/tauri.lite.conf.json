@@ -6,6 +6,11 @@
     ]
   },
   "bundle": {
-    "targets": ["nsis"]
+    "targets": ["nsis"],
+    "windows": {
+      "nsis": {
+        "compression": "none"
+      }
+    }
   }
 }

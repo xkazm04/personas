@@ -30,8 +30,8 @@
  * Exit: 0 = within budget (or --update / --self-test succeeded), 1 = over budget (or self-test failed).
  */
 
-import { readdirSync, statSync, readFileSync, writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from "fs";
+import { join, dirname, relative } from "path";
 import { fileURLToPath } from "url";
 import {
   MAX_CHUNK_KB as DEFAULT_MAX_CHUNK_KB,
@@ -42,7 +42,8 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const ASSETS_DIR = join(ROOT, "dist", "assets");
+const DIST_DIR = join(ROOT, "dist");
+const ASSETS_DIR = join(DIST_DIR, "assets");
 const BASELINE_PATH = join(__dirname, "bundle-baseline.json");
 
 const args = process.argv.slice(2);
@@ -57,12 +58,55 @@ function flag(name, fallback) {
 const MAX_CHUNK_KB = flag("max-chunk-kb", DEFAULT_MAX_CHUNK_KB);
 const MAX_TOTAL_KB = flag("max-total-kb", DEFAULT_MAX_TOTAL_KB);
 
+/**
+ * Assert that nothing large escaped the directory this gate actually scans.
+ *
+ * WHY, and it is not hypothetical. Vite emits Web Worker bundles into
+ * `dist/assets` alongside ordinary chunks, so `readCurrentBuild` below has
+ * always *seen* them — `normalizeChunkName('comparisonDiff.worker-BFWhsbBf.js')`
+ * returns `comparisonDiff.worker`, and a 22,706 KB worker with no baseline entry
+ * produced two violations (a `new-chunk` over the 850 KB cap and a +22,706 KB
+ * total rise). Verified 2026-09-20 by replaying the real measured size through
+ * `evaluateBudget`. The worker was never a blind spot — the gate was **red and
+ * ignored**, which is a different and worse failure.
+ *
+ * What WOULD be a blind spot is a large `.js` emitted anywhere else under
+ * `dist/`: `assetsDir`, a plugin's `emitFile`, a worker config change, a copied
+ * public asset. The scan is one directory deep by construction, so this check
+ * exists to make "the gate is not looking at it" impossible to reach silently.
+ */
+function assertNothingLargeOutsideAssets(maxChunkKB) {
+  if (!existsSync(DIST_DIR)) return [];
+  const escapees = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (full !== ASSETS_DIR) walk(full);
+        continue;
+      }
+      if (!entry.isFile() || !entry.name.endsWith(".js")) continue;
+      const sizeKB = statSync(full).size / 1024;
+      if (sizeKB > maxChunkKB) escapees.push({ file: relative(DIST_DIR, full), sizeKB });
+    }
+  };
+  walk(DIST_DIR);
+  return escapees;
+}
+
 function readCurrentBuild() {
   let files;
   try {
     files = readdirSync(ASSETS_DIR).filter((f) => f.endsWith(".js"));
   } catch {
     console.error("dist/assets/ not found — run `npm run build` first.");
+    process.exit(1);
+  }
+  // Fail-loud: "found no chunks" and "looked at nothing" must not both read as
+  // a pass. An empty assets dir would otherwise produce totalKB 0, which the
+  // ratchet happily reports as a (very large) DROP — a non-fatal notice.
+  if (files.length === 0) {
+    console.error("dist/assets/ holds no .js files — the build emitted nothing.");
     process.exit(1);
   }
   const entries = files.map((f) => ({
@@ -247,7 +291,15 @@ function runCheck() {
   const baseline = loadBaseline();
   const result = evaluateBudget(current, baseline, { maxChunkKB: MAX_CHUNK_KB, maxTotalKB: MAX_TOTAL_KB });
   printReport(current, baseline, result);
-  process.exit(result.violations.length > 0 ? 1 : 0);
+
+  const escapees = assertNothingLargeOutsideAssets(MAX_CHUNK_KB);
+  if (escapees.length > 0) {
+    console.log(`\n  FAIL: ${escapees.length} JS file(s) over ${MAX_CHUNK_KB} KB live OUTSIDE dist/assets, where this gate does not scan:`);
+    for (const e of escapees) console.log(`    - ${e.file}: ${e.sizeKB.toFixed(1)} KB`);
+    console.log("    Either move them under dist/assets or widen readCurrentBuild — an unscanned megabyte is not a passing build.");
+  }
+
+  process.exit(result.violations.length > 0 || escapees.length > 0 ? 1 : 0);
 }
 
 if (args.includes("--self-test")) {
