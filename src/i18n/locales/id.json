@@ -23066,7 +23066,8 @@
       "why_no_overall": "Tidak ada nilai keseluruhan: cakupan {coverage} berada di bawah batas minimum {floor}.",
       "run_failed_title": "Putaran ini tidak dapat dibaca",
       "no_run_title": "Belum ada dewan yang berjalan untuk subjek ini",
-      "no_run_body": "Jalankan satu dari buku besar fitur di Dev Tools, dan seluruh putaran akan muncul di sini."
+      "no_run_body": "Jalankan satu dari buku besar fitur di Dev Tools, dan seluruh putaran akan muncul di sini.",
+      "why_unread": "Nilai keseluruhan {overall} terhadap ambang batas {threshold}, cakupan {coverage}. Anggota putaran ini belum dimuat."
     },
     "gate": {
       "open_title": "Gerbang ini milik Anda",

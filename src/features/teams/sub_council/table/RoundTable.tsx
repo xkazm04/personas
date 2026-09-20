@@ -142,7 +142,7 @@ export function RoundTable({
             text={percent(coverage ?? 0)}
           />
           <span className="typo-body text-muted">
-            <b className="block typo-title text-foreground">{tbl.coverage}</b>
+            <b className="block typo-heading text-foreground">{tbl.coverage}</b>
             {tx(tbl.coverage_floor, { percent: percent(rubric.coverageFloor) })}
           </span>
         </div>
@@ -165,13 +165,13 @@ export function RoundTable({
               id={`council-seat-${i}`}
               aria-controls="council-member-panel"
               data-testid="council-seat-tab"
-              className={`rounded-pill border px-4 py-1.5 typo-title capitalize transition-colors ${
+              className={`rounded-pill border px-4 py-1.5 typo-heading capitalize transition-colors ${
                 s === seat
                   ? 'border-transparent bg-foreground text-background'
                   : 'border-border bg-secondary/[0.05] text-muted hover:text-foreground'
               }`}
             >
-              <span className="mr-1.5 font-mono typo-caption opacity-75">{i + 1}</span>
+              <span className="mr-1.5 font-mono typo-caption">{i + 1}</span>
               {s.name}
               {weakest?.seat.name === s.name ? (
                 <Tooltip content={tbl.seat_weakest}>

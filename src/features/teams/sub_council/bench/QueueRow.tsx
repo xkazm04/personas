@@ -80,7 +80,7 @@ export const QueueRow = memo(function QueueRow({
         overallLabel={t.council.table.rose_overall}
       />
       <span className="min-w-0">
-        <b className="block truncate typo-title text-foreground">{subject.title}</b>
+        <b className="block truncate typo-heading text-foreground">{subject.title}</b>
         <span className="mt-1.5 flex flex-wrap items-center gap-2">
           <StateChip state={subject.state} />
           <span className="typo-body text-muted">

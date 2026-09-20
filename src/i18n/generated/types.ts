@@ -1182,6 +1182,7 @@ export type Translations = {
       run_failed_title: string;
       no_run_title: string;
       no_run_body: string;
+      why_unread: string;
     };
     gate: {
       open_title: string;

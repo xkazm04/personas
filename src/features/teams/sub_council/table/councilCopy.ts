@@ -93,7 +93,7 @@ export function gateOpens(
 }
 
 export interface WhyLine {
-  key: 'why_floor_hit' | 'why_clears' | 'why_under' | 'why_no_overall';
+  key: 'why_floor_hit' | 'why_clears' | 'why_under' | 'why_no_overall' | 'why_unread';
   values: Record<string, string | number>;
 }
 
@@ -133,6 +133,20 @@ export function whyLine(
     };
   }
   const measured = seats.filter((s) => s.score != null).length;
+  // Nothing measured but an overall on hand means the ROUND has not been read
+  // yet - the queue projection carries the overall, not the members. Saying
+  // "0 of 5 members measured, and overall 0.74 clears the threshold" would be
+  // two true halves making one false sentence.
+  if (measured === 0) {
+    return {
+      key: 'why_unread',
+      values: {
+        overall: overall.toFixed(2),
+        threshold: rubric.threshold.toFixed(2),
+        coverage: coverage == null ? '-' : percent(coverage),
+      },
+    };
+  }
   const margin = overall - rubric.threshold;
   return {
     key: margin >= 0 ? 'why_clears' : 'why_under',

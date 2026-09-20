@@ -23066,7 +23066,8 @@
       "why_no_overall": "종합 점수 없음: 커버리지 {coverage}가 최저선 {floor}보다 낮습니다.",
       "run_failed_title": "이 라운드를 읽을 수 없습니다",
       "no_run_title": "이 주제에 대해 실행된 협의회가 없습니다",
-      "no_run_body": "Dev Tools의 기능 원장에서 실행하면 전체 라운드가 여기에 표시됩니다."
+      "no_run_body": "Dev Tools의 기능 원장에서 실행하면 전체 라운드가 여기에 표시됩니다.",
+      "why_unread": "종합 {overall}이 임계값 {threshold}과 비교, 커버리지 {coverage}. 이번 라운드의 구성원은 아직 불러오지 않았습니다."
     },
     "gate": {
       "open_title": "관문은 당신의 몫입니다",

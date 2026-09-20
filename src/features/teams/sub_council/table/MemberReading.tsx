@@ -46,7 +46,7 @@ export function MemberReading({
 
   return (
     <div className="flex flex-col gap-5" data-testid="council-member-reading">
-      <h2 className="m-0 flex flex-wrap items-baseline gap-4 typo-page-title capitalize text-foreground">
+      <h2 className="m-0 flex flex-wrap items-baseline gap-4 text-[31px] font-bold capitalize leading-tight tracking-tight text-foreground">
         {seat.name}
         {seat.score == null ? (
           <em className="not-italic typo-heading uppercase tracking-wide text-muted-dark">
@@ -157,7 +157,7 @@ export function MemberReading({
               <div key={`${tq.subject}/${tq.technique}`} className="flex items-center gap-2.5">
                 <ProofGlyph proof={tq.proof} label={proofWord} />
                 <span className="min-w-0">
-                  <b className="block typo-title text-foreground">{tq.technique}</b>
+                  <b className="block typo-heading text-foreground">{tq.technique}</b>
                   <small className="typo-caption text-muted-dark">
                     {tx(tbl.technique_sub, { subject: tq.subject, proof: proofWord })}
                   </small>
@@ -202,7 +202,7 @@ function FindingCard({
         >
           {severityWord}
         </span>
-        <h4 className="m-0 typo-title text-foreground">{finding.title}</h4>
+        <h4 className="m-0 text-[18px] font-bold leading-snug text-foreground">{finding.title}</h4>
       </header>
       <p className="my-2 max-w-[68ch] typo-body text-foreground">{finding.detail}</p>
       <footer className="flex flex-wrap items-center gap-4 typo-caption text-muted-dark">

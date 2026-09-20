@@ -168,7 +168,8 @@
     "why_no_overall": "Pas de score global : la couverture {coverage} est sous le plancher {floor}.",
     "run_failed_title": "Cette manche n'a pas pu être lue",
     "no_run_title": "Aucun conseil n'a siégé sur ce sujet",
-    "no_run_body": "Lancez-en un depuis le registre des fonctionnalités dans Outils de développement, et la manche entière atterrira ici."
+    "no_run_body": "Lancez-en un depuis le registre des fonctionnalités dans Outils de développement, et la manche entière atterrira ici.",
+    "why_unread": "Score global {overall} par rapport à un seuil de {threshold}, couverture {coverage}. Les membres de cette manche n'ont pas encore été chargés."
   },
   "gate": {
     "open_title": "La porte est à vous",

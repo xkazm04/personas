@@ -168,7 +168,8 @@
     "why_no_overall": "総合スコアなし。カバレッジ{coverage}は{floor}のフロアを下回っています。",
     "run_failed_title": "このラウンドを読み込めませんでした",
     "no_run_title": "この対象に評議会はまだ実行されていません",
-    "no_run_body": "Dev Toolsの機能台帳から実行すると、ラウンド全体がここに反映されます。"
+    "no_run_body": "Dev Toolsの機能台帳から実行すると、ラウンド全体がここに反映されます。",
+    "why_unread": "総合{overall}としきい値{threshold}の比較、カバレッジ{coverage}。このラウンドのメンバーはまだ読み込まれていません。"
   },
   "gate": {
     "open_title": "ゲートはあなたに委ねられています",

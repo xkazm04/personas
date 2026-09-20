@@ -23066,7 +23066,8 @@
       "why_no_overall": "没有总分：覆盖率 {coverage} 低于 {floor} 底线。",
       "run_failed_title": "无法读取此轮",
       "no_run_title": "该主题尚未运行过委员会",
-      "no_run_body": "从开发者工具的功能账本中运行一次，整轮结果就会显示在这里。"
+      "no_run_body": "从开发者工具的功能账本中运行一次，整轮结果就会显示在这里。",
+      "why_unread": "总分 {overall} 对照 {threshold} 阈值，覆盖率 {coverage}。本轮的成员尚未加载。"
     },
     "gate": {
       "open_title": "关口由你把守",

@@ -45,7 +45,7 @@ export function QueuePreview({
         <Tag>{tx(b.stars_chip, { count: subject.registrySubjects.length })}</Tag>
       </div>
 
-      <h3 className="m-0 typo-page-title text-foreground">{subject.title}</h3>
+      <h3 className="m-0 text-[26px] font-bold leading-tight tracking-tight text-foreground">{subject.title}</h3>
 
       <div className="self-center py-0.5">
         <Rose
