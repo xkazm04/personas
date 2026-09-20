@@ -65,6 +65,7 @@ knowledge:
 # .claude/skills/ as a real directory.
 skills:
   - conform
+  - contest
   - architect
   - consult
   - explorer

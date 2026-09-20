@@ -81,6 +81,7 @@ recordings/
 !.claude/skills/
 !.claude/rules/
 !.claude/perfect/
+!.claude/contest/
 !.claude/friend/
 !.claude/architect/
 !.claude/explorer/
@@ -198,6 +199,7 @@ docs/plans/
 # BEGIN ai-registry linked skills (managed by ai-registry/scripts/link-registry.mjs)
 # Links are machine state; the declarations live in .ai/manifest.yaml (`skills:` and `knowledge.domains`).
 /.claude/skills/conform
+/.claude/skills/contest
 /.claude/skills/architect
 /.claude/skills/consult
 /.claude/skills/explorer
@@ -245,3 +247,6 @@ src/test/e2e/cli-e2e-report.json
 
 # Stale top-level build transcripts (build-lite.log, build-arm64.log, ...) are
 # already covered by *.log above; this note exists so nobody re-adds them.
+
+# /contest arena and vault - prototype entries, never committed
+/.contest/
