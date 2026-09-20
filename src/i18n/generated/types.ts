@@ -818,10 +818,6 @@ export type Translations = {
     board_variant_classic: string;
     board_variant_runway: string;
     board_variant_lanes: string;
-    node_variant_aria: string;
-    node_variant_outline: string;
-    node_variant_accent: string;
-    node_variant_tinted: string;
     node_symbol_origin: string;
     node_symbol_team: string;
     node_symbol_project: string;

@@ -482,12 +482,6 @@ and reconciled by a 60 s poll the board owns while it is mounted
   by rank, a queued row the snapshot has not caught up with trailing with no
   rank rather than vanishing). A stored value naming a retired layout
   (`ranked`, `horizon`) opens on `classic`.
-- the **node style switch** (a `PillGroup` radiogroup, localStorage
-  `monitor.board.node`, default `outline`): which of the three styles —
-  **Outline**, **Accent**, **Tinted** — every node on every board, Classic
-  included, is dressed in (see *The node* below). A stored value naming one of
-  the retired prototype ids (`ledger`, `badge`, `meter`) opens on its successor
-  (`outline`, `accent`, `tinted`); anything else opens on `outline`.
 
 | Layout | What it shows |
 |---|---|
@@ -541,20 +535,21 @@ keyboard reaches them exactly as before. `PersonaTile`, `SessionTile` and
 `QueueTile` are thin wrappers that own the behaviour (the confirms, the
 portalled menus, the aria text) and hand the node its body and its affordances.
 
-Three **visibly different styles** of the same node sit behind the node
-switch; they differ in frame, hue application and symbol treatment — one data
-map, `NODE_STYLE` — and never in which symbols show:
-
-| Style | Frame | Symbols |
-|---|---|---|
-| **Outline** (default, quiet) | a hairline border in the state hue (dashed for a queued row), transparent body | monochrome at 70 %, hue only on the state symbol |
-| **Accent** (dense) | a 3px left accent bar in the state hue, `bg-secondary/20` body, title `font-medium` | full hue inside 16px rounded chips |
-| **Tinted** (bold) | the whole body washed in the state hue at 8 %, no border, `shadow-elevation-1` | hue circles with the glyph cut out; the elapsed fill is a 2px bar along the bottom edge across the full node width instead of a ring |
+The node has **one treatment**. Three were prototyped behind a header switch
+(outline, accent, tinted); **tinted** was picked on 2026-09-20 and the other
+two, the switch and its `monitor.board.node` storage key were deleted. What
+remains, as constants in `board/node/nodeSymbols.ts` (`frameClass`,
+`symbolClass`): the whole body washed in the state hue at 8 % with
+`shadow-elevation-1` and no border; every symbol, the state one included, a
+solid hue circle with the glyph cut out in the background colour; and the
+elapsed fill as a 2px bar along the bottom edge across the full node width,
+under a 6px labelled strip that carries the elapsed time (live row) or the ETA
+(queued row) for the pointer and the screen reader.
 
 Hues come from the canonical fleet palette (`fleetStateMeta`) and the persona
-palette (`SQUARE_VISUAL`); the tint and border twins are literal tables tied to
-the canonical `dot` by a lockstep test. A live row past the cap wears the
-warning hue on its frame and its state symbol. The flash ring, the selection
+palette (`SQUARE_VISUAL`); the tint twins are a literal table tied to the
+canonical `dot` by a lockstep test. A live row past the cap wears the warning
+hue on its body wash and its state symbol. The flash ring, the selection
 ring and the speech bubble are unchanged.
 
 **The verbs** (`board/queue/useQueueActions.ts`, `queueVerbs.ts`): a drag drop

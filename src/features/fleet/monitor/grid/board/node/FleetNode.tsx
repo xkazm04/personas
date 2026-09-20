@@ -23,9 +23,9 @@
 // children: the body is a `<button>` when it activates something, and a
 // control inside a control is invalid.
 //
-// The three styles (`nodeVariant.ts`) differ in frame, hue application and
-// symbol treatment — `NODE_STYLE` is the whole difference — never in which
-// symbols show.
+// ONE treatment (`nodeSymbols.ts`): the body washed in the state hue with a
+// soft elevation and no border, every symbol a solid hue circle, and the
+// elapsed fill a labelled bar along the bottom edge.
 
 import { Fragment, memo, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -42,11 +42,11 @@ import { SESSION_TILE_H, TILE_H, NODE_W } from '../../gridGeometry';
 import type { ChatBubble } from '../../channelBubbleModel';
 import { asOrigin, type QueueItem } from '../queue/useQueueModel';
 import { originLabel } from '../queue/originLabel';
-import { useNodeContext } from './nodeVariant';
+import { useNodeContext } from './nodeContext';
 import {
-  frameClass, NODE_STYLE, ORIGIN_GLYPH, PERSONA_STATE_MARK, personaHue, personaSymbols, SESSION_STATE_MARK, sessionHue,
+  frameClass, ORIGIN_GLYPH, PERSONA_STATE_MARK, personaHue, personaSymbols, SESSION_STATE_MARK, sessionHue,
   sessionSymbols, swatchHue, swatchInitial, symbolClass, WARNING_HUE,
-  type NodeHue, type NodeStyle, type NodeSymbolId, type StateMark,
+  type NodeHue, type NodeSymbolId, type StateMark,
 } from './nodeSymbols';
 
 // ---------------------------------------------------------------------------
@@ -172,35 +172,12 @@ function StateGlyph({ mark, reducedMotion }: { mark: StateMark; reducedMotion: b
   }
 }
 
-/**
- * A 12 px ring, filled clockwise to `fill`, drawn with `currentColor`: a solid
- * disc masked by a conic sector ∩ a radial hole. No text.
- */
-function ElapsedRing({ fill }: { fill: number }) {
-  const pct = Math.round(fill * 100);
-  const mask = `conic-gradient(#000 ${pct}%, transparent 0), radial-gradient(circle, transparent 3px, #000 3.5px)`;
-  const style: CSSProperties = {
-    maskImage: mask,
-    WebkitMaskImage: mask,
-    maskComposite: 'intersect',
-    WebkitMaskComposite: 'source-in',
-  };
-  return (
-    <span aria-hidden className="relative inline-flex h-3 w-3 flex-shrink-0">
-      <span className="absolute inset-0 rounded-full border border-current opacity-30" />
-      <span className="absolute inset-0 rounded-full bg-current" style={style} />
-    </span>
-  );
-}
-
 /** A 12 px coloured square with the initial letter, hue hashed from the name. */
-function Swatch({ name, inverse }: { name: string; inverse: boolean }) {
+function Swatch({ name }: { name: string }) {
   // `--swatch-h` is the ONE value that varies; the classes derive every colour
   // from it, with a darker letter under a light theme.
   const style = { '--swatch-h': swatchHue(name) } as CSSProperties;
-  const tone = inverse
-    ? 'bg-[hsl(var(--swatch-h)_55%_48%)] text-background'
-    : 'border border-[hsl(var(--swatch-h)_60%_50%/0.7)] bg-[hsl(var(--swatch-h)_60%_50%/0.22)] text-[hsl(var(--swatch-h)_70%_62%)] [[data-theme^=light]_&]:text-[hsl(var(--swatch-h)_70%_32%)]';
+  const tone = 'bg-[hsl(var(--swatch-h)_55%_48%)] text-background';
   return (
     <span aria-hidden style={style} className={`inline-flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-none ${NUMERAL} ${tone}`}>
       {swatchInitial(name)}
@@ -228,9 +205,8 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
   const height = props.height ?? (props.kind === 'persona' ? TILE_H : SESSION_TILE_H);
   const { t, tx } = useTranslation();
   const s = t.monitor;
-  const { variant: style, meanDurationMs, queueLength } = useNodeContext();
+  const { meanDurationMs, queueLength } = useNodeContext();
   const reducedMotion = (useReducedMotion() ?? false) || (props.reducedMotion ?? false);
-  const spec = NODE_STYLE[style];
 
   // Hooks first — the ETA is a date the queued row's tooltip names.
   const queue = props.kind === 'session' ? props.queue ?? null : null;
@@ -247,6 +223,8 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
   let bubble: ChatBubble | null = null;
   let bubbleBorder: string | undefined;
   let elapsedFill = 0;
+  /** What the bar says on hover / to a screen reader: elapsed for a live row, the ETA for a queued one. */
+  let elapsedLabel = '';
   const renderers: Partial<Record<NodeSymbolId, () => ReactNode>> = {};
 
   if (props.kind === 'persona') {
@@ -261,25 +239,25 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
     }[st];
     const dominant = actionBadges(card)[0] ?? null;
     title = cleanName(card.personaName);
-    frame = frameClass(style, hue);
+    frame = frameClass(hue);
     titleTone = off ? 'opacity-45' : st === 'idle' ? 'opacity-60' : '';
     bubble = props.bubble ?? null;
     bubbleBorder = card.personaColor ?? undefined;
     ids = personaSymbols({ off, teamName, unseenChat, queued: card.queued, operation: dominant !== null });
 
     renderers.state = () => (
-      <Sym id="state" label={stateLabel} testId="fleet-node-state" data={{ 'data-state': st }} className={symbolClass(style, hue, true)}>
+      <Sym id="state" label={stateLabel} testId="fleet-node-state" data={{ 'data-state': st }} className={symbolClass(hue)}>
         <StateGlyph mark={PERSONA_STATE_MARK[st]} reducedMotion={reducedMotion} />
       </Sym>
     );
     renderers.off = () => (
-      <Sym id="off" label={s.grid_persona_disabled} testId="fleet-grid-disabled" className={symbolClass(style, hue, false)}>
+      <Sym id="off" label={s.grid_persona_disabled} testId="fleet-grid-disabled" className={symbolClass(hue)}>
         <PowerOff aria-hidden className={GLYPH} />
       </Sym>
     );
     renderers.team = () => (
       <Sym id="team" label={tx(s.node_symbol_team, { name: teamName ?? '' })} testId="fleet-node-team" className="">
-        <Swatch name={teamName ?? ''} inverse={spec.symbolTone === 'inverse'} />
+        <Swatch name={teamName ?? ''} />
       </Sym>
     );
     renderers.operation = () => {
@@ -292,18 +270,18 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
         message: tx(s.grid_badge_message, { count: dominant!.count }),
       }[dominant!.key];
       return (
-        <Sym id="operation" label={line} testId="fleet-grid-badge" data={{ 'data-action': dominant!.key }} className={symbolClass(style, hue, false)}>
+        <Sym id="operation" label={line} testId="fleet-grid-badge" data={{ 'data-action': dominant!.key }} className={symbolClass(hue)}>
           <Icon aria-hidden className={GLYPH} />
         </Sym>
       );
     };
     renderers.unseen = () => (
-      <Sym id="unseen" label={tx(s.grid_chat_unseen, { count: unseenChat })} testId="fleet-grid-chat-unseen" data={{ 'data-count': String(unseenChat) }} className={`${symbolClass(style, hue, false)} w-auto gap-px px-0.5`}>
+      <Sym id="unseen" label={tx(s.grid_chat_unseen, { count: unseenChat })} testId="fleet-grid-chat-unseen" data={{ 'data-count': String(unseenChat) }} className={`${symbolClass(hue)} w-auto gap-px px-0.5`}>
         <ChatMark count={unseenChat} />
       </Sym>
     );
     renderers.queued = () => (
-      <Sym id="queued" label={tx(s.node_queued_count, { count: card.queued })} testId="fleet-node-queued" data={{ 'data-count': String(card.queued) }} className={`${symbolClass(style, hue, false)} w-auto gap-px px-0.5`}>
+      <Sym id="queued" label={tx(s.node_queued_count, { count: card.queued })} testId="fleet-node-queued" data={{ 'data-count': String(card.queued) }} className={`${symbolClass(hue)} w-auto gap-px px-0.5`}>
         <Layers aria-hidden className={GLYPH} />
         <span aria-hidden className={NUMERAL}>{card.queued > 9 ? '9+' : card.queued}</span>
       </Sym>
@@ -322,53 +300,48 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
 
     title = sessionLabel(session);
     hue = overAdmitted ? WARNING_HUE : sessionHue(session.state);
-    frame = frameClass(style, hue, { queued });
+    frame = frameClass(hue);
     titleTone = '';
     ids = sessionSymbols({
       state: session.state, elapsedFill: hasFill ? elapsedFill : null, rank, gated, projectLabel: session.projectLabel ?? null,
     });
 
     const OriginIcon = ORIGIN_GLYPH[origin];
-    const elapsedLabel = queued
+    elapsedLabel = queued
       ? (queue?.estimatedStartMs != null ? tx(s.queue_estimated_start, { time: eta }) : s.queue_no_estimate)
       : tx(s.node_symbol_elapsed, { time: formatElapsedCompact(new Date(createdAt).toISOString(), '-') });
 
     renderers.state = () => (
-      <Sym id="state" label={overAdmitted ? `${stateLabel} · ${s.queue_over_admitted}` : stateLabel} testId="fleet-node-state" data={{ 'data-state': session.state }} className={symbolClass(style, hue, true)}>
+      <Sym id="state" label={overAdmitted ? `${stateLabel} · ${s.queue_over_admitted}` : stateLabel} testId="fleet-node-state" data={{ 'data-state': session.state }} className={symbolClass(hue)}>
         <StateGlyph mark={SESSION_STATE_MARK[session.state]} reducedMotion={reducedMotion} />
       </Sym>
     );
     renderers.origin = () => (
-      <Sym id="origin" label={tx(s.node_symbol_origin, { origin: originLabel(s, origin) })} testId="fleet-queue-origin" data={{ 'data-origin': origin }} className={symbolClass(style, hue, false)}>
+      <Sym id="origin" label={tx(s.node_symbol_origin, { origin: originLabel(s, origin) })} testId="fleet-queue-origin" data={{ 'data-origin': origin }} className={symbolClass(hue)}>
         <OriginIcon aria-hidden className={GLYPH} />
       </Sym>
     );
     renderers.rank = () => (
-      <Sym id="rank" label={tx(s.queue_rank_aria, { rank: rank! })} testId="fleet-queue-rank" data={{ 'data-rank': String(rank) }} className={`${symbolClass(style, hue, false)} ${spec.chip ? '' : 'rounded-full border border-current'}`}>
+      <Sym id="rank" label={tx(s.queue_rank_aria, { rank: rank! })} testId="fleet-queue-rank" data={{ 'data-rank': String(rank) }} className={`${symbolClass(hue)}`}>
         <span aria-hidden className={NUMERAL}>{rank! > 99 ? '99+' : rank}</span>
       </Sym>
     );
     renderers.gate = () => (
-      <Sym id="gate" label={tx(s.queue_not_before, { time: notBefore })} testId="fleet-node-gate" className={symbolClass(style, hue, false)}>
+      <Sym id="gate" label={tx(s.queue_not_before, { time: notBefore })} testId="fleet-node-gate" className={symbolClass(hue)}>
         <Timer aria-hidden className={GLYPH} />
-      </Sym>
-    );
-    renderers.elapsed = () => (
-      <Sym id="elapsed" label={elapsedLabel} testId="fleet-node-elapsed" data={{ 'data-fill': elapsedFill.toFixed(2) }} className={symbolClass(style, hue, false)}>
-        <ElapsedRing fill={elapsedFill} />
       </Sym>
     );
     renderers.project = () => (
       <Sym id="project" label={tx(s.node_symbol_project, { name: session.projectLabel ?? '' })} testId="fleet-node-project" className="">
-        <Swatch name={session.projectLabel ?? ''} inverse={spec.symbolTone === 'inverse'} />
+        <Swatch name={session.projectLabel ?? ''} />
       </Sym>
     );
   }
 
-  // The tinted style draws the elapsed fill as a bar along the bottom edge,
-  // across the full node width, instead of a ring in the row.
-  const barElapsed = spec.elapsed === 'bar' && ids.includes('elapsed');
-  const rowIds = barElapsed ? ids.filter((id) => id !== 'elapsed') : ids;
+  // The elapsed fill is a bar along the bottom edge, across the full node
+  // width — never a symbol in the row.
+  const barElapsed = ids.includes('elapsed');
+  const rowIds = ids.filter((id) => id !== 'elapsed');
 
   const shell = `group relative flex flex-shrink-0 overflow-hidden rounded-input transition-colors ${frame} ${
     selected ? 'ring-1 ring-primary/40' : ''
@@ -381,7 +354,7 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
           hovering a symbol below shows that symbol's tip alone. */}
       <span className="block h-5 min-w-0" data-testid="fleet-node-title-row">
         <Tooltip content={tooltip}>
-          <span className={`block truncate typo-body leading-5 text-foreground ${spec.title} ${titleTone}`} data-testid="fleet-node-title">{title}</span>
+          <span className={`block truncate typo-body leading-5 text-foreground ${titleTone}`} data-testid="fleet-node-title">{title}</span>
         </Tooltip>
       </span>
       <span className="flex h-[18px] min-w-0 items-center gap-1" data-testid="fleet-node-symbols">
@@ -436,17 +409,29 @@ export const FleetNode = memo(function FleetNode(props: FleetNodeProps) {
   );
 
   return (
-    <div className={shell} style={{ width, height }} data-testid={testId} data-kind={props.kind} data-style={style satisfies NodeStyle}>
+    <div className={shell} style={{ width, height }} data-testid={testId} data-kind={props.kind}>
       {body}
       {barElapsed && (
-        <span
-          aria-hidden
-          data-symbol="elapsed"
-          data-testid="fleet-node-elapsed-bar"
-          data-fill={elapsedFill.toFixed(2)}
-          className={`absolute bottom-0 left-0 h-0.5 ${hue.dot}`}
-          style={{ width: `${Math.round(elapsedFill * 100)}%` }}
-        />
+        // The elapsed fill, along the bottom edge. The 2 px bar is too thin to
+        // hover, so a 6 px strip over it carries the label (elapsed for a live
+        // row, the ETA for a queued one) for the pointer and the screen reader.
+        <Tooltip content={elapsedLabel}>
+          <span
+            role="img"
+            aria-label={elapsedLabel}
+            data-symbol="elapsed"
+            data-testid="fleet-node-elapsed"
+            data-fill={elapsedFill.toFixed(2)}
+            className="absolute inset-x-0 bottom-0 h-1.5"
+          >
+            <span
+              aria-hidden
+              data-testid="fleet-node-elapsed-bar"
+              className={`absolute bottom-0 left-0 h-0.5 ${hue.dot}`}
+              style={{ width: `${Math.round(elapsedFill * 100)}%` }}
+            />
+          </span>
+        </Tooltip>
       )}
       {/* The affordances: siblings of the body, over the symbol row's right
           end, revealed on hover or when anything inside the node has focus

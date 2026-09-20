@@ -1,5 +1,5 @@
 // nodeSymbols — the node's SECOND ROW, as data: which symbols a node shows, in
-// which order, in which hue, and how each of the three styles dresses them.
+// which order, in which hue, and how the node dresses them.
 //
 // The title row is the title and nothing else (the whole 172 px), so everything
 // that used to flank it — the state, who asked for it, the rank, the gate, the
@@ -14,15 +14,14 @@
 // `*Symbols()` functions decide WHICH of them a given node shows, and the
 // tests drive them without a DOM.
 //
-// The three styles (`NODE_STYLE`) differ in FRAME, HUE APPLICATION and SYMBOL
-// TREATMENT — never in which symbols show. That difference is one data map,
-// not three forks: `frameClass` and `symbolClass` read the map.
+// The node has ONE treatment (tinted — the winner of a three-way prototype):
+// `frameClass` and `symbolClass` at the bottom of this file are the whole of it.
 //
 // Hues come from the canonical fleet palette (`fleetStateMeta` through
 // `fleetSessionModel`) and the persona palette (`SQUARE_VISUAL`), never a raw
 // colour. Tailwind cannot generate an assembled class, so the 8 % tint and the
 // per-state border twins are literal tables, tied to the canonical `dot` by a
-// lockstep test (`nodeSymbols.test.ts`) exactly as `SESSION_BORDER` is.
+// lockstep test (`nodeSymbols.test.ts`).
 
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -32,7 +31,7 @@ import {
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { SQUARE_VISUAL, type SquareState } from '../../fleetGridModel';
-import { SESSION_BORDER, sessionStateMeta } from '../../fleetSessionModel';
+import { sessionStateMeta } from '../../fleetSessionModel';
 
 // ---------------------------------------------------------------------------
 // The symbols, in the one order every board paints them.
@@ -142,17 +141,13 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
 };
 
 // ---------------------------------------------------------------------------
-// Hue — the five class slots a state paints with.
+// Hue — the two class slots a state paints with.
 // ---------------------------------------------------------------------------
 
 export interface NodeHue {
-  /** Text / icon colour. */
-  text: string;
-  /** Solid fill (the dot, the tinted style's symbol circles, the elapsed bar). */
+  /** Solid fill: the symbol circles and the elapsed bar. */
   dot: string;
-  /** Border twin of `dot`. */
-  border: string;
-  /** 8 % wash for the tinted style's body. */
+  /** 8 % wash for the node's body. */
   tint: string;
 }
 
@@ -175,7 +170,7 @@ export const SESSION_TINT: Record<FleetSessionState, string> = {
 
 export function sessionHue(state: FleetSessionState): NodeHue {
   const m = sessionStateMeta(state);
-  return { text: m.text, dot: m.dot, border: SESSION_BORDER[state], tint: SESSION_TINT[state] };
+  return { dot: m.dot, tint: SESSION_TINT[state] };
 }
 
 /**
@@ -184,10 +179,10 @@ export function sessionHue(state: FleetSessionState): NodeHue {
  * the ones that are working or waiting.
  */
 export const PERSONA_HUE: Record<SquareState, NodeHue> = {
-  running:   { text: 'text-primary',   dot: SQUARE_VISUAL.running.accent,   border: 'border-primary',        tint: 'bg-primary/[0.08]' },
-  attention: { text: 'text-amber-300', dot: SQUARE_VISUAL.attention.accent, border: 'border-amber-400',      tint: 'bg-amber-500/[0.08]' },
-  failed:    { text: 'text-red-300',   dot: SQUARE_VISUAL.failed.accent,    border: 'border-red-400',        tint: 'bg-red-500/[0.08]' },
-  idle:      { text: 'text-foreground', dot: SQUARE_VISUAL.idle.accent,     border: 'border-border',         tint: 'bg-foreground/[0.03]' },
+  running:   { dot: SQUARE_VISUAL.running.accent,   tint: 'bg-primary/[0.08]' },
+  attention: { dot: SQUARE_VISUAL.attention.accent, tint: 'bg-amber-500/[0.08]' },
+  failed:    { dot: SQUARE_VISUAL.failed.accent,    tint: 'bg-red-500/[0.08]' },
+  idle:      { dot: SQUARE_VISUAL.idle.accent,      tint: 'bg-foreground/[0.03]' },
 };
 
 export function personaHue(state: SquareState): NodeHue {
@@ -196,9 +191,7 @@ export function personaHue(state: SquareState): NodeHue {
 
 /** A live row sitting past the cap after a Start now. */
 export const WARNING_HUE: NodeHue = {
-  text: 'text-status-warning',
   dot: 'bg-status-warning',
-  border: 'border-status-warning',
   tint: 'bg-status-warning/[0.08]',
 };
 
@@ -220,90 +213,29 @@ export function swatchInitial(name: string): string {
   return (m?.[0] ?? '·').toUpperCase();
 }
 
-// ---------------------------------------------------------------------------
-// The three styles.
-// ---------------------------------------------------------------------------
+// ── The node's one treatment ────────────────────────────────────────────────
+// The board prototyped three dressings (outline / accent / tinted); the
+// operator picked TINTED and the other two were deleted. What remains is the
+// winner, as constants: the body washed in the state hue with a soft
+// elevation and no border, every symbol a solid hue circle with the glyph cut
+// out in the background colour, and the elapsed fill drawn as a bar along the
+// node's bottom edge (`FleetNode`) instead of a ring in the row.
 
-export type NodeStyle = 'outline' | 'accent' | 'tinted';
+/** The shell: a soft elevation, no border — the hue wash is the frame. */
+export const NODE_SHELL = 'shadow-elevation-1';
 
-export interface NodeStyleSpec {
-  /** Shell classes that need no hue. */
-  shell: string;
-  /** Which hue slot paints the frame. */
-  frameHue: 'border' | 'accent' | 'tint';
-  /** The chip every symbol sits in (`''` = a bare glyph). */
-  chip: string;
-  /**
-   * How a NON-state symbol is coloured: monochrome at 70 % (hue only on the
-   * state symbol), full foreground inside its chip, or the state hue's
-   * solid circle with the glyph cut out of it.
-   */
-  symbolTone: 'mono' | 'full' | 'inverse';
-  title: string;
-  /** Where the elapsed fill is drawn: a 12 px ring in the row, or a 2 px bar along the bottom edge. */
-  elapsed: 'ring' | 'bar';
-}
+/** Every symbol's box: a solid circle. */
+export const NODE_CHIP = 'rounded-full';
 
-export const NODE_STYLE: Record<NodeStyle, NodeStyleSpec> = {
-  // Quiet: a hairline in the state hue, a transparent body, symbols muted.
-  outline: {
-    shell: 'border bg-transparent',
-    frameHue: 'border',
-    chip: '',
-    symbolTone: 'mono',
-    title: '',
-    elapsed: 'ring',
-  },
-  // Dense: a 3 px accent bar, a secondary body, every symbol in a rounded chip.
-  accent: {
-    shell: 'border-l-[3px] bg-secondary/20',
-    frameHue: 'accent',
-    chip: 'rounded-full bg-secondary/40',
-    symbolTone: 'full',
-    title: 'font-medium',
-    elapsed: 'ring',
-  },
-  // Bold: the body washed in the hue, no border, symbols as hue circles, the
-  // elapsed fill as a bar across the bottom edge.
-  tinted: {
-    shell: 'shadow-elevation-1',
-    frameHue: 'tint',
-    chip: 'rounded-full',
-    symbolTone: 'inverse',
-    title: '',
-    elapsed: 'bar',
-  },
-};
-
-export interface FrameOptions {
-  /** A queued row: the frame is dashed where the style has a border. */
-  queued?: boolean;
-}
-
-/** The shell's frame for a style and a hue. */
-export function frameClass(style: NodeStyle, hue: NodeHue, o: FrameOptions = {}): string {
-  const spec = NODE_STYLE[style];
-  const dashed = o.queued ? 'border-dashed' : '';
-  switch (spec.frameHue) {
-    case 'border': return `${spec.shell} ${hue.border} ${dashed}`.trim();
-    case 'accent': return `${spec.shell} ${hue.border} ${dashed}`.trim();
-    case 'tint': return `${spec.shell} ${hue.tint}`;
-  }
+/** The shell's frame for a hue. */
+export function frameClass(hue: NodeHue): string {
+  return `${NODE_SHELL} ${hue.tint}`;
 }
 
 /**
- * One symbol's box for a style and a hue. The STATE symbol always carries the
- * hue; the others follow the style's tone. Everything inside the box paints
- * with `currentColor` (`bg-current`, `border-current`, the icon's stroke), so
- * this one class decides the whole symbol.
+ * One symbol's box for a hue. Everything inside paints with `currentColor`
+ * (`bg-current`, the icon's stroke), so this one class decides the symbol.
  */
-export function symbolClass(style: NodeStyle, hue: NodeHue, isState: boolean): string {
-  const spec = NODE_STYLE[style];
-  const inverse = spec.symbolTone === 'inverse';
-  if (isState) return `${spec.chip} ${inverse ? `${hue.dot} text-background` : hue.text}`.trim();
-  switch (spec.symbolTone) {
-    case 'mono': return 'text-foreground opacity-70';
-    case 'full': return `${spec.chip} text-foreground`;
-    case 'inverse': return `${spec.chip} ${hue.dot} text-background`;
-  }
+export function symbolClass(hue: NodeHue): string {
+  return `${NODE_CHIP} ${hue.dot} text-background`;
 }

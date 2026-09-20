@@ -3884,7 +3884,6 @@
   "id:templates.rebuild_modal.dim_prompt",
   "vi:templates.rebuild_modal.dim_prompt",
   "fr:matrix_v3.capability_trigger_description",
-  "fr:monitor.node_variant_accent",
   "*:monitor.queue_origin_athena",
   "*:monitor.queue_origin_autopilot",
   "*:monitor.queue_origin_dev_runner",
