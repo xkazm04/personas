@@ -118,7 +118,7 @@ content-addressed compiler cache (`sccache` as `RUSTC_WRAPPER`): it cannot help
 the incremental loop (it cannot cache incremental or linking crates), but a
 fresh worktree's cold start is almost entirely third-party crates, which it can.
 That is an unmeasured follow-up, tracked in
-[`docs/plans/build-structure-campaign.md`](../plans/build-structure-campaign.md).
+[`docs/refactor/build-structure-campaign.md`](../refactor/build-structure-campaign.md).
 ## Toolchain
 
 `rust-toolchain.toml` pins the compiler (1.96.1 at adoption). Before it, the
