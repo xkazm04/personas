@@ -25,6 +25,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 import { ContextCoverage, type GoalCoverage, type TDevTools } from './contextLedgerShared';
+import type { FeatureChipContext } from './featureChipContext';
 import { KIND_DOT, kindMeta } from './useCaseKind';
 import {
   KPI_STATUS_DOT,
@@ -138,6 +139,11 @@ export interface LedgerRowProps {
   memberSets: MemberSet[];
   selectedUseCaseId: string | null;
   useCaseCount: number;
+  /** The features slicing this context — a stable array from the board's
+   *  memoised Map, never a fresh one per render (mechanic 2 above). */
+  contextUseCases?: DevUseCase[];
+  /** One board-wide object, so this prop's identity never changes. */
+  featureChip?: FeatureChipContext | null;
   goal?: GoalCoverage;
   ideaCount: number;
   kpiCount: number;
@@ -160,6 +166,8 @@ export const LedgerRow = memo(function LedgerRow({
   memberSets,
   selectedUseCaseId,
   useCaseCount,
+  contextUseCases,
+  featureChip,
   goal,
   ideaCount,
   kpiCount,
@@ -194,6 +202,8 @@ export const LedgerRow = memo(function LedgerRow({
           <ContextCoverage
             fileCount={ctx.filePaths.length}
             useCaseCount={useCaseCount}
+            contextUseCases={contextUseCases}
+            chip={featureChip}
             goalCount={goal?.count ?? 0}
             firstGoalId={goal?.firstGoalId}
             ideaCount={ideaCount}

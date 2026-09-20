@@ -29,11 +29,13 @@ import { useContextRuntime } from './useContextRuntime';
 import ContextGroupRowsStats from './ContextGroupRowsStats';
 import { ContextMapHealth } from './ContextMapHealth';
 import type { ContextLedgerProps } from './contextLedgerShared';
+import type { FeatureChipContext } from './featureChipContext';
 import { buildKpiStatusByContext } from './contextKpiStatus';
 import { useUseCases } from './useUseCases';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 // PROTOTYPE (/prototype round 2): the Context Map's layout A/B. `crosstab` is
@@ -539,6 +541,43 @@ export default function ContextMapPage() {
   );
   const runtime = useContextRuntime(activeProject, useCaseState.active, flatContexts);
 
+  // ---- Feature chip inputs -------------------------------------------------
+  // Computed ONCE per board render into stable containers: the ledger rows are
+  // memoised on prop identity, so a fresh array or object per row would undo
+  // `contextMapPerf.tsx`'s whole reason for existing.
+  const useCasesByContext = useMemo(() => {
+    const m = new Map<string, DevUseCase[]>();
+    for (const uc of useCaseState.active) {
+      for (const cid of uc.context_ids) {
+        const list = m.get(cid);
+        if (list) list.push(uc);
+        else m.set(cid, [uc]);
+      }
+    }
+    return m;
+  }, [useCaseState.active]);
+
+  const featureChip: FeatureChipContext | null = useMemo(() => {
+    if (!activeProject) return null;
+    const groupIdByContext = new Map<string, string>();
+    for (const g of groups) for (const c of g.contexts) groupIdByContext.set(c.id, g.id);
+    let linked = 0;
+    for (const uc of useCaseState.active) {
+      if (uc.context_ids.length > 0) linked += 1;
+    }
+    return {
+      project: {
+        projectId: activeProject.id,
+        projectName: activeProject.name,
+        rootPath: activeProject.root_path,
+      },
+      groupIdByContext,
+      // The live Personas state: features exist, the link layer does not.
+      featuresUnlinked: useCaseState.active.length > 0 && linked === 0,
+      featureTotal: useCaseState.active.length,
+    };
+  }, [activeProject, groups, useCaseState.active]);
+
   // Everything the ledger renders from — bundled so the view stays pure and the
   // page keeps owning the scan/store orchestration.
   const ledgerProps: ContextLedgerProps = {
@@ -563,6 +602,8 @@ export default function ContextMapPage() {
     onShowNewGroup: setShowNewGroup,
     onCreateGroup: handleCreateGroup,
     onScan: handleScan,
+    useCasesByContext,
+    featureChip,
   };
 
   return (

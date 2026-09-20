@@ -10,6 +10,10 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { CouncilIngestSummary } from "@/lib/bindings/CouncilIngestSummary";
 import type { CouncilSubjectState } from "@/lib/bindings/CouncilSubjectState";
 import type { DevUseCase } from "@/lib/bindings/DevUseCase";
+import type { SkillEntry } from "@/lib/bindings/SkillEntry";
+
+/** The shared skill a council dispatch invokes. Linked from the ai-registry. */
+export const COUNCIL_SKILL = "council";
 
 /** Derived, never stored. `running` is a frontend overlay from fleet sessions. */
 export const COUNCIL_STATES = [
@@ -39,6 +43,20 @@ export async function ingestCouncilRuns(
   runDir?: string,
 ): Promise<CouncilIngestSummary> {
   return invoke<CouncilIngestSummary>("dev_tools_council_ingest", { projectId, runDir });
+}
+
+/**
+ * Is the shared `/council` skill present in the target repo's `.claude/skills`?
+ *
+ * Deliberately NOT routed through `listSkills`, whose `safeInvoke` resolves a
+ * failed read to `[]` — that would turn "the app could not look" into "the
+ * skill is missing" and hand the operator a remedy for a problem they do not
+ * have. A read failure throws here, and the dispatch's `prepare()` aborts with
+ * the real error instead.
+ */
+export async function councilSkillInstalled(projectId: string): Promise<boolean> {
+  const skills = await invoke<SkillEntry[]>("skill_files_list", { projectId });
+  return skills.some((s) => s.name === COUNCIL_SKILL);
 }
 
 /** Only tier 'major' subjects reach the human gate. */
