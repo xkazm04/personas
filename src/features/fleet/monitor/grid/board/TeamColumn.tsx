@@ -13,7 +13,7 @@
 // than `sticky` against a shared one — the same property, held structurally
 // (see `ColumnBody`'s header for the two-axis geometry decision).
 //
-// THE COLUMN IS CONTENT-SIZED, not `h-full`. The board wraps into rows of five
+// THE COLUMN IS CONTENT-SIZED, not `h-full`. The board wraps into rows
 // (`gridGeometry`'s "board's own wrap"), so a row's height is its tallest
 // column and a column that stretched would make every row the height of the
 // display. Its body is capped instead — one large team scrolls inside its own
@@ -33,15 +33,19 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { cleanName } from '../fleetGridModel';
 import { ColumnBody } from '../ColumnBody';
 import { ColumnGhost } from '../BoardGhost';
-import { COLUMN_BODY_MAX_H, TILE_W, type ColumnRow } from '../gridGeometry';
+import { COLUMN_BODY_MAX_H, type ColumnRow } from '../gridGeometry';
 import type { BoardColumn } from '../useBoardModel';
 
 export function TeamColumn({
-  column, scoped, onToggleScope, renderRow, focusKey, staged, reducedMotion,
+  column, scoped, onToggleScope, width, renderRow, focusKey, staged, reducedMotion,
 }: {
   column: BoardColumn;
   scoped: boolean;
   onToggleScope: (teamId: string, teamName: string, roster: BoardColumn['cards']) => void;
+  /** The row's measured column width (`gridGeometry`'s width ladder), never
+   *  narrower than the node. The tiles inside are rendered at the same number,
+   *  so the section and its contents cannot disagree. */
+  width: number;
   renderRow: (row: ColumnRow) => ReactNode;
   focusKey: string | null;
   /** The tiles' stage has arrived; until then the column shows its own ghost. */
@@ -67,7 +71,7 @@ export function TeamColumn({
   return (
     <section
       className="flex min-h-0 flex-shrink-0 flex-col gap-1.5"
-      style={{ width: TILE_W }}
+      style={{ width }}
       data-testid="fleet-grid-column"
     >
       <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
@@ -128,7 +132,7 @@ export function TeamColumn({
           </div>
         </motion.div>
       ) : (
-        <ColumnGhost rows={column.rows.length} maxHeight={COLUMN_BODY_MAX_H} />
+        <ColumnGhost rows={column.rows.length} maxHeight={COLUMN_BODY_MAX_H} width={width} />
       )}
       {menu && project && createPortal(
         <ContextMenu

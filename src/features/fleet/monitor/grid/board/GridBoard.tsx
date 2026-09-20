@@ -15,9 +15,10 @@
 // the same two tiles from a different layout, and two copies of a tile's props
 // are two copies that can disagree.
 //
-// THE BOARD WRAPS — five columns to a row, scrolling vertically. The wrap point
-// and its measurement live in `useBoardRows`; `gridGeometry`'s "board's own
-// wrap" carries the reasoning and the two costs it had to pay.
+// THE BOARD WRAPS — as many columns to a row as its measured width holds, up
+// to ten, each spread to fill the row. The wrap point and its measurement live
+// in `useBoardRows`; `gridGeometry`'s "board's own wrap" and "width ladder"
+// carry the reasoning and the costs they had to pay.
 
 import { Fragment, useCallback, type ReactNode } from 'react';
 import { Users } from 'lucide-react';
@@ -29,7 +30,7 @@ import { PersonaTile } from '../PersonaTile';
 import { SessionTile } from '../SessionTile';
 import { UngroupedTray } from '../UngroupedTray';
 import { BoardGhost } from '../BoardGhost';
-import { SESSION_TILE_H, TILE_H, TILE_W, type ColumnRow } from '../gridGeometry';
+import { boardLayout, COLUMNS_PER_ROW, SESSION_TILE_H, TILE_H, TILE_W, type ColumnRow } from '../gridGeometry';
 import type { BoardModel } from '../useBoardModel';
 import type { RailScope } from '../useRailScope';
 import { TeamColumn } from './TeamColumn';
@@ -60,37 +61,44 @@ export function GridBoard({
 }: GridBoardProps) {
   const { t } = useTranslation();
 
+  // The wrap point AND the column width, from the scroller's measured width.
+  // `TILE_W` / `COLUMNS_PER_ROW` are the pre-measurement assumption; the moment
+  // a measurement exists `boardLayout` takes over.
+  const { boardRef, rows, columnWidth } = useBoardRows(
+    model.columns, !model.empty, TILE_W, COLUMNS_PER_ROW, boardLayout,
+  );
+
   const renderTile = useCallback(
-    (c: PersonaCardModel, teamName: string | null = null) => (
+    (c: PersonaCardModel, teamName: string | null = null, width = columnWidth) => (
       <PersonaTile
         key={c.personaId}
         card={c}
         teamName={teamName}
         selected={c.personaId === selectedPersonaId}
         onSelect={onSelect}
-        width={TILE_W}
+        width={width}
         height={TILE_H}
         flash={focusKey === `p:${c.personaId}`}
         bubble={bubbles.get(c.personaId) ?? null}
         unseenChat={unseen.get(c.personaId) ?? 0}
       />
     ),
-    [selectedPersonaId, onSelect, focusKey, bubbles, unseen],
+    [selectedPersonaId, onSelect, focusKey, bubbles, unseen, columnWidth],
   );
 
   const renderSessionTile = useCallback(
-    (s: FleetSession) => (
+    (s: FleetSession, width = columnWidth) => (
       <SessionTile
         key={s.id}
         session={s}
-        width={TILE_W}
+        width={width}
         height={SESSION_TILE_H}
         onOpen={onOpenSession}
         onRecap={onRecapSession}
         flash={focusKey === `s:${s.id}`}
       />
     ),
-    [focusKey, onOpenSession, onRecapSession],
+    [focusKey, onOpenSession, onRecapSession, columnWidth],
   );
 
   const renderColumnRow = useCallback(
@@ -102,9 +110,9 @@ export function GridBoard({
     [renderTile, renderSessionTile, t.monitor.grid_sessions],
   );
 
-  const { boardRef, rows } = useBoardRows(model.columns, !model.empty);
-
-  if (isLoading && model.empty) return <BoardGhost />;
+  // No scroller to measure here, so the ghost paints at what the hook holds:
+  // the optimistic pre-measurement width cold, the last measured one warm.
+  if (isLoading && model.empty) return <BoardGhost width={columnWidth} />;
 
   if (model.empty) {
     return (
@@ -122,9 +130,9 @@ export function GridBoard({
 
   return (
     <>
-      {/* Rows of at most five columns, scrolling vertically. Horizontal scroll
-          survives only for a board too narrow to hold even one full row —
-          `boardPerRow` has already taken the smaller of five and what fits. */}
+      {/* Rows of columns, scrolling vertically. Horizontal scroll survives only
+          for a board too narrow to hold even one column — `boardLayout` has
+          already taken the smaller of the ceiling and what fits. */}
       <div
         ref={boardRef}
         className="min-h-0 flex-1 overflow-auto p-3"
@@ -143,6 +151,7 @@ export function GridBoard({
                     column={column}
                     scoped={scopedTeamId === column.teamId}
                     onToggleScope={onToggleScope}
+                    width={columnWidth}
                     renderRow={renderColumnRow}
                     focusKey={focusKey}
                     staged={staged}
@@ -165,8 +174,10 @@ export function GridBoard({
           <UngroupedTray
             cards={model.ungrouped}
             sessions={model.traySessions}
-            renderPersona={(c) => renderTile(c, null)}
-            renderSession={renderSessionTile}
+            // THE TRAY STAYS AT THE NODE WIDTH — its wrap point is `trayPerRow`,
+            // measured with `TILE_W`, and a wider tile would overflow that row.
+            renderPersona={(c) => renderTile(c, null, TILE_W)}
+            renderSession={(s) => renderSessionTile(s, TILE_W)}
           />
         </div>
       )}
