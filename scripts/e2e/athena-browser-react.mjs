@@ -489,6 +489,28 @@ async function main() {
     console.log('dry run complete: nothing was sent, nothing was written');
     return;
   }
+  // The tier table is the operator's setting, not the harness's: remember it
+  // and put it back however the run ends. Measured 2026-09-18: a matrix that
+  // ended on grok left Athena's MAIN tier on grok until someone noticed.
+  const originalTiers = await invoke('companion_get_engine_settings');
+  const restoreTiers = async () => {
+    try {
+      await invoke('companion_set_engine_settings', { settings: originalTiers });
+      console.log(`tiers restored: main ${originalTiers.main.engine}/${originalTiers.main.model}/${originalTiers.main.effort || 'default'}`);
+    } catch (e) {
+      console.error(`could not restore the tier table: ${String(e.message || e)} - set it back in Settings > Engine > Athena tiers`);
+    }
+  };
+  process.once('SIGINT', () => { void restoreTiers().then(() => shutdown(130)); });
+  try {
+    await runSetups(setups, engines, scenarios, recorded);
+  } finally {
+    await restoreTiers();
+  }
+  console.log(`done: results in ${RESULTS}; aggregate with --report`);
+}
+
+async function runSetups(setups, engines, scenarios, recorded) {
   for (const setup of setups) {
     const avail = engines.find((e) => e.engine === setup.engine);
     if (!avail?.installed) {
@@ -514,7 +536,6 @@ async function main() {
       }
     }
   }
-  console.log(`done: results in ${RESULTS}; aggregate with --report`);
 }
 
 main().then(() => shutdown(0)).catch((e) => { console.error('harness failed:', e.message || e); shutdown(1); });
