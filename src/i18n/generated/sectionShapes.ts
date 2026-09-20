@@ -14,7 +14,13 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   "monitor": {},
   "common": {},
   "council": {
-    "galaxy": {}
+    "galaxy": {},
+    "bench": {},
+    "table": {},
+    "gate": {},
+    "evidence": {},
+    "state": {},
+    "member": {}
   },
   "chrome": {
     "system_load": {},
