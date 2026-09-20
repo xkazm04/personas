@@ -1647,6 +1647,9 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_council_list_subjects,
             commands::infrastructure::dev_tools::dev_tools_council_get_run,
             commands::infrastructure::dev_tools::dev_tools_council_decide,
+            commands::infrastructure::dev_tools::dev_tools_council_overlay,
+            commands::infrastructure::dev_tools::dev_tools_council_read_media,
+            commands::infrastructure::dev_tools::dev_tools_registry_galaxy,
             commands::infrastructure::dev_tools::dev_tools_set_use_case_tier,
             // Lives beside the scan whose plumbing it shares, not in the
             // dev_tools tree: one background lane for use-case work.

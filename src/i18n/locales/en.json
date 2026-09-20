@@ -1213,6 +1213,7 @@
     "lifecycle": "Lifecycle",
     "competition": "Competition",
     "mastermind": "Mastermind",
+    "council": "Council",
     "context_map": "Context Map",
     "task_runner": "Run Desk",
     "projects": "Projects",

@@ -34,4 +34,13 @@ trustState: string | null, floorHits: number, hardFailures: number,
 /**
  * 'none' | 'grown' | 'changed' | 'unknown'
  */
-drift: string, runDir: string | null, finishedAt: string | null, decidedAt: string | null, rejectionReason: string | null, };
+drift: string, 
+/**
+ * The project's display name, for a queue that spans every project.
+ */
+projectName: string, 
+/**
+ * Registry subject slugs this council lands on: named by its members, else
+ * matched from the feature's contexts. This is what council focus flies to.
+ */
+registrySubjects: Array<string>, runDir: string | null, finishedAt: string | null, decidedAt: string | null, rejectionReason: string | null, };

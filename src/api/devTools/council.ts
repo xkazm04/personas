@@ -7,9 +7,14 @@
 // command is the only writer of a human decision.
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { CouncilDecision } from "@/lib/bindings/CouncilDecision";
 import type { CouncilIngestSummary } from "@/lib/bindings/CouncilIngestSummary";
+import type { CouncilMedia } from "@/lib/bindings/CouncilMedia";
+import type { CouncilOverlay } from "@/lib/bindings/CouncilOverlay";
+import type { CouncilRunDetail } from "@/lib/bindings/CouncilRunDetail";
 import type { CouncilSubjectState } from "@/lib/bindings/CouncilSubjectState";
 import type { DevUseCase } from "@/lib/bindings/DevUseCase";
+import type { RegistryGalaxy } from "@/lib/bindings/RegistryGalaxy";
 import type { SkillEntry } from "@/lib/bindings/SkillEntry";
 
 /** The shared skill a council dispatch invokes. Linked from the ai-registry. */
@@ -62,4 +67,46 @@ export async function councilSkillInstalled(projectId: string): Promise<boolean>
 /** Only tier 'major' subjects reach the human gate. */
 export async function setUseCaseTier(useCaseId: string, tier: UseCaseTier): Promise<DevUseCase> {
   return invoke<DevUseCase>("dev_tools_set_use_case_tier", { useCaseId, tier });
+}
+
+/** One run with its verdicts and the `sawDigest` the gate must hand back. */
+export async function getCouncilRun(runId: string): Promise<CouncilRunDetail> {
+  return invoke<CouncilRunDetail>("dev_tools_council_get_run", { runId });
+}
+
+export type CouncilDecisionKind = "approved" | "rejected";
+
+/**
+ * The ONLY writer of a human decision. `sawDigest` is compare-and-swap: the
+ * door refuses when the council moved since the person looked.
+ */
+export async function decideCouncil(
+  subjectId: string,
+  runId: string,
+  decision: CouncilDecisionKind,
+  sawDigest: string,
+  reason?: string,
+): Promise<CouncilDecision> {
+  return invoke<CouncilDecision>("dev_tools_council_decide", {
+    subjectId,
+    runId,
+    decision,
+    reason,
+    sawDigest,
+  });
+}
+
+/** Council signal per registry subject, across every project in the store. */
+export async function getCouncilOverlay(): Promise<CouncilOverlay> {
+  return invoke<CouncilOverlay>("dev_tools_council_overlay", {});
+}
+
+/** The registry topology, derived from the paired checkout on every read. */
+export async function getRegistryGalaxy(registryRoot: string): Promise<RegistryGalaxy> {
+  return invoke<RegistryGalaxy>("dev_tools_registry_galaxy", { registryRoot });
+}
+
+/** One evidence file from inside a run directory (path-confined by the door). */
+export async function readCouncilMedia(runId: string, relPath: string): Promise<CouncilMedia> {
+  return invoke<CouncilMedia>("dev_tools_council_read_media", { runId, relPath });
 }

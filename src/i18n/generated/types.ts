@@ -1219,6 +1219,7 @@ export type Translations = {
     lifecycle: string;
     competition: string;
     mastermind: string;
+    council: string;
     context_map: string;
     task_runner: string;
     projects: string;
