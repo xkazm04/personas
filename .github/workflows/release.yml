@@ -194,7 +194,21 @@ jobs:
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # vite.config.ts emits `hidden` sourcemaps ONLY under this flag. This
+          # is the one build that needs them (Sentry symbolicates shipped
+          # crashes from it); every other build in the repo — dev, gates,
+          # check:tiers, a local tauri build — now skips 1,500 files / 66 MB.
+          PERSONAS_RELEASE: "1"
         run: npm run build
+
+      - name: Move sourcemaps out of dist
+        # frontend-dist is what tauri-action packages into every installer, and
+        # `beforeBuildCommand: ""` in the build job means the beforeBuildCommand
+        # pruning that protects a LOCAL `tauri build` never ran here. So every
+        # released installer carried ~1,500 .map files nothing reads. Prune
+        # before the artifact is made, and ship the maps as their own artifact
+        # for the Sentry step, which is the only consumer.
+        run: node scripts/prune-sourcemaps.mjs
 
       - name: Upload frontend dist
         uses: actions/upload-artifact@v4
@@ -202,6 +216,14 @@ jobs:
           name: frontend-dist
           path: dist/
           retention-days: 1
+
+      - name: Upload frontend sourcemaps
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-sourcemaps
+          path: dist-sourcemaps/
+          retention-days: 1
+          if-no-files-found: error
 
   # ─── Job 3: Build native binaries on all platforms ────────
   build:
@@ -348,6 +370,17 @@ jobs:
           name: frontend-dist
           path: dist/
 
+      - name: Download frontend sourcemaps
+        # Only the runner that uploads to Sentry needs these, and only on a
+        # publish run — matching the "Upload source maps to Sentry" step's
+        # condition exactly. They stay OUT of dist/, so nothing here can leak
+        # them back into the bundle tauri-action packages.
+        if: matrix.label == 'linux-x64' && needs.version.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-sourcemaps
+          path: dist-sourcemaps/
+
       - name: Install frontend dependencies
         run: npm ci
 
@@ -413,6 +446,10 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           VERSION="${{ needs.version.outputs.new_version }}"
+          if [ ! -d ./dist-sourcemaps ]; then
+            echo "::error::dist-sourcemaps/ is missing — the frontend job did not produce maps, so this release cannot be symbolicated."
+            exit 1
+          fi
           if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
             npx @sentry/cli@latest releases \
               --org "$SENTRY_ORG" \
@@ -422,7 +459,7 @@ jobs:
               --org "$SENTRY_ORG" \
               --project "$SENTRY_PROJECT" \
               files "$VERSION" \
-              upload-sourcemaps ./dist \
+              upload-sourcemaps ./dist ./dist-sourcemaps \
               --url-prefix "~/"
             npx @sentry/cli@latest releases \
               --org "$SENTRY_ORG" \
