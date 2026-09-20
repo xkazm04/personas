@@ -407,6 +407,9 @@ pub async fn run_execution(
     // Fields other than `model` on the object merge into the persona's base
     // profile (provider, temperature, etc.). If no override: untouched.
     let mut engine_mode: Option<String> = None;
+    // Which fields an explicit override named - the only thing the difficulty
+    // step further down yields to (see `prompt::OverrideNamed`).
+    let mut override_named = prompt::OverrideNamed::default();
     if let (Some(uc_id), Some(ref dc_json)) = (&execution_use_case_id, &persona.design_context) {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
             let uc_value = crate::engine::design_context::pick_use_cases_array(&dc)
@@ -434,6 +437,7 @@ pub async fn run_execution(
                 .cloned();
 
             if let Some(override_val) = uc_override {
+                override_named = prompt::OverrideNamed::of(Some(&override_val));
                 let base_profile = model_profile.clone().unwrap_or_default();
                 let merged = match override_val {
                     serde_json::Value::String(model_name) => ModelProfile {
@@ -479,6 +483,37 @@ pub async fn run_execution(
             .and_then(|c| c.spec.engine_mode.as_deref())
             .map(|m| m.to_ascii_lowercase())
             .filter(|m| m == "mixed" || m == "local_first");
+    }
+
+    // Difficulty routing for a focused charter (spark
+    // `resource-aware-orchestration`, order per operator decision Q15):
+    // override > the charter's DECLARED difficulty > the persona's own profile
+    // > the `model_routing` cascade rule > the sonnet floor below. The persona
+    // profile and the cascade rule were resolved above; the difficulty
+    // outranks both, so it REPLACES the model and the effort - except a field
+    // the override named. Only a profile the charter DECLARED routes: an
+    // untagged charter keeps the persona's model and falls through to the
+    // floor exactly as before. `execute_persona_inner` applies the same step
+    // for a capability dispatch (idempotent here); this covers a charter
+    // focused by payload alone. A charter dispatched directly has no
+    // design-context row, so its override is read off `spec.modelOverride`,
+    // the same fallback `execute_persona_inner` takes.
+    if let Some(ch) = focused_charter.as_ref() {
+        if override_named == prompt::OverrideNamed::default() {
+            override_named = prompt::OverrideNamed::of(
+                ch.spec
+                    .model_override
+                    .clone()
+                    .map(serde_json::Value::String)
+                    .as_ref(),
+            );
+        }
+        model_profile = prompt::fill_profile_from_routing(
+            model_profile.take(),
+            override_named,
+            None,
+            ch.spec.resource_profile.as_ref().map(|p| p.difficulty),
+        );
     }
 
     // Capability-tier floor — the single authoritative chokepoint for EVERY

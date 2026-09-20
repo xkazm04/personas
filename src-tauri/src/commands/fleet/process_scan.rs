@@ -186,6 +186,7 @@ pub async fn fleet_resume_orphan(app: AppHandle, pid: u32, cwd: String) -> Resul
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .await

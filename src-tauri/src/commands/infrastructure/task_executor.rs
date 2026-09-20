@@ -1059,6 +1059,7 @@ fn dev_runner_request(
         goal_id: None,
         cycle_index: None,
         not_before_ms: None,
+        profile: None,
     }
 }
 

@@ -61,6 +61,7 @@ mod e35_use_cases_auto_approve;
 mod e36_fleet_queue;
 mod e37_dispatch_order_retired;
 mod e38_project_enabled;
+mod e39_fleet_budgets;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -118,6 +119,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e36_fleet_queue::run(conn)?;
     e37_dispatch_order_retired::run(conn)?;
     e38_project_enabled::run(conn)?;
+    e39_fleet_budgets::run(conn)?;
 
     Ok(())
 }

@@ -23,6 +23,21 @@
 //! raised cap, a boot reconcile), in rank order, skipping rows whose
 //! `not_before_ms` is still ahead.
 //!
+//! ## Budgets
+//!
+//! The count cap is shorthand for "N sessions of equal cost", and fleet
+//! sessions do not cost the same. With `fleet.dynamic_budgets` on (the
+//! default) the door also charges each dispatch two resource budgets -
+//! machine units and Claude-plan units - through the pure rules in
+//! [`super::budgets`]: a dispatch starts now only when it is under the count
+//! cap, its time gate has passed AND its charge fits; promotion takes the
+//! first queued entry that fits (aged backfill), and a closed RAM gate, a full
+//! five-hour window or a held GPU token defer PROMOTION only - nothing here
+//! ever touches a session that is already live. The count cap stays the hard
+//! ceiling; with the setting off the door is exactly the count-only door it
+//! was before. The measured inputs ([`BudgetLive`]) are refreshed by the
+//! staleness ticker ([`schedule_budget_tick`]), never per admission.
+//!
 //! ## Layering
 //!
 //! The in-memory registry is the admission authority while the app runs
@@ -48,10 +63,12 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_core::events::QueueChangedPayload;
+use personas_core::models::{GpuClass, ResourceProfile};
 
+use super::budgets::{self, BudgetInputs, Budgets, Charge, Used};
 use super::pty::SpawnIdentity;
 use super::registry::{
-    now_ms, registry, FleetRegistry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP,
+    now_ms, registry, AdmissionFacts, FleetRegistry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP,
 };
 use super::types::{state_to_token, FleetSessionMode, FleetSessionState};
 
@@ -124,6 +141,11 @@ pub struct DispatchRequest {
     /// floor of a re-enqueued cycle is enforced — and promoted once the gate
     /// has passed (the staleness ticker calls [`schedule_promote_head`]).
     pub not_before_ms: Option<i64>,
+    /// What this run costs the machine and the plan (the charter's
+    /// `spec.resourceProfile`, stamped by the dispatcher). `None` - a manual
+    /// session, or a charter nobody tagged - is charged as
+    /// [`ResourceProfile::default`].
+    pub profile: Option<ResourceProfile>,
 }
 
 /// The provenance a dispatcher stamps on a request: who asked, for which
@@ -220,6 +242,85 @@ fn codex_model(args: &[String]) -> Option<String> {
         .cloned()
 }
 
+/// Admit refusal reason: the entry's machine or plan units exceed the STATIC
+/// maximum budget, so no amount of waiting would ever fit it. Refused at the
+/// door, never queued. The refusal is an `AppError::Validation` whose message
+/// STARTS with this token (the `Admission` wire shape has no refused arm).
+pub const REFUSAL_EXCEEDS_BUDGET: &str = "exceeds_budget";
+
+/// Why promotion is being held back even though a count slot may be free.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum BudgetHold {
+    /// Ahead of Claude plan pace: the plan budget has shrunk.
+    AheadOfPace,
+    /// The five-hour window is full; the plan budget is zero.
+    FiveHourFull,
+    /// Measured RAM crossed the high-water mark; promotion is deferred.
+    RamHighWater,
+    /// A `gpu = exclusive` session holds the single GPU token.
+    GpuTokenHeld,
+}
+
+/// The RAM promotion gate (hysteresis: closes high, reopens low). `Warming`
+/// is the sampler's first sample, which is never acted on.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum RamGate {
+    #[default]
+    Open,
+    Closed,
+    Warming,
+}
+
+/// The two budgets admission charges, as the Monitor reads them.
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FleetBudgets {
+    /// `fleet.dynamic_budgets` - off means pure count-cap behaviour.
+    pub enabled: bool,
+    pub machine_used: u32,
+    pub machine_budget: u32,
+    pub plan_used: u32,
+    pub plan_budget: u32,
+    /// The plan budget at pace factor 1 (static cap x 2).
+    pub plan_budget_max: u32,
+    pub pace_factor: f64,
+    /// Negative = ahead of plan pace; `None` when pacing is unknown.
+    pub behind_pct: Option<f64>,
+    pub ram_pct: Option<f64>,
+    pub ram_gate: RamGate,
+    /// Session id holding the single GPU token, if any.
+    pub gpu_holder: Option<String>,
+    /// The one reason promotion is currently held, if it is.
+    pub hold: Option<BudgetHold>,
+}
+
+impl FleetBudgets {
+    /// Budgets that change nothing: every count slot is worth one machine
+    /// unit and two plan units, nothing is charged, nothing is held.
+    pub fn neutral(cap: u32) -> Self {
+        let plan = cap.saturating_mul(2);
+        Self {
+            enabled: true,
+            machine_used: 0,
+            machine_budget: cap,
+            plan_used: 0,
+            plan_budget: plan,
+            plan_budget_max: plan,
+            pace_factor: 1.0,
+            behind_pct: None,
+            ram_pct: None,
+            ram_gate: RamGate::Open,
+            gpu_holder: None,
+            hold: None,
+        }
+    }
+}
+
 /// What the door decided.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -253,6 +354,15 @@ pub struct FleetQueueEntry {
     /// when there is no history to estimate from.
     #[ts(type = "number | null")]
     pub estimated_start_ms: Option<i64>,
+    /// Machine units this entry will be charged (see `MachineLoad::units`).
+    pub machine_units: u32,
+    /// Plan units this entry will be charged (see `EffortBand::units`).
+    pub plan_units: u32,
+    pub gpu: GpuClass,
+    /// How many times promotion backfilled past this entry.
+    pub skips: u32,
+    /// Why THIS entry is not being promoted, when a budget is the reason.
+    pub held_by: Option<BudgetHold>,
 }
 
 /// The queue as the Monitor reads it.
@@ -267,6 +377,7 @@ pub struct FleetQueueSnapshot {
     /// past its own line.
     pub over_admitted: u32,
     pub entries: Vec<FleetQueueEntry>,
+    pub budgets: FleetBudgets,
 }
 
 /// How many ended sessions the start estimate averages over.
@@ -311,6 +422,166 @@ pub fn live_count() -> u32 {
     registry().live_count()
 }
 
+/// The last `fleet.dynamic_budgets` reading, for a reader with no pool yet.
+static DYNAMIC_BUDGETS_CACHED: AtomicBool =
+    AtomicBool::new(settings_keys::FLEET_DYNAMIC_BUDGETS_DEFAULT);
+
+/// `fleet.dynamic_budgets` - the kill switch. Off = the count-only door.
+/// Unset or unparseable reads as the default (on).
+pub fn dynamic_budgets(pool: &DbPool) -> bool {
+    let on = crate::db::repos::core::settings::get(pool, settings_keys::FLEET_DYNAMIC_BUDGETS)
+        .ok()
+        .flatten()
+        .and_then(|v| v.trim().parse::<bool>().ok())
+        .unwrap_or(settings_keys::FLEET_DYNAMIC_BUDGETS_DEFAULT);
+    DYNAMIC_BUDGETS_CACHED.store(on, Ordering::Relaxed);
+    on
+}
+
+/// [`dynamic_budgets`] through an `AppHandle`, read like [`cap_via_app`].
+pub fn dynamic_budgets_via_app(app: &AppHandle) -> bool {
+    match pool_of(app) {
+        Some(pool) => dynamic_budgets(&pool),
+        None => DYNAMIC_BUDGETS_CACHED.load(Ordering::Relaxed),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The measured half of the budgets
+// ---------------------------------------------------------------------------
+
+/// A pacing reading older than this is treated as "not measured" (fail open):
+/// the ticker only refreshes it while the fleet has work, so an idle fleet's
+/// last reading must not hold the first dispatch of the next morning.
+const PACING_STALE_MS: i64 = 10 * 60 * 1000;
+
+/// What the budgets were last measured from, plus the GPU token. Process
+/// global ([`budget_live`]); refreshed by [`refresh_budget_state`] on the
+/// staleness ticker and read - never re-measured - by every admission
+/// (`resource-denominated-bounds`: "resolve once and cache; never re-read on
+/// the hot path").
+#[derive(Clone, Debug)]
+pub(super) struct BudgetLive {
+    behind_pct: Option<f64>,
+    five_hour_full: bool,
+    governor_stop: bool,
+    memory_slots: Option<u32>,
+    /// When the pacing half was read; `0` = never.
+    pacing_as_of_ms: i64,
+    ram_pct: Option<f64>,
+    ram_gate: RamGate,
+    ram_samples: u32,
+    /// Session id holding the single GPU token.
+    gpu_holder: Option<String>,
+    /// The `(gate, hold)` pair last announced on `fleet-queue-changed`.
+    announced: (RamGate, Option<BudgetHold>),
+}
+
+impl BudgetLive {
+    pub(super) const fn new() -> Self {
+        Self {
+            behind_pct: None,
+            five_hour_full: false,
+            governor_stop: false,
+            memory_slots: None,
+            pacing_as_of_ms: 0,
+            ram_pct: None,
+            // Nothing sampled yet: warming, which never holds.
+            ram_gate: RamGate::Warming,
+            ram_samples: 0,
+            gpu_holder: None,
+            announced: (RamGate::Warming, None),
+        }
+    }
+
+    /// The pure rules' inputs as of `now`. A stale pacing half is dropped.
+    fn inputs(&self, cap: u32, enabled: bool, now: i64) -> BudgetInputs {
+        let fresh =
+            self.pacing_as_of_ms > 0 && now.saturating_sub(self.pacing_as_of_ms) <= PACING_STALE_MS;
+        BudgetInputs {
+            cap,
+            enabled,
+            behind_pct: self.behind_pct.filter(|_| fresh),
+            five_hour_full: fresh && self.five_hour_full,
+            governor_stop: fresh && self.governor_stop,
+            memory_slots: self.memory_slots.filter(|_| fresh),
+            ram_pct: self.ram_pct,
+            ram_gate: self.ram_gate,
+        }
+    }
+
+    /// Take one RAM reading through the gate's state machine. Returns
+    /// `(previous, next)` so the caller can log and announce a transition.
+    fn note_ram(&mut self, ram_pct: Option<f64>) -> (RamGate, RamGate) {
+        self.ram_samples = self.ram_samples.saturating_add(1);
+        self.ram_pct = ram_pct;
+        let prev = self.ram_gate;
+        self.ram_gate = budgets::next_ram_gate(prev, ram_pct, self.ram_samples);
+        (prev, self.ram_gate)
+    }
+
+    /// The GPU token follows the live set: a holder that left it releases the
+    /// token, and a free token is adopted by the OLDEST live `gpu = exclusive`
+    /// session. The second half is the startup recovery (restored live rows
+    /// carry their `gpu_class`) and what settles a start-now that put two
+    /// exclusive sessions live at once.
+    fn reconcile_gpu(&mut self, live: &[(String, i64, Charge)]) {
+        let exclusive = |id: &str| {
+            live.iter()
+                .any(|(lid, _, c)| lid == id && c.gpu == GpuClass::Exclusive)
+        };
+        if self.gpu_holder.as_deref().is_some_and(|h| !exclusive(h)) {
+            self.gpu_holder = None;
+        }
+        if self.gpu_holder.is_none() {
+            self.gpu_holder = live
+                .iter()
+                .filter(|(_, _, c)| c.gpu == GpuClass::Exclusive)
+                .min_by_key(|(id, created, _)| (*created, id.clone()))
+                .map(|(id, _, _)| id.clone());
+        }
+    }
+
+    /// What the live set costs right now, token reconciled first.
+    fn used(&mut self, reg: &FleetRegistry) -> Used {
+        let live = reg.live_charges();
+        self.reconcile_gpu(&live);
+        let mut used = Used {
+            gpu_held: self.gpu_holder.is_some(),
+            ..Used::default()
+        };
+        for (_, _, charge) in &live {
+            used.add(*charge);
+        }
+        used
+    }
+}
+
+static BUDGET_LIVE: Mutex<BudgetLive> = Mutex::new(BudgetLive::new());
+
+/// The process-global measured state. A poisoned lock is recovered: this is a
+/// cache of readings, and the next tick rewrites it.
+fn budget_live() -> std::sync::MutexGuard<'static, BudgetLive> {
+    BUDGET_LIVE.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// `(inputs, used, gpu holder)` for one decision, read under one lock
+/// acquisition.
+fn budget_reading(
+    reg: &FleetRegistry,
+    cap: u32,
+    enabled: bool,
+    now: i64,
+) -> (BudgetInputs, Used, Option<String>) {
+    let mut live = budget_live();
+    let used = live.used(reg);
+    (
+        live.inputs(cap, enabled, now),
+        used,
+        live.gpu_holder.clone(),
+    )
+}
+
 fn pool_of(app: &AppHandle) -> Option<DbPool> {
     app.try_state::<Arc<AppState>>().map(|s| s.db.clone())
 }
@@ -326,6 +597,192 @@ fn pool_or_err(app: &AppHandle) -> Result<DbPool, AppError> {
 /// Whether a dispatch may start now: strictly under the cap.
 fn under_cap(running: u32, cap: u32) -> bool {
     running < cap
+}
+
+/// Why a dispatch waits instead of starting.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum QueueWhy {
+    /// The fleet is at its live-session count cap.
+    Cap,
+    /// The dispatch's own `not_before_ms` is still ahead.
+    Gated,
+    /// A named budget reason holds it.
+    Held(BudgetHold),
+    /// The budgets are occupied by live work (no pressure signal).
+    BudgetFull,
+    /// An aged entry ahead of it must start first: backfill is suspended.
+    BehindAged,
+}
+
+impl QueueWhy {
+    fn label(self) -> String {
+        match self {
+            QueueWhy::Cap => "the fleet is at its live-session cap".into(),
+            QueueWhy::Gated => "its earliest start is still ahead".into(),
+            QueueWhy::Held(hold) => format!("held by {}", hold_label(hold)),
+            QueueWhy::BudgetFull => "the machine and plan budgets are in use".into(),
+            QueueWhy::BehindAged => {
+                "an older dispatch that has waited its turn out starts first".into()
+            }
+        }
+    }
+}
+
+/// The hold's words for a row's `state_reason` and the lifecycle log.
+fn hold_label(hold: BudgetHold) -> &'static str {
+    match hold {
+        BudgetHold::AheadOfPace => "the plan budget (ahead of the weekly pace)",
+        BudgetHold::FiveHourFull => "the five-hour window (full)",
+        BudgetHold::RamHighWater => "the RAM gate (memory above its high-water mark)",
+        BudgetHold::GpuTokenHeld => "the GPU token (another session holds it)",
+    }
+}
+
+/// The door's three verdicts (`admission-vocabulary`): start now, wait, or
+/// never. `Start.passed` names the queued entries this start backfills past.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Door {
+    Start { passed: Vec<String> },
+    Queue(QueueWhy),
+    Refuse,
+}
+
+/// One walk of the queue in promotion order against the budgets.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct QueueScan {
+    /// The first time-eligible entry that fits - what promotion starts next.
+    pick: Option<String>,
+    /// Time-eligible entries AHEAD of the pick (or all of them, when there is
+    /// no pick) that do not fit right now.
+    unfit: Vec<String>,
+    /// The walk stopped at an AGED unfit entry: nothing behind it may start
+    /// until it does.
+    blocked_by_aged: bool,
+}
+
+/// Walk the queue: first time-eligible entry that fits, honouring the aging
+/// bound. With budgets off this is [`head_to_promote`] and nothing else.
+fn scan_queue(reg: &FleetRegistry, now: i64, inputs: &BudgetInputs, used: Used) -> QueueScan {
+    if !inputs.enabled {
+        return QueueScan {
+            pick: head_to_promote(reg, now),
+            ..QueueScan::default()
+        };
+    }
+    let budgets = budgets::budgets_from(inputs, used);
+    let mut scan = QueueScan::default();
+    for (id, not_before, facts) in reg.queued_admissions_in_order() {
+        if not_before.is_some_and(|t| t > now) {
+            // A time gate is skipped, not waited on, and is not "unfit".
+            continue;
+        }
+        if budgets::fits(facts.charge(), used, &budgets).is_ok() {
+            scan.pick = Some(id);
+            return scan;
+        }
+        let aged = budgets::is_aged(facts.skip_count, facts.first_unfit_at_ms, now);
+        scan.unfit.push(id);
+        if aged {
+            scan.blocked_by_aged = true;
+            return scan;
+        }
+    }
+    scan
+}
+
+/// The pure admission decision. Budgets off = the count-only door, exactly.
+/// Every origin obeys the same rules - there are no exemptions here; the one
+/// bypass is the operator's explicit [`fleet_queue_start_now`].
+fn door_verdict(
+    reg: &FleetRegistry,
+    req: &DispatchRequest,
+    now: i64,
+    inputs: &BudgetInputs,
+    used: Used,
+) -> Door {
+    door_verdict_for(
+        reg,
+        Charge::from_profile(req.profile.as_ref()),
+        req.not_before_ms,
+        now,
+        inputs,
+        used,
+    )
+}
+
+/// [`door_verdict`] over the two facts of the request it reads.
+fn door_verdict_for(
+    reg: &FleetRegistry,
+    charge: Charge,
+    not_before_ms: Option<i64>,
+    now: i64,
+    inputs: &BudgetInputs,
+    used: Used,
+) -> Door {
+    let under = under_cap(reg.live_count(), inputs.cap);
+    let gate_ahead = not_before_ms.is_some_and(|t| t > now);
+    if !inputs.enabled {
+        return if under && !gate_ahead {
+            Door::Start { passed: Vec::new() }
+        } else if gate_ahead {
+            Door::Queue(QueueWhy::Gated)
+        } else {
+            Door::Queue(QueueWhy::Cap)
+        };
+    }
+    let budgets = budgets::budgets_from(inputs, used);
+    if budgets::never_fits(charge, &budgets) {
+        return Door::Refuse;
+    }
+    if gate_ahead {
+        return Door::Queue(QueueWhy::Gated);
+    }
+    if !under {
+        return Door::Queue(QueueWhy::Cap);
+    }
+    if let Err(unfit) = budgets::fits(charge, used, &budgets) {
+        return Door::Queue(match unfit.hold() {
+            Some(hold) => QueueWhy::Held(hold),
+            None => QueueWhy::BudgetFull,
+        });
+    }
+    // It fits - but a direct start is a backfill past the waiting line, and
+    // an aged entry suspends backfill for arrivals as it does for promotion.
+    let scan = scan_queue(reg, now, inputs, used);
+    if scan.blocked_by_aged {
+        return Door::Queue(QueueWhy::BehindAged);
+    }
+    Door::Start { passed: scan.unfit }
+}
+
+/// Record a pass's verdict on the entries it found unfit (see
+/// [`FleetRegistry::note_unfit`]). Returns what changed, for the durable rows.
+fn mark_unfit(
+    reg: &FleetRegistry,
+    unfit: &[String],
+    now: i64,
+    skipped: bool,
+) -> Vec<(String, u32, Option<i64>)> {
+    unfit
+        .iter()
+        .filter_map(|id| {
+            reg.note_unfit(id, now, skipped)
+                .map(|(skips, first)| (id.clone(), skips, first))
+        })
+        .collect()
+}
+
+/// Write the skip memory to the durable rows.
+fn persist_skips(app: &AppHandle, marks: &[(String, u32, Option<i64>)]) {
+    if marks.is_empty() {
+        return;
+    }
+    let Some(pool) = pool_of(app) else { return };
+    for (id, skips, first) in marks {
+        if let Err(err) = fleet_sessions::set_skip_state(&pool, id, *skips, *first) {
+            tracing::warn!(session_id = %id, error = %err, "fleet queue: skip-state write failed");
+        }
+    }
 }
 
 /// Admit a dispatch: spawn it now if a slot is free, queue it otherwise.
@@ -347,9 +804,31 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
     }
     let cap = cap_via_app(app) as u32;
     let running = live_count();
-    let gate_ahead = req.not_before_ms.is_some_and(|t| t > now_ms());
-    if under_cap(running, cap) && !gate_ahead {
+    let now = now_ms();
+    let gate_ahead = req.not_before_ms.is_some_and(|t| t > now);
+    let (inputs, used, _) = budget_reading(registry(), cap, dynamic_budgets_via_app(app), now);
+    let verdict = door_verdict(registry(), &req, now, &inputs, used);
+    if let Door::Refuse = verdict {
+        let charge = Charge::from_profile(req.profile.as_ref());
+        super::debug_log::lifecycle(
+            "-",
+            "refused",
+            &format!(
+                "{REFUSAL_EXCEEDS_BUDGET} · {} machine / {} plan units can never fit",
+                charge.machine, charge.plan
+            ),
+        );
+        return Err(AppError::Validation(format!(
+            "{REFUSAL_EXCEEDS_BUDGET}: this dispatch is charged {} machine and {} plan units, \
+             more than the fleet's budgets could ever hold - declare a lighter resource profile",
+            charge.machine, charge.plan
+        )));
+    }
+    if let Door::Start { passed } = &verdict {
         let session_id = spawn_now(app, &req, None)?;
+        // A direct start is a backfill past whatever waits unfit: count it -
+        // once the spawn has actually happened.
+        persist_skips(app, &mark_unfit(registry(), passed, now, true));
         super::debug_log::lifecycle(
             &session_id,
             "admitted",
@@ -363,11 +842,27 @@ pub fn admit_sync(app: &AppHandle, req: DispatchRequest) -> Result<Admission, Ap
             running: running + 1,
         });
     }
+    let budget_wait = match verdict {
+        Door::Queue(why @ (QueueWhy::Held(_) | QueueWhy::BudgetFull | QueueWhy::BehindAged)) => {
+            Some(why)
+        }
+        _ => None,
+    };
     let (session_id, rank) = enqueue(app, &req, cap, running)?;
+    if let Some(why) = budget_wait {
+        // Under the count cap and still waiting: say what holds it.
+        registry().set_state_reason(
+            &session_id,
+            &format!("Queued at rank {rank} — {}", why.label()),
+        );
+        super::persist::note_changed(app, &session_id);
+    }
     super::debug_log::lifecycle(
         &session_id,
         "queued",
-        &if gate_ahead {
+        &if let Some(why) = budget_wait {
+            format!("rank {rank} · {} ({running} of {cap} live)", why.label())
+        } else if gate_ahead {
             format!(
                 "rank {rank} · gated until {} ({running} of {cap} live)",
                 req.not_before_ms.unwrap_or_default()
@@ -441,6 +936,15 @@ fn spawn_now(
         req.goal_id.clone(),
         req.cycle_index,
     );
+    // ... and its charge: the live set's cost is summed from the rows, so a
+    // session that never queued (or was started over the budgets by the
+    // operator) is counted in `used` like any other. A promoted row already
+    // carries the charge it was admitted with; the stamp never overwrites it.
+    registry().stamp_charge(&id, Charge::from_profile(req.profile.as_ref()));
+    // Take the GPU token (a no-op unless this row is `gpu = exclusive` and the
+    // token is free) and make the stamps durable.
+    budget_live().used(registry());
+    super::persist::note_changed(app, &id);
     // A promoted row keeps the display name it was given while it waited (a
     // dispatcher may have renamed it, e.g. `athena-writer · personas`); only a
     // row with no name yet takes the spawn's.
@@ -536,6 +1040,9 @@ fn queued_inner(
         persona_id: req.persona_id.clone(),
         goal_id: req.goal_id.clone(),
         cycle_index: req.cycle_index,
+        // The verdict precedes the record, and the record carries the charge:
+        // promotion and `used` both read it from the row.
+        admission: AdmissionFacts::charged(Charge::from_profile(req.profile.as_ref())),
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
@@ -595,12 +1102,27 @@ static PROMOTING: AtomicBool = AtomicBool::new(false);
 /// Schedule [`promote_head`] on the runtime. Never blocks the caller — this is
 /// what the state emitter and the settings writer call.
 pub fn schedule_promote_head(app: &AppHandle) {
+    schedule_promotion(app, false);
+}
+
+/// The staleness ticker's call: re-measure the budgets' inputs (RAM gate,
+/// pacing), THEN run a promotion pass. This is what re-evaluates the queue
+/// when nothing left the live set - a RAM gate that reopened, a pace that
+/// recovered, a `not_before_ms` that came due. One existing timer, no new one.
+pub fn schedule_budget_tick(app: &AppHandle) {
+    schedule_promotion(app, true);
+}
+
+fn schedule_promotion(app: &AppHandle, refresh: bool) {
     let app = app.clone();
     // Spawn on the runtime's own tokio handle (callable from any thread, as
     // the PTY readers are) so the JoinHandle carries a `JoinError` whose
     // `is_panic` can be read.
     let rt = tauri::async_runtime::handle();
     let handle = rt.inner().spawn(async move {
+        if refresh {
+            refresh_budget_state(&app).await;
+        }
         promote_head(&app).await;
     });
     // The promotion pass's death is its own outcome: a panic here would leave
@@ -614,6 +1136,97 @@ pub fn schedule_promote_head(app: &AppHandle) {
             }
         }
     });
+}
+
+/// One warning per outage, not one per tick.
+static RAM_PROBE_WARNED: AtomicBool = AtomicBool::new(false);
+
+/// Re-measure what the budgets are derived from. With the kill switch off
+/// nothing is sampled. The RAM reading is taken every tick (one cheap sample
+/// of the shared sampler); the pacing half - which may cost a usage-endpoint
+/// call, cached 45 s process-wide - only while the fleet has work, so an idle
+/// fleet does not poll. Defers promotion only: nothing here reaches a live
+/// session.
+async fn refresh_budget_state(app: &AppHandle) {
+    let Some(state) = app.try_state::<Arc<AppState>>() else {
+        return;
+    };
+    let state: Arc<AppState> = state.inner().clone();
+    let pool = state.db.clone();
+    if !dynamic_budgets(&pool) {
+        return;
+    }
+    let fleet_has_work = live_count() > 0 || !registry().queued_in_order().is_empty();
+    let (ram_pct, pacing) = if fleet_has_work {
+        let pacing = crate::engine::subscription::usage_pacing::verdict(&pool, &state).await;
+        let stopped = crate::engine::subscription::usage_governor::verdict(&pool)
+            .await
+            .blocked;
+        (Some(pacing.memory_used_pct), Some((pacing, stopped)))
+    } else {
+        let mem = crate::engine::subscription::usage_pacing::read_memory(&state);
+        (Some(mem.used_pct), None)
+    };
+    // A sampler that could not read the host reports 0 of 0: spell that as
+    // "not measured" so the gate fails OPEN out loud instead of reading calm.
+    let ram_pct = ram_pct.filter(|p| p.is_finite() && *p > 0.0);
+    let (prev, next) = {
+        let mut live = budget_live();
+        if let Some((pacing, stopped)) = pacing {
+            live.behind_pct = pacing.behind_pct;
+            live.five_hour_full = pacing
+                .five_hour_pct
+                .is_some_and(|pct| pct >= pacing.five_hour_line_pct);
+            live.governor_stop = stopped;
+            live.memory_slots = Some(u32::try_from(pacing.memory_slots).unwrap_or(u32::MAX));
+            live.pacing_as_of_ms = now_ms();
+        }
+        live.note_ram(ram_pct)
+    };
+    if ram_pct.is_none() {
+        if !RAM_PROBE_WARNED.swap(true, Ordering::Relaxed) {
+            tracing::warn!("fleet queue: RAM probe unreadable - the promotion gate fails OPEN");
+        }
+    } else {
+        RAM_PROBE_WARNED.store(false, Ordering::Relaxed);
+    }
+    let closed_now = next == RamGate::Closed && prev != RamGate::Closed;
+    let reopened_now = prev == RamGate::Closed && next != RamGate::Closed;
+    if closed_now || reopened_now {
+        tracing::info!(
+            ram_pct = ?ram_pct,
+            close_at = budgets::RAM_GATE_CLOSE_PCT,
+            reopen_at = budgets::RAM_GATE_REOPEN_PCT,
+            "fleet queue: RAM promotion gate {}",
+            if closed_now {
+                "CLOSED - queued dispatches wait; live sessions are untouched"
+            } else {
+                "reopened"
+            }
+        );
+    }
+}
+
+/// Announce a change of the gate / hold pair on `fleet-queue-changed` so the
+/// Monitor's budgets block re-reads the snapshot. The existing `cap_changed`
+/// kind is reused on purpose: it already means "capacity moved, re-read", and
+/// a new kind would change the event's closed vocabulary on the wire.
+fn announce_budget_state(app: &AppHandle, cap: u32, enabled: bool) {
+    let now = now_ms();
+    let (inputs, used, gpu_holder) = budget_reading(registry(), cap, enabled, now);
+    let current = (
+        inputs.ram_gate,
+        budget_view(registry(), &inputs, used, gpu_holder, now).hold,
+    );
+    let changed = {
+        let mut live = budget_live();
+        let changed = live.announced != current;
+        live.announced = current;
+        changed
+    };
+    if changed {
+        emit_queue_changed(app, "cap_changed", None);
+    }
 }
 
 /// The next row to promote: lowest rank whose `not_before_ms` has passed.
@@ -633,12 +1246,24 @@ pub async fn promote_head(app: &AppHandle) {
         return;
     }
     let cap = cap_via_app(app) as u32;
+    let enabled = dynamic_budgets_via_app(app);
     // Bounded by the queue's length: every iteration either promotes, closes
     // or stops, so a loop over the queue can run at most `queued` times.
     let mut budget = registry().queued_in_order().len();
     while budget > 0 && under_cap(live_count(), cap) {
         budget -= 1;
-        let Some(id) = head_to_promote(registry(), now_ms()) else {
+        let now = now_ms();
+        // Re-read per iteration: the previous promotion is live now and its
+        // charge is part of `used`.
+        let (inputs, used, _) = budget_reading(registry(), cap, enabled, now);
+        let scan = scan_queue(registry(), now, &inputs, used);
+        // An unfit entry gets its first-unfit stamp either way; it is only
+        // SKIPPED when something behind it is about to start.
+        persist_skips(
+            app,
+            &mark_unfit(registry(), &scan.unfit, now, scan.pick.is_some()),
+        );
+        let Some(id) = scan.pick else {
             break;
         };
         if let Err(err) = promote(app, &id) {
@@ -656,6 +1281,7 @@ pub async fn promote_head(app: &AppHandle) {
             }
         }
     }
+    announce_budget_state(app, cap, enabled);
     PROMOTING.store(false, Ordering::SeqCst);
 }
 
@@ -773,6 +1399,7 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
             goal_id: s.goal_id.clone(),
             cycle_index: s.cycle_index,
             not_before_ms: s.not_before_ms,
+            profile: profile_of(&s.admission),
         },
         SpawnIdentity {
             id: s.id.clone(),
@@ -785,7 +1412,11 @@ fn dispatch_of(reg: &FleetRegistry, session_id: &str) -> Option<(DispatchRequest
 /// of the same work would send back through [`admit`]. `None` for an unknown
 /// id. The cycle harvest reads a `finished` autopilot row through this.
 pub fn dispatch_of_session(session_id: &str) -> Option<DispatchRequest> {
-    let reg = registry();
+    dispatch_of_session_in(registry(), session_id)
+}
+
+/// [`dispatch_of_session`] over a given registry.
+fn dispatch_of_session_in(reg: &FleetRegistry, session_id: &str) -> Option<DispatchRequest> {
     let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
     let s = map.get(session_id)?;
     Some(DispatchRequest {
@@ -804,7 +1435,16 @@ pub fn dispatch_of_session(session_id: &str) -> Option<DispatchRequest> {
         goal_id: s.goal_id.clone(),
         cycle_index: s.cycle_index,
         not_before_ms: s.not_before_ms,
+        // A re-enqueue of the same work is charged what the original was.
+        profile: profile_of(&s.admission),
     })
+}
+
+/// The profile a row's stored charge stands for; `None` when the row was
+/// never charged explicitly (it costs the default either way).
+fn profile_of(facts: &AdmissionFacts) -> Option<ResourceProfile> {
+    (facts.machine_units.is_some() || facts.plan_units.is_some() || facts.gpu.is_some())
+        .then(|| facts.charge().to_profile())
 }
 
 /// Whether the persona already has an autopilot dispatch waiting or running
@@ -882,13 +1522,112 @@ fn estimated_start_ms(now: i64, rank: u32, durations_ms: &[i64]) -> Option<i64> 
     Some(now + i64::from(rank) * mean)
 }
 
-/// Assemble the snapshot from the registry, the cap and the duration history.
+/// The budgets as the Monitor reads them, plus each queued entry's own hold.
+struct BudgetView {
+    budgets: FleetBudgets,
+    /// `session id -> why THIS entry is not starting`, budget reasons only.
+    held_by: std::collections::HashMap<String, BudgetHold>,
+    /// Mirror of `budgets.hold`, for the announcer.
+    hold: Option<BudgetHold>,
+}
+
+/// Evaluate every queued entry against the budgets. Pure over its inputs
+/// (the GPU holder id is passed in).
+///
+/// `hold` is why the HEAD entry (first time-eligible row in rank order) is
+/// held, when a budget is the reason; with no such entry it is the hold that
+/// applies to ANY dispatch (five-hour window full, RAM gate closed), so the
+/// Monitor can say why nothing would start before anyone queues. With the
+/// kill switch off nothing is ever held: `used` stays real (informational),
+/// the budgets read as the neutral count-cap pair.
+fn budget_view(
+    reg: &FleetRegistry,
+    inputs: &BudgetInputs,
+    used: Used,
+    gpu_holder: Option<String>,
+    now: i64,
+) -> BudgetView {
+    let derived: Budgets = budgets::budgets_from(inputs, used);
+    let mut held_by = std::collections::HashMap::new();
+    let mut hold = None;
+    if inputs.enabled {
+        let mut head_seen = false;
+        for (id, not_before, facts) in reg.queued_admissions_in_order() {
+            let entry_hold = budgets::fits(facts.charge(), used, &derived)
+                .err()
+                .and_then(budgets::Unfit::hold);
+            if let Some(h) = entry_hold {
+                held_by.insert(id, h);
+            }
+            if !head_seen && not_before.map_or(true, |t| t <= now) {
+                head_seen = true;
+                hold = entry_hold;
+            }
+        }
+        if !head_seen {
+            hold = budgets::global_hold(&derived);
+        }
+    }
+    let budgets = if inputs.enabled {
+        FleetBudgets {
+            enabled: true,
+            machine_used: used.machine,
+            machine_budget: derived.machine_budget,
+            plan_used: used.plan,
+            plan_budget: derived.plan_budget,
+            plan_budget_max: derived.plan_budget_max,
+            pace_factor: derived.pace_factor,
+            behind_pct: inputs.behind_pct,
+            ram_pct: inputs.ram_pct,
+            ram_gate: inputs.ram_gate,
+            gpu_holder,
+            hold,
+        }
+    } else {
+        FleetBudgets {
+            enabled: false,
+            machine_used: used.machine,
+            plan_used: used.plan,
+            behind_pct: inputs.behind_pct,
+            ram_pct: inputs.ram_pct,
+            ram_gate: inputs.ram_gate,
+            gpu_holder,
+            ..FleetBudgets::neutral(inputs.cap)
+        }
+    };
+    BudgetView {
+        budgets,
+        held_by,
+        hold,
+    }
+}
+
+/// [`build_snapshot_with`] under budgets that bind nothing beyond the cap.
+#[cfg(test)]
 fn build_snapshot(
     reg: &FleetRegistry,
     cap: u32,
     durations_ms: &[i64],
     now: i64,
 ) -> FleetQueueSnapshot {
+    let inputs = BudgetInputs::unmeasured(cap, true);
+    let mut live = BudgetLive::new();
+    let used = live.used(reg);
+    build_snapshot_with(reg, durations_ms, now, &inputs, used, live.gpu_holder)
+}
+
+/// Assemble the snapshot from the registry, the budgets' inputs and the
+/// duration history.
+fn build_snapshot_with(
+    reg: &FleetRegistry,
+    durations_ms: &[i64],
+    now: i64,
+    inputs: &BudgetInputs,
+    used: Used,
+    gpu_holder: Option<String>,
+) -> FleetQueueSnapshot {
+    let cap = inputs.cap;
+    let view = budget_view(reg, inputs, used, gpu_holder, now);
     let running = reg.live_count();
     let mut entries: Vec<FleetQueueEntry> = {
         let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -905,6 +1644,11 @@ fn build_snapshot(
                     queued_at_ms: s.queued_at_ms.unwrap_or(s.created_at_ms),
                     not_before_ms: s.not_before_ms,
                     estimated_start_ms: estimated_start_ms(now, rank, durations_ms),
+                    machine_units: s.admission.charge().machine,
+                    plan_units: s.admission.charge().plan,
+                    gpu: s.admission.charge().gpu,
+                    skips: s.admission.skip_count,
+                    held_by: view.held_by.get(&s.id).copied(),
                 }
             })
             .collect()
@@ -916,20 +1660,43 @@ fn build_snapshot(
         queued: entries.len() as u32,
         over_admitted: over_admitted(running, cap),
         entries,
+        budgets: view.budgets,
     }
 }
 
 async fn snapshot(app: &AppHandle, pool: DbPool) -> Result<FleetQueueSnapshot, AppError> {
     let _ = app;
-    let (cap, durations) = tokio::task::spawn_blocking(move || {
+    let (cap, enabled, durations) = tokio::task::spawn_blocking(move || {
         let cap = cap(&pool);
+        let enabled = dynamic_budgets(&pool);
         let durations =
             fleet_sessions::recent_ended_durations_ms(&pool, ESTIMATE_HISTORY).unwrap_or_default();
-        (cap, durations)
+        (cap, enabled, durations)
     })
     .await
     .map_err(|e| AppError::Internal(format!("fleet queue snapshot: {e}")))?;
-    Ok(build_snapshot(registry(), cap, &durations, now_ms()))
+    let now = now_ms();
+    let (inputs, used, gpu_holder) = budget_reading(registry(), cap, enabled, now);
+    Ok(build_snapshot_with(
+        registry(),
+        &durations,
+        now,
+        &inputs,
+        used,
+        gpu_holder,
+    ))
+}
+
+/// The budgets as they stand right now, for a reader that wants the figures
+/// and not the queue (the attention decide prompt). Blocking: two settings
+/// reads. It measures nothing - the same cached [`BudgetLive`] reading an
+/// admission takes - and assembles the wire shape through [`budget_view`], so
+/// the persona is told exactly what the Monitor's budgets block shows.
+pub fn current_budgets(pool: &DbPool) -> FleetBudgets {
+    let now = now_ms();
+    let (inputs, used, gpu_holder) =
+        budget_reading(registry(), cap(pool), dynamic_budgets(pool), now);
+    budget_view(registry(), &inputs, used, gpu_holder, now).budgets
 }
 
 // ---------------------------------------------------------------------------
@@ -999,8 +1766,10 @@ pub async fn fleet_queue_cancel(
     snapshot(&app, state.db.clone()).await
 }
 
-/// Start a queued dispatch NOW, cap or no cap. The snapshot's
-/// `over_admitted` reports the overshoot afterwards.
+/// Start a queued dispatch NOW, cap or no cap, budgets or no budgets - the
+/// operator's one explicit bypass. The snapshot's `over_admitted` reports the
+/// count overshoot afterwards, and the started session's charge is part of
+/// `used` like any other, so the budgets tighten behind it.
 #[tauri::command]
 pub async fn fleet_queue_start_now(
     app: AppHandle,
@@ -1043,6 +1812,7 @@ mod tests {
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         }
     }
 
@@ -1392,5 +2162,599 @@ mod tests {
         assert_eq!(over_admitted(7, 5), 2);
         assert_eq!(estimated_start_ms(100, 2, &[10, 20]), Some(130));
         assert!(!is_live_state(S::Queued));
+    }
+
+    // -----------------------------------------------------------------------
+    // Budgeted admission
+    // -----------------------------------------------------------------------
+
+    use crate::commands::fleet::budgets::{AGING_MAX_SKIPS, AGING_MAX_WAIT_MS};
+    use personas_core::models::{EffortBand, MachineLoad};
+
+    fn profiled(
+        cwd: &str,
+        machine: MachineLoad,
+        effort: EffortBand,
+        gpu: GpuClass,
+    ) -> DispatchRequest {
+        let mut r = req(cwd);
+        r.profile = Some(ResourceProfile {
+            machine,
+            effort,
+            gpu,
+            ..ResourceProfile::default()
+        });
+        r
+    }
+
+    fn xl_light(cwd: &str) -> DispatchRequest {
+        profiled(cwd, MachineLoad::Light, EffortBand::Xl, GpuClass::None)
+    }
+
+    fn s_heavy(cwd: &str) -> DispatchRequest {
+        profiled(cwd, MachineLoad::Heavy, EffortBand::S, GpuClass::None)
+    }
+
+    /// A live row carrying `r`'s charge, as a real spawn would stamp it.
+    fn live_charged(id: &str, r: &DispatchRequest) -> FleetSessionInner {
+        let mut s = live(id, S::Running);
+        s.admission = AdmissionFacts::charged(Charge::from_profile(r.profile.as_ref()));
+        s
+    }
+
+    fn end(reg: &FleetRegistry, id: &str) {
+        let mut map = reg.sessions.lock().unwrap();
+        let s = map.get_mut(id).unwrap();
+        assert_eq!(
+            apply_transition(s, S::Exited, "done", "test"),
+            TransitionOutcome::Changed
+        );
+    }
+
+    /// Ahead of pace by 20 points on a cap of 10: pace factor 0.2, plan budget 4.
+    fn ahead_inputs() -> BudgetInputs {
+        BudgetInputs {
+            behind_pct: Some(-20.0),
+            ..BudgetInputs::unmeasured(10, true)
+        }
+    }
+
+    /// Drive `n` all-default arrivals through the door, then end the live
+    /// sessions one by one and promote after each. Returns which arrivals
+    /// started at once, and the order (by cwd) the rest were promoted in.
+    fn simulate(enabled: bool, cap: u32, n: usize) -> (Vec<bool>, Vec<String>) {
+        let reg = FleetRegistry::default();
+        let inputs = BudgetInputs::unmeasured(cap, enabled);
+        let mut measured = BudgetLive::new();
+        let mut started = Vec::new();
+        for i in 0..n {
+            let r = req(&format!("C:/repo/{i:02}"));
+            let used = measured.used(&reg);
+            match door_verdict(&reg, &r, 1_000, &inputs, used) {
+                Door::Start { passed } => {
+                    assert!(passed.is_empty());
+                    reg.insert(live_charged(&format!("live-{i:02}"), &r));
+                    started.push(true);
+                }
+                Door::Queue(_) => {
+                    enqueue_into(&reg, &r, 1_000 + i as i64, cap, reg.live_count());
+                    started.push(false);
+                }
+                Door::Refuse => panic!("a default dispatch is never refused"),
+            }
+        }
+        let mut promoted = Vec::new();
+        loop {
+            let victim = reg.live_charges().into_iter().map(|(id, _, _)| id).min();
+            let Some(victim) = victim else { break };
+            end(&reg, &victim);
+            while under_cap(reg.live_count(), cap) {
+                let used = measured.used(&reg);
+                let scan = scan_queue(&reg, 9_000, &inputs, used);
+                assert!(
+                    scan.unfit.is_empty(),
+                    "a default entry always fits a free slot"
+                );
+                let Some(id) = scan.pick else { break };
+                promoted.push(dispatch_of(&reg, &id).unwrap().0.cwd);
+                assert!(reg.adopt_spawn(spawned(&id)));
+            }
+        }
+        (started, promoted)
+    }
+
+    /// THE EQUIVALENCE PROOF. An all-default fleet at pace factor 1 must admit,
+    /// queue and promote exactly as the count cap alone does - for every cap.
+    #[test]
+    fn an_all_default_fleet_behaves_exactly_like_the_count_cap() {
+        for cap in 1..=10u32 {
+            let n = cap as usize + 6;
+            let legacy = simulate(false, cap, n);
+            let budgeted = simulate(true, cap, n);
+            assert_eq!(legacy, budgeted, "cap {cap}");
+            let expected_started: Vec<bool> = (0..n).map(|i| i < cap as usize).collect();
+            assert_eq!(budgeted.0, expected_started, "cap {cap}: first `cap` start");
+            let expected_order: Vec<String> = (cap as usize..n)
+                .map(|i| format!("C:/repo/{i:02}"))
+                .collect();
+            assert_eq!(budgeted.1, expected_order, "cap {cap}: FIFO promotion");
+        }
+    }
+
+    #[test]
+    fn ahead_of_pace_defers_an_xl_light_and_admits_an_s_heavy() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = ahead_inputs();
+        let mut measured = BudgetLive::new();
+        let used = measured.used(&reg);
+        assert_eq!((used.machine, used.plan), (1, 2));
+        // At the door.
+        assert_eq!(
+            door_verdict(&reg, &xl_light("C:/repo/xl"), 1_000, &inputs, used),
+            Door::Queue(QueueWhy::Held(BudgetHold::AheadOfPace))
+        );
+        assert_eq!(
+            door_verdict(&reg, &s_heavy("C:/repo/heavy"), 1_000, &inputs, used),
+            Door::Start { passed: vec![] }
+        );
+        // In the queue: promotion backfills the s/heavy past the held xl.
+        let (xl, _) = enqueue_into(&reg, &xl_light("C:/repo/xl"), 1_000, 10, 1);
+        let (heavy, _) = enqueue_into(&reg, &s_heavy("C:/repo/heavy"), 1_001, 10, 1);
+        let scan = scan_queue(&reg, 2_000, &inputs, used);
+        assert_eq!(scan.pick.as_deref(), Some(heavy.as_str()));
+        assert_eq!(scan.unfit, vec![xl.clone()]);
+        assert!(!scan.blocked_by_aged);
+        // The Monitor reads the same story.
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        assert!(snap.budgets.enabled);
+        assert_eq!((snap.budgets.plan_used, snap.budgets.plan_budget), (2, 4));
+        assert_eq!(snap.budgets.plan_budget_max, 20);
+        assert_eq!(
+            (snap.budgets.machine_used, snap.budgets.machine_budget),
+            (1, 10)
+        );
+        assert!((snap.budgets.pace_factor - 0.2).abs() < 1e-9);
+        assert_eq!(snap.budgets.behind_pct, Some(-20.0));
+        assert_eq!(
+            snap.budgets.hold,
+            Some(BudgetHold::AheadOfPace),
+            "the HEAD's hold"
+        );
+        let e = &snap.entries[0];
+        assert_eq!(
+            (e.machine_units, e.plan_units, e.gpu),
+            (1, 8, GpuClass::None)
+        );
+        assert_eq!(e.held_by, Some(BudgetHold::AheadOfPace));
+        let e = &snap.entries[1];
+        assert_eq!((e.machine_units, e.plan_units, e.held_by), (4, 1, None));
+        // Pace recovers: the xl is the head again and fits.
+        let calm = BudgetInputs::unmeasured(10, true);
+        assert_eq!(
+            scan_queue(&reg, 3_000, &calm, used).pick.as_deref(),
+            Some(xl.as_str())
+        );
+    }
+
+    #[test]
+    fn five_skips_age_the_head_and_promotion_drains_until_it_fits() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = ahead_inputs();
+        let mut measured = BudgetLive::new();
+        let (xl, _) = enqueue_into(&reg, &xl_light("C:/repo/xl"), 1_000, 10, 1);
+        for i in 0..AGING_MAX_SKIPS {
+            let (small, _) = enqueue_into(&reg, &s_heavy("C:/repo/s"), 1_001, 10, 1);
+            let used = measured.used(&reg);
+            let scan = scan_queue(&reg, 2_000, &inputs, used);
+            assert_eq!(scan.pick.as_deref(), Some(small.as_str()), "backfill {i}");
+            let marks = mark_unfit(&reg, &scan.unfit, 2_000, scan.pick.is_some());
+            assert_eq!(marks, vec![(xl.clone(), i + 1, Some(2_000))]);
+            assert!(reg.adopt_spawn(spawned(&small)));
+            end(&reg, &small);
+        }
+        // Aged: nothing behind it may start, from the queue or at the door.
+        let (behind, _) = enqueue_into(&reg, &s_heavy("C:/repo/s"), 1_002, 10, 1);
+        let used = measured.used(&reg);
+        let scan = scan_queue(&reg, 3_000, &inputs, used);
+        assert_eq!(scan.pick, None);
+        assert!(scan.blocked_by_aged);
+        assert_eq!(scan.unfit, vec![xl.clone()]);
+        // A blocked pass promotes nothing, so it counts no skip.
+        assert!(mark_unfit(&reg, &scan.unfit, 3_000, false).is_empty());
+        assert_eq!(
+            door_verdict(&reg, &s_heavy("C:/repo/new"), 3_000, &inputs, used),
+            Door::Queue(QueueWhy::BehindAged)
+        );
+        let snap = build_snapshot_with(&reg, &[], 3_000, &inputs, used, None);
+        assert_eq!(snap.entries[0].skips, AGING_MAX_SKIPS);
+        // The pace recovers: the aged head goes first, then the line drains.
+        let calm = BudgetInputs::unmeasured(10, true);
+        assert_eq!(
+            scan_queue(&reg, 4_000, &calm, used).pick.as_deref(),
+            Some(xl.as_str())
+        );
+        assert!(reg.adopt_spawn(spawned(&xl)));
+        let used = measured.used(&reg);
+        assert_eq!(
+            scan_queue(&reg, 4_001, &calm, used).pick.as_deref(),
+            Some(behind.as_str())
+        );
+    }
+
+    #[test]
+    fn thirty_unfit_minutes_age_the_head_too() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = ahead_inputs();
+        let used = BudgetLive::new().used(&reg);
+        let (xl, _) = enqueue_into(&reg, &xl_light("C:/repo/xl"), 1_000, 10, 1);
+        let (small, _) = enqueue_into(&reg, &s_heavy("C:/repo/s"), 1_001, 10, 1);
+        let t0 = 10_000;
+        // Found unfit with nothing promoted past it: stamped, not skipped.
+        assert_eq!(
+            mark_unfit(&reg, &[xl.clone()], t0, false),
+            vec![(xl.clone(), 0, Some(t0))]
+        );
+        let just_before = scan_queue(&reg, t0 + AGING_MAX_WAIT_MS - 1, &inputs, used);
+        assert_eq!(just_before.pick.as_deref(), Some(small.as_str()));
+        let at = scan_queue(&reg, t0 + AGING_MAX_WAIT_MS, &inputs, used);
+        assert_eq!(at.pick, None);
+        assert!(at.blocked_by_aged);
+        // A time-gated entry is neither unfit nor a blocker.
+        let mut later = xl_light("C:/repo/later");
+        later.not_before_ms = Some(i64::MAX);
+        let reg2 = FleetRegistry::default();
+        reg2.insert(live("a", S::Running));
+        enqueue_into(&reg2, &later, 1_000, 10, 1);
+        let (ok, _) = enqueue_into(&reg2, &s_heavy("C:/repo/s"), 1_001, 10, 1);
+        let scan = scan_queue(&reg2, 2_000, &inputs, used);
+        assert_eq!(scan.pick.as_deref(), Some(ok.as_str()));
+        assert!(scan.unfit.is_empty());
+    }
+
+    #[test]
+    fn the_gpu_token_has_one_holder_is_released_on_exit_and_recovered_at_startup() {
+        let reg = FleetRegistry::default();
+        let gpu_job =
+            |cwd: &str| profiled(cwd, MachineLoad::Light, EffortBand::S, GpuClass::Exclusive);
+        let inputs = BudgetInputs::unmeasured(10, true);
+        let mut measured = BudgetLive::new();
+        // First exclusive job: the token is free.
+        let used = measured.used(&reg);
+        assert!(!used.gpu_held);
+        assert_eq!(
+            door_verdict(&reg, &gpu_job("C:/repo/g1"), 1_000, &inputs, used),
+            Door::Start { passed: vec![] }
+        );
+        let mut g1 = live_charged("g1", &gpu_job("C:/repo/g1"));
+        g1.created_at_ms = 100;
+        reg.insert(g1);
+        let used = measured.used(&reg);
+        assert!(used.gpu_held);
+        assert_eq!(measured.gpu_holder.as_deref(), Some("g1"));
+        // A second one waits on the token; `shared` does not.
+        assert_eq!(
+            door_verdict(&reg, &gpu_job("C:/repo/g2"), 1_000, &inputs, used),
+            Door::Queue(QueueWhy::Held(BudgetHold::GpuTokenHeld))
+        );
+        let shared = profiled(
+            "C:/repo/sh",
+            MachineLoad::Light,
+            EffortBand::S,
+            GpuClass::Shared,
+        );
+        assert_eq!(
+            door_verdict(&reg, &shared, 1_000, &inputs, used),
+            Door::Start { passed: vec![] }
+        );
+        let (g2, _) = enqueue_into(&reg, &gpu_job("C:/repo/g2"), 1_000, 10, 1);
+        let snap =
+            build_snapshot_with(&reg, &[], 2_000, &inputs, used, measured.gpu_holder.clone());
+        assert_eq!(snap.budgets.gpu_holder.as_deref(), Some("g1"));
+        assert_eq!(snap.budgets.hold, Some(BudgetHold::GpuTokenHeld));
+        assert_eq!(snap.entries[0].held_by, Some(BudgetHold::GpuTokenHeld));
+        assert_eq!(snap.entries[0].gpu, GpuClass::Exclusive);
+        assert_eq!(scan_queue(&reg, 2_000, &inputs, used).pick, None);
+        // The holder leaves the live set: released, and the waiter is next.
+        end(&reg, "g1");
+        let used = measured.used(&reg);
+        assert!(!used.gpu_held);
+        assert_eq!(measured.gpu_holder, None);
+        assert_eq!(
+            scan_queue(&reg, 3_000, &inputs, used).pick.as_deref(),
+            Some(g2.as_str())
+        );
+        assert!(reg.adopt_spawn(spawned(&g2)));
+        measured.used(&reg);
+        assert_eq!(measured.gpu_holder.as_deref(), Some(g2.as_str()));
+
+        // Startup: a fresh process finds live exclusive rows restored from the
+        // table and adopts the OLDEST as the holder.
+        let restored = FleetRegistry::default();
+        let mut young = live_charged("young", &gpu_job("C:/repo/y"));
+        young.created_at_ms = 900;
+        let mut old = live_charged("old", &gpu_job("C:/repo/o"));
+        old.created_at_ms = 200;
+        restored.insert(young);
+        restored.insert(old);
+        let mut fresh = BudgetLive::new();
+        assert!(fresh.used(&restored).gpu_held);
+        assert_eq!(fresh.gpu_holder.as_deref(), Some("old"));
+        // The charge survives the durable round trip that restore rides.
+        let row = {
+            let map = restored.sessions.lock().unwrap();
+            super::super::persist::row_from_inner(map.get("old").unwrap()).unwrap()
+        };
+        assert_eq!(row.gpu_class.as_deref(), Some("exclusive"));
+        assert_eq!(
+            (row.machine_units, row.plan_units, row.skip_count),
+            (Some(1), Some(1), None)
+        );
+        let back = super::super::persist::inner_from_row(&row);
+        assert_eq!(back.admission.charge().gpu, GpuClass::Exclusive);
+    }
+
+    #[test]
+    fn the_ram_gate_skips_its_first_sample_closes_at_85_reopens_at_70_and_never_touches_live_work()
+    {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let mut measured = BudgetLive::new();
+        let door = |m: &mut BudgetLive| {
+            let used = m.used(&reg);
+            door_verdict(
+                &reg,
+                &req("C:/repo/new"),
+                1_000,
+                &m.inputs(10, true, 1_000),
+                used,
+            )
+        };
+        // Nothing sampled, then the FIRST sample - however bad - is not acted on.
+        assert_eq!(measured.ram_gate, RamGate::Warming);
+        assert_eq!(
+            measured.note_ram(Some(99.0)),
+            (RamGate::Warming, RamGate::Warming)
+        );
+        assert_eq!(door(&mut measured), Door::Start { passed: vec![] });
+        // Second sample at the high-water mark: closed.
+        assert_eq!(
+            measured.note_ram(Some(85.0)),
+            (RamGate::Warming, RamGate::Closed)
+        );
+        assert_eq!(
+            door(&mut measured),
+            Door::Queue(QueueWhy::Held(BudgetHold::RamHighWater))
+        );
+        let (q, _) = enqueue_into(&reg, &req("C:/repo/q"), 1_000, 10, 1);
+        let used = measured.used(&reg);
+        let inputs = measured.inputs(10, true, 1_000);
+        assert_eq!(scan_queue(&reg, 2_000, &inputs, used).pick, None);
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        assert_eq!(snap.budgets.ram_gate, RamGate::Closed);
+        assert_eq!(snap.budgets.ram_pct, Some(85.0));
+        assert_eq!(snap.budgets.hold, Some(BudgetHold::RamHighWater));
+        // The gate defers promotion ONLY: the live session is untouched.
+        assert_eq!(reg.session_state("a"), Some(S::Running));
+        assert_eq!(reg.live_count(), 1);
+        // Between the marks it stays closed; it reopens only at 70.
+        assert_eq!(measured.note_ram(Some(75.0)).1, RamGate::Closed);
+        assert_eq!(measured.note_ram(Some(70.0)).1, RamGate::Open);
+        let inputs = measured.inputs(10, true, 1_000);
+        assert_eq!(
+            scan_queue(&reg, 3_000, &inputs, used).pick.as_deref(),
+            Some(q.as_str())
+        );
+        // With an empty queue the snapshot still names a closed gate.
+        let empty = FleetRegistry::default();
+        measured.note_ram(Some(90.0));
+        let snap = build_snapshot_with(
+            &empty,
+            &[],
+            1,
+            &measured.inputs(10, true, 1),
+            Used::default(),
+            None,
+        );
+        assert_eq!(snap.budgets.hold, Some(BudgetHold::RamHighWater));
+    }
+
+    #[test]
+    fn a_charge_that_could_never_fit_is_refused_not_queued() {
+        let reg = FleetRegistry::default();
+        let inputs = BudgetInputs::unmeasured(4, true);
+        let oversized = Charge {
+            machine: 9,
+            plan: 2,
+            gpu: GpuClass::None,
+        };
+        assert_eq!(
+            door_verdict_for(&reg, oversized, None, 1_000, &inputs, Used::default()),
+            Door::Refuse
+        );
+        // Refused even when a time gate or a full fleet would otherwise queue it.
+        assert_eq!(
+            door_verdict_for(
+                &reg,
+                oversized,
+                Some(i64::MAX),
+                1_000,
+                &inputs,
+                Used::default()
+            ),
+            Door::Refuse
+        );
+        assert!(reg.queued_in_order().is_empty(), "never queued");
+        // No profile in the closed vocabularies can be refused - not even on cap 1.
+        let tiny = BudgetInputs::unmeasured(1, true);
+        let heaviest = profiled(
+            "C:/r",
+            MachineLoad::Exclusive,
+            EffortBand::Xl,
+            GpuClass::Exclusive,
+        );
+        assert_eq!(
+            door_verdict(&reg, &heaviest, 1_000, &tiny, Used::default()),
+            Door::Start { passed: vec![] }
+        );
+        // The count-only door has no budgets to exceed.
+        let off = BudgetInputs::unmeasured(4, false);
+        assert_eq!(
+            door_verdict_for(&reg, oversized, None, 1_000, &off, Used::default()),
+            Door::Start { passed: vec![] }
+        );
+    }
+
+    #[test]
+    fn the_kill_switch_restores_the_count_only_door() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        // Every gauge hostile - and none of it consulted.
+        let off = BudgetInputs {
+            behind_pct: Some(-50.0),
+            five_hour_full: true,
+            governor_stop: true,
+            memory_slots: Some(0),
+            ram_pct: Some(99.0),
+            ram_gate: RamGate::Closed,
+            ..BudgetInputs::unmeasured(2, false)
+        };
+        let heaviest = profiled(
+            "C:/r",
+            MachineLoad::Exclusive,
+            EffortBand::Xl,
+            GpuClass::Exclusive,
+        );
+        let used = BudgetLive::new().used(&reg);
+        assert_eq!(
+            door_verdict(&reg, &heaviest, 1_000, &off, used),
+            Door::Start { passed: vec![] }
+        );
+        reg.insert(live("b", S::Running));
+        let used = BudgetLive::new().used(&reg);
+        assert_eq!(
+            door_verdict(&reg, &heaviest, 1_000, &off, used),
+            Door::Queue(QueueWhy::Cap)
+        );
+        let mut gated = req("C:/gated");
+        gated.not_before_ms = Some(9_000);
+        assert_eq!(
+            door_verdict(&reg, &gated, 1_000, &off, used),
+            Door::Queue(QueueWhy::Gated)
+        );
+        // Promotion is the plain head.
+        let (head, _) = enqueue_into(&reg, &heaviest, 1_000, 2, 2);
+        enqueue_into(&reg, &req("C:/next"), 1_001, 2, 2);
+        let scan = scan_queue(&reg, 2_000, &off, used);
+        assert_eq!(scan.pick, head_to_promote(&reg, 2_000));
+        assert_eq!(scan.pick.as_deref(), Some(head.as_str()));
+        assert!(scan.unfit.is_empty() && !scan.blocked_by_aged);
+        // The snapshot says so: nothing held, neutral budgets, real usage.
+        let snap = build_snapshot_with(&reg, &[], 2_000, &off, used, None);
+        assert!(!snap.budgets.enabled);
+        assert_eq!(snap.budgets.hold, None);
+        assert_eq!(
+            (snap.budgets.machine_budget, snap.budgets.plan_budget),
+            (2, 4)
+        );
+        assert_eq!((snap.budgets.machine_used, snap.budgets.plan_used), (2, 4));
+        assert_eq!(snap.budgets.pace_factor, 1.0);
+        assert!(snap.entries.iter().all(|e| e.held_by.is_none()));
+        assert_eq!(snap.entries[0].plan_units, 8, "the weight is still shown");
+    }
+
+    #[test]
+    fn start_now_bypasses_the_budgets_and_its_charge_counts_afterwards() {
+        let reg = FleetRegistry::default();
+        reg.insert(live("a", S::Running));
+        let inputs = BudgetInputs::unmeasured(3, true); // machine 3, plan 6
+        let mut measured = BudgetLive::new();
+        let big = profiled("C:/big", MachineLoad::Heavy, EffortBand::Xl, GpuClass::None);
+        let used = measured.used(&reg);
+        assert_eq!(
+            door_verdict(&reg, &big, 1_000, &inputs, used),
+            Door::Queue(QueueWhy::BudgetFull),
+            "4/8 on top of a live default does not fit 3/6"
+        );
+        let (id, _) = enqueue_into(&reg, &big, 1_000, 3, 1);
+        // The operator starts it anyway: `promote` spawns whatever the budgets say.
+        assert!(reg.adopt_spawn(spawned(&id)));
+        let used = measured.used(&reg);
+        assert_eq!((used.machine, used.plan), (5, 10), "the bypass is charged");
+        // Under the COUNT cap (2 of 3) - and still nothing else fits.
+        assert!(under_cap(reg.live_count(), 3));
+        assert_eq!(
+            door_verdict(&reg, &req("C:/next"), 2_000, &inputs, used),
+            Door::Queue(QueueWhy::BudgetFull)
+        );
+        let snap = build_snapshot_with(&reg, &[], 2_000, &inputs, used, None);
+        assert_eq!(
+            (snap.budgets.machine_used, snap.budgets.machine_budget),
+            (5, 3)
+        );
+        assert_eq!((snap.budgets.plan_used, snap.budgets.plan_budget), (10, 6));
+        assert_eq!(snap.over_admitted, 0, "the count cap was never crossed");
+        // A re-enqueue of that work is charged what the original was.
+        let again = dispatch_of_session_in(&reg, &id).unwrap();
+        assert_eq!(
+            Charge::from_profile(again.profile.as_ref()),
+            Charge::from_profile(big.profile.as_ref())
+        );
+    }
+
+    #[test]
+    fn the_empty_machine_rule_lets_an_exclusive_job_own_a_small_fleet() {
+        let reg = FleetRegistry::default();
+        let inputs = BudgetInputs::unmeasured(4, true); // machine 4, plan 8
+        let mut measured = BudgetLive::new();
+        let exclusive = profiled(
+            "C:/x",
+            MachineLoad::Exclusive,
+            EffortBand::Xl,
+            GpuClass::Exclusive,
+        );
+        let used = measured.used(&reg);
+        assert_eq!(
+            door_verdict(&reg, &exclusive, 1_000, &inputs, used),
+            Door::Start { passed: vec![] }
+        );
+        reg.insert(live_charged("x", &exclusive));
+        let used = measured.used(&reg);
+        assert_eq!((used.machine, used.plan, used.gpu_held), (8, 8, true));
+        // It owns the machine: three count slots are free and nothing fits.
+        assert_eq!(
+            door_verdict(&reg, &req("C:/d"), 1_000, &inputs, used),
+            Door::Queue(QueueWhy::BudgetFull)
+        );
+        // Not alone, the same job waits instead.
+        let busy = FleetRegistry::default();
+        busy.insert(live("a", S::Running));
+        let used = BudgetLive::new().used(&busy);
+        assert_eq!(
+            door_verdict(&busy, &exclusive, 1_000, &inputs, used),
+            Door::Queue(QueueWhy::BudgetFull)
+        );
+    }
+
+    #[test]
+    fn a_stale_pacing_reading_is_dropped_and_the_budgets_fail_open() {
+        let mut measured = BudgetLive::new();
+        measured.behind_pct = Some(-25.0);
+        measured.five_hour_full = true;
+        measured.memory_slots = Some(0);
+        measured.pacing_as_of_ms = 1_000;
+        let fresh = measured.inputs(10, true, 1_000 + PACING_STALE_MS);
+        assert!(fresh.five_hour_full);
+        assert_eq!(
+            (fresh.behind_pct, fresh.memory_slots),
+            (Some(-25.0), Some(0))
+        );
+        let stale = measured.inputs(10, true, 1_001 + PACING_STALE_MS);
+        assert!(!stale.five_hour_full);
+        assert_eq!((stale.behind_pct, stale.memory_slots), (None, None));
+        // Never read at all is the same as stale.
+        assert_eq!(BudgetLive::new().inputs(10, true, 5).behind_pct, None);
     }
 }

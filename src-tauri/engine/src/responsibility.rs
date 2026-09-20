@@ -49,8 +49,8 @@ use personas_core::error::AppError;
 use personas_core::validation::contract::{self, ValidationError};
 use personas_core::validation::persona::MAX_PROMPT_BYTES;
 use personas_db::models::{
-    CreatePersonaResponsibilityInput, PersonaResponsibility, ResponsibilityCadence,
-    ResponsibilitySpec, ResponsibilityStatus, ResponsibilityTenure,
+    CreatePersonaResponsibilityInput, PersonaResponsibility, ProfileSource, ResourceProfile,
+    ResponsibilityCadence, ResponsibilitySpec, ResponsibilityStatus, ResponsibilityTenure,
     UpdatePersonaResponsibilityInput,
 };
 use personas_db::repos::core::responsibilities as repo;
@@ -195,6 +195,14 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
                         ),
                     )
                 }),
+            // The resource profile's tags are closed enums (serde refuses an
+            // unknown one before this runs); what is left to judge is the free
+            // text, the instant, and the one incoherent combination.
+            input
+                .spec
+                .resource_profile
+                .as_ref()
+                .and_then(profile_violation),
             // A charter binds to ONE thing. `project_id` gives the decision a
             // codebase to be about; `workspace_id` gives it a portfolio (the
             // Architect, Grand Simulation G1). A row carrying both would make
@@ -246,6 +254,199 @@ pub fn validate(input: &PersonaResponsibility) -> Result<(), AppError> {
         }
     }
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Resource profile: default, validation, and the pin rule
+// ---------------------------------------------------------------------------
+
+/// Longest `resourceProfile.rationale`, in chars. It is one line in the
+/// editor and one line in the decide prompt, not an essay.
+pub const MAX_PROFILE_RATIONALE_CHARS: usize = 500;
+
+/// The first thing wrong with a stored/incoming profile, or `None`.
+fn profile_violation(p: &ResourceProfile) -> Option<ValidationError> {
+    if p.rationale
+        .as_deref()
+        .is_some_and(|r| r.chars().count() > MAX_PROFILE_RATIONALE_CHARS)
+    {
+        return Some(ValidationError::new(
+            "spec.resourceProfile.rationale",
+            "max_length",
+            format!(
+                "A resource profile rationale is one line: at most \
+                 {MAX_PROFILE_RATIONALE_CHARS} characters"
+            ),
+        ));
+    }
+    if p.declared_at
+        .as_deref()
+        .is_some_and(|t| chrono::DateTime::parse_from_rfc3339(t).is_err())
+    {
+        return Some(ValidationError::new(
+            "spec.resourceProfile.declaredAt",
+            "format",
+            "declaredAt must be an RFC 3339 instant",
+        ));
+    }
+    // Only the operator pins. A pinned profile that claims another author
+    // would lock the persona out on the say-so of no one.
+    (p.pinned && p.source != ProfileSource::Operator).then(|| {
+        ValidationError::new(
+            "spec.resourceProfile.pinned",
+            "conflict",
+            "Only an operator-authored resource profile can be pinned",
+        )
+    })
+}
+
+/// The profile a charter is CHARGED and ROUTED with: the declared one, or
+/// [`ResourceProfile::default`] (light / none / standard / m, source
+/// `default`) when nothing was declared. The one reader every consumer goes
+/// through, so "absent" means the same thing at admission, in routing and in
+/// the editor.
+pub fn effective_profile(spec: &ResponsibilitySpec) -> ResourceProfile {
+    spec.resource_profile.clone().unwrap_or_default()
+}
+
+/// Who is writing a profile. There is no third writer: a template or a
+/// migration that carries a profile is the operator's act.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProfileWriter {
+    /// The persona, self-declaring on a decide wake.
+    Persona,
+    /// The operator, through the charter editor.
+    Operator,
+}
+
+/// Why a profile write changed nothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProfileRefusal {
+    /// The operator pinned the stored profile; a persona never overwrites it
+    /// (it may still say it disagrees in its decide rationale).
+    Pinned,
+}
+
+impl ProfileRefusal {
+    /// Stable wire/ledger spelling.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pinned => "profile_pinned",
+        }
+    }
+}
+
+impl std::fmt::Display for ProfileRefusal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pinned => f.write_str(
+                "the operator pinned this resource profile; a persona self-declaration \
+                 does not overwrite a pinned profile",
+            ),
+        }
+    }
+}
+
+/// THE PIN RULE, in one function. Provenance is never taken from the payload -
+/// it is stamped from `writer`:
+///
+/// * **Operator** - `source = operator`, `pinned` exactly as given (the editor
+///   sends `true` by default; sending `false` is how the operator hands the
+///   profile back to the persona), `declared_at = now`.
+/// * **Persona** - REFUSED with [`ProfileRefusal::Pinned`] when the stored
+///   profile is pinned (nothing changes). Otherwise `source = self`,
+///   `pinned = false`, `declared_at = now` - a persona can never pin.
+pub fn merge_profile(
+    existing: Option<&ResourceProfile>,
+    incoming: ResourceProfile,
+    writer: ProfileWriter,
+) -> Result<ResourceProfile, ProfileRefusal> {
+    let declared_at = Some(chrono::Utc::now().to_rfc3339());
+    match writer {
+        ProfileWriter::Operator => Ok(ResourceProfile {
+            source: ProfileSource::Operator,
+            declared_at,
+            ..incoming
+        }),
+        ProfileWriter::Persona => {
+            if existing.is_some_and(|e| e.pinned) {
+                return Err(ProfileRefusal::Pinned);
+            }
+            Ok(ResourceProfile {
+                source: ProfileSource::SelfDeclared,
+                pinned: false,
+                declared_at,
+                ..incoming
+            })
+        }
+    }
+}
+
+/// Do two profiles say the same thing about the RUN (tags, pin, rationale)?
+/// Provenance and the instant are excluded: an editor that round-trips a
+/// stored profile unchanged has not re-authored it.
+fn same_declaration(a: &ResourceProfile, b: &ResourceProfile) -> bool {
+    a.machine == b.machine
+        && a.gpu == b.gpu
+        && a.difficulty == b.difficulty
+        && a.effort == b.effort
+        && a.pinned == b.pinned
+        && a.rationale == b.rationale
+}
+
+/// The operator door's spec reconciliation (create and update): the incoming
+/// profile goes through [`merge_profile`] as an OPERATOR write, with two cases
+/// that are not an edit and therefore re-stamp nothing:
+///
+/// * the incoming spec carries NO profile - a spec is replaced whole on
+///   update, so an editor that predates the field (or does not render it)
+///   would otherwise erase a pin by omission; the stored profile is kept;
+/// * the incoming profile says what the stored one already says.
+fn reconcile_operator_profile(existing: Option<&ResourceProfile>, spec: &mut ResponsibilitySpec) {
+    match (existing, spec.resource_profile.take()) {
+        (kept, None) => spec.resource_profile = kept.cloned(),
+        (Some(old), Some(new)) if same_declaration(old, &new) => {
+            spec.resource_profile = Some(old.clone());
+        }
+        (old, Some(new)) => {
+            // An operator write is never refused.
+            spec.resource_profile = merge_profile(old, new, ProfileWriter::Operator).ok();
+        }
+    }
+}
+
+/// What [`declare_profile`] did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProfileWriteOutcome {
+    /// Stored; this is the profile as written (provenance stamped).
+    Written(ResourceProfile),
+    /// Nothing changed, and why.
+    Refused(ProfileRefusal),
+}
+
+/// The ONE-KEY profile write door - what the decide lane's self-declaration
+/// (and any other single-field writer) calls. Reads the stored profile, applies
+/// [`merge_profile`], validates, and writes `$.resourceProfile` alone through
+/// `json_set`, so a background wake cannot revert an operator's concurrent edit
+/// to the rest of the spec (the `merge_spec_pacing` precedent).
+pub fn declare_profile(
+    pool: &DbPool,
+    charter_id: &str,
+    incoming: ResourceProfile,
+    writer: ProfileWriter,
+) -> Result<ProfileWriteOutcome, AppError> {
+    let Some(existing) = repo::get_by_id(pool, charter_id)? else {
+        return Err(AppError::NotFound(format!("Responsibility {charter_id}")));
+    };
+    let merged = match merge_profile(existing.spec.resource_profile.as_ref(), incoming, writer) {
+        Ok(p) => p,
+        Err(refusal) => return Ok(ProfileWriteOutcome::Refused(refusal)),
+    };
+    contract::check(profile_violation(&merged).into_iter().collect())?;
+    if !repo::merge_spec_resource_profile(pool, charter_id, &merged)? {
+        return Err(AppError::NotFound(format!("Responsibility {charter_id}")));
+    }
+    Ok(ProfileWriteOutcome::Written(merged))
 }
 
 // ---------------------------------------------------------------------------
@@ -609,7 +810,12 @@ pub fn create_from_input(
         source: "operator".to_string(),
         connectors: input.connectors.clone(),
         procedure: input.procedure.clone(),
-        spec: input.spec.clone(),
+        spec: {
+            // A profile arriving on the operator door is the operator's.
+            let mut spec = input.spec.clone();
+            reconcile_operator_profile(None, &mut spec);
+            spec
+        },
         created_at: String::new(),
         updated_at: String::new(),
     };
@@ -628,6 +834,12 @@ pub fn update_from_input(
     let Some(existing) = repo::get_by_id(pool, id)? else {
         return Err(AppError::NotFound(format!("Responsibility {id}")));
     };
+    // The pin rule's operator half: a spec arriving here has its profile
+    // stamped (or the stored one preserved) BEFORE validation and storage.
+    let mut input = input;
+    if let Some(spec) = input.spec.as_mut() {
+        reconcile_operator_profile(existing.spec.resource_profile.as_ref(), spec);
+    }
     let merged = PersonaResponsibility {
         title: input.title.clone().unwrap_or(existing.title),
         domain: input.domain.clone().unwrap_or(existing.domain),
@@ -1313,5 +1525,251 @@ mod tests {
             update_from_input(&pool, "resp_missing", Default::default()),
             Err(AppError::NotFound(_))
         ));
+    }
+
+    // ── Resource profile (spark resource-aware-orchestration, WP1) ─────────
+
+    use personas_db::models::{Difficulty, EffortBand, GpuClass, MachineLoad};
+
+    fn heavy_profile() -> ResourceProfile {
+        ResourceProfile {
+            machine: MachineLoad::Heavy,
+            gpu: GpuClass::Exclusive,
+            difficulty: Difficulty::Hard,
+            effort: EffortBand::L,
+            rationale: Some("trains a model".into()),
+            ..Default::default()
+        }
+    }
+
+    fn profile_charter(pool: &DbPool, spec: ResponsibilitySpec) -> PersonaResponsibility {
+        create_from_input(
+            pool,
+            &CreatePersonaResponsibilityInput {
+                persona_id: "p1".into(),
+                title: "Profiled charter".into(),
+                spec,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn resource_profile_default_on_absent_field() {
+        let spec = ResponsibilitySpec::default();
+        assert_eq!(spec.resource_profile, None);
+        let p = effective_profile(&spec);
+        assert_eq!(p, ResourceProfile::default());
+        assert_eq!(
+            (p.machine, p.gpu, p.difficulty, p.effort),
+            (
+                MachineLoad::Light,
+                GpuClass::None,
+                Difficulty::Standard,
+                EffortBand::M
+            )
+        );
+        assert_eq!(p.source, ProfileSource::Default);
+        assert!(!p.pinned);
+        // A declared one is returned as declared.
+        let declared = ResponsibilitySpec {
+            resource_profile: Some(heavy_profile()),
+            ..Default::default()
+        };
+        assert_eq!(effective_profile(&declared), heavy_profile());
+    }
+
+    #[test]
+    fn resource_profile_persona_write_refused_on_pinned() {
+        let pinned = ResourceProfile {
+            source: ProfileSource::Operator,
+            pinned: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            merge_profile(Some(&pinned), heavy_profile(), ProfileWriter::Persona),
+            Err(ProfileRefusal::Pinned)
+        );
+        assert_eq!(ProfileRefusal::Pinned.as_str(), "profile_pinned");
+
+        // ...and through the door: the stored row is untouched.
+        let pool = init_test_db().unwrap();
+        insert_persona(&pool, "p1").unwrap();
+        let charter = profile_charter(
+            &pool,
+            ResponsibilitySpec {
+                resource_profile: Some(ResourceProfile {
+                    pinned: true,
+                    machine: MachineLoad::Moderate,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        );
+        let stored = charter.spec.resource_profile.clone().expect("stored");
+        assert_eq!(stored.source, ProfileSource::Operator);
+        assert!(stored.pinned);
+        let outcome =
+            declare_profile(&pool, &charter.id, heavy_profile(), ProfileWriter::Persona).unwrap();
+        assert_eq!(
+            outcome,
+            ProfileWriteOutcome::Refused(ProfileRefusal::Pinned)
+        );
+        let after = repo::get_by_id(&pool, &charter.id).unwrap().expect("row");
+        assert_eq!(after.spec.resource_profile, Some(stored));
+    }
+
+    #[test]
+    fn resource_profile_persona_write_stamps_self_and_declared_at() {
+        // A persona cannot smuggle provenance or a pin through its payload.
+        let forged = ResourceProfile {
+            source: ProfileSource::Operator,
+            pinned: true,
+            declared_at: Some("1999-01-01T00:00:00Z".into()),
+            ..heavy_profile()
+        };
+        let unpinned = ResourceProfile::default();
+        let merged = merge_profile(Some(&unpinned), forged, ProfileWriter::Persona).unwrap();
+        assert_eq!(merged.source, ProfileSource::SelfDeclared);
+        assert!(!merged.pinned);
+        assert_eq!(merged.machine, MachineLoad::Heavy);
+        let at = merged.declared_at.as_deref().expect("stamped");
+        assert_ne!(at, "1999-01-01T00:00:00Z");
+        assert!(chrono::DateTime::parse_from_rfc3339(at).is_ok());
+
+        // Through the door, on a charter with NO profile: one key is written
+        // and the rest of the spec is left exactly as stored.
+        let pool = init_test_db().unwrap();
+        insert_persona(&pool, "p1").unwrap();
+        let charter = profile_charter(
+            &pool,
+            ResponsibilitySpec {
+                model_override: Some("opus".into()),
+                ..Default::default()
+            },
+        );
+        let outcome =
+            declare_profile(&pool, &charter.id, heavy_profile(), ProfileWriter::Persona).unwrap();
+        assert!(matches!(outcome, ProfileWriteOutcome::Written(_)));
+        let after = repo::get_by_id(&pool, &charter.id).unwrap().expect("row");
+        let p = after.spec.resource_profile.expect("written");
+        assert_eq!(p.source, ProfileSource::SelfDeclared);
+        assert_eq!(p.difficulty, Difficulty::Hard);
+        assert_eq!(after.spec.model_override.as_deref(), Some("opus"));
+        assert!(matches!(
+            declare_profile(
+                &pool,
+                "resp_missing",
+                heavy_profile(),
+                ProfileWriter::Persona
+            ),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn resource_profile_operator_write_pins() {
+        let self_declared = ResourceProfile {
+            source: ProfileSource::SelfDeclared,
+            ..heavy_profile()
+        };
+        let edit = ResourceProfile {
+            pinned: true,
+            machine: MachineLoad::Exclusive,
+            ..Default::default()
+        };
+        let merged = merge_profile(Some(&self_declared), edit, ProfileWriter::Operator).unwrap();
+        assert_eq!(merged.source, ProfileSource::Operator);
+        assert!(merged.pinned);
+        assert!(merged.declared_at.is_some());
+
+        // The update command's door routes through the same rule.
+        let pool = init_test_db().unwrap();
+        insert_persona(&pool, "p1").unwrap();
+        let charter = profile_charter(&pool, ResponsibilitySpec::default());
+        declare_profile(&pool, &charter.id, heavy_profile(), ProfileWriter::Persona).unwrap();
+        let updated = update_from_input(
+            &pool,
+            &charter.id,
+            UpdatePersonaResponsibilityInput {
+                spec: Some(ResponsibilitySpec {
+                    resource_profile: Some(ResourceProfile {
+                        pinned: true,
+                        difficulty: Difficulty::Light,
+                        // The editor echoing the old provenance changes nothing.
+                        source: ProfileSource::SelfDeclared,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let p = updated.spec.resource_profile.clone().expect("profile");
+        assert_eq!(p.source, ProfileSource::Operator);
+        assert!(p.pinned);
+        assert_eq!(p.difficulty, Difficulty::Light);
+
+        // A later spec save that omits the profile does not erase the pin...
+        let kept = update_from_input(
+            &pool,
+            &charter.id,
+            UpdatePersonaResponsibilityInput {
+                spec: Some(ResponsibilitySpec {
+                    engine_mode: Some("agentic".into()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(kept.spec.resource_profile, Some(p.clone()));
+        // ...and unpinning hands the profile back to the persona.
+        let unpinned = update_from_input(
+            &pool,
+            &charter.id,
+            UpdatePersonaResponsibilityInput {
+                spec: Some(ResponsibilitySpec {
+                    resource_profile: Some(ResourceProfile { pinned: false, ..p }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(!unpinned.spec.resource_profile.expect("profile").pinned);
+        assert!(matches!(
+            declare_profile(&pool, &charter.id, heavy_profile(), ProfileWriter::Persona).unwrap(),
+            ProfileWriteOutcome::Written(_)
+        ));
+    }
+
+    #[test]
+    fn resource_profile_validation_refuses_the_incoherent_shapes() {
+        let mut charter = PersonaResponsibility {
+            title: "Profiled".into(),
+            status: "active".into(),
+            ..Default::default()
+        };
+        charter.spec.resource_profile = Some(ResourceProfile {
+            pinned: true,
+            source: ProfileSource::SelfDeclared,
+            ..Default::default()
+        });
+        assert!(matches!(validate(&charter), Err(AppError::Validation(_))));
+        charter.spec.resource_profile = Some(ResourceProfile {
+            declared_at: Some("yesterday".into()),
+            ..Default::default()
+        });
+        assert!(matches!(validate(&charter), Err(AppError::Validation(_))));
+        charter.spec.resource_profile = Some(ResourceProfile {
+            rationale: Some("x".repeat(MAX_PROFILE_RATIONALE_CHARS + 1)),
+            ..Default::default()
+        });
+        assert!(matches!(validate(&charter), Err(AppError::Validation(_))));
+        charter.spec.resource_profile = Some(heavy_profile());
+        validate(&charter).unwrap();
     }
 }
