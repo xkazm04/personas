@@ -25,7 +25,7 @@
  * script's checkout.
  */
 import { spawn, spawnSync, execSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
@@ -85,6 +85,21 @@ const SCENARIOS = {
   "rust-check-cold-applib": { kind: "rust", note: "cargo clean -p personas-desktop, then check --lib: app_lib from nothing, deps warm, no incremental cache", before: cleanPkg("personas-desktop"), run: cargo("check", "--lib") },
   "rust-build-cold-worktree": { kind: "rust", note: "first dev build of the lib in a fresh build dir; say in --note what was already warm", run: cargo("build", "--lib") },
   "disk-build-dir": { kind: "disk", dir: "build", note: "bytes under cargo's build_directory (a worktree's own build dir when build.build-dir is configured)" },
+  // The tier gate. It is the single most expensive entry in `npm run check` and
+  // nothing had ever timed it, so "three serial vite builds" travelled as prose.
+  "fe-check-tiers": { kind: "fe", note: "npm run check:tiers (the tier gate, codegen + vite build(s))", run: npm("run", "check:tiers") },
+  // dist weight. These read the CURRENT dist — they run no build, so a row is
+  // only meaningful next to a --note saying which build produced the tree.
+  // `files` rides on every row: 0 bytes because nothing matched and 0 bytes
+  // because the artefact is genuinely gone are different outcomes (the census's
+  // fail-loud contract, applied to a measurement).
+  // `allowZero` is per scenario and is the whole difference between a
+  // measurement and a broken selector. A dist with no JS, or no worker chunk,
+  // means the walk is wrong — refuse. Zero MAPS is the opposite: it is the
+  // measurement `PERSONAS_RELEASE` was introduced to produce.
+  "size-dist": { kind: "bytes", note: "bytes of .js emitted into dist (maps excluded)", select: (rel) => rel.endsWith(".js") },
+  "size-dist-maps": { kind: "bytes", allowZero: true, note: "bytes of .map files in dist", select: (rel) => rel.endsWith(".map") },
+  "size-worker-chunk": { kind: "bytes", note: "bytes of dist worker chunks (*.worker-*.js)", select: (rel) => /\.worker-[^\\/]*\.js$/.test(rel) },
 };
 
 if (flag("list")) {
@@ -126,6 +141,30 @@ function dirBytes(dir) {
   return Number(execSync(`du -sb "${dir}"`, { encoding: "utf8" }).split(/\s+/)[0]);
 }
 
+/**
+ * Bytes of the files under `dir` whose path (relative, forward-slashed) passes
+ * `select`. Node fs rather than `du`, which hangs on this host, and rather than
+ * robocopy, which counts whole trees and cannot filter by extension.
+ */
+function selectedBytes(dir, select) {
+  if (!existsSync(dir)) throw new Error(`could not measure: ${dir} does not exist — build first`);
+  let bytes = 0, largest = null;
+  const files = [];
+  const walk = (abs, rel) => {
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      const childAbs = join(abs, entry.name);
+      const childRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) { walk(childAbs, childRel); continue; }
+      if (!entry.isFile() || !select(childRel)) continue;
+      const size = statSync(childAbs).size;
+      bytes += size; files.push(childRel);
+      if (!largest || size > largest.bytes) largest = { file: childRel, bytes: size };
+    }
+  };
+  walk(dir, "");
+  return { bytes, files, largest };
+}
+
 function buildDirectory() {
   // cwd matters: cargo discovers .cargo/config.toml from the working directory, not from --manifest-path.
   const r = spawnSync("cargo", ["metadata", "--format-version", "1", "--no-deps"], { cwd: TAURI, encoding: "utf8", maxBuffer: 1 << 26 });
@@ -161,6 +200,16 @@ async function main() {
 
   if (scenario.kind === "disk") {
     row.bytes = dirBytes(scenario.dir === "build" ? buildDirectory() : join(TAURI, "target"));
+  } else if (scenario.kind === "bytes") {
+    const measured = selectedBytes(join(ROOT, "dist"), scenario.select);
+    // Refuse an empty enumeration unless this scenario says zero is a result.
+    if (measured.files.length === 0 && !scenario.allowZero) {
+      console.error(`could not measure: ${id} matched 0 files under dist/ — broken selector, or wrong build`);
+      process.exit(1);
+    }
+    row.bytes = measured.bytes;
+    row.files = measured.files.length;
+    row.largest = measured.largest;
   } else {
     if (flag("warmup")) {
       console.error("warmup run (not recorded) ...");

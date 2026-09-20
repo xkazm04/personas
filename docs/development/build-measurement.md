@@ -54,6 +54,17 @@ on; `baseline` is the default.
 | `disk-build-dir` | bytes under cargo's `build_directory` (equals `target` unless a `build.build-dir` is configured, as it is for worktrees) |
 | `rust-check-cold-applib` | `cargo clean -p personas-desktop`, then `cargo check --lib`: the app crate from nothing, dependencies warm, no incremental cache. What CI, a fresh worktree and a first clippy run pay |
 | `rust-build-cold-worktree` | first dev build of the lib in an empty build dir. Run once per new build dir; say in `--note` what was already warm |
+| `fe-check-tiers` | `npm run check:tiers` — the tier gate, the most expensive single entry in `npm run check` |
+| `size-dist` | bytes of `.js` under `dist/` (maps excluded) |
+| `size-dist-maps` | bytes of `.map` under `dist/` |
+| `size-worker-chunk` | bytes of `dist/**/*.worker-*.js` — the Web Worker bundles |
+
+The three `size-*` scenarios measure the **current** `dist/`; they run no build of
+their own, so a row is only readable next to a `--note` saying which build
+produced that tree. Each carries `files` and `largest` alongside `bytes`,
+because "0 bytes, 0 files matched" (a broken selector, or no `dist`) and "0
+bytes, the artefact is gone" are different outcomes and only one of them is a
+win. A missing `dist/` is refused rather than recorded as zero.
 
 Rust scenarios use `--lib` on purpose: a running dev app holds
 `personas-desktop.exe` open, and a bin link would fail the measurement rather

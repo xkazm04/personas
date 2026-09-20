@@ -5,9 +5,12 @@
  * `'<$0.001'` for an EXACT zero — asserting a small nonzero cost for a run
  * that really cost nothing. `formatCost` has known both since formatters.ts.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { fmtCost, pctChange } from '../comparisonHelpers';
 import { formatCost } from '@/lib/utils/formatters';
+import { useI18nStore } from '@/stores/i18nStore';
+
+afterEach(() => useI18nStore.setState({ language: 'en' }));
 
 describe('fmtCost delegates to the app formatter', () => {
   it('renders an exact zero as zero, never as a sub-threshold value', () => {
@@ -22,6 +25,28 @@ describe('fmtCost delegates to the app formatter', () => {
 
   it('still marks a genuinely sub-threshold cost as below the threshold', () => {
     expect(fmtCost(0.0000001)).toContain('<');
+  });
+
+  /**
+   * The locale-dependent half of the comparison surface.
+   *
+   * When `diffLines`/`jsonDiff` moved out of this module into the pure
+   * `comparisonDiffCore` (to keep the i18n layer out of the Web Worker chunk —
+   * 23.3 MB of it), the thing that had to stay true is that the numbers shown
+   * NEXT to the diff are still formatted for the active UI language. This
+   * module keeps its `formatCost` dependency precisely so they are.
+   */
+  it('follows the active UI language, not en-US', () => {
+    useI18nStore.setState({ language: 'en' });
+    const en = fmtCost(1234.5678);
+    useI18nStore.setState({ language: 'cs' });
+    const cs = fmtCost(1234.5678);
+
+    expect(en).toBe('$1,234.5678');
+    expect(cs).not.toBe(en);
+    // cs groups with a NARROW NO-BREAK SPACE, not U+0020 — normalise before
+    // comparing, or the assertion fails on a difference nobody can see.
+    expect(cs.replace(/\s/gu, ' ')).toContain('1 234,5678');
   });
 });
 
