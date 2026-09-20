@@ -10,6 +10,7 @@ import { ChevronLeft } from 'lucide-react';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCouncilStore } from '../councilStore';
@@ -88,9 +89,11 @@ export function RoundTable({
             <Tag>{kindWord(subject, b)}</Tag>
             {detail ? <Tag>{tx(tbl.round, { round: detail.run.roundNo })}</Tag> : null}
           </div>
-          <h1 className="m-0 mt-1.5 text-[34px] font-bold leading-tight tracking-tight text-foreground">
+          {/* Not an <h1>: the page's one top-level heading belongs to
+              ContentHeader. This is the subject's name inside it. */}
+          <h2 className="m-0 mt-1.5 text-[34px] font-bold leading-tight tracking-tight text-foreground">
             {subject.title}
-          </h1>
+          </h2>
         </div>
         {run.chain.length > 0 ? (
           <div className="flex-none rounded-card border border-border bg-secondary/[0.04] px-2.5 py-0.5">
@@ -159,6 +162,8 @@ export function RoundTable({
               role="tab"
               aria-selected={s === seat}
               onClick={() => onSeat(i)}
+              id={`council-seat-${i}`}
+              aria-controls="council-member-panel"
               data-testid="council-seat-tab"
               className={`rounded-pill border px-4 py-1.5 typo-body font-semibold capitalize transition-colors ${
                 s === seat
@@ -169,14 +174,22 @@ export function RoundTable({
               <span className="mr-1.5 font-mono typo-caption opacity-75">{i + 1}</span>
               {s.name}
               {weakest?.seat.name === s.name ? (
-                <span className="ml-1 text-status-warning" title={tbl.seat_weakest}>
-                  ▼
-                </span>
+                <Tooltip content={tbl.seat_weakest}>
+                  <span className="ml-1 text-status-warning">▼</span>
+                </Tooltip>
               ) : null}
             </button>
           ))}
         </div>
-        {seat ? <MemberReading seat={seat} detail={detail} weakest={weakest} /> : null}
+        {/* The panel the tablist above says it controls. Declared, not
+            implied by the layout (census `tabstrip-with-no-declared-panel`). */}
+        <div
+          role="tabpanel"
+          id="council-member-panel"
+          aria-labelledby={seat ? `council-seat-${seats.indexOf(seat)}` : undefined}
+        >
+          {seat ? <MemberReading seat={seat} detail={detail} weakest={weakest} /> : null}
+        </div>
       </div>
 
       <footer className="col-span-full border-t border-border px-7 py-3">

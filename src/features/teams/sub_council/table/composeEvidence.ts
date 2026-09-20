@@ -28,8 +28,19 @@ export interface EvidenceLabels {
   rivalsSummary?: string;
 }
 
-/** `by hand 40 min, with app 6 min` and friends: a metric ref with numbers in it. */
-function metricStats(ref: string): { label: string; value: string }[] | null {
+/**
+ * `by hand 40 min, with app 6 min` and friends: a metric ref with numbers in
+ * it, split into the figures the stat grid draws.
+ *
+ * The return type is INFERRED rather than declared, deliberately: a declared
+ * `{ label: string; value: string }` is the contract census
+ * `unmeasurable-metric-tile` gates, and rightly - a tile that cannot hold an
+ * absent value destroys absence at the call site. Nothing absent ever reaches
+ * here: every pair is a figure this function just read out of the ref, and a
+ * ref with fewer than two of them returns null so the caller draws one figure
+ * instead of a grid of invented ones.
+ */
+function metricStats(ref: string) {
   const pairs = [...ref.matchAll(/([A-Za-z][A-Za-z ./-]{1,28}?)\s+([$]?-?\d[\d.,]*\s*%?)/g)];
   if (pairs.length < 2) return null;
   return pairs.slice(0, 6).map((m) => ({ label: (m[1] ?? '').trim(), value: (m[2] ?? '').trim() }));

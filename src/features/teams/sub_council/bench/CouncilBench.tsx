@@ -70,9 +70,10 @@ export function CouncilBench({ onFocusSubject }: { onFocusSubject: (s: CouncilSu
   return (
     <>
       <header className="grid flex-none grid-cols-[1fr_auto] gap-x-[18px] gap-y-1 border-b border-border px-6 pb-3 pt-4">
-        <h1 className="m-0 text-[27px] font-bold leading-tight tracking-tight text-foreground">
+        {/* Not an <h1>: ContentHeader owns this page's top-level heading. */}
+        <h2 className="m-0 text-[27px] font-bold leading-tight tracking-tight text-foreground">
           {waiting === 0 ? b.headline_none : waiting === 1 ? b.headline_one : tx(b.headline_many, { count: waiting })}
-        </h1>
+        </h2>
         <p className="m-0 self-center text-right typo-body text-muted-dark">{b.keys_hint}</p>
         <p className="col-span-full m-0 max-w-[104ch] typo-body text-muted">
           {b.lede}
