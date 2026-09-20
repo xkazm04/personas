@@ -218,6 +218,8 @@ export type { ContractReport } from "./ContractReport";
 export type { ConversationRow } from "./ConversationRow";
 export type { CorpusMapEntry } from "./CorpusMapEntry";
 export type { CorrelatedEvent } from "./CorrelatedEvent";
+export type { CouncilIngestSummary } from "./CouncilIngestSummary";
+export type { CouncilSubjectState } from "./CouncilSubjectState";
 export type { CoverageApplied } from "./CoverageApplied";
 export type { CoverageCell } from "./CoverageCell";
 export type { CoverageDebt } from "./CoverageDebt";

@@ -1643,6 +1643,12 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_remove_milestone_item,
             // The /ship-milestone skill's one gated door back into the app.
             commands::infrastructure::dev_tools::dev_tools_ship_milestone_ingest,
+            commands::infrastructure::dev_tools::dev_tools_council_ingest,
+            commands::infrastructure::dev_tools::dev_tools_council_list_subjects,
+            commands::infrastructure::dev_tools::dev_tools_council_get_run,
+            commands::infrastructure::dev_tools::dev_tools_council_decide,
+            commands::infrastructure::dev_tools::dev_tools_set_use_case_tier,
+            commands::infrastructure::dev_tools::dev_tools_relink_use_cases,
             commands::infrastructure::dev_tools::dev_tools_triage_verdicts_ingest,
             // Dev Tools -- L1 passport wall (one batched read for N covers)
             commands::infrastructure::dev_tools::dev_tools_project_wall_summary,
