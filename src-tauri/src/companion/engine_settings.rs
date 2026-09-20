@@ -314,6 +314,26 @@ mod tests {
         assert_eq!(d.micro.model, super::super::model_routing::MICRO.model);
     }
 
+    /// The defect the first live run found (2026-09-18): the nine tier keys
+    /// were never registered with the settings repo, so every save was
+    /// refused as "unknown settings key" and no test went through the repo.
+    #[test]
+    fn a_saved_table_round_trips_through_the_real_settings_repo() {
+        let db = personas_db::init_test_db().expect("test db");
+        let mut table = defaults();
+        table.main.engine = AthenaEngine::Grok;
+        table.main.model = "grok-4.6".into();
+        table.main.effort = "low".into();
+        table.aside.effort = String::new();
+        save(&db, &table).expect("the tier keys are registered settings keys");
+        let loaded = load(&db).expect("load");
+        assert_eq!(loaded.main.engine, AthenaEngine::Grok);
+        assert_eq!(loaded.main.model, "grok-4.6");
+        assert_eq!(loaded.main.effort, "low");
+        // An empty effort row means "the calibrated default", so load fills it.
+        assert_eq!(loaded.aside.effort, defaults().aside.effort);
+    }
+
     #[test]
     fn effort_validation_is_closed() {
         assert_eq!(valid_effort(" High "), Some("high".into()));

@@ -183,8 +183,19 @@ function jobsOf(conversationId) {
 function proactiveTurnsOf(conversationId, sinceSql) {
   return withDb((db) => q(db, `select t.${TURN_COLS.split(', ').join(', t.')}, substr(coalesce(n.body_excerpt,''),1,1200) as body_excerpt from companion_turn t join companion_node n on n.id = t.assistant_episode_id where n.session_id = ? and t.origin = 'proactive' and t.created_at >= ? order by t.created_at`, [conversationId, sinceSql]));
 }
-/** SQLite `datetime('now')` text (UTC, no zone) -> epoch ms. */
-const sqlMs = (s) => (s ? Date.parse(String(s).replace(' ', 'T') + (String(s).endsWith('Z') ? '' : 'Z')) : null);
+/** A stored timestamp -> epoch ms. Two shapes live in this database: SQLite
+ *  `datetime('now')` text (UTC, no zone: `2026-09-18 16:36:18`) and RFC 3339
+ *  with nanoseconds and an offset (`2026-09-18T16:36:18.548304200+00:00`, the
+ *  job table). Measured 2026-09-18: appending `Z` to the second made every
+ *  job comparison NaN. */
+const sqlMs = (s) => {
+  if (!s) return null;
+  let t = String(s).trim().replace(' ', 'T');
+  t = t.replace(/(\.\d{3})\d+/, '$1'); // nanoseconds -> milliseconds
+  if (!/(Z|[+-]\d{2}:?\d{2})$/.test(t)) t += 'Z';
+  const ms = Date.parse(t);
+  return Number.isNaN(ms) ? null : ms;
+};
 const toSql = (ms) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
 const jobRunningAt = (job, wallMs) => Boolean(job && job.started_at && sqlMs(job.started_at) <= wallMs && (!job.completed_at || sqlMs(job.completed_at) > wallMs));
 
@@ -419,6 +430,15 @@ async function scenarioB(setup, rep) {
     if (withText) { followTurnId = withText; break; }
     await sleep(1000);
   }
+  // First token seen; now let the turn FINISH before reading its text and its
+  // ledger row (the row is written at turn end). Measured 2026-09-18: reading
+  // at the first token recorded a 15-char text and no ledger row.
+  while (followTurnId && Date.now() < deadline) {
+    tl = await timeline('read');
+    const ended = tl.events.some((e) => e.turnId === followTurnId && (e.kind === 'finished' || e.kind === 'error' || e.isResult));
+    if (ended) { await sleep(1500); tl = await timeline('read'); break; }
+    await sleep(1000);
+  }
   const ledgerRows = proactiveTurnsOf(conversationId, toSql(rowB.sendWallMs - 1000));
   const ledger = ledgerRows[ledgerRows.length - 1] ?? null;
   if (followTurnId) {
@@ -469,6 +489,28 @@ async function main() {
     console.log('dry run complete: nothing was sent, nothing was written');
     return;
   }
+  // The tier table is the operator's setting, not the harness's: remember it
+  // and put it back however the run ends. Measured 2026-09-18: a matrix that
+  // ended on grok left Athena's MAIN tier on grok until someone noticed.
+  const originalTiers = await invoke('companion_get_engine_settings');
+  const restoreTiers = async () => {
+    try {
+      await invoke('companion_set_engine_settings', { settings: originalTiers });
+      console.log(`tiers restored: main ${originalTiers.main.engine}/${originalTiers.main.model}/${originalTiers.main.effort || 'default'}`);
+    } catch (e) {
+      console.error(`could not restore the tier table: ${String(e.message || e)} - set it back in Settings > Engine > Athena tiers`);
+    }
+  };
+  process.once('SIGINT', () => { void restoreTiers().then(() => shutdown(130)); });
+  try {
+    await runSetups(setups, engines, scenarios, recorded);
+  } finally {
+    await restoreTiers();
+  }
+  console.log(`done: results in ${RESULTS}; aggregate with --report`);
+}
+
+async function runSetups(setups, engines, scenarios, recorded) {
   for (const setup of setups) {
     const avail = engines.find((e) => e.engine === setup.engine);
     if (!avail?.installed) {
@@ -494,7 +536,6 @@ async function main() {
       }
     }
   }
-  console.log(`done: results in ${RESULTS}; aggregate with --report`);
 }
 
 main().then(() => shutdown(0)).catch((e) => { console.error('harness failed:', e.message || e); shutdown(1); });

@@ -777,7 +777,13 @@ const bridge: TestBridge = {
    */
   async invokeCommand(command: string, params?: Record<string, unknown>) {
     try {
-      const result = await invoke(command, params ?? {});
+      // Privileged commands check the `x-ipc-token` header. The app's own
+      // wrapper (`tauriInvoke`) attaches it; this raw passthrough must too,
+      // because the init script's header monkey-patch is not guaranteed to
+      // be applied (measured 2026-09-18: token present, `__ipc_patched` false).
+      const token = (globalThis as Record<string, unknown>).__IPC_TOKEN;
+      const headers = typeof token === "string" && token ? { "x-ipc-token": token } : undefined;
+      const result = await invoke(command, params ?? {}, headers ? { headers } : undefined);
       return { success: true, result };
     } catch (e) {
       return { success: false, error: _fmtBridgeErr(e) };

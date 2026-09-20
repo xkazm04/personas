@@ -81,8 +81,42 @@ skipped, not as a failure. The operator runs it; it is never part of a gate.
 
 ## Results
 
-**Not yet run.** The harness was built and unit-tested against the app's real command
-names; no live run has been made and `.planning/athena-browser-react/` holds no rows.
+**Run 2026-09-18** on the operator's machine (`claude` 2.1.276 on a subscription seat, `grok` 1.0.34 on
+the grok.com login, app built from `38bd5a02d` plus the three fixes below), 3 setups x 2 reps x
+scenarios A and B, 23 rows, no timeouts. Every conversation is created fresh, so scenario A and the
+first B turn are cold spawns; B2 rides the warm session the B turn opened. The research job runs on the
+ASIDE tier (Sonnet 5, medium) for every setup; only the MAIN tier changes.
+
+| MAIN tier | A: first token / total | B interim: first token / total | research dispatched | B2 while the job ran: first token / total | follow-up after job end |
+|---|---|---|---|---|---|
+| claude-opus-5 low (default) | 4.1 s, 4.5 s / 9.4 s, 10.5 s | 3.4 s, 2.1 s / 10.1 s, 9.3 s | 2 of 2 | 1.7 s, 1.0 s / 2.5 s, 2.0 s | 2.0 s, 4.6 s |
+| claude-sonnet-5 low | 4.2 s, 2.7 s / 9.0 s, 7.8 s | 3.1 s, 1.4 s / 8.6 s, 8.1 s | 2 of 2 | 0.9 s, 1.1 s / 1.0 s, 1.5 s | 4.2 s, 1.8 s |
+| grok-4.6 low | 6.7 s, 4.4 s / 10.3 s, 10.4 s | 18.1 s, 13.4 s / 40.6 s, 16.6 s | 1 of 2 | 5.8 s, 4.4 s / 5.6 s, 4.5 s | 2.7 s (one run) |
+
+First-token figures are the UI-side stamp (send to first `text_delta` seen by the page); the ledger's
+`first_text_ms` agreed within 30 to 100 ms on every row. Research jobs took 30 to 40 s each.
+
+What the run shows:
+
+- **She reads the page.** Every A reply quoted the hero line and the pricing tiers and noticed the
+  fixture's own "fictional" footer; the block landed on every turn (`browser_page` in
+  `prompt_blocks_json`).
+- **The research lane works and the conversation stays open.** On both Claude setups the B turn
+  dispatched the job every time with an interim reaction, the question sent during the job was answered
+  in about a second (Sonnet 0.9 s, Opus 1.0 to 1.7 s to first token) while the job was still running,
+  and the follow-up arrived 2 to 5 s after the job finished with findings that name the standard and
+  the study.
+- **Grok is the slow lane here too**, and less disciplined: 6.7 s to first token on A, 13 to 18 s on
+  the research ask, and in one of two runs it announced "I am still checking" and then did the checking
+  inside the turn instead of emitting the op (40 s total, no job). Its B2 answers took 4 to 6 s.
+- **The warm session is what makes B2 fast**: the same model that needs 3 to 4 s cold answers in
+  about a second on the open process.
+
+Three defects the live run found and fixed in the same session: the nine `companion.tier.*` settings
+keys were never registered with the settings repo, so no tier could be saved from the UI or a script
+(`db/src/settings_keys.rs`); the test bridge's raw command passthrough sent no `x-ipc-token` header,
+so privileged commands refused it (`src/test/automation/bridge.ts`); and the harness parsed the job
+table's RFC 3339 timestamps as SQLite text and read the follow-up before the turn ended.
 
 ### Running it (confirmed against the harness flags)
 
@@ -102,6 +136,10 @@ seeded whitelist origin), `--timeout <s>` per turn and per wait (default 300), `
 (ignore recorded rows), `--dry-run`, `--report`, `--help`. `PERSONAS_DB_DIR` points at the
 directory holding `personas_data.db` (default `%APPDATA%/com.personas.desktop`). Exit codes:
 0 done, 1 harness error, 2 app not reachable.
+
+The tier table is the operator's setting: the harness reads it once at start and restores it on every exit
+path (normal end, error, Ctrl+C), so a matrix that ends on grok leaves Athena on her configured tier. The
+calibrated default is MAIN claude-opus-5 low; with no `companion.tier.*` rows persisted that is what runs.
 
 Resume: a key `(setup, rep, scenario, turn)` that already has a clean row (no `error`, no
 `timedOut`) is skipped; errored and timed-out keys are re-run. An engine reported
