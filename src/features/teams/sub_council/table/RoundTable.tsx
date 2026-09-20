@@ -184,7 +184,7 @@ export function RoundTable({
                   : 'border-border bg-secondary/[0.05] text-muted hover:text-foreground'
               }`}
             >
-              <span className="mr-1.5 font-mono typo-caption">{i + 1}</span>
+              <span className="mr-1.5 font-mono opacity-70">{i + 1}</span>
               {s.name}
               {weakest?.seat.name === s.name ? (
                 <Tooltip content={tbl.seat_weakest}>

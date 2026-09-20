@@ -1,42 +1,20 @@
-// One row of the queue: the council's rose at 54 px, its title, its state and
-// where it came from. The rose is the whole verdict in 54 pixels, which is
-// why the row leads with it rather than with a coloured dot.
+// One row of the queue: what the council got to, against what bar, on how
+// much evidence, and where it came from.
+//
+// The glyph is `RowGlyph`, NOT the rose. A row is drawn from the list
+// projection, which has no per-member scores, and a rose there would draw
+// five hatched wedges - which says "we measured nothing" when the truth is
+// "we have not read the round". The rose is the round table's and the
+// preview's, where the members are actually on hand.
 import { memo } from 'react';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { Rose } from '../table/svg/Rose';
 import { resolveRubric } from '../table/rubrics';
-import type { Seat } from '../table/runModel';
+import { RowGlyph } from '../table/svg/RowGlyph';
+import { usePercent } from '../table/usePercent';
 import { StateChip } from './chips';
-
-/**
- * The mini rose without a run: the list projection carries the overall and
- * the floor-hit count but no per-member scores, so every wedge is drawn NOT
- * MEASURED rather than at an invented reach. That is the honest drawing of
- * "we have not read this round yet", and it fills in the moment the person
- * opens the table.
- */
-function previewSeats(subject: CouncilSubjectState): Seat[] {
-  const { rubric } = resolveRubric(null, subject.kind);
-  return Object.entries(rubric.dimensions).map(([name, def]) => ({
-    name,
-    weight: def.weight,
-    floor: def.floor,
-    kind: def.kind,
-    threshold: rubric.threshold,
-    state: 'not_run' as const,
-    score: null,
-    confidence: null,
-    floorHit: false,
-    advisory: def.kind !== 'mechanical',
-    findings: [],
-    evidence: [],
-    techniques: [],
-    delta: null,
-  }));
-}
 
 export const QueueRow = memo(function QueueRow({
   subject,
@@ -53,7 +31,15 @@ export const QueueRow = memo(function QueueRow({
 }) {
   const { t, tx } = useTranslation();
   const b = t.council.bench;
+  const tbl = t.council.table;
+  const percent = usePercent();
   const { rubric } = resolveRubric(null, subject.kind);
+  const glyphLabel = tx(tbl.row_glyph_label, {
+    overall: subject.overall == null ? tbl.rose_no_overall : subject.overall.toFixed(2),
+    threshold: rubric.threshold.toFixed(2),
+    coverage: subject.coverage == null ? tbl.not_measured : percent(subject.coverage),
+  });
+
   return (
     <button
       type="button"
@@ -68,16 +54,12 @@ export const QueueRow = memo(function QueueRow({
           : 'border-transparent hover:bg-secondary/[0.06]'
       }`}
     >
-      <Rose
-        seats={previewSeats(subject)}
-        threshold={rubric.threshold}
+      <RowGlyph
         overall={subject.overall}
-        size={54}
-        mini
-        label={t.council.table.rose_label}
-        notMeasuredLabel={t.council.table.not_measured}
-        noOverallLabel={t.council.table.rose_no_overall}
-        overallLabel={t.council.table.rose_overall}
+        coverage={subject.coverage}
+        threshold={rubric.threshold}
+        floorHit={subject.floorHits > 0 || subject.hardFailures > 0}
+        label={glyphLabel}
       />
       <span className="min-w-0">
         <b className="block truncate typo-heading text-foreground">{subject.title}</b>

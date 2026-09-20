@@ -1,9 +1,13 @@
 // The galaxy layer: rail, field, HUD, and the four states that are not a
 // galaxy (unpaired, loading, read failure, an unpainted corpus).
 //
-// The bench is WP8's. It mounts in the `bench` slot below the field and never
-// hides the sky; the engine already takes its height so the camera can frame
-// what is left.
+// The bench is WP8's. It mounts in the `bench` slot and RISES OVER the bottom
+// of the field rather than pushing it up: the sky keeps its full height, the
+// docked rail stays fully visible beside it, and the engine is told the
+// drawer's height so the camera frames the focused set in the band that is
+// left. Laying it out as a flex sibling instead would subtract the drawer
+// twice - once from the canvas element and once inside `viewport()` - and the
+// field above would be framed for a viewport that does not exist.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link2, TriangleAlert } from 'lucide-react';
 
@@ -33,7 +37,7 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
   const { t } = useTranslation();
   const g = t.council.galaxy;
   const registryRoot = useRegistryRoot();
-  const [engine, setEngine] = useState<GalaxyEngine | null>(null);
+  const [engine, setEngineLocal] = useState<GalaxyEngine | null>(null);
   const filterRef = useRef<HTMLInputElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const legendRef = useRef<HTMLDivElement | null>(null);
@@ -48,6 +52,7 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
   const load = useCouncilStore((s) => s.load);
   const loadFixture = useCouncilStore((s) => s.loadFixture);
   const setLens = useCouncilStore((s) => s.setLens);
+  const publishEngine = useCouncilStore((s) => s.setEngine);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
@@ -55,6 +60,19 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
     if (fixtureOn) return;
     void load(registryRoot);
   }, [fixtureOn, load, registryRoot]);
+
+  /* This stage OWNS the engine, and it is the only thing that publishes it.
+     The bench mounts in an opaque slot below and cannot be handed a prop, so
+     it reads the handle from the store - which is how `Esc` out of the bench
+     can restore the reader's exact camera. Cleared on unmount so nothing
+     holds a destroyed engine. */
+  const setEngine = useCallback(
+    (next: GalaxyEngine | null) => {
+      setEngineLocal(next);
+      publishEngine(next);
+    },
+    [publishEngine],
+  );
 
   useHudReservations(stageRef, hudCards, engine);
 
@@ -157,9 +175,9 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
           {status === 'loaded' && layout && focus.kind === 'none' && layout.subjects.length === 0 ? (
             <div className="absolute inset-x-0 bottom-6 text-center typo-caption text-muted-dark">{g.corpus_empty}</div>
           ) : null}
+          {bench}
         </div>
       </div>
-      {bench}
     </div>
   );
 }

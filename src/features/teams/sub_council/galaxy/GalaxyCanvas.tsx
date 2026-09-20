@@ -86,12 +86,17 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
     engineRef.current?.setHover(hover);
   }, [hover]);
 
-  // Store -> engine, but never an echo of what the engine just told the store.
+  // Store -> engine, but never an echo of what the engine just told the store,
+  // and never a second flight to a focus the engine is already standing in.
+  // The second guard is what lets the bench hand the focus back WITHOUT a
+  // flight on its way down and then restore the exact camera: this effect
+  // would otherwise fly to the focus's own altitude and undo it.
   useEffect(() => {
     if (emittedRef.current === focus) {
       emittedRef.current = null;
       return;
     }
+    if (engineRef.current?.hasFocus(focus)) return;
     engineRef.current?.setFocus(focus);
   }, [focus]);
 

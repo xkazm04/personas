@@ -1176,7 +1176,8 @@
       "run_failed_title": "This round could not be read",
       "no_run_title": "No council has run on this subject",
       "no_run_body": "Run one from the feature ledger in Dev Tools and the whole round lands here.",
-      "why_unread": "Overall {overall} against a threshold of {threshold}, coverage {coverage}. The members of this round have not been read yet."
+      "why_unread": "Overall {overall} against a threshold of {threshold}, coverage {coverage}. The members of this round have not been read yet.",
+      "row_glyph_label": "Overall {overall} against a threshold of {threshold}, on coverage {coverage}."
     },
     "gate": {
       "open_title": "The gate is yours",

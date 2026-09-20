@@ -23067,7 +23067,8 @@
       "run_failed_title": "Không thể đọc vòng này",
       "no_run_title": "Chưa có hội đồng nào chạy trên chủ đề này",
       "no_run_body": "Chạy một hội đồng từ sổ tính năng trong Dev Tools và toàn bộ vòng sẽ hiện tại đây.",
-      "why_unread": "Điểm tổng {overall} so với ngưỡng {threshold}, độ phủ {coverage}. Các thành viên của vòng này chưa được tải."
+      "why_unread": "Điểm tổng {overall} so với ngưỡng {threshold}, độ phủ {coverage}. Các thành viên của vòng này chưa được tải.",
+      "row_glyph_label": "Điểm tổng {overall} so với ngưỡng {threshold}, ở độ phủ {coverage}."
     },
     "gate": {
       "open_title": "Cổng là của bạn",

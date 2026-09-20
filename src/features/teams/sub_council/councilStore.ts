@@ -16,11 +16,13 @@ import { create } from 'zustand';
 import { getCouncilOverlay, getRegistryGalaxy, listCouncilSubjects } from '@/api/devTools/council';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';
+import type { CouncilOverlaySubject } from '@/lib/bindings/CouncilOverlaySubject';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { buildLayout } from './galaxy/engine/layout';
+import type { GalaxyEngine } from './galaxy/engine/GalaxyEngine';
 import { FIXTURE_ROOT, IS_DEV, loadReferenceFixture } from './galaxy/fixture';
 import type { CameraState, GalaxyCounts, GalaxyFocus, GalaxyLayout, GalaxyNode } from './galaxy/engine/types';
 
@@ -68,16 +70,27 @@ export interface CouncilStore {
   /**
    * The focus the reader was standing in when the bench went up.
    *
-   * The bench cannot reach the engine (GalaxyStage owns it and takes the
-   * bench as an opaque node), so dropping the bench restores the FOCUS the
-   * reader had rather than the exact camera: same altitude, same path, and
-   * the engine flies there. Restoring the camera byte for byte needs the
-   * engine handle; see the note in `docs/features/council.md`.
+   * Restored TOGETHER with `cameraBeforeBench`, and in that order: the focus
+   * without a flight, then the exact camera. Focus alone would put the
+   * reader at the altitude their path implies rather than at the view they
+   * had placed themselves, which is a different promise from the one the
+   * reference makes.
    */
   focusBeforeBench: GalaxyFocus | null;
 
   /** DEV only: the page is showing the checked-in reference fixture. */
   fixtureOn: boolean;
+
+  /**
+   * The live canvas engine, published by the galaxy stage that owns it.
+   *
+   * ONE owner: `GalaxyStage` creates it, hands it here, and clears it on
+   * unmount. The bench reads it and never constructs one. It is here rather
+   * than in a prop because the bench mounts in an opaque slot inside the
+   * stage, and the alternative - a render-prop bench - would make every
+   * consumer of the slot know about the engine.
+   */
+  engine: GalaxyEngine | null;
 
   // ── the bench (WP8) ──
   /** The queue drawer is up. The galaxy stays live above it, never hidden. */
@@ -121,6 +134,7 @@ export interface CouncilStore {
   setLens: (on: boolean) => void;
   setCameraBeforeBench: (camera: CameraState | null) => void;
 
+  setEngine: (engine: GalaxyEngine | null) => void;
   setBenchOpen: (open: boolean) => void;
   setTableSubject: (subjectId: string | null) => void;
   setQueueIndex: (index: number) => void;
@@ -147,6 +161,54 @@ const EMPTY_COUNTS: GalaxyCounts = {
   dimmed: 0,
   labelsHidden: 0,
 };
+
+/**
+ * The overlay the FIELD is painted from, with the fixture's in-memory
+ * decisions folded in.
+ *
+ * Only ever called while the fixture is on. It exists because the reference
+ * artifact makes a promise the product has to keep: a decision changes the
+ * colour of the stars that council lands on, on the way back up. With a
+ * backend that happens because `refreshCouncils()` re-reads the real
+ * overlay; with the fixture there is nothing to re-read, so the decision is
+ * projected onto the overlay here instead of being invisible above the
+ * bench.
+ *
+ * The projection follows `markOf`'s own precedence (rejected, then approved,
+ * then pending): a decision moves one count off `pending` and onto its own
+ * side, which is exactly what the ingest door would have recorded.
+ */
+export function overlayWithFixtureDecisions(
+  base: CouncilOverlay | null,
+  subjects: CouncilSubjectState[],
+  decisions: Record<string, { decision: 'approved' | 'rejected'; reason: string | null }>,
+): CouncilOverlay | null {
+  const entries = Object.entries(decisions);
+  if (entries.length === 0) return base;
+  const rows = new Map<string, CouncilOverlaySubject>(
+    (base?.subjects ?? []).map((row) => [row.slug, { ...row }]),
+  );
+  for (const [subjectId, decided] of entries) {
+    const subject = subjects.find((row) => row.id === subjectId);
+    if (!subject) continue;
+    for (const slug of subject.registrySubjects) {
+      const row = rows.get(slug) ?? {
+        slug,
+        approved: 0,
+        rejected: 0,
+        pending: 0,
+        techniquesProven: 0,
+        projects: [],
+        last: null,
+      };
+      if (decided.decision === 'rejected') row.rejected += 1;
+      else row.approved += 1;
+      row.pending = Math.max(0, row.pending - 1);
+      rows.set(slug, row);
+    }
+  }
+  return { subjects: [...rows.values()] };
+}
 
 function adopt(entry: WarmEntry) {
   return {
@@ -182,6 +244,7 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   cameraBeforeBench: null,
   focusBeforeBench: null,
   fixtureOn: false,
+  engine: null,
   benchOpen: false,
   tableSubjectId: null,
   queueIndex: 0,
@@ -276,17 +339,38 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   setLens: (lensOn) => set({ lensOn }),
   setCameraBeforeBench: (cameraBeforeBench) => set({ cameraBeforeBench }),
 
-  setBenchOpen: (benchOpen) =>
-    set((s) =>
-      benchOpen
-        ? { benchOpen, focusBeforeBench: s.focus }
-        : {
-            benchOpen,
-            tableSubjectId: null,
-            focus: s.focusBeforeBench ?? { kind: 'none' },
-            focusBeforeBench: null,
-          },
-    ),
+  setEngine: (engine) => set({ engine }),
+
+  /**
+   * Raising the bench REMEMBERS the reader's view; dropping it gives that
+   * view back, byte for byte.
+   *
+   * The camera comes from the engine rather than from anything React knows,
+   * because the camera is not React state: it is tweened per frame inside
+   * the engine, and the value that matters is the one at the moment the
+   * bench went up. On the way down the focus is restored WITHOUT a flight
+   * (`setFocus(focus, false)`), and then the exact camera is flown back to,
+   * so the reader lands where they were rather than at the altitude their
+   * focus implies.
+   */
+  setBenchOpen: (benchOpen) => {
+    const s = get();
+    if (benchOpen) {
+      set({
+        benchOpen: true,
+        focusBeforeBench: s.focus,
+        cameraBeforeBench: s.engine?.getCamera() ?? s.cameraBeforeBench,
+      });
+      return;
+    }
+    const focus = s.focusBeforeBench ?? { kind: 'none' as const };
+    const camera = s.cameraBeforeBench;
+    set({ benchOpen: false, tableSubjectId: null, focus, focusBeforeBench: null });
+    const engine = s.engine;
+    if (!engine) return;
+    engine.setFocus(focus, false);
+    if (camera) engine.restoreCamera(camera);
+  },
   setTableSubject: (tableSubjectId) => set({ tableSubjectId }),
   setQueueIndex: (queueIndex) => set({ queueIndex }),
   focusGate: () => set((s) => ({ gateFocusNonce: s.gateFocusNonce + 1 })),
@@ -296,7 +380,11 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   recordFixtureDecision: (subjectId, decision, reason) =>
     set((s) => {
       if (!s.fixtureOn) return s;
-      return { fixtureDecisions: { ...s.fixtureDecisions, [subjectId]: { decision, reason } } };
+      const fixtureDecisions = { ...s.fixtureDecisions, [subjectId]: { decision, reason } };
+      if (!s.galaxy) return { fixtureDecisions };
+      // The stars repaint on the way back up, as the reference does.
+      const overlay = overlayWithFixtureDecisions(s.overlay, s.subjects, fixtureDecisions);
+      return { fixtureDecisions, layout: buildLayout(s.galaxy, overlay) };
     }),
 
   refreshCouncils: async () => {

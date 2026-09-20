@@ -5,7 +5,7 @@
 // build of this page is compared against it. This shell owns the header and
 // the stage; the galaxy layer mounts inside, and the bench takes the `bench`
 // slot below the field without ever hiding it.
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Scale } from 'lucide-react';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
@@ -25,6 +25,7 @@ export default function CouncilPage() {
   const { t, tx } = useTranslation();
   const b = t.council.bench;
   const benchOpen = useCouncilStore((s) => s.benchOpen);
+  const tableOpen = useCouncilStore((s) => s.tableSubjectId !== null);
   const setBenchOpen = useCouncilStore((s) => s.setBenchOpen);
   const focusCouncil = useCouncilStore((s) => s.focusCouncil);
   const rawSubjects = useCouncilStore((s) => s.subjects);
@@ -75,6 +76,38 @@ export default function CouncilPage() {
     s.focusCouncil(found, null);
   }, [pendingSubjectId, subjectsStatus, setPendingCouncilSubjectId]);
 
+  /* The bench eats the bottom of the stage, and the field has to KNOW that:
+     the engine frames the focused set in the space that is left rather than
+     behind the drawer. Measured from the real element, because the height is
+     a viewport clamp (`min(68vh, 580px)`) and a constant here would drift
+     from the CSS the moment either side changes. */
+  const benchRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const engine = useCouncilStore.getState().engine;
+    const el = benchRef.current;
+    if (!engine) return;
+    if (!benchOpen || !el) {
+      engine.setBenchHeight(0);
+      return;
+    }
+    const push = () => {
+      engine.setBenchHeight(el.getBoundingClientRect().height);
+      // Re-frame: the focused set has to sit in the band the drawer leaves,
+      // not behind it. Only a COUNCIL focus is re-aimed - re-flying a reader
+      // who is standing somewhere in the field would move a camera they
+      // placed themselves, and the bench promises to give that camera back.
+      const { focus, engine: live } = useCouncilStore.getState();
+      if (focus.kind === 'council') live?.setFocus(focus, true);
+    };
+    push();
+    const ro = new ResizeObserver(push);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      engine.setBenchHeight(0);
+    };
+  }, [benchOpen, tableOpen]);
+
   const aim = useCallback(
     (subject: CouncilSubjectState) => focusCouncil(subject, null),
     [focusCouncil],
@@ -105,7 +138,7 @@ export default function CouncilPage() {
                 {waiting}
               </span>
             ) : null}
-            <kbd className="rounded border border-border px-1 font-mono typo-caption">Q</kbd>
+            <kbd className="rounded border border-current/40 px-1 font-mono opacity-70">Q</kbd>
           </button>
         }
       />
@@ -115,10 +148,23 @@ export default function CouncilPage() {
             bench={
               benchOpen ? (
                 <section
+                  ref={benchRef}
                   data-testid="council-bench"
                   aria-label={tx(b.headline_many, { count: waiting })}
-                  className="flex min-h-0 flex-none flex-col border-t border-border bg-background shadow-[0_-18px_44px_rgba(0,0,0,0.34)]"
-                  style={{ height: 'min(68vh, 580px)' }}
+                  className="absolute inset-x-0 bottom-0 z-30 flex min-h-0 flex-col border-t border-border bg-background shadow-[0_-18px_44px_rgba(0,0,0,0.34)]"
+                  /* Two heights, as the reference has: the queue leaves a
+                     band of sky, the round table takes the room it needs and
+                     leaves a thinner one. A SHARE OF THE STAGE, not of the
+                     viewport - the reference's bench is fixed to a window
+                     whose whole height is field, while this one sits inside a
+                     page that already spent ~290 px on its own header and the
+                     galaxy's HUD. `68vh` there is most of the sky; here it was
+                     all of it, leaving an 11 px strip. */
+                  style={{
+                    height: tableOpen ? '84%' : '62%',
+                    minHeight: tableOpen ? 380 : 300,
+                    maxHeight: tableOpen ? 780 : 520,
+                  }}
                 >
                   <CouncilBench onFocusSubject={aim} />
                 </section>

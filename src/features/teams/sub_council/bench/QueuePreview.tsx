@@ -60,7 +60,7 @@ export function QueuePreview({
         />
       </div>
 
-      <p className="m-0 max-w-[60ch] typo-body text-foreground">
+      <p className="m-0 max-w-[60ch] typo-body-lg text-foreground">
         {gate.open ? tx(tbl[why.key], why.values) : tx(t.council.gate[gate.key], gate.values)}
       </p>
 

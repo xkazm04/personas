@@ -235,6 +235,19 @@ export class GalaxyEngine {
    * all: one category if they share one, one cluster if they share one, the
    * whole field if they span several.
    */
+  /**
+   * Is the engine already standing in EXACTLY this focus object?
+   *
+   * Reference identity, deliberately: the caller that asks is the React host
+   * relaying the store, and the only way the engine can hold the same object
+   * is if that caller (or the store on its behalf) already applied it. A
+   * structural comparison would also return true for a NEW object describing
+   * the same place, which is a case the host must still fly.
+   */
+  hasFocus(focus: GalaxyFocus): boolean {
+    return this.focus === focus;
+  }
+
   setFocus(focus: GalaxyFocus, fly = true): void {
     this.focus = focus;
     this.applyFocus(focus, fly);
@@ -404,7 +417,12 @@ export class GalaxyEngine {
     const t0 = performance.now();
     const step = (now: number) => {
       const p = Math.min(1, (now - t0) / ms);
-      this.camera = tweenCamera(from, target, p);
+      // The last frame SNAPS to the target rather than interpolating to it:
+      // the log-space `k` tween lands within a float epsilon of the target,
+      // which is invisible on screen and fatal to "the camera returns
+      // EXACTLY where it was", which is a promise this layer makes twice
+      // (`climb()` and the bench).
+      this.camera = p >= 1 ? { ...target } : tweenCamera(from, target, p);
       this.draw();
       if (p < 1) this.flight = requestAnimationFrame(step);
       else this.flight = 0;

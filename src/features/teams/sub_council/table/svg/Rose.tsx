@@ -79,7 +79,18 @@ export function Rose({
     return { seat, i, from, to, mid, on: selectedIndex === i };
   });
 
-  const hubR = size > 300 ? 46 : 34;
+  /**
+   * The hub is a LABEL, not a mask.
+   *
+   * At the preview's 190 px the reference's flat `size > 300 ? 46 : 34` is
+   * LARGER than the threshold ring (0.70 x 43 = 30) and every wedge under
+   * it, so the whole figure disappeared behind its own centre and the rose
+   * read as an empty circle with a number in it - in both themes, and most
+   * visibly in light where the hub is a pale disc on a pale plate. It is
+   * clamped to sit inside the ring, so the ring, the floors and every wedge
+   * are always drawn on top of nothing.
+   */
+  const hubR = Math.max(18, Math.min(size > 300 ? 46 : 34, threshold * R - 6));
   // Same reason as the wedge labels: an SVG `<text>` cannot host a span.
   const overallText = overall == null ? '' : overall.toFixed(2);
 
@@ -101,7 +112,7 @@ export function Rose({
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(45)"
         >
-          <line x1="0" y1="0" x2="0" y2="7" stroke="var(--muted-dark)" strokeWidth="2" strokeOpacity="0.55" />
+          <line x1="0" y1="0" x2="0" y2="7" stroke="var(--muted-dark)" strokeWidth="2" strokeOpacity="0.7" />
         </pattern>
         <pattern
           id={`${uid}-carried`}
@@ -115,7 +126,17 @@ export function Rose({
         </pattern>
       </defs>
 
-      <circle cx={c} cy={c} r={R} fill="var(--card-bg)" stroke="var(--border)" />
+      {/* An ink wash rather than `--card-bg`: that token is a WHITE overlay
+          (`rgba(255,255,255,.05)` dark, `.92` light), so it is invisible on
+          a dark field and a white disc on a light one. A mix of the
+          foreground reads as the same faint plate in both. */}
+      <circle
+        cx={c}
+        cy={c}
+        r={R}
+        fill="color-mix(in srgb, var(--foreground) 5%, transparent)"
+        stroke="color-mix(in srgb, var(--foreground) 14%, transparent)"
+      />
 
       {drawn.map(({ seat, i, from, to, mid, on }) => (
         <g key={seat.name}>
@@ -180,7 +201,13 @@ export function Rose({
 
       {!mini ? (
         <>
-          <circle cx={c} cy={c} r={hubR} fill="var(--background)" stroke="var(--border)" />
+          <circle
+            cx={c}
+            cy={c}
+            r={hubR}
+            fill="var(--background)"
+            stroke="color-mix(in srgb, var(--foreground) 18%, transparent)"
+          />
           <text
             x={c}
             y={c + (overall == null ? 4 : 2)}

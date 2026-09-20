@@ -86,13 +86,13 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
         />
         <div className="min-w-0">
           <h3 className="m-0 mb-1 typo-heading text-foreground">{title}</h3>
-          <p className="m-0 typo-body text-foreground">{why}</p>
+          <p className="m-0 typo-body-lg text-foreground">{why}</p>
           {standing?.reason ? (
             <blockquote className="mt-3 border-l-4 border-status-error py-1 pl-4">
               <span className="block typo-caption uppercase tracking-wide text-muted">
                 {g.reason_recorded}
               </span>
-              <span className="typo-body text-foreground">{standing.reason}</span>
+              <span className="typo-body-lg text-foreground">{standing.reason}</span>
             </blockquote>
           ) : null}
         </div>
@@ -111,7 +111,7 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
       <LockOpen className="h-8 w-8 text-status-pending" aria-hidden="true" />
       <div className="min-w-0">
         <h3 className="m-0 mb-1 typo-heading text-foreground">{g.open_title}</h3>
-        <p className="m-0 typo-body text-foreground">{why}</p>
+        <p className="m-0 typo-body-lg text-foreground">{why}</p>
         {fixture ? (
           <p className="m-0 mt-1 typo-caption text-status-warning">{t.council.bench.fixture_mode}</p>
         ) : null}

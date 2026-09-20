@@ -169,7 +169,8 @@
     "run_failed_title": "No se pudo leer esta ronda",
     "no_run_title": "Ningún consejo se ha ejecutado sobre este tema",
     "no_run_body": "Ejecuta uno desde el libro de funciones en Herramientas de desarrollo y toda la ronda aparecerá aquí.",
-    "why_unread": "Global {overall} frente a un umbral de {threshold}, cobertura {coverage}. Los miembros de esta ronda aún no se han cargado."
+    "why_unread": "Global {overall} frente a un umbral de {threshold}, cobertura {coverage}. Los miembros de esta ronda aún no se han cargado.",
+    "row_glyph_label": "Global {overall} frente a un umbral de {threshold}, con cobertura {coverage}."
   },
   "gate": {
     "open_title": "La puerta es tuya",

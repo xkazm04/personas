@@ -24,7 +24,17 @@ export function CoverageRing({
   const ok = coverage >= floor;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label}>
-      <circle cx={c} cy={c} r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
+      {/* The track is an ink wash, not `--border`: the border token is a hair
+          line meant to sit on a card, and at 7 px it vanishes on a light
+          plate. */}
+      <circle
+        cx={c}
+        cy={c}
+        r={r}
+        fill="none"
+        stroke="color-mix(in srgb, var(--foreground) 12%, transparent)"
+        strokeWidth="7"
+      />
       <circle
         cx={c}
         cy={c}

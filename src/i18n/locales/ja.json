@@ -23067,7 +23067,8 @@
       "run_failed_title": "このラウンドを読み込めませんでした",
       "no_run_title": "この対象に評議会はまだ実行されていません",
       "no_run_body": "Dev Toolsの機能台帳から実行すると、ラウンド全体がここに反映されます。",
-      "why_unread": "総合{overall}としきい値{threshold}の比較、カバレッジ{coverage}。このラウンドのメンバーはまだ読み込まれていません。"
+      "why_unread": "総合{overall}としきい値{threshold}の比較、カバレッジ{coverage}。このラウンドのメンバーはまだ読み込まれていません。",
+      "row_glyph_label": "総合{overall}としきい値{threshold}の比較、カバレッジ{coverage}。"
     },
     "gate": {
       "open_title": "ゲートはあなたに委ねられています",

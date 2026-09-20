@@ -117,7 +117,7 @@ export function MemberReading({
       </div>
 
       {seat.score == null ? (
-        <p className="m-0 max-w-[66ch] typo-body text-foreground">
+        <p className="m-0 max-w-[66ch] typo-body-lg text-foreground">
           {stateWord}. {tbl.not_measured_prose}
         </p>
       ) : null}
@@ -204,7 +204,7 @@ function FindingCard({
         </span>
         <h4 className="m-0 text-[18px] font-bold leading-snug text-foreground">{finding.title}</h4>
       </header>
-      <p className="my-2 max-w-[68ch] typo-body text-foreground">{finding.detail}</p>
+      <p className="my-2 max-w-[68ch] typo-body-lg text-foreground">{finding.detail}</p>
       <footer className="flex flex-wrap items-center gap-4 typo-caption text-muted-dark">
         <span>{tx(tbl.raised_by, { member })}</span>
         <RecurrenceDots

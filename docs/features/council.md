@@ -121,11 +121,19 @@ Opening a council puts the whole field in **council focus**: the stars that
 council lands on are lit and named, everything else is dimmed rather than
 hidden, and the count of what was dimmed is printed rather than implied.
 
+`Esc` out of the bench gives the reader their own view back **exactly**: the
+camera is read off the canvas engine when the drawer goes up and flown back
+to when it comes down, and the flight's last frame snaps to its target rather
+than interpolating to within a float epsilon of it.
+
 ### The bench
 
-`Q` raises the queue over the field without hiding it. It spans **every
-project**, so a person who works across repositories has one queue; each row
-carries its project's name for that reason.
+`Q` raises the queue **over** the field without hiding it: the sky keeps its
+full height behind the drawer, the docked rail stays beside it, and the
+engine is told the drawer's height so the camera frames the focused set in
+the band that is left. The queue spans **every project**, so a person who
+works across repositories has one queue; each row carries its project's name
+for that reason.
 
 Three groups, each with its one-line note:
 
@@ -141,8 +149,13 @@ The sentence *"the instrument is uncalibrated, so judged floors are advisory;
 mechanical floors bind"* is said **once**, in the bench header. Everywhere else
 an advisory floor is simply drawn dotted.
 
-Each row carries a 54 px **rose**, and selecting one aims the sky behind the
-bench at that council's stars. `Enter` sits at the round table.
+Each row carries a 54 px **glyph** - the overall as a disc, the threshold as
+a ring, the coverage as an arc on the rim - and NOT the rose. A row is drawn
+from the list projection, which has no per-member scores, so a rose there
+would draw five hatched wedges and say "we measured nothing" when the truth
+is "we have not read the round". The rose belongs to the preview and the
+round table, where the members are actually on hand. Selecting a row aims the
+sky behind the bench at that council's stars; `Enter` sits at the round table.
 
 ### The round table
 
@@ -203,8 +216,10 @@ with no backend behind it. Approve and reject work in memory and the gate says
 so out loud. With the fixture off and no backend, every read fails into the
 page's own honest error and empty states rather than into a blank field.
 
-### What is not there yet
+### In a dev build, decisions repaint the sky
 
-Dropping the bench restores the **focus** the reader was standing in, not the
-exact camera. The bench cannot reach the canvas engine, which the galaxy stage
-owns; restoring the camera byte for byte needs one seam there.
+With the fixture on there is no backend to write to, so an approval or a
+rejection is held in memory - and folded into the overlay the field is
+painted from, so the stars that council lands on change colour on the way
+back up, exactly as they do with a backend behind the gate. The page says out
+loud that it is fixture mode; nothing reaches the store.

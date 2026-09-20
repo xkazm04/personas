@@ -14,9 +14,11 @@ export interface RailLabels {
 
 export function MemberRail({ seat, ariaLabel }: { seat: Seat; ariaLabel: string }) {
   const notMeasured = seat.score == null;
+  // Ink washes rather than `--border`: that token is a hairline colour and
+  // at a 15 px track it disappears against a light plate.
   const track = notMeasured
-    ? 'bg-[repeating-linear-gradient(135deg,var(--border)_0_6px,transparent_6px_12px)] ring-1 ring-inset ring-border'
-    : 'bg-border';
+    ? 'bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--foreground)_22%,transparent)_0_6px,transparent_6px_12px)] ring-1 ring-inset ring-foreground/15'
+    : 'bg-foreground/[0.12]';
   return (
     <div
       role="img"
@@ -93,7 +95,7 @@ export function RailLegend({ labels }: { labels: RailLabels }) {
       />
       <LegendKey
         swatch={
-          <i className="inline-block h-2.5 w-[18px] rounded border border-border bg-[repeating-linear-gradient(135deg,var(--border)_0_3px,transparent_3px_6px)]" />
+          <i className="inline-block h-2.5 w-[18px] rounded border border-foreground/20 bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--foreground)_28%,transparent)_0_3px,transparent_3px_6px)]" />
         }
         text={labels.notMeasured}
       />

@@ -169,7 +169,8 @@
     "run_failed_title": "Diese Runde konnte nicht gelesen werden",
     "no_run_title": "Für dieses Subjekt ist noch kein Council gelaufen",
     "no_run_body": "Starte einen aus dem Feature-Ledger in Dev Tools, und die ganze Runde landet hier.",
-    "why_unread": "Gesamtwert {overall} gegenüber einem Threshold von {threshold}, Coverage {coverage}. Die Mitglieder dieser Runde wurden noch nicht geladen."
+    "why_unread": "Gesamtwert {overall} gegenüber einem Threshold von {threshold}, Coverage {coverage}. Die Mitglieder dieser Runde wurden noch nicht geladen.",
+    "row_glyph_label": "Gesamtwert {overall} gegenüber einem Threshold von {threshold}, bei Coverage {coverage}."
   },
   "gate": {
     "open_title": "Das Gate liegt bei dir",
