@@ -35,16 +35,34 @@ winner's visual language.** Specifically taken from the donor:
 | queue structure and ordering | three named groups — **Yours to decide** / **Not waiting on you** / **Decided** — each with a one-line note, each sorted by title; the count that matters is the number of *decidable* rows, in the headline |
 | queue row | a 54 px **mini rose** + title + state chip + `project · round n` |
 | queue item detail (the preview) | chips (state, project, tier/kind, star count) → title → the rose → the council's one-sentence reading → **Sit at the round table** |
-| the round table | header (chips, 34 px title, round history, constellation of the stars it touches) · left: the rose, the why-line, the coverage ring, the rail legend · right: the five member seats and the member's reading · footer: the gate, always in view |
+| the round table | header (chips, 34 px title, round history, constellation of the stars it touches) · left: the rose, the why-line, the coverage ring · right: the five member seats, the member's reading and the rail legend · footer: the gate, always in view |
 | the rose | wedge **width** = the member's weight, **reach** = its score, one ring = the threshold, floors drawn as arcs (dotted when advisory), `carried` striped, **not measured hatched at full reach** |
 | member reading | seat tabs `1…5` with the weakest marked ▼ · big score or `NOT MEASURED` · the rail (fill, knob, threshold rule, floor mark, floor zone) · kind, weight bar, confidence bars, floor, delta · findings with severity and recurrence dots · rival dots · evidence drawn as graphics (minutes-saved bars, gate pips, cost) with honest placeholder frames for the video/screenshot that are not on disk · technique proof glyphs · must-address · stars this touches · the receipt |
 | the walk to the gate | queue → preview → table → the gate pinned in the footer; approve is **armed then confirmed**, reject opens a box that stays disabled until a reason is written |
+| council focus on the galaxy | opening a council aims the field at the set of stars it lands on — see below |
 | the sentences | the gate's one-line reason per state, and the council's "why" line |
 | typography hierarchy | 13 / 14 / 15 / 16 / 17 / 21 / 31 / 34 / 42 — one large number per screen, prose at 16 px |
 
 The donor's own chrome (its fullscreen L2, its glass lens layout, its sidebar) was **not**
 taken: the galaxy layer stays the winner's, and the round table lives inside the winner's
 bench so the field is still alive above it.
+
+## Council focus — the galaxy is always about the council on screen
+
+Selecting a council in the queue, or opening its round table, puts the whole galaxy layer in
+**council focus**, and it is one state, not three views that drift apart:
+
+- the camera flies to the **minimal enclosing view** of that council's `registry_subjects`, and
+  the altitude is the lowest node that still holds them all — one category if they share one,
+  one cluster if they share one, the whole field if they span several;
+- the stars in the set are **lit and named**; everything else is **dimmed, never hidden**, and
+  the count of what was dimmed is printed twice (the legend and the sidebar footer);
+- the **sidebar** becomes the same set — *"Stars this council lands on · A → Z · n"* — each row
+  carrying that star's council state, its technique count, and its rank;
+- the **breadcrumb names the council**, not wherever the reader happened to be standing;
+- `Esc` from the round table returns to the queue **and keeps the focus**; `Esc` from the queue
+  drops the bench and restores the **exact camera, altitude and path** the reader had before
+  they opened it (verified by hashing the canvas before and after: identical).
 
 ## What changed, beyond the fusion
 
@@ -60,11 +78,17 @@ bench so the field is still alive above it.
    five states (sky, deep altitude, queue, round table, after a decision): **minimum rendered
    font size 13 px**, prose 16 px, member scores 42 px. The winner's 11.5 px `kbd`, 12.5 px list
    metadata and 12.4–12.8 px SVG chart labels are gone.
-3. Smaller corrections found by looking at the screenshots: the round history moved into the
+3. **The lens takes part in the field's own label-occupancy pass.** Its star names are queued at
+   the top priority, so they displace the field's labels instead of overprinting them, and a
+   cluster's caption stands down while the lens is sitting on it.
+4. Smaller corrections found by looking at the screenshots: the round history moved into the
    table's header so it is visible without scrolling; the rose is sized from the bench height so
    the rose, the why-line and the coverage ring always clear the fold; the toast moved off the
-   queue it reports on; the sidebar's level tag no longer collides with the level name; and a
-   decision now repaints its stars **at sky altitude too**, not only at depth.
+   queue it reports on; the sidebar's level tag no longer collides with the level name; a
+   decision now repaints its stars **at sky altitude too**, not only at depth; the rail legend
+   sits under the member rail it explains, where it always clears the pinned gate; and the rose
+   re-measures itself once the bench has finished sliding open, so it fills the column it is
+   given at any window height.
 
 ## How to open it
 
@@ -104,6 +128,8 @@ reason of at least 12 characters.
 - Approve / reject mutate in-page state only, and the change is visible in the queue, in the
   sidebar pips and on the galaxy on the way back up.
 - No frame loop at idle (measured: 0 `requestAnimationFrame` calls in 2 s with nothing moving).
+- The galaxy, the sidebar and the breadcrumb always describe the council on screen, and `Esc`
+  out of the bench restores the reader's own view byte for byte.
 
 ## Port notes for the React 19 + Tailwind 4 implementation
 
@@ -117,6 +143,10 @@ reason of at least 12 characters.
 - **The rose, the rail, the coverage ring, the rounds chart, the constellation and the proof
   glyphs are plain SVG** — they port directly as components, and they are the pieces worth
   extracting first (`<Rose>`, `<MemberRail>`, `<CoverageRing>`, `<RoundHistory>`).
+- **Council focus is one state, not three.** `focusCouncil(row)` sets the thread, the altitude
+  and the camera together, and the canvas, the sidebar and the breadcrumb all read from it. In
+  React it is one store slice (`focusedCouncil`) that the canvas engine, the sidebar list and the
+  crumb subscribe to — never three components computing their own idea of "where am I".
 - **The gate is a rule, not a widget.** `decidable = state === 'ready' && (tier === 'major' ||
   kind === 'architecture')` belongs in one shared predicate used by the queue grouping, the
   headline count and the gate — three places that must never disagree.
@@ -144,4 +174,5 @@ shots/                      verification screenshots, captured at 1280x800
 `shots/`: `01-sky-dark`, `02-sky-light`, `03-lens` (+ `03b-lens-crop`, the 100 px circle up
 close), `04-deep-altitude`, `05-queue`, `06-detail-ready` (the open gate),
 `07-detail-closed-gate` (a machine pass), `08-after-reject` (+ `08a` the gate that recorded it),
-`09-galaxy-after-decision` (the repainted star), `10-keyboard-end`.
+`09-galaxy-after-decision` (the repainted star), `10-keyboard-end`,
+`11-council-focus` (the galaxy, sidebar and breadcrumb all about one council).
