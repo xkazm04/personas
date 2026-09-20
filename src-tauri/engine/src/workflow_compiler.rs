@@ -239,6 +239,7 @@ pub fn persist_blueprint(
         default_max_turns: None,
         created_at: team_now.clone(),
         updated_at: team_now,
+        workspace_id: None,
     };
 
     let team_ms = team_start.elapsed().as_millis();

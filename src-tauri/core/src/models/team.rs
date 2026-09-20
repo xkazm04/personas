@@ -11,6 +11,18 @@ use ts_rs::TS;
 pub struct PersonaTeam {
     pub id: String,
     pub project_id: Option<String>,
+    /// The workspace this team is the cross-project group OF. `Some` on
+    /// exactly one project-less team per workspace — enforced by the partial
+    /// unique index `idx_persona_teams_workspace_group`, not by convention —
+    /// and `None` on every team that is a project's roster.
+    ///
+    /// `#[ts(optional)]` rather than a bare `Option`: a required
+    /// `workspace_id: string | null` would break every TypeScript object
+    /// literal that builds a whole `PersonaTeam`, and those live in other
+    /// packages' files. See `personas_db::workspace_team`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspace_id: Option<String>,
     pub parent_team_id: Option<String>,
     pub name: String,
     pub description: Option<String>,
