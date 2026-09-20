@@ -65,9 +65,41 @@ export interface CouncilStore {
   lensOn: boolean;
   /** The view to restore when the bench drops (WP8 raises it). */
   cameraBeforeBench: CameraState | null;
+  /**
+   * The focus the reader was standing in when the bench went up.
+   *
+   * The bench cannot reach the engine (GalaxyStage owns it and takes the
+   * bench as an opaque node), so dropping the bench restores the FOCUS the
+   * reader had rather than the exact camera: same altitude, same path, and
+   * the engine flies there. Restoring the camera byte for byte needs the
+   * engine handle; see the note in `docs/features/council.md`.
+   */
+  focusBeforeBench: GalaxyFocus | null;
 
   /** DEV only: the page is showing the checked-in reference fixture. */
   fixtureOn: boolean;
+
+  // ── the bench (WP8) ──
+  /** The queue drawer is up. The galaxy stays live above it, never hidden. */
+  benchOpen: boolean;
+  /** The subject whose round table is open. Null means the queue layer. */
+  tableSubjectId: string | null;
+  /** Index into the flattened queue; the arrows move this. */
+  queueIndex: number;
+  /**
+   * Decisions taken with the fixture on.
+   *
+   * The fixture has no backend, so a decision has nowhere to go: it is held
+   * here, the bench and the galaxy read it, and the page says out loud that
+   * it is fixture mode. It is NEVER consulted when `fixtureOn` is false, so
+   * a real decision can only ever come from the store.
+   */
+  fixtureDecisions: Record<string, { decision: 'approved' | 'rejected'; reason: string | null }>;
+  /**
+   * Bumped by the `G` key. The gate FOCUSES its Approve button when this
+   * changes and does nothing else: no key in this app commits a decision.
+   */
+  gateFocusNonce: number;
 
   load: (registryRoot: string | null) => Promise<void>;
   loadFixture: () => Promise<void>;
@@ -80,6 +112,20 @@ export interface CouncilStore {
   setSelectedIndex: (index: number) => void;
   setLens: (on: boolean) => void;
   setCameraBeforeBench: (camera: CameraState | null) => void;
+
+  setBenchOpen: (open: boolean) => void;
+  setTableSubject: (subjectId: string | null) => void;
+  setQueueIndex: (index: number) => void;
+  /** Move the keyboard focus to the gate. It never commits. */
+  focusGate: () => void;
+  /** Re-read the councils and the overlay after a decision lands. */
+  refreshCouncils: () => Promise<void>;
+  /** Fixture mode only: hold the decision in memory so the page can show it. */
+  recordFixtureDecision: (
+    subjectId: string,
+    decision: 'approved' | 'rejected',
+    reason: string | null,
+  ) => void;
 }
 
 const EMPTY_COUNTS: GalaxyCounts = {
@@ -122,7 +168,13 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   selectedIndex: 0,
   lensOn: true,
   cameraBeforeBench: null,
+  focusBeforeBench: null,
   fixtureOn: false,
+  benchOpen: false,
+  tableSubjectId: null,
+  queueIndex: 0,
+  fixtureDecisions: {},
+  gateFocusNonce: 0,
 
   loadFixture: async () => {
     if (!IS_DEV) return;
@@ -210,6 +262,63 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   setSelectedIndex: (selectedIndex) => set({ selectedIndex }),
   setLens: (lensOn) => set({ lensOn }),
   setCameraBeforeBench: (cameraBeforeBench) => set({ cameraBeforeBench }),
+
+  setBenchOpen: (benchOpen) =>
+    set((s) =>
+      benchOpen
+        ? { benchOpen, focusBeforeBench: s.focus }
+        : {
+            benchOpen,
+            tableSubjectId: null,
+            focus: s.focusBeforeBench ?? { kind: 'none' },
+            focusBeforeBench: null,
+          },
+    ),
+  setTableSubject: (tableSubjectId) => set({ tableSubjectId }),
+  setQueueIndex: (queueIndex) => set({ queueIndex }),
+  focusGate: () => set((s) => ({ gateFocusNonce: s.gateFocusNonce + 1 })),
+
+  recordFixtureDecision: (subjectId, decision, reason) =>
+    set((s) => {
+      if (!s.fixtureOn) return s;
+      return { fixtureDecisions: { ...s.fixtureDecisions, [subjectId]: { decision, reason } } };
+    }),
+
+  refreshCouncils: async () => {
+    // The fixture has no backend to re-read; its decisions live in the store
+    // and the page already re-rendered from them.
+    if (get().fixtureOn) return;
+    const root = get().registryRoot;
+    const [subjectsResult, overlayResult] = await Promise.allSettled([
+      listCouncilSubjects(),
+      getCouncilOverlay(),
+    ]);
+    if (subjectsResult.status === 'fulfilled') {
+      set({ subjects: subjectsResult.value, subjectsStatus: 'loaded', subjectsError: null });
+    } else {
+      silentCatch('councilStore.refresh.subjects')(subjectsResult.reason);
+    }
+    if (overlayResult.status === 'rejected') {
+      silentCatch('councilStore.refresh.overlay')(overlayResult.reason);
+      return;
+    }
+    const overlay = overlayResult.value;
+    const galaxy = get().galaxy;
+    // The stars have to repaint: a decision changes the marks the field is
+    // drawn with, and a bench that agreed with a sky that did not would be
+    // two ideas of the same fact.
+    if (galaxy) set({ overlay, layout: buildLayout(galaxy, overlay) });
+    if (root) {
+      const cached = warm.get(root);
+      if (cached) {
+        warm.set(root, {
+          ...cached,
+          overlay,
+          subjects: subjectsResult.status === 'fulfilled' ? subjectsResult.value : cached.subjects,
+        });
+      }
+    }
+  },
 }));
 
 /** Test hatch: the warm cache outlives every component that reads it. */

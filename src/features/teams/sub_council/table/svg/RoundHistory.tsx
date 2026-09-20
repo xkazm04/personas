@@ -55,6 +55,8 @@ export function RoundHistory({
       ) : null}
       {points.map((p, k) => {
         const x = px(k);
+        // Prepared outside the JSX: an SVG `<text>` cannot host `<Numeric>`.
+        const overallText = p.overall == null ? '' : p.overall.toFixed(2);
         const current = p.roundNo === currentRound;
         const clickable = points.length > 1 && onPickRound;
         return (
@@ -96,7 +98,7 @@ export function RoundHistory({
                   fontWeight="700"
                   fill="var(--foreground)"
                 >
-                  {p.overall.toFixed(2)}
+                  {overallText}
                 </text>
               </>
             )}

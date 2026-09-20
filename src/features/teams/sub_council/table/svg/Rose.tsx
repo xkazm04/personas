@@ -80,6 +80,8 @@ export function Rose({
   });
 
   const hubR = size > 300 ? 46 : 34;
+  // Same reason as the wedge labels: an SVG `<text>` cannot host a span.
+  const overallText = overall == null ? '' : overall.toFixed(2);
 
   return (
     <svg
@@ -187,7 +189,7 @@ export function Rose({
             fontWeight={800}
             fill={overall == null ? 'var(--muted-dark)' : 'currentColor'}
           >
-            {overall == null ? noOverallLabel : overall.toFixed(2)}
+            {overall == null ? noOverallLabel : overallText}
           </text>
           {overall != null && size > 300 ? (
             <text x={c} y={c + 21} textAnchor="middle" fontSize={13} fill="var(--muted-dark)">
@@ -217,6 +219,9 @@ function RoseLabel({
   on: boolean;
   notMeasuredLabel: string;
 }) {
+  // Formatted outside the JSX: `<Numeric>` renders a span, which an SVG
+  // `<text>` cannot host, so the figure is prepared here instead.
+  const scoreText = score == null ? '' : score.toFixed(2);
   const lx = c + Math.cos(mid) * (R + 14);
   const ly = c + Math.sin(mid) * (R + 14);
   const anchor = Math.cos(mid) > 0.3 ? 'start' : Math.cos(mid) < -0.3 ? 'end' : 'middle';
@@ -242,7 +247,7 @@ function RoseLabel({
         fontWeight={800}
         fill={score == null ? 'var(--muted-dark)' : 'currentColor'}
       >
-        {score == null ? notMeasuredLabel : score.toFixed(2)}
+        {score == null ? notMeasuredLabel : scoreText}
       </text>
     </>
   );

@@ -21,12 +21,12 @@ export function MemberRail({ seat, ariaLabel }: { seat: Seat; ariaLabel: string 
     <div
       role="img"
       aria-label={ariaLabel}
-      className={`relative h-[15px] flex-none rounded-lg ${track}`}
+      className={`relative h-[15px] flex-none rounded-card ${track}`}
     >
       {seat.floor != null ? (
         <i
           aria-hidden="true"
-          className={`absolute inset-y-0 left-0 rounded-l-lg ${
+          className={`absolute inset-y-0 left-0 rounded-l-card ${
             seat.advisory ? 'bg-muted-dark/20' : 'bg-status-error/20'
           }`}
           style={{ width: `${seat.floor * 100}%` }}
@@ -36,7 +36,7 @@ export function MemberRail({ seat, ariaLabel }: { seat: Seat; ariaLabel: string 
         <>
           <i
             aria-hidden="true"
-            className={`absolute inset-y-0 left-0 rounded-lg ${
+            className={`absolute inset-y-0 left-0 rounded-card ${
               seat.floorHit
                 ? 'bg-status-error'
                 : seat.state === 'carried'
