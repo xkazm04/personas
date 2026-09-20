@@ -65,7 +65,7 @@ export function RailPath({ steps }: Props) {
             onClick={() => setFocus(step.focus)}
             aria-current={current ? 'true' : undefined}
             className={`flex w-full items-center gap-2.5 rounded-interactive px-1.5 py-1 text-left ${
-              current ? 'typo-title bg-secondary/70 text-foreground' : 'typo-caption text-muted hover:bg-secondary/50 hover:text-foreground'
+              current ? 'typo-heading bg-secondary/70 text-foreground' : 'typo-caption text-muted hover:bg-secondary/50 hover:text-foreground'
             }`}
           >
             <span

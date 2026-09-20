@@ -74,7 +74,7 @@ export function CountsPanel() {
     >
       {rows.map((row) => (
         <div key={row.key} className="flex flex-col whitespace-nowrap">
-          <b className={`typo-title-lg ${row.accent ? 'text-accent' : 'text-foreground'}`}>
+          <b className={`typo-heading ${row.accent ? 'text-accent' : 'text-foreground'}`}>
             <Numeric value={row.value} />
           </b>
           <span className="typo-caption uppercase tracking-[0.07em] text-muted-dark">{row.label}</span>

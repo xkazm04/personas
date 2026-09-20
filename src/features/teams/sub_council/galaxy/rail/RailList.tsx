@@ -25,7 +25,7 @@ interface Props {
 
 function Heading({ label }: { label: string }) {
   return (
-    <div className="px-2 pb-1 pt-2.5 typo-title uppercase tracking-[0.1em] text-muted-dark">{label}</div>
+    <div className="px-2 pb-1 pt-2.5 typo-heading uppercase tracking-[0.1em] text-muted-dark">{label}</div>
   );
 }
 

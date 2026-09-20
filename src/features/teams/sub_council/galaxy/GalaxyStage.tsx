@@ -129,7 +129,7 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
               <div className="flex items-start gap-3">
                 <TriangleAlert className="mt-0.5 h-5 w-5 flex-none text-status-error" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="typo-title-lg text-foreground">{g.error_title}</p>
+                  <p className="typo-heading text-foreground">{g.error_title}</p>
                   <p className="mt-1 typo-caption text-muted">
                     {resolveErrorTranslated(t, error instanceof Error ? error.message : String(error ?? '')).message}
                   </p>

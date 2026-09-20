@@ -59,7 +59,7 @@ export function GalaxyHud({ engine }: Props) {
               aria-current={i === steps.length - 1 ? 'true' : undefined}
               className={`whitespace-nowrap rounded-interactive px-2.5 py-1 ${
                 i === steps.length - 1
-                  ? 'typo-title bg-secondary/70 text-foreground'
+                  ? 'typo-heading bg-secondary/70 text-foreground'
                   : 'typo-caption text-muted hover:bg-secondary/50 hover:text-foreground'
               }`}
             >
@@ -71,7 +71,7 @@ export function GalaxyHud({ engine }: Props) {
 
       {fixtureOn ? (
         <span
-          className="rounded-pill border border-status-warning/50 px-2.5 py-1 typo-title text-status-warning"
+          className="rounded-pill border border-status-warning/50 px-2.5 py-1 typo-heading text-status-warning"
           data-testid="council-fixture-badge"
         >
           {g.fixture_badge}

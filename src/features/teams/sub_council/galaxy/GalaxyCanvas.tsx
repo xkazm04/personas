@@ -113,7 +113,7 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
           style={{ left: Math.min(pointer.x + 18, Math.max(0, (canvasRef.current?.clientWidth ?? 0) - 355)), top: Math.max(8, pointer.y - 14) }}
           data-testid="council-galaxy-hovercard"
         >
-          <div className="typo-title-lg text-foreground">{card.title}</div>
+          <div className="typo-heading text-foreground">{card.title}</div>
           <div className="typo-caption text-muted">{card.detail}</div>
         </div>
       ) : null}

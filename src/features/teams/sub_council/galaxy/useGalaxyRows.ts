@@ -60,7 +60,18 @@ function nodesFor(layout: GalaxyLayout, focus: GalaxyFocus): { level: RailLevel;
   const category = domain.categories.find((c) => c.id === focus.categoryId);
   if (!category) return { level: 'category', nodes: domain.categories };
   const subject = category.subjects.find((s) => s.slug === focus.subjectSlug);
-  if (!subject) return { level: 'subject', nodes: category.subjects };
+  if (!subject) {
+    // Wedge first, then name, so the list walks the category in the SAME order
+    // the canvas draws it (A to Z clockwise from twelve, names outward inside
+    // each wedge) and every subcategory heading is opened exactly once. The
+    // reference artifact sorts this list by title alone, which interleaves the
+    // wedges and reprints their headings; that is the one place this build
+    // knowingly departs from it, and it departs toward the canvas.
+    const ordered = category.wedges.length > 1
+      ? category.subjects.slice().sort((a, b) => a.wedge.a0 - b.wedge.a0 || a.title.localeCompare(b.title))
+      : category.subjects;
+    return { level: 'subject', nodes: ordered };
+  }
   return { level: 'technique', nodes: subject.techniques };
 }
 
@@ -135,10 +146,20 @@ export function useGalaxyRows(layout: GalaxyLayout | null, focus: GalaxyFocus, f
     const showGroups =
       level === 'subject' && !needle && first?.kind === 'subject' && first.category.wedges.length > 1;
 
+    // A heading is opened once per wedge. The seen-set is belt and braces on
+    // top of the wedge ordering above: a duplicate heading is not only ugly,
+    // it is two list items claiming the same identity.
+    const opened = new Set<string>();
     let previousGroup: string | null = null;
     const rows = visible.map((node) => {
       const row = toRow(node, showGroups, previousGroup);
-      if (row.groupKey !== null) previousGroup = row.groupKey;
+      if (row.groupKey !== null && opened.has(row.groupKey)) {
+        row.groupKey = null;
+        row.groupCount = 0;
+      } else if (row.groupKey !== null) {
+        opened.add(row.groupKey);
+        previousGroup = row.groupKey;
+      }
       return row;
     });
     return { level, rows, total: nodes.length };

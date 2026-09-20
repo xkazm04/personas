@@ -18,7 +18,7 @@ export function ReadingOrder() {
         className="absolute left-4 top-4 z-10 max-w-[300px] rounded-card border border-card-border bg-card-bg px-4 py-3 shadow-elevation-2"
         data-testid="council-reading-order"
       >
-        <div className="typo-title uppercase tracking-[0.09em] text-muted-dark">
+        <div className="typo-heading uppercase tracking-[0.09em] text-muted-dark">
           {tx(g.council_focus_title, { title: focus.title })}
         </div>
         <p className="mt-1.5 typo-body text-foreground">
@@ -35,7 +35,7 @@ export function ReadingOrder() {
       className="absolute left-4 top-4 z-10 max-w-[300px] rounded-card border border-card-border bg-card-bg px-4 py-3 shadow-elevation-2"
       data-testid="council-reading-order"
     >
-      <div className="typo-title uppercase tracking-[0.09em] text-muted-dark">
+      <div className="typo-heading uppercase tracking-[0.09em] text-muted-dark">
         {tx(g.reading_order, { level: g[`legend_${level}_title` as const] })}
       </div>
       <p className="mt-1.5 typo-body text-foreground">{g[`legend_${level}_body` as const]}</p>
