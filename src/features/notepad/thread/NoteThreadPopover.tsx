@@ -9,12 +9,13 @@
 // thread icon in the editor's top row. Opening it IS reading it — the thread is
 // marked read and set as the viewed thread, so an entry that lands while it is
 // open is read on arrival and never bubbles.
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessagesSquare, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { NoteComment } from '@/lib/bindings/NoteComment';
@@ -35,6 +36,8 @@ const GAP = 6;
 const MARGIN = 8;
 /** Long bodies are clipped here; the thread is a conversation, not a report viewer. */
 const BODY_MAX = 1200;
+/** Within this many px of the foot counts as "at the foot" for auto-follow. */
+const NEAR_BOTTOM_PX = 40;
 
 interface Pos {
   top: number;
@@ -94,34 +97,33 @@ export function NoteThreadPopover({
     };
   }, [anchorRef, entries.length, loading]);
 
-  // Newest at the foot, so the list follows new arrivals.
+  // Newest at the foot, so the list follows new arrivals — but only while the
+  // reader is already at the foot (live-log-stream-view.md (g)): someone
+  // reading back through a long thread is not yanked down by a new entry. The
+  // operator's own post always follows, because they just wrote it.
+  const atBottomRef = useRef(true);
+  const onListScroll = () => {
+    const list = listRef.current;
+    if (!list) return;
+    atBottomRef.current = list.scrollHeight - list.scrollTop - list.clientHeight <= NEAR_BOTTOM_PX;
+  };
   useEffect(() => {
     const list = listRef.current;
-    if (list) list.scrollTop = list.scrollHeight;
+    if (!list) return;
+    const ownPost = entries[entries.length - 1]?.authorKind === 'operator';
+    if (atBottomRef.current || ownPost) list.scrollTop = list.scrollHeight;
+    // Keyed on the count on purpose: a verdict stamped on an existing row is
+    // not an arrival and must not move the viewport.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries.length]);
 
-  // Outside click and Escape. Escape is `preventDefault`ed: the pad's Escape
-  // ladder listens on `window` and stops at a handled event, so closing this
-  // popover never also steps the pad back a layer.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return;
-      e.preventDefault();
-      onClose();
-    };
-    const onDown = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (panelRef.current?.contains(target) || anchorRef.current?.contains(target)) return;
-      onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    const timer = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      window.clearTimeout(timer);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose, anchorRef]);
+  // Outside press and Escape, through the shared dismissal hook. The panel is
+  // portalled away from its anchor, so both are "inside" (a press on the anchor
+  // is the toggle, never a dismissal). Escape is CLAIMED: the pad's Escape ladder
+  // listens on `window` and stops at a handled event, so closing this popover
+  // never also steps the pad back a layer.
+  const dismissRefs = useMemo(() => [panelRef, anchorRef], [anchorRef]);
+  useClickOutside(dismissRefs, true, onClose, { claimEscape: true });
 
   const showGhost = loading && entries.length === 0;
   const showEmpty = !loading && !failed && entries.length === 0;
@@ -162,7 +164,7 @@ export function NoteThreadPopover({
         </button>
       </header>
 
-      <ol ref={listRef} className="flex flex-col gap-2 px-3.5 py-3 max-h-96 overflow-y-auto" aria-busy={showGhost}>
+      <ol ref={listRef} onScroll={onListScroll} className="flex flex-col gap-2 px-3.5 py-3 max-h-96 overflow-y-auto" aria-busy={showGhost}>
         {showGhost &&
           [0, 1, 2].map((i) => (
             <li key={`ghost-${i}`} aria-hidden className="h-14 rounded-card bg-secondary/25" data-testid="notepad-thread-ghost" />

@@ -21,7 +21,6 @@ use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 use personas_core::events::event_name;
 use personas_core::models::serde_util::double_option;
-use personas_macros::requires;
 use tauri::Emitter;
 
 /// Patch body for `notepad_update_note`. ONE object rather than bare optional
@@ -360,19 +359,33 @@ pub async fn notepad_resolve_suggestion(
 }
 
 // ── The per-note thread (dev_note_comments, e40) ───────────────────────────
+//
+// No tier attribute on these commands, deliberately: `#[requires(auth)]`
+// expands to `require_auth`, which is `Ok(())` — the invoke-handler wrapper is
+// the only gate, and an annotation here would only make a reader believe
+// otherwise (ipc-session-token-race.md, legal fix 3).
 
-/// Run one thread repo call off the IPC worker. The handle is awaited, so a
-/// panic in the blocking task reaches the caller as an `AppError` rather than
-/// vanishing while the command reports success.
+/// Run one thread repo call off the IPC worker. The handle is bound and
+/// awaited, and a panic in the blocking task is told apart from a cancelled
+/// one (panic-isolation.md (a)): the caller gets an `AppError` naming the
+/// panic instead of a command that vanished or reported success.
 async fn on_db<T, F>(state: &AppState, op: &'static str, f: F) -> Result<T, AppError>
 where
     T: Send + 'static,
     F: FnOnce(&crate::db::DbPool) -> Result<T, AppError> + Send + 'static,
 {
     let pool = state.db.clone();
-    tokio::task::spawn_blocking(move || f(&pool))
-        .await
-        .map_err(|e| AppError::Internal(format!("{op}: task failed: {e}")))?
+    let task = tokio::task::spawn_blocking(move || f(&pool));
+    match task.await {
+        Ok(result) => result,
+        Err(join) if join.is_panic() => {
+            tracing::error!(op, "notepad: thread db task panicked");
+            Err(AppError::Internal(format!(
+                "{op}: the note thread operation crashed and was not applied"
+            )))
+        }
+        Err(join) => Err(AppError::Internal(format!("{op}: task failed: {join}"))),
+    }
 }
 
 /// Emit `NOTEPAD_NOTE_COMMENT` with the full row. The thread store and the
@@ -386,7 +399,6 @@ pub(crate) fn emit_note_comment(app: &AppHandle, comment: &NoteComment) {
 
 /// One note's thread, oldest first.
 #[tauri::command]
-#[requires(auth)]
 pub async fn notepad_list_comments(
     state: State<'_, Arc<AppState>>,
     note_id: String,
@@ -399,7 +411,6 @@ pub async fn notepad_list_comments(
 
 /// Every note with unread thread entries (absent = nothing unread).
 #[tauri::command]
-#[requires(auth)]
 pub async fn notepad_unread_counts(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<NoteUnread>, AppError> {
@@ -413,7 +424,6 @@ pub async fn notepad_unread_counts(
 
 /// The operator comments on a note. Born read (it is their own words).
 #[tauri::command]
-#[requires(auth)]
 pub async fn notepad_add_comment(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
@@ -433,7 +443,6 @@ pub async fn notepad_add_comment(
 
 /// Stamp every unread entry of one note read (the popover calls this on open).
 #[tauri::command]
-#[requires(auth)]
 pub async fn notepad_mark_comments_read(
     state: State<'_, Arc<AppState>>,
     note_id: String,
@@ -451,7 +460,6 @@ pub async fn notepad_mark_comments_read(
 /// entry, the note's move when the rework fired, and the answered review
 /// itself (the same id as before: the pad upserts thread rows by id).
 #[tauri::command]
-#[requires(auth)]
 pub async fn notepad_set_review_verdict(
     app: AppHandle,
     state: State<'_, Arc<AppState>>,
@@ -516,7 +524,6 @@ pub(crate) fn apply_review_verdict_core(
 ) -> Result<ReviewVerdictOutcome, AppError> {
     use crate::db::models::{NoteCommentKind, NoteCommentRef};
 
-    let reason = reason.map(str::trim).filter(|r| !r.is_empty());
     let review = comments_repo::get_comment(pool, comment_id)?;
     if review.kind != NoteCommentKind::Review {
         return Err(AppError::Validation(format!(
@@ -530,13 +537,13 @@ pub(crate) fn apply_review_verdict_core(
                 "A review verdict is `approved` or `rejected`, not `pending`".into(),
             ))
         }
-        NoteReviewVerdict::Rejected if reason.is_none() && !reason_optional => {
-            return Err(AppError::Validation(
-                "Rejecting a run review needs a reason".into(),
-            ))
+        NoteReviewVerdict::Rejected if !reason_optional => {
+            personas_core::validation::require_non_empty("reason", reason.unwrap_or_default())?;
         }
         _ => {}
     }
+    // Blank is absent: a whitespace-only reason is not posted to the thread.
+    let reason = reason.map(str::trim).filter(|r| !r.is_empty());
     if review.verdict == Some(verdict) {
         return Ok(ReviewVerdictOutcome {
             review,

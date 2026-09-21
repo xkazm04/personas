@@ -7,7 +7,8 @@
 // differently on purpose:
 //
 //   - UNREAD COUNTS for every note. Small, whole-desk, read by every card —
-//     a plain record behind a cached snapshot.
+//     an immutable record that IS its own snapshot: every write replaces it
+//     (copy-on-write), so `useSyncExternalStore` needs no memo beside it.
 //   - THREADS, one per note, fetched only when a popover opens. Multi-entry and
 //     keyed by an entity id, so it is a `createModuleCache` with a named cap
 //     rather than a hand-rolled Map (CLAUDE.md § Cold-load, mechanic 4).
@@ -49,7 +50,8 @@ const threads = createModuleCache<string, NoteThreadState>({ maxSize: THREAD_CAC
 
 // --- unread counts ------------------------------------------------------------
 
-let unread: Record<string, number> = {};
+/** Replaced, never mutated in place — its identity is the snapshot. */
+let unread: Readonly<Record<string, number>> = {};
 /** The newest unread entry per note — the bubble candidate. */
 let latestUnread: Record<string, string> = {};
 /** The note whose thread is on screen right now (popover open). An entry that
@@ -64,10 +66,8 @@ const SEEN_CAP = 500;
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
-let unreadCache: Readonly<Record<string, number>> | null = null;
 
 function emit(): void {
-  unreadCache = null;
   for (const l of [...listeners]) l();
 }
 
@@ -78,7 +78,7 @@ export function subscribeNoteThreads(listener: Listener): () => void {
   };
 }
 
-export const unreadSnapshot = (): Readonly<Record<string, number>> => (unreadCache ??= { ...unread });
+export const unreadSnapshot = (): Readonly<Record<string, number>> => unread;
 
 export function unreadCountOf(noteId: string | null | undefined): number {
   return noteId ? unread[noteId] ?? 0 : 0;
@@ -118,16 +118,18 @@ export async function loadThreadUnread(): Promise<void> {
     // (tests, a half-built command) can hand back anything — treat a non-array
     // as "no reading" rather than as "nothing unread".
     if (!Array.isArray(rows)) return;
-    unread = {};
-    latestUnread = {};
+    const nextUnread: Record<string, number> = {};
+    const nextLatest: Record<string, string> = {};
     for (const r of rows) {
-      if (r.unread > 0) unread[r.noteId] = r.unread;
-      if (r.latestId) latestUnread[r.noteId] = r.latestId;
+      if (r.unread > 0) nextUnread[r.noteId] = r.unread;
+      if (r.latestId) nextLatest[r.noteId] = r.latestId;
     }
     if (viewing) {
-      delete unread[viewing];
-      delete latestUnread[viewing];
+      delete nextUnread[viewing];
+      delete nextLatest[viewing];
     }
+    unread = nextUnread;
+    latestUnread = nextLatest;
     emit();
   } catch (e) {
     silentCatch('notepad thread unread counts')(e);

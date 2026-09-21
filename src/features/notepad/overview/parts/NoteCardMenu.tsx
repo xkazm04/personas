@@ -12,13 +12,13 @@
 //   Delete permanently — every status, EXCEPT while a Fleet session still holds
 //                 the note (`noteDeleteBlocked`), routed through the host's
 //                 ConfirmDialog — never a one-click delete.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Archive, Link2, Maximize2, Rocket, Sparkles, Target, Trash2 } from 'lucide-react';
-import { useShallow } from 'zustand/react/shallow';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { ContextMenu, type ContextMenuItem } from '@/features/shared/components/overlays/ContextMenu';
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -128,9 +128,11 @@ export function NoteCardMenu({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  // The whole list, shallow-compared: the delete gate reads every session's
-  // name and state, and the menu is open for seconds, not a render loop.
-  const fleetSessions = useSystemStore(useShallow((s) => s.fleetSessions));
+  // The whole list, by reference: the delete gate reads every session's name
+  // and state. No `useShallow` — a refetch hands back fresh session objects, so
+  // a shallow compare could never match (zustand-domain-slices.md, step 9); the
+  // menu is open for seconds, not a render loop.
+  const fleetSessions = useSystemStore((s) => s.fleetSessions);
   // Portaled: the card sits in a framer `layout` wrapper, and a `position:
   // fixed` menu under a transformed ancestor is placed against that ancestor,
   // not the viewport — the click point would be wrong mid-animation.
@@ -170,16 +172,11 @@ export function NoteAskQuickInput({
   const [focus, setFocus] = useState('');
   const sending = useRef(false);
 
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const timer = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+  // Outside press and Escape through the shared dismissal hook. Escape is
+  // CLAIMED so the pad's Escape ladder (which stops at a handled event) does
+  // not also step back a layer; the input's own Escape handler below covers
+  // the focused case first.
+  useClickOutside(ref, true, onClose, { claimEscape: true });
 
   const submit = async () => {
     if (sending.current) return;
