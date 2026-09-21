@@ -13605,7 +13605,19 @@
       "portfolio_risk_label": "مشاريع معرّضة للخطر",
       "portfolio_risk_none": "لا يوجد مشروع يحمل خطرًا عاليًا أو حرجًا.",
       "slot_qscore_no_runner": "حصلت الاختبارات على 0 لأن فحص خط الأساس لم يجد أي مشغّل اختبارات في هذا المستودع، وليس لأن الفرق كان صغيرًا.",
-      "ctx_audit_kind_unmapped_file": "موجود على القرص، لا يملكه أي سياق"
+      "ctx_audit_kind_unmapped_file": "موجود على القرص، لا يملكه أي سياق",
+      "skills_registry_filter_hint": "انقر لعرض المهارات الموجودة هنا فقط",
+      "skills_registry_filter_active_hint": "انقر مرة أخرى لعرض جميع المهارات",
+      "skills_registry_filter_clear": "مسح تصفية {name}",
+      "skills_registry_filter_empty": "لا توجد مهارات في {name} بعد",
+      "skills_registry_empty_title": "لا توجد مهارات لعرضها",
+      "skills_registry_name_details": "انقر لعرض التفاصيل الكاملة",
+      "skills_registry_legend_recent": "شُغِّلت خلال آخر 30 يومًا",
+      "skills_registry_filter": "عرض المهارات في {name}",
+      "skills_registry_filter_clear_label": "مسح",
+      "skills_registry_filter_aria": "تصفية المهارات إلى {name}",
+      "skills_registry_filter_clear_aria": "مسح عامل تصفية العمود",
+      "skills_registry_cell_coverage": "تغطية {pct}% · {invokes} تشغيل خلال 30 يومًا"
     },
     "dev_triage": {
       "action_label": "الإجراء:",
@@ -14081,7 +14093,9 @@
       "skill_picker_close": "إغلاق منتقي المهارات",
       "skill_picker_hint": "انقر على خلية لتحميل تلك المهارة والمشروع إلى وحدة التحكم. الخلية الفارغة تثبّت المهارة هناك أولاً.",
       "skill_picker_open": "اختر مهارة من السجل",
-      "skill_picker_title": "سجل المهارات"
+      "skill_picker_title": "سجل المهارات",
+      "skill_picker_empty": "لا يوجد بعد أي مشروع في مساحة العمل هذه مثبَّتة فيه مهارة — اعتمد واحدة من أدوات المطور ← المهارات ← السجل.",
+      "skill_picker_hint_hover": "انقر على خلية ممتلئة لتحميل تلك المهارة والمشروع. مرّر فوق الاسم لعرض الوصف. الخلية الفارغة تثبّتها هناك أولاً."
     },
     "fleet": {
       "activity_empty": "لم يُعثر على جلسات حديثة",

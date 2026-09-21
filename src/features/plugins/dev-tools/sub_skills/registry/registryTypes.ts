@@ -76,6 +76,12 @@ export interface SkillsRegistryProps {
   /** Workspace mode only — project mode has nothing to adopt into. */
   onAdopt: (skill: string, columnId: string) => void;
   onUse: (skill: string, columnId: string) => void;
+  /** Registry tab: open the skill info modal. Dock picker omits this — names
+   *  show a description tooltip instead of picking a project. */
+  onOpenInfo?: (skill: string) => void;
+  /** Dock picker: drop skills no column has installed. The Registry tab keeps
+   *  them so they can be adopted into a fresh project. */
+  hideUnadopted?: boolean;
 }
 
 export function cellKey(skill: string, columnId: string): string {

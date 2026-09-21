@@ -13605,7 +13605,19 @@
       "portfolio_risk_label": "Проекты в зоне риска",
       "portfolio_risk_none": "Ни один проект не несёт высокого или критического риска.",
       "slot_qscore_no_runner": "Тесты получили 0, потому что базовое сканирование не нашло в этом репозитории ни одного средства запуска тестов, а не потому что диф был маленьким.",
-      "ctx_audit_kind_unmapped_file": "Есть на диске, не принадлежит ни одному контексту"
+      "ctx_audit_kind_unmapped_file": "Есть на диске, не принадлежит ни одному контексту",
+      "skills_registry_filter_hint": "Нажмите, чтобы показать только эти навыки",
+      "skills_registry_filter_active_hint": "Нажмите ещё раз, чтобы показать все навыки",
+      "skills_registry_filter_clear": "Сбросить фильтр «{name}»",
+      "skills_registry_filter_empty": "В {name} пока нет навыков",
+      "skills_registry_empty_title": "Нет навыков для отображения",
+      "skills_registry_name_details": "Нажмите, чтобы открыть подробности",
+      "skills_registry_legend_recent": "запускался за последние 30 дней",
+      "skills_registry_filter": "Навыки в {name}",
+      "skills_registry_filter_clear_label": "Сбросить",
+      "skills_registry_filter_aria": "Отфильтровать навыки по {name}",
+      "skills_registry_filter_clear_aria": "Сбросить фильтр столбца",
+      "skills_registry_cell_coverage": "покрытие {pct}% · {invokes} запусков за 30 дней"
     },
     "dev_triage": {
       "action_label": "Действие:",
@@ -14081,7 +14093,9 @@
       "skill_picker_close": "Закрыть выбор навыков",
       "skill_picker_hint": "Нажмите на ячейку, чтобы загрузить этот навык и проект в консоль. Пустая ячейка сначала установит навык там.",
       "skill_picker_open": "Выбрать навык из реестра",
-      "skill_picker_title": "Реестр навыков"
+      "skill_picker_title": "Реестр навыков",
+      "skill_picker_empty": "Ни в одном проекте этого рабочего пространства пока не установлен навык — внедрите его в разделе Инструменты разработчика → Навыки → Реестр.",
+      "skill_picker_hint_hover": "Нажмите на заполненную ячейку, чтобы загрузить этот навык и проект. Наведите на имя, чтобы увидеть описание. Пустая ячейка сначала установит навык там."
     },
     "fleet": {
       "activity_empty": "Недавние сессии не найдены",

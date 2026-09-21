@@ -13605,7 +13605,19 @@
       "portfolio_risk_label": "위험한 프로젝트",
       "portfolio_risk_none": "높음 또는 심각 위험을 가진 프로젝트가 없습니다.",
       "slot_qscore_no_runner": "기준 스캔이 이 저장소에서 테스트 러너를 찾지 못했기 때문에 테스트가 0점입니다. 변경량이 적어서가 아닙니다.",
-      "ctx_audit_kind_unmapped_file": "디스크에 있지만 어느 컨텍스트에도 속하지 않음"
+      "ctx_audit_kind_unmapped_file": "디스크에 있지만 어느 컨텍스트에도 속하지 않음",
+      "skills_registry_filter_hint": "클릭하면 여기에 있는 스킬만 표시합니다",
+      "skills_registry_filter_active_hint": "다시 클릭하면 모든 스킬을 표시합니다",
+      "skills_registry_filter_clear": "{name} 필터 지우기",
+      "skills_registry_filter_empty": "{name}에 아직 스킬이 없습니다",
+      "skills_registry_empty_title": "표시할 스킬이 없습니다",
+      "skills_registry_name_details": "클릭하여 전체 세부 정보 보기",
+      "skills_registry_legend_recent": "최근 30일 내 실행됨",
+      "skills_registry_filter": "{name}의 스킬 표시",
+      "skills_registry_filter_clear_label": "지우기",
+      "skills_registry_filter_aria": "{name}의 스킬만 보기",
+      "skills_registry_filter_clear_aria": "열 필터 지우기",
+      "skills_registry_cell_coverage": "커버리지 {pct}% · 30일간 {invokes}회 실행"
     },
     "dev_triage": {
       "action_label": "작업:",
@@ -14081,7 +14093,9 @@
       "skill_picker_close": "스킬 선택기 닫기",
       "skill_picker_hint": "셀을 클릭하면 해당 스킬과 프로젝트가 콘솔에 로드됩니다. 빈 셀은 먼저 그곳에 스킬을 설치합니다.",
       "skill_picker_open": "레지스트리에서 스킬 선택",
-      "skill_picker_title": "스킬 레지스트리"
+      "skill_picker_title": "스킬 레지스트리",
+      "skill_picker_empty": "이 워크스페이스의 어떤 프로젝트에도 아직 스킬이 설치되지 않았습니다 — 개발 도구 → 스킬 → 레지스트리에서 하나 채택하세요.",
+      "skill_picker_hint_hover": "채워진 셀을 클릭하면 해당 스킬과 프로젝트가 로드됩니다. 이름에 마우스를 올리면 설명이 나타납니다. 빈 셀은 먼저 그곳에 스킬을 설치합니다."
     },
     "fleet": {
       "activity_empty": "최근 세션 없음",
