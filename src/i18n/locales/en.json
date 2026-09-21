@@ -21171,6 +21171,257 @@
           "sample": "haha yes totally 😅 next week is way better anyway. tues? 🙌"
         }
       }
+    },
+    "experience_opus": {
+      "create": {
+        "title": "Make your twin",
+        "subtitle": "A name is all it needs to start. The rest it learns from how you answer, one card at a time.",
+        "name": "Name",
+        "namePlaceholder": "Your name, or what your twin should go by",
+        "nameNeeded": "Give your twin a name first.",
+        "sigil": "Sigil",
+        "languages": "Languages you write in",
+        "languagesHint": "Tap them in order. Your twin writes in the first one unless a message calls for another.",
+        "languagesMain": "main",
+        "styleTitle": "A starting voice (optional)",
+        "styleHint": "Pick one and your twin drafts replies for each of your channels for you to look over. Or skip it: your own answers teach your voice better than any preset can.",
+        "styleNone": "No starting voice",
+        "styleNoneHint": "Build it from your answers instead. Slower, and closer to how you really write.",
+        "styleRoll": "Deal me three",
+        "styleRollHint": "Three styles made up on the spot. Pick one, or ask for three more.",
+        "styleFlipHint": "Hover to see how it sounds",
+        "styleNever": "Never:",
+        "footnote": "Only the name, sigil and languages are saved now. Everything else waits until you keep it.",
+        "cancel": "Not now",
+        "submit": "Create and start",
+        "creating": "Creating your twin"
+      },
+      "suits": {
+        "label": "To set up",
+        "identity": "Identity",
+        "tone": "Voice",
+        "channels": "Channels",
+        "memories": "Memories",
+        "statusLine": "{status} · {detail}",
+        "openHub": "Approve memories in the Brain"
+      },
+      "stage": {
+        "label": "Stage",
+        "setup": "Set up",
+        "training": "Train"
+      },
+      "mode": {
+        "label": "View",
+        "table": "Table",
+        "fields": "Fields",
+        "studio": "Batch"
+      },
+      "table": {
+        "subtitle": "One question at a time. Nothing is saved until you keep it.",
+        "training": "Training",
+        "noQuestion": "Nothing left to ask right now.",
+        "dealing": "Dealing the next question",
+        "greeting": "Picking up where you left off. Still open: {items}.",
+        "greetingFresh": "{name} is on the table. We'll cover {items}, one question at a time.",
+        "incoming": "They wrote",
+        "incomingFrom": "On {channel}, they wrote",
+        "writeHint": "Reply the way you'd really send it, typos and all. You can keep your reply as a sample of how you write.",
+        "handLabel": "Answers to pick from",
+        "playHint": "Press again to play",
+        "composerPick": "Or say it your own way",
+        "composerWrite": "Type your reply",
+        "send": "Send",
+        "yourReply": "Your reply",
+        "yourReplyOn": "Your reply on {channel}",
+        "ready": "{score}% ready"
+      },
+      "loot": {
+        "kind": {
+          "bio": "Bio",
+          "role": "Role",
+          "voice": "Voice",
+          "examples": "Sample",
+          "constraints": "Rule"
+        },
+        "onChannel": "{kind} · {channel}",
+        "sampleReason": "Your own words, kept exactly as you wrote them.",
+        "keep": "Keep",
+        "edit": "Edit",
+        "pass": "Pass",
+        "stamp": {
+          "accepted": "Kept",
+          "edited": "Edited",
+          "dismissed": "Passed"
+        }
+      },
+      "pile": {
+        "label": "Played",
+        "you": "You",
+        "skipped": "Skipped",
+        "tally": "{played} played · {kept} kept",
+        "empty": "Your answers land here.",
+        "earlier": "{count} earlier",
+        "hideEarlier": "Hide earlier"
+      },
+      "twinCard": {
+        "label": "Your twin so far",
+        "unnamed": "Your twin",
+        "noRole": "No role yet",
+        "noBio": "The bio fills in as you answer.",
+        "voices": "Voice by channel",
+        "everywhere": "Everywhere",
+        "noVoice": "(no voice yet)",
+        "samplesAndRules": "Samples: {samples}. Rules: {rules}.",
+        "memories": "Memories: {detail}"
+      },
+      "style": {
+        "title": "Style",
+        "hint": "Start from a preset or roll three. Nothing is written until you keep the drafts.",
+        "backToTable": "Back to the table",
+        "idle": "Pick a starting voice, or roll three.",
+        "rolling": "Rolling three styles…",
+        "drafting": "Drafting replies in the {name} style…",
+        "candidatesReady": "Three styles are waiting for you.",
+        "draftsReady": "Drafts in the {name} style are ready to look over.",
+        "saving": "Saving the drafts you kept",
+        "open": "Open the style deck",
+        "review": "Look them over"
+      },
+      "topics": {
+        "label": "Training deck",
+        "sessions": "Rounds finished: {count}",
+        "coverage": "{tier}. Memories: {count}",
+        "tiers": {
+          "thin": "Thin",
+          "some": "Some",
+          "covered": "Well covered"
+        },
+        "drills": {
+          "label": "Reply drills",
+          "blurb": "Realistic messages to answer the way you would.",
+          "prompt": "Give me realistic messages people send me, one at a time, and have me reply exactly as I would: a request I'd turn down, a vague ask, someone chasing me, a thank-you. Mix the channels I use."
+        },
+        "stories": {
+          "label": "Work stories",
+          "blurb": "One scene at a time: a day that went wrong, a call you got right.",
+          "prompt": "Ask me for specific stories from my work, one scene at a time: a day that went wrong, a call I got right, how I ended up doing this. Ask what happened, not what I learned."
+        },
+        "takes": {
+          "label": "Takes you'd defend",
+          "blurb": "Opinions you'd argue for, in your field and out of it.",
+          "prompt": "Ask what I think about things in my field and outside it, the takes I'd argue for over dinner. If I sit on the fence, push once."
+        },
+        "asks": {
+          "label": "What people ask you",
+          "blurb": "The questions that land on your desk, answered your way.",
+          "prompt": "Ask me the questions people usually bring to me at work, and let me answer them the way I'd answer a colleague."
+        },
+        "lines": {
+          "label": "Lines you hold",
+          "blurb": "What you won't do, and what your twin must never say for you.",
+          "prompt": "Ask what I won't do, what I say yes to quickly, and what my twin must never say, promise or agree to on my behalf."
+        },
+        "offClock": {
+          "label": "Off the clock",
+          "blurb": "Life outside work: what you do, what you could talk about for hours.",
+          "prompt": "Ask about my life outside work: what I do with my time, what I could talk about for hours, what I'm bad at and still enjoy."
+        }
+      },
+      "notices": {
+        "guideDown": "The guide couldn't deal this one. Nothing was saved, and the suit stays open.",
+        "retry": "Deal again",
+        "fields": "Type it in yourself",
+        "inviteTitle": "Memories come from training",
+        "inviteBody": "Setup covers who you are and how you write. What you remember and what you think comes from training rounds, and every answer there is saved for you to approve.",
+        "inviteStart": "Start a training round",
+        "completeTitle": "{name} is ready",
+        "completeBody": "Every suit is set. Your twin can draft in your voice now, and each training round makes it sound more like you.",
+        "completeTrain": "Keep training",
+        "completeClose": "Done for now"
+      },
+      "keys": {
+        "pick": "pick",
+        "move": "move",
+        "play": "play",
+        "edit": "edit",
+        "skip": "skip",
+        "close": "close"
+      },
+      "launch": {
+        "title": "{name}'s table",
+        "titleNoTwin": "Your twin's table",
+        "body": "{score}% ready. Pick up where you left off, or start a training round.",
+        "resume": "Carry on setting up",
+        "train": "Start a training round"
+      }
+    },
+    "experience_grok": {
+      "title": "Build your twin",
+      "trainTitle": "Train {name}",
+      "close": "Close",
+      "forge": {
+        "eyebrow": "New twin",
+        "title": "Who should this twin be?",
+        "subtitle": "A name is enough to start. We deal the rest as cards.",
+        "name": "Name",
+        "namePlaceholder": "The name you actually use",
+        "gender": "How should it show up?",
+        "style": "Starting voice",
+        "styleHint": "Optional. Pick a voice to start from, or skip and we will find it in training.",
+        "styleSkip": "Decide later",
+        "styleSkipHint": "We will learn the voice from how you answer.",
+        "styleSurprise": "Surprise me",
+        "styleSurpriseHint": "Roll three voices after this twin exists.",
+        "create": "Deal the first hand",
+        "creating": "Creating…",
+        "hint": "Nothing is stored until you play a card."
+      },
+      "table": {
+        "greeting": "We'll walk {items} as a hand of cards. Pick one, write your own, or skip.",
+        "noQuestion": "The table is clear. Every slot is set.",
+        "composerPlaceholder": "Or write it in your own words",
+        "send": "Play",
+        "thinking": "Dealing the next card",
+        "legendPick": "1–3 pick",
+        "legendAccept": "Enter play",
+        "legendEdit": "E edit",
+        "legendSkip": "S skip",
+        "skip": "Skip this card",
+        "pickCard": "Pick this answer",
+        "score": "Ready",
+        "openFields": "All fields",
+        "openGuide": "The table",
+        "viewLabel": "Setup view",
+        "trailLabel": "Played so far",
+        "earlier": "{count} earlier",
+        "earlierHide": "Hide earlier",
+        "skipped": "Skipped",
+        "stageLabel": "Stage",
+        "stageSetup": "Setup",
+        "stageTraining": "Training"
+      },
+      "slots": {
+        "identity": {
+          "label": "Identity",
+          "hint": "Who you are, what you're known for, the hill you will die on."
+        },
+        "tone": {
+          "label": "Voice",
+          "hint": "How you actually write — length, heat, what you never say."
+        },
+        "channels": {
+          "label": "Channels",
+          "hint": "Where you speak, to whom, and what that place is for."
+        },
+        "memories": {
+          "label": "Memories",
+          "hint": "Facts, opinions, and stories worth keeping."
+        }
+      },
+      "voice": {
+        "dictate": "Dictate",
+        "stop": "Stop listening"
+      }
     }
   },
   "radio": {

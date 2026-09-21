@@ -109,6 +109,8 @@ function turn(over: Partial<SetupTurnResult> = {}): SetupTurnResult {
     question: 'What are you known for?',
     focus: 'identity',
     toneChannel: null,
+    answerMode: 'pick',
+    incoming: null,
     suggestions: [{ text: 'Shipping things', reason: 'Matches the bio.' }],
     proposals: [],
     doneHint: false,
@@ -531,5 +533,192 @@ describe('useSetupSession — dig-deeper handoff', () => {
     await waitFor(() => expect(result.current.question).toBe('What went wrong in 2019?'));
     expect(result.current.stage).toBe('training');
     expect(mockSetPendingTrainingQuestions).toHaveBeenCalledWith(null);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Writing samples are the person's own words
+// ---------------------------------------------------------------------------
+
+describe("useSetupSession — a writing sample is the person's own words", () => {
+  const writeTurn = () =>
+    turn({
+      question: 'Your manager on Slack sends this. Reply the way you would.',
+      focus: 'tone',
+      toneChannel: 'slack',
+      answerMode: 'write',
+      incoming: 'can we push the review to thursday?',
+      suggestions: [],
+    });
+
+  it('a write turn deals no cards and says what is being replied to', async () => {
+    mockSetupTurn.mockResolvedValue({
+      ...writeTurn(),
+      // A model that ignored the contract. The hand stays empty regardless.
+      suggestions: [{ text: 'Sure thing! Thursday works great.', reason: 'x' }],
+    });
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).not.toBeNull());
+
+    expect(result.current.answerMode).toBe('write');
+    expect(result.current.incoming).toBe('can we push the review to thursday?');
+    expect(result.current.toneChannel).toBe('slack');
+    expect(result.current.suggestions).toEqual([]);
+  });
+
+  it('the answer is offered back verbatim as a sample, and nothing is written until it is accepted', async () => {
+    setStore({
+      twinTones: [
+        makeTone({
+          channel: 'slack',
+          voice_directives: 'lowercase',
+          examples_json: '["on it"]',
+          constraints_json: '["never apologise twice"]',
+          length_hint: 'one line',
+        }),
+      ],
+    });
+    mockSetupTurn.mockResolvedValueOnce(writeTurn());
+    mockSetupTurn.mockResolvedValue(turn({ question: 'And on email?' }));
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.answerMode).toBe('write'));
+
+    await act(async () => {
+      await result.current.answer('  yep thursday works, same time?  ');
+    });
+
+    expect(mockUpsertTwinTone).not.toHaveBeenCalled();
+    const sample = result.current.proposals.find((p) => p.part === 'examples');
+    expect(sample).toMatchObject({
+      kind: 'tone',
+      part: 'examples',
+      channel: 'slack',
+      value: 'yep thursday works, same time?',
+    });
+    // It rides on the next guide turn, so its verdict lands in the trail.
+    expect(result.current.history.at(-1)?.proposals?.some((p) => p.id === sample!.id)).toBe(true);
+
+    await act(async () => {
+      await result.current.accept(sample!);
+    });
+    // Appended to the samples; the voice, the rules and the length travel over.
+    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
+      't1',
+      'slack',
+      'lowercase',
+      '["on it","yep thursday works, same time?"]',
+      '["never apologise twice"]',
+      'one line',
+    );
+  });
+
+  it('a pick answer and a training answer are never offered as samples', async () => {
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).not.toBeNull());
+    await act(async () => {
+      await result.current.answer('Shipping things');
+    });
+    expect(result.current.proposals).toEqual([]);
+
+    mockSetupTurn.mockResolvedValue(writeTurn());
+    act(() => {
+      result.current.focusOn('tone');
+    });
+    await waitFor(() => expect(result.current.answerMode).toBe('write'));
+    act(() => {
+      result.current.setStage('training');
+    });
+    mockSetupTurn.mockResolvedValue(turn({ question: 'Next?' }));
+    await act(async () => {
+      await result.current.answer('yep thursday works');
+    });
+    // Kept word for word as training material instead.
+    expect(mockRecordInteraction).toHaveBeenCalled();
+    expect(result.current.proposals).toEqual([]);
+  });
+
+  it('an accepted rule is appended to the constraints and carries the rest of the row', async () => {
+    setStore({
+      twinTones: [makeTone({ channel: 'email', voice_directives: 'Short.', constraints_json: '["Always sign off with M"]' })],
+    });
+    mockSetupTurn.mockResolvedValue(
+      turn({
+        focus: 'channels',
+        proposals: [
+          {
+            id: 'r1',
+            kind: 'tone',
+            part: 'constraints',
+            channel: 'email',
+            value: 'Never agree to a meeting time without checking with me.',
+            lengthHint: null,
+            reason: 'They said so.',
+          },
+        ],
+      }),
+    );
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.proposals.length).toBe(1));
+
+    await act(async () => {
+      await result.current.accept(result.current.proposals[0]!);
+    });
+    expect(mockUpsertTwinTone).toHaveBeenCalledWith(
+      't1',
+      'email',
+      'Short.',
+      null,
+      '["Always sign off with M","Never agree to a meeting time without checking with me."]',
+      null,
+    );
+  });
+
+  it('a register with a tone row and no bound channel is still covered', async () => {
+    setStore({ twinTones: [makeTone({ channel: 'email' })] });
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).not.toBeNull());
+    expect(result.current.toneChannels).toEqual(['generic', 'email']);
+  });
+
+  it('asks the guide to speak the app language', async () => {
+    renderHook(() => useSetupSession());
+    await waitFor(() => expect(mockSetupTurn).toHaveBeenCalled());
+    expect(typeof mockSetupTurn.mock.calls[0]?.[6]).toBe('string');
+  });
+});
+
+describe('useSetupSession — redeal asks again without recording anything', () => {
+  it('replaces the live question on the same slot and writes nothing', async () => {
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.question).toBe('What are you known for?'));
+    mockSetupTurn.mockClear();
+    mockSetupTurn.mockResolvedValue(turn({ question: 'Where did you start out?' }));
+
+    act(() => {
+      result.current.redeal();
+    });
+
+    await waitFor(() => expect(result.current.question).toBe('Where did you start out?'));
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+    expect(mockRecordInteraction).not.toHaveBeenCalled();
+    expect(mockUpdateTwinProfile).not.toHaveBeenCalled();
+  });
+
+  it('is ignored while a turn is in flight', async () => {
+    let release!: (value: SetupTurnResult) => void;
+    mockSetupTurn.mockReturnValue(
+      new Promise<SetupTurnResult>((resolve) => {
+        release = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useSetupSession());
+    await waitFor(() => expect(result.current.busy).toBe(true));
+    act(() => {
+      result.current.redeal();
+    });
+    expect(mockSetupTurn).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      release(turn());
+    });
   });
 });

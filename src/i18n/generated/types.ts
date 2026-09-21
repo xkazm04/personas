@@ -21178,6 +21178,257 @@ export type Translations = {
         };
       };
     };
+    experience_opus: {
+      create: {
+        title: string;
+        subtitle: string;
+        name: string;
+        namePlaceholder: string;
+        nameNeeded: string;
+        sigil: string;
+        languages: string;
+        languagesHint: string;
+        languagesMain: string;
+        styleTitle: string;
+        styleHint: string;
+        styleNone: string;
+        styleNoneHint: string;
+        styleRoll: string;
+        styleRollHint: string;
+        styleFlipHint: string;
+        styleNever: string;
+        footnote: string;
+        cancel: string;
+        submit: string;
+        creating: string;
+      };
+      suits: {
+        label: string;
+        identity: string;
+        tone: string;
+        channels: string;
+        memories: string;
+        statusLine: string;
+        openHub: string;
+      };
+      stage: {
+        label: string;
+        setup: string;
+        training: string;
+      };
+      mode: {
+        label: string;
+        table: string;
+        fields: string;
+        studio: string;
+      };
+      table: {
+        subtitle: string;
+        training: string;
+        noQuestion: string;
+        dealing: string;
+        greeting: string;
+        greetingFresh: string;
+        incoming: string;
+        incomingFrom: string;
+        writeHint: string;
+        handLabel: string;
+        playHint: string;
+        composerPick: string;
+        composerWrite: string;
+        send: string;
+        yourReply: string;
+        yourReplyOn: string;
+        ready: string;
+      };
+      loot: {
+        kind: {
+          bio: string;
+          role: string;
+          voice: string;
+          examples: string;
+          constraints: string;
+        };
+        onChannel: string;
+        sampleReason: string;
+        keep: string;
+        edit: string;
+        pass: string;
+        stamp: {
+          accepted: string;
+          edited: string;
+          dismissed: string;
+        };
+      };
+      pile: {
+        label: string;
+        you: string;
+        skipped: string;
+        tally: string;
+        empty: string;
+        earlier: string;
+        hideEarlier: string;
+      };
+      twinCard: {
+        label: string;
+        unnamed: string;
+        noRole: string;
+        noBio: string;
+        voices: string;
+        everywhere: string;
+        noVoice: string;
+        samplesAndRules: string;
+        memories: string;
+      };
+      style: {
+        title: string;
+        hint: string;
+        backToTable: string;
+        idle: string;
+        rolling: string;
+        drafting: string;
+        candidatesReady: string;
+        draftsReady: string;
+        saving: string;
+        open: string;
+        review: string;
+      };
+      topics: {
+        label: string;
+        sessions: string;
+        coverage: string;
+        tiers: {
+          thin: string;
+          some: string;
+          covered: string;
+        };
+        drills: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+        stories: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+        takes: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+        asks: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+        lines: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+        offClock: {
+          label: string;
+          blurb: string;
+          prompt: string;
+        };
+      };
+      notices: {
+        guideDown: string;
+        retry: string;
+        fields: string;
+        inviteTitle: string;
+        inviteBody: string;
+        inviteStart: string;
+        completeTitle: string;
+        completeBody: string;
+        completeTrain: string;
+        completeClose: string;
+      };
+      keys: {
+        pick: string;
+        move: string;
+        play: string;
+        edit: string;
+        skip: string;
+        close: string;
+      };
+      launch: {
+        title: string;
+        titleNoTwin: string;
+        body: string;
+        resume: string;
+        train: string;
+      };
+    };
+    experience_grok: {
+      title: string;
+      trainTitle: string;
+      close: string;
+      forge: {
+        eyebrow: string;
+        title: string;
+        subtitle: string;
+        name: string;
+        namePlaceholder: string;
+        gender: string;
+        style: string;
+        styleHint: string;
+        styleSkip: string;
+        styleSkipHint: string;
+        styleSurprise: string;
+        styleSurpriseHint: string;
+        create: string;
+        creating: string;
+        hint: string;
+      };
+      table: {
+        greeting: string;
+        noQuestion: string;
+        composerPlaceholder: string;
+        send: string;
+        thinking: string;
+        legendPick: string;
+        legendAccept: string;
+        legendEdit: string;
+        legendSkip: string;
+        skip: string;
+        pickCard: string;
+        score: string;
+        openFields: string;
+        openGuide: string;
+        viewLabel: string;
+        trailLabel: string;
+        earlier: string;
+        earlierHide: string;
+        skipped: string;
+        stageLabel: string;
+        stageSetup: string;
+        stageTraining: string;
+      };
+      slots: {
+        identity: {
+          label: string;
+          hint: string;
+        };
+        tone: {
+          label: string;
+          hint: string;
+        };
+        channels: {
+          label: string;
+          hint: string;
+        };
+        memories: {
+          label: string;
+          hint: string;
+        };
+      };
+      voice: {
+        dictate: string;
+        stop: string;
+      };
+    };
   };
   radio: {
     footer_label: string;

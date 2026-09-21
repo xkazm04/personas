@@ -20843,6 +20843,257 @@
         "title": "Gaya acak",
         "use": "Gunakan gaya ini"
       }
+    },
+    "experience_opus": {
+      "create": {
+        "cancel": "Nanti saja",
+        "creating": "Membuat twin Anda",
+        "footnote": "Hanya nama, sigil, dan bahasa yang disimpan sekarang. Semua yang lain menunggu sampai Anda menyimpannya.",
+        "languages": "Bahasa penulisan Anda",
+        "languagesHint": "Ketuk secara berurutan. Twin Anda menulis dalam bahasa pertama, kecuali pesan tertentu membutuhkan bahasa lain.",
+        "languagesMain": "utama",
+        "name": "Nama",
+        "nameNeeded": "Beri nama twin Anda dulu.",
+        "namePlaceholder": "Nama Anda, atau nama panggilan untuk twin Anda",
+        "sigil": "Sigil",
+        "styleFlipHint": "Arahkan kursor untuk melihat cara gayanya terdengar",
+        "styleHint": "Pilih salah satu, dan twin Anda akan membuat draf balasan untuk setiap kanal Anda supaya bisa Anda tinjau. Atau lewati saja: jawaban Anda sendiri mengajarkan gaya Anda lebih baik daripada preset apa pun.",
+        "styleNever": "Pantangan:",
+        "styleNone": "Tanpa gaya awal",
+        "styleNoneHint": "Bangun dari jawaban Anda sendiri. Lebih lambat, tapi lebih dekat dengan cara Anda menulis yang sebenarnya.",
+        "styleRoll": "Bagikan tiga",
+        "styleRollHint": "Tiga gaya yang dibuat saat itu juga. Pilih satu, atau minta tiga lagi.",
+        "styleTitle": "Gaya awal (opsional)",
+        "submit": "Buat dan mulai",
+        "subtitle": "Cukup satu nama untuk memulai. Sisanya dipelajari dari cara Anda menjawab, satu kartu setiap kali.",
+        "title": "Buat twin Anda"
+      },
+      "keys": {
+        "close": "tutup",
+        "edit": "ubah",
+        "move": "pindah",
+        "pick": "pilih",
+        "play": "main",
+        "skip": "lewati"
+      },
+      "launch": {
+        "body": "{score}% siap. Lanjutkan dari tempat terakhir Anda berhenti, atau mulai putaran pelatihan.",
+        "resume": "Lanjutkan penyiapan",
+        "title": "Meja {name}",
+        "titleNoTwin": "Meja twin Anda",
+        "train": "Mulai putaran pelatihan"
+      },
+      "loot": {
+        "edit": "Ubah",
+        "keep": "Simpan",
+        "kind": {
+          "bio": "Bio",
+          "constraints": "Aturan",
+          "examples": "Contoh",
+          "role": "Peran",
+          "voice": "Suara"
+        },
+        "onChannel": "{kind} · {channel}",
+        "pass": "Lewati",
+        "sampleReason": "Kata-kata Anda sendiri, disimpan persis seperti Anda menulisnya.",
+        "stamp": {
+          "accepted": "Disimpan",
+          "dismissed": "Dilewati",
+          "edited": "Diedit"
+        }
+      },
+      "mode": {
+        "fields": "Bidang",
+        "label": "Tampilan",
+        "studio": "Batch",
+        "table": "Meja"
+      },
+      "notices": {
+        "completeBody": "Semua kategori sudah lengkap. Twin Anda kini bisa membuat draf dengan gaya bicara Anda, dan setiap putaran pelatihan membuatnya semakin terdengar seperti Anda.",
+        "completeClose": "Selesai dulu",
+        "completeTitle": "{name} sudah siap",
+        "completeTrain": "Lanjutkan pelatihan",
+        "fields": "Ketik sendiri",
+        "guideDown": "Pemandu tidak dapat membagikan kartu ini. Tidak ada yang disimpan, dan kategori ini tetap terbuka.",
+        "inviteBody": "Penyiapan mencakup siapa Anda dan bagaimana Anda menulis. Apa yang Anda ingat dan apa yang Anda pikirkan berasal dari putaran pelatihan, dan setiap jawaban di sana disimpan untuk Anda setujui.",
+        "inviteStart": "Mulai putaran pelatihan",
+        "inviteTitle": "Memori berasal dari pelatihan",
+        "retry": "Bagikan lagi"
+      },
+      "pile": {
+        "earlier": "{count} sebelumnya",
+        "empty": "Jawaban Anda akan muncul di sini.",
+        "hideEarlier": "Sembunyikan yang sebelumnya",
+        "label": "Dimainkan",
+        "skipped": "Dilewati",
+        "tally": "{played} dimainkan · {kept} disimpan",
+        "you": "Anda"
+      },
+      "stage": {
+        "label": "Tahap",
+        "setup": "Setup",
+        "training": "Pelatihan"
+      },
+      "style": {
+        "backToTable": "Kembali ke meja",
+        "candidatesReady": "Tiga gaya sudah menunggu Anda.",
+        "drafting": "Membuat draf balasan dengan gaya {name}…",
+        "draftsReady": "Draf dengan gaya {name} sudah siap untuk ditinjau.",
+        "hint": "Mulai dari preset atau acak tiga gaya baru. Tidak ada yang ditulis sampai Anda menyimpan drafnya.",
+        "idle": "Pilih gaya awal, atau acak tiga.",
+        "open": "Buka tumpukan gaya",
+        "review": "Tinjau",
+        "rolling": "Mengacak tiga gaya…",
+        "saving": "Menyimpan draf pilihan Anda",
+        "title": "Gaya"
+      },
+      "suits": {
+        "channels": "Kanal",
+        "identity": "Identitas",
+        "label": "Perlu disiapkan",
+        "memories": "Memori",
+        "openHub": "Setujui memori di Otak",
+        "statusLine": "{status} · {detail}",
+        "tone": "Nada suara"
+      },
+      "table": {
+        "composerPick": "Atau tulis jawaban Anda sendiri",
+        "composerWrite": "Ketik balasan Anda",
+        "dealing": "Membagikan pertanyaan berikutnya",
+        "greeting": "Melanjutkan dari tempat terakhir Anda berhenti. Masih terbuka: {items}.",
+        "greetingFresh": "{name} sudah ada di meja. Kita akan membahas {items}, satu pertanyaan setiap kali.",
+        "handLabel": "Jawaban untuk dipilih",
+        "incoming": "Mereka menulis",
+        "incomingFrom": "Di {channel}, mereka menulis",
+        "noQuestion": "Tidak ada lagi yang perlu ditanyakan.",
+        "playHint": "Tekan lagi untuk main",
+        "ready": "{score}% siap",
+        "send": "Kirim",
+        "subtitle": "Satu pertanyaan setiap kali. Tidak ada yang disimpan sampai Anda menyimpannya.",
+        "training": "Pelatihan",
+        "writeHint": "Balas dengan cara yang benar-benar akan Anda kirim, salah ketik dan semuanya. Anda bisa menyimpan balasan ini sebagai contoh cara Anda menulis.",
+        "yourReply": "Balasan Anda",
+        "yourReplyOn": "Balasan Anda di {channel}"
+      },
+      "topics": {
+        "asks": {
+          "blurb": "Pertanyaan yang sering diajukan kepada Anda, dijawab dengan cara Anda sendiri.",
+          "label": "Apa yang orang tanyakan kepada Anda",
+          "prompt": "Tanyakan pertanyaan-pertanyaan yang biasanya diajukan orang kepada saya di tempat kerja, dan biarkan saya menjawabnya seperti saya menjawab rekan kerja."
+        },
+        "coverage": "{tier}. Memori: {count}",
+        "drills": {
+          "blurb": "Pesan realistis untuk dijawab dengan cara Anda sendiri.",
+          "label": "Latihan balasan",
+          "prompt": "Berikan saya pesan-pesan realistis yang biasa dikirim orang kepada saya, satu per satu, lalu minta saya membalasnya persis seperti biasanya: permintaan yang akan saya tolak, permintaan yang tidak jelas, seseorang yang mengejar-ngejar saya, atau ucapan terima kasih. Campurkan kanal yang saya gunakan."
+        },
+        "label": "Tumpukan pelatihan",
+        "lines": {
+          "blurb": "Apa yang tidak akan Anda lakukan, dan apa yang tidak boleh dikatakan twin Anda atas nama Anda.",
+          "label": "Batasan yang Anda pegang",
+          "prompt": "Tanyakan apa yang tidak akan saya lakukan, apa yang cepat saya setujui, dan apa yang tidak boleh dikatakan, dijanjikan, atau disetujui oleh twin saya atas nama saya."
+        },
+        "offClock": {
+          "blurb": "Kehidupan di luar pekerjaan: apa yang Anda lakukan, apa yang bisa Anda bicarakan berjam-jam.",
+          "label": "Di luar jam kerja",
+          "prompt": "Tanyakan tentang hidup saya di luar pekerjaan: apa yang saya lakukan dengan waktu saya, apa yang bisa saya bicarakan berjam-jam, dan apa yang saya kurang kuasai tapi tetap saya nikmati."
+        },
+        "sessions": "Putaran selesai: {count}",
+        "stories": {
+          "blurb": "Satu adegan pada satu waktu: hari yang berjalan buruk, keputusan yang Anda ambil dengan tepat.",
+          "label": "Cerita kerja",
+          "prompt": "Minta saya bercerita tentang kisah-kisah spesifik dari pekerjaan saya, satu adegan setiap kali: hari yang berjalan buruk, keputusan yang saya ambil dengan tepat, bagaimana saya akhirnya menekuni ini. Tanyakan apa yang terjadi, bukan apa yang saya pelajari."
+        },
+        "takes": {
+          "blurb": "Opini yang akan Anda pertahankan, di bidang Anda maupun di luar itu.",
+          "label": "Pendapat yang Anda pertahankan",
+          "prompt": "Tanyakan pendapat saya tentang hal-hal di bidang saya maupun di luar itu, opini yang akan saya pertahankan sambil makan malam. Jika saya bersikap ragu-ragu, desak sekali lagi."
+        },
+        "tiers": {
+          "covered": "Tercakup baik",
+          "some": "Sebagian",
+          "thin": "Tipis"
+        }
+      },
+      "twinCard": {
+        "everywhere": "Di mana saja",
+        "label": "Twin Anda sejauh ini",
+        "memories": "Memori: {detail}",
+        "noBio": "Biografi akan terisi seiring Anda menjawab.",
+        "noRole": "Belum ada peran",
+        "noVoice": "(belum ada nada suara)",
+        "samplesAndRules": "Contoh: {samples}. Aturan: {rules}.",
+        "unnamed": "Twin Anda",
+        "voices": "Nada suara per kanal"
+      }
+    },
+    "experience_grok": {
+      "close": "Tutup",
+      "forge": {
+        "create": "Bagikan tangan pertama",
+        "creating": "Membuat…",
+        "eyebrow": "Twin baru",
+        "gender": "Bagaimana ia tampil?",
+        "hint": "Tidak ada yang disimpan sampai kamu memainkan kartu.",
+        "name": "Nama",
+        "namePlaceholder": "Nama yang benar-benar kamu pakai",
+        "style": "Suara awal",
+        "styleHint": "Opsional. Pilih suara awal, atau lewati — kita temukan saat pelatihan.",
+        "styleSkip": "Putuskan nanti",
+        "styleSkipHint": "Suara dipelajari dari cara kamu menjawab.",
+        "styleSurprise": "Kejutkan saya",
+        "styleSurpriseHint": "Undi tiga suara setelah twin ini ada.",
+        "subtitle": "Nama saja cukup untuk mulai. Sisanya kami bagikan sebagai kartu.",
+        "title": "Siapa twin ini seharusnya?"
+      },
+      "slots": {
+        "channels": {
+          "hint": "Di mana kamu bicara, kepada siapa, dan untuk apa tempat itu.",
+          "label": "Saluran"
+        },
+        "identity": {
+          "hint": "Siapa kamu, dikenal karena apa, hal yang tidak kamu kompromikan.",
+          "label": "Identitas"
+        },
+        "memories": {
+          "hint": "Fakta, pendapat, dan cerita yang layak diingat.",
+          "label": "Ingatan"
+        },
+        "tone": {
+          "hint": "Cara kamu benar-benar menulis — panjang, panas, yang tidak pernah kamu katakan.",
+          "label": "Suara"
+        }
+      },
+      "table": {
+        "composerPlaceholder": "Atau tulis dengan kata-katamu sendiri",
+        "earlier": "{count} sebelumnya",
+        "earlierHide": "Sembunyikan sebelumnya",
+        "greeting": "Kita akan menelusuri {items} sebagai satu tangan kartu. Pilih satu, tulis sendiri, atau lewati.",
+        "legendAccept": "Enter mainkan",
+        "legendEdit": "E sunting",
+        "legendPick": "1–3 pilih",
+        "legendSkip": "S lewati",
+        "noQuestion": "Meja kosong. Semua slot sudah terisi.",
+        "openFields": "Semua bidang",
+        "openGuide": "Meja",
+        "pickCard": "Pilih jawaban ini",
+        "score": "Siap",
+        "send": "Mainkan",
+        "skip": "Lewati kartu ini",
+        "skipped": "Dilewati",
+        "stageLabel": "Tahap",
+        "stageSetup": "Penyiapan",
+        "stageTraining": "Pelatihan",
+        "thinking": "Membagikan kartu berikutnya",
+        "trailLabel": "Yang sudah dimainkan",
+        "viewLabel": "Tampilan penyiapan"
+      },
+      "title": "Bangun twin-mu",
+      "trainTitle": "Latih {name}",
+      "voice": {
+        "dictate": "Dikte",
+        "stop": "Berhenti mendengarkan"
+      }
     }
   },
   "vault": {
