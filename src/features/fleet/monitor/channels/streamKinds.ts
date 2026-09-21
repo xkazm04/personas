@@ -37,8 +37,3 @@ export function resolveRowLabels(t: Translations): StreamRowLabels {
   for (const v of Object.keys(STEP_VERB_KEY) as StepVerb[]) verb[v] = m[STEP_VERB_KEY[v]] as string;
   return { kind, verb, assignment: m.stream_assignment_filter };
 }
-
-/* PROTOTYPE — row typography. TODO(prototype, 2026-09-21): consolidate the
- * StreamRow font switcher once a variant wins; delete the losers + this type. */
-export type StreamFont = 'mono' | 'ledger' | 'editorial';
-export const STREAM_FONTS: StreamFont[] = ['mono', 'ledger', 'editorial'];

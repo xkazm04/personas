@@ -5,7 +5,7 @@ import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/b
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { StreamRow, ROW_HEIGHT } from './StreamRow';
-import { resolveRowLabels, type StreamFont } from './streamKinds';
+import { resolveRowLabels } from './streamKinds';
 import type { TaggedItem } from './types';
 
 /**
@@ -18,7 +18,7 @@ import type { TaggedItem } from './types';
  * an old row back into view must never re-fire it (plan §5.4).
  */
 export function LensStream({
-  rows: data, onOpen, onAssignment, emptyLabel, hasMore, onEndReached, font,
+  rows: data, onOpen, onAssignment, emptyLabel, hasMore, onEndReached,
 }: {
   rows: TaggedItem[];
   onOpen: (row: TaggedItem) => void;
@@ -28,8 +28,6 @@ export function LensStream({
   hasMore?: boolean;
   /** Fired once when the tail scrolls into view — pages the merge deeper. */
   onEndReached?: () => void;
-  /** PROTOTYPE — the row typography under audition (see StreamRow FONT). */
-  font?: StreamFont;
 }) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -143,7 +141,6 @@ export function LensStream({
                   onOpen={onOpen}
                   onAssignment={onAssignment}
                   labels={rowLabels}
-                  font={font}
                 />
               </div>
             );
