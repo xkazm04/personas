@@ -876,15 +876,22 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        // Two warnings now: (1) Error — the rule is inert because workflow-tag
-        // routing is not wired up; (2) Info — the unknown `other_provider`.
+        // Two warnings: (1) Warning — the rule matches on the persona's
+        // template category, so it fails OPEN for personas without one;
+        // (2) Info — the unknown `other_provider`.
+        //
+        // This used to be an Error saying the rule could "never match". Since
+        // 2026-07-15 the runner passes `template_category` as the tag source
+        // (see `validate`'s own comment), so the rule does real work and the
+        // remaining defect is partial coverage, not inertness. The old Error
+        // does not exist any more; the partial-coverage Warning replaced it.
         assert_eq!(warnings.len(), 2);
-        let inert = warnings
+        let coverage = warnings
             .iter()
-            .find(|w| w.severity == PolicyWarningSeverity::Error)
-            .expect("inert-compliance error");
-        assert!(inert.message.contains("HIPAA"));
-        assert!(inert.message.contains("never match"));
+            .find(|w| w.severity == PolicyWarningSeverity::Warning)
+            .expect("partial-coverage compliance warning");
+        assert!(coverage.message.contains("HIPAA"));
+        assert!(coverage.message.contains("fails open"));
         let unknown = warnings
             .iter()
             .find(|w| w.severity == PolicyWarningSeverity::Info)
@@ -907,16 +914,34 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        // Two Errors now: (1) the rule is inert (no tag source); (2) its allowed
-        // provider is explicitly blocked.
+        // Two warnings: (1) Warning — the rule only restricts personas that
+        // carry a template category, so it fails open for the rest;
+        // (2) Error — its allowed provider is explicitly blocked.
+        //
+        // The first was an Error ("never match") until the runner started
+        // passing a tag source on 2026-07-15. That claim no longer exists in
+        // `validate`; the partial-coverage Warning is what replaced it. The
+        // Error this test really guards — a blocked provider in an allow-list
+        // — is asserted exactly as before.
         assert_eq!(warnings.len(), 2);
+        assert_eq!(
+            warnings
+                .iter()
+                .filter(|w| w.severity == PolicyWarningSeverity::Error)
+                .count(),
+            1,
+        );
         assert!(warnings
             .iter()
-            .all(|w| w.severity == PolicyWarningSeverity::Error));
-        assert!(warnings.iter().any(|w| w.message.contains("never match")));
+            .any(|w| w.severity == PolicyWarningSeverity::Warning
+                && w.message.contains("fails open")));
         assert!(warnings
             .iter()
-            .any(|w| w.message.contains("explicitly blocked")));
+            .any(|w| w.severity == PolicyWarningSeverity::Error
+                && w.message.contains("explicitly blocked")));
+        // A blocked provider inside a compliance allow-list is a real
+        // contradiction and must still block saving.
+        assert!(policy.has_blocking_errors());
     }
 
     #[test]
@@ -1342,7 +1367,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_routing_rule_critical_is_inert_warning() {
+    fn test_validate_routing_rule_critical_is_not_inert() {
+        // The twin of `test_validate_routing_rule_standard_is_not_inert` for
+        // the Critical band. It asserted a "never fires" Warning until
+        // 2026-07-15, when the runner began classifying task complexity via
+        // `TaskComplexity::infer` and passing it to `evaluate` — so rules in
+        // ALL THREE bands fire and `validate` deliberately stopped emitting
+        // that warning (its comment says so). The warning this test used to
+        // read no longer exists, so the test now asserts the behaviour that
+        // replaced it: a Critical rule on an allowed provider is clean.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],
@@ -1356,11 +1389,10 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
-        assert!(warnings[0].message.contains("Critical route"));
-        assert!(warnings[0].message.contains("never fires"));
-        // A merely-inert routing rule must NOT block saving.
+        assert!(
+            warnings.is_empty(),
+            "a Critical routing rule on an allowed provider fires and is clean, got {warnings:?}",
+        );
         assert!(!policy.has_blocking_errors());
     }
 

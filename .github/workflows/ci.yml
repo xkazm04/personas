@@ -892,14 +892,35 @@ jobs:
   # advisory turned the build job red and was indistinguishable from a
   # compilation failure or a broken test.
   #
-  # STATUS 2026-08-22: this job is RED, honestly. Licences, sources and bans
-  # pass; advisories report seven entries. Four ride rustls 0.22.4 under
-  # sentry 0.34.0 and need a sentry major bump, two arrive through tauri's own
-  # notification and plist paths, and RUSTSEC-2023-0071 (the Marvin timing
-  # side-channel in rsa) has no fixed release at all. No `ignore` entries were
-  # written for any of them: an advisory nobody has read, silently ignored, is
-  # exactly the state deny.toml was in before 2026-08-20, when a stale config
-  # key meant the tool exited on a parse error and checked nothing for months.
+  # STATUS 2026-09-21: this job is RED, honestly, on ONE advisory.
+  # Licences, sources and bans pass. Six of the seven entries the 2026-08-22
+  # note below described are closed: the four rustls 0.22.4 / rustls-webpki
+  # 0.102.8 advisories went with the sentry 0.34 -> 0.35 bump this note's
+  # commit made (0.35 is the first release on rustls 0.23; it needed no source
+  # change), and the two quick-xml DoS advisories (RUSTSEC-2026-0194/0195)
+  # went with `plist` 1.8 -> 1.10 and `notify-rust` 4.12 -> 4.18, which is
+  # where the 0.37/0.38 copies came from. `chacha20` 0.10.0's yanked warning
+  # went with it. Everything was a lockfile move inside semver except the
+  # sentry line in src-tauri/Cargo.toml.
+  #
+  # What is LEFT is RUSTSEC-2023-0071, the Marvin timing side-channel in
+  # `rsa`, and it is left because there is nothing to bump to: the advisory
+  # says `patched = []` and records that 0.9.10 (latest stable) and
+  # 0.10.0-rc.18 (latest) are both still affected. `rsa` is a DIRECT
+  # dependency here — `personas-core` and `personas-desktop` both declare it,
+  # and `core/src/crypto.rs` uses RSA-OAEP for the session keypair that
+  # protects the IPC bridge. Closing it is a protocol change (replace the
+  # hybrid RSA-OAEP key wrap), not a bump, and that is an operator decision.
+  #
+  # STATUS 2026-08-22 (historic): this job is RED, honestly. Licences, sources
+  # and bans pass; advisories report seven entries. Four ride rustls 0.22.4
+  # under sentry 0.34.0 and need a sentry major bump, two arrive through
+  # tauri's own notification and plist paths, and RUSTSEC-2023-0071 (the
+  # Marvin timing side-channel in rsa) has no fixed release at all. No
+  # `ignore` entries were written for any of them: an advisory nobody has read,
+  # silently ignored, is exactly the state deny.toml was in before 2026-08-20,
+  # when a stale config key meant the tool exited on a parse error and checked
+  # nothing for months.
   rust-deny:
     needs: changes
     # See the note on rust-fmt's condition.
@@ -1257,8 +1278,10 @@ jobs:
   # file on 2026-09-18 (seven mutations, seven failures).
   #
   # Known and deliberate: rust-deny is honestly red (see its STATUS note), so
-  # this job is red on every Rust push until those advisories are dealt with.
-  # That is the same verdict the workflow already gave; it is not new.
+  # this job is red on every Rust push until that advisory is dealt with. As
+  # of 2026-09-21 it is ONE advisory, RUSTSEC-2023-0071, which has no fixed
+  # release to move to. That is the same verdict the workflow already gave; it
+  # is not new.
   ci-verdict:
     if: always()
     needs:

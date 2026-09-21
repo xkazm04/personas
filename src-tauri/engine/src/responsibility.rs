@@ -1486,11 +1486,17 @@ mod tests {
 
         // Update validates the MERGED row: raising the rung past the ceiling
         // fails even though every provided field is individually well-formed.
+        //
+        // The rung here must be the same one the create door refuses above.
+        // It was 3 until 2026-09-09, when MAX_GRANTABLE_RUNG became RUNG_MERGE
+        // (3) — `validate_refuses_rung_4_blank_titles_bad_status_and_unknown_classes`
+        // was updated to say so and this door's twin was not, so it asked for
+        // a rung that is now granted and the `unwrap_err` hit an `Ok`.
         let err = update_from_input(
             &pool,
             &created.id,
             UpdatePersonaResponsibilityInput {
-                scope_rung: Some(3),
+                scope_rung: Some(MAX_GRANTABLE_RUNG + 1),
                 ..Default::default()
             },
         )
