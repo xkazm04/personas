@@ -3,10 +3,14 @@ import { Suspense, useEffect } from 'react';
 import { idlePrefetch } from '@/lib/idlePrefetch';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { startNoteAskSuggestionWatch } from './athena/noteSuggestions';
 import NotepadShell from './NotepadShell';
+import { askingNoteIds, reportSuggestionCount } from './notepadAskState';
 import { NotepadOverlayHostLazy, notepadHostImport } from './notepadHostChunk';
 import { startNotepadListeners } from './notepadStore';
 import { markNotepadPhase } from './notepadTiming';
+import { startNoteThreadListeners } from './thread/noteThreadStore';
+import { NotepadLiveFeeder } from './thread/NotepadLiveFeeder';
 
 /**
  * App-wide host for the notepad overlay.
@@ -36,6 +40,13 @@ export default function NotepadLayer() {
 
   useEffect(() => {
     startNotepadListeners();
+    // The thread listener rides beside the sweeper's for the same reason: a
+    // review can land on a note while the pad is shut, and its unread count
+    // must be right the moment the pad opens.
+    startNoteThreadListeners();
+    // Ends an "Athena is working" wait when her blocks land, whichever surface
+    // started it — the dispatch bar may not be mounted.
+    startNoteAskSuggestionWatch(askingNoteIds, reportSuggestionCount);
   }, []);
 
   useEffect(() => {
@@ -73,11 +84,16 @@ export default function NotepadLayer() {
 
   if (open) markNotepadPhase('layer');
 
-  if (!open) return null;
-
   return (
-    <Suspense fallback={<NotepadShell />}>
-      <NotepadOverlayHostLazy />
-    </Suspense>
+    <>
+      {/* Always mounted: an entry for a note whose card is not on screen —
+          pad shut included — goes to the LiveCommsStack from here. */}
+      <NotepadLiveFeeder />
+      {open && (
+        <Suspense fallback={<NotepadShell />}>
+          <NotepadOverlayHostLazy />
+        </Suspense>
+      )}
+    </>
   );
 }

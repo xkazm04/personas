@@ -31,6 +31,7 @@
   ],
   "citations": {
     "AgentDetail.tsx": {"count":1,"sections":[],"lines":["77-93"],"contexts":["`AgentDetail.tsx:77-93` runs `i * 120` over four elements, which is fine; the same expression"],"resolved":false},
+    "RegistryHeatmap.tsx": {"count":1,"sections":[7],"lines":["47"],"contexts":["`RegistryHeatmap.tsx:47` (`` `${mode}:${columns.length}` ``)."],"resolved":false},
     "RevealItem.test.tsx": {"count":1,"sections":[9],"contexts":["5. **Land the four probes** from this composition as `RevealItem.test.tsx` /"],"resolved":false},
     "ToneConsole.tsx": {"count":1,"sections":[7],"lines":["280"],"contexts":["`ScraperControlRoom.tsx:347`, `ToneConsole.tsx:280`) — these are placeholders, not entrances;"],"resolved":false},
     "UnifiedTable.reveal.test.tsx": {"count":1,"sections":[9],"contexts":["`UnifiedTable.reveal.test.tsx`: the delay cap, the reduced-motion short-circuit, the"],"resolved":false},
@@ -121,7 +122,6 @@
       "verbatim": "ReviewInboxPanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx": {"count":1,"sections":[4],"lines":["499"],"contexts":["`ProjectManagerPage.tsx:499`, `SharedEventsTab.tsx:163`)."],"resolvedFrom":"basename","verbatim":"ProjectManagerPage.tsx"},
-    "src/features/plugins/dev-tools/sub_skills/registry/RegistryHeatmap.tsx": {"count":1,"sections":[7],"lines":["47"],"contexts":["`RegistryHeatmap.tsx:47` (`` `${mode}:${columns.length}` ``)."],"resolvedFrom":"basename","verbatim":"RegistryHeatmap.tsx"},
     "src/features/scraper/ScraperControlRoom.tsx": {
       "count": 1,
       "sections": [7],

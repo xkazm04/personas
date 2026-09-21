@@ -558,4 +558,14 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// for claims to verify / current events / "check, research"; interim
 /// reaction in the same reply; the findings return as a `job_completed`
 /// follow-up turn to summarise with sources).
-pub const CONSTITUTION_VERSION: u32 = 65;
+///
+/// v66 (note-overview-cycle): the Notepad gains a per-note THREAD, and Athena
+/// gains the op to answer on it — `comment_on_note {note_id, body_md}`,
+/// auto-fire, writes one comment and nothing else. The Notepad section now
+/// says what the thread holds (his comments, hers, the note-task agent's run
+/// reviews, her suggestion cards as reviews, status milestones), that
+/// `describe_note` ends with its last eight entries so she reads the
+/// conversation before joining it, and the two rules most likely to bite: an
+/// answer the pad asked for goes on the thread, not in the chat; and a body
+/// change is still a `show_note_suggestions` row, never a comment.
+pub const CONSTITUTION_VERSION: u32 = 66;

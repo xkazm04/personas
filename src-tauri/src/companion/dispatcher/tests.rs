@@ -456,6 +456,84 @@ fn show_ship_goals_with_a_note_id_carries_it_and_moves_the_note() {
     let after = crate::db::repos::dev_tools::get_note(&sys, &note.id).expect("note");
     assert_eq!(after.status, crate::db::models::NoteStatus::InProgress);
     assert_eq!(after.dispatch_target.as_deref(), Some("athena_goals"));
+    // The move is REPORTED, so session.rs can tell the pad (the dispatcher has
+    // no AppHandle; a silent move was the gap this closes).
+    assert_eq!(out.notepad_status_changes.len(), 1);
+    assert_eq!(out.notepad_status_changes[0].note_id, note.id);
+    assert_eq!(
+        out.notepad_status_changes[0].status,
+        crate::db::models::NoteStatus::InProgress
+    );
+}
+
+// -- the Notepad thread: comment_on_note -----------------------------------
+
+/// `comment_on_note` is an auto-fire op with its own arm: on neither consent
+/// list (no approval card, not a lookup), and documented in the reference.
+#[test]
+fn comment_on_note_is_an_auto_fire_op() {
+    assert!(!ALLOWED_ACTIONS.contains(&"comment_on_note"));
+    assert!(!READ_OPS.contains(&"comment_on_note"));
+    assert!(AUTO_FIRE_ACTIONS.contains(&"comment_on_note"));
+}
+
+/// Against a real pad: the comment lands on the thread as athena/comment, is
+/// handed back in `note_comments` for session.rs to emit, and the op line is
+/// stripped from the displayed reply.
+#[test]
+fn comment_on_note_posts_to_the_thread_and_reports_the_row() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let note = crate::db::repos::dev_tools::create_note(&sys, "Threaded", None).expect("note");
+    let op = format!(
+        r###"{{"op":"propose_action","action":"comment_on_note","params":{{"note_id":"{}","body_md":"Looks right to me."}}}}"###,
+        note.id
+    );
+    let text = format!("Prose.\nOP: {op}\nMore prose.");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+
+    assert_eq!(out.note_comments.len(), 1, "warnings: {:?}", out.warnings);
+    let c = &out.note_comments[0];
+    assert_eq!(c.note_id, note.id);
+    assert_eq!(c.body_md, "Looks right to me.");
+    assert_eq!(c.author_kind, crate::db::models::NoteCommentAuthor::Athena);
+    assert_eq!(c.kind, crate::db::models::NoteCommentKind::Comment);
+    assert!(
+        !out.cleaned_text.contains("comment_on_note"),
+        "{}",
+        out.cleaned_text
+    );
+    let thread =
+        crate::db::repos::dev::note_comments::list_comments(&sys, &note.id).expect("thread");
+    assert_eq!(thread.len(), 1);
+}
+
+/// An unknown note is an ANSWER (a warning + a system episode she reads next
+/// turn), never a panic or a row on some other note.
+#[test]
+fn comment_on_note_refuses_an_unknown_note_without_writing() {
+    let sys = crate::db::init_test_db().expect("system db");
+    let op = r###"{"op":"propose_action","action":"comment_on_note","params":{"note_id":"nope","body_md":"hi"}}"###;
+    let text = format!("Prose.\nOP: {op}");
+    let user = test_pool();
+    let out = dispatch_with_sys(&user, Some(&sys), "default", &text).expect("dispatch ok");
+    assert!(out.note_comments.is_empty());
+    assert!(
+        out.warnings
+            .iter()
+            .any(|w| w.contains("No note has the id `nope`")),
+        "{:?}",
+        out.warnings
+    );
+}
+
+/// Without the app DB there is nothing to post into: refuse, do not pretend.
+#[test]
+fn comment_on_note_fails_closed_without_the_notepad() {
+    let op = r###"{"op":"propose_action","action":"comment_on_note","params":{"note_id":"n1","body_md":"hi"}}"###;
+    let out = dispatch_op(op);
+    assert!(out.note_comments.is_empty());
+    assert!(out.warnings.iter().any(|w| w.contains("comment_on_note")));
 }
 
 /// Without a `note_id` the card must not grow one, and no note may move. The

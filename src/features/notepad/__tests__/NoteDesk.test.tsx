@@ -6,7 +6,7 @@
 // which notes each lens admits, that `shipped` is admitted by NONE of them, that
 // the choice survives a remount, and that the goals bar appears exactly when
 // there is a fraction to draw.
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -32,6 +32,8 @@ vi.mock('../overview/parts/NoteQuickWrite', () => ({
 let summaries: Record<string, NotePlanSummary> = {};
 let stale = false;
 vi.mock('../useNotepad', () => ({
+  // The grid's presence map reads every note by id; an empty map is "nobody working".
+  useNotepadNotes: () => ({}),
   useNotepadPlanSummaries: () => summaries,
   useNotepadStatus: () => ({ loading: false, loaded: true, planSummariesStale: stale }),
 }));
@@ -90,6 +92,8 @@ function desk(notes: DevNote[], over: { initialProjectId?: string | null } = {})
       onOpen={onOpen}
       onPatch={vi.fn()}
       onCreate={vi.fn()}
+      onDelete={vi.fn()}
+      onCertify={vi.fn()}
       {...over}
     />,
   );
@@ -105,6 +109,10 @@ beforeEach(() => {
   summaries = {};
   stale = false;
   localStorage.clear();
+  // The grid animates leavers OUT (AnimatePresence), so a filtered-away card is
+  // still in the DOM for its exit. Under the app's own Reduce Motion the exit
+  // is instant — it still lands a frame later, hence the `waitFor`s below.
+  document.documentElement.setAttribute('data-motion', 'reduce');
 });
 
 describe('NoteOverview — the status lens', () => {
@@ -122,14 +130,14 @@ describe('NoteOverview — the status lens', () => {
     expect(visibleIds(all)).toEqual(['draft', 'published', 'done', 'scoped', 'cut']);
   });
 
-  it('Drafts is the brainstorm rail, Scoped is the plan rail mid-flight', () => {
+  it('Drafts is the brainstorm rail, Scoped is the plan rail mid-flight', async () => {
     desk(all);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Drafts' }));
-    expect(visibleIds(all)).toEqual(['draft', 'published', 'done']);
+    await waitFor(() => expect(visibleIds(all)).toEqual(['draft', 'published', 'done']));
 
     fireEvent.click(screen.getByRole('tab', { name: 'Scoped' }));
-    expect(visibleIds(all)).toEqual(['scoped', 'cut']);
+    await waitFor(() => expect(visibleIds(all)).toEqual(['scoped', 'cut']));
   });
 
   // A shipped note lives in the archive drawer's Shipped group. If it leaked
@@ -168,10 +176,10 @@ describe('NoteOverview — initialProjectId', () => {
 
   // A SEED, not a controlled value: once the pad is open the operator owns the
   // filter, and a prop that kept re-asserting itself would undo every click.
-  it('does not fight the operator once they pick another project', () => {
+  it('does not fight the operator once they pick another project', async () => {
     desk(all, { initialProjectId: 'p2' });
     fireEvent.click(screen.getByRole('tab', { name: /personas/ }));
-    expect(visibleIds(all)).toEqual(['a']);
+    await waitFor(() => expect(visibleIds(all)).toEqual(['a']));
   });
 
   it('falls back to All when the prop is absent', () => {
@@ -193,6 +201,8 @@ describe('NoteDeskCard — the linked readings', () => {
         autoFocus={false}
         onOpen={vi.fn()}
         onPatch={vi.fn()}
+        onDelete={vi.fn()}
+        onCertify={vi.fn()}
       />,
     );
   }

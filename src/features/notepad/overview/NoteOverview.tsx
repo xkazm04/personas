@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CornerDownLeft } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 import { NOTE_CAP } from '../notepadStore';
 import { noteOccupiesSlot } from '../noteStatusMeta';
 import { useNotepadPlanSummaries, useNotepadStatus } from '../useNotepad';
+import { useNotesWorkingMap } from '../thread/useNoteWorking';
 import { deskForecasts } from './deskForecast';
 import { DESK_FILTERS, matchesDeskFilter, readDeskFilter, writeDeskFilter, type DeskFilter } from './deskFilter';
 import { NoteDeskCard } from './NoteDeskCard';
@@ -54,9 +57,15 @@ export function NoteOverview({
   onOpen,
   onPatch,
   onCreate,
+  onDelete,
+  onCertify,
 }: NoteOverviewProps & { loading: boolean }) {
   const { t, tx } = useTranslation();
   const enter = useRevealTracker();
+  const reduced = useReducedMotion();
+  // ONE presence subscription for the whole grid (a fleet heartbeat re-derives
+  // once, not once per card).
+  const working = useNotesWorkingMap();
   // Seeded ONCE, from a deep link. `useState`'s initializer rather than an
   // effect: an effect would fight the operator the moment they picked a
   // different project and the prop had not changed.
@@ -180,21 +189,47 @@ export function NoteOverview({
           <OverviewGhost />
         ) : (
           <div className="grid grid-cols-4 gap-4" role="tabpanel" id={`notepad-desk-filter-panel-${active}`} aria-labelledby={`notepad-desk-filter-tab-${active}`}>
-            {visible.map((note, index) => (
-              <NoteDeskCard
-                key={note.id}
-                note={note}
-                projects={projects}
-                saveState={saveStates[note.id] ?? 'clean'}
-                summary={summaries[note.id]}
-                forecast={forecasts[note.id]}
-                order={index}
-                reveal={enter}
-                autoFocus={note.id === focusNoteId}
-                onOpen={() => onOpen(note.id)}
-                onPatch={(patch) => onPatch(note.id, patch)}
-              />
-            ))}
+            {/* THE GRID MOVES, it does not jump. Each card sits in a `layout`
+                wrapper under `AnimatePresence`, so a filter change or a delete
+                slides the survivors into place and fades the leavers out.
+                The wrapper is deliberately OUTSIDE `RevealItem`: the entrance
+                cascade is a one-shot CSS animation on the card, and layout is
+                a transform on its parent — nesting them keeps the two from
+                fighting over the same element's `transform`. `popLayout` takes
+                a leaver out of flow at once, so the reflow starts with the exit
+                rather than after it. */}
+            <AnimatePresence initial={false} mode="popLayout">
+              {visible.map((note, index) => (
+                <motion.div
+                  key={note.id}
+                  layout={!reduced}
+                  // A card that has never entered gets the RevealItem cascade and
+                  // nothing else; only a RE-entry (a filter bringing it back)
+                  // fades in here, so no card ever plays two entrances at once.
+                  initial={!reduced && enter.hasEntered(note.id) ? { opacity: 0, scale: 0.96 } : false}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+                  transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 34 }}
+                  data-testid={`notepad-card-slot-${note.id}`}
+                >
+                  <NoteDeskCard
+                    note={note}
+                    projects={projects}
+                    saveState={saveStates[note.id] ?? 'clean'}
+                    summary={summaries[note.id]}
+                    forecast={forecasts[note.id]}
+                    working={working[note.id]}
+                    order={index}
+                    reveal={enter}
+                    autoFocus={note.id === focusNoteId}
+                    onOpen={() => onOpen(note.id)}
+                    onPatch={(patch) => onPatch(note.id, patch)}
+                    onDelete={() => onDelete(note)}
+                    onCertify={() => onCertify(note.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

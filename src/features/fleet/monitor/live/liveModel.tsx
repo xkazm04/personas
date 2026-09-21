@@ -7,13 +7,16 @@
 // prototype is fed by demo.ts; the production wiring will project the live
 // useTeamChannel feed into the same shape.
 
-import { Sparkles, Compass, User, AlertCircle, Hash, type LucideIcon } from 'lucide-react';
+import { Sparkles, Compass, User, AlertCircle, Hash, Scale, MessagesSquare, type LucideIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import { avatarBgFor, AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import { cleanName } from '../grid/fleetGridModel';
+
+/** Where a live message came from. Absent = `channel` (a team-channel item). */
+export type LiveMessageSource = 'channel' | 'notepad';
 
 /** A single channel message, projected for the corner live overlay. */
 export interface LiveMessage {
@@ -41,6 +44,18 @@ export interface LiveMessage {
   alert: boolean;
   /** Date.now() when the overlay first saw it — drives auto-dismiss timing. */
   receivedAt: number;
+  /** Absent = a team-channel item. A non-channel source pushes through
+   *  `liveExternal.ts` and supplies its own inline verbs there. Channel rows
+   *  never set any of the fields below, so their behaviour is unchanged. */
+  source?: LiveMessageSource;
+  /** Notepad: the note the entry belongs to. */
+  noteId?: string;
+  /** Notepad: the thread entry's id. */
+  commentId?: string;
+  /** Notepad: set on a review entry — what it reviews and whether it still waits. */
+  review?: { refKind: string; pending: boolean };
+  /** A secondary caption under the author (the note's title for a Notepad entry). */
+  context?: string;
 }
 
 /** Resolve the accent colour for a message's author (team-agnostic). */
@@ -112,6 +127,15 @@ export function liveMessageType(m: LiveMessage): LiveMessageType {
   return 'channel';
 }
 
+/** The corner cluster's type glyph. Tone matches the event label vocabulary
+ *  the card used to spell out; the event text itself rides in the tooltip so
+ *  no information is lost. Shared by every pop-up presentation. */
+export const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
+  decision: { Icon: Scale, cls: 'text-status-warning' },
+  directive: { Icon: User, cls: 'text-emerald-400' },
+  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
+};
+
 /** The contract every live-overlay variant renders against. The host owns the
  *  queue (accumulation + acknowledge bookkeeping); a variant owns its own
  *  layout, grouping, and presentation. There is NO auto-timeout: a pop-up
@@ -127,6 +151,11 @@ export interface LiveVariantProps {
   onDismissAll: () => void;
   /** Redirect into the Channels → Timeline view (optionally team-scoped). */
   onOpenConversation: (teamId?: string, personaId?: string | null, itemId?: string | null) => void;
+  /** Body click on a NON-channel message (a feed registered in
+   *  `liveExternal.ts`). The host runs the feed's `open` and acknowledges the
+   *  message — opening it is reading it. Absent: the feed's `open` is called
+   *  directly, and the channel default applies when there is none. */
+  onOpenExternal?: (m: LiveMessage) => void;
   reducedMotion: boolean;
 }
 

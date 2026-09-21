@@ -44,6 +44,20 @@ project the note belongs to.
    means the app has not published this note into this repo; the operator needs
    to know that, not to receive work aimed at a requirement you invented.
 
+   **If `note.md` ends with a `## Operator feedback` section, this is a
+   rework.** A previous run of this note finished, the operator read its
+   result and REJECTED it, and the note was sent back to you. That section —
+   his rejection reason plus any comments he left since that run — is
+   **binding rework instruction**: it overrides the body wherever the two
+   disagree, and a run that repeats what was rejected has failed no matter how
+   green its gates are. Before planning, read what was rejected: the previous
+   attempt's artifacts were moved to
+   `.personas/notepad/runs/<note-id>/attempts/<run-id>/` (`report.md`,
+   `result.json`; the most recently modified directory is the attempt just
+   rejected — `ls -t` lists it first). Address
+   every point of the feedback, and say in your summary how each one was
+   answered.
+
 2. **Write `started.json` immediately**, before you analyse anything:
 
    ```bash
@@ -138,6 +152,31 @@ warning nobody reads:
   touched files (`"file"`), and any documentation you wrote (`"doc"`). Keep it
   to what matters; this is a manifest, not a `git diff --stat`.
 - The whole file must be under **1 MiB**. It is a report, not a log.
+
+**Optional: `comments`** — an array of `{ "body_md": "..." }` for anything you
+want to say to the operator beyond the summary: a question you could not
+resolve, a risk you want him to see, a follow-up you deliberately left. Each
+entry lands on the note's thread in the app as your comment, just above your
+run's review (which carries the `summary`). It is additive — `schema_version`
+stays `1`, and a result without it is exactly as valid:
+
+```json
+{
+  "schema_version": 1,
+  "note_id": "<note-id>",
+  "status": "completed",
+  "summary": "…",
+  "artifacts": [],
+  "comments": [
+    { "body_md": "The retry budget is a guess (3). Say if you want it configurable." }
+  ],
+  "finished_at": "<ISO-8601 UTC>"
+}
+```
+
+At most 8 comments are posted and each is capped at 4 KiB. Keep them few and
+worth reading: the summary is still where the outcome goes, and the operator
+approves or rejects the run from its review, not from a comment.
 
 Do **not** write `ingested.json` — that marker is the app's, and writing it
 yourself makes the app skip your result entirely.
