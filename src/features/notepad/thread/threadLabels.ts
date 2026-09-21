@@ -8,6 +8,7 @@ import type { Translations } from '@/i18n/generated/types';
 import type { NoteComment } from '@/lib/bindings/NoteComment';
 
 import { markdownToPlainText } from '../cardMarkdown';
+import { runOutcomeFor } from './noteThreadStore';
 
 type NotepadStrings = Translations['notepad'];
 type Tx = (template: string, vars: Record<string, string | number>) => string;
@@ -29,26 +30,28 @@ export function threadAuthorLabel(c: Pick<NoteComment, 'authorKind' | 'authorNam
 /**
  * What KIND of entry it is.
  *
- * A `run` review does not say in its row whether the run failed — the ingest
- * writes the summary, or the bare outcome token when there is none. A body that
- * IS the token `failed` is therefore the one failure signal the row carries;
- * everything else reads as a completed run.
+ * A `run` review does not say in its row whether the run failed; the ingest
+ * writes a `system` status row (ref_id `completed` | `failed`) directly before
+ * it, which the thread store indexes (`runOutcomeFor`). A body that IS the bare
+ * token `failed` (no summary) is the fallback signal.
  */
 export function threadEntryLabel(
-  c: Pick<NoteComment, 'kind' | 'refKind' | 'refId' | 'bodyMd'>,
+  c: Pick<NoteComment, 'id' | 'kind' | 'refKind' | 'refId' | 'bodyMd'>,
   n: NotepadStrings,
 ): string {
   if (c.kind === 'comment') return n.thread_entry_comment;
   if (c.kind === 'review') {
     if (c.refKind === 'suggestion_card') return n.thread_entry_suggestions_ready;
     if (c.refKind === 'run') {
-      return c.bodyMd.trim() === 'failed' ? n.thread_entry_run_failed : n.thread_entry_run_completed;
+      const failed = runOutcomeFor(c.id) === 'failed' || c.bodyMd.trim() === 'failed';
+      return failed ? n.thread_entry_run_failed : n.thread_entry_run_completed;
     }
     return n.thread_entry_review_requested;
   }
   // system / status milestone — the token rides in `ref_id` (WP1 stores no English).
   if (c.refId === 'cut') return n.thread_entry_status_cut;
   if (c.refId === 'shipped') return n.thread_entry_status_shipped;
+  if (c.refId === 'failed') return n.thread_entry_run_failed;
   return n.thread_entry_status_completed;
 }
 

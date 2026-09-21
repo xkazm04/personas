@@ -147,8 +147,49 @@ function mergeEntries(a: readonly NoteComment[], b: readonly NoteComment[]): Not
   return [...byId.values()].sort((x, y) => x.createdAt.localeCompare(y.createdAt));
 }
 
+// --- run outcomes -------------------------------------------------------------
+//
+// A `run` review row does not carry its outcome. The ingest writes a
+// `system`/`status` row with ref_id `completed` | `failed` IMMEDIATELY before
+// each run review (notepad_ingest.rs post_run_thread), so the outcome is the
+// nearest preceding status row. Indexed by review id from both doors: a loaded
+// thread (ordering) and the live feed (arrival order).
+const runOutcomes = new Map<string, 'completed' | 'failed'>();
+const lastStatusByNote = new Map<string, 'completed' | 'failed'>();
+
+function outcomeToken(c: NoteComment): 'completed' | 'failed' | null {
+  return c.kind === 'system' && (c.refId === 'completed' || c.refId === 'failed') ? c.refId : null;
+}
+
+function indexRunOutcomes(entries: readonly NoteComment[]): void {
+  let last: 'completed' | 'failed' | null = null;
+  for (const c of entries) {
+    const tok = outcomeToken(c);
+    if (tok) last = tok;
+    else if (c.kind === 'review' && c.refKind === 'run' && last) runOutcomes.set(c.id, last);
+  }
+}
+
+function noteRunOutcome(c: NoteComment): void {
+  const tok = outcomeToken(c);
+  if (tok) {
+    lastStatusByNote.set(c.noteId, tok);
+    return;
+  }
+  if (c.kind === 'review' && c.refKind === 'run' && !runOutcomes.has(c.id)) {
+    const last = lastStatusByNote.get(c.noteId);
+    if (last) runOutcomes.set(c.id, last);
+  }
+}
+
+/** The outcome of the run a `run` review answers for, when known. */
+export function runOutcomeFor(reviewId: string): 'completed' | 'failed' | undefined {
+  return runOutcomes.get(reviewId);
+}
+
 function setThread(noteId: string, next: NoteThreadState): void {
   threads.set(noteId, next);
+  indexRunOutcomes(next.entries);
   threads.notify();
 }
 
@@ -268,6 +309,7 @@ export function onNoteComment(fn: (a: NoteCommentArrival) => void): () => void {
  * counted or announced again.
  */
 export function ingestNoteComment(comment: NoteComment): void {
+  noteRunOutcome(comment);
   const fresh = remember(comment.id);
   const cached = threads.get(comment.noteId);
   const isViewed = viewing === comment.noteId;

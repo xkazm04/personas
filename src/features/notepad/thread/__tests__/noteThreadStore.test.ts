@@ -17,6 +17,7 @@ import {
   __resetNoteThreadStoreForTests,
   fetchThread,
   ingestNoteComment,
+  runOutcomeFor,
   latestUnreadIdOf,
   loadThreadUnread,
   markThreadRead,
@@ -227,5 +228,19 @@ describe('onNoteComment — the bubble feed', () => {
     off();
     ingestNoteComment(comment());
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+describe('run outcomes', () => {
+  it('reads a run review as failed from the status row the ingest writes before it', () => {
+    ingestNoteComment(comment({ id: 's1', kind: 'system', authorKind: 'system', refKind: 'status', refId: 'failed', bodyMd: 'failed' }));
+    ingestNoteComment(comment({ id: 'r1', kind: 'review', authorKind: 'agent', refKind: 'run', refId: 'run-1', verdict: 'pending', bodyMd: 'Build broke' }));
+    expect(runOutcomeFor('r1')).toBe('failed');
+  });
+
+  it('reads a completed run as completed', () => {
+    ingestNoteComment(comment({ id: 's2', kind: 'system', authorKind: 'system', refKind: 'status', refId: 'completed', bodyMd: 'completed' }));
+    ingestNoteComment(comment({ id: 'r2', kind: 'review', authorKind: 'agent', refKind: 'run', refId: 'run-2', verdict: 'pending', bodyMd: 'Done' }));
+    expect(runOutcomeFor('r2')).toBe('completed');
   });
 });
