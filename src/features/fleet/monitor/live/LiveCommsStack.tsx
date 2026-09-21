@@ -24,30 +24,24 @@
 // clicks the body — which opens CONVERSATIONS, the room with a composer in it,
 // rather than the merged Timeline it used to open.
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, MessagesSquare, Scale, User } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
-  LiveAvatar, authorAccent, authorName, liveMessageType, type LiveMessageType,
+  LiveAvatar, TYPE_ICON, authorAccent, authorName, liveMessageType,
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
+import { LiveCommsHeaderBubble } from './LiveCommsHeaderBubble';
+import { LiveCommsIsland } from './LiveCommsIsland';
 
 const MAX_VISIBLE = 3;
 // +20% over the original 352 (operator request) — the wider card gives the
 // message line room now that it is the only prose in the bubble.
 const STACK_WIDTH = 422;
-
-/** The corner cluster's type glyph. Tone matches the event label vocabulary
- *  the card used to spell out; the event text itself rides in the tooltip so
- *  no information is lost. */
-const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
-  decision: { Icon: Scale, cls: 'text-status-warning' },
-  directive: { Icon: User, cls: 'text-emerald-400' },
-  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
-};
 
 function BubbleRow({
   m, onDismiss, onOpenConversation, reducedMotion,
@@ -141,7 +135,7 @@ function BubbleRow({
   );
 }
 
-function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
+function LiveCommsStackBaseline({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
   const { t, tx } = useTranslation();
   if (messages.length === 0) return null;
   const visible = messages.slice(0, MAX_VISIBLE);
@@ -186,6 +180,62 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenConversat
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+// ── TEMP (prototype, 2026-09-21): top-center header placement A/B ───────────
+// Three presentations behind one switch: the as-is corner stack, the same
+// bubble re-seated in the title bar (styling preserved), and the wildcard
+// Signal Island. The switch floats bottom-center only while a pop-up is live.
+// Deleted with the losers once a winner is picked.
+type Presentation = 'corner' | 'header' | 'island';
+const PRESENTATION_ID = 'live-presentation';
+const PRESENTATION_KEY = 'personas.live.prototypeVariant';
+const PRESENTATION_TABS: { id: Presentation; label: string }[] = [
+  { id: 'corner', label: 'As-is · corner' },
+  { id: 'header', label: 'Header bubble' },
+  { id: 'island', label: 'Signal island' },
+];
+
+function readPresentation(): Presentation {
+  const v = safeLocalGet(PRESENTATION_KEY, 'live:prototype-variant read');
+  return v === 'header' || v === 'island' ? v : 'corner';
+}
+
+function LiveCommsStackImpl(props: LiveVariantProps) {
+  const [presentation, setPresentation] = useState<Presentation>(readPresentation);
+  const pick = (p: Presentation) => {
+    setPresentation(p);
+    safeLocalSet(PRESENTATION_KEY, p, 'live:prototype-variant');
+  };
+  const Body = presentation === 'header' ? LiveCommsHeaderBubble
+    : presentation === 'island' ? LiveCommsIsland
+    : LiveCommsStackBaseline;
+  return (
+    <>
+      {props.messages.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-[10000] -translate-x-1/2 rounded-full border border-primary/15 bg-background/90 p-1 shadow-elevation-3 backdrop-blur-md">
+          <SegmentedTabs
+            tabs={PRESENTATION_TABS}
+            activeTab={presentation}
+            onTabChange={pick}
+            size="sm"
+            fullWidth={false}
+            idPrefix={PRESENTATION_ID}
+            ariaLabel="Live pop-up presentation"
+          />
+        </div>
+      )}
+      {/* The panel is declared AFTER its strip (both are fixed-positioned, so
+          DOM order is layout-neutral). */}
+      <div
+        role="tabpanel"
+        id={`${PRESENTATION_ID}-panel-${presentation}`}
+        aria-labelledby={`${PRESENTATION_ID}-tab-${presentation}`}
+      >
+        <Body {...props} />
+      </div>
+    </>
   );
 }
 

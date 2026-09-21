@@ -7,7 +7,7 @@
 // prototype is fed by demo.ts; the production wiring will project the live
 // useTeamChannel feed into the same shape.
 
-import { Sparkles, Compass, User, AlertCircle, Hash, type LucideIcon } from 'lucide-react';
+import { Sparkles, Compass, User, AlertCircle, Hash, Scale, MessagesSquare, type LucideIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
@@ -111,6 +111,15 @@ export function liveMessageType(m: LiveMessage): LiveMessageType {
   if (m.kind === 'directive') return 'directive';
   return 'channel';
 }
+
+/** The corner cluster's type glyph. Tone matches the event label vocabulary
+ *  the card used to spell out; the event text itself rides in the tooltip so
+ *  no information is lost. Shared by every pop-up presentation. */
+export const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
+  decision: { Icon: Scale, cls: 'text-status-warning' },
+  directive: { Icon: User, cls: 'text-emerald-400' },
+  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
+};
 
 /** The contract every live-overlay variant renders against. The host owns the
  *  queue (accumulation + acknowledge bookkeeping); a variant owns its own
