@@ -717,9 +717,10 @@ export function NoteOverviewV2({
             <LayoutGroup id="notepad-v2c">
               <div
                 ref={gridRef}
+                role="tabpanel"
+                id={`notepad-v2c-project-panel-${active}`}
+                aria-labelledby={`notepad-v2c-project-tab-${active}`}
                 className="relative grid grid-cols-[repeat(auto-fill,minmax(17rem,1fr))] gap-5"
-                role="region"
-                aria-label={t.notepad.tabs_label}
                 onFocusCapture={(e) => setEditingCard(isEditable(e.target))}
                 onBlurCapture={() => setEditingCard(false)}
               >
