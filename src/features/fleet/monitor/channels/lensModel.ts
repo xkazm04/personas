@@ -25,6 +25,15 @@ import type { TaggedItem } from './types';
 
 export const ALL_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'message', 'deliberation', 'slack'];
 
+/**
+ * The Stream's scope — a DECISION log, not the conversation. Messages and
+ * Slack are talk and belong to Conversations; the Stream keeps what was
+ * decided and what happened: step transitions, bus events, memories written,
+ * deliberation turns. Deliberation is IN by default here (it is the purest
+ * decision record there is), unlike the blended read where it stays opt-in.
+ */
+export const STREAM_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'deliberation'];
+
 export const ALL_FAMILIES: EventFamily[] = [
   'handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other',
 ];
@@ -109,6 +118,15 @@ export function rowCallsign(item: TaggedItem['item'], name: string | undefined):
   if (item.kind === 'slack') return callsign(slackAuthorName(item));
   if (name) return callsign(name);
   return callsign(VOICELESS_NAME[item.kind]);
+}
+
+/** WHO SPOKE, as a person would write it ("QA Guardian", not "QA-GUARDIAN") —
+ *  the same resolution as {@link rowCallsign}, for rows set in a proportional
+ *  face where an air-traffic callsign reads as shouting. */
+export function rowSpeaker(item: TaggedItem['item'], name: string | undefined): string {
+  if (item.kind === 'slack') return slackAuthorName(item);
+  if (name) return name.replace(/^T:\s*/, '');
+  return VOICELESS_NAME[item.kind] ?? 'System';
 }
 
 /**
@@ -293,8 +311,9 @@ export function memoryModesAvailable(lens: LensState, selectedTeamCount: number)
   return lens.kinds.size === 1 && lens.kinds.has('memory') && selectedTeamCount === 1;
 }
 
-/** The kinds to ASK THE SERVER for. Empty lens = the blended conversation
- *  (deliberation turns stay opt-in, so they're excluded unless asked for). */
-export function fetchKinds(lens: LensState): ChannelKind[] | undefined {
-  return lens.kinds.size > 0 ? [...lens.kinds] : undefined;
+/** The kinds to ASK THE SERVER for. Never the blended read: an empty kind
+ *  lens means every STREAM kind, so talk (messages, Slack) is never fetched
+ *  and never spends the page budget. */
+export function fetchKinds(lens: LensState): ChannelKind[] {
+  return lens.kinds.size > 0 ? [...lens.kinds] : STREAM_KINDS;
 }

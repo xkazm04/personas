@@ -5,6 +5,7 @@ import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/b
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { StreamRow, ROW_HEIGHT } from './StreamRow';
+import { resolveRowLabels, type StreamFont } from './streamKinds';
 import type { TaggedItem } from './types';
 
 /**
@@ -17,7 +18,7 @@ import type { TaggedItem } from './types';
  * an old row back into view must never re-fire it (plan §5.4).
  */
 export function LensStream({
-  rows: data, onOpen, onAssignment, emptyLabel, hasMore, onEndReached,
+  rows: data, onOpen, onAssignment, emptyLabel, hasMore, onEndReached, font,
 }: {
   rows: TaggedItem[];
   onOpen: (row: TaggedItem) => void;
@@ -27,6 +28,8 @@ export function LensStream({
   hasMore?: boolean;
   /** Fired once when the tail scrolls into view — pages the merge deeper. */
   onEndReached?: () => void;
+  /** PROTOTYPE — the row typography under audition (see StreamRow FONT). */
+  font?: StreamFont;
 }) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -38,6 +41,7 @@ export function LensStream({
   useEffect(() => { fetching.current = false; }, [data.length]);
 
   const labels = useMemo(() => timeGroupLabels(t), [t]);
+  const rowLabels = useMemo(() => resolveRowLabels(t), [t]);
   const { rows, headerIndexes } = useMemo(
     () => buildGroupRows(data, (tagged) => { const key = timeGroupKey(tagged.item.at); return { key, label: labels[key] }; }),
     [data, labels],
@@ -138,7 +142,8 @@ export function LensStream({
                   persona={persona}
                   onOpen={onOpen}
                   onAssignment={onAssignment}
-                  assignmentTitle={t.monitor.stream_assignment_filter}
+                  labels={rowLabels}
+                  font={font}
                 />
               </div>
             );

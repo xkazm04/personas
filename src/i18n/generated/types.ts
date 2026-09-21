@@ -290,6 +290,14 @@ export type Translations = {
     stream_kind_message: string;
     stream_kind_deliberation: string;
     stream_kind_slack: string;
+    stream_verb_created: string;
+    stream_verb_step_running: string;
+    stream_verb_step_done: string;
+    stream_verb_step_failed: string;
+    stream_verb_step_skipped: string;
+    stream_verb_status_awaiting_review: string;
+    stream_verb_status_done: string;
+    stream_verb_qa_changes_requested_rework: string;
     stream_search: string;
     stream_loading: string;
     stream_lens_one: string;
