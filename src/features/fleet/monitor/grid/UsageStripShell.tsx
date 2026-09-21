@@ -25,7 +25,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 /** The stored-plan count the header chip is read against ("n/5 plans"). A design number, not a backend cap: the rows themselves have no slot limit. */
 export const PLAN_SLOTS = 5;
 
-/** The row grid: auto-fill columns of at least 320px, rows of exactly 28px. */
+/** The row grid: auto-fill columns of at least 400px, rows of exactly 28px. */
 export const ROW_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] auto-rows-[1.75rem] gap-x-4 gap-y-1';
 
 /** One row's box — shared by the real row and its ghost so the swap moves nothing. */
