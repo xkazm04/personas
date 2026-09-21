@@ -33,6 +33,9 @@ pub mod cross_project;
 pub mod cycle_goals;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
+/// `dev_ideas.plan` — the execution plan an analysing model left for an
+/// executing model. Its own module because `DevIdea` does not carry the column.
+pub mod idea_plans;
 /// `dev_ideas` — the backlog, its dedup spine and the triage page.
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.
