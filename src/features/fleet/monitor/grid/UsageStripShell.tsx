@@ -11,7 +11,7 @@
 //      the right. Under a subtle border. It is permanent: it renders before the
 //      first read, during it and after it.
 //   2. ROWS — ONE 28px ROW PER ACCOUNT, across every provider, flowing in an
-//      auto-fill grid (`ROW_GRID`): as many 400px-minimum columns (the email needs ~200px beside the fixed icon + two clusters) as the width
+//      auto-fill grid (`ROW_GRID`): as many 400px-minimum columns (the email takes all of it but the icon and the compact right-hand stats group) as the width
 //      allows, so one account and eight both stay compact and the strip never
 //      scrolls sideways. A row is a single line — provider mark, account, the
 //      5-hour cluster, the 7-day cluster — and its bottom edge IS the 7-day
@@ -34,7 +34,7 @@ export const PLAN_SLOTS = 5;
 export const ROW_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(max(14rem,calc((100%_-_4rem)/5)),1fr))] auto-rows-[1.75rem] gap-x-4 gap-y-1';
 
 /** One row's box — shared by the real row and its ghost so the swap moves nothing. */
-export const ROW_BOX = 'relative flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-input px-1.5';
+export const ROW_BOX = 'relative flex h-7 min-w-0 items-center gap-1.5 overflow-hidden rounded-input px-1.5';
 
 /** The live account's cell: a subtle success wash, so it is found at a glance. */
 export const ROW_ACTIVE = 'bg-status-success/10';
@@ -106,8 +106,10 @@ export function GhostRow() {
     >
       <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-primary/[0.06]" />
       <span className={`min-w-0 flex-1 ${bar}`} />
-      <span className={`w-14 flex-shrink-0 ${bar}`} />
-      <span className={`w-14 flex-shrink-0 ${bar}`} />
+      <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+        <span className={`w-12 ${bar}`} />
+        <span className={`w-12 ${bar}`} />
+      </span>
       <span className="absolute inset-x-0 bottom-0 h-0.5 bg-border/40" />
     </div>
   );

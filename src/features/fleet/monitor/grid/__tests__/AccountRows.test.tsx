@@ -222,6 +222,34 @@ describe('AccountRows', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('packs both clusters and the Forget act into ONE right-aligned group, so the name keeps the rest', () => {
+    renderRows();
+    const live = row('sim-plan-1');
+    const groups = within(live).getAllByTestId('fleet-usage-stats');
+    expect(groups).toHaveLength(1);
+    const group = groups[0]!;
+    expect(group.className).toContain('ml-auto');
+    expect(group.className).toContain('gap-1.5');
+    expect(within(group).getAllByTestId('fleet-usage-window').map((c) => c.getAttribute('data-window'))).toEqual(['short', 'long']);
+    // No fixed width and no spacer inside a cluster — that was the dead space.
+    for (const cluster of within(group).getAllByTestId('fleet-usage-window')) {
+      expect(cluster.className).not.toMatch(/(^|\s)w-\[/);
+      expect(cluster.className).toContain('gap-0.5');
+      expect(cluster.querySelector('.flex-1')).toBeNull();
+    }
+    expect(within(live).getAllByTestId('fleet-usage-percent')[0]!.className).toContain('tabular-nums');
+    // The name is outside the group and still the flexible, truncating part.
+    expect(group.contains(within(live).getByTestId('fleet-usage-name'))).toBe(false);
+    // Forget lives at the END of the group and takes no width until revealed.
+    const unreadable = row('sim-plan-4');
+    const forget = within(unreadable).getByTestId('fleet-usage-remove');
+    expect(within(unreadable).getByTestId('fleet-usage-stats').lastElementChild!.contains(forget)).toBe(true); // (the Tooltip wraps it in a display:contents span)
+    expect(forget.className).toContain('w-0');
+    expect(forget.className).toContain('group-focus-within/row:w-5');
+    // A trouble row still gets the group — for its Forget act alone.
+    expect(within(row('sim-plan-5')).getByTestId('fleet-usage-stats')).toBeInTheDocument();
+  });
+
   it('opens the forget confirm from its action button without also asking to switch', () => {
     renderRows();
     const forget = within(row('sim-plan-4')).getByTestId('fleet-usage-remove');

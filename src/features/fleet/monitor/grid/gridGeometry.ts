@@ -38,11 +38,18 @@ export const TILE_W = NODE_W;
 export const TITLE_ROW_H = 20;
 /** The symbol row: 16 px symbols with a hair of air. */
 export const SYMBOL_ROW_H = 18;
-/** Persona node: title row + symbol row + 4 px of padding above and below. */
-export const TILE_H = TITLE_ROW_H + SYMBOL_ROW_H + 8;
+/**
+ * The room between the rows: a 1 px hairline divider and the air around it.
+ * The body is `justify-between` — title pinned to the top, symbols to the
+ * bottom — so this is what keeps the title from sitting on the symbol row
+ * (the operator's 2026-09-21 note: "Task title sticks too close together").
+ */
+export const NODE_DIVIDER_H = 4;
+/** Persona node: title row + divider room + symbol row + 4 px of padding above and below. */
+export const TILE_H = TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 8;
 /** Sessions are visibly subordinate to the personas above them — same width,
  *  a little less height (3 px of padding, not 4). Not the same kind of citizen. */
-export const SESSION_TILE_H = TITLE_ROW_H + SYMBOL_ROW_H + 6;
+export const SESSION_TILE_H = TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 6;
 /** The queue boards paint the same session node — one geometry, not a wider
  *  cousin (it was 232×30 before the node). */
 export const QUEUE_TILE_W = NODE_W;

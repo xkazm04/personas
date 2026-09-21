@@ -81,7 +81,17 @@ function ProviderMark({ provider }: { provider: ProviderModel }) {
   );
 }
 
-const CLUSTER_BOX = 'inline-flex w-[4.75rem] flex-shrink-0 items-center gap-1 typo-caption';
+// A cluster is exactly as wide as its glyphs — no fixed width, no spacer — so
+// the email keeps every pixel the stats do not use. Two slots stay fixed so the
+// rows of one column still line up: the figure (`FIGURE_BOX`, 3ch of tabular
+// digits — "99%" fits, "100%" overflows it by one character, which only a
+// capped window ever shows) and the pace slot (`PACE_BOX`, the glyph's own size,
+// held even when there is no pace so a paceless row does not shift).
+const CLUSTER_BOX = 'inline-flex flex-shrink-0 items-center gap-0.5 typo-caption';
+const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end tabular-nums';
+const PACE_BOX = 'inline-flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center';
+/** The row's right-hand group: both clusters and the Forget act, packed tight against the row's right edge. */
+const STATS_GROUP = 'ml-auto flex flex-shrink-0 items-center gap-1.5';
 
 /** One window as three glyphs: its icon, the percent in its tone, the pace. No bar. */
 function WindowCluster({
@@ -95,8 +105,9 @@ function WindowCluster({
   const { t, tx } = useTranslation();
   const Icon = slot === 'short' ? Timer : CalendarDays;
   if (!w) {
-    // The plan has no such window (Codex reports one, not two): the column
-    // keeps its width so the rows stay aligned, and says so rather than "0%".
+    // The plan has no such window (Codex reports one, not two): the same
+    // compact shape as a read cluster, so the rows stay aligned, and it says so
+    // rather than "0%".
     return (
       <Tooltip content={t.monitor.usage_window_none}>
         <span
@@ -108,8 +119,8 @@ function WindowCluster({
           data-empty
         >
           <Icon className="h-3 w-3 flex-shrink-0" aria-hidden />
-          <span aria-hidden className="flex-1 text-right">—</span>
-          <span className="w-3.5 flex-shrink-0" />
+          <span aria-hidden className={FIGURE_BOX}>—</span>
+          <span aria-hidden className={PACE_BOX} />
         </span>
       </Tooltip>
     );
@@ -136,13 +147,13 @@ function WindowCluster({
       >
         <Icon className="h-3 w-3 flex-shrink-0 opacity-60" aria-hidden />
         <span
-          className={`inline-flex flex-1 items-baseline justify-end tabular-nums ${TONE_TEXT[w.tone]} ${w.projected ? 'opacity-70' : ''}`}
+          className={`${FIGURE_BOX} ${TONE_TEXT[w.tone]} ${w.projected ? 'opacity-70' : ''}`}
           data-testid="fleet-usage-percent"
         >
           {w.projected && <span aria-hidden>≈</span>}
           <Numeric value={w.usedPct} unit="percent" precision={0} />
         </span>
-        <span className={`inline-flex w-3.5 flex-shrink-0 items-center justify-center ${w.pace ? PACE_TONE[w.pace] : ''}`}>
+        <span className={`${PACE_BOX} ${w.pace ? PACE_TONE[w.pace] : ''}`}>
           {Pace && <Pace className="h-3.5 w-3.5" aria-hidden data-testid="fleet-usage-pace" data-pace={w.pace} />}
         </span>
       </span>
@@ -242,27 +253,35 @@ function PlanRow({
           </Tooltip>
         )}
       </span>
-      {!trouble && (
-        <>
-          <WindowCluster w={short} slot="short" projectedHint={projectedHint} />
-          <WindowCluster w={long} slot="long" projectedHint={projectedHint} />
-        </>
-      )}
-      {canRemove && (
-        <Tooltip content={t.monitor.usage_accounts_remove_hint}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              ask('remove', plan);
-            }}
-            aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: name })}
-            className="focus-ring inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-interactive text-foreground opacity-0 hover:text-status-error focus-visible:opacity-100 group-hover/row:opacity-70 group-focus-within/row:opacity-70"
-            data-testid="fleet-usage-remove"
-          >
-            <Trash2 className="h-3 w-3" aria-hidden />
-          </button>
-        </Tooltip>
+      {(!trouble || canRemove) && (
+        <span className={STATS_GROUP} data-testid="fleet-usage-stats">
+          {!trouble && (
+            <>
+              <WindowCluster w={short} slot="short" projectedHint={projectedHint} />
+              <WindowCluster w={long} slot="long" projectedHint={projectedHint} />
+            </>
+          )}
+          {canRemove && (
+            <Tooltip content={t.monitor.usage_accounts_remove_hint}>
+              {/* Hidden, it takes NO width — the email gets it back. It opens on
+                  row hover and on focus anywhere in the row; tabbing onto the
+                  button is itself focus-within, so it is never a zero-width
+                  focus target. */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ask('remove', plan);
+                }}
+                aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: name })}
+                className="focus-ring inline-flex h-5 w-0 flex-shrink-0 items-center justify-center overflow-hidden rounded-interactive text-foreground opacity-0 hover:text-status-error focus-visible:w-5 focus-visible:opacity-100 group-hover/row:w-5 group-hover/row:opacity-70 group-focus-within/row:w-5 group-focus-within/row:opacity-70"
+                data-testid="fleet-usage-remove"
+              >
+                <Trash2 className="h-3 w-3 flex-shrink-0" aria-hidden />
+              </button>
+            </Tooltip>
+          )}
+        </span>
       )}
       <WeekBorder w={long} />
     </div>

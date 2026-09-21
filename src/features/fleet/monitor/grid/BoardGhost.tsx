@@ -25,12 +25,13 @@ function GhostRow() {
   return (
     <div style={{ height: PERSONA_ROW_H }}>
       <div
-        className="relative flex flex-col justify-center overflow-hidden rounded-input border border-border bg-foreground/[0.02] px-1"
+        className="relative flex flex-col justify-between overflow-hidden rounded-input border border-border bg-foreground/[0.02] px-1 py-0.5"
         style={{ width: TILE_W, height: TILE_H }}
       >
         <span className="flex items-center" style={{ height: TITLE_ROW_H }}>
           <span className="h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
         </span>
+        <span className="h-px bg-foreground/[0.05]" />
         <span className="flex items-center gap-1" style={{ height: SYMBOL_ROW_H }}>
           {Array.from({ length: GHOST_SYMBOLS }, (_, i) => (
             <span key={i} className="h-3 w-3 rounded-full bg-primary/[0.05]" />

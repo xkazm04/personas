@@ -125,9 +125,21 @@ row. Each column's floor is a fifth of the strip (`(100% − 4 gaps) / 5`) with 
 scrolling sideways:
 
 ```
-<provider mark>  <account>  <5h: timer · percent · pace>  <7d: calendar · percent · pace>
+<provider mark>  <account ………………………………>  [<5h: timer·percent·pace> <7d: calendar·percent·pace> <forget>]
 ══════════ 7-day utilisation, as the row's bottom border ══════════
 ```
+
+**The stats are one right-aligned group** (2026-09-21). Both clusters — and the
+hover-revealed Forget act — sit together at the row's right edge
+(`data-testid="fleet-usage-stats"`, `ml-auto`, 6px between clusters), and the
+account name takes everything else. Inside a cluster the icon, the percent and
+the pace glyph touch (2px apart): no cluster has a fixed width or a spacer. Two
+slots stay fixed so the rows of one column still line up — the percent is 3ch of
+tabular digits right-aligned (`99%` fits; a capped `100%` overruns it by one
+character) and the pace slot keeps the glyph's 14px even when there is no pace.
+The Forget button takes **no width** until the row is hovered or anything in it
+has focus (tabbing onto it is itself focus-within, so it is never a zero-width
+focus target), so a row without hover gives that space to the email.
 
 - **Provider mark** — the Claude, OpenAI (Codex) or X (Grok) glyph, 16px, in the
   text colour. Its tooltip names the provider and the CLI version when known; for
@@ -479,7 +491,7 @@ and reconciled by a 60 s poll the board owns while it is mounted
 | Layout | What it shows |
 |---|---|
 | **Runway** | a Running band with exactly `cap` slots (free slots as ghost cards, live rows past the cap appended with a warning border), then the queue as a **wrapped grid** in rank order — left → right, top → bottom, wrapping at whatever count fits the board's width by the same `ResizeObserver` arithmetic the classic board uses (`useBoardRows`), so there is no horizontal scroll at any width. Reorder in two dimensions with native HTML5 drag (drop before / after the node under the pointer by which half of it the pointer is on — `dropPayload` in `queueVerbs.ts`), ↑/↓ from the keyboard; a drop or a promotion slides the node to its new slot (`layoutId`). |
-| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis (framer `Reorder`); Parked / done holds hibernated and finished rows plus rows that exited within the last hour. |
+| **Lanes** | Running \| Queued \| Parked / done. Queued is the reorder list on the `y` axis (framer `Reorder`); Parked / done holds hibernated and finished rows plus rows that exited within the last hour. Every node spans its lane's full width. |
 
 Loading and empty are decided once for both (`QueueBoard.tsx`): a ghost
 under the chrome while the first read has not landed and there is nothing to
@@ -488,9 +500,23 @@ show, the shared `ScenarioEmptyState` when nothing is running or queued.
 **The node** (`board/node/FleetNode.tsx`) is the one visual every board paints,
 for both kinds — persona and session — at `NODE_W` = 172px (`gridGeometry.ts`;
 `TILE_W`, `QUEUE_TILE_W`, the tray and per-row arithmetic all derive from it),
-46px tall for a persona and 44px for a session: a 20px title row, an 18px
-symbol row, and 4px (persona) or 3px (session) of padding above and below.
-The two rows are strict about what they hold:
+50px tall for a persona and 48px for a session: a 20px title row, 4px of divider
+room (`NODE_DIVIDER_H`), an 18px symbol row, and 4px (persona) or 3px (session)
+of padding above and below. The body is a `justify-between` column (2026-09-21):
+the **title row pinned to the top**, a **subtle 1px hairline divider**
+(`bg-foreground/10`, decorative, inset by the body's padding) between, and the
+**symbol row pinned to the bottom** — so the title no longer sits on the symbol
+row. The elapsed bar stays on the node's bottom edge, under the symbol row.
+On the **Lanes** board every node **fills its lane** (`fill`): no fixed pixel
+width, `w-full` in the Running and Parked lanes and `flex-1` beside the team
+accent bar in the Queued lane; the affordances and the elapsed bar still anchor
+to the node's own right and bottom edges. Runway and Classic keep the fixed
+172px node. The component is split by idea — `nodeTypes.ts` (props, the
+per-kind view, the fill arithmetic), `personaNodeView.tsx` /
+`sessionNodeView.tsx` (what each kind paints), `NodeSymbolParts.tsx` (the symbol
+pieces), `NodeRows.tsx` (the rows and the elapsed bar), `nodeHues.ts` (hues,
+swatch, the treatment; re-exported by `nodeSymbols.ts`) — every file under 200
+lines. The two rows are strict about what they hold:
 
 - the **title row is the title and nothing else** — the whole width, one line,
   `typo-body`, no glyph, no chip and no control beside it. A title of about 24

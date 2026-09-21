@@ -94,6 +94,33 @@ describe('FleetNode — the title row', () => {
   });
 });
 
+describe('FleetNode — layout: title on top, a divider, symbols at the bottom', () => {
+  it('puts a decorative hairline divider between the title row and the symbol row, in a justify-between column', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
+    const body = screen.getByTestId('body');
+    expect(body.className).toContain('flex-col');
+    expect(body.className).toContain('justify-between');
+    const order = [...body.children].map((c) => c.getAttribute('data-testid'));
+    expect(order).toEqual(['fleet-node-title-row', 'fleet-node-divider', 'fleet-node-symbols']);
+    const divider = screen.getByTestId('fleet-node-divider');
+    expect(divider).toHaveAttribute('aria-hidden', 'true');
+    expect(divider.className).toContain('h-px');
+    expect(divider.className).toContain('bg-foreground/10');
+  });
+
+  it('keeps a fixed pixel width by default, and spans its parent with `fill`', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="fixed" />);
+    const fixed = screen.getByTestId('fixed');
+    expect(fixed.style.width).toBe('172px');
+    expect(fixed).toHaveAttribute('data-width', 'fixed');
+    wrap(<FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" testId="filled" fill />);
+    const filled = screen.getByTestId('filled');
+    expect(filled.style.width).toBe('');
+    expect(filled.className).toContain('w-full');
+    expect(filled).toHaveAttribute('data-width', 'fill');
+  });
+});
+
 describe('FleetNode — the symbol row, session', () => {
   it('running: state · origin · project in the row, elapsed on the bottom bar — no rank, no gate, no persona symbol', () => {
     wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
