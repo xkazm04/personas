@@ -31,6 +31,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { useTranslation } from '@/i18n/useTranslation';
+import { liveSourceFor } from './liveExternal';
 import {
   LiveAvatar, TYPE_ICON, authorAccent, authorName, liveMessageType,
   type LiveMessage, type LiveVariantProps,
@@ -44,17 +45,23 @@ const MAX_VISIBLE = 3;
 const STACK_WIDTH = 422;
 
 function BubbleRow({
-  m, onDismiss, onOpenConversation, reducedMotion,
+  m, onDismiss, onOpenConversation, onOpenExternal, reducedMotion,
 }: {
   m: LiveMessage;
   onDismiss: (id: string) => void;
   onOpenConversation: (teamId?: string, personaId?: string | null, itemId?: string | null) => void;
+  onOpenExternal?: (m: LiveMessage) => void;
   reducedMotion: boolean;
 }) {
   const { t } = useTranslation();
   const accent = authorAccent(m);
   const type = liveMessageType(m);
   const TypeGlyph = TYPE_ICON[type];
+  // A non-channel feed (Notepad) lends its own verbs: where the body goes, and
+  // inline controls under it. Channel rows have none and behave as before.
+  const source = liveSourceFor(m);
+  const actions = source?.renderActions?.(m);
+  const openLabel = m.source === 'notepad' ? t.notepad.stack_open_note : t.monitor.live_open_conversation;
   return (
     <motion.div
       layout={!reducedMotion}
@@ -75,17 +82,30 @@ function BubbleRow({
             m.alert ? 'border-status-warning/30 bg-status-warning/15' : 'border-primary/12 bg-secondary/40'
           }`}
         />
-        <Tooltip content={t.monitor.live_open_conversation} placement="left">
+        {/* The bubble is the frame; the body BUTTON is the author + message
+            inside it, so a feed's inline controls (below the button) sit in the
+            same bubble without nesting a control inside a control. */}
+        <div
+          data-testid={m.source === 'notepad' ? `live-stack-notepad-${m.noteId}` : undefined}
+          data-source={m.source ?? 'channel'}
+          className={`relative w-full overflow-hidden rounded-2xl rounded-bl-md border shadow-elevation-2 backdrop-blur-md transition-colors ${
+            m.alert
+              ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
+              : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
+          }`}
+        >
+        <Tooltip content={openLabel} placement="left">
           <button
             type="button"
             // The card knows exactly which line it is showing; handing over
             // only its team throws that away at the one moment it is free.
-            onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
-            className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
-              m.alert
-                ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
-                : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
-            }`}
+            onClick={() => {
+              if (source && onOpenExternal) onOpenExternal(m);
+              else if (source?.open) source.open(m);
+              else onOpenConversation(m.teamId, m.personaId, m.id);
+            }}
+            data-testid={m.source === 'notepad' ? `live-stack-notepad-open-${m.noteId}` : undefined}
+            className="relative block w-full px-3 py-2.5 text-left"
           >
             {/* The author line is the author. No team/project tag (the persona
                 name carries recognition; a per-project logo is the future
@@ -96,11 +116,16 @@ function BubbleRow({
             <div className="flex items-center pr-14">
               <span className="typo-caption font-semibold truncate" style={{ color: accent }}>{authorName(m)}</span>
             </div>
+            {m.context && (
+              <p className="typo-caption text-foreground/85 truncate pr-14">{m.context}</p>
+            )}
             {m.message && (
               <p className="mt-1 typo-body text-foreground line-clamp-3">{m.message}</p>
             )}
           </button>
         </Tooltip>
+        {actions && <div className="px-3 pb-2.5">{actions}</div>}
+        </div>
 
         {/* THE CORNER CLUSTER — what this message IS, and the one act on it.
             Outside the body button on purpose: nesting either inside it would
@@ -135,7 +160,7 @@ function BubbleRow({
   );
 }
 
-function LiveCommsStackBaseline({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
+function LiveCommsStackBaseline({ messages, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion }: LiveVariantProps) {
   const { t, tx } = useTranslation();
   if (messages.length === 0) return null;
   const visible = messages.slice(0, MAX_VISIBLE);
@@ -174,6 +199,7 @@ function LiveCommsStackBaseline({ messages, onDismiss, onDismissAll, onOpenConve
               m={m}
               onDismiss={onDismiss}
               onOpenConversation={onOpenConversation}
+              onOpenExternal={onOpenExternal}
               reducedMotion={reducedMotion}
             />
           ))}

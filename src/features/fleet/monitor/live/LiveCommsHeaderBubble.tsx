@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { liveSourceFor } from './liveExternal';
 import {
   LiveAvatar, TYPE_ICON, authorAccent, authorName, liveMessageType,
   type LiveMessage, type LiveVariantProps,
@@ -26,16 +27,22 @@ import {
 const MAX_VISIBLE = 3;
 
 function HeaderBubbleRow({
-  m, onDismiss, onOpenConversation, reducedMotion,
+  m, onDismiss, onOpenConversation, onOpenExternal, reducedMotion,
 }: {
   m: LiveMessage;
   onDismiss: (id: string) => void;
   onOpenConversation: LiveVariantProps['onOpenConversation'];
+  onOpenExternal?: LiveVariantProps['onOpenExternal'];
   reducedMotion: boolean;
 }) {
   const { t } = useTranslation();
   const accent = authorAccent(m);
   const TypeGlyph = TYPE_ICON[liveMessageType(m)];
+  // A non-channel feed (Notepad) lends its own verbs — same routing as the
+  // corner stack: where the body goes, and inline controls under it.
+  const source = liveSourceFor(m);
+  const actions = source?.renderActions?.(m);
+  const openLabel = m.source === 'notepad' ? t.notepad.stack_open_note : t.monitor.live_open_conversation;
   return (
     <motion.div
       layout={!reducedMotion}
@@ -55,18 +62,26 @@ function HeaderBubbleRow({
             m.alert ? 'border-status-warning/30 bg-status-warning/15' : 'border-primary/12 bg-secondary/40'
           }`}
         />
-        <Tooltip content={t.monitor.live_open_conversation} placement="left">
+        <div
+          data-source={m.source ?? 'channel'}
+          className={`relative w-full overflow-hidden rounded-2xl rounded-tl-md border shadow-elevation-2 backdrop-blur-md transition-colors ${
+            m.alert
+              ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
+              : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
+          }`}
+        >
+        <Tooltip content={openLabel} placement="left">
           <button
             type="button"
-            onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
-            className={`relative flex w-full items-start gap-2 overflow-hidden rounded-2xl rounded-tl-md border py-1.5 pl-3 pr-14 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
-              m.alert
-                ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
-                : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
-            }`}
+            onClick={() => {
+              if (source && onOpenExternal) onOpenExternal(m);
+              else if (source?.open) source.open(m);
+              else onOpenConversation(m.teamId, m.personaId, m.id);
+            }}
+            className="relative flex w-full items-start gap-2 py-1.5 pl-3 pr-14 text-left"
           >
             <span className="typo-caption mt-0.5 max-w-[35%] flex-shrink-0 truncate" style={{ color: accent }}>
-              {authorName(m)}
+              {m.context ? `${authorName(m)} · ${m.context}` : authorName(m)}
             </span>
             {m.message && (
               <span className="typo-body min-w-0 flex-1 truncate text-foreground group-hover:line-clamp-3 group-hover:whitespace-normal">
@@ -75,6 +90,8 @@ function HeaderBubbleRow({
             )}
           </button>
         </Tooltip>
+        {actions && <div className="px-3 pb-2">{actions}</div>}
+        </div>
 
         {/* The corner cluster, unchanged in meaning: what the message IS, and
             the one act on it. Tooltips open to the RIGHT — below would sit
@@ -101,7 +118,7 @@ function HeaderBubbleRow({
   );
 }
 
-function LiveCommsHeaderBubbleImpl({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
+function LiveCommsHeaderBubbleImpl({ messages, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion }: LiveVariantProps) {
   const { t, tx } = useTranslation();
   if (messages.length === 0) return null;
   const visible = messages.slice(0, MAX_VISIBLE);
@@ -120,6 +137,7 @@ function LiveCommsHeaderBubbleImpl({ messages, onDismiss, onDismissAll, onOpenCo
             m={m}
             onDismiss={onDismiss}
             onOpenConversation={onOpenConversation}
+            onOpenExternal={onOpenExternal}
             reducedMotion={reducedMotion}
           />
         ))}

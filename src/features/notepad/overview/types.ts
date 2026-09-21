@@ -32,4 +32,9 @@ export interface NoteOverviewProps {
   onOpen: (id: string) => void;
   onPatch: (id: string, patch: NotePatch) => void;
   onCreate: (seed?: NoteSeed) => void;
+  /** Delete permanently, from a card's menu — the host confirms first. */
+  onDelete: (note: DevNote) => void;
+  /** A plan note's rail step (cut / ship): open it in the editor with the
+   *  certify dialog requested. */
+  onCertify: (id: string) => void;
 }

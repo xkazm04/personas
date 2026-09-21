@@ -14,6 +14,9 @@ import type { NotepadIngestReport } from "@/lib/bindings/NotepadIngestReport";
 import type { DevNoteRun } from "@/lib/bindings/DevNoteRun";
 import type { NotePlanSummary } from "@/lib/bindings/NotePlanSummary";
 import type { NotePromotion } from "@/lib/bindings/NotePromotion";
+import type { NoteComment } from "@/lib/bindings/NoteComment";
+import type { NoteUnread } from "@/lib/bindings/NoteUnread";
+import type { NoteReviewVerdict } from "@/lib/bindings/NoteReviewVerdict";
 
 /** Max non-archived notes, used only to grey out `+` before the user clicks
  *  it — the server refuses the eleventh note regardless of this number. The
@@ -163,5 +166,45 @@ export async function recordNoteRunStart(
     kind,
     dispatchKey: dispatchKey ?? null,
     fleetSessionId: fleetSessionId ?? null,
+  });
+}
+
+// --- the per-note thread (dev_note_comments, e40) ------------------------------
+//
+// Comments, reviews and status milestones about one note. Writes emit
+// `notepad-note-comment` with the full row, so a listener never refetches.
+
+/** One note's thread, oldest first. */
+export async function listNoteComments(noteId: string): Promise<NoteComment[]> {
+  return invoke<NoteComment[]>("notepad_list_comments", { noteId });
+}
+
+/** Every note with unread thread entries. Notes with nothing unread are
+ *  absent, not zero. The operator's own comments are born read. */
+export async function noteUnreadCounts(): Promise<NoteUnread[]> {
+  return invoke<NoteUnread[]>("notepad_unread_counts");
+}
+
+/** The operator comments on a note. Returns the stored row. */
+export async function addNoteComment(noteId: string, bodyMd: string): Promise<NoteComment> {
+  return invoke<NoteComment>("notepad_add_comment", { noteId, bodyMd });
+}
+
+/** Stamp every unread entry of one note read (popover open). */
+export async function markNoteCommentsRead(noteId: string): Promise<void> {
+  return invoke<void>("notepad_mark_comments_read", { noteId });
+}
+
+/** Answer a review entry. The server refuses `pending`, and refuses
+ *  `rejected` without a non-empty reason. */
+export async function setNoteReviewVerdict(
+  commentId: string,
+  verdict: Exclude<NoteReviewVerdict, "pending">,
+  reason?: string,
+): Promise<NoteComment> {
+  return invoke<NoteComment>("notepad_set_review_verdict", {
+    commentId,
+    verdict,
+    reason: reason ?? null,
   });
 }

@@ -1488,7 +1488,7 @@ impl NoteStatus {
     /// | draft | published, scoped, archived |
     /// | published | in_progress, completed, scoped, archived |
     /// | in_progress | completed, scoped, archived |
-    /// | completed | archived |
+    /// | completed | published (rework), archived |
     /// | scoped | cut, draft (unlink), archived |
     /// | cut | shipped, archived |
     /// | shipped | archived |
@@ -1505,6 +1505,15 @@ impl NoteStatus {
     /// that has been cut has scope hanging off this brief, and unlinking it
     /// would leave that scope describing nothing.
     ///
+    /// `completed → published` is the REWORK move — the reject-and-rerun loop.
+    /// The operator rejected the run's review with a reason; the reason lands
+    /// on the note's thread and the note goes back to `published` so the pad
+    /// can re-dispatch it with that feedback appended to `note.md`. It is the
+    /// only way back from `completed` short of archiving, and it goes to
+    /// `published` (handed over), not `draft`: the requirement was not wrong,
+    /// the attempt was, and a draft would re-open the body for editing under
+    /// the dispatch that follows immediately.
+    ///
     /// A no-op move (`x` to the same `x`) is NOT legal: `notepad_set_status`
     /// stamps timestamps, and re-stamping `started_at` on a second
     /// `in_progress` write would quietly rewrite when the run began.
@@ -1520,6 +1529,8 @@ impl NoteStatus {
                 | (InProgress, Completed)
                 | (InProgress, Archived)
                 | (Completed, Archived)
+                // The rework move: a rejected run's note is sent back out.
+                | (Completed, Published)
                 | (Archived, Draft)
                 // ── the ship lane ──────────────────────────────────────────
                 | (Draft, Scoped)
@@ -1648,6 +1659,232 @@ pub struct NotepadIngestReport {
     pub failed: u32,
 }
 
+// ── The per-note thread (dev_note_comments, e40) ────────────────────────────
+
+// Each vocabulary's tokens MUST stay identical to the serde snake_case rename
+// AND to the matching `dev_note_comments` CHECK (e40); `note_comment_tests`
+// pins serde against `as_str`.
+
+/// Who wrote a thread entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteCommentAuthor {
+    /// The human at the keyboard.
+    Operator,
+    Athena,
+    /// The note-task (fleet) agent that ran the note.
+    Agent,
+    /// A lifecycle milestone the app itself recorded.
+    System,
+}
+
+impl NoteCommentAuthor {
+    /// The wire/column token.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NoteCommentAuthor::Operator => "operator",
+            NoteCommentAuthor::Athena => "athena",
+            NoteCommentAuthor::Agent => "agent",
+            NoteCommentAuthor::System => "system",
+        }
+    }
+
+    /// Parse a column/wire token; `None` outside the vocabulary.
+    pub fn parse(raw: &str) -> Option<NoteCommentAuthor> {
+        match raw {
+            "operator" => Some(NoteCommentAuthor::Operator),
+            "athena" => Some(NoteCommentAuthor::Athena),
+            "agent" => Some(NoteCommentAuthor::Agent),
+            "system" => Some(NoteCommentAuthor::System),
+            _ => None,
+        }
+    }
+}
+
+/// What a thread entry is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteCommentKind {
+    Comment,
+    /// Asks the operator for a verdict (`verdict` starts `pending`).
+    Review,
+    /// A status milestone. Carries no verdict.
+    System,
+}
+
+impl NoteCommentKind {
+    /// The wire/column token.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NoteCommentKind::Comment => "comment",
+            NoteCommentKind::Review => "review",
+            NoteCommentKind::System => "system",
+        }
+    }
+
+    /// Parse a column/wire token; `None` outside the vocabulary.
+    pub fn parse(raw: &str) -> Option<NoteCommentKind> {
+        match raw {
+            "comment" => Some(NoteCommentKind::Comment),
+            "review" => Some(NoteCommentKind::Review),
+            "system" => Some(NoteCommentKind::System),
+            _ => None,
+        }
+    }
+}
+
+/// What a thread entry points at (`ref_id` holds the id).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteCommentRef {
+    /// A `note_suggestions` card Athena emitted.
+    SuggestionCard,
+    /// A note-task run (a `dev_note_runs` row).
+    Run,
+    /// A status transition.
+    Status,
+}
+
+impl NoteCommentRef {
+    /// The wire/column token.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NoteCommentRef::SuggestionCard => "suggestion_card",
+            NoteCommentRef::Run => "run",
+            NoteCommentRef::Status => "status",
+        }
+    }
+
+    /// Parse a column/wire token; `None` outside the vocabulary.
+    pub fn parse(raw: &str) -> Option<NoteCommentRef> {
+        match raw {
+            "suggestion_card" => Some(NoteCommentRef::SuggestionCard),
+            "run" => Some(NoteCommentRef::Run),
+            "status" => Some(NoteCommentRef::Status),
+            _ => None,
+        }
+    }
+}
+
+/// The operator's answer to a review entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum NoteReviewVerdict {
+    Pending,
+    Approved,
+    Rejected,
+}
+
+impl NoteReviewVerdict {
+    /// The wire/column token.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            NoteReviewVerdict::Pending => "pending",
+            NoteReviewVerdict::Approved => "approved",
+            NoteReviewVerdict::Rejected => "rejected",
+        }
+    }
+
+    /// Parse a column/wire token; `None` outside the vocabulary.
+    pub fn parse(raw: &str) -> Option<NoteReviewVerdict> {
+        match raw {
+            "pending" => Some(NoteReviewVerdict::Pending),
+            "approved" => Some(NoteReviewVerdict::Approved),
+            "rejected" => Some(NoteReviewVerdict::Rejected),
+            _ => None,
+        }
+    }
+}
+
+/// One thread entry. Mirrors `dev_note_comments` column-for-column.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteComment {
+    pub id: String,
+    pub note_id: String,
+    pub author_kind: NoteCommentAuthor,
+    /// Display name when the kind alone is not enough (an agent's session
+    /// label, a persona name). NULL for the operator and the system.
+    pub author_name: Option<String>,
+    pub kind: NoteCommentKind,
+    pub body_md: String,
+    pub ref_kind: Option<NoteCommentRef>,
+    pub ref_id: Option<String>,
+    /// Set on `review` entries only; NULL for comments and system entries.
+    pub verdict: Option<NoteReviewVerdict>,
+    pub created_at: String,
+    /// NULL = unread. Stamped when the operator opens the thread.
+    pub read_at: Option<String>,
+}
+
+/// The unread state of one note's thread — only notes with at least one
+/// unread entry are returned by `notepad_unread_counts`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteUnread {
+    pub note_id: String,
+    #[ts(type = "number")]
+    pub unread: i64,
+    /// The newest unread entry's id (the bubble candidate).
+    pub latest_id: Option<String>,
+}
+
+#[cfg(test)]
+mod note_comment_tests {
+    use super::{NoteCommentAuthor, NoteCommentKind, NoteCommentRef, NoteReviewVerdict};
+
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn thread_vocab_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            NoteCommentAuthor::Operator,
+            NoteCommentAuthor::Athena,
+            NoteCommentAuthor::Agent,
+            NoteCommentAuthor::System,
+        ] {
+            assert_eq!(serde_token(&v), v.as_str());
+            assert_eq!(NoteCommentAuthor::parse(v.as_str()), Some(v));
+        }
+        for v in [
+            NoteCommentKind::Comment,
+            NoteCommentKind::Review,
+            NoteCommentKind::System,
+        ] {
+            assert_eq!(serde_token(&v), v.as_str());
+            assert_eq!(NoteCommentKind::parse(v.as_str()), Some(v));
+        }
+        for v in [
+            NoteCommentRef::SuggestionCard,
+            NoteCommentRef::Run,
+            NoteCommentRef::Status,
+        ] {
+            assert_eq!(serde_token(&v), v.as_str());
+            assert_eq!(NoteCommentRef::parse(v.as_str()), Some(v));
+        }
+        for v in [
+            NoteReviewVerdict::Pending,
+            NoteReviewVerdict::Approved,
+            NoteReviewVerdict::Rejected,
+        ] {
+            assert_eq!(serde_token(&v), v.as_str());
+            assert_eq!(NoteReviewVerdict::parse(v.as_str()), Some(v));
+        }
+        assert_eq!(NoteCommentAuthor::parse("robot"), None);
+    }
+}
+
 #[cfg(test)]
 mod notepad_tests {
     use super::NoteStatus;
@@ -1683,12 +1920,12 @@ mod notepad_tests {
         }
     }
 
-    /// The WHOLE 8x8 table, asserted cell by cell — the nineteen legal moves
-    /// and the forty-five illegal ones, self-loops included.
+    /// The WHOLE 8x8 table, asserted cell by cell — the twenty legal moves
+    /// and the forty-four illegal ones, self-loops included.
     #[test]
     fn transition_table_is_exactly_the_contract() {
         use NoteStatus::*;
-        let legal: [(NoteStatus, NoteStatus); 19] = [
+        let legal: [(NoteStatus, NoteStatus); 20] = [
             (Draft, Published),
             (Draft, Archived),
             (Published, InProgress),
@@ -1697,6 +1934,7 @@ mod notepad_tests {
             (InProgress, Completed),
             (InProgress, Archived),
             (Completed, Archived),
+            (Completed, Published),
             (Archived, Draft),
             (Draft, Scoped),
             (Published, Scoped),
@@ -1725,8 +1963,8 @@ mod notepad_tests {
             }
         }
         assert_eq!(
-            legal_seen, 19,
-            "the table must have exactly nineteen legal moves"
+            legal_seen, 20,
+            "the table must have exactly twenty legal moves"
         );
     }
 
@@ -1794,5 +2032,23 @@ mod notepad_tests {
             !Shipped.can_transition_to(Cut),
             "shipped → cut must be refused"
         );
+    }
+
+    /// The rework loop: a rejected run sends `completed` back to `published`,
+    /// and ONLY `completed` does — it is not a general "re-publish" door, and
+    /// it never lands in `draft` (the body stays frozen under the re-dispatch).
+    #[test]
+    fn completed_goes_back_to_published_for_rework() {
+        use NoteStatus::*;
+        assert!(Completed.can_transition_to(Published));
+        assert!(!Completed.can_transition_to(Draft));
+        assert!(!Completed.can_transition_to(InProgress));
+        for s in ALL {
+            assert_eq!(
+                s.can_transition_to(Published),
+                matches!(s, Draft | Completed),
+                "only draft (first publish) and completed (rework) reach published; saw {s:?}"
+            );
+        }
     }
 }

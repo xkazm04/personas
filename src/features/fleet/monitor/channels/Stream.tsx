@@ -15,7 +15,7 @@ import { StreamMemoryViews } from './StreamMemoryViews';
 import { KIND_META } from './streamKinds';
 import {
   ALL_FAMILIES, STREAM_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
-  matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
+  matchesLens, memoryModesAvailable, SPEAKER_REMOVED, SPEAKER_SYSTEM, type LensState, type MemoryMode,
 } from './lensModel';
 import type { StreamTeam, TaggedItem } from './types';
 import { cleanName } from '../grid/fleetGridModel';
@@ -338,7 +338,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
             {facets.callsigns.length === 0 && (
               <p className="px-2 typo-caption text-foreground opacity-40">{t.monitor.stream_no_speakers}</p>
             )}
-            {facets.callsigns.slice(0, 12).map((f) => {
+            {facets.callsigns.filter((f) => personaIndex.has(f.key)).slice(0, 12).map((f) => {
               const persona = personaIndex.get(f.key);
               // The Red Room was single-team, so a callsign was unique. The
               // Stream is cross-team, and personas with the same name in
@@ -354,6 +354,25 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   color={memberColor(persona, f.key)}
                   dotColor={home?.teamColor}
                   title={home ? `${persona?.name ?? f.key} — ${cleanName(home.teamName)}` : persona?.name}
+                  onClick={() => toggle('callsigns', f.key)}
+                />
+              );
+            })}
+            {/* The speakers that are not a persona — ONE row each, below the
+                named ones, instead of a "SYSTEM" row per unresolved id. Voiced
+                keys (__athena__ …) only occur if talk ever reaches the log. */}
+            {facets.callsigns.filter((f) => !personaIndex.has(f.key)).map((f) => {
+              const named =
+                f.key === SPEAKER_REMOVED ? [t.monitor.stream_speaker_removed, t.monitor.stream_speaker_removed_hint]
+                  : f.key === SPEAKER_SYSTEM ? [t.monitor.stream_speaker_system, t.monitor.stream_speaker_system_hint]
+                    : [callsign(f.key.replace(/_/g, ' ').trim()), undefined];
+              return (
+                <FacetRow
+                  key={f.key}
+                  label={named[0]!}
+                  count={f.count}
+                  on={lens.callsigns.has(f.key)}
+                  title={named[1]}
                   onClick={() => toggle('callsigns', f.key)}
                 />
               );

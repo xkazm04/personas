@@ -199,7 +199,7 @@ pub(crate) async fn execute_approval_action(
         // Ship layer — act on a milestone that already exists. The CREATE path
         // is the editable `show_ship_milestone` chat card, not an approval.
         "set_ship_scope" => execute_set_ship_scope(&state, params),
-        "ship_milestone_lifecycle" => execute_ship_milestone_lifecycle(&state, params),
+        "ship_milestone_lifecycle" => execute_ship_milestone_lifecycle(&state, &app, params),
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, params),

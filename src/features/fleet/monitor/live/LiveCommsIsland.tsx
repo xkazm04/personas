@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { liveSourceFor } from './liveExternal';
 import {
   LiveAvatar, TYPE_ICON, authorAccent, authorName, liveMessageType,
   type LiveMessage, type LiveVariantProps,
@@ -27,6 +28,19 @@ import {
 
 const MAX_VISIBLE = 3;
 const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+type OpenFn = (m: LiveMessage) => void;
+
+/** Body-click routing shared with the corner stack: a non-channel feed
+ *  (Notepad) opens through the host / its own `open`; channel rows open
+ *  Conversations on the line. */
+function makeOpen({ onOpenConversation, onOpenExternal }: Pick<LiveVariantProps, 'onOpenConversation' | 'onOpenExternal'>): OpenFn {
+  return (m) => {
+    const source = liveSourceFor(m);
+    if (source && onOpenExternal) onOpenExternal(m);
+    else if (source?.open) source.open(m);
+    else onOpenConversation(m.teamId, m.personaId, m.id);
+  };
+}
 
 /** Author avatar with an accent ring — the island's identity mark. */
 function RingedAvatar({ m, size }: { m: LiveMessage; size: 'sm' | 'md' }) {
@@ -71,9 +85,9 @@ function ActCluster({ m, onDismiss }: { m: LiveMessage; onDismiss: (id: string) 
 }
 
 /** The header-seated capsule carrying the newest message. */
-function IslandCapsule({ m, waiting, onDismiss, onOpenConversation }: {
+function IslandCapsule({ m, waiting, onDismiss, onOpen }: {
   m: LiveMessage; waiting: number;
-  onDismiss: (id: string) => void; onOpenConversation: LiveVariantProps['onOpenConversation'];
+  onDismiss: (id: string) => void; onOpen: OpenFn;
 }) {
   const accent = authorAccent(m);
   return (
@@ -85,7 +99,7 @@ function IslandCapsule({ m, waiting, onDismiss, onOpenConversation }: {
     >
       <button
         type="button"
-        onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
+        onClick={() => onOpen(m)}
         className="flex min-w-0 flex-1 items-center gap-2 text-left"
       >
         <RingedAvatar m={m} size="sm" />
@@ -105,25 +119,26 @@ function IslandCapsule({ m, waiting, onDismiss, onOpenConversation }: {
 }
 
 /** One full card in the opened island. */
-function IslandCard({ m, onDismiss, onOpenConversation, reducedMotion, index }: {
+function IslandCard({ m, onDismiss, onOpen, reducedMotion, index }: {
   m: LiveMessage; index: number; reducedMotion: boolean;
-  onDismiss: (id: string) => void; onOpenConversation: LiveVariantProps['onOpenConversation'];
+  onDismiss: (id: string) => void; onOpen: OpenFn;
 }) {
   const accent = authorAccent(m);
+  const actions = liveSourceFor(m)?.renderActions?.(m);
   return (
     <motion.div
       layout={!reducedMotion}
       initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0, transition: { delay: reducedMotion ? 0 : index * 0.04 } }}
       exit={{ opacity: 0 }}
-      className={`relative flex items-start gap-3 overflow-hidden rounded-card border bg-background/95 p-3 shadow-elevation-2 ${
+      className={`relative flex flex-wrap items-start gap-3 overflow-hidden rounded-card border bg-background/95 p-3 shadow-elevation-2 ${
         m.alert ? 'border-status-warning/40' : 'border-primary/12'
       }`}
       style={{ backgroundImage: `linear-gradient(135deg, ${mix(accent, 14)}, transparent 45%)` }}
     >
       <button
         type="button"
-        onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
+        onClick={() => onOpen(m)}
         className="flex min-w-0 flex-1 items-start gap-3 text-left"
       >
         <RingedAvatar m={m} size="md" />
@@ -134,19 +149,21 @@ function IslandCard({ m, onDismiss, onOpenConversation, reducedMotion, index }: 
           </span>
           <span className="typo-caption mt-0.5 flex items-center gap-1.5 text-foreground">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: m.teamColor }} />
-            {m.teamName}
+            {m.context ?? m.teamName}
           </span>
           {m.message && <span className="typo-body mt-1.5 line-clamp-3 block text-foreground">{m.message}</span>}
         </span>
       </button>
       <ActCluster m={m} onDismiss={onDismiss} />
+      {actions && <div className="w-full pl-11">{actions}</div>}
     </motion.div>
   );
 }
 
-function LiveCommsIslandImpl({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
+function LiveCommsIslandImpl({ messages, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion }: LiveVariantProps) {
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
+  const onOpen = makeOpen({ onOpenConversation, onOpenExternal });
   if (messages.length === 0) return null;
   const [head, ...rest] = messages;
   const deck = rest.slice(0, MAX_VISIBLE - 1);
@@ -184,7 +201,7 @@ function LiveCommsIslandImpl({ messages, onDismiss, onDismissAll, onOpenConversa
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', stiffness: 420, damping: 30 }}
           >
-            <IslandCapsule m={head!} waiting={messages.length - 1} onDismiss={onDismiss} onOpenConversation={onOpenConversation} />
+            <IslandCapsule m={head!} waiting={messages.length - 1} onDismiss={onDismiss} onOpen={onOpen} />
           </motion.div>
         </AnimatePresence>
 
@@ -198,9 +215,9 @@ function LiveCommsIslandImpl({ messages, onDismiss, onDismissAll, onOpenConversa
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
               className="absolute inset-x-0 top-full flex flex-col gap-2 pt-2"
             >
-              <IslandCard m={head!} index={0} onDismiss={onDismiss} onOpenConversation={onOpenConversation} reducedMotion={reducedMotion} />
+              <IslandCard m={head!} index={0} onDismiss={onDismiss} onOpen={onOpen} reducedMotion={reducedMotion} />
               {deck.map((m, i) => (
-                <IslandCard key={m.id} m={m} index={i + 1} onDismiss={onDismiss} onOpenConversation={onOpenConversation} reducedMotion={reducedMotion} />
+                <IslandCard key={m.id} m={m} index={i + 1} onDismiss={onDismiss} onOpen={onOpen} reducedMotion={reducedMotion} />
               ))}
               {messages.length > 1 && (
                 <div className="flex items-center justify-end gap-3 px-1">
