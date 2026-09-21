@@ -37,7 +37,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { GhostRow, ROW_BOX } from './UsageStripShell';
+import { GhostRow, ROW_ACTIVE, ROW_BOX, ROW_REST } from './UsageStripShell';
 import {
   FILL, PACE_ICON, PACE_TONE, TONE_TEXT, cliReasonHint, cliReasonLabel, providerName, reasonLabel, windowSentence,
 } from './usageBits';
@@ -208,9 +208,9 @@ function PlanRow({
       // Pointer convenience only: the whole row is the target. The keyboard's
       // door is the account-name <button> inside it, which carries the act's name.
       onClick={canSwitch ? onSwitch : undefined}
-      className={`${ROW_BOX} group/row transition-opacity ${
+      className={`${ROW_BOX} ${plan.isActive ? ROW_ACTIVE : ROW_REST} group/row transition-[opacity,background-color] ${
         recede ? 'opacity-60 hover:opacity-100 focus-within:opacity-100' : ''
-      } ${canSwitch ? 'cursor-pointer hover:bg-secondary/20' : ''}`}
+      } ${canSwitch ? 'cursor-pointer hover:bg-black/30' : ''}`}
       data-testid="fleet-usage-account"
       data-provider={provider.id}
       data-account={plan.id}
@@ -278,7 +278,7 @@ function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
     <div
       role="group"
       aria-label={`${providerName(t, provider.id)} · ${label}`}
-      className={ROW_BOX}
+      className={`${ROW_BOX} ${ROW_REST}`}
       data-testid="fleet-usage-empty"
       data-provider={provider.id}
       data-reason={reason}
