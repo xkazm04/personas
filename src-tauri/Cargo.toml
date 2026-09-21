@@ -71,7 +71,7 @@ tower-http = { version = "0.6", features = ["cors"] }
 hkdf = "0.12"
 hex = "0.4"
 url = "2"
-sentry = { version = "0.34", default-features = false, features = [
+sentry = { version = "0.35", default-features = false, features = [
     "backtrace", "contexts", "panic", "rustls", "reqwest"
 ] }
 zeroize = { version = "1", features = ["derive"] }
@@ -410,7 +410,7 @@ open = { version = "5", features = ["shellexecute-on-windows"] }
 url = { workspace = true }
 urlencoding = "2"
 sentry = { workspace = true }
-sentry-tracing = "0.34"
+sentry-tracing = "0.35"
 zeroize = { workspace = true }
 dotenvy = "0.15"
 rsa = { workspace = true }
