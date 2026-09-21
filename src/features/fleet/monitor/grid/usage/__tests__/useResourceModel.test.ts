@@ -1,12 +1,11 @@
-// The pure join behind the resource-strip variants. What is pinned here is what
-// four layouts rely on without re-deriving: provider order, the two-slot window
-// grammar, that a stale / projected CLI read is carried as such, that a provider
-// with nothing to meter becomes a REASON and never a plan, and that absent
-// budgets are null rather than a block of zeros.
+// The pure join behind the usage strip's rows. What is pinned here is what the
+// row relies on without re-deriving: provider order, the two-slot window grammar,
+// that a stale / projected CLI read is carried as such, and that a provider with
+// nothing to meter becomes a REASON and never a plan.
 
 import { describe, it, expect } from 'vitest';
 import { buildResourceModel, windowIn, type ResourceInputs } from '../useResourceModel';
-import { buildSimAccountsSnapshot, buildSimBudgets, buildSimCliUsage } from '../../simulation/simPlans';
+import { buildSimAccountsSnapshot, buildSimCliUsage } from '../../simulation/simPlans';
 import { pace } from '../../usageModel';
 
 const NOW = 1_800_000_000_000;
@@ -17,7 +16,6 @@ function inputs(over: Partial<ResourceInputs> = {}): ResourceInputs {
     accounts: buildSimAccountsSnapshot(NOW),
     single: null,
     cli: buildSimCliUsage(NOW),
-    budgets: buildSimBudgets(),
     fetchedAt: NOW - 60_000,
     now: NOW,
     ...over,
@@ -50,7 +48,7 @@ describe('buildResourceModel', () => {
     expect(w.tone).toBe('warning'); // 81% — past 75, under 90
   });
 
-  it('mirrors AccountRows: projected, unreadable and quarantined plans, and which acts each offers', () => {
+  it('carries each plan state: projected, unreadable and quarantined plans, and which acts each offers', () => {
     const plans = buildResourceModel(inputs()).providers[0]!.plans;
     expect(plans.map((p) => p.state)).toEqual(['ok', 'ok', 'projected', 'unreadable', 'quarantined']);
     expect(plans[2]!.windows.every((w) => w.projected)).toBe(true);
@@ -96,22 +94,6 @@ describe('buildResourceModel', () => {
   it('calls a provider the backend did not mention unreadable', () => {
     const m = buildResourceModel(inputs({ cli: { providers: [] } }));
     expect(m.providers[2]!.emptyReason).toBe('unreadable');
-  });
-
-  it('maps undefined and null budgets to null', () => {
-    expect(buildResourceModel(inputs({ budgets: undefined })).budgets).toBeNull();
-    expect(buildResourceModel(inputs({ budgets: null })).budgets).toBeNull();
-  });
-
-  it('derives clamped fractions and the throttle flag from present budgets', () => {
-    const b = buildResourceModel(inputs()).budgets!;
-    expect(b.machineFrac).toBeCloseTo(0.6);
-    expect(b.planFrac).toBeCloseTo(11 / 12);
-    expect(b.planCeilingFrac).toBeCloseTo(0.6);
-    expect(b.throttled).toBe(true);
-    expect(b.hold).toBe('ahead_of_pace');
-    const zero = buildResourceModel(inputs({ budgets: { ...buildSimBudgets(), machineBudget: 0, machineUsed: 3 } })).budgets!;
-    expect(zero.machineFrac).toBe(0);
   });
 
   it('falls back to the single-login read while nothing is stored, and to a worded card when that failed', () => {

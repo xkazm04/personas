@@ -1,13 +1,13 @@
-// simPlans — five Claude logins for the usage strip's five slots.
+// simPlans — five Claude logins (and two other CLIs) for the usage strip's rows.
 //
 // The strip has more branches than any other part of this surface, and all of
-// them are invisible on a machine with one login. The fixture fills every
-// slot AND every branch `AccountRows` can take:
+// them are invisible on a machine with one login. The fixture covers every
+// branch an `AccountRows` row can take:
 //
 //   slot 1 — the ACTIVE plan, both windows read live, comfortably under pace;
-//   slot 2 — a healthy standby, high 5-hour utilisation (meter in warning);
-//   slot 3 — a PROJECTED read (`usageProjectedFromMs`), the "approx" meters
-//            plus the history glyph on the card header;
+//   slot 2 — a healthy standby, high 5-hour utilisation (percent in warning);
+//   slot 3 — a PROJECTED read (`usageProjectedFromMs`): "≈" percents and a
+//            half-strength bottom border;
 //   slot 4 — a plan the endpoint refused (`usageReason`, no projection) —
 //            the unreadable branch, which is the only one that offers Forget;
 //   slot 5 — a QUARANTINED plan (dead refresh token): says "Needs login" in
@@ -21,7 +21,6 @@ import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapsh
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
-import type { FleetBudgets } from '@/lib/bindings/FleetBudgets';
 
 const HOUR_MS = 3_600_000;
 const FIVE_HOUR_MS = 5 * HOUR_MS;
@@ -64,8 +63,9 @@ export function buildSimAccounts(now = Date.now()): ClaudeAccountView[] {
     account({
       id: 'sim-plan-1', email: 'fleet.one@simulated.test', slot: 1, isActive: true,
       displayName: 'Fleet primary',
-      // The live plan also carries the per-model weekly windows, so the variants
-      // that show them (the ledger's Opus / Sonnet columns) have something to show.
+      // The live plan also carries the per-model weekly windows, as a real Max
+      // plan does: the row must keep painting the ALL-MODELS weekly window as its
+      // 7-day cluster and border, not whichever weekly window happens to come last.
       usage: [
         ...windows(now, 34, 41, 2.2 * HOUR_MS),
         { key: 'seven_day_opus', utilizationPct: 62, resetsAtMs: now + 3.5 * 24 * HOUR_MS, windowMs: SEVEN_DAY_MS },
@@ -142,18 +142,16 @@ export function simRemoveAccount(snapshot: ClaudeAccountsSnapshot, id: string): 
   return { ...snapshot, accounts: snapshot.accounts.filter((a) => a.id !== id) };
 }
 
-// ── The other CLIs, and the machine ─────────────────────────────────────────
+// ── The other CLIs ───────────────────────────────────────────────────────────
 //
-// The resource-strip variants show three providers and the fleet's budgets, and
-// on a development machine neither Codex nor a budget hold is likely to exist.
-// So the fixture carries one of each honest state:
+// The strip gives Codex and Grok a row each, and on a development machine
+// neither is likely to be installed. So the fixture carries one of each honest
+// state:
 //
 //   codex — installed, plan `pro`, ONE window (the 7-day `primary`), last
-//           reported three hours ago: the freshness label has something to say
-//           and the "5h" column has to cope with a provider that has none;
-//   grok  — not installed: the empty state, never a meter;
-//   budgets — the fleet is AHEAD of plan pace, so the plan budget has been
-//           throttled (pace factor 0.6) and promotion is held for that reason.
+//           reported three hours ago: the row's 5-hour cluster has to cope with
+//           a provider that has none;
+//   grok  — not installed: the worded empty row, never a meter.
 
 export function buildSimCliUsage(now = Date.now()): CliUsageSnapshot {
   return {
@@ -181,22 +179,5 @@ export function buildSimCliUsage(now = Date.now()): CliUsageSnapshot {
         reason: 'not_installed',
       },
     ],
-  };
-}
-
-export function buildSimBudgets(): FleetBudgets {
-  return {
-    enabled: true,
-    machineUsed: 6,
-    machineBudget: 10,
-    planUsed: 11,
-    planBudget: 12,
-    planBudgetMax: 20,
-    paceFactor: 0.6,
-    behindPct: -18,
-    ramPct: 71,
-    ramGate: 'open',
-    gpuHolder: 'sim-session-07',
-    hold: 'ahead_of_pace',
   };
 }

@@ -107,108 +107,96 @@ stale board look fresh. The strip renders nothing when every feed answered;
 the rows underneath are never replaced by it. A quick-execute from the
 Capabilities tab that fails now toasts instead of spinning back to idle.
 
-**The usage strip is the board's one resource surface (2026-09-18, prototype
-round).** The band between the board's header and its project columns now
-answers three questions in one place — *how much subscription is left*, *what
-else on this machine can be billed to*, and *why is a queued session not
-starting* — and it is being auditioned in five layouts behind a switcher in its
-own header (`layout/SegmentedTabs`, a per-viewer preference stored in
-localStorage under `monitor.usage.variant`; a missing or unknown value opens on
-**Classic**). Classic is the strip described in the paragraphs below, unchanged.
-The four new layouts are lazy chunks that all render the same joined model
-(`grid/usage/useResourceModel.ts`), so they differ in information architecture
-and in nothing else — same names, same thresholds, same acts:
+**The usage strip — one row per account (2026-09-21).** The band between the
+board's header and its project columns answers *how much subscription is left,
+and whose*. It has ONE layout. (For a round it hosted five layouts behind a
+switcher; four were deleted along with the switcher and the *Machine & budgets*
+block they carried. A layout name a browser profile still holds in localStorage
+under `monitor.usage.variant` is read by nothing. The *Dynamic budgets* kill
+switch, `fleet.dynamic_budgets`, is unchanged in **Settings → Limits**.)
 
-| Layout | The question it answers | Shape |
-|---|---|---|
-| **Classic** | how much of the plan I am billing to is left | five Claude plan cards, two meters each |
-| **Lanes** | where is there room, across everything I can bill to | one lane per provider; its plans are segments along the lane, every segment the same two-row meter (session window over weekly window) |
-| **Horizon** | what frees up, and when | one shared time axis from now to +7 days; every window is a bar that ends at its reset, filled to utilisation, with a tick where an even pace would be; rows sorted soonest-reset first. The axis is piecewise (the next 5 hours, then the rest of the week) and labelled as such, because on one linear week a 5-hour window is a sliver |
-| **Cockpit** | is anything about to run dry | one card per plan in a provider-tinted frame, with a concentric two-ring dial — outer ring weekly, inner ring session, a pace tick on each ring |
-| **Ledger** | every number, aligned | a dense table: provider · plan · 5h · 7d · Opus · Sonnet · pace · resets · as of |
+The **header row** is permanent: the label and a *n/5 plans* count on the left;
+on the right the auto-rotate toggle, its threshold and the last rotation, then
+the "as of" stamp with a refresh button that is only live once the five-minute
+cache has elapsed. Under it, every account is **one 28px row**, across all three
+providers, laid out in an auto-filling grid (columns of at least 400px), so one
+account and eight both stay compact and the strip never scrolls sideways:
 
-**Providers.** Claude comes first and is the only provider the strip *drives*:
-every layout keeps Switch (behind the same confirm), Forget (offered only where
-no usage could be read) and the auto-rotate toggle with its threshold in the
-header. **Codex** and **Grok** follow and are strictly read-only (`fleet_cli_usage`,
-polled every five minutes and only while a layout that shows them is open): their
-numbers come from each CLI's own records, never feed auto-rotate or pacing, and
-always carry a freshness label — *reported 3h ago* — because Codex's last report
-can be hours old. A reading that has rolled past a window reset is marked
-*Estimated*. A provider with nothing to meter says why in words — *Not
-installed*, *No quota source*, *No sessions yet*, *Unreadable* — and never draws
-a meter: 0% is a reading, and "not installed" is not. Where a plan simply has no
-such window (Codex reports only a weekly one) the slot shows a dash, or a dashed
-empty ring, never a zero. Colour has two jobs that never share a mark: provider
-tint is painted only on frames and names, tone (warning at 75%, error at 90%)
-only on fills. Claude's per-model weekly windows (Opus, Sonnet) are carried for
-every plan that reports them: the Ledger shows them for all plans, Cockpit and
-Horizon for the live one.
+```
+<provider mark>  <account>  <5h: timer · percent · pace>  <7d: calendar · percent · pace>
+══════════ 7-day utilisation, as the row's bottom border ══════════
+```
 
-**Machine & budgets.** Every new layout hosts one block (a single row, or a side
-panel in Cockpit) that shows what admission is charging against: **machine**
-units used / budget, **plan** units used / budget with the current **pace
-factor** (the plan budget is its maximum multiplied by that factor, and shrinks
-when the fleet is ahead of plan pace), the **RAM gate** (open / closed / warming
-up) with the memory percent, and who holds the single **GPU** token. When
-promotion is being held it says so in one line — ahead of plan pace, the 5-hour
-window is full, memory above its high-water mark, or the GPU is taken — so a free
-count slot with nothing starting is explained rather than inferred. The numbers
-ride on the fleet queue snapshot the board already polls (`snapshot.budgets`);
-the strip adds no poll of its own, and hides the block entirely when a snapshot
-carries no budgets.
+- **Provider mark** — the Claude, OpenAI (Codex) or X (Grok) glyph, 16px, in the
+  text colour. Its tooltip names the provider and the CLI version when known; for
+  Codex and Grok it also says the row is read-only and when the numbers were
+  last reported (*reported 3h ago*), because Codex's last report can be hours old.
+- **Account** — the login's email (Claude) or the plan type (Codex), truncated,
+  with the full value in a tooltip. Before any Claude login is stored, the live
+  login is one row of the same component.
+- **5-hour cluster** — a timer icon, the percent used, and the **pace** glyph
+  (flame ahead of the clock, gauge on pace, snowflake behind; omitted when the
+  window is too young or has no reset to pace against). There is **no 5-hour
+  bar**.
+- **7-day cluster** — a calendar icon, the percent, the pace glyph, same rules.
+- **The bottom border is the 7-day meter** — a 2px track along the row's bottom
+  edge, filled to the weekly window's utilisation in that window's tone. It is
+  the only bar on the row; it is decorative to assistive tech, because the 7-day
+  cluster carries the sentence. A plan with no weekly window shows an empty track.
 
-**The kill switch.** The block's *Dynamic budgets* toggle is the app setting
-`fleet.dynamic_budgets`, written straight away through the same settings door as
-the header's parallel-session stepper (painted first, snapped back with a toast
-if the write fails). Off means admission falls back to the plain
-parallel-session cap; the block stays visible, dimmed, and says so. In Simulation
-mode the toggle flips locally and writes nothing.
+The percent wears the window's **tone** (warning at 75%, error at 90%), and so
+does the border's fill. Each cluster's tooltip and accessible name is the full
+sentence — *5h 34% · resets in 2h 12m · on pace* — since what is painted is three
+glyphs wide. Where a plan simply has no such window (Codex reports only a weekly
+one) the cluster shows a dash, never a zero.
+
+**There are no status icons.** No check mark on the live plan, no slot number,
+no shield, no history mark. The **live** Claude plan is shown by emphasis alone:
+full opacity and a medium-weight name. Every other Claude plan recedes to 60%
+and comes to full on hover **or keyboard focus**; where no plan is known to be
+live (and for the read-only CLIs, which have no such notion) nothing recedes. A
+plan that cannot be read says why **in words** beside its name — *Needs login*
+(a dead refresh token), *Usage unavailable* (the tooltip gives the reason) — and
+shows no clusters; it never fakes a meter.
+
+**Acts.** Claude is the only provider the strip *drives*. Clicking an inactive
+Claude row (its account name is the real button, so the keyboard reaches it)
+opens the same **Switch** confirm as before — a switch changes which plan the
+CLI's next message bills to. **Forget** is offered only where no usage could be
+read for the plan, as an icon button that appears at the row's end on hover or
+focus, behind its own confirm. **Codex** and **Grok** rows are strictly read-only
+(`fleet_cli_usage`, polled every five minutes while the board is open): their
+numbers come from each CLI's own records and never feed auto-rotate or pacing. A
+provider with nothing to meter is still one row — its mark, and *Not installed*,
+*No quota source*, *No sessions yet* or *Unreadable* where the account would be:
+0% is a reading, and "not installed" is not.
+
+**Loading.** Before a read settles, the header is already there and a
+geometry-matched ghost row stands in for each provider — never a spinner. Usage
+is cached for five minutes in the module, so re-opening the Monitor paints the
+last read without re-fetching and without resetting the stamp.
+
+**Source.** Anthropic's OAuth usage endpoint — the same one the community usage
+monitors opt into — read with the Claude Code login already on the machine
+(`~/.claude/.credentials.json`, or `CLAUDE_CODE_OAUTH_TOKEN`); the token goes to
+the host that issued it and nowhere else, and never crosses IPC. An install with
+no OAuth login (API-key users, a macOS Keychain-only login) gets one row saying
+*Usage unavailable*, whose tooltip says why. Backend cache 45s, poll 60s. Every
+row comes out of one joined model (`grid/usage/useResourceModel.ts`), so the
+three providers are described by the same two-window grammar.
 
 **Simulation** fills every branch: five Claude plans (live, warning, estimated,
-unreadable, needs-login) with per-model windows on the live one, Codex on a `pro`
-plan with only a 7-day window last reported three hours ago, Grok not installed,
-and a budgets block holding because the fleet is ahead of plan pace.
+unreadable, needs-login) with per-model weekly windows on the live one (which the
+row ignores — its 7-day cluster is the all-models window), Codex on a `pro` plan
+with only a 7-day window last reported three hours ago, and Grok not installed.
 
-**The Classic layout — the Claude usage strip (2026-09-05, reshaped 2026-09-06).**
-The default layout, and the one every other paragraph in this section describes.
-A band between the board's header and its project columns. The **title row** carries the
-label on the left and, on the right, the "as of" stamp with a refresh button
-that is only live once the five-minute cache has elapsed. Under it sit
-**five plan slots** of equal width: one card per Claude login, added one at
-a time until all five are filled; empty slots stay empty and keep their
-width, so the first plan is exactly as wide as the fifth will be. A card
-shows its **account** on the header line — aligned with its own meters,
-which is what a column is for — and beneath it one meter per rolling window:
-the **5-hour** session window and the **7-day** window. Each meter is
-labelled by the **whole units left** until that window resets (*3h*, *<1h*,
-*2d*, *<1d*), and carries two dimensions: the fill is utilisation (brand
-tone, warning at 75%, error at 90%), and a vertical **marker** is the clock —
-it sits at the fraction of the window already elapsed and warms as the reset
-approaches (cool, then warning past 60%, then error past 85%). A **pace**
-glyph closes the row (flame ahead of the clock, snowflake behind, gauge on
-pace). The exact countdown rides in each row's accessible label. Usage is
-cached for five minutes in the module, so re-opening the Monitor paints the
-last read without re-fetching and without resetting the stamp. Before any
-login is stored the live login occupies the first slot; that is the whole add
-flow — sign in with the CLI, and the strip notices it is not stored yet and
-stores it (see below). The source is Anthropic's OAuth usage endpoint — the same one
-the community usage monitors opt into — read with the Claude Code login
-already on the machine (`~/.claude/.credentials.json`, or
-`CLAUDE_CODE_OAUTH_TOKEN`); the token goes to the host that issued it and
-nowhere else, and never crosses IPC. An install with no OAuth login (API-key
-users, a macOS Keychain-only login) gets one calm *Usage unavailable* chip
-whose tooltip says why; it never fakes a meter. Backend cache 45s, poll 60s.
-
-**Several plans, one strip (2026-09-05).** The usage strip has a second
-mode for operators who juggle more than one Claude subscription. Storing a
+**Several plans, one strip (2026-09-05; rows since 2026-09-21).** The usage
+strip serves operators who juggle more than one Claude subscription. Storing a
 login captures the CLI's current login (the whole credentials file, encrypted
 with the app's master key, in the `claude_accounts` table) together with the
 account identity from Anthropic's profile endpoint. From then on each stored
-plan fills a slot — the active one on a highlighted ground, each with its
-5-hour and 7-day meters (fill plus reset marker) and a pace glyph — and
-every non-active card has a **Switch** button on its header behind a
-confirm. A plan is only offered for forgetting when no usage could
+plan is a row — the active one at full strength — and every non-active row
+switches on click, behind a confirm. A plan is only offered for forgetting when no usage could
 be read for it and nothing is remembered; a plan that reads fine is not
 clutter.
 
@@ -221,7 +209,7 @@ per login, guarded by a module-scoped set keyed on the live email, so a
 capture that fails toasts once (through `toastCatch`, so it also reaches
 Sentry) and never loops on the next poll or remount, while a different login
 arriving later still gets its own attempt. Forgetting a plan stays a
-deliberate act on the card. The strip's header row now carries the title and
+deliberate act on the row. The strip's header row now carries the title and
 a *n/5 plans* count on the left and, on the right, the auto-rotate toggle,
 its threshold and the last rotation, followed by the refresh control; they
 used to be portaled into the Activity card's header, which put the control
@@ -229,11 +217,11 @@ one row away from the thing it acts on.
 
 **Only the live plan is at full strength (2026-09-07).** The strip answers one
 question at a glance — how much of the plan being billed to right now is left —
-and five equally-bright cards made the eye hunt for which card that was. Only a
-quarantined plan was dimmed, so the four cards competing hardest with the answer
-were the four in perfect health. Every card that is not the live login now sits
-at half opacity and comes to full on hover **or keyboard focus** (its Switch and
-Forget controls are tab-reachable). The last rotation, being history rather than
+and five equally-bright plans made the eye hunt for which one that was. Only a
+quarantined plan was dimmed, so the four plans competing hardest with the answer
+were the four in perfect health. Every plan that is not the live login now
+recedes (60% since the 2026-09-21 rows) and comes to full on hover **or keyboard
+focus** (its Switch and Forget controls are tab-reachable). The last rotation, being history rather than
 state, recedes the same way.
 
 **Fixed: *Store this login* could never appear on some installs (2026-09-07).**
@@ -253,9 +241,9 @@ read is carried forward to now: a window whose reset is still ahead keeps its
 utilisation — this machine did not use the plan, so the figure is a floor —
 and a window whose reset has passed shows empty, with the weekly window's
 next reset advanced by whole weeks and the 5-hour window's left unknown. Such
-a card wears a history mark on its header, its meters are hatched and their
-percentages carry an approximation sign, and the tooltip says which read it
-was projected from. Not precise, and never claimed to be.
+a row's percentages carry an approximation sign and sit back, its bottom border
+is drawn at half strength, each cluster's sentence ends in *Estimated*, and the
+tooltip says which read it was projected from. Not precise, and never claimed to be.
 
 > **Two defects fixed the same day.** The snapshot only reported a live
 > account id when that account was already stored, so on an empty table the
@@ -629,7 +617,7 @@ underlying human-review queue.
 
 ### Cross-CLI usage (Codex, Grok)
 
-The usage strip shows one informational card per other coding CLI on the machine, served by `fleet_cli_usage`
+The usage strip shows one informational row per other coding CLI on the machine, served by `fleet_cli_usage`
 (`src-tauri/src/commands/fleet/cli_usage/`). It is passive and read-only.
 
 **Data source.** *Codex*: codex-cli appends a `token_count` event to the running session's rollout log

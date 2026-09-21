@@ -1,13 +1,13 @@
-// useResourceModel — everything the resource strip knows, joined into ONE shape.
+// useResourceModel — everything the usage strip knows, joined into ONE shape.
 //
-// Three reads feed the strip and they arrive in three vocabularies: the Claude
-// plans (`ClaudeAccountsSnapshot`, or the single-login `ClaudeUsageSnapshot`
-// while nothing is stored), the other CLIs (`CliUsageSnapshot`, windows keyed
-// primary/secondary and measured in minutes) and the fleet's budgets (riding on
-// the queue snapshot the board already polls). Four layouts render them, and a
-// layout that re-derives "which window is the weekly one" is a layout that will
-// disagree with its neighbour. So the join happens once, here, as a pure
-// function of its inputs and `now` — the variants only lay out what it returns.
+// Two reads feed the strip and they arrive in two vocabularies: the Claude plans
+// (`ClaudeAccountsSnapshot`, or the single-login `ClaudeUsageSnapshot` while
+// nothing is stored) and the other CLIs (`CliUsageSnapshot`, windows keyed
+// primary/secondary and measured in minutes). The strip paints one row grammar
+// for all of them, and a row that re-derives "which window is the weekly one" per
+// provider is a row that will disagree with its neighbour. So the join happens
+// once, here, as a pure function of its inputs and `now` — `AccountRows` only
+// lays out what it returns.
 //
 // THE ARITHMETIC IS NOT HERE. Pace, tone and elapsed fraction are `usageModel`'s
 // (`pace`, `meterTone`, `windowProgress`); a CLI window is converted into the
@@ -15,9 +15,10 @@
 //
 // WORDS ARE NOT HERE EITHER. `label` is the window's SLOT in the strip's
 // two-window grammar (`short` = the hours-scale session window, `long` = the
-// weekly one, plus Claude's per-model weekly `opus` / `sonnet`); the variants
-// turn a slot into copy. Every provider is described by the same slots, which is
-// what lets one meter grammar serve all three.
+// weekly one, plus Claude's per-model weekly `opus` / `sonnet`, which the row
+// does not paint); the row turns a slot into an icon and a sentence. Every
+// provider is described by the same slots, which is what lets one row serve all
+// three.
 
 import { useMemo } from 'react';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
@@ -28,7 +29,6 @@ import type { CliProvider } from '@/lib/bindings/CliProvider';
 import type { CliProviderUsage } from '@/lib/bindings/CliProviderUsage';
 import type { CliUsageReason } from '@/lib/bindings/CliUsageReason';
 import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
-import type { FleetBudgets } from '@/lib/bindings/FleetBudgets';
 import { meterTone, orderWindows, pace, windowProgress, type MeterTone, type Pace } from '../usageModel';
 import { CLI_PROVIDERS } from './cliProviders';
 
@@ -70,7 +70,7 @@ export interface PlanModel {
   reason: string | null;
   windows: WindowModel[];
   asOfMs: number | null;
-  /** Claude only, and only where `AccountRows` offers the same act. */
+  /** Claude only: the plan is not live and not quarantined / nothing could be read for it. */
   canSwitch: boolean;
   canRemove: boolean;
 }
@@ -90,21 +90,9 @@ export interface ProviderModel {
   projected: boolean;
 }
 
-export interface BudgetsModel extends FleetBudgets {
-  /** 0–1, clamped — used / budget. */
-  machineFrac: number;
-  planFrac: number;
-  /** 0–1 — how much of the un-throttled plan budget pacing currently allows. */
-  planCeilingFrac: number;
-  /** Pacing has cut the plan budget below its maximum. */
-  throttled: boolean;
-}
-
 export interface ResourceModel {
   /** Always claude, codex, grok — in that order. */
   providers: ProviderModel[];
-  budgets: BudgetsModel | null;
-  asOfMs: number | null;
 }
 
 export interface ResourceInputs {
@@ -112,8 +100,6 @@ export interface ResourceInputs {
   /** The single-login read, used only while no plan is stored. */
   single: ClaudeUsageSnapshot | null;
   cli: CliUsageSnapshot | null;
-  /** `FleetQueueSnapshot.budgets` — absent on older snapshots and fixtures. */
-  budgets: FleetBudgets | null | undefined;
   /** When the Claude read was taken, epoch ms. */
   fetchedAt: number | null;
   /** The Claude IPC itself rejected and nothing is remembered — a worded card, not an endless ghost. */
@@ -127,11 +113,6 @@ const CLAUDE_SLOTS: Record<string, WindowSlot> = {
   seven_day_opus: 'opus',
   seven_day_sonnet: 'sonnet',
 };
-
-function frac(used: number, budget: number): number {
-  if (!(budget > 0)) return 0;
-  return Math.min(1, Math.max(0, used / budget));
-}
 
 function windowModel(
   w: ClaudeUsageWindow, label: WindowSlot, now: number, projected: boolean, asOfMs: number | null,
@@ -164,7 +145,6 @@ function claudeWindows(
 }
 
 function claudePlan(a: ClaudeAccountView, now: number): PlanModel {
-  // The same three facts `AccountRows` derives, in the same words.
   const quarantined = a.quarantineReason !== null;
   const projected = a.usageProjectedFromMs !== null && a.usage.length > 0;
   const unreadable = (quarantined || a.usageReason !== null) && !projected;
@@ -258,17 +238,6 @@ function cliProvider(id: CliProvider, usage: CliProviderUsage | undefined, settl
   };
 }
 
-function budgetsModel(b: FleetBudgets | null | undefined): BudgetsModel | null {
-  if (!b) return null;
-  return {
-    ...b,
-    machineFrac: frac(b.machineUsed, b.machineBudget),
-    planFrac: frac(b.planUsed, b.planBudget),
-    planCeilingFrac: frac(b.planBudget, b.planBudgetMax),
-    throttled: b.planBudget < b.planBudgetMax,
-  };
-}
-
 /** The pure join. Same inputs, same `now` → same model. */
 export function buildResourceModel(inputs: ResourceInputs): ResourceModel {
   const { cli, now } = inputs;
@@ -277,8 +246,6 @@ export function buildResourceModel(inputs: ResourceInputs): ResourceModel {
       claudeProvider(inputs),
       ...CLI_PROVIDERS.map((id) => cliProvider(id, cli?.providers.find((p) => p.provider === id), cli !== null, now)),
     ],
-    budgets: budgetsModel(inputs.budgets),
-    asOfMs: inputs.fetchedAt,
   };
 }
 
@@ -289,9 +256,9 @@ export function windowIn(plan: PlanModel, slot: WindowSlot): WindowModel | null 
 }
 
 export function useResourceModel(inputs: ResourceInputs): ResourceModel {
-  const { accounts, single, cli, budgets, fetchedAt, claudeFailed, now } = inputs;
+  const { accounts, single, cli, fetchedAt, claudeFailed, now } = inputs;
   return useMemo(
-    () => buildResourceModel({ accounts, single, cli, budgets, fetchedAt, claudeFailed, now }),
-    [accounts, single, cli, budgets, fetchedAt, claudeFailed, now],
+    () => buildResourceModel({ accounts, single, cli, fetchedAt, claudeFailed, now }),
+    [accounts, single, cli, fetchedAt, claudeFailed, now],
   );
 }
