@@ -64,3 +64,4 @@
 {"ts":"2026-09-20T19:10:00Z","bundle":"software-engineering","subjects":["table"],"techniques":["sorting","pagination","filtering","performance","loading-and-empty-states","client-server-split"],"deviations":1,"context":"display-table-primitives"}
 {"ts":"2026-09-20T19:10:00Z","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","pagination","filtering","loading-and-empty-states"],"deviations":1,"context":"overview-activity-metrics"}
 {"ts":"2026-09-21T09:00:00Z","bundle":"software-engineering","subjects":["canvas-graph","hitl-approval","async-ui-states","design-tokens"],"techniques":["render-budget","viewport-transform","decision-records","oracle-before-gate"],"deviations":0}
+{"ts":"2026-09-21T00:00:00Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["queue-lifecycle","source-normalization","verdict-writeback"],"deviations":3}

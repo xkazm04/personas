@@ -63,6 +63,7 @@ mod e37_dispatch_order_retired;
 mod e38_project_enabled;
 mod e39_workspace_team_binding;
 mod e40_council;
+mod e41_backlog_contract;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -122,6 +123,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e38_project_enabled::run(conn)?;
     e39_workspace_team_binding::run(conn)?;
     e40_council::run(conn)?;
+    e41_backlog_contract::run(conn)?;
 
     Ok(())
 }

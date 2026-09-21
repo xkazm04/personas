@@ -2,6 +2,11 @@
 
 ## Active
 
+### spark-backlog-unification — Unify backlog item generation across sources: shared schema, numbered execution steps, analysis gate, and the ACCEPTED->Dispatch->done lifecycle
+- **[2026-09-21 13:41]**
+- **Paths:** `src/features/fleet/monitor/grid/rail/**` · `src/features/plugins/dev-tools/**backlog**` · `src-tauri/src/**backlog**` · `src-tauri/db/**backlog**`
+- **Status:** started
+
 - **[2026-09-20 14:21]**
 - **Paths:** `src/features/council/**` · `src/features/plugins/dev-tools/sub_context/**` · `.claude/skills/council/**`
 - **Status:** started
