@@ -113,6 +113,9 @@ beforeEach(() => {
   // still in the DOM for its exit. Under the app's own Reduce Motion the exit
   // is instant — it still lands a frame later, hence the `waitFor`s below.
   document.documentElement.setAttribute('data-motion', 'reduce');
+  // jsdom has no layout, so no scrolling either; the desk's lamp scrolls its
+  // selected card into view on every change of the visible set.
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 describe('NoteOverview — the status lens', () => {

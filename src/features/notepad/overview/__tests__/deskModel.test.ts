@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   chromeReducer,
+  columnsFromRowTops,
+  columnsFromTemplate,
   commandFromKey,
   cycleId,
   escapeOwnedByDesk,
@@ -9,11 +11,12 @@ import {
   matchesQuery,
   moveIndex,
   moveSelection,
+  reviewKeyEffect,
   scoreMatch,
   splitHighlight,
   surviveSelection,
   tokenizeQuery,
-} from './deskModel';
+} from '../deskModel';
 
 const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
 
@@ -228,5 +231,72 @@ describe('commandFromKey', () => {
     expect(commandFromKey({ key: 'A', shiftKey: true })).toBeNull();
     expect(commandFromKey({ key: 'x' })).toBeNull();
     expect(commandFromKey({ key: 'Backspace' })).toBeNull();
+  });
+});
+
+describe('rendered column count', () => {
+  it('counts resolved tracks from a computed grid-template-columns', () => {
+    expect(columnsFromTemplate('212px 212px 212px 212px')).toBe(4);
+    expect(columnsFromTemplate('300px 300px')).toBe(2);
+    expect(columnsFromTemplate('640px')).toBe(1);
+  });
+
+  it('reads an unresolved repeat() and treats minmax() as one track', () => {
+    expect(columnsFromTemplate('repeat(3, minmax(0, 1fr))')).toBe(3);
+    expect(columnsFromTemplate('minmax(0, 1fr) minmax(0, 1fr)')).toBe(2);
+  });
+
+  it('ignores line names', () => {
+    expect(columnsFromTemplate('[a] 100px [b] 100px [c]')).toBe(2);
+  });
+
+  it('falls back when the template is unreadable', () => {
+    expect(columnsFromTemplate('', 4)).toBe(4);
+    expect(columnsFromTemplate('none', 3)).toBe(3);
+    expect(columnsFromTemplate(undefined, 0)).toBe(0);
+  });
+
+  it('counts the cards that share the first card row', () => {
+    expect(columnsFromRowTops([10, 10, 10, 220, 220])).toBe(3);
+    expect(columnsFromRowTops([10, 10.5, 220])).toBe(2);
+    expect(columnsFromRowTops([10])).toBe(1);
+    expect(columnsFromRowTops([], 4)).toBe(4);
+  });
+
+  it('arrows move one RENDERED row, whatever the count', () => {
+    // 3 columns:  a b c / d e f / g h i
+    expect(moveSelection(ids, 'b', 'down', 3)).toBe('e');
+    expect(moveSelection(ids, 'e', 'up', 3)).toBe('b');
+    // 2 columns:  a b / c d / ...
+    expect(moveSelection(ids, 'b', 'down', 2)).toBe('d');
+  });
+});
+
+describe('reviewKeyEffect — the bubble first, the thread otherwise', () => {
+  const none = { up: false, pendingReview: false, refKind: null };
+  const comment = { up: true, pendingReview: false, refKind: null };
+  const runReview = { up: true, pendingReview: true, refKind: 'run' };
+  const cardReview = { up: true, pendingReview: true, refKind: 'suggestion_card' };
+
+  it('r focuses the bubble Comment field when a bubble is up, else the thread composer', () => {
+    expect(reviewKeyEffect('reply', comment)).toBe('bubbleComment');
+    expect(reviewKeyEffect('reply', runReview)).toBe('bubbleComment');
+    expect(reviewKeyEffect('reply', none)).toBe('threadReply');
+  });
+
+  it('y approves a pending review on the bubble, else opens the thread', () => {
+    expect(reviewKeyEffect('approve', runReview)).toBe('approve');
+    expect(reviewKeyEffect('approve', cardReview)).toBe('approve');
+    expect(reviewKeyEffect('approve', comment)).toBe('thread');
+    expect(reviewKeyEffect('approve', none)).toBe('thread');
+  });
+
+  it('n asks for the reason on a run review, rejects a suggestion card in one tap', () => {
+    expect(reviewKeyEffect('reject', runReview)).toBe('rejectReason');
+    expect(reviewKeyEffect('reject', cardReview)).toBe('rejectNow');
+    expect(reviewKeyEffect('reject', comment)).toBe('thread');
+    expect(reviewKeyEffect('reject', none)).toBe('thread');
+    // A pending review whose bubble is NOT up (the thread swallowed it) goes to the thread.
+    expect(reviewKeyEffect('reject', { ...runReview, up: false })).toBe('thread');
   });
 });

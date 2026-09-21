@@ -14,10 +14,13 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 | `NotepadFooterIcon.tsx` | The footer toggle (`data-testid="footer-notepad"`), first item of `DesktopFooter`'s right cluster. Ships in production, unlike the Fleet cluster. |
 | `NotepadLayer.tsx` | Cheap always-mounted gate (`OverlayIsland name="notepad"` in `App.tsx`); lazy-loads the host on first open and owns the `notepad-note-changed` listener. |
 | `NotepadOverlayHost.tsx` | The full-screen layer, in two views: the **overview** (layer 1) and the **editor** (layer 2: tab strip → body → dispatch bar). Opens on the overview; a card opens the editor, "All notes" and `Escape` step back. Lazy-loads the archive modal and the confirm dialog, so neither is in the pad's first paint. Owns the **plan tab** (so `Ctrl/Cmd+1/2/3` can move it from the pad's keyboard priority — the pane is two levels down) and the **Escape ladder**: popover (`defaultPrevented`, in BOTH views) → card caret → editor back → close, with the plan tab deliberately NOT a rung. On a plan note the back button becomes the first crumb of `Desk › title › tab`. |
-| `overview/NoteOverview.tsx` | Layer 1, the **Project desk**: heading + slot count, a capture line (Enter creates a draft in the selected project), TWO filters (status lens then project — the project tabs count what the lens admits) and a 4-column grid of `NoteDeskCard`. Takes an optional `initialProjectId` that SEEDS the project filter once (the deep-link door); a seed and not a controlled value, so it never fights the operator. Derives the per-card forecasts over the whole open set and suppresses them entirely while `planSummariesStale`. Picked 2026-09-14 out of three directions (Index cards, Lifecycle board, Project desk); the other two and the switcher were deleted in the same change. |
+| `overview/NoteOverview.tsx` | Layer 1, the **desk** — keyboard-first ("the lamp on the blotter"): heading + slot count + the `?` keys button, a capture line (Enter creates a draft in the selected project), the `/` find field (fuzzy AND over title + body, title-prefix hits ranked first), TWO filters (status lens then project — the project tabs count what the lens admits; each status tab wears its `1`/`2`/`3` digit as a keycap) and the grid of `NoteDeskCard` in a recessed well, with `DeskHintRail` stuck under it and `DeskCheatSheet` one `?` away. Owns the `chromeReducer` state (selection, query, find open, cheat open) and the selection-survival step (the same note stays selected across a filter/find change; otherwise the note now in its old slot). Takes an optional `initialProjectId` that SEEDS the project filter once (the deep-link door). Derives the per-card forecasts over the whole open set and suppresses them while `planSummariesStale`. Picked 2026-09-21 out of a three-way contest (the 2026-09-14 Project desk, an Opus take and a Grok take); the Grok desk won and the other two and the switcher were deleted in the same change. |
+| `overview/deskModel.ts` | PURE model of the desk: `chromeReducer` + the Escape rungs (`escapeOwnedByDesk`), grid walking (`moveIndex` / `moveSelection` — arrows clamp, `j`/`k` wrap), `surviveSelection`, find (`matchesQuery` / `scoreMatch` / `splitHighlight`), the keymap (`commandFromKey`), `isTypingSurface` / `overlayOwnsKeys`, the rendered column count (`columnsFromTemplate` / `columnsFromRowTops`) and where a review key lands (`reviewKeyEffect`: bubble first, thread otherwise). Everything the DOM knows is passed in. |
+| `overview/useDeskKeyboard.ts` | The desk's keyboard layer through `useAppKeyboard` at `NOTEPAD_LAYER_PRIORITY + 1` — one rung above the host, because at an equal priority the host (a parent, registered later) would be asked first and its Escape would beat the desk's clear-find rung. Keys the desk does not consume fall through to the host. Also `useGridColumns`: the grid's RENDERED column count (computed `grid-template-columns`, else the cards' row tops, else the styled 4), re-measured on resize. |
+| `overview/parts/Keycap.tsx` · `DeskHintRail.tsx` · `DeskCheatSheet.tsx` | `Keycap` and `DESK_KEY` — the key legends are glyphs, not copy, and never enter the catalogs. `DeskHintRail`: the keys that apply to the SELECTED note right now (Ask only when askable, Publish/Goals only for a mapped draft, `y`/`n` only while its bubble carries a pending review). `DeskCheatSheet`: the full map in a `BaseModal`, three groups. |
 | `overview/deskFilter.ts` | The desk's STATUS lens — `drafts` (the brainstorm rail) · `scoped` (`scoped\|cut`) · `all`. `shipped` is excluded from every option, including `all`: a shipped note is a record and belongs in the archive drawer's Shipped group. The choice is a per-viewer convenience in `safeLocalStorage` under `personas.notepad.deskFilter`, coerced on read — never the authority for anything. |
 | `overview/deskForecast.ts` | PURE per-card cycle-time forecast. Reuses `observedCycles` / `median` / `MIN_SAMPLES` from `lib/milestone/shipVelocity.ts` rather than `deriveShipVelocity`, which answers "when does the NEXT milestone land?" — one forecast per project, picked by `order_index`, which the summary does not carry. **Summary-based: it may differ from the plan pane's**, which reads the project's whole milestone table; the header says so in full. |
-| `overview/NoteDeskCard.tsx` · `overview/parts/*` | One card: project + status badge, title, text, one footer row (elapsed time via `RelativeTime format="elapsed"` · save dot · `n/100` · open). `NoteProjectPicker` turns the project into a `Listbox` popover of the ACTIVE WORKSPACE's projects (`scopeProjects`) — draft only. `NoteQuickWrite` owns the card rule: a draft of ≤100 VISIBLE characters is `CardRichText` — a `contentEditable` surface that formats as you type (`cardInputRules.ts`: closing `**`/`_`/`` ` `` and line-start `- `/`1. `/`[] `/`#`/`>` become formatting via `execCommand`, which keeps native undo) and serializes back to markdown on every input, so markers never show; editable stays latched until blur; anything else is a faded `DeferredMarkdown variant="card"` that opens the editor. No toolbar on cards; the editor's shortcuts work in the textarea. |
+| `overview/NoteDeskCard.tsx` · `overview/parts/*` | One card (SELECTED, it lifts and wears the traveling lamp, a `layoutId` bar on its top edge; it receives the desk's keyboard verbs as a `command` prop and routes review keys through `reviewKeyEffect` — `r` / `n` reach the bubble via `NoteCardBubble`'s `intent`): project + status badge, title, text, one footer row (elapsed time via `RelativeTime format="elapsed"` · save dot · `n/100` · open). `NoteProjectPicker` turns the project into a `Listbox` popover of the ACTIVE WORKSPACE's projects (`scopeProjects`) — draft only. `NoteQuickWrite` owns the card rule: a draft of ≤100 VISIBLE characters is `CardRichText` — a `contentEditable` surface that formats as you type (`cardInputRules.ts`: closing `**`/`_`/`` ` `` and line-start `- `/`1. `/`[] `/`#`/`>` become formatting via `execCommand`, which keeps native undo) and serializes back to markdown on every input, so markers never show; editable stays latched until blur; anything else is a faded `DeferredMarkdown variant="card"` that opens the editor. No toolbar on cards; the editor's shortcuts work in the textarea. |
 | `noteText.ts` | Pure text helpers shared by both layers: `CARD_TEXT_LIMIT`, `visibleLength`, `canQuickWrite`, `titleFromText`, `resultSummary`. |
 | `cardMarkdown.ts` | The card's markdown subset (lines, `#`–`###`, `>`, bullet / numbered / checklist items, `**` `_` `` ` ``) both ways: `renderCardMarkdown` (escaped, parsed via `DOMParser`, `card` density classes), `cardDomToMarkdown` (reads the browser's block-per-line DOM), `markdownToPlainText`. Stored text stays plain markdown. |
 | `NoteBody.tsx` | The body. The **Workbench** layout, picked 2026-09-06 out of the three the prototype round compared; the other two and the switcher were deleted in the same commit. |
@@ -124,7 +127,7 @@ carries `content-visibility: hidden`, so the covered app stops paying layout and
 paint for a screen nobody can see. It does not make the pad open faster: none of
 the four costs above run in the app underneath.
 
-## Prototype status: CLOSED (twice)
+## Prototype status: CLOSED (three times)
 
 The `/prototype` round compared Journal, Workbench and Split canvas behind a
 switcher. **Workbench won (2026-09-06)**; the other two files and the switcher
@@ -135,6 +138,46 @@ The second round (2026-09-14) added the overview layer and compared Index cards,
 Lifecycle board and Project desk. **Project desk won**, with two refinements
 from the pick: no formatting toolbar on a card, and the last-touched and
 character-count rows merged into one footer.
+
+The third round (2026-09-21, `/spark note-overview-cycle`) put the Project desk
+against two keyboard-first takes behind a switcher. **The Grok desk won**; the
+Opus take, the switcher and the baseline were deleted in the same change, its
+copy moved into the catalogs, and three gaps it reported itself were closed on
+promotion (`r` / `n` reach the bubble, arrows read the rendered column count).
+
+## Keyboard
+
+The desk is meant to be driven with the hands on the keys; every verb is still on
+the card for the mouse. Letter keys never fire while focus is in an input,
+textarea or contenteditable (capture line, find field, quick-write, Ask Athena,
+thread composer), nor while a dialog, menu or listbox owns focus. Modifier chords
+(Ctrl/Cmd/Alt) are never the desk's.
+
+| Key | Action |
+|---|---|
+| `↑` `↓` `←` `→` | Move the lamp across the grid, one RENDERED column / row (clamped) |
+| `h` `l` | Left / right |
+| `j` `k` | Next / previous note (wraps) |
+| `Home` `End` | First / last note |
+| `Enter` | Open the selected note in the editor |
+| `/` | Find (fuzzy AND over title + body) |
+| `Esc` | Clear find → close find → the host's ladder (blur, back, close) |
+| `1` `2` `3` | Drafts / scoped / all |
+| `⇧1`–`⇧9` | Jump to a project tab |
+| `[` `]` | Cycle project tabs |
+| `a` | Ask Athena (quick input on the selected card) |
+| `p` | Publish to Fleet |
+| `g` | Turn into goals |
+| `t` | Open thread |
+| `r` | Reply: the bubble's inline Comment field when the card has a bubble up, else the thread composer |
+| `y` | Approve the bubble's pending review; otherwise open the thread |
+| `n` | Reject the bubble's pending review — one tap for a suggestion card, the reason field for a `run` review; otherwise open the thread |
+| `Del` | Delete permanently (the host confirms; refused while a Fleet session holds the note) |
+| `?` | Cheat sheet |
+
+Escape is claimed only while the cheat sheet or the find field is up, and never
+when something above already handled it (`defaultPrevented`), so the pad's
+existing ladder still owns the rest. Selection survives filter and find changes.
 
 ## Thread → bubble → stack (spark note-overview-cycle)
 

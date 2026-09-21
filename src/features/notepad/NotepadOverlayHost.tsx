@@ -62,8 +62,7 @@ import { noteBodyEditable, NOTE_PLAN_STATUSES } from './noteStatusMeta';
 import { NotePlanProvider, PLAN_TABS, type PlanTab } from './plan/NotePlanContext';
 import NoteBody from './NoteBody';
 import { titleFromText } from './noteText';
-// TEMPORARY (desk contest): the switcher wraps the baseline NoteOverview — see overview/v2/deskVariant.tsx.
-import { NoteOverviewContest } from './overview/v2/deskVariant';
+import { NoteOverview } from './overview/NoteOverview';
 import type { NoteSeed } from './overview/types';
 
 /** Layer 1 is every note as a card; layer 2 is one note in the full editor. */
@@ -503,7 +502,7 @@ export default function NotepadOverlayHost() {
             />
           </div>
         ) : (
-          <NoteOverviewContest
+          <NoteOverview
             loading={showGhost}
             notes={notes}
             projects={projects}

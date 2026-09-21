@@ -31,6 +31,14 @@ import {
 
 export const BUBBLE_MS = 10_000;
 
+/** A keyboard request aimed at the bubble on screen: open its inline Comment
+ *  field, or open the reject-reason field of its pending `run` review. `seq`
+ *  makes a repeated key a new request. */
+export interface BubbleIntent {
+  seq: number;
+  kind: 'comment' | 'reject';
+}
+
 /**
  * The card's bubble slot: the entry to show, or null. Subscribes to the thread
  * store's arrival feed for this note only; an entry that landed while its thread
@@ -56,10 +64,13 @@ export function useCardBubble(noteId: string): { entry: NoteComment | null; dism
  */
 export function NoteCardBubble({
   entry,
+  intent = null,
   onDismiss,
   onRead,
 }: {
   entry: NoteComment;
+  /** The desk's latest keyboard request for this card's bubble (`r` / `n`). */
+  intent?: BubbleIntent | null;
   onDismiss: () => void;
   /** Open the thread (which marks it read). */
   onRead: () => void;
@@ -70,6 +81,17 @@ export function NoteCardBubble({
   const [focused, setFocused] = useState(false);
   const [replying, setReplying] = useState(false);
   const paused = hovered || focused;
+
+  // Only requests made WHILE this bubble is up count: a request consumed by the
+  // bubble this one replaced must not re-fire on mount.
+  const seenIntent = useRef(intent?.seq ?? 0);
+  const [rejectSignal, setRejectSignal] = useState(0);
+  useEffect(() => {
+    if (!intent || intent.seq === seenIntent.current) return;
+    seenIntent.current = intent.seq;
+    if (intent.kind === 'comment') setReplying(true);
+    else setRejectSignal(intent.seq);
+  }, [intent]);
 
   // The clock: a remaining budget that only runs while unpaused.
   const remaining = useRef(BUBBLE_MS);
@@ -148,7 +170,12 @@ export function NoteCardBubble({
               {t.notepad.bubble_read}
             </Button>
             {pending && (
-              <ReviewVerdictActions comment={entry} testIdPrefix="notepad-card-bubble-review" onSettled={onDismiss} />
+              <ReviewVerdictActions
+                comment={entry}
+                testIdPrefix="notepad-card-bubble-review"
+                onSettled={onDismiss}
+                openRejectSignal={rejectSignal}
+              />
             )}
             <Button
               variant="ghost"

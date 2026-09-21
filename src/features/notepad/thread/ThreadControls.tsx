@@ -5,7 +5,7 @@
 // Every verb is an `AsyncButton` whose onClick RETURNS the promise: the spinner
 // belongs to the control that was pressed (the action half of the spinner
 // boundary), and the double-submit guard only holds when the promise reaches it.
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Check, SendHorizontal, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -30,9 +30,13 @@ export function ReviewVerdictActions({
   size = 'xs',
   testIdPrefix,
   onSettled,
+  openRejectSignal = 0,
 }: {
   comment: NoteComment;
   size?: 'xs' | 'sm';
+  /** A changed non-zero value opens the reject-reason field of a `run` review
+   *  from outside — the desk's `n` key on a card whose bubble is up. */
+  openRejectSignal?: number;
   /** `data-testid` stem — `${prefix}-approve`, `-reject`, `-reason`, `-reject-submit`. */
   testIdPrefix: string;
   /** After a verdict landed (either one). */
@@ -44,6 +48,13 @@ export function ReviewVerdictActions({
   const [missing, setMissing] = useState(false);
   const isRun = comment.refKind === 'run';
   const isCard = comment.refKind === 'suggestion_card';
+
+  const seenSignal = useRef(openRejectSignal);
+  useEffect(() => {
+    if (!openRejectSignal || openRejectSignal === seenSignal.current) return;
+    seenSignal.current = openRejectSignal;
+    if (isRun) setRejecting(true);
+  }, [openRejectSignal, isRun]);
 
   const approve = async () => {
     const r = await approveReview(comment);

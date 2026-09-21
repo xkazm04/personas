@@ -1,7 +1,11 @@
-// Pure selection, filter, and keymap for the grok desk.
+// Pure selection, filter, and keymap for the notepad desk.
 // No React, no DOM, no stores — the keyboard reducer lives here so the
-// tests can pin the model without mounting the overlay.
+// tests can pin the model without mounting the overlay. Anything the DOM
+// knows (the rendered column count, whether a card has a bubble up) is
+// measured by the caller and passed IN.
 
+/** The column count the grid is styled with — only the fallback for when the
+ *  rendered count cannot be read (no layout yet, a test DOM). */
 export const GRID_COLUMNS = 4;
 
 export const PROJECT_ALL = '__all';
@@ -60,10 +64,14 @@ export function escapeOwnedByDesk(state: DeskChromeState): boolean {
 
 export function chromeReducer(state: DeskChromeState, action: ChromeAction): DeskChromeState {
   switch (action.type) {
+    // An unchanged cursor returns the SAME state, so React bails out of the
+    // re-render (the survive step runs on every change of the visible set).
     case 'select':
-      return { ...state, selectedId: action.id };
-    case 'survive':
-      return { ...state, selectedId: surviveSelection(action.ids, state.selectedId, action.previousIds) };
+      return action.id === state.selectedId ? state : { ...state, selectedId: action.id };
+    case 'survive': {
+      const next = surviveSelection(action.ids, state.selectedId, action.previousIds);
+      return next === state.selectedId ? state : { ...state, selectedId: next };
+    }
     case 'openSearch':
       return { ...state, searchOpen: true };
     case 'setQuery':
@@ -267,6 +275,89 @@ export function commandFromKey(stroke: KeyStroke): DeskCommand | null {
     default:
       return null;
   }
+}
+
+/**
+ * The rendered column count from a computed `grid-template-columns`. A laid-out
+ * grid reports resolved tracks (`"212px 212px 212px"`); an unresolved one may
+ * still report the authored `repeat(4, minmax(0, 1fr))`. Anything unreadable
+ * (`none`, empty) returns `fallback`.
+ */
+export function columnsFromTemplate(template: string | null | undefined, fallback: number = GRID_COLUMNS): number {
+  const value = (template ?? '').trim();
+  if (!value || value === 'none') return fallback;
+  const repeat = /^repeat\(\s*(\d+)\s*,/.exec(value);
+  if (repeat) return Math.max(1, Number(repeat[1]));
+  // Count top-level tracks: drop `[line-name]`s, then split on whitespace that
+  // sits outside parentheses (`minmax(0, 1fr)` is ONE track).
+  const bare = value.replace(/\[[^\]]*\]/g, ' ');
+  let depth = 0;
+  let tracks = 0;
+  let inTrack = false;
+  for (const ch of bare) {
+    if (ch === '(') depth += 1;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (depth === 0 && /\s/.test(ch)) {
+      inTrack = false;
+    } else if (!inTrack) {
+      inTrack = true;
+      tracks += 1;
+    }
+  }
+  return tracks > 0 ? tracks : fallback;
+}
+
+/**
+ * The column count from the cards' own top edges, in grid order: the cards
+ * sharing the first card's row. Used when the template cannot be read. An
+ * empty grid returns `fallback`.
+ */
+export function columnsFromRowTops(tops: readonly number[], fallback: number = GRID_COLUMNS): number {
+  if (tops.length === 0) return fallback;
+  const first = tops[0]!;
+  let n = 0;
+  for (const top of tops) {
+    if (Math.abs(top - first) > 1) break;
+    n += 1;
+  }
+  return Math.max(1, n);
+}
+
+/** What the card knows about its bubble at the moment a review key lands. */
+export interface BubbleSnapshot {
+  /** A bubble is on screen for the card (and the thread is not). */
+  up: boolean;
+  /** The bubble carries a review still waiting on the operator. */
+  pendingReview: boolean;
+  /** The review's `refKind` — `run` rejects with a reason, `suggestion_card` in one tap. */
+  refKind: string | null;
+}
+
+/** Where a review key lands. */
+export type ReviewKeyEffect =
+  | 'bubbleComment'
+  | 'threadReply'
+  | 'approve'
+  | 'rejectNow'
+  | 'rejectReason'
+  | 'thread';
+
+/**
+ * `r` / `y` / `n` act on the bubble when one is up — the same place the mouse
+ * would — and fall back to the thread otherwise:
+ *   - `r` focuses the bubble's inline Comment field, else the thread composer;
+ *   - `y` approves the bubble's pending review, else opens the thread;
+ *   - `n` rejects a pending suggestion-card review in one tap, opens the
+ *     reject-reason field for a pending `run` review (the reason is what the
+ *     re-run is told), else opens the thread.
+ */
+export function reviewKeyEffect(action: 'reply' | 'approve' | 'reject', bubble: BubbleSnapshot): ReviewKeyEffect {
+  if (action === 'reply') return bubble.up ? 'bubbleComment' : 'threadReply';
+  if (!bubble.up || !bubble.pendingReview) return 'thread';
+  if (action === 'approve') return 'approve';
+  if (bubble.refKind === 'suggestion_card') return 'rejectNow';
+  if (bubble.refKind === 'run') return 'rejectReason';
+  return 'thread';
 }
 
 /** True when the keystroke belongs to a typing surface — inputs keep their keys. */
