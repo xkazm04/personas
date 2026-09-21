@@ -43,14 +43,32 @@ static USE_CASE_SCAN_JOBS: BackgroundJobManager<UseCaseScanExtra> = BackgroundJo
     event_name::USE_CASE_SCAN_OUTPUT,
 );
 
-/// Hard cap on proposals applied from one scan (the prompt also states it).
-/// Deliberately small — use cases are meant to be FEW and KEY; enumerating every
+/// The floor and ceiling of the per-scan proposal cap (the prompt states the
+/// computed value). Use cases are meant to be FEW and KEY; enumerating every
 /// screen would reintroduce the cardinality problem this layer exists to solve.
-const MAX_PROPOSALS_PER_SCAN: usize = 12;
+const MIN_PROPOSAL_CAP: usize = 12;
+const MAX_PROPOSAL_CAP: usize = 24;
+
+/// The cap scales with the map. A flat twelve was calibrated on 50-context
+/// products; two dry runs on 2026-09-21 (54 and 191 contexts) both hit it and
+/// both named real, documented features it made them drop. One proposal per ten
+/// contexts, inside the floor and the ceiling: 54 -> 12, 191 -> 19, 208 -> 20.
+pub(crate) fn proposal_cap(context_count: usize) -> usize {
+    (context_count / 10).clamp(MIN_PROPOSAL_CAP, MAX_PROPOSAL_CAP)
+}
 
 /// How many of one scan's proposals may be marked `major`. Stated in the
 /// prompt AND enforced here: a cap that only exists in a prompt is a request.
-const MAX_MAJOR_PER_SCAN: usize = 5;
+const MAX_MAJOR_PER_SCAN: usize = 6;
+
+/// A `major` feature is one a person signs off at the council's gate, and it
+/// is major because it cuts ACROSS the product: it must span at least this
+/// many context groups. A feature that lives inside one group is a capability
+/// of that group, however important, and stays `standard`.
+pub(crate) const MIN_GROUPS_FOR_MAJOR: usize = 2;
+
+/// The most contexts a slice may name, test contexts excluded.
+pub(crate) const MAX_SPANNED_CONTEXTS: usize = 8;
 
 /// The `BackgroundJobManager` lifecycle tokens, named once.
 ///
@@ -100,15 +118,86 @@ struct UseCaseProposal {
     tier: String,
 }
 
-fn parse_use_case_proposal(line: &str) -> Option<UseCaseProposal> {
+/// Does this line CLAIM to be a proposal? Used to tell "not a protocol line"
+/// from "a protocol line we could not read", which are different outcomes.
+fn claims_proposal(line: &str) -> bool {
+    line.contains("\"use_case_proposal\"")
+}
+
+/// Parse one protocol line, repairing the one truncation models actually
+/// produce: a line that lost its closing brace(s). A dry run on 2026-09-21
+/// emitted twelve of twelve proposals one brace short; a strict parse would
+/// have dropped the whole scan without a word.
+fn parse_repairing<T: serde::de::DeserializeOwned>(line: &str) -> Option<T> {
     let trimmed = line.trim();
-    if !trimmed.contains("\"use_case_proposal\"") {
+    let start = trimmed.find('{')?;
+    let body = trimmed[start..].trim_end_matches(',');
+    let mut candidate = body.to_string();
+    for _ in 0..=3 {
+        if let Ok(v) = serde_json::from_str::<T>(&candidate) {
+            return Some(v);
+        }
+        candidate.push('}');
+    }
+    None
+}
+
+fn parse_use_case_proposal(line: &str) -> Option<UseCaseProposal> {
+    if !claims_proposal(line) {
         return None;
     }
-    let start = trimmed.find('{')?;
-    serde_json::from_str::<UseCaseProposalEnvelope>(&trimmed[start..])
-        .ok()
-        .map(|e| e.use_case_proposal)
+    parse_repairing::<UseCaseProposalEnvelope>(line).map(|e| e.use_case_proposal)
+}
+
+/// A shared context the product evidently HAS but the map does not name: the
+/// voice and chat plumbing three features call, the LLM engine every agent
+/// rides. A feature cannot link to a context that does not exist, so the scan
+/// reports the hole instead of bending a slice around it. Surfaced in the scan
+/// output for the operator; it writes nothing - the context map has its own
+/// door.
+#[derive(Debug, Deserialize)]
+struct MissingSharedContextEnvelope {
+    missing_shared_context: MissingSharedContext,
+}
+
+#[derive(Debug, Deserialize)]
+struct MissingSharedContext {
+    name: String,
+    #[serde(default)]
+    why: String,
+    #[serde(default)]
+    used_by: Vec<String>,
+}
+
+fn parse_missing_shared_context(line: &str) -> Option<MissingSharedContext> {
+    if !line.contains("\"missing_shared_context\"") {
+        return None;
+    }
+    parse_repairing::<MissingSharedContextEnvelope>(line).map(|e| e.missing_shared_context)
+}
+
+/// A context that holds a behavior's tests rather than the behavior. It may be
+/// listed in a slice and does not count against the span ceiling: tests are
+/// often the only place a use case's measurable behavior is pinned.
+pub(crate) fn is_test_context(name: &str) -> bool {
+    let n = name.trim().to_lowercase();
+    n.starts_with("tests-") || n.starts_with("test-") || n.ends_with("-tests")
+}
+
+/// How many distinct groups a resolved slice crosses. An ungrouped context is
+/// its own group of one, so it can never make a slice look narrower than it is.
+pub(crate) fn groups_crossed(
+    resolved: &[String],
+    group_of: &std::collections::HashMap<String, Option<String>>,
+) -> usize {
+    let mut seen = std::collections::HashSet::new();
+    for id in resolved {
+        match group_of.get(id).cloned().flatten() {
+            Some(g) => seen.insert(format!("g:{g}")),
+            None => seen.insert(format!("c:{id}")),
+        };
+    }
+    seen.len()
 }
 
 // =============================================================================
@@ -120,6 +209,7 @@ fn build_use_case_scan_prompt(
     groups_block: &str,
     existing: &str,
     rejected: &str,
+    max: usize,
 ) -> String {
     format!(
         r#"You are a product-minded staff engineer mapping what the project "{project_name}" actually DOES for its users, so an autonomous dev team can be steered by outcomes.
@@ -142,19 +232,28 @@ A use case is NOT:
 - an internal refactor or a piece of infrastructure with no observable behavior.
 
 ## Your job
-Explore the repository (you are in its root) to ground yourself: read the README, the entry points listed in the map, the routes/commands. Then propose AT MOST {max} use cases — the KEY ones, the handful this product would be judged on. Fewer, sharper proposals beat a long list.
+Explore the repository (you are in its root) to ground yourself: read the README, the entry points listed in the map, the routes/commands. Then propose AT MOST {max} use cases — the KEY ones, the ones this product would be judged on. Fewer, sharper proposals beat a long list.
+
+Work at TWO altitudes:
+- **Major features** (at most {max_major}): what a competitor review would name, and what a person will be asked to sign off. A major feature cuts ACROSS the product. Follow it end to end: the surface the user touches, the API or command behind it, the engine or pipeline that does the work, the SHARED services it rides (an LLM engine, voice or chat IO, a scheduler, persistence, an integration boundary). It MUST span at least {min_groups} groups of the map. If it fits inside one group you have described that group, not a feature: keep looking for what it calls.
+- **Standard capabilities**: narrower behaviors worth steering by that live mostly inside one area. These may sit in one group, but still never in one context.
 
 Rules:
 1. `name`: 2-4 words, the words a product person would use ("Checkout conversion", "Agent execution", "Credential vault"). Title case. It becomes a stable join key, so avoid version numbers and internal codenames.
-2. `context_names`: the EXACT context names from the map above that this use case spans. 1-5 of them. Never invent a name — if you cannot ground it in the map, do not propose it.
+2. `context_names`: the EXACT context names from the map above that implement this behavior END TO END, shared services included. At least {min_span}, at most {max_span}. One context is a module, not a use case. Contexts that only hold tests (`tests-...`) may be listed in addition and do not count toward the {max_span}. Never invent a name — if you cannot ground it in the map, do not propose it. A map partitioned by feature makes this harder, not optional: when a group already looks like your use case, the contexts that matter are the ones OUTSIDE it that it depends on.
 3. `primary_context_name`: the one context that most owns it; MUST be one of `context_names`.
 4. `kind`: `user_flow` (a user-visible journey), `capability` (something the product can do), `integration` (an external system boundary), `ops` (operator/maintenance behavior).
 5. Propose it ONLY if you can name a plausible way to measure whether it is working. If nothing about it could ever be measured, it is not a use case worth tracking.
 6. `rationale`: ONE sentence on why this is a unit worth steering by.
-7. `tier`: `major` or `standard`. Mark AT MOST 5 of your proposals `major` - the ones a competitor review would name. Everything else is `standard`. Omit the field and it is read as `standard`, so mark deliberately rather than generously: a `major` feature is one a person will be asked to sign off, and a list where everything is major is a list where nothing is.
+7. `tier`: `major` or `standard`. Mark AT MOST {max_major} of your proposals `major`. Everything else is `standard`. Omit the field and it is read as `standard`, so mark deliberately rather than generously: a list where everything is major is a list where nothing is. A proposal marked `major` that spans fewer than {min_groups} groups will be stored as `standard`.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
 {{"use_case_proposal": {{"name": "...", "description": "...", "kind": "capability", "context_names": ["..."], "primary_context_name": "...", "tier": "standard", "rationale": "..."}}}}
+
+If a major feature plainly depends on a shared service that the map does NOT name as a context (voice or chat IO used by three features, an LLM engine every agent rides), do not bend the slice around the hole. Report it, one line each, at most 5:
+{{"missing_shared_context": {{"name": "...", "why": "...", "used_by": ["<use case name>", "..."]}}}}
+
+Every protocol line is ONE complete JSON object on ONE line. Count your closing braces.
 
 Finish with one line: {{"use_case_scan_summary": {{"proposals": <count>}}}}
 "#,
@@ -162,7 +261,11 @@ Finish with one line: {{"use_case_scan_summary": {{"proposals": <count>}}}}
         groups_block = groups_block,
         existing = existing,
         rejected = rejected,
-        max = MAX_PROPOSALS_PER_SCAN,
+        max = max,
+        max_major = MAX_MAJOR_PER_SCAN,
+        min_groups = MIN_GROUPS_FOR_MAJOR,
+        min_span = MIN_SPANNED_CONTEXTS,
+        max_span = MAX_SPANNED_CONTEXTS,
     )
 }
 
@@ -278,6 +381,7 @@ pub(crate) fn launch_use_case_scan(
         &context_map_block(pool, &project_id),
         &use_case_list_block(pool, &project_id, false),
         &use_case_list_block(pool, &project_id, true),
+        proposal_cap(mapped as usize),
     );
 
     let scan = repo::create_scan(pool, Some(&project_id), "use-case-scan", Some("running"))?;
@@ -472,12 +576,23 @@ async fn run_use_case_scan(
     // Context-name → id. A proposal naming a context that does not exist is
     // hallucinating the slice; we drop the unknown names rather than write a
     // broken link, and refuse the proposal outright if none resolve.
-    let context_ids: std::collections::HashMap<String, String> =
-        repo::list_contexts_by_project(pool, project_id, None)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|c| (c.name.to_lowercase(), c.id))
-            .collect();
+    let all_contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
+    let cap = proposal_cap(all_contexts.len());
+    // Context id -> its group, for the rule that a `major` feature crosses groups.
+    let group_of: std::collections::HashMap<String, Option<String>> = all_contexts
+        .iter()
+        .map(|c| (c.id.clone(), c.group_id.clone()))
+        .collect();
+    // Context ids that only hold tests: listed freely, never counted in the span ceiling.
+    let test_context_ids: std::collections::HashSet<String> = all_contexts
+        .iter()
+        .filter(|c| is_test_context(&c.name))
+        .map(|c| c.id.clone())
+        .collect();
+    let context_ids: std::collections::HashMap<String, String> = all_contexts
+        .into_iter()
+        .map(|c| (c.name.to_lowercase(), c.id))
+        .collect();
     // Duplicate guard across every status: an archived (rejected) name must not
     // come back either.
     let existing_slugs: std::collections::HashSet<String> =
@@ -524,9 +639,15 @@ async fn run_use_case_scan(
     // prompt states is a cap the model may quietly exceed.
     let mut major_marked = 0usize;
     // Proposals the model produced but the cap discarded — surfaced so a scan
-    // that "found" more than MAX_PROPOSALS_PER_SCAN doesn't report a clean
+    // that "found" more than the cap doesn't report a clean
     // count with no trace of the shortfall.
     let mut dropped = 0i32;
+    // Lines that CLAIMED to be a proposal and could not be read even after
+    // repair. Found-nothing and could-not-read are different outcomes, and
+    // only one of them is a clean scan.
+    let mut malformed = 0i32;
+    // Shared contexts the scan says the map is missing. Reported, never written.
+    let mut gaps = 0i32;
     let timeout_duration = std::time::Duration::from_secs(900); // exploration only, no repo mutation
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
@@ -548,17 +669,45 @@ async fn run_use_case_scan(
             USE_CASE_SCAN_JOBS.record_line(scan_id, trimmed.to_string());
 
             for proto_line in trimmed.lines() {
-                let Some(p) = parse_use_case_proposal(proto_line) else {
-                    continue;
-                };
-                if created as usize >= MAX_PROPOSALS_PER_SCAN {
-                    dropped += 1;
+                if let Some(gap) = parse_missing_shared_context(proto_line) {
+                    gaps += 1;
                     USE_CASE_SCAN_JOBS.emit_line(
                         app,
                         scan_id,
                         format!(
-                            "[Cap] {MAX_PROPOSALS_PER_SCAN} proposals reached — ignoring the rest"
+                            "[Gap] the map has no context for \"{}\" (used by {}): {}",
+                            gap.name.trim(),
+                            if gap.used_by.is_empty() {
+                                "unnamed features".to_string()
+                            } else {
+                                gap.used_by.join(", ")
+                            },
+                            gap.why.trim()
                         ),
+                    );
+                    continue;
+                }
+                let Some(p) = parse_use_case_proposal(proto_line) else {
+                    if claims_proposal(proto_line) {
+                        malformed += 1;
+                        USE_CASE_SCAN_JOBS.emit_line(
+                            app,
+                            scan_id,
+                            format!(
+                                "[Malformed] a proposal line could not be read, even after \
+                                 brace repair: {}",
+                                proto_line.chars().take(120).collect::<String>()
+                            ),
+                        );
+                    }
+                    continue;
+                };
+                if created as usize >= cap {
+                    dropped += 1;
+                    USE_CASE_SCAN_JOBS.emit_line(
+                        app,
+                        scan_id,
+                        format!("[Cap] {cap} proposals reached — ignoring the rest"),
                     );
                     continue;
                 }
@@ -581,6 +730,33 @@ async fn run_use_case_scan(
                 // - the feature is real even when the model could only ground
                 // half of it, and an unlinked row is visible where a rejected
                 // one is not.
+                // The span ceiling counts behavior, not its tests: keep every
+                // test context and the first MAX_SPANNED_CONTEXTS others.
+                let resolved: Vec<String> = {
+                    let mut kept = 0usize;
+                    let before = resolved.len();
+                    let trimmed_slice: Vec<String> = resolved
+                        .into_iter()
+                        .filter(|id| {
+                            if test_context_ids.contains(id) {
+                                return true;
+                            }
+                            kept += 1;
+                            kept <= MAX_SPANNED_CONTEXTS
+                        })
+                        .collect();
+                    if trimmed_slice.len() < before {
+                        USE_CASE_SCAN_JOBS.emit_line(
+                            app,
+                            scan_id,
+                            format!(
+                                "[Trim] {name}: more than {MAX_SPANNED_CONTEXTS} contexts \
+                                 named - kept the first {MAX_SPANNED_CONTEXTS} and the tests"
+                            ),
+                        );
+                    }
+                    trimmed_slice
+                };
                 let under_spanned = resolved.len() < MIN_SPANNED_CONTEXTS;
                 if under_spanned {
                     USE_CASE_SCAN_JOBS.emit_line(
@@ -630,7 +806,17 @@ async fn run_use_case_scan(
                         // editorial field and `create_use_case` must not learn
                         // to take one, or every caller gains the power to
                         // promote a feature past the council's gate.
-                        if p.tier.trim() == "major" {
+                        let crossed = groups_crossed(&uc.context_ids, &group_of);
+                        if p.tier.trim() == "major" && crossed < MIN_GROUPS_FOR_MAJOR {
+                            USE_CASE_SCAN_JOBS.emit_line(
+                                app,
+                                scan_id,
+                                format!(
+                                    "[Standard] {name}: marked major but spans {crossed} \
+                                     group(s), fewer than {MIN_GROUPS_FOR_MAJOR} - stored as standard"
+                                ),
+                            );
+                        } else if p.tier.trim() == "major" {
                             if major_marked < MAX_MAJOR_PER_SCAN {
                                 if let Err(e) = repo::set_use_case_tier(pool, &uc.id, "major") {
                                     USE_CASE_SCAN_JOBS.emit_line(
@@ -689,11 +875,16 @@ async fn run_use_case_scan(
     }
     let _ = child.wait().await;
 
-    let suffix = if dropped > 0 {
-        format!(" ({dropped} more capped and dropped)")
-    } else {
-        String::new()
-    };
+    let mut suffix = String::new();
+    if dropped > 0 {
+        suffix.push_str(&format!(" ({dropped} more capped and dropped)"));
+    }
+    if malformed > 0 {
+        suffix.push_str(&format!(" ({malformed} proposal line(s) unreadable)"));
+    }
+    if gaps > 0 {
+        suffix.push_str(&format!(" ({gaps} missing shared context(s) reported)"));
+    }
     USE_CASE_SCAN_JOBS.emit_line(
         app,
         scan_id,
@@ -1379,5 +1570,87 @@ mod relink_tests {
             spanning_slice(vec!["a".into(), "b".into()]),
             Some(vec!["a".into(), "b".into()])
         );
+    }
+
+    // ---- calibration of 2026-09-21 -------------------------------------
+
+    #[test]
+    fn the_cap_scales_with_the_map_inside_its_floor_and_ceiling() {
+        assert_eq!(proposal_cap(0), 12);
+        assert_eq!(proposal_cap(54), 12, "ascent");
+        assert_eq!(proposal_cap(191), 19, "kp");
+        assert_eq!(proposal_cap(208), 20, "personas");
+        assert_eq!(proposal_cap(5_000), 24);
+    }
+
+    #[test]
+    fn a_proposal_one_brace_short_is_repaired_not_dropped() {
+        let short = r#"{"use_case_proposal": {"name": "Repo Scan", "kind": "user_flow", "context_names": ["a", "b"], "primary_context_name": "a", "tier": "major", "rationale": "r"}"#;
+        assert!(
+            serde_json::from_str::<serde_json::Value>(short).is_err(),
+            "the fixture must be malformed"
+        );
+        let p = parse_use_case_proposal(short).expect("repaired");
+        assert_eq!(p.name, "Repo Scan");
+        assert_eq!(p.tier, "major");
+        assert_eq!(p.context_names, vec!["a".to_string(), "b".to_string()]);
+    }
+
+    #[test]
+    fn a_line_that_claims_a_proposal_and_cannot_be_read_is_not_silent() {
+        let garbage = r#"{"use_case_proposal": {"name": "Broken", "context_names": ["a", "#;
+        assert!(claims_proposal(garbage));
+        assert!(parse_use_case_proposal(garbage).is_none());
+        // prose that merely mentions the word is neither a proposal nor a failure
+        assert!(!claims_proposal("I will now emit use case proposals."));
+    }
+
+    #[test]
+    fn a_missing_shared_context_is_read_and_is_not_a_proposal() {
+        let line = r#"{"missing_shared_context": {"name": "voice-chat-io", "why": "three features share one speech loop", "used_by": ["AI Voice Interviews", "Conversational Apply"]}}"#;
+        let gap = parse_missing_shared_context(line).expect("gap");
+        assert_eq!(gap.name, "voice-chat-io");
+        assert_eq!(gap.used_by.len(), 2);
+        assert!(parse_use_case_proposal(line).is_none());
+    }
+
+    #[test]
+    fn test_contexts_are_recognised_by_name() {
+        assert!(is_test_context("tests-companion-voice"));
+        assert!(is_test_context("Test-Harness"));
+        assert!(is_test_context("pipeline-tests"));
+        assert!(!is_test_context("voice-interview-api"));
+        assert!(!is_test_context("contest-runner"));
+    }
+
+    #[test]
+    fn groups_crossed_counts_groups_and_never_flatters_an_ungrouped_context() {
+        let mut g = std::collections::HashMap::new();
+        g.insert("c1".to_string(), Some("voice".to_string()));
+        g.insert("c2".to_string(), Some("voice".to_string()));
+        g.insert("c3".to_string(), Some("engine".to_string()));
+        g.insert("c4".to_string(), None);
+        let ids = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(groups_crossed(&ids(&["c1", "c2"]), &g), 1);
+        assert_eq!(groups_crossed(&ids(&["c1", "c3"]), &g), 2);
+        assert_eq!(
+            groups_crossed(&ids(&["c1", "c4"]), &g),
+            2,
+            "ungrouped is its own group"
+        );
+        assert_eq!(groups_crossed(&ids(&[]), &g), 0);
+    }
+
+    #[test]
+    fn the_prompt_states_the_rules_the_door_enforces() {
+        let prompt = build_use_case_scan_prompt("P", "### G\n- a: x\n", "(none)", "(none)", 19);
+        assert!(prompt.contains("AT MOST 19 use cases"));
+        assert!(prompt.contains(&format!("at most {MAX_MAJOR_PER_SCAN}")));
+        assert!(prompt.contains(&format!("span at least {MIN_GROUPS_FOR_MAJOR} groups")));
+        assert!(prompt.contains(&format!(
+            "At least {MIN_SPANNED_CONTEXTS}, at most {MAX_SPANNED_CONTEXTS}"
+        )));
+        assert!(prompt.contains("missing_shared_context"));
+        assert!(!prompt.contains("1-5 of them"), "the old span cap is gone");
     }
 }

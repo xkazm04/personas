@@ -31,6 +31,37 @@ human gate. A standard feature that passes every mechanical check reaches
 `machine_pass` instead and stops there, which is why the ledger offers
 **Promote to major** on exactly that state.
 
+### How features are found
+
+The feature scan (`src-tauri/src/commands/infrastructure/use_case_scan.rs`) reads
+the context map and proposes features at two altitudes:
+
+- **Major** (at most 6): what a competitor review would name. A major feature is
+  followed end to end (the surface, the API or command behind it, the engine, the
+  shared services it rides) and must cross at least **2 groups**. The door
+  enforces it: a proposal marked major that spans one group is stored as
+  `standard`, and the scan output says so.
+- **Standard**: narrower capabilities. These may sit inside one group, never
+  inside one context.
+
+A slice names **2 to 8 contexts**; contexts that only hold tests may be listed in
+addition and do not count. The number of proposals scales with the map, one per
+ten contexts between 12 and 24 (a 54-context product gets 12, a 191-context one
+19). The scan can also report a **missing shared context**: a service several
+features plainly ride that the map does not name. It is printed in the scan
+output as `[Gap]` and writes nothing, because the context map has its own door.
+A proposal line that lost its closing braces is repaired; one that cannot be read
+is counted and reported as `[Malformed]`, never dropped in silence.
+
+These rules were calibrated on 2026-09-21 against two projects. With the earlier
+rules (1 to 5 contexts, a flat cap of 12) every one of kp's 12 features sat
+inside a single group and 4 of ascent's 12 were a single context; after the
+change no kp feature sits in one group and every major crosses 2 to 4.
+
+Most contexts are in no feature's slice (38% of kp's and 59% of ascent's are),
+and that is not a defect of the contexts: a slice records a feature's core, not
+the platform code, tests and overflow that serve it.
+
 ## The rubric
 
 `feature-v1` weighs value `.30` (floor `.40`), craft `.25`, rivalry `.20`,
