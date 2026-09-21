@@ -20,17 +20,8 @@
         "src/features/agents/sub_health/useHealthCheck.ts"
       ],
       "file_paths": [
-        "src/features/agents/sub_health/HealthCheckPanel.tsx",
-        "src/features/agents/sub_health/HealthDigestPanel.tsx",
-        "src/features/agents/sub_health/HealthIssueCard.tsx",
-        "src/features/agents/sub_health/HealthScoreDisplay.tsx",
-        "src/features/agents/sub_health/HealthWatchToggle.tsx",
-        "src/features/agents/sub_health/gradeColors.ts",
-        "src/features/agents/sub_health/statusConfig.ts",
         "src/features/agents/sub_health/types.ts",
-        "src/features/agents/sub_health/useApplyHealthFix.ts",
         "src/features/agents/sub_health/useHealthCheck.ts",
-        "src/features/agents/sub_health/useHealthDigestPrefetch.ts",
         "src/features/agents/sub_health/useHealthDigestScheduler.ts",
         "src/features/agents/sub_health/index.ts"
       ],
@@ -49,7 +40,7 @@
         "issue",
         "monitor"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.590200900+00:00",
       "name": "agent-health",
       "pinned": false,
       "tech_stack": [
@@ -82,7 +73,6 @@
         "src/features/agents/components/allPersonas/PersonaOverviewFilterHeader.tsx",
         "src/features/agents/components/allPersonas/PersonaOverviewFilters.tsx",
         "src/features/agents/components/allPersonas/PersonaOverviewEmptyState.tsx",
-        "src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx",
         "src/features/agents/components/allPersonas/viewConfig.ts",
         "src/features/agents/components/allPersonas/PersonaOverviewCardList.tsx",
         "src/features/agents/components/allPersonas/PersonaOverviewCells.tsx",
@@ -91,9 +81,7 @@
         "src/features/agents/components/allPersonas/PersonaOverviewBadges.tsx",
         "src/features/agents/components/allPersonas/PersonaOverviewBatchBar.tsx",
         "src/features/agents/components/allPersonas/DirectorPanel.tsx",
-        "src/features/agents/components/allPersonas/CompletenessRing.tsx",
         "src/features/agents/components/allPersonas/PersonaGroupDropRail.tsx",
-        "src/features/agents/components/allPersonas/PersonaHealthIndicator.tsx",
         "src/features/agents/components/allPersonas/VerdictTrendCell.tsx",
         "src/features/agents/components/allPersonas/personaBuildStatus.ts",
         "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx",
@@ -116,7 +104,7 @@
         "table",
         "batch"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.591497900+00:00",
       "name": "agents-components-allpersonas",
       "pinned": false,
       "tech_stack": [
@@ -276,28 +264,28 @@
       ]
     },
     {
-      "api_surface": "invoke_tool_direct",
-      "business_feature": "Agent Design Hub",
+      "api_surface": "run_design_session, apply_design",
+      "business_feature": "AI Design Tab",
       "category": "ui",
       "cross_refs": [
         "persona-editor",
         "persona-build-matrix"
       ],
       "db_tables": [
-        "personas"
+        "personas",
+        "design_sessions"
       ],
-      "description": "Design tab of the persona editor: a four sub-tab hub authored in order of what the agent IS, OWNS, REMEMBERS and REACHES (Manifest, Responsibilities, Brain, Connectors). Each sub-tab is a lazy, store-reading wrapper around a self-contained section (sub_manifest, sub_responsibilities, sub_life BrainSection, connector verification); an unknown persisted sub-tab falls back to Manifest. [Consolidated 2026-08-04: absorbed tool-runner; the conversational design wizard was retired by the 2026-09-04 agent-manifest rebase]",
+      "description": "Conversational AI-driven design tab embedded in the persona editor. Guides the user through analysis, refining, previewing, and applying phases that generate or update a persona's prompt and parameters via an LLM conversation. Manages multi-phase state (analyzing, refining, preview, applied, error) and displays example input/output pairs. [Consolidated 2026-08-04: absorbed tool-runner]",
       "entry_points": [
-        "src/features/agents/sub_design/DesignHub.tsx",
+        "src/features/agents/sub_design/DesignTab.tsx",
+        "src/features/agents/sub_design/libs/useDesignTabState.ts",
         "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx"
       ],
       "file_paths": [
         "src/features/agents/sub_design/DesignHub.tsx",
-        "src/features/agents/sub_design/components/DesignLifePanels.tsx",
         "src/features/agents/sub_design/components/DesignSubtabPanels.tsx",
         "src/features/agents/sub_design/libs/designStateHelpers.ts",
         "src/features/agents/sub_design/index.ts",
-        "src/features/agents/sub_design/__tests__/DesignHub.test.tsx",
         "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx",
         "src/features/agents/sub_tool_runner/components/ToolRunnerModal.tsx",
         "src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx",
@@ -309,17 +297,19 @@
       "id": "8650ca36-36fe-4862-98f5-745e866a2687",
       "keywords": [
         "design",
-        "hub",
-        "subtab",
-        "manifest",
-        "responsibilities",
-        "charter",
-        "brain",
-        "connectors",
+        "conversation",
+        "AI",
+        "phase",
+        "analyze",
+        "refine",
+        "preview",
+        "apply",
+        "parameters",
+        "prompt",
         "tool",
         "runner"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.593789500+00:00",
       "name": "agents-design",
       "pinned": false,
       "tech_stack": [
@@ -434,9 +424,7 @@
       "file_paths": [
         "src/features/agents/sub_executions/components/list/ExecutionList.tsx",
         "src/features/agents/sub_executions/components/list/ExecutionListFilters.tsx",
-        "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx",
         "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx",
-        "src/features/agents/sub_executions/components/list/CostSparkline.tsx",
         "src/features/agents/sub_executions/components/list/ExecutionComparison.tsx",
         "src/features/agents/sub_executions/components/list/ComparisonTable.tsx",
         "src/features/agents/sub_executions/components/list/ComparisonDiff.tsx",
@@ -480,7 +468,7 @@
         "span",
         "stage"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.595467600+00:00",
       "name": "agents-executions-components",
       "pinned": false,
       "tech_stack": [
@@ -524,13 +512,11 @@
         "src/features/agents/quick-answer/triage/triageQueue.ts",
         "src/features/agents/quick-answer/triage/triageDispatch.ts",
         "src/features/agents/quick-answer/triage/triageAdapters.ts",
-        "src/features/agents/quick-answer/triage/triageReach.ts",
         "src/features/agents/quick-answer/triage/useTriageCopy.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageAdapters.test.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageDispatch.test.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageFixtures.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageQueue.test.ts",
-        "src/features/agents/quick-answer/triage/__tests__/triageReach.test.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageRenderCost.test.tsx",
         "src/features/agents/quick-answer/triage/__tests__/useDeckControls.test.ts",
         "src/features/agents/quick-answer/triage/useUnifiedTriage.ts",
@@ -554,7 +540,7 @@
         "review-card",
         "question-group"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.596518500+00:00",
       "name": "agents-quick-answer",
       "pinned": false,
       "tech_stack": [
@@ -586,35 +572,6 @@
         "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx"
       ],
       "file_paths": [
-        "src/features/agents/sub_use_cases/components/core/PersonaUseCasesTab.tsx",
-        "src/features/agents/sub_use_cases/components/core/UseCasesRefineCard.tsx",
-        "src/features/agents/sub_use_cases/components/core/CapabilityDisableDialog.tsx",
-        "src/features/agents/sub_use_cases/components/core/EventRenameModal.tsx",
-        "src/features/agents/sub_use_cases/components/detail/UseCaseDetailPanel.tsx",
-        "src/features/agents/sub_use_cases/components/detail/UseCaseDetailSections.tsx",
-        "src/features/agents/sub_use_cases/components/detail/UseCaseChannelDropdown.tsx",
-        "src/features/agents/sub_use_cases/components/detail/UseCaseModelDropdown.tsx",
-        "src/features/agents/sub_use_cases/components/detail/UseCaseFixtureDropdown.tsx",
-        "src/features/agents/sub_use_cases/components/detail/FixtureDropdownList.tsx",
-        "src/features/agents/sub_use_cases/components/persona-layout/PersonaLayoutView.tsx",
-        "src/features/agents/sub_use_cases/components/persona-layout/UseCaseLeftPanel.tsx",
-        "src/features/agents/sub_use_cases/components/persona-layout/CapabilityTagBar.tsx",
-        "src/features/agents/sub_use_cases/components/persona-layout/index.ts",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/UseCaseDetailExpanded.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/ConnectorDimCard.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/NotificationsDimCard.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/PersonaCrest.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/TileModelStrip.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/TilePolicyToggles.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/MiniSigil.tsx",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase.ts",
-        "src/features/agents/sub_use_cases/components/recipes-prototype/shared/usePolicyControls.ts",
-        "src/features/agents/sub_use_cases/libs/useCapabilityToggle.ts",
-        "src/features/agents/sub_use_cases/libs/useCaseDetailHelpers.ts",
-        "src/features/agents/sub_use_cases/libs/useCaseHelpers.ts",
-        "src/features/agents/sub_use_cases/libs/useManualPersonaRun.ts",
-        "src/features/agents/sub_use_cases/libs/useUseCaseDetail.ts",
-        "src/features/agents/sub_use_cases/libs/useUseCasesTab.ts",
         "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx",
         "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx",
         "src/features/agents/sub_settings/components/SettingsStatusBar.tsx",
@@ -637,7 +594,7 @@
         "assertions",
         "contracts"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.597272300+00:00",
       "name": "agents-use-cases",
       "pinned": false,
       "tech_stack": [
@@ -699,7 +656,6 @@
         "src/api/credentials/mcpGateways.ts",
         "src/api/credentials/scopedResources.ts",
         "src/api/signing/index.ts",
-        "src/api/researchLab/researchLab.ts",
         "src/api/obsidianBrain/index.ts"
       ],
       "group": "Agent Platform",
@@ -719,7 +675,7 @@
         "build",
         "session"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.598319600+00:00",
       "name": "api-agents",
       "pinned": false,
       "tech_stack": [
@@ -751,7 +707,6 @@
         "src/api/__tests__/events.test.ts",
         "src/api/__tests__/executions.test.ts",
         "src/api/__tests__/memories.test.ts",
-        "src/api/__tests__/messages.test.ts",
         "src/api/__tests__/observability.test.ts",
         "src/api/__tests__/personas.test.ts",
         "src/api/__tests__/settings.test.ts",
@@ -773,7 +728,7 @@
         "personas",
         "observability"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.598852900+00:00",
       "name": "api-bridge-tests",
       "pinned": false,
       "tech_stack": [
@@ -855,7 +810,6 @@
         "src/api/overview/reviews.ts",
         "src/api/overview/certification.ts",
         "src/api/overview/memories.ts",
-        "src/api/overview/messages.ts",
         "src/api/overview/events.ts",
         "src/api/overview/savedViews.ts",
         "src/api/overview/health.ts",
@@ -901,7 +855,7 @@
         "dispute",
         "health"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.600075500+00:00",
       "name": "api-overview",
       "pinned": false,
       "tech_stack": [
@@ -1002,7 +956,6 @@
         "src/api/enums.ts",
         "src/api/system/system.ts",
         "src/api/system/systemMetrics.ts",
-        "src/api/system/managementApiAuth.ts",
         "src/api/system/gitlab.ts",
         "src/api/system/qwen.ts",
         "src/api/system/cloud.ts",
@@ -1027,7 +980,7 @@
         "recipe",
         "settings"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.600990200+00:00",
       "name": "api-system",
       "pinned": false,
       "tech_stack": [
@@ -1143,6 +1096,63 @@
         "React 19",
         "TypeScript",
         "Tailwind 4",
+        "Zustand 5"
+      ]
+    },
+    {
+      "api_surface": "browser_webview_list, browser-tabs event, browser_tab_navigate, browser_tab_approve",
+      "business_feature": "Agent Browser Control",
+      "category": "ui",
+      "cross_refs": [
+        "site-whitelist-management"
+      ],
+      "db_tables": [],
+      "description": "Provides the embedded Webview page that lets agents and operators navigate the web inside the app. Manages open tabs via a Tauri event subscription, exposes an address bar with origin-aware autocomplete, renders a twin toolbar for AI steering, and guards navigation with a pending-approval bar when an agent's request requires operator sign-off. Depends on the browser store singleton and the browser Tauri IPC bridge.",
+      "entry_points": [
+        "src/features/browser/webview/WebviewPage.tsx",
+        "src/features/browser/browserStore.ts",
+        "src/features/browser/types.ts"
+      ],
+      "file_paths": [
+        "src/features/browser/browserStore.ts",
+        "src/features/browser/twinDraftLane.ts",
+        "src/features/browser/types.ts",
+        "src/features/browser/webview/AddressBar.tsx",
+        "src/features/browser/webview/AddressSuggestions.tsx",
+        "src/features/browser/webview/hostVisibility.ts",
+        "src/features/browser/webview/LeaseBadge.tsx",
+        "src/features/browser/webview/PageSlot.tsx",
+        "src/features/browser/webview/PendingApprovalBar.tsx",
+        "src/features/browser/webview/suggestOrigins.ts",
+        "src/features/browser/webview/TabStrip.tsx",
+        "src/features/browser/webview/TwinStatusRow.tsx",
+        "src/features/browser/webview/TwinSteerRow.tsx",
+        "src/features/browser/webview/TwinToolbar.tsx",
+        "src/features/browser/webview/useAddressSuggestions.ts",
+        "src/features/browser/webview/WebviewPage.tsx",
+        "src/features/browser/webview/__tests__/hostVisibility.test.ts"
+      ],
+      "group": "Agent Platform",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "keywords": [
+        "webview",
+        "tabs",
+        "address-bar",
+        "twin",
+        "browser-control",
+        "lease",
+        "pending-approval",
+        "navigation",
+        "agent-browsing"
+      ],
+      "last_written_at": "2026-09-21T21:05:59.612013500+00:00",
+      "name": "browser-webview-control",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Tauri 2",
         "Zustand 5"
       ]
     },
@@ -1328,7 +1338,6 @@
         "src-tauri/src/commands/communication/mod.rs",
         "src-tauri/src/commands/communication/notifications.rs",
         "src-tauri/src/commands/communication/sla.rs",
-        "src-tauri/src/commands/communication/messages.rs",
         "src-tauri/src/commands/communication/mock_seed.rs"
       ],
       "group": "Overview Observability",
@@ -1348,7 +1357,7 @@
         "sla",
         "subscribe"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.603301600+00:00",
       "name": "commands-communication",
       "pinned": false,
       "tech_stack": [
@@ -1404,13 +1413,7 @@
         "src-tauri/src/commands/companion/consolidate.rs",
         "src-tauri/src/commands/companion/decisions.rs",
         "src-tauri/src/commands/companion/voice.rs",
-        "src-tauri/src/commands/companion/stt.rs",
-        "src-tauri/src/commands/artist/ffmpeg.rs",
-        "src-tauri/src/commands/artist/mod.rs",
-        "src-tauri/src/commands/artist/persistence.rs",
-        "src-tauri/src/commands/artist/schema_policy.rs",
-        "src-tauri/src/commands/artist/transcribe.rs",
-        "src-tauri/src/commands/artist/voiceover.rs"
+        "src-tauri/src/commands/companion/stt.rs"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -1429,7 +1432,7 @@
         "autopilot",
         "action"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.604323200+00:00",
       "name": "commands-companion",
       "pinned": false,
       "tech_stack": [
@@ -1458,7 +1461,6 @@
       ],
       "file_paths": [
         "src-tauri/src/commands/core/personas.rs",
-        "src-tauri/src/commands/core/validation.rs",
         "src-tauri/src/commands/core/gallery.rs",
         "src-tauri/src/commands/core/saved_views.rs",
         "src-tauri/src/commands/core/export_types.rs",
@@ -1470,9 +1472,7 @@
         "src-tauri/src/commands/core/chat.rs",
         "src-tauri/src/commands/core/memories.rs",
         "src-tauri/src/commands/core/memory_compile.rs",
-        "src-tauri/src/commands/core/import_export.rs",
-        "src-tauri/src/commands/core/data_portability.rs",
-        "src-tauri/src/commands/core/composition_workflows.rs"
+        "src-tauri/src/commands/core/import_export.rs"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
@@ -1491,7 +1491,7 @@
         "generate",
         "leonardo"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.604928100+00:00",
       "name": "commands-core",
       "pinned": false,
       "tech_stack": [
@@ -1803,7 +1803,6 @@
         "src-tauri/src/commands/recipes/recipe_versioning.rs",
         "src-tauri/src/commands/recipes/crud.rs",
         "src-tauri/src/commands/recipes/recipe_adoption.rs",
-        "src-tauri/src/commands/recipes/recipe_eligibility.rs",
         "src-tauri/src/commands/recipes/recipe_execution.rs",
         "src-tauri/src/commands/recipes/mod.rs"
       ],
@@ -1824,7 +1823,7 @@
         "execute",
         "template"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.607592200+00:00",
       "name": "commands-recipes",
       "pinned": false,
       "tech_stack": [
@@ -1913,16 +1912,12 @@
         "src-tauri/src/companion/generated_anchors.rs",
         "src-tauri/src/companion/wake_window.rs",
         "src-tauri/src/companion/dev_mode.rs",
-        "src-tauri/src/companion/dev_session.rs",
         "src-tauri/src/companion/athena_reaction.rs",
         "src-tauri/src/companion/connectors.rs",
         "src-tauri/src/companion/plugins.rs",
         "src-tauri/src/companion/projects.rs",
-        "src-tauri/src/companion/session.rs",
         "src-tauri/src/companion/conversation.rs",
-        "src-tauri/src/companion/turn_ledger.rs",
-        "src-tauri/src/companion/prompt.rs",
-        "src-tauri/src/companion/dispatcher.rs"
+        "src-tauri/src/companion/turn_ledger.rs"
       ],
       "group": "AI Companion",
       "group_id": "ecfbb6a4-7ca3-4ad7-ba76-cf1e1e2efdd4",
@@ -1941,7 +1936,7 @@
         "athena",
         "claude-cli"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.608482100+00:00",
       "name": "companion",
       "pinned": false,
       "tech_stack": [
@@ -1970,7 +1965,6 @@
       ],
       "file_paths": [
         "src-tauri/src/companion/brain/fleet.rs",
-        "src-tauri/src/companion/brain/fleet_patterns.rs",
         "src-tauri/src/companion/brain/profile_synthesis.rs",
         "src-tauri/src/companion/brain/recall_synthesis.rs",
         "src-tauri/src/companion/brain/decisions.rs",
@@ -2019,7 +2013,7 @@
         "goals",
         "backlog"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.609475100+00:00",
       "name": "companion-brain",
       "pinned": false,
       "tech_stack": [
@@ -2131,7 +2125,6 @@
         "src/features/plugins/companion/athenaLabels.ts",
         "src/features/plugins/companion/__tests__/decisionStore.test.ts",
         "src/features/plugins/companion/__tests__/liveTurns.test.ts",
-        "src/features/plugins/companion/CompanionPanel.tsx",
         "src/features/plugins/companion/CompanionPluginPage.tsx",
         "src/features/plugins/companion/CompanionFooterIcon.tsx",
         "src/features/plugins/companion/CompanionToolbar.tsx",
@@ -2154,7 +2147,7 @@
         "chat",
         "tauri-events"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.610760800+00:00",
       "name": "companion-core-store",
       "pinned": false,
       "tech_stack": [
@@ -2336,8 +2329,6 @@
         "tests/playwright/discord-twin-1-setup.spec.ts",
         "tests/playwright/discord-twin-2-replier.spec.ts",
         "tests/playwright/twin-cycle-features.spec.ts",
-        "tests/playwright/artist-smoke.spec.ts",
-        "tests/playwright/drive-cycle-features.spec.ts",
         "tests/playwright/athena-guided-walkthrough.spec.ts",
         "tests/playwright/athena-guided-walkthrough-topics.spec.ts",
         "tests/playwright/companion-backend-commands.spec.ts",
@@ -2350,15 +2341,12 @@
         "tests/playwright/tours-obsidian-brain.spec.ts",
         "tests/playwright/preset-questionnaire.spec.ts",
         "tests/playwright/preset-team-adoption.spec.ts",
-        "tests/playwright/sidebar-navigation.spec.ts",
         "tests/playwright/team-functionality.spec.ts",
         "tests/playwright/template-marathon-fixtures.ts",
         "tests/playwright/__tests__/template-marathon-fixtures.test.ts",
         "tests/playwright/adoption-bridge.ts",
-        "tests/playwright/artist-bridge.ts",
         "tests/playwright/companion-real-claude-workflow.spec.ts",
         "tests/playwright/athena-conversation.spec.ts",
-        "tests/playwright/drive-smoke.spec.ts",
         "tests/playwright/fleet-smoke.spec.ts",
         "tests/playwright/perf-nav-walk.spec.ts"
       ],
@@ -2379,7 +2367,7 @@
         "bot-token",
         "credential"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.613025600+00:00",
       "name": "companion-ui-controls",
       "pinned": false,
       "tech_stack": [
@@ -2423,7 +2411,6 @@
         "src-tauri/core/src/scheduler.rs",
         "src-tauri/core/src/digest_config.rs",
         "src-tauri/core/src/evolution_status.rs",
-        "src-tauri/core/src/harvest_scopes.rs",
         "src-tauri/core/src/score_weights.rs",
         "src-tauri/core/src/topology_graph.rs",
         "src-tauri/core/src/trace.rs",
@@ -2434,8 +2421,7 @@
         "src-tauri/src/cloud/client.rs",
         "src-tauri/src/cloud/remote_commands.rs",
         "src-tauri/src/commands/ocr/mod.rs",
-        "src-tauri/src/commands/radio.rs",
-        "src-tauri/src/commands/drive.rs"
+        "src-tauri/src/commands/radio.rs"
       ],
       "group": "Platform Infrastructure",
       "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
@@ -2454,7 +2440,7 @@
         "AES-256-GCM",
         "RSA"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.614039100+00:00",
       "name": "core",
       "pinned": false,
       "tech_stack": [
@@ -2603,10 +2589,7 @@
         "src-tauri/db/src/repos/dev_memories_tests.rs",
         "src-tauri/db/src/repos/dev_run_checkpoints.rs",
         "src-tauri/db/src/repos/dev_tools.rs",
-        "src-tauri/db/src/repos/dev_tools_backlog_tests.rs",
-        "src-tauri/db/src/repos/dev_tools_page_tests.rs",
         "src-tauri/db/src/repos/twin.rs",
-        "src-tauri/db/src/repos/research_lab.rs",
         "src-tauri/db/src/repos/execution/metrics.rs",
         "src-tauri/db/src/repos/llm_spend.rs",
         "src-tauri/db/src/repos/run_budget.rs",
@@ -2616,9 +2599,7 @@
         "src-tauri/db/src/repos/utils.rs",
         "src-tauri/db/src/repos/system_ops.rs",
         "src-tauri/db/src/repos/test_fixtures.rs",
-        "src-tauri/db/src/repos/workspace_taxonomy.rs",
         "src-tauri/db/src/repos/dev_workspaces.rs",
-        "src-tauri/db/src/migrations/incremental.rs",
         "src-tauri/db/src/migrations/fk_hygiene.rs",
         "src-tauri/db/src/migrations/helpers.rs",
         "src-tauri/db/src/migrations/schema.rs",
@@ -2642,7 +2623,7 @@
         "memory",
         "facts"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.615557200+00:00",
       "name": "db-repos",
       "pinned": false,
       "tech_stack": [
@@ -2679,7 +2660,6 @@
         "src-tauri/db/src/repos/communication/shared_events.rs",
         "src-tauri/db/src/repos/communication/smee_relays.rs",
         "src-tauri/db/src/repos/communication/mod.rs",
-        "src-tauri/db/src/repos/communication/messages.rs",
         "src-tauri/db/src/repos/communication/alert_rules.rs",
         "src-tauri/db/src/repos/communication/sla.rs"
       ],
@@ -2700,7 +2680,7 @@
         "smee",
         "webhook"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.616053600+00:00",
       "name": "db-repos-communication",
       "pinned": false,
       "tech_stack": [
@@ -3252,7 +3232,6 @@
         "src-tauri/src/engine/curation_scheduler.rs",
         "src-tauri/src/engine/persona_jobs.rs",
         "src-tauri/src/engine/leadership.rs",
-        "src-tauri/engine/src/ambient_context.rs",
         "src-tauri/engine/src/ambient_signal_repo.rs",
         "src-tauri/engine/src/app_focus.rs",
         "src-tauri/engine/src/clipboard_monitor.rs",
@@ -3293,7 +3272,7 @@
         "ambient",
         "clipboard"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.620661+00:00",
       "name": "engine-core-infrastructure",
       "pinned": false,
       "tech_stack": [
@@ -3334,10 +3313,6 @@
         "src-tauri/src/engine/project_tracking/watchers/git.rs",
         "src-tauri/src/engine/project_tracking/watchers/ledger.rs",
         "src-tauri/src/engine/project_tracking/watchers/obsidian.rs",
-        "src-tauri/src/engine/render_plan/mod.rs",
-        "src-tauri/src/engine/render_plan/compile.rs",
-        "src-tauri/src/engine/render_plan/invariants.rs",
-        "src-tauri/src/engine/render_plan/tests.rs",
         "src-tauri/src/engine/runner/credentials.rs",
         "src-tauri/src/engine/runner/env.rs",
         "src-tauri/src/engine/runner/globals.rs",
@@ -3367,7 +3342,7 @@
         "ledger watcher",
         "Obsidian watcher"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.621504300+00:00",
       "name": "engine-project-tracking",
       "pinned": false,
       "tech_stack": [
@@ -3433,7 +3408,7 @@
         "logs",
         "memories"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.622296900+00:00",
       "name": "execution-detail-inspector",
       "pinned": false,
       "tech_stack": [
@@ -3568,7 +3543,6 @@
         "src/features/fleet/monitor/channels/LensStream.tsx"
       ],
       "file_paths": [
-        "src/features/fleet/monitor/channels/MonitorChannelGrid.tsx",
         "src/features/fleet/monitor/channels/ConversationBriefing.tsx",
         "src/features/fleet/monitor/channels/ConversationCards.tsx",
         "src/features/fleet/monitor/channels/ConversationComposer.tsx",
@@ -3593,8 +3567,6 @@
         "src/features/fleet/monitor/channels/mergedFeed.tsx",
         "src/features/fleet/monitor/channels/MergedRow.tsx",
         "src/features/fleet/monitor/grid/FleetGridView.tsx",
-        "src/features/fleet/monitor/grid/PersonaSquare.tsx",
-        "src/features/fleet/monitor/grid/TeamBadge.tsx",
         "src/features/fleet/monitor/grid/fleetGridModel.ts",
         "src/features/fleet/monitor/live/LiveChannelOverlay.tsx",
         "src/features/fleet/monitor/live/LiveCommsStack.tsx",
@@ -3618,7 +3590,7 @@
         "channel kind",
         "event family"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.623810600+00:00",
       "name": "fleet-monitor-channels",
       "pinned": false,
       "tech_stack": [
@@ -3731,8 +3703,7 @@
         "src/features/plugins/fleet/FleetShipIcon.tsx",
         "src/features/plugins/fleet/FleetDebugLogButton.tsx",
         "src/features/plugins/fleet/FleetDebugLogFooterPill.tsx",
-        "src/features/plugins/fleet/useFleetDebugLog.ts",
-        "src/features/plugins/research-lab/ResearchLabPage.tsx"
+        "src/features/plugins/fleet/useFleetDebugLog.ts"
       ],
       "group": "Fleet & Orchestration",
       "group_id": "e6548264-523b-46c3-8c35-57f63767d8ed",
@@ -3751,7 +3722,7 @@
         "tab",
         "shell"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.625047500+00:00",
       "name": "fleet-session-grid",
       "pinned": false,
       "tech_stack": [
@@ -3830,11 +3801,7 @@
         "src/features/fleet/monitor/triage/MonitorProjectColumns.tsx",
         "src/features/fleet/monitor/triage/triageModel.ts"
       ],
-      "file_paths": [
-        "src/features/fleet/monitor/triage/MonitorProjectColumns.tsx",
-        "src/features/fleet/monitor/triage/PersonaGlyph.tsx",
-        "src/features/fleet/monitor/triage/triageModel.ts"
-      ],
+      "file_paths": [],
       "group": "Fleet & Orchestration",
       "group_id": "e6548264-523b-46c3-8c35-57f63767d8ed",
       "id": "942d2449-34ab-4f02-af7e-b130269d10ef",
@@ -3848,7 +3815,7 @@
         "input required",
         "draft ready"
       ],
-      "last_written_at": "2026-07-29T21:52:06.869090500+00:00",
+      "last_written_at": "2026-09-21T21:05:58.625538100+00:00",
       "name": "fleet-triage-columns",
       "pinned": false,
       "tech_stack": [
@@ -4086,7 +4053,6 @@
         "src/features/home/sub_cockpit/widgets/MetricSparkWidget.tsx",
         "src/features/home/sub_cockpit/widgets/StatGridWidget.tsx",
         "src/features/home/sub_cockpit/widgets/ExecutionFactsWidget.tsx",
-        "src/features/home/sub_cockpit/widgets/MessageSummaryWidget.tsx",
         "src/features/home/sub_cockpit/widgets/IssueListWidget.tsx",
         "src/features/home/sub_cockpit/widgets/intentColors.ts",
         "src/features/home/sub_cockpit/widgets/personaStats.ts"
@@ -4108,7 +4074,7 @@
         "decisions",
         "decision-log"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.627900600+00:00",
       "name": "home-cockpit-widgets",
       "pinned": false,
       "tech_stack": [
@@ -4347,14 +4313,11 @@
         "src/hooks/execution/useActivityMonitor.ts"
       ],
       "file_paths": [
-        "src/hooks/execution/useExecutionStream.ts",
         "src/hooks/execution/useCorrelatedCliStream.ts",
         "src/hooks/execution/useStructuredStream.ts",
         "src/hooks/execution/usePersonaExecution.ts",
         "src/hooks/execution/useExecutionScope.ts",
         "src/hooks/execution/useExecutionSummary.ts",
-        "src/hooks/execution/useActivityMonitor.ts",
-        "src/hooks/execution/useFileChanges.ts",
         "src/hooks/execution/useSystemTrace.ts",
         "src/hooks/execution/useReasoningTrace.ts",
         "src/hooks/execution/useReplayTimeline.ts",
@@ -4377,7 +4340,7 @@
         "system-trace",
         "healing"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.630123700+00:00",
       "name": "hooks-execution",
       "pinned": false,
       "tech_stack": [
@@ -4406,12 +4369,6 @@
         "src/hooks/realtime/createSingletonListener.ts",
         "src/hooks/realtime/useEventBusListener.ts",
         "src/hooks/realtime/useRunEventListener.ts",
-        "src/hooks/realtime/useMessageCreatedListener.ts",
-        "src/hooks/realtime/useRealtimeEvents.ts",
-        "src/hooks/realtime/useAnimatedEvents.ts",
-        "src/hooks/realtime/useTimelineReplay.ts",
-        "src/hooks/realtime/useEventPhaseProgressor.ts",
-        "src/hooks/realtime/useEventColor.ts",
         "src/hooks/realtime/useSmeeRelayStatus.ts",
         "src/hooks/realtime/useCloudWebhookRelay.ts",
         "src/hooks/realtime/emitDeploymentEvent.ts",
@@ -4453,7 +4410,7 @@
         "persona",
         "agent"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.630960100+00:00",
       "name": "hooks-realtime",
       "pinned": false,
       "tech_stack": [
@@ -5300,7 +5257,6 @@
       "file_paths": [
         "src/features/teams/sub_mastermind/lib/CategoryPopover.tsx",
         "src/features/teams/sub_mastermind/lib/DimListPopover.tsx",
-        "src/features/teams/sub_mastermind/lib/GoalListPopover.tsx",
         "src/features/teams/sub_mastermind/lib/KpiListPopover.tsx",
         "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx",
         "src/features/teams/sub_mastermind/lib/PersonaListPopover.tsx",
@@ -5319,7 +5275,6 @@
         "src/features/teams/sub_mastermind/lib/hex.ts",
         "src/features/teams/sub_mastermind/lib/IslandBanner.tsx",
         "src/features/teams/sub_mastermind/lib/IslandMenu.tsx",
-        "src/features/teams/sub_mastermind/lib/DimTile.tsx",
         "src/features/teams/sub_mastermind/lib/DimGlyph.tsx",
         "src/features/teams/sub_mastermind/lib/DimLegend.tsx",
         "src/features/teams/sub_mastermind/lib/StatColumns.tsx",
@@ -5349,7 +5304,7 @@
         "canvas",
         "camera"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.636474500+00:00",
       "name": "mastermind-popovers",
       "pinned": false,
       "tech_stack": [
@@ -5399,9 +5354,7 @@
         "src/features/teams/sub_mastermind/lib/types.ts",
         "src/features/teams/sub_mastermind/lib/deriveScene.ts",
         "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx",
-        "src/features/teams/sub_mastermind/variants/MastermindInverseGrid.tsx",
-        "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx",
-        "src/features/teams/sub_mastermind/variants/InverseIsland.tsx"
+        "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx"
       ],
       "group": "Team Collaboration",
       "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
@@ -5420,7 +5373,7 @@
         "group",
         "link"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.637119500+00:00",
       "name": "mastermind-scene-store",
       "pinned": false,
       "tech_stack": [
@@ -5645,6 +5598,292 @@
       ]
     },
     {
+      "api_surface": "notepad_list_notes, notepad_save_note, notepad_archive_note, notepad_delete_note (Tauri IPC)",
+      "business_feature": "Notepad Core",
+      "category": "lib",
+      "cross_refs": [
+        "notepad-overview",
+        "notepad-editor",
+        "notepad-plan"
+      ],
+      "db_tables": [
+        "dev_notes"
+      ],
+      "description": "Footer-toggled, full-screen scratchpad overlay that is the entry point and persistence backbone for the Notepad feature. The layer lazy-loads the host on first open, the store holds a three-tier write stack (memory → localStorage shadow → 500 ms debounced SQLite), and the dispatch actions expose the three exits: ask Athena, publish to Fleet, or convert to ship goals. The Athena seam (prompt builders and suggestion parser) lives here to keep the boundary explicit — no direct paste of note body into prompts.",
+      "entry_points": [
+        "src/features/notepad/NotepadLayer.tsx",
+        "src/features/notepad/notepadStore.ts",
+        "src/features/notepad/notepadActions.ts"
+      ],
+      "file_paths": [
+        "src/features/notepad/NotepadFooterIcon.tsx",
+        "src/features/notepad/NotepadLayer.tsx",
+        "src/features/notepad/NotepadShell.tsx",
+        "src/features/notepad/NotepadOverlayHost.tsx",
+        "src/features/notepad/notepadHostChunk.ts",
+        "src/features/notepad/notepadStore.ts",
+        "src/features/notepad/useNotepad.ts",
+        "src/features/notepad/notepadActions.ts",
+        "src/features/notepad/notepadTiming.ts",
+        "src/features/notepad/types.ts",
+        "src/features/notepad/noteText.ts",
+        "src/features/notepad/cardMarkdown.ts",
+        "src/features/notepad/noteStatusMeta.ts",
+        "src/features/notepad/athena/buildNoteAskPrompt.ts",
+        "src/features/notepad/athena/buildNoteGoalsPrompt.ts",
+        "src/features/notepad/athena/noteSuggestions.ts"
+      ],
+      "group": "Design & Build Studio",
+      "group_id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+      "id": "35c52f59-9612-47c4-8662-0ebb3c821771",
+      "keywords": [
+        "notepad",
+        "scratchpad",
+        "overlay",
+        "note store",
+        "dispatch",
+        "publishFleet",
+        "toGoals",
+        "askAthena",
+        "noteSuggestions",
+        "lifecycle"
+      ],
+      "last_written_at": "2026-09-21T21:06:38.151001100+00:00",
+      "name": "notepad-core",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Zustand 5",
+        "Tauri 2"
+      ]
+    },
+    {
+      "api_surface": "notepad_archive_note, notepad_fork_note, notepad_list_milestones (Tauri IPC)",
+      "business_feature": "Note Editor",
+      "category": "ui",
+      "cross_refs": [
+        "notepad-core",
+        "notepad-plan",
+        "notepad-overview"
+      ],
+      "db_tables": [
+        "dev_notes"
+      ],
+      "description": "Layer-2 editor UI: tab strip with rename, fork, and archive context-menu actions; the workbench body; the dispatch bar for submitting actions; milestone picker for linking a note to a plan; and the archive modal with two groups (Archived / Shipped). Goal-banner notifications are raised from the store's BANNER_TRANSITIONS table and resolved into translated headlines by the host at app root.",
+      "entry_points": [
+        "src/features/notepad/NoteBody.tsx",
+        "src/features/notepad/NoteTabStrip.tsx",
+        "src/features/notepad/parts/NoteDispatchBar.tsx"
+      ],
+      "file_paths": [
+        "src/features/notepad/NoteBody.tsx",
+        "src/features/notepad/NoteTabStrip.tsx",
+        "src/features/notepad/NoteArchiveModal.tsx",
+        "src/features/notepad/parts/NoteHeader.tsx",
+        "src/features/notepad/parts/SuggestionSlot.tsx",
+        "src/features/notepad/parts/SaveDot.tsx",
+        "src/features/notepad/parts/NoteDispatchBar.tsx",
+        "src/features/notepad/parts/NoteMilestonePicker.tsx",
+        "src/features/notepad/parts/NoteStatusTimeline.tsx",
+        "src/features/notepad/notifications/GoalBannerHost.tsx",
+        "src/features/notepad/notifications/goalBanner.ts"
+      ],
+      "group": "Design & Build Studio",
+      "group_id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+      "id": "738f591b-60e9-4701-b786-cf868db66c51",
+      "keywords": [
+        "tab strip",
+        "workbench",
+        "dispatch bar",
+        "archive modal",
+        "goal banner",
+        "milestone picker",
+        "suggestion slot",
+        "save dot",
+        "editor",
+        "status timeline"
+      ],
+      "last_written_at": "2026-09-21T21:06:38.155052800+00:00",
+      "name": "notepad-editor",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Tailwind 4",
+        "Tauri 2"
+      ]
+    },
+    {
+      "api_surface": "notepad_list_notes, dev_tools_list_projects (Tauri IPC reads)",
+      "business_feature": "Note Overview Desk",
+      "category": "ui",
+      "cross_refs": [
+        "notepad-core",
+        "notepad-editor"
+      ],
+      "db_tables": [
+        "dev_notes"
+      ],
+      "description": "Layer-1 'Project Desk' showing all notes as a 4-column card grid with status-lens and project-tab filters. Cards support inline rich-text editing via a contentEditable surface that formats markdown on the fly for short notes, degrading to a read-only deferred markdown view for longer ones. Per-card cycle-time forecasts are derived from observed milestone velocities and suppressed while plan summaries are stale.",
+      "entry_points": [
+        "src/features/notepad/overview/NoteOverview.tsx",
+        "src/features/notepad/overview/NoteDeskCard.tsx"
+      ],
+      "file_paths": [
+        "src/features/notepad/overview/NoteOverview.tsx",
+        "src/features/notepad/overview/NoteDeskCard.tsx",
+        "src/features/notepad/overview/deskFilter.ts",
+        "src/features/notepad/overview/deskForecast.ts",
+        "src/features/notepad/overview/types.ts",
+        "src/features/notepad/overview/parts/CardRichText.tsx",
+        "src/features/notepad/overview/parts/cardInputRules.ts",
+        "src/features/notepad/overview/parts/NoteCardBits.tsx",
+        "src/features/notepad/overview/parts/NoteQuickWrite.tsx",
+        "src/features/notepad/overview/parts/NoteProjectPicker.tsx"
+      ],
+      "group": "Design & Build Studio",
+      "group_id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+      "id": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+      "keywords": [
+        "desk",
+        "overview",
+        "card grid",
+        "deskFilter",
+        "deskForecast",
+        "quick write",
+        "project picker",
+        "status lens",
+        "markdown card",
+        "velocity forecast"
+      ],
+      "last_written_at": "2026-09-21T21:06:38.154818200+00:00",
+      "name": "notepad-overview",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Tailwind 4"
+      ]
+    },
+    {
+      "api_surface": "notepad_list_plan_summaries, ship_certify, ship_dispatch, notepad_promote_note (Tauri IPC)",
+      "business_feature": "Note Ship Plan",
+      "category": "ui",
+      "cross_refs": [
+        "notepad-core",
+        "notepad-editor"
+      ],
+      "db_tables": [
+        "dev_notes",
+        "dev_note_runs"
+      ],
+      "description": "The Ship tab plan rail rehosted inside the notepad: a note linked to a milestone becomes that milestone's living brief. NotePlanPane renders a two-column surface (brief left, scope ledger right), NotePlanRuns shows run history, and the Ship* components cover certification, criteria, velocity, dispatch, and milestone composition. shipAthena drives the AI-assisted readiness assessment, and useProjectPlan is the single data-fetching entry point replacing the old Factory ShipPlannerTab.",
+      "entry_points": [
+        "src/features/notepad/plan/NotePlanPane.tsx",
+        "src/features/notepad/plan/useProjectPlan.ts",
+        "src/features/notepad/plan/shipAthena.ts"
+      ],
+      "file_paths": [
+        "src/features/notepad/plan/NotePlanContext.tsx",
+        "src/features/notepad/plan/NotePlanLedger.tsx",
+        "src/features/notepad/plan/NotePlanPane.tsx",
+        "src/features/notepad/plan/NotePlanRuns.tsx",
+        "src/features/notepad/plan/ShipCertifyModal.tsx",
+        "src/features/notepad/plan/ShipControlBar.tsx",
+        "src/features/notepad/plan/ShipCriteriaPanel.tsx",
+        "src/features/notepad/plan/ShipDispatch.tsx",
+        "src/features/notepad/plan/ShipGoalRail.tsx",
+        "src/features/notepad/plan/ShipItemAnnotations.tsx",
+        "src/features/notepad/plan/ShipMilestoneComposer.tsx",
+        "src/features/notepad/plan/ShipMilestoneMeta.tsx",
+        "src/features/notepad/plan/ShipMilestoneRun.tsx",
+        "src/features/notepad/plan/ShipVelocityNote.tsx",
+        "src/features/notepad/plan/planInk.ts",
+        "src/features/notepad/plan/seedOnboarding.ts",
+        "src/features/notepad/plan/shipAthena.ts",
+        "src/features/notepad/plan/shipReadinessPublish.ts",
+        "src/features/notepad/plan/shipRows.tsx",
+        "src/features/notepad/plan/useProjectPlan.ts",
+        "src/features/notepad/plan/useShipLive.ts"
+      ],
+      "group": "Design & Build Studio",
+      "group_id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+      "id": "959baa73-f18f-42c8-8569-466939b9050d",
+      "keywords": [
+        "ship plan",
+        "milestone",
+        "ship criteria",
+        "plan ledger",
+        "certification",
+        "velocity",
+        "goals rail",
+        "readiness",
+        "plan tab",
+        "scoped cut shipped"
+      ],
+      "last_written_at": "2026-09-21T21:06:40.727449300+00:00",
+      "name": "notepad-plan",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Zustand 5",
+        "Tauri 2"
+      ]
+    },
+    {
+      "api_surface": "",
+      "business_feature": "Notepad Tests",
+      "category": "test",
+      "cross_refs": [
+        "notepad-core",
+        "notepad-editor",
+        "notepad-plan",
+        "notepad-overview"
+      ],
+      "db_tables": [],
+      "description": "Vitest unit and component tests covering the notepad feature's store, text utilities, markdown serialization, UI components, and plan Athena integration. Tests validate the three-tier store write stack, the card markdown round-trip, dispatch bar states, tab strip keyboard and context-menu behaviour, and ship-readiness AI assessment.",
+      "entry_points": [
+        "src/features/notepad/__tests__/notepadStore.test.ts",
+        "src/features/notepad/__tests__/cardMarkdown.test.ts"
+      ],
+      "file_paths": [
+        "src/features/notepad/__tests__/noteSuggestions.test.ts",
+        "src/features/notepad/__tests__/NoteArchiveModal.test.tsx",
+        "src/features/notepad/__tests__/cardMarkdown.test.ts",
+        "src/features/notepad/__tests__/NoteDispatchBar.test.tsx",
+        "src/features/notepad/__tests__/NotePlanPane.test.tsx",
+        "src/features/notepad/__tests__/notePrompts.test.ts",
+        "src/features/notepad/__tests__/NoteTabStrip.test.tsx",
+        "src/features/notepad/__tests__/noteText.test.ts",
+        "src/features/notepad/__tests__/notepadStore.test.ts",
+        "src/features/notepad/__tests__/NoteDesk.test.tsx",
+        "src/features/notepad/plan/__tests__/shipAthena.test.ts"
+      ],
+      "group": "Design & Build Studio",
+      "group_id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+      "id": "cd17ecec-1587-4c38-8ec1-934632aa09fa",
+      "keywords": [
+        "vitest",
+        "notepad store test",
+        "card markdown test",
+        "dispatch bar test",
+        "tab strip test",
+        "ship athena test",
+        "note desk test",
+        "note suggestions test"
+      ],
+      "last_written_at": "2026-09-21T21:06:38.155483300+00:00",
+      "name": "notepad-tests",
+      "pinned": false,
+      "tech_stack": [
+        "Vitest",
+        "React 19",
+        "TypeScript"
+      ]
+    },
+    {
       "api_surface": "",
       "business_feature": "Observability & Audit Models",
       "category": "data",
@@ -5694,15 +5933,12 @@
         "src-tauri/core/src/models/dev_tools.rs",
         "src-tauri/core/src/models/saved_views.rs",
         "src-tauri/core/src/models/tool.rs",
-        "src-tauri/core/src/models/artist.rs",
         "src-tauri/core/src/models/twin.rs",
         "src-tauri/core/src/models/obsidian_brain.rs",
         "src-tauri/core/src/models/n8n_session.rs",
         "src-tauri/core/src/models/gitlab.rs",
         "src-tauri/core/src/models/ocr.rs",
-        "src-tauri/core/src/models/research_lab.rs",
         "src-tauri/core/src/models/chat.rs",
-        "src-tauri/core/src/models/message.rs",
         "src-tauri/core/src/models/deliberation.rs",
         "src-tauri/core/src/models/review.rs"
       ],
@@ -5723,7 +5959,7 @@
         "vault",
         "OAuth"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.638887400+00:00",
       "name": "observability-audit-models",
       "pinned": false,
       "tech_stack": [
@@ -5754,7 +5990,6 @@
         "src-tauri/src/commands/obsidian_brain/mirror_tests.rs",
         "src-tauri/src/commands/obsidian_brain/mod.rs",
         "src-tauri/src/commands/obsidian_brain/revitalize.rs",
-        "src-tauri/src/commands/obsidian_brain/semantic_lint.rs",
         "src-tauri/src/commands/obsidian_brain/vault_fs.rs"
       ],
       "group": "Plugin Ecosystem",
@@ -5770,7 +6005,7 @@
         "conflict",
         "revitalize"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.639288500+00:00",
       "name": "obsidian-brain",
       "pinned": false,
       "tech_stack": [
@@ -6007,7 +6242,6 @@
         "src/features/overview/sub_certification/components/RunDetailView.tsx",
         "src/features/overview/sub_certification/components/RunHistoryView.tsx",
         "src/features/overview/sub_certification/components/StandardsCard.tsx",
-        "src/features/overview/sub_certification/components/TeamCertCard.tsx",
         "src/features/overview/sub_certification/components/TrajectoryChart.tsx",
         "src/features/overview/sub_certification/components/VerdictBadge.tsx",
         "src/features/overview/sub_certification/components/__tests__/VerdictBadge.test.tsx"
@@ -6025,7 +6259,7 @@
         "cert-status",
         "standards"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.641376800+00:00",
       "name": "overview-certification",
       "pinned": false,
       "tech_stack": [
@@ -6059,13 +6293,10 @@
         "src/features/overview/components/dashboard/HomeCustomizePopover.tsx",
         "src/features/overview/components/dashboard/OverviewFilterContext.tsx",
         "src/features/overview/components/dashboard/OverviewPage.tsx",
-        "src/features/overview/components/dashboard/widgets/AnalyticsInserts.tsx",
         "src/features/overview/components/dashboard/widgets/DashboardChartCard.tsx",
         "src/features/overview/components/dashboard/widgets/DashboardRangeSwitch.tsx",
         "src/features/overview/components/dashboard/widgets/DetailModal.tsx",
         "src/features/overview/components/dashboard/widgets/MetricHelpPopover.tsx",
-        "src/features/overview/components/dashboard/widgets/TopPerformersWidget.tsx",
-        "src/features/overview/components/dashboard/widgets/TrafficErrorsChart.tsx",
         "src/features/overview/components/health/ConfigurationPopup.tsx",
         "src/features/overview/components/health/CrashLogsSection.tsx",
         "src/features/overview/components/health/FooterActions.tsx",
@@ -6099,7 +6330,7 @@
         "disk-usage",
         "configuration"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.642287800+00:00",
       "name": "overview-components",
       "pinned": false,
       "tech_stack": [
@@ -6156,11 +6387,9 @@
         "src/features/overview/sub_knowledge/libs/knowledgeHelpers.ts",
         "src/features/overview/sub_knowledge/libs/KnowledgeTypeIcons.tsx",
         "src/features/overview/sub_missionControl/index.ts",
-        "src/features/overview/sub_missionControl/DashboardHomeMissionControl.tsx",
         "src/features/overview/sub_missionControl/PaneHeader.tsx",
         "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx",
-        "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx",
-        "src/features/overview/sub_missionControl/cards/VaultRecentChangesCard.tsx"
+        "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx"
       ],
       "group": "Agent Quality & Governance",
       "group_id": "e71efb39-68e6-4e76-b38c-22727611ed24",
@@ -6179,7 +6408,7 @@
         "attention-triage",
         "momentum"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.643341200+00:00",
       "name": "overview-director",
       "pinned": false,
       "tech_stack": [
@@ -6255,24 +6484,10 @@
         "src/features/overview/sub_health/components/PersonaHealthDashboard.tsx"
       ],
       "file_paths": [
-        "src/features/overview/sub_health/components/heartbeats/HeartbeatsView.tsx",
-        "src/features/overview/sub_health/components/heartbeats/VitalsLedger.tsx",
         "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx",
-        "src/features/overview/sub_health/components/heartbeats/RowDetail.tsx",
-        "src/features/overview/sub_health/components/heartbeats/SuccessSourceBadge.tsx",
         "src/features/overview/sub_health/components/heartbeats/primitives.tsx",
         "src/features/overview/sub_health/components/heartbeats/model.ts",
-        "src/features/overview/sub_health/components/heartbeats/index.ts",
-        "src/features/overview/sub_health/components/heartbeats/insights/AlertsPanel.tsx",
-        "src/features/overview/sub_health/components/heartbeats/insights/BurnPanel.tsx",
-        "src/features/overview/sub_health/components/heartbeats/insights/CascadePanel.tsx",
-        "src/features/overview/sub_health/components/heartbeats/insights/data.ts",
-        "src/features/overview/sub_health/components/heartbeats/insights/index.ts",
-        "src/features/overview/sub_health/components/heartbeats/insights/InsightBand.tsx",
-        "src/features/overview/sub_health/components/heartbeats/insights/InsightPanel.tsx",
         "src/features/overview/sub_health/components/HeartbeatIndicator.tsx",
-        "src/features/overview/sub_health/components/PersonaHealthDashboard.tsx",
-        "src/features/overview/sub_health/components/StatusPageView.tsx",
         "src/features/overview/sub_health/libs/compositeHealthScore.ts",
         "src/features/overview/sub_health/libs/compositeHealthScore.test.ts",
         "src/features/overview/sub_health/libs/useStatusPageData.ts",
@@ -6284,9 +6499,7 @@
         "src/features/overview/sub_events/components/EventLogList.tsx",
         "src/features/overview/sub_events/libs/eventTypeLabel.ts",
         "src/features/overview/sub_events/libs/useEventLog.ts",
-        "src/features/overview/sub_sla/index.ts",
         "src/features/overview/sub_sla/components/SLACard.tsx",
-        "src/features/overview/sub_sla/components/SLADashboard.tsx",
         "src/features/overview/sub_sla/libs/slaHelpers.ts"
       ],
       "group": "Overview Observability",
@@ -6306,7 +6519,7 @@
         "status-page",
         "heartbeat"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.644440700+00:00",
       "name": "overview-health",
       "pinned": false,
       "tech_stack": [
@@ -6393,13 +6606,9 @@
         "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts"
       ],
       "file_paths": [
-        "src/features/overview/sub_leaderboard/index.ts",
-        "src/features/overview/sub_leaderboard/components/EmptyStates.tsx",
         "src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx",
-        "src/features/overview/sub_leaderboard/components/LeaderboardPage.tsx",
         "src/features/overview/sub_leaderboard/components/leaderboardViewHelpers.ts",
         "src/features/overview/sub_leaderboard/components/leaderboardViewTypes.ts",
-        "src/features/overview/sub_leaderboard/components/ScoreRadar.tsx",
         "src/features/overview/sub_leaderboard/libs/leaderboardRanking.ts",
         "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts",
         "src/features/overview/sub_leaderboard/libs/useLeaderboardData.ts"
@@ -6416,7 +6625,7 @@
         "persona-performance",
         "multi-dimension"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.645280900+00:00",
       "name": "overview-leaderboard",
       "pinned": false,
       "tech_stack": [
@@ -6446,7 +6655,6 @@
         "src/features/overview/sub_manual-review/index.ts",
         "src/features/overview/sub_manual-review/components/BulkActionBar.tsx",
         "src/features/overview/sub_manual-review/components/DecisionModeTabs.tsx",
-        "src/features/overview/sub_manual-review/components/KnowledgeApprovalsPanel.tsx",
         "src/features/overview/sub_manual-review/components/ManualReviewList.tsx",
         "src/features/overview/sub_manual-review/components/ReviewDetailPanel.tsx",
         "src/features/overview/sub_manual-review/components/ReviewFilterTrailing.tsx",
@@ -6492,7 +6700,7 @@
         "Athena-verdict",
         "backlog-table"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.646256900+00:00",
       "name": "overview-manual-review",
       "pinned": false,
       "tech_stack": [
@@ -6529,16 +6737,11 @@
         "src/features/overview/sub_memories/libs/memoryActions.ts",
         "src/features/overview/sub_memories/libs/memoryConflicts.ts",
         "src/features/overview/sub_memories/libs/memoryVisualTokens.ts",
-        "src/features/overview/sub_memories/index.ts",
         "src/features/overview/sub_memories/components/MemoriesPage.tsx",
         "src/features/overview/sub_memories/components/MemoriesPageDense.tsx",
         "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx",
         "src/features/overview/sub_memories/components/MemoryCard.tsx",
-        "src/features/overview/sub_memories/components/MemoryDetailModal.tsx",
-        "src/features/overview/sub_memories/components/MemoryEmptyState.tsx",
-        "src/features/overview/sub_memories/components/MemoryFilterBar.tsx",
-        "src/features/overview/sub_memories/components/MemoryHeaderActions.tsx",
-        "src/features/overview/sub_memories/components/MemoryTableHeader.tsx"
+        "src/features/overview/sub_memories/components/MemoryDetailModal.tsx"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -6557,7 +6760,7 @@
         "memory-card",
         "graph-view"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.646948400+00:00",
       "name": "overview-memories",
       "pinned": false,
       "tech_stack": [
@@ -6580,16 +6783,7 @@
       "entry_points": [
         "src/features/overview/sub_messages/components/MessageList.tsx"
       ],
-      "file_paths": [
-        "src/features/overview/sub_messages/index.ts",
-        "src/features/overview/sub_messages/components/ChannelDeliveryPill.tsx",
-        "src/features/overview/sub_messages/components/MessageDetailModal.tsx",
-        "src/features/overview/sub_messages/components/MessageList.tsx",
-        "src/features/overview/sub_messages/components/PriorityChip.tsx",
-        "src/features/overview/sub_messages/libs/chatSeed.ts",
-        "src/features/overview/sub_messages/libs/feedbackInstruction.ts",
-        "src/features/overview/sub_messages/libs/messageHelpers.ts"
-      ],
+      "file_paths": [],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
       "id": "a397f2e9-de1d-495f-8ff4-fabc019646cc",
@@ -6602,7 +6796,7 @@
         "feedback-instruction",
         "message-detail"
       ],
-      "last_written_at": "2026-07-29T22:32:03.368173+00:00",
+      "last_written_at": "2026-09-21T21:05:58.647305100+00:00",
       "name": "overview-messages",
       "pinned": false,
       "tech_stack": [
@@ -6650,14 +6844,7 @@
         "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx",
         "src/features/overview/sub_observability/libs/chartAnnotations.ts",
         "src/features/overview/sub_observability/libs/useAnnotationData.ts",
-        "src/features/overview/sub_observability/libs/useObservabilityData.ts",
-        "src/features/overview/ExecutionDetailModal/index.ts",
-        "src/features/overview/ExecutionDetailModal/ExecutionDetailContent.tsx",
-        "src/features/overview/ExecutionDetailModal/ExecutionDetailModal.tsx",
-        "src/features/overview/ExecutionDetailModal/outputParser.ts",
-        "src/features/overview/ExecutionDetailModal/OutputSections.tsx",
-        "src/features/overview/ExecutionDetailModal/provenance.ts",
-        "src/features/overview/ExecutionDetailModal/__tests__/provenance.test.ts"
+        "src/features/overview/sub_observability/libs/useObservabilityData.ts"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -6676,7 +6863,7 @@
         "HealingTimelineEvent",
         "chain-id"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.648221200+00:00",
       "name": "overview-observability",
       "pinned": false,
       "tech_stack": [
@@ -6699,26 +6886,7 @@
         "src/features/overview/sub_patterns/ExtractionMenu.tsx"
       ],
       "file_paths": [
-        "src/features/overview/sub_patterns/PracticeDetailModal.tsx",
-        "src/features/overview/sub_patterns/PracticeDetailLedger.tsx",
-        "src/features/overview/sub_patterns/practiceViewTypes.ts",
-        "src/features/overview/sub_patterns/practiceAreaTheme.ts",
-        "src/features/overview/sub_patterns/CreatePracticeModal.tsx",
-        "src/features/overview/sub_patterns/ExtractionMenu.tsx",
-        "src/features/overview/sub_patterns/useHarvestAutoIngest.ts",
-        "src/features/overview/sub_patterns/practiceHarvestPrompt.ts",
-        "src/features/overview/sub_patterns/harvestWave.ts",
-        "src/features/overview/sub_patterns/__tests__/harvestWave.test.ts",
-        "src/features/overview/sub_patterns/KnowledgeLibrary.tsx",
-        "src/features/overview/sub_patterns/KnowledgeTree.tsx",
-        "src/features/overview/sub_patterns/libraryModel.ts",
-        "src/features/overview/sub_patterns/__tests__/libraryModel.test.ts",
-        "src/features/overview/sub_patterns/PatternsPanel.tsx",
-        "src/features/overview/sub_patterns/PracticeRolloutModal.tsx",
-        "src/features/overview/sub_patterns/adoptPracticePrompt.ts",
-        "src/features/overview/sub_patterns/WorkspacePulse.tsx",
-        "src/features/overview/sub_patterns/libraryPulse.ts",
-        "src/features/overview/sub_patterns/__tests__/libraryPulse.test.ts"
+        "src/features/overview/sub_patterns/PatternsPanel.tsx"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -6737,7 +6905,7 @@
         "manual authoring",
         "proposed"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.648717700+00:00",
       "name": "overview-patterns",
       "pinned": false,
       "tech_stack": [
@@ -7040,7 +7208,6 @@
         "src/features/teams/sub_factory/passport/ReadinessTrend.tsx",
         "src/features/teams/sub_factory/passport/RowSetupModal.tsx",
         "src/features/teams/sub_factory/passport/WallCompareTable.tsx",
-        "src/features/teams/sub_factory/passport/WallOverviewGrid.tsx",
         "src/features/teams/sub_factory/passport/WarningBadge.tsx"
       ],
       "group": "Factory & Projects",
@@ -7056,7 +7223,7 @@
         "roadmap",
         "populate"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.650749400+00:00",
       "name": "passport-wall-ui",
       "pinned": false,
       "tech_stack": [
@@ -7141,7 +7308,6 @@
         "src/features/agents/sub_glyph/personaCore/PersonaCoreBadge.tsx",
         "src/features/agents/sub_glyph/personaCore/ConfigTiles.tsx",
         "src/features/agents/sub_glyph/personaCore/MentalityCard.tsx",
-        "src/features/agents/sub_glyph/personaCore/PolaritySlider.tsx",
         "src/features/agents/sub_glyph/personaCore/TraitGrid.tsx",
         "src/features/agents/sub_glyph/personaCore/SnapshotColumn.tsx",
         "src/features/agents/sub_glyph/personaCore/SectionLabels.tsx",
@@ -7165,7 +7331,7 @@
         "identity",
         "badge"
       ],
-      "last_written_at": "2026-07-30T07:44:46.703465800+00:00",
+      "last_written_at": "2026-09-21T21:05:58.651567+00:00",
       "name": "persona-core-codex",
       "pinned": false,
       "tech_stack": [
@@ -7358,23 +7524,7 @@
         "src/features/plugins/artist/sub_gallery/Gallery2D.tsx",
         "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx"
       ],
-      "file_paths": [
-        "src/features/plugins/artist/sub_gallery/GalleryPage.tsx",
-        "src/features/plugins/artist/sub_gallery/Gallery2D.tsx",
-        "src/features/plugins/artist/sub_gallery/Gallery3D.tsx",
-        "src/features/plugins/artist/sub_gallery/AssetCard.tsx",
-        "src/features/plugins/artist/sub_gallery/GallerySelectionBar.tsx",
-        "src/features/plugins/artist/sub_gallery/TagEditorModal.tsx",
-        "src/features/plugins/artist/sub_gallery/BulkAddTagModal.tsx",
-        "src/features/plugins/artist/sub_gallery/groupByDay.ts",
-        "src/features/plugins/artist/sub_gallery/tagOps.ts",
-        "src/features/plugins/artist/sub_gallery/__tests__/AssetCard.test.tsx",
-        "src/features/plugins/artist/sub_gallery/__tests__/BulkAddTagModal.test.tsx",
-        "src/features/plugins/artist/sub_gallery/__tests__/GallerySelectionBar.test.tsx",
-        "src/features/plugins/artist/sub_gallery/__tests__/groupByDay.test.ts",
-        "src/features/plugins/artist/sub_gallery/__tests__/tagOps.test.ts",
-        "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
@@ -7392,7 +7542,7 @@
         "three.js",
         "3d"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.652970+00:00",
       "name": "plugins-artist-gallery",
       "pinned": false,
       "tech_stack": [
@@ -7419,17 +7569,7 @@
         "src/features/plugins/artist/hooks/useGallerySelection.ts",
         "src/features/plugins/artist/hooks/useBlenderMcp.ts"
       ],
-      "file_paths": [
-        "src/features/plugins/artist/hooks/useArtistAssets.ts",
-        "src/features/plugins/artist/hooks/useLocalImage.ts",
-        "src/features/plugins/artist/hooks/useGallerySelection.ts",
-        "src/features/plugins/artist/hooks/__tests__/useArtistAssets.test.ts",
-        "src/features/plugins/artist/hooks/__tests__/useGallerySelection.test.ts",
-        "src/features/plugins/artist/hooks/useBlenderMcp.ts",
-        "src/features/plugins/artist/hooks/useCreativeSession.ts",
-        "src/features/plugins/artist/hooks/useCreativeConnectors.ts",
-        "src/features/plugins/artist/hooks/useModelViewer.ts"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "cab45fee-e439-4bff-9924-217b1acc17f8",
@@ -7447,7 +7587,7 @@
         "connectors",
         "streaming"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.653328100+00:00",
       "name": "plugins-artist-hooks",
       "pinned": false,
       "tech_stack": [
@@ -7471,30 +7611,7 @@
         "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx",
         "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx"
       ],
-      "file_paths": [
-        "src/features/plugins/artist/sub_media_studio/TimelinePanel.tsx",
-        "src/features/plugins/artist/sub_media_studio/TimelineRuler.tsx",
-        "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx",
-        "src/features/plugins/artist/sub_media_studio/VideoLane.tsx",
-        "src/features/plugins/artist/sub_media_studio/AudioLane.tsx",
-        "src/features/plugins/artist/sub_media_studio/ImageLane.tsx",
-        "src/features/plugins/artist/sub_media_studio/TextLane.tsx",
-        "src/features/plugins/artist/sub_media_studio/TitleLane.tsx",
-        "src/features/plugins/artist/sub_media_studio/MediaLaneShell.tsx",
-        "src/features/plugins/artist/sub_media_studio/ClipContextMenu.tsx",
-        "src/features/plugins/artist/sub_media_studio/TransitionPicker.tsx",
-        "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx",
-        "src/features/plugins/artist/sub_media_studio/MediaStudioPage.tsx",
-        "src/features/plugins/artist/sub_media_studio/types.ts",
-        "src/features/plugins/artist/sub_media_studio/constants.ts",
-        "src/features/plugins/artist/sub_media_studio/renderPlanHelpers.ts",
-        "src/features/plugins/artist/sub_media_studio/FfmpegStatusBanner.tsx",
-        "src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx",
-        "src/features/plugins/artist/sub_blender/CreativeSessionHistory.tsx",
-        "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx",
-        "src/features/plugins/artist/sub_blender/sessionMarkdown.ts",
-        "src/features/plugins/artist/sub_blender/__tests__/sessionMarkdown.test.ts"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "09cf4f1d-dc6f-4c3d-b15f-6686c6ce1eb7",
@@ -7512,7 +7629,7 @@
         "context-menu",
         "preview"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.653827700+00:00",
       "name": "plugins-artist-media-studio",
       "pinned": false,
       "tech_stack": [
@@ -7535,29 +7652,7 @@
         "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts",
         "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts"
       ],
-      "file_paths": [
-        "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudioPersistence.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useFfmpegDetect.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useMediaFilePicker.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useAudioWaveform.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useVideoThumbnails.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/__tests__/useMediaExport.test.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/__tests__/useMediaStudioPersistence.test.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/__tests__/normalizeProgress.test.ts",
-        "src/features/plugins/artist/sub_media_studio/PlaybackControls.tsx",
-        "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useTimelineKeyboard.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useRenderPlan.ts",
-        "src/features/plugins/artist/sub_media_studio/hooks/useTranscriptCache.ts",
-        "src/features/plugins/artist/sub_media_studio/toolbar/MediaStudioToolbar.tsx",
-        "src/features/plugins/artist/sub_media_studio/toolbar/fields.tsx",
-        "src/features/plugins/artist/sub_media_studio/toolbar/IconPopover.tsx",
-        "src/features/plugins/artist/sub_media_studio/BeatSidebar.tsx",
-        "src/features/plugins/artist/sub_media_studio/VoiceoverButton.tsx",
-        "src/features/plugins/artist/sub_media_studio/__tests__/BeatSidebar.test.tsx"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "b2d7acbc-0191-46e4-8a4d-87c229410c7e",
@@ -7575,7 +7670,7 @@
         "play",
         "pause"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.654319300+00:00",
       "name": "plugins-artist-media-studio-hooks",
       "pinned": false,
       "tech_stack": [
@@ -7750,7 +7845,6 @@
         "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts",
         "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts",
         "src/features/plugins/dev-tools/sub_context/useUseCases.ts",
-        "src/features/plugins/dev-tools/sub_context/UseCaseDetailModal.tsx",
         "src/features/plugins/dev-tools/sub_context/useCaseKind.ts",
         "src/features/plugins/dev-tools/sub_context/__tests__/useContextRuntime.test.ts",
         "src/features/plugins/dev-tools/sub_context/__tests__/ContextCoverage.test.tsx",
@@ -7779,7 +7873,7 @@
         "context-detail",
         "color-picker"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.656293700+00:00",
       "name": "plugins-dev-tools-context",
       "pinned": false,
       "tech_stack": [
@@ -8109,22 +8203,9 @@
       ],
       "file_paths": [
         "src/features/plugins/drive/__tests__/designTokens.test.ts",
-        "src/features/plugins/drive/components/__tests__/DriveEmptyHint.test.tsx",
-        "src/features/plugins/drive/components/__tests__/DropCountChip.test.tsx",
         "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts",
         "src/features/plugins/drive/hooks/__tests__/useScrollShadows.test.ts",
-        "src/features/plugins/drive/components/__tests__/ImagePreviewBlob.test.tsx",
-        "src/features/plugins/drive/components/DriveToolbar.tsx",
-        "src/features/plugins/drive/components/DriveSidebar.tsx",
-        "src/features/plugins/drive/components/DriveFileList.tsx",
-        "src/features/plugins/drive/components/DriveKindFilterBar.tsx",
-        "src/features/plugins/drive/components/DriveTrashBanner.tsx",
-        "src/features/plugins/drive/components/DriveDetailsPane.tsx",
-        "src/features/plugins/drive/components/DriveContextMenu.tsx",
-        "src/features/plugins/drive/components/DriveImageLightbox.tsx",
-        "src/features/plugins/drive/components/DriveEmptyHint.tsx",
         "src/features/plugins/drive/components/DrivePrompt.tsx",
-        "src/features/plugins/drive/components/DropCountChip.tsx",
         "src/features/plugins/drive/knowledge/useDriveKnowledge.ts",
         "src/features/plugins/drive/knowledge/KbPickerDialog.tsx",
         "src/features/plugins/drive/knowledge/DriveKnowledgeDrawer.tsx",
@@ -8137,8 +8218,7 @@
         "src/features/plugins/drive/signing/DriveSignDialog.tsx",
         "src/features/plugins/drive/signing/DriveSignaturesPanel.tsx",
         "src/features/plugins/drive/signing/DriveVerifyDialog.tsx",
-        "src/features/plugins/drive/hooks/useScrollShadows.ts",
-        "src/features/plugins/drive/hooks/useLazyImageThumb.ts"
+        "src/features/plugins/drive/hooks/useScrollShadows.ts"
       ],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
@@ -8157,7 +8237,7 @@
         "file list",
         "folder tree"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.658920500+00:00",
       "name": "plugins-drive",
       "pinned": false,
       "tech_stack": [
@@ -8208,7 +8288,6 @@
         "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts",
         "src/features/plugins/fleet/sub_settings/FleetSettingsPage.tsx",
         "src/features/plugins/fleet/sub_settings/FleetAutoHibernateSettings.tsx",
-        "src/features/plugins/fleet/sub_settings/FleetLiveSlotSettings.tsx",
         "src/features/plugins/fleet/sub_settings/FleetStateCutoffSettings.tsx",
         "src/features/plugins/fleet/sub_settings/FleetTerminalSettings.tsx",
         "src/features/plugins/fleet/sub_settings/FleetProcessRow.tsx",
@@ -8233,7 +8312,7 @@
         "transcript",
         "recent"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.659968700+00:00",
       "name": "plugins-fleet-tests",
       "pinned": false,
       "tech_stack": [
@@ -8323,7 +8402,6 @@
         "src/features/plugins/twin/useTwinReadiness.ts",
         "src/features/plugins/twin/useReadinessCelebration.ts",
         "src/features/plugins/twin/TwinEmptyState.tsx",
-        "src/features/plugins/twin/CoachMark.tsx",
         "src/features/plugins/twin/useProfileDashboards.ts",
         "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx",
         "src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx",
@@ -8344,11 +8422,7 @@
         "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx",
         "src/features/plugins/obsidian-brain/sub_sync/SyncResultCard.tsx",
         "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx",
-        "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts",
-        "src/features/plugins/artist/ArtistPage.tsx",
-        "src/features/plugins/artist/types.ts",
-        "src/features/plugins/artist/utils/format.ts",
-        "src/features/plugins/artist/utils/__tests__/format.test.ts"
+        "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts"
       ],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
@@ -8367,7 +8441,7 @@
         "lazy-panel",
         "tour-anchor"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.661226800+00:00",
       "name": "plugins-obsidian-brain",
       "pinned": false,
       "tech_stack": [
@@ -8450,18 +8524,7 @@
         "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts",
         "src/features/plugins/research-lab/sub_projects/ResearchProjectList.tsx"
       ],
-      "file_paths": [
-        "src/features/plugins/research-lab/sub_reports/ReportsPanel.tsx",
-        "src/features/plugins/research-lab/sub_reports/AddReportForm.tsx",
-        "src/features/plugins/research-lab/sub_reports/ReportPreviewDrawer.tsx",
-        "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts",
-        "src/features/plugins/research-lab/sub_reports/compileReport.ts",
-        "src/features/plugins/research-lab/sub_reports/parseSynthesis.ts",
-        "src/features/plugins/research-lab/sub_projects/ResearchProjectList.tsx",
-        "src/features/plugins/research-lab/sub_projects/ResearchProjectListCartograph.tsx",
-        "src/features/plugins/research-lab/sub_projects/ResearchProjectListAtelier.tsx",
-        "src/features/plugins/research-lab/sub_projects/ResearchProjectForm.tsx"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
@@ -8479,7 +8542,7 @@
         "project-form",
         "cartograph"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.661947900+00:00",
       "name": "plugins-research-lab-reports",
       "pinned": false,
       "tech_stack": [
@@ -8505,39 +8568,7 @@
         "src/features/plugins/research-lab/sub_literature/arxivClient.ts",
         "src/features/plugins/research-lab/shared/tokens.ts"
       ],
-      "file_paths": [
-        "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanel.tsx",
-        "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanelAtelier.tsx",
-        "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanelWorkbench.tsx",
-        "src/features/plugins/research-lab/sub_literature/AddSourceForm.tsx",
-        "src/features/plugins/research-lab/sub_literature/ArxivSearchModal.tsx",
-        "src/features/plugins/research-lab/sub_literature/arxivClient.ts",
-        "src/features/plugins/research-lab/sub_literature/crossrefClient.ts",
-        "src/features/plugins/research-lab/shared/tokens.ts",
-        "src/features/plugins/research-lab/shared/experimentConfig.ts",
-        "src/features/plugins/research-lab/shared/runPersona.ts",
-        "src/features/plugins/research-lab/shared/downloadFile.ts",
-        "src/features/plugins/research-lab/shared/useIngestSource.ts",
-        "src/features/plugins/research-lab/shared/ResearchLabFormModal.tsx",
-        "src/features/plugins/research-lab/shared/SignalMeter.tsx",
-        "src/features/plugins/research-lab/shared/FormField.tsx",
-        "src/features/plugins/research-lab/shared/SectionHeader.tsx",
-        "src/features/plugins/research-lab/shared/PrototypeTabs.tsx",
-        "src/features/plugins/research-lab/shared/EmptyState.tsx",
-        "src/features/plugins/research-lab/sub_dashboard/ResearchDashboard.tsx",
-        "src/features/plugins/research-lab/sub_experiments/ExperimentsPanel.tsx",
-        "src/features/plugins/research-lab/sub_experiments/AddExperimentForm.tsx",
-        "src/features/plugins/research-lab/sub_experiments/ExperimentRunsDrawer.tsx",
-        "src/features/plugins/research-lab/sub_findings/FindingsPanel.tsx",
-        "src/features/plugins/research-lab/sub_findings/AddFindingForm.tsx",
-        "src/features/plugins/research-lab/sub_graph/GraphPanel.tsx",
-        "src/features/plugins/research-lab/sub_graph/ResearchNode.tsx",
-        "src/features/plugins/research-lab/sub_graph/graphLayout.ts",
-        "src/features/plugins/research-lab/sub_hypotheses/HypothesesPanel.tsx",
-        "src/features/plugins/research-lab/sub_hypotheses/AddHypothesisForm.tsx",
-        "src/features/plugins/research-lab/sub_hypotheses/GenerateHypothesesModal.tsx",
-        "src/features/plugins/research-lab/sub_hypotheses/parseHypotheses.ts"
-      ],
+      "file_paths": [],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "id": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
@@ -8555,7 +8586,7 @@
         "status-color",
         "experiment-config"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.662571600+00:00",
       "name": "plugins-research-lab-shared",
       "pinned": false,
       "tech_stack": [
@@ -8582,39 +8613,14 @@
         "src/features/plugins/twin/shared/channels.ts"
       ],
       "file_paths": [
-        "src/features/plugins/twin/shared/TwinHeaderBand.tsx",
-        "src/features/plugins/twin/shared/TwinReadinessRibbon.tsx",
-        "src/features/plugins/twin/shared/TwinStat.tsx",
-        "src/features/plugins/twin/shared/TwinPicker.tsx",
-        "src/features/plugins/twin/shared/TwinWikiPanel.tsx",
-        "src/features/plugins/twin/shared/WikiFreshnessPill.tsx",
-        "src/features/plugins/twin/shared/ReadinessGapPopover.tsx",
-        "src/features/plugins/twin/shared/readinessGaps.ts",
         "src/features/plugins/twin/shared/channels.ts",
-        "src/features/plugins/twin/shared/decorations.tsx",
         "src/features/plugins/twin/shared/gender.ts",
-        "src/features/plugins/twin/shared/__tests__/ReadinessGapPopover.test.tsx",
         "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts",
-        "src/features/plugins/twin/sub_brain/BrainPage.tsx",
-        "src/features/plugins/twin/sub_brain/BrainAtelier.tsx",
-        "src/features/plugins/twin/sub_brain/useBrainConnection.ts",
-        "src/features/plugins/twin/sub_brain/RejectionPatternsPanel.tsx",
-        "src/features/plugins/twin/sub_brain/DistilledFactsPanel.tsx",
-        "src/features/plugins/twin/sub_brain/RecallPreviewPanel.tsx",
-        "src/features/plugins/twin/sub_brain/ReflectionsPanel.tsx",
-        "src/features/plugins/twin/sub_channels/ChannelsPage.tsx",
-        "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx",
         "src/features/plugins/twin/sub_channels/ContactThread.tsx",
         "src/features/plugins/twin/sub_channels/SentReplies.tsx",
         "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx",
         "src/features/plugins/twin/sub_channels/useChannelActivity.ts",
-        "src/features/plugins/twin/sub_channels/__tests__/useChannelActivity.test.ts",
-        "src/features/plugins/twin/sub_identity/IdentityPage.tsx",
-        "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx",
-        "src/features/plugins/twin/sub_knowledge/KnowledgePage.tsx",
-        "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx",
-        "src/features/plugins/twin/sub_knowledge/ContactsPanel.tsx",
-        "src/features/plugins/twin/variants/TwinVariantTabs.tsx"
+        "src/features/plugins/twin/sub_channels/__tests__/useChannelActivity.test.ts"
       ],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
@@ -8633,7 +8639,7 @@
         "unit test",
         "milestone"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.663338600+00:00",
       "name": "plugins-twin-shared",
       "pinned": false,
       "tech_stack": [
@@ -8664,8 +8670,6 @@
         "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx"
       ],
       "file_paths": [
-        "src/features/plugins/twin/sub_training/TrainingPage.tsx",
-        "src/features/plugins/twin/sub_training/TrainingAtelier.tsx",
         "src/features/plugins/twin/sub_training/TrainingStudio.tsx",
         "src/features/plugins/twin/sub_training/NextMovesPanel.tsx",
         "src/features/plugins/twin/sub_training/useTrainingSession.ts",
@@ -8673,13 +8677,7 @@
         "src/features/plugins/twin/sub_training/topicCoverage.ts",
         "src/features/plugins/twin/sub_profiles/ProfilesPage.tsx",
         "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx",
-        "src/features/plugins/twin/sub_profiles/TwinHero.tsx",
-        "src/features/plugins/twin/sub_profiles/CompleteTwinChecklist.tsx",
-        "src/features/plugins/twin/sub_profiles/CreateTwinWizard.tsx",
-        "src/features/plugins/twin/sub_tone/TonePage.tsx",
-        "src/features/plugins/twin/sub_tone/ToneAtelier.tsx",
-        "src/features/plugins/twin/sub_tone/ToneBaseline.tsx",
-        "src/features/plugins/twin/sub_tone/ToneConsole.tsx"
+        "src/features/plugins/twin/sub_profiles/TwinHero.tsx"
       ],
       "group": "Plugin Ecosystem",
       "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
@@ -8698,7 +8696,7 @@
         "create twin",
         "wizard"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.663895100+00:00",
       "name": "plugins-twin-training",
       "pinned": false,
       "tech_stack": [
@@ -9031,7 +9029,6 @@
         "src-tauri/src/commands/infrastructure/tier_usage.rs",
         "src-tauri/src/commands/infrastructure/memory_ledger.rs",
         "src-tauri/src/commands/infrastructure/memory_health.rs",
-        "src-tauri/src/commands/infrastructure/research_lab.rs",
         "src-tauri/src/commands/infrastructure/scraper.rs",
         "src-tauri/src/commands/infrastructure/qwen_engine.rs",
         "src-tauri/src/commands/infrastructure/idea_scanner.rs",
@@ -9057,7 +9054,7 @@
         "idea",
         "scan"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.666498+00:00",
       "name": "resource-tracking",
       "pinned": false,
       "tech_stack": [
@@ -9141,20 +9138,10 @@
         "src/features/schedules/components/EventTooltip.tsx",
         "src/features/schedules/libs/calendarHelpers.ts",
         "src/features/schedules/libs/useCronPreview.ts",
-        "src/features/schedules/components/ScheduleRow.tsx",
-        "src/features/schedules/components/FrequencyEditor.tsx",
-        "src/features/schedules/components/BackfillModal.tsx",
-        "src/features/schedules/libs/useScheduleActions.ts",
-        "src/features/schedules/components/ScheduleRowHistoryPanel.tsx",
-        "src/features/schedules/components/ScheduleRecentRuns.tsx",
         "src/features/schedules/index.ts",
-        "src/features/schedules/components/ScheduleTimeline.tsx",
-        "src/features/schedules/components/ScheduleGroupedList.tsx",
         "src/features/schedules/libs/scheduleHelpers.ts",
-        "src/features/schedules/libs/scheduleListItems.ts",
         "src/features/schedules/libs/__tests__/matchPastSlotsToRuns.test.ts",
-        "src/features/schedules/libs/__tests__/useCalendarEvents.test.ts",
-        "src/features/schedules/libs/__tests__/scheduleListItems.test.ts"
+        "src/features/schedules/libs/__tests__/useCalendarEvents.test.ts"
       ],
       "group": "Automation & Pipelines",
       "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
@@ -9173,7 +9160,7 @@
         "backfill",
         "skip"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.667187+00:00",
       "name": "schedules-components",
       "pinned": false,
       "tech_stack": [
@@ -9399,7 +9386,6 @@
         "src/features/shared/chrome/CommandPaletteResults.tsx",
         "src/features/shared/chrome/commandPaletteUtils.ts",
         "src/features/shared/chrome/commandPaletteUtils.test.ts",
-        "src/features/shared/chrome/DesktopFooter.tsx",
         "src/features/shared/chrome/FooterSectionNav.tsx",
         "src/features/shared/chrome/SystemLoadFooterIcon.tsx",
         "src/features/shared/chrome/__tests__/FooterSectionNav.test.tsx",
@@ -9429,7 +9415,7 @@
         "fleet",
         "background services"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.669085900+00:00",
       "name": "shared-chrome",
       "pinned": false,
       "tech_stack": [
@@ -9653,6 +9639,71 @@
       ]
     },
     {
+      "api_surface": "browser_sites_list, browser_site_upsert, browser_site_delete, browser_site_scan",
+      "business_feature": "Browser Site Whitelist",
+      "category": "ui",
+      "cross_refs": [
+        "browser-webview-control"
+      ],
+      "db_tables": [
+        "browser_sites"
+      ],
+      "description": "Lets operators curate which origins agents are allowed to visit and what tools they may use on each site. The whitelist page renders in three layout variants (cards, ledger, master-detail) and a site-detail pane with tabs for login forms, page tools, access policy, and hands-tier controls. A scan subsystem periodically polls running scans and renders a report with a controllability meter. Depends on the browser store for site rows and the browser Tauri IPC bridge for mutations.",
+      "entry_points": [
+        "src/features/browser/whitelist/WhitelistPage.tsx",
+        "src/features/browser/whitelist/useWhitelistActions.ts",
+        "src/features/browser/whitelist/detail/SiteDetailPane.tsx"
+      ],
+      "file_paths": [
+        "src/features/browser/whitelist/AddSiteModal.tsx",
+        "src/features/browser/whitelist/ControlMeter.tsx",
+        "src/features/browser/whitelist/detail/HandsTab.tsx",
+        "src/features/browser/whitelist/detail/LoginTab.tsx",
+        "src/features/browser/whitelist/detail/PageToolsTab.tsx",
+        "src/features/browser/whitelist/detail/PolicyTab.tsx",
+        "src/features/browser/whitelist/detail/SiteDetailPane.tsx",
+        "src/features/browser/whitelist/PatternHint.tsx",
+        "src/features/browser/whitelist/ScanReport.tsx",
+        "src/features/browser/whitelist/SiteChips.tsx",
+        "src/features/browser/whitelist/useWhitelistActions.ts",
+        "src/features/browser/whitelist/variants/CardsVariant.tsx",
+        "src/features/browser/whitelist/variants/LedgerVariant.tsx",
+        "src/features/browser/whitelist/variants/MasterDetailVariant.tsx",
+        "src/features/browser/whitelist/variants/variantProps.ts",
+        "src/features/browser/whitelist/WhitelistPage.tsx",
+        "src/features/browser/__tests__/AddressBar.test.tsx",
+        "src/features/browser/__tests__/browserStore.test.ts",
+        "src/features/browser/__tests__/origin.test.ts",
+        "src/features/browser/__tests__/pendingApproval.test.ts",
+        "src/features/browser/__tests__/structure.test.ts",
+        "src/features/browser/__tests__/suggestOrigins.test.ts",
+        "src/features/browser/__tests__/twinDraftLane.test.ts"
+      ],
+      "group": "Agent Platform",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+      "keywords": [
+        "whitelist",
+        "site-policy",
+        "origin",
+        "scan",
+        "control-tier",
+        "page-tools",
+        "login-form",
+        "hands",
+        "allowlist",
+        "browser-policy"
+      ],
+      "last_written_at": "2026-09-21T21:05:54.844723600+00:00",
+      "name": "site-whitelist-management",
+      "pinned": false,
+      "tech_stack": [
+        "React 19",
+        "TypeScript",
+        "Tauri 2"
+      ]
+    },
+    {
       "api_surface": null,
       "business_feature": "System Store Composition",
       "category": "lib",
@@ -9682,7 +9733,6 @@
         "src/stores/pipelineStore.ts",
         "src/stores/vaultStore.ts",
         "src/stores/authStore.ts",
-        "src/api/artist/index.ts",
         "src/api/radio.ts",
         "src/api/fleet/fleet.ts",
         "src/api/director.ts",
@@ -9713,7 +9763,7 @@
         "dashboard",
         "store"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.672100500+00:00",
       "name": "stores",
       "pinned": false,
       "tech_stack": [
@@ -9801,7 +9851,6 @@
       "file_paths": [
         "src/stores/slices/overview/eventSlice.ts",
         "src/stores/slices/overview/eventSlice.test.ts",
-        "src/stores/slices/overview/messageSlice.ts",
         "src/stores/slices/overview/alertSlice.ts",
         "src/stores/selectors/activeAlertCount.ts",
         "src/stores/slices/processActivitySlice.ts",
@@ -9843,7 +9892,7 @@
         "homeSpine",
         "windows"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.673017900+00:00",
       "name": "stores-slices-overview",
       "pinned": false,
       "tech_stack": [
@@ -9880,8 +9929,6 @@
         "src/stores/remoteCommandStore.ts",
         "src/stores/slices/system/twinSlice.ts",
         "src/stores/slices/system/companionPluginSlice.ts",
-        "src/stores/slices/system/artistSlice.ts",
-        "src/stores/slices/system/researchLabSlice.ts",
         "src/stores/slices/system/radioSlice.ts",
         "src/stores/slices/system/__tests__/twinSlice.fetchTwinTones.test.ts",
         "src/stores/slices/system/obsidianBrainSlice.ts",
@@ -9918,7 +9965,7 @@
         "headless",
         "CLI"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.673760900+00:00",
       "name": "stores-slices-system",
       "pinned": false,
       "tech_stack": [
@@ -10222,7 +10269,6 @@
       "file_paths": [
         "src/features/teams/sub_teamMemory/TeamMemoryPane.tsx",
         "src/features/teams/sub_teamMemory/useTeamMemories.ts",
-        "src/features/teams/sub_teamMemory/index.ts",
         "src/features/teams/sub_teamMemory/libs/memoryConstants.ts",
         "src/features/teams/sub_teamMemory/libs/memoryDiff.ts",
         "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts",
@@ -10231,7 +10277,6 @@
         "src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx",
         "src/features/teams/sub_teamMemory/components/panel/MemoryRowActions.tsx",
         "src/features/teams/sub_teamMemory/components/panel/MemoryRowDetail.tsx",
-        "src/features/teams/sub_teamMemory/components/panel/TeamMemoryBadge.tsx",
         "src/features/teams/sub_teamMemory/components/panel/TeamMemoryPanel.tsx",
         "src/features/teams/sub_teamMemory/components/panel/TeamMemoryRow.tsx",
         "src/features/teams/sub_teamMemory/components/diff/DiffContent.tsx",
@@ -10253,7 +10298,7 @@
         "importance",
         "run filter"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.675168900+00:00",
       "name": "team-memory",
       "pinned": false,
       "tech_stack": [
@@ -10276,35 +10321,6 @@
         "src/features/teams/sub_canvas/libs/useCanvasReducer.ts"
       ],
       "file_paths": [
-        "src/features/teams/sub_canvas/components/PipelineControls.tsx",
-        "src/features/teams/sub_canvas/components/TeamToolbar.tsx",
-        "src/features/teams/sub_canvas/components/OptimizerPanel.tsx",
-        "src/features/teams/sub_canvas/components/OptimizerResults.tsx",
-        "src/features/teams/sub_canvas/components/debugger/DebuggerControls.tsx",
-        "src/features/teams/sub_canvas/components/debugger/DebuggerStepView.tsx",
-        "src/features/teams/sub_canvas/components/debugger/DebuggerVariables.tsx",
-        "src/features/teams/sub_canvas/components/debugger/DryRunDebugger.tsx",
-        "src/features/teams/sub_canvas/components/assistant/AssistantInput.tsx",
-        "src/features/teams/sub_canvas/components/assistant/AssistantMessages.tsx",
-        "src/features/teams/sub_canvas/components/assistant/CanvasAssistant.tsx",
-        "src/features/teams/sub_canvas/libs/useDebugger.ts",
-        "src/features/teams/sub_canvas/libs/debuggerMocks.ts",
-        "src/features/teams/sub_canvas/libs/debuggerTypes.ts",
-        "src/features/teams/sub_canvas/index.ts",
-        "src/features/teams/sub_canvas/libs/CanvasDragContext.tsx",
-        "src/features/teams/sub_canvas/libs/canvasActions.ts",
-        "src/features/teams/sub_canvas/libs/teamConstants.tsx",
-        "src/features/teams/sub_canvas/libs/teamGraph.ts",
-        "src/features/teams/sub_canvas/libs/useCanvasReducer.ts",
-        "src/features/teams/sub_canvas/libs/useDerivedCanvasState.ts",
-        "src/features/teams/sub_canvas/components/AlignmentGuides.tsx",
-        "src/features/teams/sub_canvas/components/edges/ConnectionEdge.tsx",
-        "src/features/teams/sub_canvas/components/edges/ConnectionLegend.tsx",
-        "src/features/teams/sub_canvas/components/edges/EdgeDeleteTooltip.tsx",
-        "src/features/teams/sub_canvas/components/edges/GhostEdge.tsx",
-        "src/features/teams/sub_canvas/components/nodes/NodeContextMenu.tsx",
-        "src/features/teams/sub_canvas/components/nodes/PersonaNode.tsx",
-        "src/features/teams/sub_canvas/components/nodes/StickyNoteNode.tsx",
         "src/features/teams/sub_assignments/index.ts",
         "src/features/teams/sub_assignments/useAssignmentProgressListener.ts",
         "src/features/teams/sub_assignments/useGlobalAssignmentProgressListener.ts",
@@ -10328,7 +10344,7 @@
         "reducer",
         "drag"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.675746700+00:00",
       "name": "teams-canvas",
       "pinned": false,
       "tech_stack": [
@@ -10370,7 +10386,6 @@
         "src-tauri/db/src/repos/resources/owned_devices.rs",
         "src-tauri/db/src/repos/resources/playwright_procedures.rs",
         "src-tauri/db/src/repos/resources/ocr.rs",
-        "src-tauri/db/src/repos/resources/artist.rs",
         "src-tauri/db/src/repos/resources/obsidian_brain.rs",
         "src-tauri/db/src/repos/resources/db_schema.rs",
         "src-tauri/db/src/repos/resources/deliberation.rs",
@@ -10387,7 +10402,6 @@
         "src-tauri/db/src/repos/resources/tool_audit_log.rs",
         "src-tauri/db/src/repos/resources/connectors.rs",
         "src-tauri/db/src/repos/resources/composition_workflows.rs",
-        "src-tauri/db/src/repos/resources/triggers.rs",
         "src-tauri/db/src/repos/resources/automations.rs",
         "src-tauri/db/src/repos/resources/webhook_log.rs",
         "src-tauri/db/src/repos/resources/cloud_webhook_watermarks.rs",
@@ -10411,7 +10425,7 @@
         "browser-automation",
         "OCR"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.676571600+00:00",
       "name": "teams-collaboration-repo",
       "pinned": false,
       "tech_stack": [
@@ -10503,23 +10517,6 @@
         "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx"
       ],
       "file_paths": [
-        "src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipContextDrawer.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipDispatch.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipLibraryTree.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipMilestoneComposer.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipPlannerTab.tsx",
-        "src/features/teams/sub_factory/l2/ship/ShipVelocityNote.tsx",
-        "src/features/teams/sub_factory/l2/ship/shipCriteria.ts",
-        "src/features/teams/sub_factory/l2/ship/shipDerive.ts",
-        "src/features/teams/sub_factory/l2/ship/shipModel.ts",
-        "src/features/teams/sub_factory/l2/ship/shipRows.tsx",
-        "src/features/teams/sub_factory/l2/ship/shipVelocity.ts",
-        "src/features/teams/sub_factory/l2/ship/useShipData.ts",
-        "src/features/teams/sub_factory/l2/ship/seedOnboarding.ts",
-        "src/features/teams/sub_factory/l2/ship/__tests__/shipDerive.test.ts",
-        "src/features/teams/sub_factory/l2/ship/__tests__/shipFixtures.ts",
-        "src/features/teams/sub_factory/l2/ship/__tests__/shipVelocity.test.ts",
         "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx",
         "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx",
         "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx",
@@ -10542,7 +10539,7 @@
         "l2",
         "factory drill-down"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.677533100+00:00",
       "name": "teams-factory-l2",
       "pinned": false,
       "tech_stack": [
@@ -10582,8 +10579,6 @@
         "src/features/teams/sub_factory/passport/improve/__tests__/skillsWorkbenchData.test.ts",
         "src/features/teams/sub_factory/passport/improve/goldenStandard.test.ts",
         "src/features/teams/sub_factory/passport/improve/SkillsWorkbench.tsx",
-        "src/features/teams/sub_factory/passport/improve/SkillDetailPane.tsx",
-        "src/features/teams/sub_factory/passport/improve/SkillListPane.tsx",
         "src/features/teams/sub_factory/passport/improve/workbenchChrome.tsx",
         "src/features/teams/sub_factory/passport/improve/ImproveCell.tsx",
         "src/features/teams/sub_factory/passport/improve/ImprovePlanPanel.tsx",
@@ -10612,7 +10607,7 @@
         "golden gauge",
         "deploy"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.678653100+00:00",
       "name": "teams-factory-passport-improve",
       "pinned": false,
       "tech_stack": [
@@ -10659,13 +10654,8 @@
         "src/features/teams/sub_goals/__tests__/partitionGoalTasks.test.ts",
         "src/features/teams/sub_goals/goalStatus.ts",
         "src/features/teams/sub_goals/GoalStatusBadge.tsx",
-        "src/features/teams/sub_goals/goalAcceptanceModel.ts",
-        "src/features/teams/sub_goals/GoalAcceptanceOverlay.tsx",
-        "src/features/teams/sub_goals/GoalAcceptanceView.tsx",
-        "src/features/teams/sub_goals/AcceptanceTriagePolished.tsx",
         "src/features/teams/sub_goals/acceptancePrimitives.tsx",
         "src/features/teams/sub_goals/GoalKpiLink.tsx",
-        "src/features/teams/sub_goals/__tests__/goalAcceptanceModel.test.ts",
         "src/features/teams/sub_goals/__tests__/goalStatus.test.ts",
         "src/features/teams/sub_collab/ChannelDetailModal.tsx",
         "src/features/teams/sub_collab/collabRender.tsx",
@@ -10692,7 +10682,7 @@
         "triage",
         "kpi link"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.679680400+00:00",
       "name": "teams-goals",
       "pinned": false,
       "tech_stack": [
@@ -10913,22 +10903,16 @@
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx"
       ],
       "file_paths": [
-        "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx",
-        "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeaderBand.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireCategoryRail.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeroQuestion.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx",
-        "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireFooterNav.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireBlockedCredentialCta.tsx",
-        "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireCenterpieceSigil.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireKeyboardHint.tsx",
         "src/features/templates/sub_generated/adoption/questionnaire/questionnaireGlyphRow.ts",
         "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts",
         "src/features/templates/sub_generated/adoption/questionnaire/types.ts",
-        "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireCategoryData.ts",
         "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts",
-        "src/features/templates/sub_generated/adoption/questionnaire/index.ts",
         "src/features/templates/sub_generated/adoption/questionnaireCategoryOrder.ts"
       ],
       "group": "Factory & Projects",
@@ -10943,7 +10927,7 @@
         "keyboard nav",
         "credential blocker"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.681631700+00:00",
       "name": "template-adoption-questionnaire",
       "pinned": false,
       "tech_stack": [
@@ -11671,7 +11655,6 @@
         "src-tauri/engine/src/queue.rs"
       ],
       "file_paths": [
-        "src-tauri/engine/src/test_runner.rs",
         "src-tauri/engine/src/eval.rs",
         "src-tauri/engine/src/output_assertions.rs",
         "src-tauri/engine/src/verification_command.rs",
@@ -11723,7 +11706,7 @@
         "rate-limit",
         "session"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.686047600+00:00",
       "name": "test-runner-lab",
       "pinned": false,
       "tech_stack": [
@@ -11978,7 +11961,6 @@
         "src/features/triggers/sub_triggers/NlTriggerInput.tsx"
       ],
       "file_paths": [
-        "src/features/triggers/sub_triggers/TriggerList.tsx",
         "src/features/triggers/sub_triggers/TriggerRow.tsx",
         "src/features/triggers/sub_triggers/TriggerListItem.tsx",
         "src/features/triggers/sub_triggers/TriggerAddForm.tsx",
@@ -11995,14 +11977,11 @@
         "src/features/triggers/sub_triggers/nlTriggerParser.ts",
         "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts",
         "src/features/triggers/sub_triggers/TriggerHealthSparkline.tsx",
-        "src/features/triggers/sub_triggers/HealthDot.tsx",
         "src/features/triggers/sub_triggers/triggerArmState.ts",
         "src/features/triggers/sub_triggers/DryRunResultView.tsx",
         "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts",
         "src/features/triggers/sub_triggers/TriggerScheduleConfig.tsx",
         "src/features/triggers/sub_triggers/TriggerSchedulePreview.tsx",
-        "src/features/triggers/sub_triggers/TriggerCountdown.tsx",
-        "src/features/triggers/sub_triggers/RadialCountdownRing.tsx",
         "src/features/triggers/sub_triggers/TimezoneSelect.tsx",
         "src/features/triggers/sub_triggers/ActiveHoursSection.tsx",
         "src/features/triggers/sub_triggers/UnattendedModeSection.tsx",
@@ -12028,7 +12007,7 @@
         "parser",
         "cron"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.687935400+00:00",
       "name": "triggers-triggers",
       "pinned": false,
       "tech_stack": [
@@ -12363,7 +12342,6 @@
         "src/features/vault/sub_credentials/components/forms/SetupGuideSection.tsx",
         "src/features/vault/sub_credentials/components/forms/TemplateFormHeader.tsx",
         "src/features/vault/sub_credentials/components/card/badges/CompositeHealthDot.tsx",
-        "src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx",
         "src/features/vault/sub_credentials/components/card/banners/ScopeMismatchBanner.tsx",
         "src/features/vault/sub_credentials/components/card/banners/VaultErrorBanner.tsx",
         "src/features/vault/sub_credentials/components/card/CredentialDeleteDialog.tsx",
@@ -12398,7 +12376,7 @@
         "delete",
         "vault-error"
       ],
-      "last_written_at": "2026-08-04T11:53:19.459805+00:00",
+      "last_written_at": "2026-09-21T21:05:58.690516900+00:00",
       "name": "vault-credentials-components-forms",
       "pinned": false,
       "tech_stack": [
@@ -12930,7 +12908,6 @@
         "src-tauri/src/engine/cloud_webhook_relay.rs",
         "src-tauri/src/engine/smee_relay.rs",
         "src-tauri/engine/src/git_checkpoint.rs",
-        "src-tauri/engine/src/dream_replay.rs",
         "src-tauri/engine/src/context_fidelity.rs",
         "src-tauri/engine/src/compilation_pipeline.rs",
         "src-tauri/engine/src/template_v3.rs",
@@ -12938,7 +12915,6 @@
         "src-tauri/engine/src/cli_process.rs",
         "src-tauri/engine/src/cli_capabilities.rs",
         "src-tauri/engine/src/cli_mcp_config.rs",
-        "src-tauri/src/engine/subscription.rs",
         "src-tauri/src/engine/composite.rs",
         "src-tauri/src/engine/polling.rs",
         "src-tauri/src/engine/knowledge.rs",
@@ -12977,7 +12953,7 @@
         "checkpoint",
         "replay"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.693329300+00:00",
       "name": "webhook-ingestion",
       "pinned": false,
       "tech_stack": [
@@ -13007,10 +12983,6 @@
       "file_paths": [
         "src-tauri/src/commands/infrastructure/standards_scan.rs",
         "src-tauri/src/commands/infrastructure/doc_rot.rs",
-        "src-tauri/src/commands/infrastructure/workspace_divergence.rs",
-        "src-tauri/src/commands/infrastructure/workspace_harvest.rs",
-        "src-tauri/src/commands/infrastructure/workspace_verify.rs",
-        "src-tauri/src/commands/infrastructure/git_checkpoint.rs",
         "src-tauri/src/commands/infrastructure/gitlab.rs",
         "src-tauri/src/commands/infrastructure/context_generation.rs",
         "src-tauri/src/commands/infrastructure/context_audit.rs",
@@ -13057,7 +13029,7 @@
         "coverage",
         "static-analysis"
       ],
-      "last_written_at": "2026-08-06T20:21:34.430966100+00:00",
+      "last_written_at": "2026-09-21T21:05:58.694079700+00:00",
       "name": "workspace-governance",
       "pinned": false,
       "tech_stack": [
@@ -13118,12 +13090,12 @@
       ]
     }
   ],
-  "generated_at": "2026-08-06T20:23:09.821205800+00:00",
+  "generated_at": "2026-09-21T21:06:40.852713700+00:00",
   "generator": "personas-context-scan",
   "groups": [
     {
       "color": "violet",
-      "context_count": 22,
+      "context_count": 24,
       "domain": "feature",
       "id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
       "name": "Agent Platform"
@@ -13193,7 +13165,7 @@
     },
     {
       "color": "violet",
-      "context_count": 7,
+      "context_count": 12,
       "domain": "feature",
       "id": "06c96134-c206-4582-9489-96b0f75c8ff9",
       "name": "Design & Build Studio"
@@ -13237,15 +13209,15 @@
   "project": {
     "id": "b0c1541f-af08-4912-818e-19ca94f7b6e9",
     "name": "personas",
-    "root": "C:/Users/kazda/kiro/personas"
+    "root": "C:\\Users\\kazda\\kiro\\personas"
   },
   "provenance": {
-    "git_commit": "d9f5643a48126465c288bdf83d6ca3617084834f",
-    "git_commit_count": 6965
+    "git_commit": "dea452c4c86268ba4390ef07f2ffb0931b9e380b",
+    "git_commit_count": 9542
   },
   "stats": {
-    "contexts": 208,
-    "files": 4136,
+    "contexts": 215,
+    "files": 3789,
     "groups": 16,
     "use_cases": 12
   },
@@ -13275,7 +13247,8 @@
       "name": "Agent Execution",
       "pinned": false,
       "primary_context": null,
-      "slug": "agent-execution"
+      "slug": "agent-execution",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13285,7 +13258,8 @@
       "name": "Athena Companion",
       "pinned": false,
       "primary_context": null,
-      "slug": "athena-companion"
+      "slug": "athena-companion",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13295,7 +13269,8 @@
       "name": "Credential Vault",
       "pinned": false,
       "primary_context": null,
-      "slug": "credential-vault"
+      "slug": "credential-vault",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13305,7 +13280,8 @@
       "name": "Event-Driven Triggers",
       "pinned": false,
       "primary_context": null,
-      "slug": "event-driven-triggers"
+      "slug": "event-driven-triggers",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13315,7 +13291,8 @@
       "name": "Execution Observability",
       "pinned": false,
       "primary_context": null,
-      "slug": "execution-observability"
+      "slug": "execution-observability",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13325,7 +13302,8 @@
       "name": "External Protocol Integration",
       "pinned": false,
       "primary_context": null,
-      "slug": "external-protocol-integration"
+      "slug": "external-protocol-integration",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13335,7 +13313,8 @@
       "name": "Knowledge Base Ingestion",
       "pinned": false,
       "primary_context": null,
-      "slug": "knowledge-base-ingestion"
+      "slug": "knowledge-base-ingestion",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13345,7 +13324,8 @@
       "name": "Multi-Agent Orchestration",
       "pinned": false,
       "primary_context": null,
-      "slug": "multi-agent-orchestration"
+      "slug": "multi-agent-orchestration",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13355,7 +13335,8 @@
       "name": "Onboarding to First Run",
       "pinned": false,
       "primary_context": null,
-      "slug": "onboarding-to-first-run"
+      "slug": "onboarding-to-first-run",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13365,7 +13346,8 @@
       "name": "Persona Authoring",
       "pinned": false,
       "primary_context": null,
-      "slug": "persona-authoring"
+      "slug": "persona-authoring",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13375,7 +13357,8 @@
       "name": "Recipe Playback",
       "pinned": false,
       "primary_context": null,
-      "slug": "recipe-playback"
+      "slug": "recipe-playback",
+      "tier": "standard"
     },
     {
       "contexts": [],
@@ -13385,7 +13368,8 @@
       "name": "Self-Healing Recovery",
       "pinned": false,
       "primary_context": null,
-      "slug": "self-healing-recovery"
+      "slug": "self-healing-recovery",
+      "tier": "standard"
     }
   ],
   "version": 2
