@@ -1,26 +1,30 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Radio, Search, X, Layers, Users, Signal, Brain, Hash } from 'lucide-react';
+import { Radio, Search, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { Translations } from '@/i18n/en';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { memberColor, type EventFamily } from '@/lib/channel/eventModel';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
-import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { LensStream } from './LensStream';
 import { useLensFeed } from './useLensFeed';
 import { StreamMemoryViews } from './StreamMemoryViews';
+import { KIND_META, STREAM_FONTS, type StreamFont } from './streamKinds';
 import {
-  ALL_FAMILIES, ALL_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
+  ALL_FAMILIES, STREAM_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
   matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
 } from './lensModel';
 import type { StreamTeam, TaggedItem } from './types';
 import { cleanName } from '../grid/fleetGridModel';
 
 /* ----------------------------------------------------------------------------
- * STREAM — the Monitor's log. One virtualized, read-only feed with composable
- * lenses. Absorbs the Teams Red Room and Team-memory panes.
+ * STREAM — the Monitor's DECISION log. One virtualized, read-only feed with
+ * composable lenses. Absorbs the Teams Red Room and Team-memory panes.
+ *
+ * SCOPE: what was decided and what happened — steps, events, memories,
+ * deliberation. Talk (channel messages, bridged Slack) is NOT in it; that is
+ * Conversations' job, and mixing the two buried every decision under chatter.
+ * `fetchKinds` never issues the blended read, so talk is not even fetched.
  *
  * THE LAYOUT ARGUMENT (the /prototype question, and its answer): five composable
  * lens dimensions — kind · event family · callsign · channel · search — cannot
@@ -48,16 +52,8 @@ const FAMILY_DOT: Record<string, string> = {
   failure: 'bg-red-400', build: 'bg-sky-400', note: 'bg-amber-300', other: 'bg-foreground/30',
 };
 
-/** Icons are static; the LABELS are i18n keys resolved at render (a module-scope
- *  constant cannot call a hook). */
-const KIND_META: Record<ChannelKind, { labelKey: keyof Translations['monitor']; icon: typeof Layers }> = {
-  step: { labelKey: 'stream_kind_step', icon: Layers },
-  event: { labelKey: 'stream_kind_event', icon: Signal },
-  memory: { labelKey: 'stream_kind_memory', icon: Brain },
-  message: { labelKey: 'stream_kind_message', icon: Users },
-  deliberation: { labelKey: 'stream_kind_deliberation', icon: Radio },
-  slack: { labelKey: 'stream_kind_slack', icon: Hash },
-};
+/** PROTOTYPE switcher labels — throwaway scaffold, deleted with the switcher. */
+const FONT_LABEL: Record<StreamFont, string> = { mono: 'Mono', ledger: 'Ledger', editorial: 'Editorial' };
 
 /** One facet row: a value, a live count, on/off. */
 function FacetRow({
@@ -129,6 +125,8 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
     initialCallsign ? { ...EMPTY_LENS, callsigns: new Set([initialCallsign]) } : EMPTY_LENS,
   );
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
+  // PROTOTYPE — TODO(prototype, 2026-09-21): consolidate the row-font switcher.
+  const [font, setFont] = useState<StreamFont>('mono');
 
   const selected = useMemo(() => teams.filter((t) => t.selected), [teams]);
   const { rows, loading, hasMore, loadMore, counts } = useLensFeed(selected, fetchKinds(lens));
@@ -170,11 +168,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
    * the rows actually are.
    */
   const kindTotals = useMemo(() => {
-    // `null` = not counted by the server. The rail renders that as '·', never as
-    // a zero — a false zero is exactly the quiet lie this rail exists to avoid.
-    const totals: Record<ChannelKind, number | null> = {
-      step: 0, event: 0, memory: 0, message: 0, deliberation: 0, slack: null,
-    };
+    const totals: Partial<Record<ChannelKind, number>> = {};
     let any = false;
     for (const tm of selected) {
       const c = counts[tm.teamId];
@@ -183,12 +177,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
       totals.step = (totals.step ?? 0) + c.step;
       totals.event = (totals.event ?? 0) + c.event;
       totals.memory = (totals.memory ?? 0) + c.memory;
-      totals.message = (totals.message ?? 0) + c.message;
       totals.deliberation = (totals.deliberation ?? 0) + c.deliberation;
-      // The Slack column joins `ChannelKindCounts` with the bridge backend; read
-      // it tolerantly so this rail neither breaks nor lies before it lands.
-      const slack = (c as ChannelKindCounts & { slack?: number }).slack;
-      if (slack !== undefined) totals.slack = (totals.slack ?? 0) + slack;
     }
     return any ? totals : null;
   }, [selected, counts]);
@@ -208,6 +197,22 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
         {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
 
         <div className="ml-auto flex items-center gap-2">
+          {/* PROTOTYPE switcher — throwaway, deleted when a row font wins. */}
+          <div className="flex items-center rounded-full border border-border bg-secondary/20 p-0.5">
+            {STREAM_FONTS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFont(id)}
+                aria-pressed={font === id}
+                className={`px-2 py-0.5 rounded-full typo-caption text-foreground transition-colors ${
+                  font === id ? 'bg-primary/15' : 'opacity-55 hover:opacity-100'
+                }`}
+              >
+                {FONT_LABEL[id]}
+              </button>
+            ))}
+          </div>
           {layoutControl}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground opacity-45 pointer-events-none" />
@@ -235,7 +240,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
         {/* THE TUNER — every lens dimension, with live counts. */}
         <div className="flex-shrink-0 w-[248px] border-r border-border bg-foreground/[0.012] overflow-y-auto p-2">
           <FacetGroup title={t.monitor.stream_group_kind}>
-            {ALL_KINDS.map((k) => {
+            {STREAM_KINDS.map((k) => {
               const Icon = KIND_META[k].icon;
               const on = lens.kinds.has(k);
               const total = kindTotals?.[k];
@@ -372,6 +377,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
               emptyLabel={active > 0 ? t.monitor.stream_empty_filtered : t.monitor.stream_empty}
               hasMore={hasMore}
               onEndReached={loadMore}
+              font={font}
             />
           )}
         </div>
