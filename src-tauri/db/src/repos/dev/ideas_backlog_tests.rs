@@ -54,8 +54,20 @@ fn normalize_collapses_rewordings_and_keeps_verbs() {
         normalize_idea_title("Add retry to the fetch helper"),
         normalize_idea_title("Add retry for fetch helper"),
     );
-    // Punctuation / casing are not identity.
+    // Punctuation / casing / repeated whitespace are not identity.
     assert_eq!(
+        normalize_idea_title("Extract  DimTile!"),
+        normalize_idea_title("extract dimtile"),
+    );
+    // But word BOUNDARIES are. `normalize_idea_title` splits on non-alphanumeric
+    // characters only; it does not break camelCase apart, so "DimTile" and
+    // "dim tile" are two different subjects to it. This pair used to sit in the
+    // assert_eq above, which claimed camelCase splitting the function has never
+    // done — and `normalize_idea_title` is the dedup KEY, so teaching it to
+    // split would re-key every existing `dev_ideas` row (see the note on
+    // IDEA_SIMILARITY_STOPWORDS). The behaviour is pinned here instead of
+    // asserted away, so a future change to it fails loudly.
+    assert_ne!(
         normalize_idea_title("Extract  DimTile!"),
         normalize_idea_title("extract dim tile"),
     );

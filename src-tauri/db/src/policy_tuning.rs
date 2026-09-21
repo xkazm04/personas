@@ -264,9 +264,27 @@ pub fn generate_proposals(
         // Incumbent = the model this category currently resolves to via the
         // cascade (probe with a synthetic persona id so only category /
         // universal rules match), else the dominant model by observed runs.
+        //
+        // TIE-BREAK. `max_by_key` alone returns the LAST maximum, so two models
+        // with equal run counts made the incumbent depend on the snapshot's row
+        // order — and the row order comes from a SQL query with no total
+        // ordering. Break the tie on cost, highest first: the tuner only ever
+        // proposes moving to something cheaper, so electing the cheaper of two
+        // equally-evidenced models as the incumbent forfeits the comparison
+        // outright and the category silently produces nothing. Model name is
+        // the last resort so the result is fully determined by the data.
         let routed =
             resolve(current_rules, "\u{0}policy-tuning-probe", Some(category)).map(|r| r.model);
-        let Some(&dominant) = cells.iter().max_by_key(|c| c.runs) else {
+        let Some(&dominant) = cells.iter().max_by(|a, b| {
+            a.runs
+                .cmp(&b.runs)
+                .then_with(|| {
+                    a.avg_cost_usd
+                        .partial_cmp(&b.avg_cost_usd)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
+                .then_with(|| b.model.cmp(&a.model))
+        }) else {
             continue;
         };
         let incumbent: &EvidenceCell = routed

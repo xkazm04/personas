@@ -189,7 +189,22 @@ static RESUME_EVALUATED: AtomicBool = AtomicBool::new(false);
 /// on reopening the app. `trigger_ref` is the local date, so the dedupe guard
 /// keeps several restarts in one day to a single card.
 fn conversation_resume(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
-    if RESUME_EVALUATED.swap(true, Ordering::Relaxed) {
+    conversation_resume_latched(pool, &RESUME_EVALUATED)
+}
+
+/// [`conversation_resume`] with its latch passed in.
+///
+/// The latch is process-global by design, and a test binary is ONE process:
+/// any other test that reaches `collect_all` consumes `RESUME_EVALUATED`
+/// first, so the latch test saw an already-latched world and both of its looks
+/// came back empty. It passed on Windows and failed on Linux purely on test
+/// ordering. Taking the latch as a parameter lets that test own a fresh one
+/// and exercise the real swap, instead of racing every sibling for a global.
+fn conversation_resume_latched(
+    pool: &UserDbPool,
+    latch: &AtomicBool,
+) -> Result<Vec<Nudge>, AppError> {
+    if latch.swap(true, Ordering::Relaxed) {
         return Ok(Vec::new());
     }
     open_threads(pool)
@@ -1346,8 +1361,13 @@ mod conversation_resume_tests {
             let conn = pool.get()?;
             promise(&conn, "b1")?;
         }
-        let first = conversation_resume(&pool)?;
-        let second = conversation_resume(&pool)?;
+        // A latch this test owns: `RESUME_EVALUATED` is process-global and any
+        // sibling test that reaches `collect_all` flips it before this one
+        // runs. The mechanism under test is the swap, not which static holds
+        // it.
+        let latch = AtomicBool::new(false);
+        let first = conversation_resume_latched(&pool, &latch)?;
+        let second = conversation_resume_latched(&pool, &latch)?;
         assert_eq!(
             first.len() + second.len(),
             1,
