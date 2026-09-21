@@ -72,9 +72,42 @@ export function normaliseFixtureTitle(title: string): string {
 }
 
 /** The reference's `topology.js` is the same shape the Rust reader emits. */
+// The fixture FILE is snake_case where the product binding is camelCase
+// (`use_when` vs `useWhen`), so these types describe the file as it is, not as
+// the product shape. Typing it as `RegistryGalaxy` hid exactly that difference
+// and let a technique reach the engine with no `useWhen` at all.
+type GalaxyDomainShape = RegistryGalaxy['domains'][number];
+type GalaxyCategoryShape = GalaxyDomainShape['categories'][number];
+type GalaxySubjectShape = GalaxyCategoryShape['subjects'][number];
+export interface FixtureTechnique {
+  slug: string;
+  laws?: string[];
+  use_when?: string[];
+  useWhen?: string[];
+}
+type FixtureSubject = Omit<GalaxySubjectShape, 'techniques'> & { techniques: FixtureTechnique[] };
+type FixtureCategory = Omit<GalaxyCategoryShape, 'subjects'> & { subjects: FixtureSubject[] };
+type FixtureDomain = Omit<GalaxyDomainShape, 'categories'> & { categories: FixtureCategory[] };
+
+/**
+ * One fixture technique in the product's shape. Never returns a technique
+ * without `useWhen`: the hover card reads its first entry.
+ */
+export function normaliseFixtureTechnique(technique: FixtureTechnique): {
+  slug: string;
+  laws: string[];
+  useWhen: string[];
+} {
+  return {
+    slug: technique.slug,
+    laws: technique.laws ?? [],
+    useWhen: technique.useWhen ?? technique.use_when ?? [],
+  };
+}
+
 interface FixtureTopology {
   totals: RegistryGalaxy['totals'];
-  domains: RegistryGalaxy['domains'];
+  domains: FixtureDomain[];
 }
 
 interface FixtureCouncil {
@@ -153,6 +186,10 @@ export async function loadReferenceFixture(): Promise<FixtureBundle> {
           subjects: category.subjects.map((subject) => ({
             ...subject,
             title: normaliseFixtureTitle(subject.title),
+            // The fixture file is snake_case (`use_when`); the product's
+            // binding is camelCase. Translate here, at the boundary, so no
+            // technique reaches the engine without its `useWhen`.
+            techniques: subject.techniques.map(normaliseFixtureTechnique),
           })),
         })),
       })),

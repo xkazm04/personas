@@ -12,7 +12,7 @@ import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
 import { decidable, pressureRamp } from '../councilRules';
 import { fitToSet, sameCamera, tweenCamera, type Viewport } from '../galaxy/engine/camera';
 import { allocateLabels, MIN_LABEL_PX, type LabelRequest } from '../galaxy/engine/labels';
-import { normaliseFixtureTitle } from '../galaxy/fixture';
+import { normaliseFixtureTechnique, normaliseFixtureTitle } from '../galaxy/fixture';
 import { buildLayout, markOf } from '../galaxy/engine/layout';
 import { applyLens, LENS_M, LENS_R } from '../galaxy/engine/lens';
 
@@ -317,5 +317,23 @@ describe('decidable — the one gate rule', () => {
     for (const state of ['none', 'fail', 'incomplete', 'stalled', 'approved', 'approved_drifted', 'rejected']) {
       expect(decidable({ state, tier: 'major', kind: 'use_case' })).toBe(false);
     }
+  });
+});
+
+describe('normaliseFixtureTechnique - the fixture file is snake_case', () => {
+  it('reads use_when into useWhen, so a hovered technique always has a list to read', () => {
+    expect(normaliseFixtureTechnique({ slug: 'a', laws: ['l'], use_when: ['when x'] })).toEqual({
+      slug: 'a',
+      laws: ['l'],
+      useWhen: ['when x'],
+    });
+  });
+
+  it('never returns a technique without useWhen or laws', () => {
+    expect(normaliseFixtureTechnique({ slug: 'bare' })).toEqual({ slug: 'bare', laws: [], useWhen: [] });
+  });
+
+  it('prefers the product spelling when a file already carries it', () => {
+    expect(normaliseFixtureTechnique({ slug: 'a', useWhen: ['p'], use_when: ['s'] }).useWhen).toEqual(['p']);
   });
 });

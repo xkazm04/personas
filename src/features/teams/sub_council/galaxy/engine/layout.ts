@@ -239,7 +239,7 @@ export function buildLayout(galaxy: RegistryGalaxy, overlay: CouncilOverlay | nu
               kind: 'technique',
               slug: tech.slug,
               laws: tech.laws,
-              useWhen: tech.useWhen,
+              useWhen: tech.useWhen ?? [],
               rank: ti + 1,
               x: 0,
               y: 0,
