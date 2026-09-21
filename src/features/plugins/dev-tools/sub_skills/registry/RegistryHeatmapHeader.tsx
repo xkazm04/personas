@@ -1,6 +1,7 @@
-// The heatmap's sticky header row — the app's table-header language
-// (`bg-background/95` + `backdrop-blur-sm` + a `primary/10` hairline, as in
-// UnifiedTable), not the grey slab it used to be.
+// The heatmap's sticky header row — the app's panel-header language: an
+// opaque `bg-background` washed with a `primary/5` tint over a `primary/10`
+// hairline (as in the Skills Manager / ContentLayout headers), with the column
+// names set in typo-caption so they read as labels, not fine print.
 //
 // Each column header is a toggle: pressing it filters the rows to the skills
 // present in that column, pressing it again clears the filter. The corner cell
@@ -14,9 +15,13 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { FOCUS, HEAD_ROW, LABEL_COL, navId, tint } from './heatmapKit';
-import type { RegistryColumn, RegistryModel } from '../../registryTypes';
+import type { RegistryColumn, RegistryModel } from './registryTypes';
 
 const VERTICAL: React.CSSProperties = { writingMode: 'vertical-rl', transform: 'rotate(180deg)' };
+/** The header wash: primary/5 laid over the opaque background as an image, so
+ *  the sticky row (and its sticky corner) stay opaque over scrolled cells. */
+const WASH = 'color-mix(in oklab, var(--primary) 5%, transparent)';
+const HEAD_TINT: React.CSSProperties = { backgroundImage: `linear-gradient(${WASH}, ${WASH})` };
 
 export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, tabFor, chipTransition }: {
   model: RegistryModel;
@@ -35,10 +40,10 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
   const clearId = navId(HEAD_ROW, LABEL_COL);
 
   return (
-    <div role="row" className="sticky top-0 z-20 col-span-full grid grid-cols-subgrid border-b border-primary/10 bg-background/95 backdrop-blur-sm">
+    <div role="row" className="sticky top-0 z-20 col-span-full grid grid-cols-subgrid border-b border-primary/10 bg-background" style={HEAD_TINT}>
       {/* Corner — its content is absolutely placed so the chip can never
           widen the label track and shove the whole cell field sideways. */}
-      <div role="columnheader" className="sticky left-0 z-10 min-w-[11rem] border-r border-primary/10 bg-background">
+      <div role="columnheader" className="sticky left-0 z-10 min-w-[11rem] border-r border-primary/10 bg-background" style={HEAD_TINT}>
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 px-3 pb-2">
           <AnimatePresence initial={false} mode="wait">
             {filtered ? (
@@ -82,6 +87,7 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
         <ColumnHeader
           key={c.id}
           column={c}
+          dot={c.color ?? model.header?.color ?? 'var(--status-neutral)'}
           index={j}
           selected={c.id === filterId}
           hint={mode === 'project'
@@ -97,8 +103,10 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
   );
 }
 
-function ColumnHeader({ column: c, index, selected, hint, action, tabIndex, onToggle }: {
+function ColumnHeader({ column: c, dot, index, selected, hint, action, tabIndex, onToggle }: {
   column: RegistryColumn;
+  /** The column's accent, falling back to the matrix's own colour. */
+  dot: string;
   index: number;
   selected: boolean;
   hint: string;
@@ -121,18 +129,18 @@ function ColumnHeader({ column: c, index, selected, hint, action, tabIndex, onTo
           data-nav={navId(HEAD_ROW, c.id)} data-nav-r={0} data-nav-c={index + 1}
           data-testid={`registry-column-${c.id}`}
           className={`group/col relative flex h-[6.5rem] w-full flex-col items-center justify-end gap-1.5 rounded-t-interactive pb-2 transition-colors ${FOCUS} ${
-            selected ? 'bg-primary/10' : 'hover:bg-secondary/50'
+            selected ? 'bg-primary/15' : 'hover:bg-primary/5'
           }`}
         >
           <span
-            className={`typo-label max-h-[4.75rem] min-h-0 overflow-hidden text-ellipsis whitespace-nowrap transition-colors ${
+            className={`typo-caption leading-none max-h-[4.75rem] min-h-0 overflow-hidden text-ellipsis whitespace-nowrap transition-colors ${
               selected ? 'text-primary' : 'text-foreground group-hover/col:text-primary'
             }`}
             style={VERTICAL}
           >
             {c.name}
           </span>
-          {c.color && <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />}
+          <span className={`flex-shrink-0 rounded-full transition-all ${selected ? 'h-2 w-2' : 'h-1.5 w-1.5'}`} style={{ backgroundColor: dot }} aria-hidden />
           <span
             className="typo-label flex-shrink-0 rounded-pill px-1 tabular-nums text-foreground"
             style={{ backgroundColor: tint('var(--primary)', selected ? 0.22 : 0.08) }}

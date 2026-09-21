@@ -2991,12 +2991,7 @@
     "skills_registry_filter_empty": "Aún no hay habilidades en {name}",
     "skills_registry_empty_title": "No hay habilidades que mostrar",
     "skills_registry_name_details": "Haz clic para ver todos los detalles",
-    "skills_registry_legend_recent": "ejecutada en los últimos 30 días",
-    "skills_registry_filter": "Mostrando skills de {name}",
-    "skills_registry_filter_clear_label": "Quitar",
-    "skills_registry_filter_aria": "Filtrar skills a {name}",
-    "skills_registry_filter_clear_aria": "Quitar el filtro de columna",
-    "skills_registry_cell_coverage": "{pct}% de cobertura · {invokes} ejecuciones en 30 días"
+    "skills_registry_legend_recent": "ejecutada en los últimos 30 días"
   },
   "dev_triage": {
     "action_label": "Acción:",
@@ -3473,8 +3468,7 @@
     "skill_picker_hint": "Haz clic en una celda para cargar esa habilidad y proyecto en la consola. Una celda vacía instala primero la habilidad allí.",
     "skill_picker_open": "Elegir una habilidad del registro",
     "skill_picker_title": "Registro de habilidades",
-    "skill_picker_empty": "Ningún proyecto de este espacio de trabajo tiene aún una habilidad instalada: adopta una en Herramientas de desarrollo → Habilidades → Registro.",
-    "skill_picker_hint_hover": "Haz clic en una celda rellena para cargar esa habilidad y proyecto. Pasa el cursor por un nombre para ver su descripción. Una celda vacía la instala allí primero."
+    "skill_picker_empty": "Ningún proyecto de este espacio de trabajo tiene aún una habilidad instalada: adopta una en Herramientas de desarrollo → Habilidades → Registro."
   },
   "fleet": {
     "activity_empty": "No se encontraron sesiones recientes",

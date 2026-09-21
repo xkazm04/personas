@@ -2991,12 +2991,7 @@
     "skills_registry_filter_empty": "{name}-এ এখনও কোনো স্কিল নেই",
     "skills_registry_empty_title": "দেখানোর মতো কোনো স্কিল নেই",
     "skills_registry_name_details": "পুরো বিবরণ দেখতে ক্লিক করুন",
-    "skills_registry_legend_recent": "গত ৩০ দিনে চলেছে",
-    "skills_registry_filter": "{name}-এ স্কিল দেখানো হচ্ছে",
-    "skills_registry_filter_clear_label": "মুছুন",
-    "skills_registry_filter_aria": "{name}-এ স্কিল ফিল্টার করুন",
-    "skills_registry_filter_clear_aria": "কলাম ফিল্টার মুছুন",
-    "skills_registry_cell_coverage": "{pct}% কভারেজ · ৩০ দিনে {invokes} রান"
+    "skills_registry_legend_recent": "গত ৩০ দিনে চলেছে"
   },
   "dev_triage": {
     "action_label": "ক্রিয়া:",
@@ -3473,8 +3468,7 @@
     "skill_picker_hint": "একটি সেলে ক্লিক করে সেই স্কিল ও প্রজেক্ট কনসোলে লোড করুন। খালি সেল আগে সেখানে স্কিলটি ইনস্টল করে।",
     "skill_picker_open": "রেজিস্ট্রি থেকে একটি স্কিল বাছুন",
     "skill_picker_title": "স্কিল রেজিস্ট্রি",
-    "skill_picker_empty": "এই ওয়ার্কস্পেসের কোনো প্রজেক্টে এখনও কোনো স্কিল ইনস্টল করা নেই — ডেভ টুলস → স্কিল → রেজিস্ট্রি থেকে একটি অ্যাডপ্ট করুন।",
-    "skill_picker_hint_hover": "ভরা সেলে ক্লিক করে সেই স্কিল ও প্রজেক্ট লোড করুন। নামের উপর হোভার করলে বিবরণ দেখা যায়। খালি সেল আগে সেখানে ইনস্টল করে।"
+    "skill_picker_empty": "এই ওয়ার্কস্পেসের কোনো প্রজেক্টে এখনও কোনো স্কিল ইনস্টল করা নেই — ডেভ টুলস → স্কিল → রেজিস্ট্রি থেকে একটি অ্যাডপ্ট করুন।"
   },
   "fleet": {
     "activity_empty": "কোনো সাম্প্রতিক সেশন পাওয়া যায়নি",

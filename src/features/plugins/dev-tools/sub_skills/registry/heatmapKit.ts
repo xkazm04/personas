@@ -23,7 +23,7 @@ import { useCallback, useState, type FocusEvent, type KeyboardEvent } from 'reac
 
 import { interpolate, type Translations } from '@/i18n/useTranslation';
 
-import type { CellStatus, RegistryCell } from '../../registryTypes';
+import type { CellStatus, RegistryCell } from './registryTypes';
 
 export type DevToolsT = Translations['plugins']['dev_tools'];
 

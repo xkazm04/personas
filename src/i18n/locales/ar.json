@@ -13614,12 +13614,7 @@
       "skills_registry_filter_empty": "لا توجد مهارات في {name} بعد",
       "skills_registry_empty_title": "لا توجد مهارات لعرضها",
       "skills_registry_name_details": "انقر لعرض التفاصيل الكاملة",
-      "skills_registry_legend_recent": "شُغِّلت خلال آخر 30 يومًا",
-      "skills_registry_filter": "عرض المهارات في {name}",
-      "skills_registry_filter_clear_label": "مسح",
-      "skills_registry_filter_aria": "تصفية المهارات إلى {name}",
-      "skills_registry_filter_clear_aria": "مسح عامل تصفية العمود",
-      "skills_registry_cell_coverage": "تغطية {pct}% · {invokes} تشغيل خلال 30 يومًا"
+      "skills_registry_legend_recent": "شُغِّلت خلال آخر 30 يومًا"
     },
     "dev_triage": {
       "action_label": "الإجراء:",
@@ -14096,8 +14091,7 @@
       "skill_picker_hint": "انقر على خلية لتحميل تلك المهارة والمشروع إلى وحدة التحكم. الخلية الفارغة تثبّت المهارة هناك أولاً.",
       "skill_picker_open": "اختر مهارة من السجل",
       "skill_picker_title": "سجل المهارات",
-      "skill_picker_empty": "لا يوجد بعد أي مشروع في مساحة العمل هذه مثبَّتة فيه مهارة — اعتمد واحدة من أدوات المطور ← المهارات ← السجل.",
-      "skill_picker_hint_hover": "انقر على خلية ممتلئة لتحميل تلك المهارة والمشروع. مرّر فوق الاسم لعرض الوصف. الخلية الفارغة تثبّتها هناك أولاً."
+      "skill_picker_empty": "لا يوجد بعد أي مشروع في مساحة العمل هذه مثبَّتة فيه مهارة — اعتمد واحدة من أدوات المطور ← المهارات ← السجل."
     },
     "fleet": {
       "activity_empty": "لم يُعثر على جلسات حديثة",

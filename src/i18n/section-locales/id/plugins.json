@@ -2991,12 +2991,7 @@
     "skills_registry_filter_empty": "Belum ada skill di {name}",
     "skills_registry_empty_title": "Tidak ada skill untuk ditampilkan",
     "skills_registry_name_details": "Klik untuk detail lengkap",
-    "skills_registry_legend_recent": "dijalankan dalam 30 hari terakhir",
-    "skills_registry_filter": "Menampilkan skill di {name}",
-    "skills_registry_filter_clear_label": "Hapus",
-    "skills_registry_filter_aria": "Filter skill ke {name}",
-    "skills_registry_filter_clear_aria": "Hapus filter kolom",
-    "skills_registry_cell_coverage": "cakupan {pct}% · {invokes} jalan dalam 30 hari"
+    "skills_registry_legend_recent": "dijalankan dalam 30 hari terakhir"
   },
   "dev_triage": {
     "action_label": "Tindakan:",
@@ -3473,8 +3468,7 @@
     "skill_picker_hint": "Klik sel untuk memuat skill dan proyek itu ke konsol. Sel kosong memasang skill di sana terlebih dahulu.",
     "skill_picker_open": "Pilih skill dari registri",
     "skill_picker_title": "Registri skill",
-    "skill_picker_empty": "Belum ada proyek di ruang kerja ini yang memasang skill — adopsi satu di Alat pengembang → Keterampilan → Registri.",
-    "skill_picker_hint_hover": "Klik sel terisi untuk memuat skill dan proyek itu. Arahkan ke nama untuk melihat deskripsinya. Sel kosong memasangnya di sana terlebih dahulu."
+    "skill_picker_empty": "Belum ada proyek di ruang kerja ini yang memasang skill — adopsi satu di Alat pengembang → Keterampilan → Registri."
   },
   "fleet": {
     "activity_empty": "Tidak ada sesi terbaru yang ditemukan",

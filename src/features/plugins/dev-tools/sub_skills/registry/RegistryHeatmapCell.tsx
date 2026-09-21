@@ -22,7 +22,7 @@ import { formatPercent } from '@/lib/utils/formatters';
 import { cellAlpha, cellReadout, FOCUS, navId, tint, type DevToolsT } from './heatmapKit';
 import {
   cellStatus, coveragePct, type RegistryCell, type RegistryColumn, type RegistrySkill, type SkillsRegistryProps,
-} from '../../registryTypes';
+} from './registryTypes';
 
 type CellProps = Pick<SkillsRegistryProps, 'adopting' | 'onAdopt' | 'onUse'> & {
   /** `t.plugins.dev_tools`, handed down — one hook per grid, not one per cell. */

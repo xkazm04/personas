@@ -14640,7 +14640,6 @@ export type Translations = {
       recent_empty: string;
       recent_open_aria: string;
       skill_picker_empty: string;
-      skill_picker_hint_hover: string;
     };
     fleet: {
       search_placeholder: string;
@@ -16451,11 +16450,6 @@ export type Translations = {
       skills_registry_empty_title: string;
       skills_registry_name_details: string;
       skills_registry_legend_recent: string;
-      skills_registry_filter: string;
-      skills_registry_filter_clear_label: string;
-      skills_registry_filter_aria: string;
-      skills_registry_filter_clear_aria: string;
-      skills_registry_cell_coverage: string;
     };
     doc_signing: {
       sign_heading: string;

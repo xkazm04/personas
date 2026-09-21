@@ -18,7 +18,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { FOCUS, LABEL_COL, navId, tint, type DevToolsT } from './heatmapKit';
 import { RegistryHeatmapCell } from './RegistryHeatmapCell';
-import type { RegistryColumn, RegistryModel, RegistrySkill, SkillsRegistryProps } from '../../registryTypes';
+import type { RegistryColumn, RegistryModel, RegistrySkill, SkillsRegistryProps } from './registryTypes';
 
 const FOLD = { initial: { height: 0, opacity: 0 }, animate: { height: 'auto', opacity: 1 }, exit: { height: 0, opacity: 0 } };
 

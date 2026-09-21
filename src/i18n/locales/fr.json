@@ -13614,12 +13614,7 @@
       "skills_registry_filter_empty": "Aucune compétence dans {name} pour l’instant",
       "skills_registry_empty_title": "Aucune compétence à afficher",
       "skills_registry_name_details": "Cliquez pour voir tous les détails",
-      "skills_registry_legend_recent": "exécutée ces 30 derniers jours",
-      "skills_registry_filter": "Compétences dans {name}",
-      "skills_registry_filter_clear_label": "Effacer",
-      "skills_registry_filter_aria": "Filtrer les compétences sur {name}",
-      "skills_registry_filter_clear_aria": "Effacer le filtre de colonne",
-      "skills_registry_cell_coverage": "{pct} % de couverture · {invokes} exécutions sur 30 jours"
+      "skills_registry_legend_recent": "exécutée ces 30 derniers jours"
     },
     "dev_triage": {
       "action_label": "Action :",
@@ -14096,8 +14091,7 @@
       "skill_picker_hint": "Cliquez sur une cellule pour charger cette compétence et ce projet dans la console. Une cellule vide installe d'abord la compétence.",
       "skill_picker_open": "Choisir une compétence dans le registre",
       "skill_picker_title": "Registre des compétences",
-      "skill_picker_empty": "Aucun projet de cet espace de travail n’a encore de compétence installée — adoptez-en une dans Outils dev → Compétences → Registre.",
-      "skill_picker_hint_hover": "Cliquez sur une cellule remplie pour charger cette compétence et ce projet. Survolez un nom pour lire sa description. Une cellule vide l'installe d'abord."
+      "skill_picker_empty": "Aucun projet de cet espace de travail n’a encore de compétence installée — adoptez-en une dans Outils dev → Compétences → Registre."
     },
     "fleet": {
       "activity_empty": "Aucune session récente trouvée",
