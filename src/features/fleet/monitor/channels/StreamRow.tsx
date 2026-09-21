@@ -5,8 +5,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { itemAccent, STEP_TONE } from '@/features/teams/sub_collab/collabRender';
 import { decisionTitle } from '@/features/teams/sub_collab/decisionTitle';
 import type { TaggedItem } from './types';
-import { itemKind, rowCallsign, rowFamily, rowSpeaker } from './lensModel';
-import { KIND_META, type StreamFont, type StreamRowLabels } from './streamKinds';
+import { itemKind, rowCallsign, rowFamily } from './lensModel';
+import { KIND_META, type StreamRowLabels } from './streamKinds';
 
 /* ----------------------------------------------------------------------------
  * STREAM ROW — one decision. A dense 30px log line, and only that.
@@ -37,49 +37,14 @@ const KIND_TEXT: Record<string, string> = {
   deliberation: 'text-violet-300',
 };
 
-/**
- * PROTOTYPE — three typographic treatments of the same row (C). All three keep
- * the fixed 30px and the same content; only faces, weights and sizes move.
- *   mono      — baseline: one monospace voice for everything.
- *   ledger    — a small mono gutter (time + callsign) beside a proportional
- *               headline: machine metadata looks like metadata, prose like prose.
- *   editorial — all Inter; the speaker as a written name, the headline carries
- *               the weight, metadata recedes into small tabular labels.
+/*
+ * TYPOGRAPHY (picked 2026-09-21 over an all-mono baseline and an all-Inter
+ * "editorial" variant): a small MONO gutter — time and callsign in `typo-code`,
+ * machine metadata that should look like metadata — beside a PROPORTIONAL
+ * headline in `typo-body`, prose that should read like prose. Token-only: a
+ * font-weight painted over a typo-* token is the census's
+ * `typo-token-overpainted`, so each span picks the token whose weight it wants.
  */
-/* Token-only by rule: a font-weight painted over a typo-* token is the census's
- * `typo-token-overpainted`, so each variant picks the token whose weight it
- * wants (typo-data = 500 headline, typo-title = 600 name) instead. */
-const FONT: Record<StreamFont, {
-  root: string; time: string; sign: string; verb: string; title: string; meta: string; speaker: 'callsign' | 'name';
-}> = {
-  mono: {
-    root: 'font-mono',
-    time: 'typo-caption opacity-70',
-    sign: 'typo-caption font-semibold w-28',
-    verb: 'typo-caption',
-    title: 'typo-caption',
-    meta: 'typo-caption',
-    speaker: 'callsign',
-  },
-  ledger: {
-    root: '',
-    time: 'typo-code opacity-55',
-    sign: 'typo-code w-24',
-    verb: 'typo-label',
-    title: 'typo-body leading-none',
-    meta: 'typo-code',
-    speaker: 'callsign',
-  },
-  editorial: {
-    root: '',
-    time: 'typo-label opacity-45',
-    sign: 'typo-title w-32',
-    verb: 'typo-label uppercase tracking-wider',
-    title: 'typo-data leading-none',
-    meta: 'typo-label',
-    speaker: 'name',
-  },
-};
 
 function hhmmss(at: string): string {
   const d = new Date(at);
@@ -102,7 +67,7 @@ function ImportanceDots({ value }: { value: number }) {
 }
 
 export const StreamRow = memo(function StreamRow({
-  row, persona, onOpen, onAssignment, labels, font = 'mono',
+  row, persona, onOpen, onAssignment, labels,
 }: {
   row: TaggedItem;
   persona: Persona | undefined;
@@ -112,15 +77,13 @@ export const StreamRow = memo(function StreamRow({
   /** Pre-resolved i18n labels (the row is memoized; resolving the hook here
    *  would defeat that). */
   labels: StreamRowLabels;
-  font?: StreamFont;
 }) {
   const { item, team } = row;
-  const f = FONT[font];
   const kind = itemKind(item);
   const fam = rowFamily(item);
   // WHO SPOKE comes from the shared model, so the log signs a row exactly the
   // way the Conversation surface and the lens filters do.
-  const sign = f.speaker === 'name' ? rowSpeaker(item, persona?.name) : rowCallsign(item, persona?.name);
+  const sign = rowCallsign(item, persona?.name);
   const color = itemAccent(item, persona);
   const parsed = kind === 'event' ? parsePayload(item.extra) : null;
   const head = decisionTitle(item);
@@ -142,27 +105,27 @@ export const StreamRow = memo(function StreamRow({
       type="button"
       onClick={() => onOpen(row)}
       style={{ height: ROW_HEIGHT, boxShadow: `inset 2px 0 0 ${team.teamColor}` }}
-      className={`w-full text-left flex items-center gap-2 px-3 hover:bg-secondary/25 transition-colors ${f.root}`}
+      className="w-full text-left flex items-center gap-2 px-3 hover:bg-secondary/25 transition-colors"
     >
-      <span className={`${f.time} text-foreground tabular-nums flex-shrink-0`}>{hhmmss(item.at)}</span>
+      <span className={`typo-code opacity-55 text-foreground tabular-nums flex-shrink-0`}>{hhmmss(item.at)}</span>
       <span className={`flex-shrink-0 ${tone}`}>
         <KindIcon className="w-3.5 h-3.5" role="img" aria-label={labels.kind[kind]} />
       </span>
-      <span className={`${f.sign} flex-shrink-0 truncate`} style={{ color }} title={sign}>
+      <span className={`typo-code w-24 flex-shrink-0 truncate`} style={{ color }} title={sign}>
         {sign}
       </span>
-      {verb && <span className={`${f.verb} flex-shrink-0 ${tone}`}>{verb}</span>}
+      {verb && <span className={`typo-label flex-shrink-0 ${tone}`}>{verb}</span>}
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-      <span className={`${f.title} text-foreground truncate`} title={head.title}>
+      <span className="typo-body leading-none text-foreground truncate" title={head.title}>
         {head.title}
       </span>
       {heard > 0 && (
-        <span className={`ml-auto flex-shrink-0 inline-flex items-center gap-1 ${f.meta} text-foreground opacity-60`} title={`Heard by ${heard}`}>
+        <span className={`ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-60`} title={`Heard by ${heard}`}>
           <Ear className="w-3 h-3" /> {heard}
         </span>
       )}
       {parsed?.artifact && (
-        <span className={`flex-shrink-0 inline-flex items-center gap-1 ${f.meta} text-foreground opacity-70`}>
+        <span className={`flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-70`}>
           <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
         </span>
       )}
@@ -186,7 +149,7 @@ export const StreamRow = memo(function StreamRow({
             e.stopPropagation();
             onAssignment(item.assignmentId!);
           }}
-          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 ${f.meta} tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
+          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-code tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
         >
           #{item.assignmentId.slice(0, 4)}
         </span>

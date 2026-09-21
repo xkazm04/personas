@@ -120,15 +120,6 @@ export function rowCallsign(item: TaggedItem['item'], name: string | undefined):
   return callsign(VOICELESS_NAME[item.kind]);
 }
 
-/** WHO SPOKE, as a person would write it ("QA Guardian", not "QA-GUARDIAN") —
- *  the same resolution as {@link rowCallsign}, for rows set in a proportional
- *  face where an air-traffic callsign reads as shouting. */
-export function rowSpeaker(item: TaggedItem['item'], name: string | undefined): string {
-  if (item.kind === 'slack') return slackAuthorName(item);
-  if (name) return name.replace(/^T:\s*/, '');
-  return VOICELESS_NAME[item.kind] ?? 'System';
-}
-
 /**
  * THE MACHINE TOKEN — the badge between the callsign and the summary.
  *

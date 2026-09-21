@@ -9,7 +9,7 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { LensStream } from './LensStream';
 import { useLensFeed } from './useLensFeed';
 import { StreamMemoryViews } from './StreamMemoryViews';
-import { KIND_META, STREAM_FONTS, type StreamFont } from './streamKinds';
+import { KIND_META } from './streamKinds';
 import {
   ALL_FAMILIES, STREAM_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
   matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
@@ -51,9 +51,6 @@ const FAMILY_DOT: Record<string, string> = {
   handoff: 'bg-violet-400', pr: 'bg-blue-400', qa: 'bg-amber-400', release: 'bg-emerald-400',
   failure: 'bg-red-400', build: 'bg-sky-400', note: 'bg-amber-300', other: 'bg-foreground/30',
 };
-
-/** PROTOTYPE switcher labels — throwaway scaffold, deleted with the switcher. */
-const FONT_LABEL: Record<StreamFont, string> = { mono: 'Mono', ledger: 'Ledger', editorial: 'Editorial' };
 
 /** One facet row: a value, a live count, on/off. */
 function FacetRow({
@@ -125,8 +122,6 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
     initialCallsign ? { ...EMPTY_LENS, callsigns: new Set([initialCallsign]) } : EMPTY_LENS,
   );
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
-  // PROTOTYPE — TODO(prototype, 2026-09-21): consolidate the row-font switcher.
-  const [font, setFont] = useState<StreamFont>('mono');
 
   const selected = useMemo(() => teams.filter((t) => t.selected), [teams]);
   const { rows, loading, hasMore, loadMore, counts } = useLensFeed(selected, fetchKinds(lens));
@@ -197,22 +192,6 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
         {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
 
         <div className="ml-auto flex items-center gap-2">
-          {/* PROTOTYPE switcher — throwaway, deleted when a row font wins. */}
-          <div className="flex items-center rounded-full border border-border bg-secondary/20 p-0.5">
-            {STREAM_FONTS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFont(id)}
-                aria-pressed={font === id}
-                className={`px-2 py-0.5 rounded-full typo-caption text-foreground transition-colors ${
-                  font === id ? 'bg-primary/15' : 'opacity-55 hover:opacity-100'
-                }`}
-              >
-                {FONT_LABEL[id]}
-              </button>
-            ))}
-          </div>
           {layoutControl}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground opacity-45 pointer-events-none" />
@@ -377,7 +356,6 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
               emptyLabel={active > 0 ? t.monitor.stream_empty_filtered : t.monitor.stream_empty}
               hasMore={hasMore}
               onEndReached={loadMore}
-              font={font}
             />
           )}
         </div>
