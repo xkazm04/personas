@@ -1,77 +1,59 @@
-// UsageStrip — the band above the project columns that says how much of the
-// Claude subscription this fleet has burned, whose logins those are, and —
-// once logins are stored — which of up to five plans is live and how the
-// others are doing.
+// UsageStrip — the band above the project columns that says how much of each
+// coding subscription this fleet has burned, and whose logins those are: ONE ROW
+// PER ACCOUNT, across Claude, Codex and Grok.
 //
-// THE FRAME (`UsageStripShell`) is a header row and five plan slots. This
+// THE FRAME (`UsageStripShell`) is a permanent header and a grid of rows. This
 // file decides what goes in each:
 //   • HEADER LEFT — the title and the stored-plan count (the frame's own).
 //   • HEADER RIGHT — `UsageStripControls` (auto-rotate, threshold, last
 //     rotation) once anything is stored, then refresh with its "as of" stamp,
 //     live only once the five-minute cache has elapsed.
-//   • SLOTS — `AccountRows` once anything is stored, `UsageStripLive` (one
-//     card) while nothing is. Empty slots keep their width, so the first plan
-//     is exactly as wide as the fifth will be.
+//   • ROWS — `AccountRows`, fed by ONE joined `ResourceModel`
+//     (`usage/useResourceModel`): every stored Claude plan (or, while nothing is
+//     stored, the single live login as one row of the same component), then the
+//     read-only Codex / Grok usage (`usage/useCliUsage`). A read that has not
+//     settled is a ghost row under the header — never a spinner.
+//
+// THERE IS ONE LAYOUT. The strip was a five-variant prototype host for a round;
+// the variants were deleted and the switcher with them. A layout name a browser
+// profile still holds under `monitor.usage.variant` is read by nothing.
 //
 // STORING IS AUTOMATIC. When the backend reports a live login that is not one
 // of the stored plans, `useAutoCapture` stores it — once per login, never in
-// a loop — and the strip switches to multi-plan mode on the snapshot that
-// comes back. The *Store this login* button is gone; Forget stays manual.
+// a loop — and the strip shows the stored plan on the snapshot that comes back.
+// Forget stays manual.
 //
 // The acts live in `usageStripActions`; the meters' arithmetic in `usageModel`.
 //
-// SIMULATION. With `simulated`, both reads are switched off (`enabled` goes
-// false, so neither poll runs, and the auto-capture is inert) and the strip
-// renders `useSimPlans` — five plans covering every branch `AccountRows` can
-// take, including the projected, the unreadable and the quarantined. The
-// switch, the forget and the auto-rotate control stay wired; they land in
-// that state instead of in the backend, so each flow can be walked with its
-// real confirm dialog.
-//
-// VARIANT HOST (prototype round). The header carries a layout switcher; the
-// choice is a per-viewer preference (`usage/usageVariant`). `classic` renders the
-// tree described above, untouched — the slots, the frame, the single-login
-// branch. The other four (`usage/variants/`) are lazy chunks that render ONE
-// joined `ResourceModel` (`usage/useResourceModel`): the same Claude reads, plus
-// the read-only Codex / Grok usage (`usage/useCliUsage`, polled only while a
-// variant that shows it is up) and the fleet budgets that already ride on the
-// queue snapshot in the store — no second poll. Consolidating on a winner is a
-// deletion: the losing files, their names in `USAGE_VARIANTS`, and nothing here.
+// SIMULATION. With `simulated`, every read is switched off (`enabled` goes
+// false, so no poll runs, and the auto-capture is inert) and the strip renders
+// `useSimPlans` — five plans covering every branch a row can take, including
+// the projected, the unreadable and the quarantined — beside a simulated Codex
+// (one window) and a not-installed Grok (`buildSimCliUsage`). The switch, the
+// forget and the auto-rotate control stay wired; they land in that state
+// instead of in the backend, so each flow can be walked with its real confirm
+// dialog.
 
-import { Suspense, memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AsyncButton } from '@/features/shared/components/buttons';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { lazyRetry } from '@/lib/lazyRetry';
-import { useSystemStore } from '@/stores/systemStore';
-import type { Translations } from '@/i18n/generated/types';
 import type { ClaudeRotationEvent } from '@/lib/bindings/ClaudeRotationEvent';
 import { useClaudeUsage, USAGE_CACHE_MS } from './useClaudeUsage';
 import { useClaudeAccounts } from './useClaudeAccounts';
 import { useAutoCapture } from './useAutoCapture';
 import { formatCountdown } from './usageModel';
 import { AccountRows } from './AccountRows';
-import { EmptySlots, GhostCard, SLOT_GRID, StripFrame } from './UsageStripShell';
-import { UsageStripLive, UsageStripLoading } from './UsageStripLive';
+import { StripFrame } from './UsageStripShell';
 import { UsageStripControls } from './UsageStripControls';
 import { useUsageActions } from './usageStripActions';
 import { useUsageClock } from './usageBits';
-import { buildSimBudgets, useSimPlans } from './simulation';
-import { USAGE_VARIANTS, readUsageVariant, writeUsageVariant, type UsageVariant } from './usage/usageVariant';
+import { useSimPlans } from './simulation';
 import { useCliUsage } from './usage/useCliUsage';
 import { useResourceModel } from './usage/useResourceModel';
-
-const LanesStrip = lazyRetry(() => import('./usage/variants/LanesStrip'));
-const HorizonStrip = lazyRetry(() => import('./usage/variants/HorizonStrip'));
-const CockpitStrip = lazyRetry(() => import('./usage/variants/CockpitStrip'));
-const LedgerStrip = lazyRetry(() => import('./usage/variants/LedgerStrip'));
-
-const VARIANT_VIEW = { lanes: LanesStrip, horizon: HorizonStrip, cockpit: CockpitStrip, ledger: LedgerStrip } as const;
-const TABS_ID = 'fleet-usage-variant';
 
 export const UsageStrip = memo(function UsageStrip({
   enabled = true, simulated = false,
@@ -83,12 +65,6 @@ export const UsageStrip = memo(function UsageStrip({
   const addToast = useToastStore((s) => s.addToast);
   const now = useUsageClock();
   const live = enabled && !simulated;
-  const [variant, setVariant] = useState<UsageVariant>(readUsageVariant);
-  const pickVariant = useCallback((v: UsageVariant) => {
-    setVariant(v);
-    writeUsageVariant(v);
-  }, []);
-  const classic = variant === 'classic';
 
   const onRotated = useCallback(
     (e: ClaudeRotationEvent) =>
@@ -132,25 +108,12 @@ export const UsageStrip = memo(function UsageStrip({
   const liveUncaptured = snap !== null && snap.livePresent && !snap.liveCaptured;
   useAutoCapture({ active: live && liveUncaptured, liveEmail: snap?.liveEmail ?? null, capture: actions.capture });
 
-  // Slots -----------------------------------------------------------------
-  const cold = !single.snapshot && !single.ipcFailed && !accounts.ipcFailed;
-  const slots = multi ? (
-    <AccountRows accounts={stored} now={now} onSwitch={onSwitch} onRemove={onRemove} />
-  ) : cold ? (
-    <UsageStripLoading />
-  ) : (
-    <UsageStripLive snapshot={single.snapshot} liveEmail={snap?.liveEmail ?? null} now={now} />
-  );
-
-  // The joined model — only the variants read it; classic never asks for the CLIs.
-  const cli = useCliUsage(enabled && !classic, simulated);
-  const liveBudgets = useSystemStore((st) => st.fleetQueue)?.budgets;
-  const simBudgets = useMemo(() => (simulated ? buildSimBudgets() : null), [simulated]);
+  // The joined model — every row the strip paints comes out of it.
+  const cli = useCliUsage(enabled, simulated);
   const model = useResourceModel({
     accounts: snap,
     single: simulated ? null : single.snapshot,
-    cli: classic ? null : cli.snapshot,
-    budgets: simulated ? simBudgets : liveBudgets,
+    cli: cli.snapshot,
     fetchedAt: multi ? accounts.fetchedAt : (single.fetchedAt ?? accounts.fetchedAt),
     claudeFailed: !simulated && !single.snapshot && (single.ipcFailed || accounts.ipcFailed),
     now,
@@ -201,48 +164,11 @@ export const UsageStrip = memo(function UsageStrip({
 
   const controls = multi && snap ? <UsageStripControls snapshot={snap} onSave={onSaveRotate} /> : null;
 
-  const tabs = (
-    <SegmentedTabs<UsageVariant>
-      size="sm"
-      fullWidth={false}
-      idPrefix={TABS_ID}
-      ariaLabel={t.monitor.usage_variant_aria}
-      activeTab={variant}
-      onTabChange={pickVariant}
-      tabs={USAGE_VARIANTS.map((id) => ({ id, label: variantLabel(t, id), testId: `fleet-usage-variant-${id}` }))}
-    />
-  );
-  const View = classic ? null : VARIANT_VIEW[variant];
-
   return (
-    <StripFrame planCount={stored.length} titleRight={titleRight} controls={controls} tabs={tabs} bare={!classic}>
-      <div
-        role="tabpanel"
-        id={`${TABS_ID}-panel-${variant}`}
-        aria-labelledby={`${TABS_ID}-tab-${variant}`}
-        className={classic ? 'contents' : 'block min-w-0'}
-        data-variant={variant}
-        data-mode={multi ? 'multi' : 'single'}
-        data-simulated={simulated || undefined}
-      >
-        {View ? (
-          <Suspense fallback={<div className={`${SLOT_GRID} px-3 py-1.5`}><GhostCard /><EmptySlots from={1} /></div>}>
-            <View model={model} onSwitch={onSwitch} onRemove={onRemove} simulated={simulated} />
-          </Suspense>
-        ) : slots}
-      </div>
+    <StripFrame planCount={stored.length} titleRight={titleRight} controls={controls}>
+      <AccountRows model={model} onSwitch={onSwitch} onRemove={onRemove} />
     </StripFrame>
   );
 });
-
-function variantLabel(t: Translations, v: UsageVariant): string {
-  switch (v) {
-    case 'classic': return t.monitor.usage_variant_classic;
-    case 'lanes': return t.monitor.usage_variant_lanes;
-    case 'horizon': return t.monitor.usage_variant_horizon;
-    case 'cockpit': return t.monitor.usage_variant_cockpit;
-    case 'ledger': return t.monitor.usage_variant_ledger;
-  }
-}
 
 export default UsageStrip;

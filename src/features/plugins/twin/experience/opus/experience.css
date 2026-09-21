@@ -1,0 +1,207 @@
+/*
+ * The Twin table: surfaces, card borders and card mechanics for the
+ * full-screen onboarding + training experience (`experience/`).
+ *
+ * Everything is prefixed `xo-` and scoped to this folder. Colours come from
+ * the app tokens (`--primary`, `--foreground`, `--secondary`, `--background`)
+ * so all ten themes carry it; the four suit hues are the one decorative
+ * palette this surface adds, and each is re-tuned for the light themes.
+ *
+ * Motion contract (Design.md §6): every animation here is decorative, and all
+ * of it stops under `prefers-reduced-motion` AND under the in-app Reduce
+ * Motion toggle (`<html data-motion="reduce">`), which CSS can see directly.
+ */
+
+@property --xo-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.xo-root {
+  --xo-suit-identity: #a78bfa;
+  --xo-suit-tone: #38bdf8;
+  --xo-suit-channels: #fbbf24;
+  --xo-suit-memories: #fb7185;
+  --xo-card: color-mix(in oklab, var(--secondary) 78%, var(--background));
+  --xo-card-raised: color-mix(in oklab, var(--secondary) 92%, var(--foreground) 4%);
+}
+
+[data-theme^='light'] .xo-root {
+  --xo-suit-identity: #7c3aed;
+  --xo-suit-tone: #0284c7;
+  --xo-suit-channels: #b45309;
+  --xo-suit-memories: #e11d48;
+  --xo-card: color-mix(in oklab, var(--background) 88%, var(--foreground) 3%);
+  --xo-card-raised: var(--background);
+}
+
+.xo-suit-identity { --xo-hue: var(--xo-suit-identity); }
+.xo-suit-tone { --xo-hue: var(--xo-suit-tone); }
+.xo-suit-channels { --xo-hue: var(--xo-suit-channels); }
+.xo-suit-memories { --xo-hue: var(--xo-suit-memories); }
+
+/* The table itself: a lit felt with a faint diamond weave. */
+.xo-felt {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, color-mix(in oklab, var(--xo-suit-identity) 12%, transparent), transparent 70%),
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--foreground) 2.5%, transparent) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 2.5%, transparent) 0 1px, transparent 1px 22px),
+    var(--background);
+}
+
+/* A card surface. */
+.xo-card {
+  background: var(--xo-card);
+  border-radius: 1rem;
+}
+.xo-card-raised {
+  background: var(--xo-card-raised);
+}
+
+/*
+ * The foil: a conic border ring in the card's suit hue. `.xo-foil-live` turns
+ * it slowly; the picked answer card and the loot cards wear it live.
+ */
+.xo-foil {
+  position: relative;
+  isolation: isolate;
+}
+.xo-foil::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--xo-angle),
+    var(--xo-hue, var(--primary)),
+    color-mix(in oklab, var(--xo-hue, var(--primary)) 18%, transparent) 22%,
+    color-mix(in oklab, var(--primary) 70%, transparent) 50%,
+    color-mix(in oklab, var(--xo-hue, var(--primary)) 18%, transparent) 78%,
+    var(--xo-hue, var(--primary))
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.55;
+  transition: opacity 250ms ease;
+}
+.xo-foil:hover::before,
+.xo-foil:focus-visible::before,
+.xo-foil[data-picked='true']::before {
+  opacity: 1;
+}
+.xo-foil-live::before {
+  opacity: 1;
+  animation: xo-spin 6s linear infinite;
+}
+.xo-foil-quiet::before {
+  opacity: 0.28;
+}
+
+/* The sheen that crosses a loot card: it reads as "something you can keep". */
+.xo-holo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 32%,
+    color-mix(in oklab, var(--foreground) 9%, transparent) 44%,
+    color-mix(in oklab, var(--xo-hue, var(--primary)) 16%, transparent) 50%,
+    transparent 62%
+  );
+  background-size: 260% 260%;
+  animation: xo-sheen 4.5s ease-in-out infinite;
+}
+
+/* The back of a card: the deck's pattern in the suit hue. */
+.xo-back {
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--xo-hue, var(--primary)) 22%, transparent) 0 18%, transparent 19%),
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--xo-hue, var(--primary)) 14%, transparent) 0 5px, transparent 5px 11px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--xo-hue, var(--primary)) 10%, transparent) 0 5px, transparent 5px 11px),
+    var(--xo-card);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--xo-hue, var(--primary)) 35%, transparent),
+    inset 0 0 0 6px var(--xo-card),
+    inset 0 0 0 7px color-mix(in oklab, var(--xo-hue, var(--primary)) 25%, transparent);
+}
+
+/* A glow under a card that is in play. */
+.xo-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--xo-hue, var(--primary)) 30%, transparent),
+    0 18px 40px -18px color-mix(in oklab, var(--xo-hue, var(--primary)) 55%, transparent);
+}
+
+/* Flip: front and back faces of one card, turned on hover, focus or state. */
+.xo-flip {
+  perspective: 1100px;
+}
+.xo-flip-inner {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.xo-flip:hover .xo-flip-inner,
+.xo-flip:focus-visible .xo-flip-inner,
+.xo-flip[data-flipped='true'] .xo-flip-inner {
+  transform: rotateY(180deg);
+}
+.xo-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.xo-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Keycap for the legend and the card numbers. */
+.xo-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  border-radius: 0.375rem;
+  background: color-mix(in oklab, var(--secondary) 80%, transparent);
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--foreground) 14%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes xo-spin {
+  to { --xo-angle: 360deg; }
+}
+@keyframes xo-sheen {
+  0%, 100% { background-position: 100% 100%; }
+  50% { background-position: 0% 0%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xo-foil-live::before,
+  .xo-holo::after {
+    animation: none;
+  }
+  .xo-flip-inner {
+    transition: none;
+  }
+}
+[data-motion='reduce'] .xo-foil-live::before,
+[data-motion='reduce'] .xo-holo::after {
+  animation: none;
+}
+[data-motion='reduce'] .xo-flip-inner {
+  transition: none;
+}

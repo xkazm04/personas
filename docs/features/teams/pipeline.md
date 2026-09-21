@@ -149,7 +149,7 @@ collapsed them into two surfaces under **Monitor → Channels**:
 
 | Was | Is now |
 | --- | --- |
-| `sub_redRoom/` — a read-only comm log, client-fused from four `list*` calls on a 10s timer pulling 500 unscoped `persona_events` | **Stream** (`fleet/monitor/channels/Stream.tsx`) — one virtualized log with composable lenses. Red Room's 8 event families, its callsign lens (personas ranked by traffic) and its "Heard by" chips all survive; "Heard by" is now a **server-side subscription join** (`consumers`) rather than an N-per-member client fan-out. |
+| `sub_redRoom/` — a read-only comm log, client-fused from four `list*` calls on a 10s timer pulling 500 unscoped `persona_events` | **Stream** (`fleet/monitor/channels/Stream.tsx`) — one virtualized log with composable lenses. Red Room's 8 event families, its callsign lens (personas ranked by traffic) and its "Heard by" chips all survive; "Heard by" is now a **server-side subscription join** (`consumers`) rather than an N-per-member client fan-out. Since 2026-09-21 it is a **decision log**: steps, events, memory and deliberation only (messages and Slack live in Conversations and are not fetched); each row leads with its kind glyph and a short headline (`decisionTitle`), with the long form in the detail modal. |
 | `sub_collab/CollabPane` + `CollabLiveCorrespondence` — the living chat, unvirtualized and paging upward forever | **Conversations** (`fleet/monitor/channels/ConversationBriefing.tsx`) — a virtualized messenger (`measureElement`) with a sidebar of projects-as-conversations, unread badges, and assignments/deliberations rendered as bands. |
 
 What survives from `sub_collab/`: `useTeamChannel.ts` (now a thin selector over the shared

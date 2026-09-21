@@ -3,193 +3,197 @@
 // COLUMNS. Each filled cell takes its skill's lens colour at an intensity
 // proportional to coverage, so the *shape* of adoption reads at a glance.
 // Column headers run vertically to keep columns narrow (height, not width).
-// The skill name is a button → the shared SkillInfoModal.
 //
 // One component, two axes (see registryTypes):
 //   · workspace — columns are projects; an empty cell ADOPTS the skill there.
 //   · project   — columns are that project's context groups; nothing is adopted
 //     per context, so every cell DISPATCHES, and an empty one is the invitation
 //     to run the skill somewhere it has not been.
-import { useMemo, useState } from 'react';
+//
+// Pressing a column header narrows the rows to what that column holds (the
+// rows fold away, the column takes a band); pressing it again — or the chip in
+// the corner — restores them. Geometry and the keyboard model: heatmapKit.
+import { useCallback, useMemo, useState } from 'react';
+import { AnimatePresence, motion, type Transition } from 'framer-motion';
 import { ArrowDownToLine, Play } from 'lucide-react';
 
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { IllustratedEmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { MOTION } from '@/lib/utils/designTokens';
+import { formatPercent } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { cellStatus, coveragePct, type RegistrySkill, type SkillsRegistryProps } from './registryTypes';
+import { cellAlpha, HEAD_ROW, INK_VARS, LABEL_COL, LEGEND_STOPS, navId, templateFor, tint, useGridNav, type DevToolsT } from './heatmapKit';
+import { RegistryHeatmapHeader } from './RegistryHeatmapHeader';
+import { RegistryCategoryRow, RegistryHeatmapRow } from './RegistryHeatmapRow';
+import type { RegistrySkill, SkillsRegistryProps } from './registryTypes';
 
-/** hex (#RRGGBB) → rgba with the given alpha. */
-function withAlpha(hex: string, a: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-}
+const EASE = [0.22, 1, 0.36, 1] as const;
+const STILL: Transition = { duration: 0 };
 
-const COL = '2.25rem';
-/** The skill column: a fixed 150px (operator-specified) — names truncate, the
- *  info modal carries the full one — so the cell field starts at the same x
- *  in every host and the grid never stretches the label column to fill. */
-const SKILL_COL = '150px';
-const NEUTRAL = 'rgba(148,163,184,.9)';
-/** Keyboard ring shared by every cell affordance. */
-const CELL_FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
-const VERTICAL: React.CSSProperties = { writingMode: 'vertical-rl', transform: 'rotate(180deg)' };
-
-export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo }: SkillsRegistryProps & {
-  onOpenInfo: (skill: string) => void;
+export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo, bare = false, emptyHint }: SkillsRegistryProps & {
+  /** Name click → the host's detail surface. Omitted, the name only explains itself. */
+  onOpenInfo?: (skill: string) => void;
+  /** Drop the card frame when the host already is one (the Dock popover). */
+  bare?: boolean;
+  /** Settled-empty copy, when the host knows better why there is nothing. */
+  emptyHint?: string;
 }) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const { columns, skills, mode } = model;
-  const [hover, setHover] = useState<string | null>(null);
-  const projectMode = mode === 'project';
+  const { shouldAnimate } = useMotion();
+  const fold: Transition = useMemo(() => (shouldAnimate ? { duration: MOTION.duration.normal / 1000, ease: EASE } : STILL), [shouldAnimate]);
+  const quick: Transition = useMemo(() => (shouldAnimate ? { duration: MOTION.duration.fast / 1000, ease: EASE } : STILL), [shouldAnimate]);
 
-  // Stagger row MOUNTING: each row is `columns.length` tooltip-bearing cells,
-  // and a workspace of 20 skills × 10 projects big-banged 200+ interactive
-  // cells onto one frame. The reveal hands rows to the renderer across a
-  // short window instead (loading-pattern v2 §3).
-  const reveal = useProgressiveReveal(skills.length, {
-    initialCount: 10,
-    resetKey: `${mode}:${columns.length}`,
-  });
-  const grouped = useMemo(() => {
-    const shown = skills.slice(0, reveal.count);
-    const out: Array<{ cat: string; rows: RegistrySkill[] }> = [];
-    for (const s of shown) {
-      const last = out[out.length - 1];
-      if (last && last.cat === s.category) last.rows.push(s);
-      else out.push({ cat: s.category, rows: [s] });
-    }
+  // The filter is a column id; a column that leaves the model takes it along.
+  const [picked, setPicked] = useState<string | null>(null);
+  const filterIndex = columns.findIndex((c) => c.id === picked);
+  const filterColumn = columns[filterIndex] ?? null;
+  const filterId = filterColumn?.id ?? null;
+  const { cell } = model;
+  const matches = useCallback((s: RegistrySkill) => !filterId || cell(s.name, filterId).adopted, [filterId, cell]);
+  const matchCount = useMemo(() => skills.filter(matches).length, [skills, matches]);
+
+  // Stagger row MOUNTING: a workspace of 20 skills × 10 projects big-banged
+  // 200+ interactive cells onto one frame. The reveal hands rows to the
+  // renderer across a short window instead (loading-pattern v2 §3).
+  const reveal = useProgressiveReveal(skills.length, { initialCount: 12, resetKey: `${mode}:${model.header?.id ?? ''}:${columns.length}` });
+  const rows = useMemo(() => skills.slice(0, reveal.count).filter(matches), [skills, reveal.count, matches]);
+  const lines = useMemo(() => {
+    const perCat = new Map<string, number>();
+    for (const s of rows) perCat.set(s.category, (perCat.get(s.category) ?? 0) + 1);
+    const out: Array<{ key: string; cat: string; count: number } | { key: string; skill: RegistrySkill; r: number }> = [];
+    rows.forEach((s, i) => {
+      if (rows[i - 1]?.category !== s.category) out.push({ key: `cat:${s.category}`, cat: s.category, count: perCat.get(s.category) ?? 0 });
+      out.push({ key: s.name, skill: s, r: i + 1 });
+    });
     return out;
-  }, [skills, reveal.count]);
+  }, [rows]);
 
-  const template = `${SKILL_COL} repeat(${columns.length}, ${COL})`;
+  // One tab stop. The stored identity falls back to the first cell whenever
+  // the thing it names is no longer on screen (filtered away, column gone).
+  const nav = useGridNav(rows.length + 1, columns.length + 1);
+  const [activeRow, activeCol] = (nav.active ?? '').split('::');
+  const activeLive = (activeRow === HEAD_ROW ? (activeCol !== LABEL_COL || !!filterId) : rows.some((s) => s.name === activeRow))
+    && (activeCol === LABEL_COL || columns.some((c) => c.id === activeCol));
+  const stop = activeLive ? nav.active : rows[0] && columns[0] ? navId(rows[0].name, columns[0].id) : columns[0] ? navId(HEAD_ROW, columns[0].id) : null;
+  const [stopRow, stopCol] = (stop ?? '').split('::');
+  const tabFor = useCallback((id: string): 0 | -1 => (id === stop ? 0 : -1), [stop]);
+
+  const ghost = model.loading && skills.length === 0;
+  const empty = !model.loading && skills.length === 0;
+  const frame = bare ? '' : 'rounded-card border border-primary/10 bg-background';
 
   return (
-    <div className="h-full flex flex-col rounded-card border border-border/60 bg-secondary/[0.12] overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-auto">
-        {/* header — subtle primary tint (matches panel/modal headers), vertical column names */}
-        <div className="grid sticky top-0 z-20 bg-secondary/80 backdrop-blur border-b border-border" style={{ gridTemplateColumns: template }}>
-          <div className="px-3 py-2 flex items-end typo-label text-foreground opacity-60 sticky left-0 z-10 bg-secondary/80 backdrop-blur">{d.skills_sort_skill}</div>
-          {columns.map((c) => (
-            <Tooltip
-              key={c.id}
-              content={projectMode
-                ? tx(d.skills_registry_group_hint, { name: c.name, present: c.presentCount, total: skills.length, contexts: c.units })
-                : tx(d.skills_registry_project_hint, { name: c.name, adopted: c.presentCount, total: skills.length, contexts: c.units })}
-              placement="top"
-            >
-              <div className="h-24 flex flex-col items-center justify-end gap-1.5 pb-1.5 min-w-0">
-                <span className="typo-label text-foreground opacity-70 leading-none whitespace-nowrap overflow-hidden max-h-[5rem]" style={VERTICAL}>{c.name}</span>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color ?? model.header?.color ?? NEUTRAL }} />
-              </div>
-            </Tooltip>
-          ))}
+    <div className={`flex h-full min-h-0 flex-col overflow-hidden ${INK_VARS} ${frame}`} data-testid="registry-heatmap">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain scroll-pt-28">
+        <div
+          role="grid"
+          aria-label={model.header?.name ?? d.skills_tab_registry}
+          onKeyDown={nav.onKeyDown}
+          onFocus={nav.onFocus}
+          className="relative isolate grid w-max min-w-full"
+          style={{ gridTemplateColumns: templateFor(columns.length) }}
+        >
+          <RegistryHeatmapHeader model={model} filterId={filterId} shownCount={matchCount} onToggle={setPicked} tabFor={tabFor} chipTransition={quick} />
+
+          {/* Label sizer: every name, invisible and zero-height, so the label
+              track is sized for the whole list from the first frame — rows
+              the reveal mounts later can never widen it and shove the field. */}
+          <div aria-hidden className="invisible col-start-1 flex h-0 items-center gap-2 overflow-hidden px-3">
+            <span className="w-5 flex-shrink-0" />
+            <span className="typo-caption flex flex-col whitespace-nowrap">{skills.map((s) => <span key={s.name}>{s.name}</span>)}</span>
+            <span className="typo-label px-1.5 tabular-nums">{columns.length}/{columns.length}</span>
+          </div>
+
+          {/* The selected column's band — behind the cells, gliding between
+              columns when the filter moves. Absolutely placed, so it takes no
+              grid slot; the explicit `span 1` matters, because an absolute
+              item's `auto` end line is the grid's padding edge, not its own. */}
+          <AnimatePresence>
+            {filterIndex >= 0 && (
+              <motion.div
+                key="band" layout="position" aria-hidden
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={fold}
+                className="pointer-events-none absolute inset-0 -z-10 border-x border-primary/20 bg-primary/[0.06]"
+                style={{ gridColumn: `${filterIndex + 2} / span 1` }}
+              />
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence initial={false}>
+            {lines.map((line) => ('skill' in line
+              ? (
+                <RegistryHeatmapRow
+                  key={line.key}
+                  d={d}
+                  skill={line.skill}
+                  columns={columns}
+                  cell={cell}
+                  projectMode={mode === 'project'}
+                  r={line.r}
+                  activeCol={stopRow === line.skill.name ? (stopCol ?? null) : null}
+                  adopting={adopting}
+                  onAdopt={onAdopt}
+                  onUse={onUse}
+                  onOpenInfo={onOpenInfo}
+                  transition={fold}
+                />
+              )
+              : <RegistryCategoryRow key={line.key} label={line.cat} count={line.count} transition={fold} />))}
+          </AnimatePresence>
+
+          {ghost && <GhostRows columns={columns.length} label={t.common.loading} />}
         </div>
 
-        {/* body */}
-        {grouped.map(({ cat, rows }) => (
-          <div key={cat}>
-            <div className="px-3 pt-3 pb-1 typo-label uppercase tracking-wide text-foreground opacity-50 sticky left-0 border-b border-border/40">{cat}</div>
-            {rows.map((s) => (
-              <div key={s.name} className="grid items-center border-b border-border/25 hover:bg-primary/[0.04] transition-colors" style={{ gridTemplateColumns: template }}>
-                {/* skill label (sticky) — click opens the info modal */}
-                <div className="px-3 py-1 flex items-center gap-2 min-w-0 sticky left-0 z-10 bg-secondary/[0.12] backdrop-blur border-r border-border/40">
-                  {s.visual && (
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border flex-shrink-0"
-                      style={{ color: s.visual.color, borderColor: withAlpha(s.visual.color, 0.25), backgroundColor: withAlpha(s.visual.color, 0.08) }}>
-                      <s.visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
-                    </span>
-                  )}
-                  <button type="button" onClick={() => onOpenInfo(s.name)}
-                    className={`typo-caption text-foreground truncate text-left hover:text-primary transition-colors rounded-interactive ${CELL_FOCUS}`}
-                    data-testid={`registry-skill-${s.name}`}>
-                    {s.name}
-                  </button>
-                  <span className="ml-auto typo-label text-foreground opacity-50 tabular-nums flex-shrink-0 rounded-full bg-secondary/60 px-1.5 leading-4">{s.adoptedCount}/{columns.length}</span>
-                </div>
-                {/* cells */}
-                {columns.map((c) => {
-                  const cell = model.cell(s.name, c.id);
-                  const status = cellStatus(cell, adopting, s.name, c.id);
-                  const pct = coveragePct(cell, c.units);
-                  const hue = s.visual?.color ?? '#6366f1';
-                  const key = `${s.name}|${c.id}`;
-                  const isHover = hover === key;
-
-                  if (status === 'adopted') {
-                    return (
-                      <button key={c.id} type="button"
-                        onMouseEnter={() => setHover(key)} onMouseLeave={() => setHover((h) => (h === key ? null : h))}
-                        onClick={() => onUse(s.name, c.id)}
-                        aria-label={tx(d.skills_registry_use_cell, { skill: s.name, project: c.name })}
-                        className={`relative h-8 mx-0.5 my-0.5 rounded-interactive flex items-center justify-center transition-colors hover:brightness-110 ${CELL_FOCUS} ${cell.running ? 'ring-2 ring-status-info/60' : ''}`}
-                        style={{ backgroundColor: withAlpha(hue, 0.15 + (pct / 100) * 0.55) }}
-                        data-testid={`registry-cell-${s.name}-${c.id}`}
-                      >
-                        {isHover
-                          ? <Play className="w-3.5 h-3.5 text-foreground" aria-hidden />
-                          : <span className="typo-label tabular-nums text-foreground">{pct}%</span>}
-                        {cell.invokes30d > 0 && !isHover && (
-                          <span className="absolute bottom-0 right-0.5 typo-label text-foreground opacity-60 leading-none" style={{ fontSize: '0.55rem' }}>{cell.invokes30d}</span>
-                        )}
-                      </button>
-                    );
-                  }
-
-                  // Untouched cell. In project mode this is not "missing" — the
-                  // skill is installed, it just has not run in that part of the
-                  // repo yet — so it stays a dispatch, never an adopt.
-                  if (projectMode) {
-                    return (
-                      <button key={c.id} type="button"
-                        onMouseEnter={() => setHover(key)} onMouseLeave={() => setHover((h) => (h === key ? null : h))}
-                        onClick={() => onUse(s.name, c.id)}
-                        disabled={cell.running}
-                        aria-label={tx(d.skills_registry_use_cell, { skill: s.name, project: c.name })}
-                        className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-border flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${CELL_FOCUS} ${cell.running ? 'animate-pulse' : ''}`}
-                        data-testid={`registry-cell-${s.name}-${c.id}`}
-                      >
-                        <Play className="w-3.5 h-3.5" aria-hidden />
-                      </button>
-                    );
-                  }
-
-                  const busy = status === 'adopting';
-                  const blocked = status === 'blocked';
-                  return (
-                    <button key={c.id} type="button"
-                      disabled={busy || blocked}
-                      onClick={() => onAdopt(s.name, c.id)}
-                      aria-label={blocked
-                        ? tx(d.skills_registry_running_cell, { skill: s.name, project: c.name })
-                        : tx(d.skills_registry_adopt_cell, { skill: s.name, project: c.name })}
-                      className={`h-8 mx-0.5 my-0.5 rounded-interactive border border-dashed border-border flex items-center justify-center text-foreground opacity-40 hover:opacity-100 hover:text-primary hover:border-primary/40 hover:bg-primary/[0.06] transition-colors disabled:cursor-not-allowed ${CELL_FOCUS} ${busy ? 'animate-pulse opacity-80 border-solid border-primary/40 text-primary' : ''} ${blocked ? 'opacity-25' : ''}`}
-                      data-testid={`registry-cell-${s.name}-${c.id}`}
-                    >
-                      <ArrowDownToLine className="w-3.5 h-3.5" aria-hidden />
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+        {empty && (
+          <div className="px-6 py-8">
+            <IllustratedEmptyState variant="heatmap" heading={d.skills_registry_empty_title} description={emptyHint ?? d.skills_proj_empty} />
           </div>
-        ))}
-      </div>
-
-      {/* legend */}
-      <div className="flex items-center gap-4 px-3 py-1.5 border-t border-border flex-shrink-0 typo-label text-foreground opacity-60 bg-secondary/40">
-        <span className="flex items-center gap-1">
-          {d.skills_col_coverage}
-          {[0.2, 0.45, 0.7, 0.95].map((a) => (
-            <span key={a} className="w-3 h-3 rounded-interactive" style={{ backgroundColor: withAlpha('#6366f1', a) }} />
-          ))}
-        </span>
-        <span className="flex items-center gap-1"><Play className="w-3 h-3" aria-hidden /> {d.skills_registry_legend_use}</span>
-        {!projectMode && (
-          <span className="flex items-center gap-1"><ArrowDownToLine className="w-3 h-3" aria-hidden /> {d.skills_registry_legend_adopt}</span>
+        )}
+        {!ghost && !empty && filterColumn && matchCount === 0 && (
+          <p className="typo-caption px-6 py-8 text-center text-foreground">
+            {tx(d.skills_registry_filter_empty, { name: filterColumn.name })}
+          </p>
         )}
       </div>
+
+      <Legend d={d} projectMode={mode === 'project'} />
+    </div>
+  );
+}
+
+/** Cold load: the header above stays; calm tiles fade in under it after a beat,
+ *  on the grid's own tracks so the ghost is the shape of what is coming. */
+function GhostRows({ columns, label }: { columns: number; label: string }) {
+  return (
+    <div role="status" aria-live="polite" className="contents">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: 6 }, (_, r) => (
+        <div key={r} aria-hidden className="col-span-full grid animate-fade-in grid-cols-subgrid items-center" style={{ animationDelay: `${120 + r * 35}ms` }}>
+          <span className="mx-3 my-2.5 h-3.5 rounded-interactive bg-primary/[0.06]" />
+          {Array.from({ length: columns }, (_, c) => <span key={c} className="mx-0.5 my-[3px] h-7 rounded-interactive bg-primary/[0.04]" />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Legend({ d, projectMode }: { d: DevToolsT; projectMode: boolean }) {
+  return (
+    <div className="flex flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-primary/10 px-3 py-1.5 typo-label text-foreground">
+      <span className="flex items-center gap-1.5">
+        {d.skills_col_coverage}
+        <span className="flex items-center gap-px" aria-hidden>
+          {LEGEND_STOPS.map((p) => <span key={p} className="h-2.5 w-3.5 first:rounded-l-pill last:rounded-r-pill" style={{ backgroundColor: tint('var(--primary)', cellAlpha(p)) }} />)}
+        </span>
+        <span className="tabular-nums">{`${formatPercent(0, { precision: 0 })}–${formatPercent(100, { precision: 0 })}`}</span>
+      </span>
+      <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-foreground" aria-hidden />{d.skills_registry_legend_recent}</span>
+      <span className="flex items-center gap-1"><Play className="h-3 w-3 text-primary" aria-hidden />{d.skills_registry_legend_use}</span>
+      {!projectMode && <span className="flex items-center gap-1"><ArrowDownToLine className="h-3 w-3 text-primary" aria-hidden />{d.skills_registry_legend_adopt}</span>}
     </div>
   );
 }

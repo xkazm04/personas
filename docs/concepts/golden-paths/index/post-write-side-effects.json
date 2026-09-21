@@ -55,6 +55,7 @@
       ],
       "resolved": false
     },
+    "core/src/events.rs": {"count":1,"sections":[3],"contexts":["- **`core/src/events.rs` — `event_name::*`.** Every event name, one registry."],"resolved":false},
     "crates/brainiac-server/src/demand.rs": {"count":1,"sections":[4],"lines":["32"],"contexts":["(`crates/brainiac-server/src/demand.rs:32`) writes down exactly why: *\"its"],"resolved":false},
     "crates/brainiac-server/src/http.rs": {"count":1,"sections":[4],"lines":["444-447"],"contexts":["(`crates/brainiac-server/src/http.rs:444-447`: *\"`tx` above is never"],"resolved":false},
     "crudRouteFactory.ts": {
@@ -104,7 +105,6 @@
     "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["- **Mechanism** — a `scripts/census/rules.json` entry, ratcheting. Not a new"]},
     "sla.rs": {"count":4,"sections":[2,6,7,11],"lines":["636-664","614-621"],"contexts":["`sla.rs:636-664`); and if the derived table is deliberately allowed to outlive"],"resolved":false},
     "src-tauri/**.rs": {"count":1,"sections":[6],"contexts":["| Transaction openers in `src-tauri/**.rs` | **153** across 65 files | both implementations agree |"],"resolved":false},
-    "src-tauri/core/src/events.rs": {"count":1,"sections":[3],"contexts":["- **`core/src/events.rs` — `event_name::*`.** Every event name, one registry."],"resolvedFrom":"suffix","verbatim":"core/src/events.rs"},
     "src-tauri/db/Cargo.toml": {"count":1,"sections":[7],"lines":["45"],"contexts":["(`db/Cargo.toml:45`) and `transaction-boundary.md` flagged the same absence"],"resolvedFrom":"suffix","verbatim":"db/Cargo.toml"},
     "src-tauri/db/src/cdc.rs": {
       "count": 15,

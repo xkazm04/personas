@@ -24,7 +24,8 @@
     "dispatched": "Dispatched — the session appears above",
     "recent_title": "Recent dispatches",
     "recent_empty": "Nothing dispatched yet",
-    "recent_open_aria": "Open the Fleet page"
+    "recent_open_aria": "Open the Fleet page",
+    "skill_picker_empty": "No project in this workspace has a skill installed yet — adopt one in Dev Tools → Skills → Registry."
   },
   "fleet": {
     "search_placeholder": "Filter sessions…",
@@ -1856,7 +1857,14 @@
     "council_chip_tooltip": "{count} features slice this context. Open the review list.",
     "council_skill_missing": "The council skill is not linked in {project}. Run {remedy} in the registry checkout, then try again.",
     "council_dispatch_title": "Council: {feature}",
-    "council_close": "Close the feature list"
+    "council_close": "Close the feature list",
+    "skills_registry_filter_hint": "Click to show only the skills here",
+    "skills_registry_filter_active_hint": "Click again to show every skill",
+    "skills_registry_filter_clear": "Clear the {name} filter",
+    "skills_registry_filter_empty": "No skills in {name} yet",
+    "skills_registry_empty_title": "No skills to show",
+    "skills_registry_name_details": "Click for full details",
+    "skills_registry_legend_recent": "ran in the last 30 days"
   },
   "doc_signing": {
     "sign_heading": "Sign a Document",

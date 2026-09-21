@@ -1,10 +1,7 @@
 // fleetSessionModel — the session layer under the Activity board.
 //
-// The first test is the important one: SESSION_BORDER duplicates the hue
-// decisions in FLEET_STATE_META because Tailwind cannot generate a class built
-// at runtime. Duplication is only safe while something compares the two copies,
-// so a hue change in the canonical table must fail HERE rather than quietly
-// giving sessions a different colour in the Monitor than in the Fleet page.
+// The hue tables the node paints with (`SESSION_TINT`) are pinned to the
+// canonical palette in `board/node/__tests__/nodeSymbols.test.ts`.
 
 import { describe, it, expect } from 'vitest';
 import { FLEET_STATE_META } from '@/features/plugins/fleet/fleetStateMeta';
@@ -12,7 +9,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import {
-  SESSION_BORDER, groupSessions, isLiveSession, sessionGlyph, sessionLabel, sessionStateMeta,
+  groupSessions, isLiveSession, sessionGlyph, sessionLabel, sessionStateMeta,
 } from '../fleetSessionModel';
 
 function session(o: Partial<FleetSession> & { id: string }): FleetSession {
@@ -28,18 +25,6 @@ function session(o: Partial<FleetSession> & { id: string }): FleetSession {
 
 const project = (root: string, teamId: string | null): DevProject =>
   ({ id: `p-${root}`, root_path: root, team_id: teamId } as unknown as DevProject);
-
-describe('SESSION_BORDER', () => {
-  it('stays in lockstep with the canonical FLEET_STATE_META palette', () => {
-    for (const meta of FLEET_STATE_META) {
-      expect(SESSION_BORDER[meta.id]).toBe(meta.dot.replace('bg-', 'border-'));
-    }
-  });
-
-  it('covers every lifecycle state', () => {
-    expect(Object.keys(SESSION_BORDER).sort()).toEqual(FLEET_STATE_META.map((m) => m.id).sort());
-  });
-});
 
 describe('sessionStateMeta', () => {
   it('resolves a known state', () => {

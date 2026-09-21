@@ -232,5 +232,10 @@ pub(super) fn shard(
         commands::infrastructure::dev_tools::notepad_list_plan_summaries,
         commands::infrastructure::dev_tools::notepad_list_runs,
         commands::infrastructure::dev_tools::notepad_record_run_start,
+        commands::infrastructure::dev_tools::notepad_list_comments,
+        commands::infrastructure::dev_tools::notepad_unread_counts,
+        commands::infrastructure::dev_tools::notepad_add_comment,
+        commands::infrastructure::dev_tools::notepad_mark_comments_read,
+        commands::infrastructure::dev_tools::notepad_set_review_verdict,
     ])
 }

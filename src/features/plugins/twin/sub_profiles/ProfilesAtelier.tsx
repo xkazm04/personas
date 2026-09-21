@@ -7,7 +7,8 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { TWIN_SLOTS, type TwinSlotId } from '../shared/twinStatus';
-import { CreateTwinDialog } from './CreateTwinDialog';
+// TEMPORARY /contest scaffold — see experience/twinExperienceVariant.tsx.
+import { startCreateTwin } from '../experience/twinExperienceVariant';
 import { TwinCard } from './TwinCard';
 import { TwinHero } from './TwinHero';
 
@@ -32,7 +33,6 @@ export default function ProfilesAtelier() {
   const deleteTwinProfile = useSystemStore((s) => s.deleteTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
-  const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
@@ -61,12 +61,7 @@ export default function ProfilesAtelier() {
 
   // First run: no roster to show, so the explainer IS the page.
   if (!twinProfilesLoading && sorted.length === 0) {
-    return (
-      <>
-        <TwinHero onCreate={() => setCreating(true)} />
-        {creating && <CreateTwinDialog onClose={() => setCreating(false)} />}
-      </>
-    );
+    return <TwinHero onCreate={startCreateTwin} />;
   }
 
   return (
@@ -78,7 +73,7 @@ export default function ProfilesAtelier() {
           <h1 className="typo-heading-lg truncate">{twin.profiles.title}</h1>
           <p className="typo-caption">{twin.profiles.subtitle}</p>
         </div>
-        <Button onClick={() => setCreating(true)} variant="accent" accentColor="violet" className="shrink-0">
+        <Button onClick={startCreateTwin} variant="accent" accentColor="violet" className="shrink-0">
           <Plus className="w-4 h-4 mr-1.5" />
           {twin.profiles.newTwin}
         </Button>
@@ -106,8 +101,6 @@ export default function ProfilesAtelier() {
               />
             ))}
       </div>
-
-      {creating && <CreateTwinDialog onClose={() => setCreating(false)} />}
 
       {confirmDelete && (
         <ConfirmDialog

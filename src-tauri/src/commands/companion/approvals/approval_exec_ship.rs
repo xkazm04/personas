@@ -735,6 +735,7 @@ pub(crate) fn create_ship_goals_inner(
 /// he broke refuses the whole operation with a reason the card shows.
 #[tauri::command]
 pub async fn companion_create_ship_goals(
+    app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     milestone_id: String,
     goals: Vec<serde_json::Value>,
@@ -752,7 +753,23 @@ pub async fn companion_create_ship_goals(
     );
     let out = create_ship_goals_inner(&state.db, &plan)?;
     if let Some(note_id) = note_id.as_deref() {
+        // The scope move writes the note on its own schedule (best-effort,
+        // several branches); what the pad is owed is "this note changed", so
+        // compare the row before and after rather than threading a return
+        // value through every branch.
+        let before = repo::get_note(&state.db, note_id)
+            .ok()
+            .map(|n| n.updated_at);
         scope_note_for_goals(&state.db, note_id, &plan.milestone_id, &out.goal_ids);
+        if let Ok(after) = repo::get_note(&state.db, note_id) {
+            if before.as_deref() != Some(after.updated_at.as_str()) {
+                crate::commands::infrastructure::dev_tools::notepad::emit_note_status(
+                    &app,
+                    note_id,
+                    after.status,
+                );
+            }
+        }
     }
     Ok(out)
 }
@@ -1163,6 +1180,7 @@ pub(crate) fn ship_lifecycle_target(
 /// operator and `active` is not a word anyone says out loud.
 pub(crate) fn execute_ship_milestone_lifecycle(
     state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
     params_json: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     // Through the shared vocabulary rather than an open-coded emptiness test
@@ -1184,7 +1202,7 @@ pub(crate) fn execute_ship_milestone_lifecycle(
     let (target, name) = ship_lifecycle_target(&state.db, milestone_id, transition)
         .map_err(|reason| AppError::Validation(format!("ship_milestone_lifecycle: {reason}")))?;
 
-    repo::update_milestone(
+    let (_, moves) = repo::update_milestone_tracked(
         &state.db,
         milestone_id,
         None,
@@ -1194,6 +1212,8 @@ pub(crate) fn execute_ship_milestone_lifecycle(
         None,
         None,
     )?;
+    // The cut / ship walks the milestone's brief note along; the pad hears it.
+    crate::commands::infrastructure::dev_tools::notepad::emit_brief_moves(app, &moves);
     tracing::info!(milestone_id = %milestone_id, transition, "companion: ship milestone lifecycle");
 
     Ok(ExecuteResult::message(if target == "active" {

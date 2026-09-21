@@ -44,7 +44,8 @@ export interface RegistrySkill {
   adoptedCount: number;
   /** Sum of 30d invokes across the matrix. */
   totalInvokes: number;
-  /** Description — the adopt/dispatch confirmation modal shows it. */
+  /** Description — the heatmap's skill-name tooltip and the adopt/dispatch
+   *  confirmation modal both show it. */
   description?: string | null;
 }
 

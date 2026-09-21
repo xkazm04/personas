@@ -12,8 +12,8 @@
 // survives a failed re-read: the last honest numbers, still stamped with when
 // they were true, beat a wall of "unreadable".
 //
-// SIMULATION replaces the read outright (`buildSimCliUsage`), so the variants
-// can be judged without a backend or an installed Codex.
+// SIMULATION replaces the read outright (`buildSimCliUsage`), so the Codex and
+// Grok rows can be judged without a backend or an installed Codex.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePolling } from '@/hooks/utility/timing/usePolling';

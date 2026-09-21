@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildNoteAskPrompt } from '../athena/buildNoteAskPrompt';
+import { buildNoteCommentPrompt } from '../athena/buildNoteCommentPrompt';
 import { buildNoteGoalsPrompt } from '../athena/buildNoteGoalsPrompt';
 
 /**
@@ -103,5 +104,29 @@ describe('buildNoteGoalsPrompt', () => {
 
   it('does not authorise anything beyond the proposal', () => {
     expect(buildNoteGoalsPrompt(NOTE_ID)).toContain('Do not execute anything else');
+  });
+});
+
+/**
+ * The thread-reply pointer. Same three rules: it points at the note, names the
+ * read op and the answering op, and carries neither his comment nor a script.
+ */
+describe('buildNoteCommentPrompt', () => {
+  const COMMENT = 'Please also cover the offline case.';
+
+  it('names describe_note and the note id', () => {
+    const out = buildNoteCommentPrompt(NOTE_ID);
+    expect(out).toContain('describe_note');
+    expect(out).toContain(`query: \`${NOTE_ID}\``);
+  });
+
+  it('names comment_on_note as the answering op, so the reply lands in the thread', () => {
+    expect(buildNoteCommentPrompt(NOTE_ID)).toContain(`comment_on_note\` (note_id: \`${NOTE_ID}\``);
+  });
+
+  it('pastes neither the note body nor his comment — she reads both from the note', () => {
+    const out = buildNoteCommentPrompt(NOTE_ID);
+    expect(out).not.toContain(BODY);
+    expect(out).not.toContain(COMMENT);
   });
 });

@@ -3013,7 +3013,14 @@
     "council_state_stalled": "Nach Runde 3 festgefahren",
     "council_state_unknown": "Status nicht erkannt",
     "council_tier_major": "Wichtig",
-    "council_tier_toggle_label": "{name} als wichtige Funktion markieren"
+    "council_tier_toggle_label": "{name} als wichtige Funktion markieren",
+    "skills_registry_filter_hint": "Klicken, um nur die Skills hier anzuzeigen",
+    "skills_registry_filter_active_hint": "Erneut klicken, um alle Skills anzuzeigen",
+    "skills_registry_filter_clear": "Filter „{name}“ entfernen",
+    "skills_registry_filter_empty": "Noch keine Skills in {name}",
+    "skills_registry_empty_title": "Keine Skills zum Anzeigen",
+    "skills_registry_name_details": "Klicken für alle Details",
+    "skills_registry_legend_recent": "in den letzten 30 Tagen ausgeführt"
   },
   "dev_triage": {
     "action_label": "Aktion:",
@@ -3489,7 +3496,8 @@
     "skill_picker_close": "Skill-Auswahl schließen",
     "skill_picker_hint": "Klicke auf eine Zelle, um diesen Skill und das Projekt in die Konsole zu laden. Eine leere Zelle installiert den Skill dort zuerst.",
     "skill_picker_open": "Skill aus der Registry wählen",
-    "skill_picker_title": "Skill-Registry"
+    "skill_picker_title": "Skill-Registry",
+    "skill_picker_empty": "In diesem Arbeitsbereich hat noch kein Projekt einen Skill installiert — übernimm einen unter Entwicklertools → Skills → Register."
   },
   "fleet": {
     "activity_empty": "Keine aktuellen Sitzungen gefunden",

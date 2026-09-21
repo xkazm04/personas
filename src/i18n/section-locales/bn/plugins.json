@@ -3013,7 +3013,14 @@
     "council_state_stalled": "৩ রাউন্ডের পরেও আটকে আছে",
     "council_state_unknown": "অবস্থা শনাক্ত করা যায়নি",
     "council_tier_major": "প্রধান",
-    "council_tier_toggle_label": "{name}-কে প্রধান ফিচার হিসেবে চিহ্নিত করুন"
+    "council_tier_toggle_label": "{name}-কে প্রধান ফিচার হিসেবে চিহ্নিত করুন",
+    "skills_registry_filter_hint": "শুধু এখানকার স্কিল দেখাতে ক্লিক করুন",
+    "skills_registry_filter_active_hint": "সব স্কিল দেখাতে আবার ক্লিক করুন",
+    "skills_registry_filter_clear": "{name} ফিল্টার সরান",
+    "skills_registry_filter_empty": "{name}-এ এখনও কোনো স্কিল নেই",
+    "skills_registry_empty_title": "দেখানোর মতো কোনো স্কিল নেই",
+    "skills_registry_name_details": "পুরো বিবরণ দেখতে ক্লিক করুন",
+    "skills_registry_legend_recent": "গত ৩০ দিনে চলেছে"
   },
   "dev_triage": {
     "action_label": "ক্রিয়া:",
@@ -3489,7 +3496,8 @@
     "skill_picker_close": "স্কিল পিকার বন্ধ করুন",
     "skill_picker_hint": "একটি সেলে ক্লিক করে সেই স্কিল ও প্রজেক্ট কনসোলে লোড করুন। খালি সেল আগে সেখানে স্কিলটি ইনস্টল করে।",
     "skill_picker_open": "রেজিস্ট্রি থেকে একটি স্কিল বাছুন",
-    "skill_picker_title": "স্কিল রেজিস্ট্রি"
+    "skill_picker_title": "স্কিল রেজিস্ট্রি",
+    "skill_picker_empty": "এই ওয়ার্কস্পেসের কোনো প্রজেক্টে এখনও কোনো স্কিল ইনস্টল করা নেই — ডেভ টুলস → স্কিল → রেজিস্ট্রি থেকে একটি অ্যাডপ্ট করুন।"
   },
   "fleet": {
     "activity_empty": "কোনো সাম্প্রতিক সেশন পাওয়া যায়নি",

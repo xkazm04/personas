@@ -42,12 +42,14 @@ import type { QueueActions } from './useQueueActions';
 type Confirm = 'cancel' | 'start' | null;
 
 export const QueueTile = memo(function QueueTile({
-  item, width = QUEUE_TILE_W, height = QUEUE_TILE_H, flash = false, overAdmitted = false,
+  item, width = QUEUE_TILE_W, height = QUEUE_TILE_H, fill = false, flash = false, overAdmitted = false,
   onOpen, onRecap, actions, onNudge, first = false, last = false, dragControls, dragHandle = false,
 }: {
   item: QueueItem;
   width?: number;
   height?: number;
+  /** Span the parent's width instead of `width` — the Lanes board opts in. */
+  fill?: boolean;
   /** Athena pointed at this node — ring it until the board clears the signal. */
   flash?: boolean;
   /** A live row sitting past the cap after a Start now — warning frame. */
@@ -187,6 +189,7 @@ export const QueueTile = memo(function QueueTile({
         overAdmitted={overAdmitted}
         width={width}
         height={height}
+        fill={fill}
         flash={flash}
         symbols={affordances}
         // A terminal-opening body for a live row; an inert labelled body for a

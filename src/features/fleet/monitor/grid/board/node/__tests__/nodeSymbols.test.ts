@@ -1,18 +1,18 @@
-// nodeSymbols — the map every board reads, and the three styles as data.
+// nodeSymbols — the map every board reads, and the node's one treatment.
 //
 // Two contracts. (1) WHICH symbols show, in WHICH order, is one pure function
 // per kind, so a symbol that leaks (a rank on a live row, an origin on a
 // persona) or an order that drifts between boards fails here, without a DOM.
 // (2) The tint and border tables are literal (Tailwind must see the class
 // verbatim), so they are tied to the canonical `FLEET_STATE_META[].dot` by
-// hue FAMILY — the same lockstep `SESSION_BORDER` has — and a palette change
+// hue FAMILY, and a palette change
 // fails a test instead of drifting.
 
 import { describe, it, expect } from 'vitest';
 import { FLEET_STATE_META } from '@/features/plugins/fleet/fleetStateMeta';
 import { SQUARE_STATE_ORDER, SQUARE_VISUAL } from '../../../fleetGridModel';
 import {
-  frameClass, NODE_STYLE, NODE_SYMBOL_ORDER, ORIGIN_GLYPH, PERSONA_HUE, PERSONA_STATE_MARK, personaSymbols,
+  frameClass, NODE_CHIP, NODE_SHELL, NODE_SYMBOL_ORDER, ORIGIN_GLYPH, PERSONA_HUE, PERSONA_STATE_MARK, personaSymbols,
   SESSION_STATE_MARK, SESSION_TINT, sessionHue, sessionSymbols, swatchHue, swatchInitial, symbolClass,
 } from '../nodeSymbols';
 
@@ -102,9 +102,9 @@ describe('the hue tables', () => {
     expect(Object.keys(SESSION_TINT).sort()).toEqual(FLEET_STATE_META.map((m) => m.id).sort());
   });
 
-  it('sessionHue reads text and dot from the canonical table', () => {
+  it('sessionHue reads the dot from the canonical table', () => {
     const meta = FLEET_STATE_META.find((m) => m.id === 'awaiting_input')!;
-    expect(sessionHue('awaiting_input')).toMatchObject({ text: meta.text, dot: meta.dot, border: 'border-violet-400' });
+    expect(sessionHue('awaiting_input')).toEqual({ dot: meta.dot, tint: SESSION_TINT.awaiting_input });
   });
 
   it('PERSONA_HUE stays in the same family as SQUARE_VISUAL\'s accent, per state', () => {
@@ -112,50 +112,24 @@ describe('the hue tables', () => {
       const fam = family(SQUARE_VISUAL[st].accent);
       expect(family(PERSONA_HUE[st].dot)).toBe(fam);
       if (st !== 'idle') {
-        expect(family(PERSONA_HUE[st].border)).toBe(fam);
         expect(family(PERSONA_HUE[st].tint)).toBe(fam);
       }
     }
   });
 });
 
-describe('the three styles', () => {
+describe('the node treatment', () => {
   const hue = sessionHue('running');
 
-  it('yield three DISTINCT frames for the same hue', () => {
-    const frames = (['outline', 'accent', 'tinted'] as const).map((s) => frameClass(s, hue));
-    expect(new Set(frames).size).toBe(3);
-    expect(frames[0]).toContain('border-blue-400');
-    expect(frames[0]).toContain('bg-transparent');
-    expect(frames[1]).toContain('border-l-[3px]');
-    expect(frames[1]).toContain('border-blue-400');
-    expect(frames[2]).toContain('bg-blue-500/[0.08]');
-    expect(frames[2]).not.toMatch(/border/);
-    expect(frames[2]).toContain('shadow-elevation-1');
+  it('frames the node with the hue wash and a soft elevation — no border, so nothing to dash for a queued row', () => {
+    expect(frameClass(hue)).toBe(`${NODE_SHELL} ${hue.tint}`);
+    expect(frameClass(hue)).toContain('bg-blue-500/[0.08]');
+    expect(frameClass(hue)).toContain('shadow-elevation-1');
+    expect(frameClass(hue)).not.toMatch(/border/);
   });
 
-  it('dash the frame for a queued row only where there is a border', () => {
-    expect(frameClass('outline', hue, { queued: true })).toContain('border-dashed');
-    expect(frameClass('accent', hue, { queued: true })).toContain('border-dashed');
-    expect(frameClass('tinted', hue, { queued: true })).not.toContain('border-dashed');
-  });
-
-  it('put the hue on the state symbol only in outline, in chips in accent, on solid circles in tinted', () => {
-    expect(symbolClass('outline', hue, true)).toBe(hue.text);
-    expect(symbolClass('outline', hue, false)).toBe('text-foreground opacity-70');
-    expect(symbolClass('accent', hue, true)).toContain('bg-secondary/40');
-    expect(symbolClass('accent', hue, true)).toContain(hue.text);
-    expect(symbolClass('accent', hue, false)).toBe('rounded-full bg-secondary/40 text-foreground');
-    expect(symbolClass('tinted', hue, true)).toBe(`rounded-full ${hue.dot} text-background`);
-    expect(symbolClass('tinted', hue, false)).toBe(`rounded-full ${hue.dot} text-background`);
-  });
-
-  it('differ in frame, hue application and symbol treatment — never in which symbols show', () => {
-    expect(NODE_STYLE.outline.elapsed).toBe('ring');
-    expect(NODE_STYLE.accent.elapsed).toBe('ring');
-    expect(NODE_STYLE.tinted.elapsed).toBe('bar');
-    expect(NODE_STYLE.accent.title).toBe('font-medium');
-    expect(new Set(Object.values(NODE_STYLE).map((s) => s.symbolTone)).size).toBe(3);
+  it('puts every symbol, the state one included, on a solid hue circle', () => {
+    expect(symbolClass(hue)).toBe(`${NODE_CHIP} ${hue.dot} text-background`);
   });
 });
 

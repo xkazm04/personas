@@ -84,6 +84,7 @@
       ],
       "resolved": false
     },
+    "core/src/events.rs": {"count":4,"sections":[4,7],"lines":["79-90","12"],"contexts":["2. **Declare the name in `core/src/events.rs`'s `event_names!` block.** Group it with its"],"resolved":false},
     "demand.rs": {
       "count": 1,
       "sections": [2],
@@ -177,7 +178,7 @@
     },
     "src-tauri/": {"count":1,"sections":[7],"contexts":["`src-tauri/`. The step's `onComplete()` can only ever fire from another path; the listener"],"resolved":false,"isDir":true},
     "src-tauri/clippy.toml": {"count":1,"sections":[9],"contexts":["repo already runs `cargo clippy -- -D warnings` in its PR gate. A `src-tauri/clippy.toml` with"]},
-    "src-tauri/core/src/events.rs": {"count":6,"sections":[3,4,6,7],"lines":["16-30","79-90","12"],"contexts":["- **`personas_core::events::event_names!`** (`src-tauri/core/src/events.rs:16-30`, table at"]},
+    "src-tauri/core/src/events.rs": {"count":2,"sections":[3,6],"lines":["16-30"],"contexts":["- **`personas_core::events::event_names!`** (`src-tauri/core/src/events.rs:16-30`, table at"]},
     "src-tauri/db/src/cdc.rs": {
       "count": 7,
       "sections": [5,6,7,8,9],

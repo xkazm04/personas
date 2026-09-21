@@ -3013,7 +3013,14 @@
     "council_state_stalled": "ラウンド 3 で停滞",
     "council_state_unknown": "認識できない状態",
     "council_tier_major": "主要",
-    "council_tier_toggle_label": "{name} を主要な機能としてマーク"
+    "council_tier_toggle_label": "{name} を主要な機能としてマーク",
+    "skills_registry_filter_hint": "クリックすると、ここにあるスキルだけを表示します",
+    "skills_registry_filter_active_hint": "もう一度クリックすると、すべてのスキルを表示します",
+    "skills_registry_filter_clear": "{name} のフィルターを解除",
+    "skills_registry_filter_empty": "{name} にはまだスキルがありません",
+    "skills_registry_empty_title": "表示するスキルがありません",
+    "skills_registry_name_details": "クリックで詳細を表示",
+    "skills_registry_legend_recent": "過去30日に実行"
   },
   "dev_triage": {
     "action_label": "アクション:",
@@ -3489,7 +3496,8 @@
     "skill_picker_close": "スキルピッカーを閉じる",
     "skill_picker_hint": "セルをクリックすると、そのスキルとプロジェクトがコンソールに読み込まれます。空のセルは先にそこへスキルをインストールします。",
     "skill_picker_open": "レジストリからスキルを選択",
-    "skill_picker_title": "スキルレジストリ"
+    "skill_picker_title": "スキルレジストリ",
+    "skill_picker_empty": "このワークスペースのプロジェクトにはまだスキルがインストールされていません — 開発ツール → スキル → レジストリ から採用してください。"
   },
   "fleet": {
     "activity_empty": "最近のセッションが見つかりません",

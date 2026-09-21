@@ -114,6 +114,16 @@
       "resolvedFrom": "basename",
       "verbatim": "CustomThemeCreator.tsx"
     },
+    "src/features/teams/sub_council/galaxy/engine/theme.ts": {
+      "count": 1,
+      "sections": [],
+      "lines": ["14"],
+      "contexts": [
+        "| **Multi-theme via `[data-theme]` + CSS custom properties, light tier first-class** | 11 themes, 8+3 | **11 themes, 8+3**, full ~26-declaration token block per light theme | **declined outright** —…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "theme.ts"
+    },
     "src/features/teams/sub_factory/passport/improve/monitoringCard.tsx": {
       "count": 1,
       "sections": [9],
@@ -163,15 +173,6 @@
       "contexts": ["pass); full reads of `globals.css` (5,553 lines), `themeStore.ts`, `contrastRatio.ts`,"],
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
-    },
-    "theme.ts": {
-      "count": 1,
-      "sections": [],
-      "lines": ["14"],
-      "contexts": [
-        "| **Multi-theme via `[data-theme]` + CSS custom properties, light tier first-class** | 11 themes, 8+3 | **11 themes, 8+3**, full ~26-declaration token block per light theme | **declined outright** —…"
-      ],
-      "resolved": false
     }
   }
 }

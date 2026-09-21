@@ -7,7 +7,7 @@
 //! this is the roster for the work that sits above all of them.
 //!
 //! **Where the link lives.** `persona_teams.workspace_id` is the authority, and
-//! it has been since `e41_workspace_team_binding`. Before that column existed
+//! it has been since `e42_workspace_team_binding`. Before that column existed
 //! the link was the *formatted name string* — `app_master_adopt.rs` minted
 //! `"{workspace} — cross-project"` and then found it again by scanning every
 //! team for that exact name. Two consequences, both silent: renaming a
@@ -26,7 +26,7 @@
 //!
 //! **Two doors, one invariant.** [`ensure_workspace_team`] is the live door
 //! (every workspace-bound adoption calls it, so a workspace can never leave
-//! that path groupless); the migration step `e41_workspace_team_binding` is the
+//! that path groupless); the migration step `e42_workspace_team_binding` is the
 //! backfill door for workspaces that existed before this rule did, and probes
 //! the same postcondition. The pairing mirrors [`crate::project_team`], which
 //! does this job one level down.

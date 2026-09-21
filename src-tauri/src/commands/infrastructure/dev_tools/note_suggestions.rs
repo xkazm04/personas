@@ -526,6 +526,74 @@ pub fn resolve_note_suggestion_core(
     Ok(note)
 }
 
+/// Longest row label the suggestions review lists, in characters.
+const REVIEW_ROW_LABEL_MAX: usize = 80;
+
+/// Post the thread's `review` entry for a `note_suggestions` card the moment
+/// the card is persisted (session.rs, where the card's id is minted).
+///
+/// Author `athena`, `ref_kind = suggestion_card`, `ref_id` = the chat card id
+/// (the key `notepad_resolve_suggestion` takes, so the pad's Approve / Reject
+/// on the review can resolve every open row). The body is DATA — one line per
+/// row, `- <kind>: <title or the head of its body>` — because the pad renders
+/// its own label from `kind` + `ref_kind`; no English sentence is stored.
+pub(crate) fn record_suggestions_review(
+    db: &crate::db::DbPool,
+    card_id: &str,
+    config: &Value,
+) -> Result<crate::db::models::NoteComment, AppError> {
+    use crate::db::models::{NoteCommentAuthor, NoteCommentKind, NoteCommentRef};
+    use crate::db::repos::dev::note_comments::{insert_comment, NewNoteComment};
+
+    let note_id = config
+        .get("note_id")
+        .and_then(Value::as_str)
+        .ok_or_else(|| AppError::Validation("suggestion card config has no note_id".into()))?;
+    let lines: Vec<String> = config
+        .get("rows")
+        .and_then(Value::as_array)
+        .map(|rows| {
+            rows.iter()
+                .map(|r| {
+                    let kind = r.get("kind").and_then(Value::as_str).unwrap_or("section");
+                    let label = r
+                        .get("title")
+                        .and_then(Value::as_str)
+                        .filter(|t| !t.trim().is_empty())
+                        .or_else(|| r.get("body_md").and_then(Value::as_str))
+                        .unwrap_or("");
+                    let flat = label.split_whitespace().collect::<Vec<_>>().join(" ");
+                    let clipped: String = flat.chars().take(REVIEW_ROW_LABEL_MAX).collect();
+                    let ellipsis = if flat.chars().count() > REVIEW_ROW_LABEL_MAX {
+                        "…"
+                    } else {
+                        ""
+                    };
+                    format!("- {kind}: {clipped}{ellipsis}")
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let body = if lines.is_empty() {
+        "note_suggestions".to_string()
+    } else {
+        lines.join("\n")
+    };
+    insert_comment(
+        db,
+        &NewNoteComment {
+            note_id,
+            author_kind: NoteCommentAuthor::Athena,
+            author_name: Some("Athena"),
+            kind: NoteCommentKind::Review,
+            body_md: &body,
+            ref_kind: Some(NoteCommentRef::SuggestionCard),
+            ref_id: Some(card_id),
+            verdict: None,
+        },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -635,6 +703,33 @@ mod tests {
         patch_row_outcome(&mut c, "r1", "accepted", None).unwrap();
         let err = patch_row_outcome(&mut c, "r1", "rejected", None).unwrap_err();
         assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+    }
+
+    /// The card's review entry: athena / review / suggestion_card, keyed on
+    /// the card id, pending, one data line per row.
+    #[test]
+    fn the_suggestions_review_is_keyed_on_the_card_and_lists_the_rows() -> Result<(), AppError> {
+        use crate::db::models::{NoteCommentAuthor, NoteCommentRef, NoteReviewVerdict};
+        let db = crate::db::init_test_db().expect("test db");
+        let note = repo::create_note(&db, "Pad note", None)?;
+        let config = json!({
+            "note_id": note.id,
+            "note_title": "Pad note",
+            "rows": [
+                { "row_id": "r1", "kind": "section", "title": "Add a risks section", "body_md": "## Risks" },
+                { "row_id": "r2", "kind": "question", "title": null, "body_md": "Which repo?" },
+            ],
+        });
+        let c = record_suggestions_review(&db, "card-9", &config)?;
+        assert_eq!(c.author_kind, NoteCommentAuthor::Athena);
+        assert_eq!(c.ref_kind, Some(NoteCommentRef::SuggestionCard));
+        assert_eq!(c.ref_id.as_deref(), Some("card-9"));
+        assert_eq!(c.verdict, Some(NoteReviewVerdict::Pending));
+        assert_eq!(
+            c.body_md,
+            "- section: Add a risks section\n- question: Which repo?"
+        );
+        Ok(())
     }
 
     #[test]

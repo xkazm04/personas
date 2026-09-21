@@ -3013,7 +3013,14 @@
     "council_state_stalled": "Estancada tras la ronda 3",
     "council_state_unknown": "Estado no reconocido",
     "council_tier_major": "Principal",
-    "council_tier_toggle_label": "Marcar {name} como funcionalidad principal"
+    "council_tier_toggle_label": "Marcar {name} como funcionalidad principal",
+    "skills_registry_filter_hint": "Haz clic para mostrar solo las habilidades de aquí",
+    "skills_registry_filter_active_hint": "Haz clic de nuevo para mostrar todas las habilidades",
+    "skills_registry_filter_clear": "Quitar el filtro de {name}",
+    "skills_registry_filter_empty": "Aún no hay habilidades en {name}",
+    "skills_registry_empty_title": "No hay habilidades que mostrar",
+    "skills_registry_name_details": "Haz clic para ver todos los detalles",
+    "skills_registry_legend_recent": "ejecutada en los últimos 30 días"
   },
   "dev_triage": {
     "action_label": "Acción:",
@@ -3489,7 +3496,8 @@
     "skill_picker_close": "Cerrar el selector de habilidades",
     "skill_picker_hint": "Haz clic en una celda para cargar esa habilidad y proyecto en la consola. Una celda vacía instala primero la habilidad allí.",
     "skill_picker_open": "Elegir una habilidad del registro",
-    "skill_picker_title": "Registro de habilidades"
+    "skill_picker_title": "Registro de habilidades",
+    "skill_picker_empty": "Ningún proyecto de este espacio de trabajo tiene aún una habilidad instalada: adopta una en Herramientas de desarrollo → Habilidades → Registro."
   },
   "fleet": {
     "activity_empty": "No se encontraron sesiones recientes",

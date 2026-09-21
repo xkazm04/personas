@@ -538,6 +538,8 @@ async fn send_turn_inner(
                 requests_continuation: false,
                 warnings: vec![format!("dispatcher error: {e}")],
                 progress_beats: Vec::new(),
+                notepad_status_changes: Vec::new(),
+                note_comments: Vec::new(),
             }
         }
     };
@@ -936,6 +938,21 @@ async fn send_turn_inner(
         }
     }
 
+    // Notepad side effects of this turn's ops. The dispatcher wrote them to
+    // the app DB but has no AppHandle, so the pad hears about them here: a
+    // note an op moved (`show_ship_goals` stamping its note in flight) and
+    // each thread entry an op posted (`comment_on_note`).
+    for change in &dispatched.notepad_status_changes {
+        crate::commands::infrastructure::dev_tools::notepad::emit_note_status(
+            app,
+            &change.note_id,
+            change.status,
+        );
+    }
+    for comment in &dispatched.note_comments {
+        crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, comment);
+    }
+
     // Inline chat-cards. Emitted once per turn with the full list so the
     // frontend appends to the latest bubble.
     //
@@ -969,6 +986,19 @@ async fn send_turn_inner(
                         config_json,
                     ) {
                         Ok(id) => {
+                            // A suggestions card is also a REVIEW on the note's
+                            // thread, keyed on this card id — which exists only
+                            // from here on, so this is where it is written.
+                            if card.kind == "note_suggestions" {
+                                match crate::commands::infrastructure::dev_tools::note_suggestions::record_suggestions_review(
+                                    &sys_db,
+                                    &id,
+                                    &card.config,
+                                ) {
+                                    Ok(comment) => crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, &comment),
+                                    Err(e) => tracing::warn!(card = %id, error = %e, "notepad: suggestions review not posted on the thread"),
+                                }
+                            }
                             value["id"] = serde_json::Value::String(id);
                         }
                         Err(e) => {

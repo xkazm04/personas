@@ -12,6 +12,14 @@ export type SetupProposal = {
  */
 id: string, kind: "bio" | "role" | "tone", 
 /**
+ * Which column of the tone row a `kind == "tone"` proposal fills:
+ * `"voice"` (the voice directives, and the reading when absent) or
+ * `"constraints"` (one Always/Never rule appended to the list). The model
+ * is never allowed `"examples"`: a sample message has to be the person's
+ * own words, so the client offers those itself from what they typed.
+ */
+part: "voice" | "constraints" | null, 
+/**
  * Tone channel id for `kind == "tone"`; `None` otherwise.
  */
 channel: string | null, value: string, 

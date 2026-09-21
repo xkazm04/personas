@@ -41,6 +41,8 @@ pub mod ideas;
 pub mod kpis;
 /// `dev_milestones` and `dev_milestone_items`.
 pub mod milestones;
+/// `dev_note_comments` — the per-note thread (comments, reviews, status milestones).
+pub mod note_comments;
 /// `dev_notes` — the Notepad: scratch requirements and their dispatch handshake.
 pub mod notes;
 /// `dev_pipelines` — idea-to-execution.

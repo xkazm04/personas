@@ -1,26 +1,23 @@
-// usageBits — the small pieces both usage surfaces share: the meter, the
-// pace glyph, the window label, the reason copy, and the local clock that
-// drives the reset marker. Pure presentation; the numbers come from usageModel.
+// usageBits — the small pieces the usage strip's rows share: the tone and pace
+// vocabularies, the window's name and spoken sentence, the reason copy, and the
+// local clock that re-derives pace and countdowns. Pure presentation; the numbers
+// come from `usageModel`, joined per provider by `usage/useResourceModel`.
 //
-// THE METER CARRIES TWO DIMENSIONS. The fill is utilisation. The vertical
-// MARKER is the clock: it sits at the fraction of the window already elapsed,
-// and its colour warms as the reset approaches — cool early, warning past
-// 60%, hot past 85% — so "how close is the reset" is read off the same bar as
-// "how much is spent", with no sentence beside it. The exact countdown rides
-// in the row's accessible label.
+// TONE IS PAINTED TWICE, ON PURPOSE. A window's tone (ok / warning / error at
+// 75 / 90) colours its PERCENT (`TONE_TEXT`), and — for the weekly window only —
+// the fill of the row's bottom border (`FILL`). There is no other bar: the
+// 5-hour window is a number and a pace glyph, nothing more.
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Flame, Gauge, Snowflake } from 'lucide-react';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Flame, Gauge, Snowflake } from 'lucide-react';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
-import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
+import type { CliUsageReason } from '@/lib/bindings/CliUsageReason';
 import type { Translations } from '@/i18n/generated/types';
 import { formatPercent } from '@/lib/utils/formatters';
-import {
-  formatCountdown, meterTone, pace, remainingLabel, windowProgress, type MeterTone, type Pace,
-} from './usageModel';
+import { formatCountdown, type MeterTone, type Pace } from './usageModel';
+import type { ProviderId, WindowModel } from './usage/useResourceModel';
 
-/** The marker moves with the clock; 30s is the finest it needs. */
+/** Pace and countdowns move with the clock; 30s is the finest they need. */
 const TICK_MS = 30_000;
 
 export const FILL: Record<MeterTone, string> = {
@@ -41,34 +38,6 @@ export const PACE_TONE: Record<Pace, string> = {
   slow: 'text-status-info',
 };
 
-/** Marker warmth thresholds on the elapsed fraction. */
-export const MARKER_WARM_AT = 0.6;
-export const MARKER_HOT_AT = 0.85;
-
-export type MarkerWarmth = 'cool' | 'warm' | 'hot';
-
-export function markerWarmth(elapsedFrac: number): MarkerWarmth {
-  if (elapsedFrac >= MARKER_HOT_AT) return 'hot';
-  if (elapsedFrac >= MARKER_WARM_AT) return 'warm';
-  return 'cool';
-}
-
-const MARKER_FILL: Record<MarkerWarmth, string> = {
-  cool: 'bg-status-info',
-  warm: 'bg-status-warning',
-  hot: 'bg-status-error',
-};
-
-export function windowLabel(t: Translations, key: string): string {
-  switch (key) {
-    case 'five_hour': return t.monitor.usage_window_five_hour;
-    case 'seven_day': return t.monitor.usage_window_seven_day;
-    case 'seven_day_opus': return t.monitor.usage_window_seven_day_opus;
-    case 'seven_day_sonnet': return t.monitor.usage_window_seven_day_sonnet;
-    default: return key;
-  }
-}
-
 export function paceLabel(t: Translations, p: Pace): string {
   switch (p) {
     case 'fast': return t.monitor.usage_pace_fast;
@@ -77,6 +46,15 @@ export function paceLabel(t: Translations, p: Pace): string {
   }
 }
 
+export function providerName(t: Translations, id: ProviderId): string {
+  switch (id) {
+    case 'claude': return t.monitor.usage_provider_claude;
+    case 'codex': return t.monitor.usage_provider_codex;
+    case 'grok': return t.monitor.usage_provider_grok;
+  }
+}
+
+/** Why a Claude plan could not be read, in the `fleet_claude_usage` vocabulary. */
 export function reasonLabel(t: Translations, reason: string | null): string {
   switch (reason) {
     case 'no_credentials': return t.monitor.usage_reason_no_credentials;
@@ -90,35 +68,61 @@ export function reasonLabel(t: Translations, reason: string | null): string {
   }
 }
 
-export function countdownText(
-  t: Translations,
-  tx: (s: string, v: Record<string, string | number>) => string,
-  w: ClaudeUsageWindow,
-  now: number,
-): string {
-  const { remainingMs } = windowProgress(w, now);
-  if (remainingMs === null) return t.monitor.usage_resets_unknown;
-  const units = {
-    day: t.monitor.usage_unit_day,
-    hour: t.monitor.usage_unit_hour,
-    minute: t.monitor.usage_unit_minute,
-    underMinute: t.monitor.usage_under_minute,
-  };
-  return tx(t.monitor.usage_resets_in, { time: formatCountdown(remainingMs, units) });
+/** Why a read-only CLI has nothing to meter — the words that stand in the name slot. */
+export function cliReasonLabel(t: Translations, reason: CliUsageReason): string {
+  switch (reason) {
+    case 'not_installed': return t.monitor.usage_cli_not_installed;
+    case 'no_quota_source': return t.monitor.usage_cli_no_quota_source;
+    case 'no_sessions': return t.monitor.usage_cli_no_sessions;
+    case 'unreadable': return t.monitor.usage_cli_unreadable;
+  }
 }
 
-/** The full accessible sentence for one window: label, percent, reset, pace. */
-export function windowAria(
-  t: Translations,
-  tx: (s: string, v: Record<string, string | number>) => string,
-  w: ClaudeUsageWindow,
-  now: number,
+export function cliReasonHint(t: Translations, reason: CliUsageReason): string {
+  switch (reason) {
+    case 'not_installed': return t.monitor.usage_cli_not_installed_hint;
+    case 'no_quota_source': return t.monitor.usage_cli_no_quota_source_hint;
+    case 'no_sessions': return t.monitor.usage_cli_no_sessions_hint;
+    case 'unreadable': return t.monitor.usage_cli_unreadable_hint;
+  }
+}
+
+const DAY_MINUTES = 24 * 60;
+
+/** "5h" / "7d" — a window's short name, from its real length (a CLI's window is keyed `primary`, not `five_hour`). */
+export function windowTitle(t: Translations, w: WindowModel): string {
+  if (w.windowMinutes >= DAY_MINUTES) return `${Math.round(w.windowMinutes / DAY_MINUTES)}${t.monitor.usage_unit_day}`;
+  return `${Math.max(1, Math.round(w.windowMinutes / 60))}${t.monitor.usage_unit_hour}`;
+}
+
+/**
+ * The full sentence for one window: name, percent, reset countdown, pace, and
+ * "Estimated" when the figure is a projection. It is the cluster's accessible
+ * name AND its tooltip — the cluster itself shows only an icon, a number and a glyph.
+ *
+ * formatPercent, not `${Math.round(x)}%`: this string is read aloud, and the
+ * hand-composed form freezes en's conventions into all 14 locales (de/fr/cs want
+ * `42 %`, ar needs bidi marks).
+ */
+export function windowSentence(
+  t: Translations, tx: (s: string, v: Record<string, string | number>) => string, w: WindowModel,
 ): string {
-  const p = pace(w, now);
-  // formatPercent, not `${Math.round(x)}%`: this string is read aloud, and the
-  // hand-composed form freezes en's decimal separator and its no-space-before-%
-  // convention into all 14 locales (de/fr/cs want `42 %`, ar needs bidi marks).
-  return `${windowLabel(t, w.key)} ${formatPercent(w.utilizationPct, { precision: 0 })} · ${countdownText(t, tx, w, now)}${p ? ` · ${paceLabel(t, p)}` : ''}`;
+  const parts = [
+    `${windowTitle(t, w)} ${formatPercent(w.usedPct, { precision: 0 })}`,
+    w.remainingMs === null
+      ? t.monitor.usage_resets_unknown
+      : tx(t.monitor.usage_resets_in, {
+        time: formatCountdown(w.remainingMs, {
+          day: t.monitor.usage_unit_day,
+          hour: t.monitor.usage_unit_hour,
+          minute: t.monitor.usage_unit_minute,
+          underMinute: t.monitor.usage_under_minute,
+        }),
+      }),
+  ];
+  if (w.pace) parts.push(paceLabel(t, w.pace));
+  if (w.projected) parts.push(t.monitor.usage_projected_short);
+  return parts.join(' · ');
 }
 
 /** Ticks only while the window is visible, re-stamped on re-show. */
@@ -132,97 +136,4 @@ export function useUsageClock(): number {
     return () => clearInterval(id);
   }, [visible]);
   return now;
-}
-
-/**
- * The bar (utilisation fill + reset marker) and the percent, optionally with
- * the warning/error icon and label. Renders two or three grid cells.
- */
-export function MeterBar({
-  w, now, t, showTone = true, approx = false,
-}: {
-  w: ClaudeUsageWindow;
-  now: number;
-  t: Translations;
-  showTone?: boolean;
-  /** The figure is a projection, not a read: the fill hatches and the
-   *  percent wears an approximation sign. */
-  approx?: boolean;
-}) {
-  const tone = meterTone(w.utilizationPct);
-  const pct = Math.round(w.utilizationPct);
-  const toneLabel = tone === 'error' ? t.monitor.usage_tone_error : t.monitor.usage_tone_warning;
-  const { elapsedFrac } = windowProgress(w, now);
-  const warmth = elapsedFrac === null ? null : markerWarmth(elapsedFrac);
-  return (
-    <>
-      <span
-        aria-hidden
-        className="relative h-2 w-full overflow-hidden rounded-full bg-foreground/10"
-        data-testid="fleet-usage-meter"
-        data-marker={warmth ?? 'none'}
-        data-approx={approx || undefined}
-      >
-        <span
-          className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ${FILL[tone]} ${approx ? 'opacity-50' : ''}`}
-          style={{ width: `${pct}%` }}
-        />
-        {elapsedFrac !== null && warmth && (
-          <span
-            className={`absolute inset-y-0 w-0.5 ring-1 ring-background transition-[left] duration-500 ${MARKER_FILL[warmth]}`}
-            style={{ left: `calc(${(elapsedFrac * 100).toFixed(2)}% - 1px)` }}
-          />
-        )}
-      </span>
-      <span className={`typo-caption tabular-nums text-right text-foreground ${approx ? 'opacity-70' : ''}`}>
-        {approx ? '≈' : ''}{pct}%
-      </span>
-      {showTone && tone !== 'ok' && (
-        <span className={`inline-flex flex-shrink-0 items-center gap-0.5 typo-caption ${TONE_TEXT[tone]}`}>
-          <AlertTriangle className="h-3 w-3" aria-hidden />
-          {toneLabel}
-        </span>
-      )}
-    </>
-  );
-}
-
-/**
- * The meter's leading label: whole hours (5h window) or days (7d window)
- * left until the reset. The window's name is the tooltip; the number is what
- * you read. A window with no scheduled reset shows its plain name.
- */
-export function RemainingLabel({ w, now, t }: { w: ClaudeUsageWindow; now: number; t: Translations }) {
-  const label = remainingLabel(w, now, { day: t.monitor.usage_unit_day, hour: t.monitor.usage_unit_hour });
-  const name = windowLabel(t, w.key);
-  return (
-    <Tooltip content={windowHint(t, w.key)}>
-      <span className="typo-caption tabular-nums text-foreground opacity-70" data-testid="fleet-usage-remaining">
-        {label ?? name}
-      </span>
-    </Tooltip>
-  );
-}
-
-export function windowHint(t: Translations, key: string): string {
-  switch (key) {
-    case 'five_hour': return t.monitor.usage_window_five_hour_hint;
-    case 'seven_day': return t.monitor.usage_window_seven_day_hint;
-    case 'seven_day_opus': return t.monitor.usage_window_seven_day_opus_hint;
-    case 'seven_day_sonnet': return t.monitor.usage_window_seven_day_sonnet_hint;
-    default: return key;
-  }
-}
-
-/** The temperature glyph; the name rides along for screen readers. */
-export function PaceGlyph({ w, now, t }: { w: ClaudeUsageWindow; now: number; t: Translations }) {
-  const p = pace(w, now);
-  if (!p) return <span />;
-  const Icon = PACE_ICON[p];
-  return (
-    <span className={`inline-flex items-center justify-center ${PACE_TONE[p]}`} data-pace={p}>
-      <Icon className="h-3.5 w-3.5" aria-hidden />
-      <span className="sr-only">{paceLabel(t, p)}</span>
-    </span>
-  );
 }

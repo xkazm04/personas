@@ -3,12 +3,12 @@
 // The node's contract is as much what it leaves out as what it shows. The
 // first two-row node shared its title row with a glyph and a chip and hung
 // side columns beside the body; the operator rejected it because the title
-// was still truncated and the three styles looked the same. So this file
-// asserts, per kind × state × style:
+// was still truncated and the three styles looked the same. Tinted was then
+// picked and the other two deleted. So this file asserts, per kind × state:
 //   • the title row holds ONE element — the title — and no sibling;
 //   • the symbol row holds EXACTLY the symbols `nodeSymbols` orders, by
 //     `data-symbol`, presence AND absence;
-//   • the three styles paint three distinct frames on the same node.
+//   • the one treatment: hue wash, solid symbol circles, a labelled bottom bar.
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -16,7 +16,7 @@ import type { ReactNode } from 'react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../../../../monitorModel';
 import { FleetNode, liveMeterFill, queuedMeterFill } from '../FleetNode';
-import { NodeContext, type NodeContextValue, type NodeVariant } from '../nodeVariant';
+import { NodeContext, type NodeContextValue } from '../nodeContext';
 import type { QueueItem } from '../../queue/useQueueModel';
 
 const NOW = Date.now();
@@ -54,8 +54,8 @@ function queued(o: Partial<QueueItem> = {}): QueueItem {
   };
 }
 
-function wrap(variant: NodeVariant, ui: ReactNode, ctx: Partial<NodeContextValue> = {}) {
-  const value: NodeContextValue = { variant, meanDurationMs: 10 * 60_000, queueLength: 30, ...ctx };
+function wrap(ui: ReactNode, ctx: Partial<NodeContextValue> = {}) {
+  const value: NodeContextValue = { meanDurationMs: 10 * 60_000, queueLength: 30, ...ctx };
   return render(<NodeContext.Provider value={value}>{ui}</NodeContext.Provider>);
 }
 
@@ -66,7 +66,7 @@ const has = (id: string) => screen.queryByTestId(id) !== null;
 
 describe('FleetNode — the title row', () => {
   it('holds the title and NOTHING else — no glyph, no chip, no control beside it', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
+    wrap(<FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
     const row = screen.getByTestId('fleet-node-title-row');
     const title = screen.getByTestId('fleet-node-title');
     expect(row.textContent).toBe(LONG);
@@ -79,25 +79,52 @@ describe('FleetNode — the title row', () => {
   });
 
   it('renders the FULL title (CSS truncates; the text is intact for the tooltip)', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
+    wrap(<FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
     expect(screen.getByTestId('fleet-node-title').textContent).toBe(LONG);
     expect(screen.getByTestId('fleet-node-title').className).toContain('truncate');
   });
 
   it('is a button only when it activates something, and the symbol row sits inside the body either way', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
     expect(screen.getByTestId('body').tagName).toBe('SPAN');
     expect(screen.getByTestId('body').querySelector('[data-testid="fleet-node-symbols"]')).not.toBeNull();
-    wrap('outline', <FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" bodyTestId="body2" onActivate={() => {}} />);
+    wrap(<FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" bodyTestId="body2" onActivate={() => {}} />);
     expect(screen.getByTestId('body2').tagName).toBe('BUTTON');
     expect(screen.getByTestId('body2').getAttribute('aria-label')).toBe('y');
   });
 });
 
+describe('FleetNode — layout: title on top, a divider, symbols at the bottom', () => {
+  it('puts a decorative hairline divider between the title row and the symbol row, in a justify-between column', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
+    const body = screen.getByTestId('body');
+    expect(body.className).toContain('flex-col');
+    expect(body.className).toContain('justify-between');
+    const order = [...body.children].map((c) => c.getAttribute('data-testid'));
+    expect(order).toEqual(['fleet-node-title-row', 'fleet-node-divider', 'fleet-node-symbols']);
+    const divider = screen.getByTestId('fleet-node-divider');
+    expect(divider).toHaveAttribute('aria-hidden', 'true');
+    expect(divider.className).toContain('h-px');
+    expect(divider.className).toContain('bg-foreground/10');
+  });
+
+  it('keeps a fixed pixel width by default, and spans its parent with `fill`', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="fixed" />);
+    const fixed = screen.getByTestId('fixed');
+    expect(fixed.style.width).toBe('172px');
+    expect(fixed).toHaveAttribute('data-width', 'fixed');
+    wrap(<FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" testId="filled" fill />);
+    const filled = screen.getByTestId('filled');
+    expect(filled.style.width).toBe('');
+    expect(filled.className).toContain('w-full');
+    expect(filled).toHaveAttribute('data-width', 'fill');
+  });
+});
+
 describe('FleetNode — the symbol row, session', () => {
-  it('running: state · origin · elapsed · project — no rank, no gate, no persona symbol', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(symbols()).toEqual(['state', 'origin', 'elapsed', 'project']);
+  it('running: state · origin · project in the row, elapsed on the bottom bar — no rank, no gate, no persona symbol', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'project']);
     expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Working');
     expect(screen.getByTestId('fleet-queue-origin').getAttribute('aria-label')).toBe('Dispatched by Athena');
     expect(screen.getByTestId('fleet-queue-origin').dataset.origin).toBe('athena');
@@ -110,15 +137,15 @@ describe('FleetNode — the symbol row, session', () => {
     expect(has('fleet-grid-chat-unseen')).toBe(false);
   });
 
-  it('running with no mean duration yet: no elapsed ring', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />, { meanDurationMs: null });
+  it('running with no mean duration yet: no elapsed bar', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />, { meanDurationMs: null });
     expect(symbols()).toEqual(['state', 'origin', 'project']);
   });
 
-  it('queued: state · origin · rank · gate · elapsed · project, with the rank as the one numeral', () => {
+  it('queued: state · origin · rank · gate · project, the ETA on the bottom bar, the rank as the one numeral', () => {
     const q = queued({ notBeforeMs: NOW + 60_000 });
-    wrap('outline', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
-    expect(symbols()).toEqual(['state', 'origin', 'rank', 'gate', 'elapsed', 'project']);
+    wrap(<FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'rank', 'gate', 'project']);
     expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Queued');
     expect(screen.getByTestId('fleet-queue-rank').textContent).toBe('3');
     expect(screen.getByTestId('fleet-queue-rank').getAttribute('aria-label')).toBe('Queue position 3');
@@ -130,15 +157,15 @@ describe('FleetNode — the symbol row, session', () => {
 
   it('queued: the gate goes once notBefore has passed; "No estimate" names an empty door', () => {
     const q = queued({ notBeforeMs: NOW - 60_000, estimatedStartMs: null });
-    wrap('outline', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
-    expect(symbols()).toEqual(['state', 'origin', 'rank', 'elapsed', 'project']);
+    wrap(<FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'rank', 'project']);
     expect(screen.getByTestId('fleet-node-elapsed').getAttribute('aria-label')).toBe('No estimate');
   });
 
   it('paints every lifecycle state as a symbol and never as a word', () => {
     const states = ['awaiting_input', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'spawning'] as const;
     for (const state of states) {
-      const { unmount } = wrap('outline', <FleetNode kind="session" session={session({ id: state, state })} ariaLabel="x" tooltip="x" />);
+      const { unmount } = wrap(<FleetNode kind="session" session={session({ id: state, state })} ariaLabel="x" tooltip="x" />);
       expect(symbols()).toEqual(['state', 'origin', 'project']);
       const row = screen.getByTestId('fleet-node-symbols');
       expect(row.textContent).toBe('P'); // the project swatch's initial is the only glyph text in the row
@@ -148,7 +175,7 @@ describe('FleetNode — the symbol row, session', () => {
   });
 
   it('reads the origin from the queue first and the session second, defaulting to manual', () => {
-    wrap('outline', <FleetNode kind="session" session={session({ origin: null })} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="session" session={session({ origin: null })} ariaLabel="x" tooltip="x" />);
     expect(screen.getByTestId('fleet-queue-origin').dataset.origin).toBe('manual');
     expect(screen.getByTestId('fleet-queue-origin').getAttribute('aria-label')).toBe('Dispatched by Manual');
   });
@@ -161,7 +188,7 @@ describe('FleetNode — the symbol row, persona', () => {
   });
 
   it('state · team · operation · unseen · queued — no origin, no project, no rank', () => {
-    wrap('outline', <FleetNode kind="persona" card={c} teamName="pumper" unseenChat={4} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="persona" card={c} teamName="pumper" unseenChat={4} ariaLabel="x" tooltip="x" />);
     expect(screen.getByTestId('fleet-node-title').textContent).toBe('Release Scribe of the long-running release train');
     expect(symbols()).toEqual(['state', 'team', 'operation', 'unseen', 'queued']);
     expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Running');
@@ -177,7 +204,7 @@ describe('FleetNode — the symbol row, persona', () => {
   });
 
   it('a resting tray persona shows its state alone', () => {
-    wrap('outline', <FleetNode kind="persona" card={card()} teamName={null} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="persona" card={card()} teamName={null} ariaLabel="x" tooltip="x" />);
     expect(symbols()).toEqual(['state']);
     expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Idle');
     expect(has('fleet-node-team')).toBe(false);
@@ -187,79 +214,59 @@ describe('FleetNode — the symbol row, persona', () => {
   });
 
   it('a switched-off persona carries the off symbol after its state', () => {
-    wrap('outline', <FleetNode kind="persona" card={card()} teamName="pumper" off ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="persona" card={card()} teamName="pumper" off ariaLabel="x" tooltip="x" />);
     expect(symbols()).toEqual(['state', 'off', 'team']);
     expect(screen.getByTestId('fleet-grid-disabled')).not.toBeNull();
   });
 
   it('shows attention and failed as the warning triangle, in their own hue', () => {
-    wrap('outline', <FleetNode kind="persona" card={card({ execState: 'failed' })} teamName={null} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="persona" card={card({ execState: 'failed' })} teamName={null} ariaLabel="x" tooltip="x" />);
     expect(screen.getByTestId('fleet-node-state').dataset.state).toBe('failed');
-    expect(screen.getByTestId('fleet-node-state').className).toContain('text-red-300');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('text-background');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-red-400');
     expect(screen.getByTestId('fleet-node-state').querySelector('svg')).not.toBeNull();
   });
 });
 
-describe('FleetNode — the three styles', () => {
-  it('paint three DISTINCT frames on the same node, and say which one on the shell', () => {
-    const frames = (['outline', 'accent', 'tinted'] as const).map((v) => {
-      const { unmount } = wrap(v, <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
-      const shell = screen.getByTestId('shell');
-      const out = { style: shell.dataset.style, cls: shell.className };
-      unmount();
-      return out;
-    });
-    expect(frames.map((f) => f.style)).toEqual(['outline', 'accent', 'tinted']);
-    expect(new Set(frames.map((f) => f.cls)).size).toBe(3);
-    expect(frames[0]!.cls).toContain('bg-transparent');
-    expect(frames[1]!.cls).toContain('border-l-[3px]');
-    expect(frames[2]!.cls).toContain('bg-blue-500/[0.08]');
+describe('FleetNode — the treatment', () => {
+  it('washes the body in the state hue with a soft elevation and no border', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
+    const cls = screen.getByTestId('shell').className;
+    expect(cls).toContain('bg-blue-500/[0.08]');
+    expect(cls).toContain('shadow-elevation-1');
+    expect(cls).not.toMatch(/\bborder(-|\b)/);
+    expect(screen.getByTestId('shell').dataset.style).toBeUndefined();
   });
 
-  it('show the SAME symbols in every style — only the treatment changes', () => {
-    const q = queued({ notBeforeMs: NOW + 60_000 });
-    const seen = (['outline', 'accent', 'tinted'] as const).map((v) => {
-      const { unmount } = wrap(v, <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" testId="shell" />);
-      const all = [...screen.getByTestId('shell').querySelectorAll('[data-symbol]')].map((e) => (e as HTMLElement).dataset.symbol).sort();
-      unmount();
-      return all;
-    });
-    expect(seen[1]).toEqual(seen[0]);
-    expect(seen[2]).toEqual(seen[0]);
-  });
-
-  it('tinted draws the elapsed fill as a bottom bar across the node, not a ring in the row', () => {
-    wrap('tinted', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
+  it('draws the elapsed fill as a labelled bar across the bottom edge, never a symbol in the row', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
     expect(symbols()).toEqual(['state', 'origin', 'project']);
+    const strip = screen.getByTestId('fleet-node-elapsed');
+    expect(strip.dataset.fill).toBe('0.50');
+    expect(strip.getAttribute('role')).toBe('img');
+    expect(strip.getAttribute('aria-label')).toMatch(/\S/);
     const bar = screen.getByTestId('fleet-node-elapsed-bar');
-    expect(bar.dataset.fill).toBe('0.50');
     expect(bar.style.width).toBe('50%');
     expect(bar.className).toContain('bg-blue-400');
-    expect(has('fleet-node-elapsed')).toBe(false);
+    expect(screen.getByTestId('fleet-node-symbols').contains(strip)).toBe(false);
   });
 
-  it('tinted paints every symbol as a hue circle with the glyph cut out', () => {
-    wrap('tinted', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-queue-origin').className).toContain('bg-blue-400 text-background');
+  it('paints every symbol as a hue circle with the glyph cut out', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-blue-400 text-background');
+    expect(screen.getByTestId('fleet-queue-origin').className).toContain('rounded-full bg-blue-400 text-background');
   });
 
-  it('outline keeps the hue on the state symbol only', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-state').className).toContain('text-blue-300');
-    expect(screen.getByTestId('fleet-queue-origin').className).toContain('opacity-70');
-    expect(screen.getByTestId('fleet-queue-origin').className).not.toContain('blue');
-  });
-
-  it('over-admitted wears the warning hue on the frame and the state symbol', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} overAdmitted ariaLabel="x" tooltip="x" testId="shell" />);
-    expect(screen.getByTestId('shell').className).toContain('border-status-warning');
-    expect(screen.getByTestId('fleet-node-state').className).toContain('text-status-warning');
+  it('over-admitted wears the warning hue on the body wash and the state symbol', () => {
+    wrap(<FleetNode kind="session" session={session()} overAdmitted ariaLabel="x" tooltip="x" testId="shell" />);
+    expect(screen.getByTestId('shell').className).toContain('status-warning');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('status-warning');
   });
 });
 
 describe('FleetNode — affordances and motion', () => {
   it('renders the wrapper\'s affordances as siblings of the body, never inside it', () => {
-    wrap('outline', (
+    wrap((
       <FleetNode
         kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" onActivate={() => {}}
         symbols={<button type="button" aria-label="Session recap" data-testid="recap" />}
@@ -272,14 +279,14 @@ describe('FleetNode — affordances and motion', () => {
   });
 
   it('renders no affordance cluster when the wrapper hands none', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
     expect(has('fleet-node-affordances')).toBe(false);
   });
 
   it('pulses the running dot only while motion is allowed', () => {
-    wrap('outline', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
     expect(screen.getByTestId('fleet-node-state').firstElementChild!.className).toContain('animate-pulse');
-    wrap('outline', <FleetNode kind="session" session={session({ id: 'rm' })} reducedMotion ariaLabel="y" tooltip="y" testId="rm" />);
+    wrap(<FleetNode kind="session" session={session({ id: 'rm' })} reducedMotion ariaLabel="y" tooltip="y" testId="rm" />);
     expect(screen.getByTestId('rm').querySelector('[data-testid="fleet-node-state"]')!.firstElementChild!.className).not.toContain('animate-pulse');
   });
 });

@@ -11,8 +11,10 @@ use tauri::{AppHandle, State};
 
 use crate::commands::infrastructure::notepad_ingest::sweep_notepad_runs_core;
 use crate::db::models::{
-    DevNote, DevNoteRun, NotePlanSummary, NotePromotion, NoteStatus, NotepadIngestReport,
+    DevNote, DevNoteRun, NoteComment, NotePlanSummary, NotePromotion, NoteReviewVerdict,
+    NoteStatus, NoteUnread, NotepadIngestReport,
 };
+use crate::db::repos::dev::note_comments as comments_repo;
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -135,11 +137,30 @@ pub fn notepad_fork_note(state: State<'_, Arc<AppState>>, id: String) -> Result<
 /// than polling, and every command below that moves a note owes it — the same
 /// contract `notepad_ingest_runs` follows.
 fn emit_note_changed(app: &AppHandle, note: &DevNote) {
+    emit_note_status(app, &note.id, note.status);
+}
+
+/// [`emit_note_changed`] for a caller that holds the id and the new status
+/// rather than the row — the dispatcher's side effects and the brief mirror.
+pub(crate) fn emit_note_status(app: &AppHandle, note_id: &str, status: NoteStatus) {
     if let Err(e) = app.emit(
         event_name::NOTEPAD_NOTE_CHANGED,
-        serde_json::json!({ "noteId": note.id, "status": note.status.as_str() }),
+        serde_json::json!({ "noteId": note_id, "status": status.as_str() }),
     ) {
         tracing::warn!(event = event_name::NOTEPAD_NOTE_CHANGED, error = %e, "notepad: note-changed emit failed");
+    }
+}
+
+/// Emit what the milestone→brief mirror did (`repo::update_milestone_tracked`):
+/// one `NOTEPAD_NOTE_CHANGED` per lifecycle step, plus the `system` thread row
+/// that recorded it. The db crate cannot emit; every caller that can does it
+/// through here.
+pub(crate) fn emit_brief_moves(app: &AppHandle, moves: &[repo::BriefMove]) {
+    for m in moves {
+        emit_note_status(app, &m.note_id, m.status);
+        if let Some(comment) = m.comment.as_ref() {
+            emit_note_comment(app, comment);
+        }
     }
 }
 
@@ -305,7 +326,12 @@ pub fn notepad_ingest_runs(
             tracing::warn!(event = event_name::NOTEPAD_NOTE_CHANGED, error = %e, "notepad: note-changed emit failed");
         }
     };
-    Ok(sweep_notepad_runs_core(&state.db, &mut emit))
+    let mut emit_comment = |comment: &NoteComment| emit_note_comment(&app, comment);
+    Ok(sweep_notepad_runs_core(
+        &state.db,
+        &mut emit,
+        &mut emit_comment,
+    ))
 }
 
 /// Accept, edit or reject ONE row of an Athena `note_suggestions` card.
@@ -330,6 +356,240 @@ pub async fn notepad_resolve_suggestion(
         &outcome,
         body_md.as_deref(),
     )
+}
+
+// ── The per-note thread (dev_note_comments, e40) ───────────────────────────
+//
+// No tier attribute on these commands, deliberately: `#[requires(auth)]`
+// expands to `require_auth`, which is `Ok(())` — the invoke-handler wrapper is
+// the only gate, and an annotation here would only make a reader believe
+// otherwise (ipc-session-token-race.md, legal fix 3).
+
+/// Run one thread repo call off the IPC worker. The handle is bound and
+/// awaited, and a panic in the blocking task is told apart from a cancelled
+/// one (panic-isolation.md (a)): the caller gets an `AppError` naming the
+/// panic instead of a command that vanished or reported success.
+async fn on_db<T, F>(state: &AppState, op: &'static str, f: F) -> Result<T, AppError>
+where
+    T: Send + 'static,
+    F: FnOnce(&crate::db::DbPool) -> Result<T, AppError> + Send + 'static,
+{
+    let pool = state.db.clone();
+    let task = tokio::task::spawn_blocking(move || f(&pool));
+    match task.await {
+        Ok(result) => result,
+        Err(join) if join.is_panic() => {
+            tracing::error!(op, "notepad: thread db task panicked");
+            Err(AppError::Internal(format!(
+                "{op}: the note thread operation crashed and was not applied"
+            )))
+        }
+        Err(join) => Err(AppError::Internal(format!("{op}: task failed: {join}"))),
+    }
+}
+
+/// Emit `NOTEPAD_NOTE_COMMENT` with the full row. The thread store and the
+/// card bubbles key off this; a failed emit is logged, never fatal — the row
+/// is already durable and the next load reads it.
+pub(crate) fn emit_note_comment(app: &AppHandle, comment: &NoteComment) {
+    if let Err(e) = app.emit(event_name::NOTEPAD_NOTE_COMMENT, comment) {
+        tracing::warn!(event = event_name::NOTEPAD_NOTE_COMMENT, error = %e, "notepad: note-comment emit failed");
+    }
+}
+
+/// One note's thread, oldest first.
+#[tauri::command]
+pub async fn notepad_list_comments(
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+) -> Result<Vec<NoteComment>, AppError> {
+    on_db(&state, "notepad_list_comments", move |db| {
+        comments_repo::list_comments(db, &note_id)
+    })
+    .await
+}
+
+/// Every note with unread thread entries (absent = nothing unread).
+#[tauri::command]
+pub async fn notepad_unread_counts(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<NoteUnread>, AppError> {
+    on_db(
+        &state,
+        "notepad_unread_counts",
+        comments_repo::unread_counts,
+    )
+    .await
+}
+
+/// The operator comments on a note. Born read (it is their own words).
+#[tauri::command]
+pub async fn notepad_add_comment(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+    body_md: String,
+) -> Result<NoteComment, AppError> {
+    let comment = on_db(&state, "notepad_add_comment", move |db| {
+        comments_repo::insert_comment(
+            db,
+            &comments_repo::NewNoteComment::operator_comment(&note_id, &body_md),
+        )
+    })
+    .await?;
+    emit_note_comment(&app, &comment);
+    Ok(comment)
+}
+
+/// Stamp every unread entry of one note read (the popover calls this on open).
+#[tauri::command]
+pub async fn notepad_mark_comments_read(
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+) -> Result<(), AppError> {
+    on_db(&state, "notepad_mark_comments_read", move |db| {
+        comments_repo::mark_read(db, &note_id).map(|_| ())
+    })
+    .await
+}
+
+/// The operator answers a review entry: `approved` or `rejected`.
+///
+/// The IPC envelope around [`apply_review_verdict_core`]: run it off the IPC
+/// worker, then emit what it wrote — the operator's reason as a new thread
+/// entry, the note's move when the rework fired, and the answered review
+/// itself (the same id as before: the pad upserts thread rows by id).
+#[tauri::command]
+pub async fn notepad_set_review_verdict(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    comment_id: String,
+    verdict: NoteReviewVerdict,
+    reason: Option<String>,
+) -> Result<NoteComment, AppError> {
+    let outcome = on_db(&state, "notepad_set_review_verdict", move |db| {
+        apply_review_verdict_core(db, &comment_id, verdict, reason.as_deref())
+    })
+    .await?;
+    if let Some(reason) = outcome.reason_comment.as_ref() {
+        emit_note_comment(&app, reason);
+    }
+    if let Some(note) = outcome.reworked.as_ref() {
+        emit_note_changed(&app, note);
+    }
+    emit_note_comment(&app, &outcome.review);
+    Ok(outcome.review)
+}
+
+/// What [`apply_review_verdict_core`] wrote, for the command to emit.
+#[derive(Debug)]
+pub(crate) struct ReviewVerdictOutcome {
+    /// The answered review, verdict stamped.
+    pub review: NoteComment,
+    /// The operator's reason, posted to the thread as their own comment.
+    pub reason_comment: Option<NoteComment>,
+    /// The note, when the rework move fired (`completed → published`).
+    pub reworked: Option<DevNote>,
+}
+
+/// Answer one review entry.
+///
+/// **Which answers need a reason.** `pending` is not an answer and is refused.
+/// Rejecting a **run** review needs a non-empty reason: it is what the rework
+/// run is told, and a bare "no" is how the reject-and-rerun loop ping-pongs.
+/// Rejecting a **suggestion-card** review does NOT (Director decision,
+/// note-overview-cycle): it rejects every open row of Athena's card — a
+/// decision about her proposal, not an instruction to anyone — and it must be
+/// one tap. A reason given anyway is still posted, because she reads the
+/// thread before she replies. Any other review keeps the strict rule.
+///
+/// **The rework move.** Rejecting a run review whose note is still
+/// `completed`: the previous attempt's artifacts are moved aside
+/// (`notepad_ingest::archive_attempt` — without that, the re-dispatched run
+/// finds the old `ingested.json` and is never ingested), the reason lands as
+/// an operator comment, and the note goes `completed → published`. The pad
+/// re-dispatches it to Fleet right after, with the feedback appended to
+/// `note.md`. A note that is no longer `completed` (a failed run leaves it
+/// `in_progress`; the operator may have archived it) gets the comment and the
+/// verdict only — the verdict is a fact about the review, the move is not
+/// owed.
+///
+/// Answering a review with the verdict it already carries is a no-op: no
+/// second comment, no second move. Changing an answer is allowed.
+pub(crate) fn apply_review_verdict_core(
+    pool: &crate::db::DbPool,
+    comment_id: &str,
+    verdict: NoteReviewVerdict,
+    reason: Option<&str>,
+) -> Result<ReviewVerdictOutcome, AppError> {
+    use crate::db::models::{NoteCommentKind, NoteCommentRef};
+
+    let review = comments_repo::get_comment(pool, comment_id)?;
+    if review.kind != NoteCommentKind::Review {
+        return Err(AppError::Validation(format!(
+            "Note comment {comment_id} is not a review and takes no verdict"
+        )));
+    }
+    let reason_optional = review.ref_kind == Some(NoteCommentRef::SuggestionCard);
+    match verdict {
+        NoteReviewVerdict::Pending => {
+            return Err(AppError::Validation(
+                "A review verdict is `approved` or `rejected`, not `pending`".into(),
+            ))
+        }
+        NoteReviewVerdict::Rejected if !reason_optional => {
+            personas_core::validation::require_non_empty("reason", reason.unwrap_or_default())?;
+        }
+        _ => {}
+    }
+    // Blank is absent: a whitespace-only reason is not posted to the thread.
+    let reason = reason.map(str::trim).filter(|r| !r.is_empty());
+    if review.verdict == Some(verdict) {
+        return Ok(ReviewVerdictOutcome {
+            review,
+            reason_comment: None,
+            reworked: None,
+        });
+    }
+
+    let mut reworked = None;
+    let mut reason_comment = None;
+    if verdict == NoteReviewVerdict::Rejected {
+        let rework = review.ref_kind == Some(NoteCommentRef::Run)
+            && repo::get_note(pool, &review.note_id)?.status == NoteStatus::Completed;
+        // Files first: if the marker cannot be moved, refuse before anything
+        // is written, rather than send back a note whose rerun can never land.
+        if rework {
+            crate::commands::infrastructure::notepad_ingest::archive_attempt(
+                pool,
+                &review.note_id,
+                review.ref_id.as_deref().unwrap_or("attempt"),
+            )?;
+        }
+        if let Some(reason) = reason {
+            reason_comment = Some(comments_repo::insert_comment(
+                pool,
+                &comments_repo::NewNoteComment::operator_comment(&review.note_id, reason),
+            )?);
+        }
+        if rework {
+            reworked = Some(repo::set_status(
+                pool,
+                &review.note_id,
+                NoteStatus::Published,
+                None,
+                None,
+                None,
+                None,
+            )?);
+        }
+    }
+    let review = comments_repo::set_verdict(pool, comment_id, verdict)?;
+    Ok(ReviewVerdictOutcome {
+        review,
+        reason_comment,
+        reworked,
+    })
 }
 
 /// The three branches of `notepad_promote_note`, driven through the core.
@@ -495,5 +755,172 @@ mod promote_tests {
         let note = repo::create_note(&p, "homeless", None).unwrap();
         let err = promote_note_core(&p, &note.id).unwrap_err();
         assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+    }
+}
+
+/// `apply_review_verdict_core` — the reject-and-rerun loop and the reason
+/// rules, driven through the core (a `tauri::State` is not buildable here).
+#[cfg(test)]
+mod verdict_tests {
+    use super::*;
+    use crate::db::models::{NoteCommentAuthor, NoteCommentKind, NoteCommentRef};
+    use crate::db::DbPool;
+    use comments_repo::NewNoteComment;
+
+    fn pool() -> DbPool {
+        crate::db::init_test_db().expect("test db")
+    }
+
+    /// A note walked to `completed` (unmapped — no run dir to archive), with a
+    /// pending run review on its thread.
+    fn completed_with_run_review(p: &DbPool) -> Result<(DevNote, NoteComment), AppError> {
+        let n = repo::create_note(p, "n", None)?;
+        repo::set_status(
+            p,
+            &n.id,
+            NoteStatus::Published,
+            Some("fleet"),
+            None,
+            None,
+            None,
+        )?;
+        let n = repo::set_status(
+            p,
+            &n.id,
+            NoteStatus::Completed,
+            None,
+            None,
+            None,
+            Some("{}"),
+        )?;
+        let review = comments_repo::insert_comment(
+            p,
+            &NewNoteComment {
+                note_id: &n.id,
+                author_kind: NoteCommentAuthor::Agent,
+                author_name: Some("note-task"),
+                kind: NoteCommentKind::Review,
+                body_md: "did it",
+                ref_kind: Some(NoteCommentRef::Run),
+                ref_id: Some("run-1"),
+                verdict: None,
+            },
+        )?;
+        Ok((n, review))
+    }
+
+    #[test]
+    fn rejecting_a_run_review_posts_the_reason_and_sends_the_note_back() -> Result<(), AppError> {
+        let p = pool();
+        let (n, review) = completed_with_run_review(&p)?;
+        let out = apply_review_verdict_core(
+            &p,
+            &review.id,
+            NoteReviewVerdict::Rejected,
+            Some("  tests missing  "),
+        )?;
+        assert_eq!(out.review.verdict, Some(NoteReviewVerdict::Rejected));
+        let reason = out.reason_comment.expect("the reason is posted");
+        assert_eq!(reason.author_kind, NoteCommentAuthor::Operator);
+        assert_eq!(reason.body_md, "tests missing");
+        let moved = out.reworked.expect("the note is sent back");
+        assert_eq!(moved.status, NoteStatus::Published);
+        assert!(moved.completed_at.is_none());
+        assert_eq!(
+            moved.result_json.as_deref(),
+            Some("{}"),
+            "the previous report stays"
+        );
+        assert_eq!(repo::get_note(&p, &n.id)?.status, NoteStatus::Published);
+
+        // The same answer again is a no-op: no second comment, no second move.
+        let again =
+            apply_review_verdict_core(&p, &review.id, NoteReviewVerdict::Rejected, Some("x"))?;
+        assert!(again.reason_comment.is_none() && again.reworked.is_none());
+        assert_eq!(comments_repo::list_comments(&p, &n.id)?.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn a_run_reject_needs_a_reason_and_pending_is_not_an_answer() -> Result<(), AppError> {
+        let p = pool();
+        let (n, review) = completed_with_run_review(&p)?;
+        for reason in [None, Some("   ")] {
+            assert!(matches!(
+                apply_review_verdict_core(&p, &review.id, NoteReviewVerdict::Rejected, reason),
+                Err(AppError::Validation(_))
+            ));
+        }
+        assert!(matches!(
+            apply_review_verdict_core(&p, &review.id, NoteReviewVerdict::Pending, None),
+            Err(AppError::Validation(_))
+        ));
+        assert_eq!(
+            repo::get_note(&p, &n.id)?.status,
+            NoteStatus::Completed,
+            "a refused verdict moves nothing"
+        );
+        Ok(())
+    }
+
+    /// A run review whose note is no longer `completed` (a failed run leaves it
+    /// `in_progress`) records the verdict and the reason, and moves nothing.
+    #[test]
+    fn a_reject_on_a_note_that_is_not_completed_only_records() -> Result<(), AppError> {
+        let p = pool();
+        let n = repo::create_note(&p, "n", None)?;
+        repo::set_status(&p, &n.id, NoteStatus::Published, None, None, None, None)?;
+        repo::set_status(&p, &n.id, NoteStatus::InProgress, None, None, None, None)?;
+        let review = comments_repo::insert_comment(
+            &p,
+            &NewNoteComment {
+                note_id: &n.id,
+                author_kind: NoteCommentAuthor::Agent,
+                author_name: None,
+                kind: NoteCommentKind::Review,
+                body_md: "failed",
+                ref_kind: Some(NoteCommentRef::Run),
+                ref_id: Some("run-1"),
+                verdict: None,
+            },
+        )?;
+        let out =
+            apply_review_verdict_core(&p, &review.id, NoteReviewVerdict::Rejected, Some("why"))?;
+        assert!(out.reworked.is_none());
+        assert!(out.reason_comment.is_some());
+        assert_eq!(repo::get_note(&p, &n.id)?.status, NoteStatus::InProgress);
+        Ok(())
+    }
+
+    /// Director decision: rejecting a suggestion card is one tap — no reason.
+    /// Approving anything changes no status.
+    #[test]
+    fn a_suggestion_card_reject_needs_no_reason_and_approve_moves_nothing() -> Result<(), AppError>
+    {
+        let p = pool();
+        let n = repo::create_note(&p, "n", None)?;
+        let card = comments_repo::insert_comment(
+            &p,
+            &NewNoteComment {
+                note_id: &n.id,
+                author_kind: NoteCommentAuthor::Athena,
+                author_name: Some("Athena"),
+                kind: NoteCommentKind::Review,
+                body_md: "- section: x",
+                ref_kind: Some(NoteCommentRef::SuggestionCard),
+                ref_id: Some("card-1"),
+                verdict: None,
+            },
+        )?;
+        let out = apply_review_verdict_core(&p, &card.id, NoteReviewVerdict::Rejected, None)?;
+        assert_eq!(out.review.verdict, Some(NoteReviewVerdict::Rejected));
+        assert!(out.reason_comment.is_none() && out.reworked.is_none());
+
+        let (done, review) = completed_with_run_review(&p)?;
+        let ok = apply_review_verdict_core(&p, &review.id, NoteReviewVerdict::Approved, None)?;
+        assert_eq!(ok.review.verdict, Some(NoteReviewVerdict::Approved));
+        assert!(ok.reworked.is_none());
+        assert_eq!(repo::get_note(&p, &done.id)?.status, NoteStatus::Completed);
+        Ok(())
     }
 }
