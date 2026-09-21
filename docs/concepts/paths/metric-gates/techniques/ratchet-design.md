@@ -1,6 +1,6 @@
 ---
 layer: technique
-subject: quality-gates
+subject: metric-gates
 technique: ratchet-design
 status: forged
 laws: [count-carries-predicate, derivation-names-recomputation, failure-not-empty-success]
