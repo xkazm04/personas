@@ -146,13 +146,28 @@ export function verdictFor(
 }
 
 /**
- * Is this finding ready to be judged? Only if the work actually SHIPPED — an
- * accepted finding whose task completed. We refuse to claim a verdict on work that
- * was never done; that would be the loop lying to itself in the most damaging way.
+ * Is this finding ready to be judged? Only if the work actually SHIPPED — a
+ * finding whose task completed. We refuse to claim a verdict on work that was
+ * never done; that would be the loop lying to itself in the most damaging way.
+ *
+ * `delivered` is admitted alongside `accepted`, and leaving it out would have
+ * been a silent outage rather than a missing feature. `accepted` used to be
+ * where a finished item stayed forever, because the status vocabulary had
+ * nowhere else to put it — so "accepted with a completed task" WAS the shape of
+ * shipped work. The backlog contract gave that state a name, and the migration
+ * that introduced it moved 518 already-finished items into it in one pass. Had
+ * this clause kept naming only `accepted`, every one of them would have dropped
+ * out of the sweep that re-measures whether shipping the work actually moved
+ * the signal — the B-side of the findings loop, gone, with no error anywhere.
+ *
+ * The task check stays, and stays load-bearing: `delivered` means the work
+ * exists, but the evidence grade differs (a commit on the App-Master path, only
+ * a branch on the in-app one), and a verdict is worth passing only where a
+ * terminal task says there is something to re-measure.
  */
 export function isVerifiable(idea: DevIdea, tasks: DevTask[]): boolean {
   if (!idea.origin || !idea.dedup_key) return false;
-  if (idea.status !== 'accepted') return false;
+  if (idea.status !== 'accepted' && idea.status !== 'delivered') return false;
   return tasks.some((t) => t.source_idea_id === idea.id && t.status === 'completed');
 }
 
