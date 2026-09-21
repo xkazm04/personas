@@ -1010,6 +1010,11 @@ mod live_fleet_task_tests {
             persona_id: None,
             goal_id: None,
             cycle_index: None,
+            machine_units: None,
+            plan_units: None,
+            gpu_class: None,
+            skip_count: None,
+            first_unfit_at_ms: None,
         }
     }
 

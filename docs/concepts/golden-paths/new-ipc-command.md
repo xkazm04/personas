@@ -91,7 +91,8 @@ because a `Value` return is the one shape ts-rs cannot describe and it forces th
 frontend to hand-write the contract instead. Classify its tier
 ([`ipc-command-authorization.md`](./ipc-command-authorization.md)) and record that
 classification in both places that path names. Register the fn in
-`tauri::generate_handler![]` at `src-tauri/src/lib.rs:1805` — this is the step the
+`tauri::generate_handler![]` in the `src-tauri/src/ipc_shards/shard_N.rs` that holds its
+family (the list left `lib.rs` on 2026-09-18) — this is the step the
 framework will not do for you and the step every other artefact silently depends on.
 Then run `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings`
 (all three flags are load-bearing; the repo's own instruction omits two of them — see
@@ -111,8 +112,11 @@ call is different. Then stop: no manual header handling, no second wrapper, no
 
 - **`#[tauri::command]`** — Tauri's attribute. 1,661 sites. It makes a function
   *invocable*; it does **not** make it *reachable*.
-- **`src-tauri/src/lib.rs:1805` — `tauri::generate_handler![]`**, wrapped in
-  `ipc_auth::wrap_invoke_handler`. **1,585 entries** (128 of them under a `#[cfg]`).
+- **`src-tauri/src/ipc_shards/shard_0..7.rs` — eight `tauri::generate_handler![]` lists**,
+  each inside `personas_macros::ipc_shard!`, routed by `ipc_shards/mod.rs` and wrapped ONCE
+  in `ipc_auth::wrap_invoke_handler` at `lib.rs`. (One list until 2026-09-18; split because a
+  single 1,600-arm handler closure was half of a cold `cargo check` of the app crate —
+  `ipc_shards/mod.rs` carries the measurement.) **1,585 entries** (128 of them under a `#[cfg]`).
   This is what makes a command reachable. There is no auto-registration.
 - **`ts_rs::TS` — `#[derive(TS)] #[ts(export)]`.** 990 derives / 996 `#[ts(export)]`
   attributes. Writes TypeScript into `src/lib/bindings/` via `TS_RS_EXPORT_DIR`,
@@ -140,10 +144,10 @@ call is different. Then stop: no manual header handling, no second wrapper, no
   `cargo test --workspace ... --features desktop export_bindings` then
   `git diff --quiet src/lib/bindings/`. Its own comment block (`:369-386`) is the best
   documentation in the repo of *why* each flag is required.
-- **`src-tauri/src/lib.rs:3952` — `every_network_command_is_registered_in_generate_handler`** —
+- **`src-tauri/src/ipc_shards/mod.rs` — `every_network_command_is_registered_in_generate_handler`** —
   the only test that checks a command is registered. It covers `src/commands/network/`
   and nothing else. Copy its `declared.len() > 20` precondition assertion (`:3955-3961`).
-- **`src-tauri/src/lib.rs:3916` — `generate_handler_has_no_orphaned_cfg_attributes`** —
+- **`src-tauri/src/ipc_shards/mod.rs` — `generate_handler_has_no_orphaned_cfg_attributes`** —
   catches the stacked-`#[cfg]` shape that once silently deleted 15 commands.
 
 **Frontend**
@@ -183,8 +187,8 @@ call is different. Then stop: no manual header handling, no second wrapper, no
 4. **Write the function** with `state: State<'_, Arc<AppState>>` named `state` (the
    macro requires that ident) and prefer `pub fn` over `pub async fn` for privileged
    work — sync is the only shape whose in-body guard actually enforces.
-5. **Register it** in `generate_handler![]` at `lib.rs:1805`, in the block for its
-   domain. If it is `#[cfg]`-gated, put the attribute on the line directly above and
+5. **Register it** in the `generate_handler![]` list of the `src-tauri/src/ipc_shards/shard_N.rs`
+   that holds its domain's block (one line; the router derives ownership from the same list). If it is `#[cfg]`-gated, put the attribute on the line directly above and
    nothing else between.
 6. **Regenerate, and read the output.**
    `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings`

@@ -323,6 +323,10 @@ pub struct FleetSessionInner {
     pub persona_id: Option<String>,
     pub goal_id: Option<String>,
     pub cycle_index: Option<i64>,
+    /// Budgeted admission's per-session facts (see `super::budgets`): what
+    /// this session is charged, and - while it waits - how often promotion
+    /// passed it over.
+    pub admission: AdmissionFacts,
     /// PTY master — needed for resize. `None` after exit.
     pub master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     /// PTY writer — for write_input. `None` after exit.
@@ -357,6 +361,38 @@ pub struct FleetSessionInner {
     /// `claude` ignores stdin EOF, so dropping the PTY handles alone leaves a
     /// zombie shell that keeps burning tokens. `None` only in test fixtures.
     pub killer: Option<Mutex<Box<dyn portable_pty::ChildKiller + Send + Sync>>>,
+}
+
+/// What budgeted admission remembers about one session. `None` units / GPU
+/// read as the default charge ([`super::budgets::Charge::DEFAULT`]) - a manual
+/// session, an untagged charter, a row restored from before migration e39.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AdmissionFacts {
+    pub machine_units: Option<u32>,
+    pub plan_units: Option<u32>,
+    pub gpu: Option<personas_core::models::GpuClass>,
+    /// Times promotion backfilled past this entry while it was queued.
+    pub skip_count: u32,
+    /// When promotion first found this entry unfit.
+    pub first_unfit_at_ms: Option<i64>,
+}
+
+impl AdmissionFacts {
+    /// The budget facts of a session admitted with `charge`.
+    pub fn charged(charge: super::budgets::Charge) -> Self {
+        Self {
+            machine_units: Some(charge.machine),
+            plan_units: Some(charge.plan),
+            gpu: Some(charge.gpu),
+            skip_count: 0,
+            first_unfit_at_ms: None,
+        }
+    }
+
+    /// The charge this session costs the two budgets.
+    pub fn charge(&self) -> super::budgets::Charge {
+        super::budgets::Charge::from_columns(self.machine_units, self.plan_units, self.gpu)
+    }
 }
 
 impl FleetSessionInner {
@@ -811,6 +847,63 @@ impl FleetRegistry {
         }
     }
 
+    /// Stamp the charge on a row that started without queueing (an immediate
+    /// admission, or a start-now). Never overwrites a charge already set - a
+    /// promoted row carries its own from admission.
+    pub fn stamp_charge(&self, session_id: &str, charge: super::budgets::Charge) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(s) = map.get_mut(session_id) else {
+            return;
+        };
+        if s.admission.machine_units.is_none() {
+            s.admission.machine_units = Some(charge.machine);
+        }
+        if s.admission.plan_units.is_none() {
+            s.admission.plan_units = Some(charge.plan);
+        }
+        if s.admission.gpu.is_none() {
+            s.admission.gpu = Some(charge.gpu);
+        }
+    }
+
+    /// The charge of every session occupying a live slot, as `(id,
+    /// created_at_ms, charge)`. What budgeted admission sums into "used".
+    pub fn live_charges(&self) -> Vec<(String, i64, super::budgets::Charge)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| is_live_state(s.state))
+            .map(|s| (s.id.clone(), s.created_at_ms, s.admission.charge()))
+            .collect()
+    }
+
+    /// Record one promotion pass's verdict on a QUEUED entry that did not fit:
+    /// stamp `first_unfit_at_ms` if it is not set yet, and count a skip when
+    /// something behind it was promoted. Returns the entry's resulting
+    /// `(skip_count, first_unfit_at_ms)` when anything changed, so the caller
+    /// persists exactly what is in memory.
+    pub fn note_unfit(
+        &self,
+        session_id: &str,
+        now: i64,
+        skipped: bool,
+    ) -> Option<(u32, Option<i64>)> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let s = map.get_mut(session_id)?;
+        if !matches!(s.state, FleetSessionState::Queued) {
+            return None;
+        }
+        let mut changed = false;
+        if s.admission.first_unfit_at_ms.is_none() {
+            s.admission.first_unfit_at_ms = Some(now);
+            changed = true;
+        }
+        if skipped {
+            s.admission.skip_count = s.admission.skip_count.saturating_add(1);
+            changed = true;
+        }
+        changed.then_some((s.admission.skip_count, s.admission.first_unfit_at_ms))
+    }
+
     /// Stamp dense ranks (`1..`) onto queued rows in the given order. Ids that
     /// are unknown or not queued are skipped; queued rows NOT named keep
     /// their relative order after the named ones. Returns the final
@@ -874,6 +967,29 @@ impl FleetRegistry {
             .collect();
         rows.sort_by_key(|(_, rank, at, _)| (*rank, *at));
         rows
+    }
+
+    /// The queued rows in promotion order WITH their budget facts: `(id,
+    /// not_before_ms, budget)`. What budgeted promotion walks.
+    pub fn queued_admissions_in_order(&self) -> Vec<(String, Option<i64>, AdmissionFacts)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut rows: Vec<(u32, i64, String, Option<i64>, AdmissionFacts)> = map
+            .values()
+            .filter(|s| matches!(s.state, FleetSessionState::Queued))
+            .map(|s| {
+                (
+                    s.queue_rank.unwrap_or(u32::MAX),
+                    s.queued_at_ms.unwrap_or(0),
+                    s.id.clone(),
+                    s.not_before_ms,
+                    s.admission,
+                )
+            })
+            .collect();
+        rows.sort_by_key(|(rank, at, _, _, _)| (*rank, *at));
+        rows.into_iter()
+            .map(|(_, _, id, not_before, facts)| (id, not_before, facts))
+            .collect()
     }
 
     /// Returns a DTO snapshot of every tracked session.
@@ -2293,6 +2409,7 @@ mod tests {
             persona_id: None,
             goal_id: None,
             cycle_index: None,
+            admission: Default::default(),
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),

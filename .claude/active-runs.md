@@ -57,6 +57,24 @@
 
 - **[2026-09-17 10:06]**
 - **Paths:** `.claude/worktrees/incr-load/**`
+### spark-rao-build — spark resource-aware-orchestration BUILD in worktree .claude/worktrees/spark-rao: fleet queue budgets, responsibility resourceProfile, decide-lane resource state, cli_usage reader, usage strip variants
+- **[2026-09-18 19:21]**
+- **Paths:** `src-tauri/src/commands/fleet/queue.rs` · `src-tauri/src/commands/fleet/cli_usage/**` · `src-tauri/src/engine/subscription/attention*.rs` · `src-tauri/core/src/models/responsibility.rs` · `src/features/fleet/monitor/grid/UsageStrip*` · `src/features/fleet/monitor/grid/usage/**` · `src/features/agents/sub_responsibilities/**`
+- **Status:** started
+
+- **[2026-09-18 18:58]**
+- **Paths:** `src/features/fleet/monitor/grid/UsageStrip*` · `src/features/fleet/monitor/grid/usage/**` · `src-tauri/src/commands/fleet/**`
+- **Status:** started
+
+### spark-build-process-upgrade — /spark: build process upgrade - faster/lighter builds + artifact hygiene (design phase, read-only scouting first)
+- **[2026-09-18 18:35]**
+- **Paths:** `scripts/build/**` · `src-tauri/Cargo.toml` · `src-tauri/.cargo/**` · `package.json` · `docs/development/**` · `.github/workflows/**`
+- **Status:** started
+
+- **[2026-09-18 18:33]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
 - **[2026-09-18 10:38]**
 - **Paths:** `src/features/plugins/companion/sub_create/**`
 - **Status:** started
@@ -950,6 +968,10 @@
 ### spark-drive-finder — Drive redesign to Apple-OS-quality file/folder environment; from-scratch variant built in parallel to compare
 
 ### incr-load-worktree — Implement all incremental-load findings in worktree, merge to master
+### spark-monitor-nodes2 — spark monitor-orchestration adjust wave 2: title-only row, symbolic second row, visibly distinct node styles
+
+### spark-resource-aware-orchestration — spark: resource-aware orchestration (responsibility resource tags, plan-headroom admission) + cross-CLI usage strip prototypes — DESIGN PHASE, read-only until build; overlaps spark-monitor-nodes2 on grid/** (will build in own worktree, UsageStrip* files only)
+
 ### spark-monitor-nodes — spark monitor-orchestration adjust wave: node prototypes, Runway wrap, descope Ranked/Horizon
 
 ### spark-athena-stage — Create Athena: consolidate Stage winner, caption layout, persistent step highlight

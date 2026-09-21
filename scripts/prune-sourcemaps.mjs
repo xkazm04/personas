@@ -12,18 +12,27 @@
 // into every installer for no runtime benefit — nothing in the shipped app
 // ever reads them.
 //
-// This script does NOT touch sourcemap generation (still `hidden` in
-// vite.config.ts) and does NOT change what Sentry receives — it only moves
-// where the files land on disk after `vite build` finishes, before Tauri
-// (or anything else) reads dist/.
+// This script does NOT generate sourcemaps and does NOT change what Sentry
+// receives — it only moves where the files land on disk after `vite build`
+// finishes, before Tauri (or anything else) reads dist/.
 //
-// Wiring: local packaging only (tauri.conf.json's `beforeBuildCommand`, so
-// `tauri build` / `tauri:build:lite` / `tauri:build:stable` all get it). CI's
-// release.yml builds the frontend once in its own job and uploads `dist/` as
-// an artifact for the Sentry-sourcemap-upload step in a LATER job to read —
-// wiring this into that pipeline needs the artifact upload/download and the
-// `upload-sourcemaps` step's source path updated together, which is out of
-// this change's verified scope. See the CLI report for that follow-up.
+// UPDATED 2026-09-20. Two things changed under it:
+//
+//  1. Generation is now conditional. `vite.config.ts` emits `hidden` maps only
+//     when `PERSONAS_RELEASE=1`, so the ordinary case for this script is now
+//     "there are none, by design". That is NOT the same outcome as "the walk
+//     found none", and the two are reported differently below — a pruner that
+//     says "nothing to prune" when the build silently stopped emitting maps is
+//     a gate running green while checking nothing.
+//  2. The CI hole this header used to describe as out of scope is CLOSED.
+//     release.yml's frontend job now runs this script itself and uploads
+//     `dist-sourcemaps/` as its own artifact, so `frontend-dist` — the artifact
+//     tauri-action packages — is map-free and the installers no longer carry
+//     ~1,500 .map files. The Sentry step reads both directories.
+//
+// Wiring: tauri.conf.json's `beforeBuildCommand` (so a local `tauri build` /
+// `tauri:build:lite` / `tauri:build:stable` is covered) AND release.yml's
+// frontend job.
 
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
@@ -54,7 +63,22 @@ function main() {
   walk(distDir, maps);
 
   if (maps.length === 0) {
-    console.log('prune-sourcemaps: no .map files found in dist/ — nothing to prune.');
+    // Say WHICH zero this is. "No maps because the build was told not to emit
+    // them" is the expected path; "no maps although the build was told to emit
+    // them" means generation broke and Sentry is about to receive nothing —
+    // and the two used to print the same reassuring line.
+    if (process.env.PERSONAS_RELEASE === '1') {
+      console.error(
+        'prune-sourcemaps: 0 maps in dist/ — but PERSONAS_RELEASE=1 asked for them. ' +
+          'Sourcemap generation did not happen; Sentry will not be able to symbolicate this build.',
+      );
+      process.exitCode = 1;
+      return;
+    }
+    console.log(
+      'prune-sourcemaps: 0 maps — sourcemaps are disabled for this build ' +
+        '(vite emits them only when PERSONAS_RELEASE=1). Nothing to prune.',
+    );
     return;
   }
 

@@ -276,7 +276,16 @@ mod tests {
         std::env::set_var("PERSONAS_HOME", "C:\\test-home");
         let dir = engine_dir().unwrap();
         std::env::remove_var("PERSONAS_HOME");
-        assert!(dir.to_string_lossy().ends_with("companion-stt\\bin"));
+        // Component-wise, not string-wise: the backslash literal only matched
+        // on Windows and failed the Linux CI leg. See the same note in
+        // `companion::stt::downloader`.
+        let expected: std::path::PathBuf = ["companion-stt", "bin"].iter().collect();
+        assert!(
+            dir.ends_with(&expected),
+            "{} should end with {}",
+            dir.display(),
+            expected.display(),
+        );
     }
 
     #[test]

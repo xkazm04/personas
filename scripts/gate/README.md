@@ -88,7 +88,7 @@ both modes.
 
 The client prints exactly one line, `gate: daemon unavailable (<reason>), running cold`,
 and runs in `--root`: `tsc --noEmit -p tsconfig.json`,
-`eslint --cache --cache-location .eslintcache <changed files or src/>`,
+`eslint --cache --cache-location node_modules/.cache/eslint/gate/ <changed files or src/>`,
 `node scripts/census/run-census.mjs --check`, `vitest related <changed> --run`.
 It also runs cold any single gate the daemon reports as `unavailable` (worker file
 missing, worker crashed). A daemon serving a different base than the requested
@@ -106,6 +106,27 @@ through base, introduced, fixed, deleted, added, base-dirty and healed states an
 asserts the program was reused; `census-worker` drives the census worker through
 base, introduced, inherited base drift, resolved, own-registry and structural
 states and asserts the base evaluation is cached across requests.
+
+## Parity and the native-compiler probe
+
+```bash
+npm run gate:parity                       # daemon vs cold commands on five seeded states
+node scripts/gate/parity.mjs --case hub   # one case
+npm run gate:tsgo-diff -- --native <bin>  # TS 6 vs the TS 7 native compiler, clean + leaf + hub
+npm run typecheck:native                  # tsc --noEmit on the native compiler (needs the alias dep)
+```
+
+`parity.mjs` is the test lefthook pre-push was waiting for: it compares the exit verdict
+AND the diagnostic set per gate on a clean tree, a leaf type error, a hub signature
+change, a census rise and an error-level lint finding, and treats a gate the daemon
+answered cold as a failure of the test. Seeds (`parity-seeds.mjs`) are new files in one
+throwaway directory plus one tracked-file edit that is refused if the file is dirty and
+is restored byte-exact (sha256 + `git diff --quiet`). It edits the checkout it runs in
+for the duration of a case, so do not run it beside a build of the same checkout. Result
+and date: `docs/architecture/warm-verification-service.md`, "Parity on a red tree".
+
+`tsgo-diff.mjs` asks the same question of the TS 7 native compiler. The daemon stays on
+the TS 6 API whatever it answers - TS 7.0 has no programmatic API.
 
 ## Measured (2026-09-07, this machine, base at 6,651 program files / 4,683 roots)
 

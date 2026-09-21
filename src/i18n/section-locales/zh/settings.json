@@ -620,7 +620,9 @@
     "autopilot_target_unit": "占 7 天窗口的百分比",
     "fleet_concurrency_label": "舰队会话",
     "fleet_concurrency_aria": "舰队并行会话上限",
-    "fleet_concurrency_hint": "所有派发者合计可同时运行的 Claude Code 会话数。超过这条线，派发会以排队状态被接纳，并在槽位空出后自动启动。活动看板标题栏的步进器写入的是同一设置。"
+    "fleet_concurrency_hint": "所有派发者合计可同时运行的 Claude Code 会话数。超过这条线，派发会以排队状态被接纳，并在槽位空出后自动启动。活动看板标题栏的步进器写入的是同一设置。",
+    "dynamic_budgets_hint": "根据每个职责的资源配置，按实时机器、GPU 和套餐预算放行舰队运行。关闭后将回退到上方的固定会话上限。",
+    "dynamic_budgets_label": "动态舰队预算"
   },
   "notifications": {
     "digest_description": "每周通知，汇总所有智能体的健康问题及总体健康评分",

@@ -6,7 +6,7 @@ export function CelebrationIllustration({ icon: _icon, color: _color }: { icon: 
       className="animate-fade-slide-in w-40 h-30 mx-auto flex items-center justify-center"
     >
       <img
-        src="/illustrations/adopt-celebration.png"
+        src="/illustrations/adopt-celebration.webp"
         alt=""
         aria-hidden="true"
         width={160}

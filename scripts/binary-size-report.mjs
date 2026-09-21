@@ -92,7 +92,19 @@ const sizes = collectSizes();
 const baseline = loadBaseline();
 
 if (Object.keys(sizes).length === 0) {
-  console.error("No build artifacts found. Run 'npx tauri build' first.");
+  // Say WHERE it looked. This script's own --target comment records the time it
+  // died with this message in CI while pointing at the wrong directory; a
+  // "nothing found" that does not name the path it searched sends the reader
+  // looking for a missing build instead of a wrong path.
+  console.error("No build artifacts found — nothing to measure.");
+  console.error(`  looked for a binary at: ${BINARY_PATH}`);
+  console.error(`  looked for installers under: ${BUNDLE_DIR}/{nsis,msi,deb,appimage,dmg,macos}`);
+  console.error(
+    target
+      ? `  (--target ${target} was passed, so the triple-qualified path above is the one that matters)`
+      : "  (no --target passed; a build made with --target writes to src-tauri/target/<triple>/release instead)",
+  );
+  console.error("  Run `npm run tauri:build:lite` (or `npm run tauri:build`) first; `npm run tauri:build:nobundle` produces the .exe but no installers.");
   process.exit(1);
 }
 

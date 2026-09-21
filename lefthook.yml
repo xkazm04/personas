@@ -15,9 +15,21 @@
 pre-commit:
   parallel: true
   jobs:
+    # The cache lives under node_modules/.cache, NOT at the repo-root default
+    # `.eslintcache`. Measured 2026-09-18 (build-ledger.jsonl, fe-eslint): any
+    # eslint run WITHOUT --cache deletes the default-location cache file
+    # (eslint/lib/eslint/eslint.js, "Deleting cache file"), and agents run
+    # `npx eslint <file>` all day - so the whole-src cache this hook shared with
+    # `npm run lint` was 418 bytes whenever anyone looked, and every full run
+    # paid ~60 s cold instead of ~3.5 s. A cached staged run was NOT the evictor
+    # (it grows the file; variant shared-cache-after-staged), but it gets its own
+    # directory anyway so a staged run and a full run never rewrite one file
+    # concurrently. Directory form (trailing slash): ESLint names the file
+    # .cache_<hash of cwd> and keys entries by absolute path, so worktrees that
+    # share node_modules through a junction cannot serve each other's results.
     - name: eslint-staged
       glob: "*.{ts,tsx,js,cjs,mjs}"
-      run: npx eslint --cache --cache-location .eslintcache --quiet --no-warn-ignored --max-warnings 99999 {staged_files}
+      run: npx eslint --cache --cache-location node_modules/.cache/eslint/staged/ --quiet --no-warn-ignored --max-warnings 99999 {staged_files}
 
     # Secret scan on staged changes — the shift-left D9 control: a leaked key is blocked BEFORE it
     # leaves the machine (CI catching it is already a leak). Runs gitleaks if installed, else skips
@@ -89,8 +101,22 @@ pre-commit:
 
 pre-push:
   jobs:
-    - name: typecheck
-      run: npx tsc --noEmit
+    # typecheck + golden-path census, answered by the warm gate daemon
+    # (scripts/gate/, docs/architecture/warm-verification-service.md). Routed here
+    # 2026-09-18, after `npm run gate:parity` held on all five seeded states
+    # (clean / leaf type error / hub signature change with 1,400 errors in files
+    # the seed never touched / census rise / error-level lint): same exit verdict
+    # AND the same diagnostic set as `npx tsc --noEmit` and `npm run census:check`.
+    # Until that run the daemon was held out of this hook by its own design doc.
+    #
+    # When the daemon cannot answer, the client prints one line and runs those two
+    # cold commands itself, with the same exit code - so this job can be slower
+    # than the old one, never laxer. One deliberate difference: pushed from a
+    # WORKTREE, the verdict is a delta against the main checkout, so an error or
+    # drift the main checkout already carries does not block the push. Pushed from
+    # the main checkout it is the old zero-errors / no-drift verdict.
+    - name: typecheck-and-census
+      run: node scripts/gate/gate.mjs --gates tsc,census
 
     # The golden-path census. Added 2026-08-16 because it was enforced NOWHERE:
     # `census:check` lives only inside `npm run check`, which nothing runs
@@ -108,9 +134,9 @@ pre-push:
     # broken matcher, sometimes a real fix). A drop is cleared with
     # `npm run census -- --update`, which is a deliberate act that lands in the
     # diff — which is the entire point of a ratchet.
-    - name: golden-path-census
-      run: npm run census:check
-
+    #
+    # The job itself is `typecheck-and-census` above; this history stays because
+    # the reason the census is on pre-push at all is recorded nowhere else.
     - name: i18n-coverage
       run: node scripts/i18n/check-coverage.mjs
 

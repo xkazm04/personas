@@ -325,13 +325,92 @@ state. Every other edge is refused by `transition_is_legal`.
 
 | Command | Does |
 |---|---|
-| `fleet_queue_snapshot` | `{ cap, running, queued, over_admitted, entries[] }` — entries in rank order with `estimatedStartMs = now + rank × mean duration of the last 20 ended sessions` (`null` without history) |
+| `fleet_queue_snapshot` | `{ cap, running, queued, over_admitted, entries[], budgets }` — entries in rank order with `estimatedStartMs = now + rank × mean duration of the last 20 ended sessions` (`null` without history) |
 | `fleet_queue_reorder(session_ids)` | dense re-rank in the given order; unknown / non-queued ids ignored, unnamed rows keep their relative order after the named ones; persists; emits `reordered` |
 | `fleet_queue_cancel(session_id)` | `Queued → Exited` (`cancelled`); `NotFound` / `Validation` when the id is unknown / not queued; emits `cancelled` |
-| `fleet_queue_start_now(session_id)` | promotes cap or no cap; `over_admitted = max(0, live − cap)` reports the overshoot afterwards |
+| `fleet_queue_start_now(session_id)` | promotes cap or no cap, budgets or no budgets; `over_admitted = max(0, live − cap)` reports the count overshoot afterwards, and the started session's charge counts in `budgets.machineUsed / planUsed` |
 
 **Event**: `fleet-queue-changed`, payload `{ kind: enqueued | promoted |
 reordered | cancelled | cap_changed, sessionId }` (`QueueChangedPayload`).
+`cap_changed` also announces a budget change (RAM gate closed / reopened, the
+head's hold reason changed, the `fleet.dynamic_budgets` switch flipped): it
+means "capacity moved, re-read the snapshot".
+
+### Budgeted admission
+
+The count cap is shorthand for "N sessions of equal cost", and fleet sessions
+do not cost the same. With **`fleet.dynamic_budgets`** on (default) the door
+also charges every dispatch **two budgets**; the pure rules live in
+`commands/fleet/budgets.rs`, the wiring in `queue.rs`.
+
+| | Machine budget | Plan budget |
+|---|---|---|
+| Unit | `MachineLoad`: light 1 · moderate 2 · heavy 4 · exclusive 8 | `EffortBand`: s 1 · m 2 · l 4 · xl 8 |
+| Budget | `min(cap, machineUsed + memory_slots)` — what is charged now plus what the free memory below `fleet_autopilot.memory_stop_pct` can still hold (`usage_pacing::memory_slots`, one unit per `memory_per_agent_mb`); `cap` when memory is unmeasured | `max(2, round(cap × 2 × paceFactor))`; **0** while the five-hour window is at the fleet start line or the usage governor has stopped dispatch |
+| Static max | `cap` | `cap × 2` (`planBudgetMax`) |
+
+A dispatch's charge comes from `DispatchRequest.profile` (the charter's
+`spec.resourceProfile`); no profile — a manual session, an untagged charter, a
+row from before migration **e39** — is charged the default **1 machine / 2
+plan / no GPU**. That is why an all-default fleet at pace factor 1 admits,
+queues and promotes exactly as the count cap alone does (pinned by a
+table-driven test over cap 1..10). The charge is stored on the row
+(`fleet_sessions.machine_units / plan_units / gpu_class`) at enqueue AND at an
+immediate start, so `used` — the sum over live sessions (`spawning`,
+`running`, `awaiting_input`, `idle`) — survives a restart.
+
+- **Pace factor.** `AutopilotPacing.behind_pct = linear − actual`: positive =
+  behind pace, **negative = ahead** (burning faster than linear). Behind / on
+  pace / unreadable → `1.0`; `0 → −25` falls linearly to `0.0`, where the
+  budget sits on its floor of 2 units (one default session). So when the plan
+  runs hot, an `xl` waits while an `s`/heavy build still starts.
+- **RAM gate.** Closes at **≥ 85 %** used RAM, reopens only at **≤ 70 %**
+  (the `resource_governor` thresholds); `warming` until the second sample, and
+  an unreadable probe fails OPEN with one warning. It defers **promotion
+  only** — a live session is never paused, throttled or ended by a budget.
+- **GPU token.** One process-global holder. A `gpu = exclusive` dispatch waits
+  (`gpu_token_held`) while another exclusive session is live; the token follows
+  the live set — released when the holder leaves it, re-adopted at startup by
+  the oldest restored live exclusive row. `shared` is informational.
+- **Aged backfill.** Promotion takes the first time-eligible entry that
+  **fits**, so small work backfills past a held heavy one. Each promotion (or
+  direct start) past an unfit entry raises its `skip_count`; once an entry has
+  been skipped **5** times or has been unfit for **30 min**
+  (`first_unfit_at_ms`), backfill stops at it — nothing behind it starts, from
+  the queue or at the door, until it does.
+- **Empty-machine rule.** A charge larger than a budget is still admitted when
+  it would be the ONLY live charge, so an `exclusive` job runs on a cap-4 fleet
+  and then owns the machine. It never overrides a closed RAM gate or a stopped
+  plan, and on the plan axis it applies only while the budget is at its static
+  maximum (an `xl` too big for a *shrunk* budget waits for the pace).
+- **Refusal.** A charge that could never start — larger than both the static
+  maximum and the heaviest vocabulary weight (8) — is refused at the door with
+  `AppError::Validation("exceeds_budget: …")`, never queued. No profile in the
+  closed vocabularies can trip it.
+- **Hold reasons** (`BudgetHold`, first that applies): `five_hour_full` >
+  `ram_high_water` > `gpu_token_held` > `ahead_of_pace`. Budgets that are simply
+  occupied by live work are the ordinary wait and carry no hold.
+- **Kill switch.** `fleet.dynamic_budgets = false` → the count-only door,
+  exactly; nothing is sampled. The snapshot then reports `enabled: false`, real
+  `used`, neutral budgets and no holds.
+- **Start now** bypasses the budgets as it bypasses the cap; its charge counts
+  in `used` afterwards.
+- **Every origin obeys.** There is no origin exemption at the door.
+
+**Re-evaluation.** Promotion runs on a slot freeing, a cap / switch change,
+boot, and the 30 s staleness tick — which is also the one place the inputs are
+re-measured (`queue::schedule_budget_tick`): RAM every tick, the pacing half
+(usage snapshot, cached 45 s process-wide) only while the fleet has live or
+queued work. Admissions read that cached state and never measure; a pacing
+reading older than 10 min is dropped (fail open).
+
+**Snapshot.** `FleetQueueSnapshot.budgets` (`FleetBudgets`): `enabled`,
+`machineUsed / machineBudget`, `planUsed / planBudget / planBudgetMax`,
+`paceFactor`, `behindPct`, `ramPct`, `ramGate` (`open | closed | warming`),
+`gpuHolder`, and `hold` — why the HEAD entry (first time-eligible row) is
+held, or, with nothing queued, the hold any dispatch would meet
+(`five_hour_full` / `ram_high_water`). Each `FleetQueueEntry` carries
+`machineUnits`, `planUnits`, `gpu`, `skips` and its own `heldBy`.
 
 **Origins** (`DispatchOrigin`, snake_case tokens on the row): `manual`
 (operator spawns), `dev_runner`, `dispatch_ideas`, `athena` (her three

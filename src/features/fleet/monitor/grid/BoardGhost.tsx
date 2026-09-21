@@ -19,24 +19,31 @@
 // ladder's floor and its pre-measurement value, so every other caller is
 // unchanged.
 
-import { PERSONA_ROW_H, TILE_H, TILE_W } from './gridGeometry';
+import { PERSONA_ROW_H, SYMBOL_ROW_H, TILE_H, TILE_W, TITLE_ROW_H } from './gridGeometry';
 
 /** Ghost rows per column — enough to read as a roster, few enough to stay calm. */
 const COLD_COLUMNS = 3;
 const COLD_ROWS = 6;
 export const GHOST_ROW_CAP = 12;
+/** Symbol-shaped dots on the ghost's second row — the node's row is a run of 16 px marks. */
+const GHOST_SYMBOLS = 3;
 
-/** One node-shaped box: the rail slot, a title bar over a shorter meta bar. */
+/** One node-shaped box: a title bar over a row of symbol-sized dots. */
 function GhostRow({ width = TILE_W }: { width?: number }) {
   return (
     <div style={{ height: PERSONA_ROW_H }}>
       <div
-        className="relative flex flex-col justify-center gap-1.5 overflow-hidden rounded-input border border-border bg-foreground/[0.02] pl-2"
+        className="relative flex flex-col justify-center overflow-hidden rounded-input border border-border bg-foreground/[0.02] px-1"
         style={{ width, height: TILE_H }}
       >
-        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-foreground/10" />
-        <span className="ml-1 h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
-        <span className="ml-1 h-[0.5em] w-14 rounded bg-primary/[0.05] typo-caption" />
+        <span className="flex items-center" style={{ height: TITLE_ROW_H }}>
+          <span className="h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
+        </span>
+        <span className="flex items-center gap-1" style={{ height: SYMBOL_ROW_H }}>
+          {Array.from({ length: GHOST_SYMBOLS }, (_, i) => (
+            <span key={i} className="h-3 w-3 rounded-full bg-primary/[0.05]" />
+          ))}
+        </span>
       </div>
     </div>
   );

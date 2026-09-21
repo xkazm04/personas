@@ -609,6 +609,41 @@ pub fn merge_spec_pacing(
     )
 }
 
+/// Merge a charter's resource profile into ONE key of its `spec` JSON
+/// (`$.resourceProfile`) - the same one-key `json_set` posture as
+/// [`merge_spec_pacing`], for the same reason: the persona declares its
+/// profile from a background wake, and rewriting the whole column from that
+/// wake's snapshot would revert whatever the operator edited meanwhile.
+///
+/// This is STORAGE only. The pin rule (a persona never overwrites a pinned
+/// profile) lives at the write door,
+/// `personas_engine::responsibility::declare_profile` - call that, not this.
+/// Returns `false` when no row matched.
+pub fn merge_spec_resource_profile(
+    pool: &DbPool,
+    id: &str,
+    profile: &crate::models::ResourceProfile,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_responsibilities",
+        "responsibilities::merge_spec_resource_profile",
+        {
+            let profile_json = to_json(profile, "spec.resourceProfile")?;
+            let conn = pool.conn("responsibilities::merge_spec_resource_profile")?;
+            let updated = conn.execute(
+                "UPDATE persona_responsibilities
+                 SET spec = json_set(
+                         CASE WHEN json_valid(spec) THEN spec ELSE '{}' END,
+                         '$.resourceProfile', json(?1)),
+                     updated_at = ?2
+                 WHERE id = ?3",
+                params![profile_json, chrono::Utc::now().to_rfc3339(), id],
+            )?;
+            Ok(updated > 0)
+        }
+    )
+}
+
 /// Bump `updated_at` without changing anything else (attention passes touch
 /// the charter they just served so staleness ordering stays honest). Touching
 /// a charter that does not exist is an error, not a silent no-op.

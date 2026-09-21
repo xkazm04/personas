@@ -39,16 +39,26 @@ describe('board variant', () => {
 });
 
 describe('node variant', () => {
-  it('is ledger | badge | meter, defaulting to ledger', () => {
-    expect([...NODE_VARIANTS]).toEqual(['ledger', 'badge', 'meter']);
-    expect(readNodeVariant()).toBe('ledger');
+  it('is outline | accent | tinted, defaulting to outline', () => {
+    expect([...NODE_VARIANTS]).toEqual(['outline', 'accent', 'tinted']);
+    expect(readNodeVariant()).toBe('outline');
     expect(isNodeVariant('classic')).toBe(false);
+    expect(isNodeVariant('ledger')).toBe(false);
   });
 
-  it('falls back to ledger for an unknown stored value and round-trips a live one', () => {
+  it('maps the three retired prototype ids forward, so a persisted choice survives the rename', () => {
+    localStorage.setItem(NODE_VARIANT_KEY, 'ledger');
+    expect(readNodeVariant()).toBe('outline');
+    localStorage.setItem(NODE_VARIANT_KEY, 'badge');
+    expect(readNodeVariant()).toBe('accent');
+    localStorage.setItem(NODE_VARIANT_KEY, 'meter');
+    expect(readNodeVariant()).toBe('tinted');
+  });
+
+  it('falls back to outline for an unknown stored value and round-trips a live one', () => {
     localStorage.setItem(NODE_VARIANT_KEY, 'ranked');
-    expect(readNodeVariant()).toBe('ledger');
-    writeNodeVariant('meter');
-    expect(readNodeVariant()).toBe('meter');
+    expect(readNodeVariant()).toBe('outline');
+    writeNodeVariant('tinted');
+    expect(readNodeVariant()).toBe('tinted');
   });
 });

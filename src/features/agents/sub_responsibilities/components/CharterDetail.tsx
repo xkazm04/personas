@@ -11,6 +11,7 @@ import { getDimLabels, type PersonaCapability } from '@/lib/personas/capabilitie
 import { CharterStatusLadder, type CharterStatus } from './CharterStatusLadder';
 import { CharterRunButton } from './CharterRunButton';
 import { CharterParametersCard } from './CharterParametersCard';
+import { CharterResourceCard } from './CharterResourceCard';
 import { CharterRecipeBlocks } from './CharterRecipeBlocks';
 import { CharterEditor } from './CharterEditor';
 import { resolveCharterSigilBody } from './sigil/charterSigilBodies';
@@ -114,6 +115,10 @@ export function CharterDetail({
             <CharterRecipeBlocks charter={charter} />
 
             <CharterParametersCard charter={charter} onPatch={onPatch} />
+
+            {/* Keyed by charter so an unsaved profile edit never carries over
+                to the next charter selected in the master list. */}
+            <CharterResourceCard key={charter.id} charter={charter} personaId={personaId} onPatch={onPatch} />
 
             <CharterEditor
               key={charter.id}

@@ -20,6 +20,8 @@
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
 import type { ClaudeAccountView } from '@/lib/bindings/ClaudeAccountView';
 import type { ClaudeUsageWindow } from '@/lib/bindings/ClaudeUsageWindow';
+import type { CliUsageSnapshot } from '@/lib/bindings/CliUsageSnapshot';
+import type { FleetBudgets } from '@/lib/bindings/FleetBudgets';
 
 const HOUR_MS = 3_600_000;
 const FIVE_HOUR_MS = 5 * HOUR_MS;
@@ -62,7 +64,13 @@ export function buildSimAccounts(now = Date.now()): ClaudeAccountView[] {
     account({
       id: 'sim-plan-1', email: 'fleet.one@simulated.test', slot: 1, isActive: true,
       displayName: 'Fleet primary',
-      usage: windows(now, 34, 41, 2.2 * HOUR_MS),
+      // The live plan also carries the per-model weekly windows, so the variants
+      // that show them (the ledger's Opus / Sonnet columns) have something to show.
+      usage: [
+        ...windows(now, 34, 41, 2.2 * HOUR_MS),
+        { key: 'seven_day_opus', utilizationPct: 62, resetsAtMs: now + 3.5 * 24 * HOUR_MS, windowMs: SEVEN_DAY_MS },
+        { key: 'seven_day_sonnet', utilizationPct: 18, resetsAtMs: now + 3.5 * 24 * HOUR_MS, windowMs: SEVEN_DAY_MS },
+      ],
       usageFetchedAtMs: now - 90_000,
       lastSwitchedAtMs: now - 4 * HOUR_MS,
     }),
@@ -132,4 +140,63 @@ export function simSwitchActive(snapshot: ClaudeAccountsSnapshot, id: string): C
 /** Forget a plan. Slots are NOT renumbered — the real backend does not either. */
 export function simRemoveAccount(snapshot: ClaudeAccountsSnapshot, id: string): ClaudeAccountsSnapshot {
   return { ...snapshot, accounts: snapshot.accounts.filter((a) => a.id !== id) };
+}
+
+// ── The other CLIs, and the machine ─────────────────────────────────────────
+//
+// The resource-strip variants show three providers and the fleet's budgets, and
+// on a development machine neither Codex nor a budget hold is likely to exist.
+// So the fixture carries one of each honest state:
+//
+//   codex — installed, plan `pro`, ONE window (the 7-day `primary`), last
+//           reported three hours ago: the freshness label has something to say
+//           and the "5h" column has to cope with a provider that has none;
+//   grok  — not installed: the empty state, never a meter;
+//   budgets — the fleet is AHEAD of plan pace, so the plan budget has been
+//           throttled (pace factor 0.6) and promotion is held for that reason.
+
+export function buildSimCliUsage(now = Date.now()): CliUsageSnapshot {
+  return {
+    providers: [
+      {
+        provider: 'codex',
+        installed: true,
+        version: '0.41.0',
+        planType: 'pro',
+        windows: [
+          { key: 'primary', windowMinutes: 10_080, usedPercent: 47, resetsAtMs: now + 2.25 * 24 * HOUR_MS },
+        ],
+        asOfMs: now - 3 * HOUR_MS,
+        projected: false,
+        reason: null,
+      },
+      {
+        provider: 'grok',
+        installed: false,
+        version: null,
+        planType: null,
+        windows: [],
+        asOfMs: null,
+        projected: false,
+        reason: 'not_installed',
+      },
+    ],
+  };
+}
+
+export function buildSimBudgets(): FleetBudgets {
+  return {
+    enabled: true,
+    machineUsed: 6,
+    machineBudget: 10,
+    planUsed: 11,
+    planBudget: 12,
+    planBudgetMax: 20,
+    paceFactor: 0.6,
+    behindPct: -18,
+    ramPct: 71,
+    ramGate: 'open',
+    gpuHolder: 'sim-session-07',
+    hold: 'ahead_of_pace',
+  };
 }
