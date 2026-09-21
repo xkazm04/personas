@@ -189,7 +189,7 @@ You are analyzing a codebase to generate actionable improvement ideas. You have 
 Output each idea as a JSON object on its own line:
 
 ```
-{{"scan_idea": {{"project_id": "{project_id}", "scan_type": "<agent-key>", "category": "<technical|user|business|mastermind>", "title": "Short actionable title", "description": "Detailed description of the improvement", "reasoning": "Why this matters and what evidence you found", "effort": <1-10>, "impact": <1-10>, "risk": <1-10>}}}}
+{{"scan_idea": {{"project_id": "{project_id}", "scan_type": "<agent-key>", "category": "<technical|user|business|mastermind>", "title": "Short actionable title", "description": "Detailed description of the improvement", "reasoning": "Why this matters and what evidence you found", "effort": <1-5>, "impact": <1-5>, "risk": <1-5>, "plan": [{{"n": 1, "action": "one imperative line", "files": ["repo/relative/path"], "done_when": "the observable condition that finishes this step"}}]}}}}
 ```
 
 Field guidelines:
@@ -198,9 +198,10 @@ Field guidelines:
 - **title**: Concise action item (max ~80 chars)
 - **description**: Markdown with EXACTLY these four `## ` sections, in this order, each present: `## Summary` (one or two sentences: what is wrong or missing, and where), `## Description` (what the code does today, why that is a defect or gap, what fixed looks like, `file:line` for every claim), `## Flow` (bullet steps: user action -> code path -> observed result; for a proposal, the build steps in order), `## Expected impact` (who notices, what changes, how it is measured, one sentence on what could break), `## Evaluation` (six lines: `Claim:` quality|performance|resilience|user|other — what the idea promises; `Before:` the measurement today — a count, a timing, a reproduced behaviour or the sample looked at; `After:` the same measurement under the change, from a probe on a small sample or a simulated run; `Method:` probe|simulation|gate — what produced the two figures; `Result:` better|not-better|unmeasurable; `Gate:` none|contract|policy|irreversible — the hard gate the implementation REQUIRES, if any). Escape newlines as \n inside the JSON string
 - **reasoning**: Evidence from the codebase that supports this idea
-- **effort**: 1=trivial, 2=minimal, 3=small, 4=easy, 5=moderate, 6=medium, 7=substantial, 8=large, 9=very large, 10=epic
-- **impact**: 1=negligible, 2=minimal, 3=minor, 4=low, 5=moderate, 6=notable, 7=significant, 8=major, 9=critical, 10=transformative
-- **risk**: 1=none, 2=trivial, 3=low, 4=minor, 5=moderate, 6=notable, 7=high, 8=risky, 9=dangerous, 10=critical
+- **effort**: 1 = under an hour · 2 = an hour or two · 3 = a day · 4 = several days · 5 = a wave of its own
+- **impact**: 1 = cosmetic · 2 = a local improvement · 3 = visible to the project's users or gates · 4 = moves a declared goal or KPI · 5 = unblocks a goal or a money path
+- **risk**: 1 = documentation or a reversible local change · 2 = code behind a test · 3 = touches a route, a contract or a schema · 4 = touches ledger, settlement or security semantics · 5 = irreversible or external
+- **plan**: the ordered 1-8 steps that turn this finding into a commit. YOU are the analyst; whoever executes it later is a cheaper model that will NOT re-derive your analysis — everything you leave out, it invents. `action` is one imperative line at the altitude of a commit subject. `files` is not decoration: two items may be executed in PARALLEL exactly when their plans' file sets do not intersect, so a step naming no file cannot be scheduled against anything. `done_when` is OBSERVABLE — a named test that passes, a command that exits clean, a value a specific surface shows; "the code is correct" is not one. A finding you genuinely cannot plan is still worth filing: omit `plan` and it is stored and marked `draft` rather than dropped. Never invent a path you have not opened — a fabricated file list schedules work against files that do not exist.
 
 {value_literacy}
 At the end, output a summary:
@@ -237,6 +238,10 @@ enum IdeaProtocol {
         effort: Option<i32>,
         impact: Option<i32>,
         risk: Option<i32>,
+        /// The ordered steps the scanning model leaves for the executing one.
+        /// Optional: a finding it cannot plan is still worth filing, and the
+        /// door grades the item `draft` rather than refusing it.
+        plan: Option<crate::db::models::IdeaPlan>,
     },
     Summary {
         ideas_generated: i32,
@@ -261,17 +266,49 @@ enum IdeaProtocol {
     },
 }
 
+/// The scale this scanner's ANSWERS are expressed on, as the write door still
+/// declares it (`BacklogSource::native_scale_max`).
+///
+/// **This is a bridge with a deliberate expiry, and it self-retires.** The
+/// prompt above now asks for 1-5 — the one scale the queue ranks on, and the
+/// only one whose bands carry documented meanings — but the door still folds
+/// this producer's numbers in from ten (`normalize_scale`), because migration
+/// `e42` converted the stored rows and the *arm naming this producer* has not
+/// been retired yet. Shipping the prompt change alone would therefore halve
+/// every new scanner score: a risk 5 ("irreversible or external") would be
+/// stored as 3 and walk straight through a triage rule that accepts risk below
+/// 4. So a 1-5 answer is expressed on whatever scale the door says it is
+/// converting FROM. The factor is READ from that declaration rather than
+/// written down here, so the day the `IdeaScanner` arm becomes 5 the factor is
+/// 1 and this function becomes the identity it should have been all along.
+fn native_scale_factor() -> i64 {
+    let native = crate::db::models::BacklogSource::IdeaScanner.native_scale_max() as i64;
+    let queue = crate::db::models::IDEA_SCALE_MAX as i64;
+    (native / queue).max(1)
+}
+
 /// Score fields (effort/impact/risk) must be present and inside 1..=10. The LLM
 /// can hallucinate any integer (negative, 0, 999, INT64_MAX) and that value
 /// would otherwise be persisted unchanged. Returns `None` if missing or out of
 /// range so the caller can drop the idea entirely.
+///
+/// Both dialects are read, because a model does not stop answering the way it
+/// used to the moment a prompt changes: a value at or below the queue's own
+/// maximum is the 1-5 answer the prompt asks for and is expressed on the
+/// door's native scale (see [`native_scale_factor`]); a value above it is a
+/// ten-point answer already on that scale and passes through untouched.
 fn validate_score(idea: &serde_json::Value, field: &str) -> Option<i32> {
     let raw = idea.get(field).and_then(|v| v.as_i64())?;
-    if (1..=10).contains(&raw) {
-        Some(raw as i32)
-    } else {
-        None
+    if !(1..=10).contains(&raw) {
+        return None;
     }
+    let queue_max = crate::db::models::IDEA_SCALE_MAX as i64;
+    let native = if raw <= queue_max {
+        raw * native_scale_factor()
+    } else {
+        raw
+    };
+    Some(native as i32)
 }
 
 fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
@@ -314,6 +351,11 @@ fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
             effort,
             impact,
             risk,
+            // The same tolerant reader the `propose_backlog` door uses, so the
+            // two producers cannot drift into accepting different shapes of
+            // one contract. Every failure mode drops the PLAN and keeps the
+            // FINDING.
+            plan: crate::engine::parser::parse_idea_plan(idea),
         });
     }
 
@@ -442,27 +484,45 @@ pub async fn run_scan_core(
         _ => {}
     }
 
+    // The same aging, on the pile that never had any. Until this contract the
+    // whole backpressure system stopped at the moment of acceptance: 741
+    // accepted items sat undispatched with no cap, no reaper and no terminal
+    // state, while the pending queue this scan launcher has always reaped held
+    // 63 at its largest (measured 2026-09-21).
+    //
+    // Wired HERE, beside its sibling, and the choice is worth stating because
+    // the brief asked for it to be questioned: this is the one place in the
+    // tree that already ages the backlog, it runs on a scan LAUNCH rather than
+    // on a timer, and an accepted item is only stale relative to a project
+    // that kept producing. A project nobody scans has nobody waiting on its
+    // accepted pile either. The honest limitation is the one its sibling
+    // already carries - a project whose scans stopped stops aging too - and
+    // the fix for both is one scheduled sweep, not two call sites.
+    match repo::expire_stale_accepted_ideas(
+        &db,
+        Some(&project_id),
+        crate::engine::dispatch::ACCEPTED_STALE_DAYS,
+    ) {
+        Ok(n) if n > 0 => {
+            tracing::info!(project_id = %project_id, expired = n, "Expired accepted ideas that never became work before scan");
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Accepted-idea expiry failed; continuing scan")
+        }
+        _ => {}
+    }
+
     // Backlog backpressure: skip the whole scan round when the project's
-    // pending backlog is already saturated — producers must not stack ideas
-    // faster than triage + promotion can drain them (mirrors the per-idea
-    // guard at the `propose_backlog` dispatch chokepoint).
-    let pending: i64 = db
-        .get()
-        .ok()
-        .and_then(|conn| {
-            conn.query_row(
-                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
-                rusqlite::params![project_id],
-                |r| r.get(0),
-            )
-            .ok()
-        })
-        .unwrap_or(0);
-    if pending >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+    // backlog is already saturated - producers must not stack ideas faster
+    // than triage + promotion can drain them. THE SAME question the per-idea
+    // `propose_backlog` guard asks, through the same function, so extending
+    // the policy can never leave one of the two producers reading half of it:
+    // that is exactly how the accepted pile reached 741 undispatched while
+    // every guard in the tree counted `pending`.
+    if let Some(limit) = crate::engine::dispatch::backlog_saturation(&db, &project_id) {
         return Err(AppError::Validation(format!(
-            "Idea scan skipped: backlog saturated ({pending} pending ideas ≥ cap {}). \
-             Triage / promote the existing backlog first.",
-            crate::engine::dispatch::IDEA_BACKLOG_CAP
+            "Idea scan skipped: {}. Triage / promote / dispatch the existing backlog first.",
+            limit.describe()
         )));
     }
 
@@ -867,6 +927,7 @@ async fn run_idea_scan(
                                 effort,
                                 impact,
                                 risk,
+                                plan,
                             } => {
                                 // Use the caller-supplied project_id, not the
                                 // LLM-parsed one, to prevent data integrity
@@ -879,22 +940,32 @@ async fn run_idea_scan(
                                 // stop rebuilding the same backlog.
                                 let dedup_key =
                                     repo::scan_dedup_key(&scan_type, Some(scope_token), &title);
-                                match repo::create_idea_deduped(
-                                    pool,
-                                    project_id,
-                                    None, // context_id
-                                    &scan_type,
-                                    Some(&category),
-                                    &title,
-                                    description.as_deref(),
-                                    reasoning.as_deref(),
-                                    effort,
-                                    impact,
-                                    risk,
-                                    Some("claude"),
-                                    Some("claude-sonnet-4-6"),
-                                    &dedup_key,
-                                ) {
+                                // ONE draft through the ONE door. The legacy
+                                // positional signature had no parameter for
+                                // the plan, which is the half of the finding
+                                // the executing model actually reads; the
+                                // source resolution and the `pending` status
+                                // it applied are reproduced here verbatim, and
+                                // the attribution this producer has always
+                                // stamped stays exactly as it was.
+                                let source =
+                                    crate::db::models::BacklogSource::from_token(&scan_type)
+                                        .unwrap_or(crate::db::models::BacklogSource::IdeaScanner);
+                                let mut draft =
+                                    crate::db::models::IdeaDraft::new(project_id, source, &title);
+                                draft.scan_type = Some(scan_type.clone());
+                                draft.category = Some(category.clone());
+                                draft.description = description.clone();
+                                draft.reasoning = reasoning.clone();
+                                draft.effort = effort;
+                                draft.impact = impact;
+                                draft.risk = risk;
+                                draft.plan = plan.clone();
+                                draft.provider = Some("claude".to_string());
+                                draft.model = Some("claude-sonnet-4-6".to_string());
+                                draft.status = Some("pending".to_string());
+                                draft.dedup_key = Some(dedup_key.clone());
+                                match repo::file_idea(pool, draft) {
                                     Ok(None) => {
                                         counts.ideas_deduped += 1;
                                         IDEA_SCAN_JOBS.emit_line(
@@ -1452,5 +1523,88 @@ mod tests {
         // An idea that moves nothing SAYS so — unmeasured is not zero.
         assert!(prompt.contains("`Journey: none`"), "{prompt}");
         assert!(prompt.contains("never invent a journey"), "{prompt}");
+    }
+
+    /// The scanner asked its model for `<1-10>` while the queue ranks on 1-5
+    /// and `propose_backlog` documents a MEANING per band. 75 stored rows
+    /// exceeded 5. The operator settled it on 2026-09-21 - one scale, 1-5 -
+    /// and a prompt that keeps asking for a scale the queue does not use is
+    /// the defect that produced the split in the first place. The band
+    /// wordings are COPIED from the `propose_backlog` contract, never invented
+    /// a second time.
+    #[test]
+    fn the_scan_prompt_asks_for_the_queues_own_scale_with_its_documented_bands() {
+        let a = agent();
+        let prompt =
+            build_idea_scan_prompt("proj-1", &[&a], None, None, None, None, None, false, None);
+
+        assert!(
+            prompt.contains(r#""effort": <1-5>, "impact": <1-5>, "risk": <1-5>"#),
+            "the protocol line must ask for the one scale the queue ranks on: {prompt}"
+        );
+        assert!(
+            !prompt.contains("<1-10>"),
+            "no ten-point ask may survive anywhere in the prompt: {prompt}"
+        );
+        assert!(prompt.contains("1 = documentation or a reversible local change"));
+        assert!(prompt.contains("5 = irreversible or external"));
+        assert!(prompt.contains("1 = under an hour"));
+        assert!(prompt.contains("5 = unblocks a goal or a money path"));
+    }
+
+    /// The scanner's prompt asks for the same plan the `propose_backlog` verb
+    /// does, for the same reason: the analysing model is the one that can
+    /// write it, and a finding nobody planned makes the CHEAPEST model in the
+    /// chain do the analysis.
+    #[test]
+    fn the_scan_prompt_asks_for_the_execution_plan() {
+        let a = agent();
+        let prompt =
+            build_idea_scan_prompt("proj-1", &[&a], None, None, None, None, None, false, None);
+
+        assert!(prompt.contains(r#""plan": [{"n": 1, "action""#), "{prompt}");
+        assert!(prompt.contains("file sets do not intersect"), "{prompt}");
+        assert!(prompt.contains("still worth filing"), "{prompt}");
+        assert!(
+            prompt.contains("Never invent a path you have not opened"),
+            "{prompt}"
+        );
+    }
+
+    /// **The bridge that stops the prompt change from halving every score.**
+    ///
+    /// The write door still folds this producer's numbers in from ten
+    /// (`BacklogSource::native_scale_max` names `IdeaScanner`), so a 1-5
+    /// answer shipped raw would store risk 5 ("irreversible or external") as 3
+    /// - and walk it straight through a live triage rule that accepts risk
+    /// below 4. A 1-5 answer is therefore expressed on whatever scale the door
+    /// says it is converting FROM, and the factor is READ from that
+    /// declaration: the day the `IdeaScanner` arm becomes 5, this is the
+    /// identity function and this test still passes.
+    #[test]
+    fn a_five_point_answer_survives_the_door_that_still_converts_from_ten() {
+        let scored = |v: i64| {
+            validate_score(&json!({ "risk": v }), "risk").map(|raw| {
+                crate::db::models::normalize_scale(
+                    Some(raw),
+                    crate::db::models::BacklogSource::IdeaScanner.native_scale_max(),
+                )
+            })
+        };
+        for asked in 1..=crate::db::models::IDEA_SCALE_MAX as i64 {
+            assert_eq!(
+                scored(asked),
+                Some(Some(asked as i32)),
+                "a {asked} the prompt asked for must be stored as {asked}"
+            );
+        }
+        // A model still answering on the old ten-point scale is not corrupted
+        // either: it is already native, so it passes through and the door
+        // converts it exactly as it always did.
+        assert_eq!(scored(9), Some(Some(5)), "9/10 folds to the top band");
+        assert_eq!(scored(6), Some(Some(3)), "6/10 folds to the middle");
+        // Out of range in either direction is still a DROPPED idea, unchanged.
+        assert_eq!(scored(0), None);
+        assert_eq!(scored(11), None);
     }
 }

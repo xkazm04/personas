@@ -1,4 +1,7 @@
-use personas_core::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, TodoItem};
+use personas_core::models::{IdeaPlan, PlanStep};
+use personas_core::types::{
+    ExecutionMetrics, ProposedPlan, ProtocolMessage, StreamLineType, TodoItem,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -716,8 +719,92 @@ fn parse_knowledge_annotation(msg: &serde_json::Value) -> Option<ProtocolMessage
 /// A block with no usable `title` still parses; the dispatcher drops it with an
 /// explicit `[BACKLOG] propose_backlog dropped — empty title` log
 /// (`engine/dispatch.rs`), which is a visible outcome rather than a silent one.
+/// Parse the OPTIONAL execution plan a backlog filing carries, from the
+/// enclosing payload's `plan` key.
+///
+/// Shared by both producers that ask for one — the `propose_backlog` protocol
+/// verb and the Idea Scanner's `scan_idea` line — so the two cannot drift into
+/// accepting different shapes of the same contract.
+///
+/// **Every failure mode here drops the PLAN and keeps the FILING.** A filing
+/// that arrives with a broken optional key is still a filing: losing a
+/// persona's finding because it mis-shaped one object is strictly worse than
+/// an unplanned item, which the door already grades `draft`
+/// (`IdeaDraft::completeness`). The tolerances, each measured against what
+/// models actually emit:
+///
+/// - no `plan` key at all → `None`, silently. Not every filer can plan;
+/// - `plan` as the documented ARRAY of steps, or as the object the type itself
+///   serialises to (`{"steps": [...]}`) — a model that has seen the Rust shape
+///   reaches for the latter;
+/// - `plan` as anything else (a string, a number, an object with no `steps`)
+///   → dropped with a warning naming the item;
+/// - a step with no usable `action` is skipped — a step that names no change
+///   is not a step;
+/// - a step with no `files` keeps its place with an empty scope. It is not
+///   silently fine: `IdeaPlan::is_actionable` is false for it, so the item is
+///   stored `draft` and cannot become work until something completes it.
+///   Dropping the whole plan here would discard the steps that DID name files,
+///   which is the input the wave computation needs;
+/// - `done_when` is read from either spelling (`done_when` / `doneWhen`);
+/// - `n` is IGNORED as given and renumbered from array position. The array
+///   order is the execution order (`PlanStep::n`), so a model that numbers its
+///   steps 1,3,2 has contradicted itself and position is the survivable half.
+pub fn parse_idea_plan(msg: &serde_json::Value) -> Option<IdeaPlan> {
+    let raw = msg.get("plan")?;
+    let steps_raw = match raw {
+        serde_json::Value::Array(items) => items,
+        serde_json::Value::Object(obj) => match obj.get("steps").and_then(|s| s.as_array()) {
+            Some(items) => items,
+            None => {
+                tracing::warn!(
+                    "Backlog filing carried a `plan` object with no `steps` array; plan dropped, item kept"
+                );
+                return None;
+            }
+        },
+        _ => {
+            tracing::warn!(
+                "Backlog filing carried a `plan` that is neither an array nor an object; plan dropped, item kept"
+            );
+            return None;
+        }
+    };
+
+    let mut steps: Vec<PlanStep> = Vec::new();
+    for item in steps_raw {
+        let Some(action) = str_field(item, "action")
+            .map(|a| a.trim().to_string())
+            .filter(|a| !a.is_empty())
+        else {
+            continue;
+        };
+        let mut files = str_array_field(item, "files").unwrap_or_default();
+        files.retain(|f| !f.trim().is_empty());
+        let done_when = str_field(item, "done_when")
+            .or_else(|| str_field(item, "doneWhen"))
+            .map(|d| d.trim().to_string())
+            .unwrap_or_default();
+        steps.push(PlanStep {
+            n: (steps.len() + 1) as u32,
+            action,
+            files,
+            done_when,
+        });
+    }
+
+    if steps.is_empty() {
+        tracing::warn!(
+            "Backlog filing carried a `plan` with no usable step; plan dropped, item kept"
+        );
+        return None;
+    }
+    Some(IdeaPlan { steps })
+}
+
 fn parse_propose_backlog(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::ProposeBacklog {
+        plan: parse_idea_plan(msg).map(ProposedPlan),
         title: str_field_or(msg, "title", "Backlog item"),
         description: str_field(msg, "description"),
         category: str_field(msg, "category"),
@@ -1754,6 +1841,112 @@ mod tests {
         let unmarked = r#"{"propose_backlog": {"title": "SEPA pacs.008 validation"}}"#;
         match extract_protocol_message(unmarked).expect("parses") {
             ProtocolMessage::ProposeBacklog { target, .. } => assert_eq!(target, None),
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    /// The plan is the half of the filing the EXECUTING model reads. It parses
+    /// into `PlanStep`s in the order given, with the paths that make a wave
+    /// computable and the observable condition that ends each step.
+    #[test]
+    fn propose_backlog_parses_a_well_formed_plan() {
+        let line = r#"{"propose_backlog": {"title": "Extract the retry helper", "impact": 3, "effort": 2, "risk": 1, "plan": [{"n": 1, "action": "Add the shared retry helper", "files": ["src/lib/retry.rs"], "done_when": "`cargo test retry_helper` passes"}, {"n": 2, "action": "Retire the three copies", "files": ["src/a.rs", "src/lib/retry.rs"], "done_when": "`rg 'fn retry_' src/` returns one hit"}]}}"#;
+        match extract_protocol_message(line).expect("parses") {
+            ProtocolMessage::ProposeBacklog { plan, .. } => {
+                let plan = plan.expect("the plan parsed").0;
+                assert_eq!(plan.steps.len(), 2);
+                assert_eq!(plan.steps[0].n, 1);
+                assert_eq!(plan.steps[0].action, "Add the shared retry helper");
+                assert_eq!(plan.steps[0].files, vec!["src/lib/retry.rs".to_string()]);
+                assert_eq!(plan.steps[0].done_when, "`cargo test retry_helper` passes");
+                assert_eq!(plan.steps[1].n, 2);
+                assert_eq!(
+                    plan.file_scope(),
+                    vec!["src/lib/retry.rs".to_string(), "src/a.rs".to_string()],
+                    "the wave's input is the de-duplicated union of every step's paths"
+                );
+                assert!(
+                    plan.is_actionable(),
+                    "every step names a path, so this plan can be scheduled"
+                );
+            }
+            other => panic!("Expected ProposeBacklog, got {other:?}"),
+        }
+    }
+
+    /// **A filing that arrives with a broken plan is still a filing.** Losing a
+    /// persona's finding because it mis-shaped one OPTIONAL key is strictly
+    /// worse than an unplanned item, which the write door already grades
+    /// `draft` rather than refusing.
+    #[test]
+    fn a_broken_plan_is_dropped_and_the_filing_survives() {
+        let cases = [
+            (
+                r#"{"propose_backlog": {"title": "Nothing to plan with"}}"#,
+                "no `plan` key at all — not every filer can plan",
+            ),
+            (
+                r#"{"propose_backlog": {"title": "Prose instead of steps", "plan": "first do the thing, then the other"}}"#,
+                "`plan` is a string, not an array",
+            ),
+            (
+                r#"{"propose_backlog": {"title": "An object with no steps", "plan": {"summary": "later"}}}"#,
+                "`plan` is an object carrying no `steps`",
+            ),
+            (
+                r#"{"propose_backlog": {"title": "An empty plan", "plan": []}}"#,
+                "`plan` is an empty array",
+            ),
+            (
+                r#"{"propose_backlog": {"title": "Steps that name no change", "plan": [{"files": ["a.rs"], "done_when": "it works"}]}}"#,
+                "no step carries a usable `action`",
+            ),
+        ];
+        for (line, why) in cases {
+            match extract_protocol_message(line)
+                .unwrap_or_else(|| panic!("the filing must survive: {why}"))
+            {
+                ProtocolMessage::ProposeBacklog { title, plan, .. } => {
+                    assert!(!title.is_empty(), "the item is kept: {why}");
+                    assert!(plan.is_none(), "only the plan is dropped: {why}");
+                }
+                other => panic!("Expected ProposeBacklog, got {other:?}"),
+            }
+        }
+    }
+
+    /// Two step-level tolerances, both deliberate:
+    ///
+    /// - `n` is renumbered from ARRAY POSITION. The array order is the
+    ///   execution order, so a model that numbers 3,1 has contradicted itself
+    ///   and position is the survivable half;
+    /// - a step with no `files` keeps its place with an empty scope rather than
+    ///   taking the whole plan down with it — dropping the plan would discard
+    ///   the steps that DID name paths. It is not silently fine: the plan is
+    ///   not actionable, so the door stores the item `draft`.
+    #[test]
+    fn a_plan_survives_out_of_order_steps_and_a_step_that_names_no_file() {
+        let line = r#"{"propose_backlog": {"title": "Half-planned", "plan": [{"n": 3, "action": "Decide the shape", "done_when": "the ADR is merged"}, {"n": 1, "action": "Write it", "files": ["src/a.rs"], "doneWhen": "`cargo test shape` passes"}]}}"#;
+        match extract_protocol_message(line).expect("parses") {
+            ProtocolMessage::ProposeBacklog { plan, .. } => {
+                let plan = plan.expect("the plan survived").0;
+                assert_eq!(plan.steps.len(), 2);
+                assert_eq!(plan.steps[0].n, 1, "renumbered from position, not from `n`");
+                assert_eq!(plan.steps[0].action, "Decide the shape");
+                assert!(
+                    plan.steps[0].files.is_empty(),
+                    "a step with no `files` keeps its place with an empty scope"
+                );
+                assert_eq!(plan.steps[1].n, 2);
+                assert_eq!(
+                    plan.steps[1].done_when, "`cargo test shape` passes",
+                    "`doneWhen` is read as well as `done_when`"
+                );
+                assert!(
+                    !plan.is_actionable(),
+                    "a plan with a scope-less step cannot be scheduled, so the item is a draft"
+                );
+            }
             other => panic!("Expected ProposeBacklog, got {other:?}"),
         }
     }
