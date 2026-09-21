@@ -20843,6 +20843,257 @@
         "title": "Styles tirés",
         "use": "Utiliser ce style"
       }
+    },
+    "experience_opus": {
+      "create": {
+        "cancel": "Pas maintenant",
+        "creating": "Création de votre twin",
+        "footnote": "Seuls le nom, le sceau et les langues sont enregistrés pour l’instant. Tout le reste attend que vous le gardiez.",
+        "languages": "Langues d’écriture",
+        "languagesHint": "Touchez-les dans l’ordre. Votre jumeau écrit dans la première, sauf si un message en appelle une autre.",
+        "languagesMain": "principale",
+        "name": "Nom",
+        "nameNeeded": "Donnez d’abord un nom à votre twin.",
+        "namePlaceholder": "Votre nom, ou celui que votre twin doit porter",
+        "sigil": "Sceau",
+        "styleFlipHint": "Survolez pour voir comment ça sonne",
+        "styleHint": "Choisissez-en un et votre jumeau rédige des réponses pour chacun de vos canaux, à relire. Ou passez cette étape : vos propres réponses enseignent votre voix mieux qu’aucun préréglage.",
+        "styleNever": "Jamais :",
+        "styleNone": "Aucune voix de départ",
+        "styleNoneHint": "Construisez-la plutôt à partir de vos réponses. Plus lent, mais plus proche de la façon dont vous écrivez vraiment.",
+        "styleRoll": "Tirez-m’en trois",
+        "styleRollHint": "Trois styles inventés sur le moment. Choisissez-en un, ou tirez-en trois de plus.",
+        "styleTitle": "Une voix de départ (facultatif)",
+        "submit": "Créer et commencer",
+        "subtitle": "Un nom suffit pour commencer. Le reste, il l’apprend de vos réponses, une carte à la fois.",
+        "title": "Créer votre twin"
+      },
+      "keys": {
+        "close": "fermer",
+        "edit": "modifier",
+        "move": "déplacer",
+        "pick": "choisir",
+        "play": "jouer",
+        "skip": "ignorer"
+      },
+      "launch": {
+        "body": "{score} % prêt. Reprenez là où vous en étiez, ou lancez une manche d’entraînement.",
+        "resume": "Poursuivre la configuration",
+        "title": "La table de {name}",
+        "titleNoTwin": "La table de votre twin",
+        "train": "Lancer une manche d’entraînement"
+      },
+      "loot": {
+        "edit": "Modifier",
+        "keep": "Garder",
+        "kind": {
+          "bio": "Bio",
+          "constraints": "Règle",
+          "examples": "Exemple",
+          "role": "Rôle",
+          "voice": "Voix"
+        },
+        "onChannel": "{kind} · {channel}",
+        "pass": "Passer",
+        "sampleReason": "Vos propres mots, gardés exactement comme vous les avez écrits.",
+        "stamp": {
+          "accepted": "Gardé",
+          "dismissed": "Passé",
+          "edited": "Modifié"
+        }
+      },
+      "mode": {
+        "fields": "Champs",
+        "label": "Vue",
+        "studio": "Lots",
+        "table": "Table"
+      },
+      "notices": {
+        "completeBody": "Chaque couleur est remplie. Votre jumeau peut désormais rédiger avec votre voix, et chaque manche d’entraînement le rapproche un peu plus de vous.",
+        "completeClose": "Terminé pour l’instant",
+        "completeTitle": "{name} est prêt",
+        "completeTrain": "S’entraîner encore",
+        "fields": "Le saisir vous-même",
+        "guideDown": "Le guide n’a pas pu distribuer celle-ci. Rien n’a été enregistré, et la couleur reste ouverte.",
+        "inviteBody": "La configuration couvre qui vous êtes et votre façon d’écrire. Ce dont vous vous souvenez et ce que vous pensez vient des manches d’entraînement, et chaque réponse y est enregistrée pour que vous puissiez l’approuver.",
+        "inviteStart": "Lancer une manche d’entraînement",
+        "inviteTitle": "Les souvenirs viennent de l’entraînement",
+        "retry": "Redistribuer"
+      },
+      "pile": {
+        "earlier": "{count} précédents",
+        "empty": "Vos réponses arrivent ici.",
+        "hideEarlier": "Masquer les précédents",
+        "label": "Joués",
+        "skipped": "Ignoré",
+        "tally": "{played} joués · {kept} gardés",
+        "you": "Vous"
+      },
+      "stage": {
+        "label": "Étape",
+        "setup": "Configuration",
+        "training": "Entraînement"
+      },
+      "style": {
+        "backToTable": "Retour à la table",
+        "candidatesReady": "Trois styles vous attendent.",
+        "drafting": "Rédaction des réponses dans le style {name}…",
+        "draftsReady": "Les brouillons dans le style {name} sont prêts à être relus.",
+        "hint": "Partez d’un préréglage ou tirez-en trois. Rien n’est écrit tant que vous ne gardez pas les brouillons.",
+        "idle": "Choisissez une voix de départ, ou tirez-en trois.",
+        "open": "Ouvrir le paquet de styles",
+        "review": "Les relire",
+        "rolling": "Tirage de trois styles…",
+        "saving": "Enregistrement des brouillons que vous avez gardés",
+        "title": "Style"
+      },
+      "suits": {
+        "channels": "Canaux",
+        "identity": "Identité",
+        "label": "À configurer",
+        "memories": "Souvenirs",
+        "openHub": "Approuver les souvenirs dans le cerveau",
+        "statusLine": "{status} · {detail}",
+        "tone": "Voix"
+      },
+      "table": {
+        "composerPick": "Ou dites-le à votre façon",
+        "composerWrite": "Tapez votre réponse",
+        "dealing": "Distribution de la question suivante",
+        "greeting": "Vous reprenez là où vous en étiez. Encore ouvert : {items}.",
+        "greetingFresh": "{name} est sur la table. Nous verrons {items}, une question à la fois.",
+        "handLabel": "Réponses parmi lesquelles choisir",
+        "incoming": "Reçu",
+        "incomingFrom": "Reçu sur {channel}",
+        "noQuestion": "Plus rien à demander pour le moment.",
+        "playHint": "Appuyez à nouveau pour jouer",
+        "ready": "{score} % prêt",
+        "send": "Envoyer",
+        "subtitle": "Une question à la fois. Rien n’est enregistré tant que vous ne le gardez pas.",
+        "training": "Entraînement",
+        "writeHint": "Répondez comme vous l’enverriez vraiment, fautes de frappe comprises. Vous pouvez garder votre réponse comme exemple de votre façon d’écrire.",
+        "yourReply": "Votre réponse",
+        "yourReplyOn": "Votre réponse sur {channel}"
+      },
+      "topics": {
+        "asks": {
+          "blurb": "Les questions qui arrivent sur votre bureau, répondues à votre façon.",
+          "label": "Ce que les gens vous demandent",
+          "prompt": "Posez-moi les questions que les gens m’apportent habituellement au travail, et laissez-moi y répondre comme je répondrais à un collègue."
+        },
+        "coverage": "{tier}. Souvenirs : {count}",
+        "drills": {
+          "blurb": "Des messages réalistes auxquels répondre comme vous le feriez.",
+          "label": "Exercices de réponse",
+          "prompt": "Donnez-moi des messages réalistes que les gens m’envoient, un à la fois, et faites-moi répondre exactement comme je le ferais : une demande que je refuserais, une requête floue, quelqu’un qui me relance, un remerciement. Mélangez les canaux que j’utilise."
+        },
+        "label": "Paquet d’entraînement",
+        "lines": {
+          "blurb": "Ce que vous ne ferez pas, et ce que votre jumeau ne doit jamais dire en votre nom.",
+          "label": "Limites que vous posez",
+          "prompt": "Posez-moi des questions sur ce que je ne ferai pas, ce à quoi je dis oui rapidement, et ce que mon jumeau ne doit jamais dire, promettre ou accepter en mon nom."
+        },
+        "offClock": {
+          "blurb": "La vie en dehors du travail : ce que vous faites, ce dont vous pourriez parler pendant des heures.",
+          "label": "Hors travail",
+          "prompt": "Posez-moi des questions sur ma vie en dehors du travail : ce que je fais de mon temps, ce dont je pourrais parler pendant des heures, ce que je fais mal et que j’aime quand même."
+        },
+        "sessions": "Manches terminées : {count}",
+        "stories": {
+          "blurb": "Une scène à la fois : une journée qui a mal tourné, une décision que vous avez bien prise.",
+          "label": "Histoires de travail",
+          "prompt": "Demandez-moi des histoires précises tirées de mon travail, une scène à la fois : une journée qui a mal tourné, une décision que j’ai bien prise, comment j’en suis arrivé à faire ce métier. Demandez ce qui s’est passé, pas ce que j’en ai retenu."
+        },
+        "takes": {
+          "blurb": "Des avis que vous défendriez, dans votre domaine et en dehors.",
+          "label": "Avis que vous défendriez",
+          "prompt": "Posez-moi des questions sur ce que je pense, dans mon domaine et en dehors, les avis que je défendrais autour d’un dîner. Si je reste indécis, insistez une fois."
+        },
+        "tiers": {
+          "covered": "Bien couvert",
+          "some": "Partiel",
+          "thin": "Peu couvert"
+        }
+      },
+      "twinCard": {
+        "everywhere": "Partout",
+        "label": "Votre jumeau jusqu’ici",
+        "memories": "Souvenirs : {detail}",
+        "noBio": "La bio se complète à mesure que vous répondez.",
+        "noRole": "Pas encore de rôle",
+        "noVoice": "(pas encore de voix)",
+        "samplesAndRules": "Exemples : {samples}. Règles : {rules}.",
+        "unnamed": "Votre jumeau",
+        "voices": "Voix par canal"
+      }
+    },
+    "experience_grok": {
+      "close": "Fermer",
+      "forge": {
+        "create": "Distribuer la première main",
+        "creating": "Création…",
+        "eyebrow": "Nouveau twin",
+        "gender": "Comment doit-il apparaître ?",
+        "hint": "Rien n'est enregistré tant que tu n'as pas joué une carte.",
+        "name": "Nom",
+        "namePlaceholder": "Le nom que tu utilises vraiment",
+        "style": "Voix de départ",
+        "styleHint": "Facultatif. Choisis une voix de départ, ou passe — on la trouvera à l'entraînement.",
+        "styleSkip": "Décider plus tard",
+        "styleSkipHint": "On apprendra la voix d'après tes réponses.",
+        "styleSurprise": "Surprends-moi",
+        "styleSurpriseHint": "Tirer trois voix une fois ce twin créé.",
+        "subtitle": "Un nom suffit pour commencer. Le reste, on le distribue en cartes.",
+        "title": "Qui doit être ce twin ?"
+      },
+      "slots": {
+        "channels": {
+          "hint": "Où tu parles, à qui, et à quoi sert cet endroit.",
+          "label": "Canaux"
+        },
+        "identity": {
+          "hint": "Qui tu es, pour quoi on te connaît, ce sur quoi tu ne cèdes pas.",
+          "label": "Identité"
+        },
+        "memories": {
+          "hint": "Faits, avis et histoires qui valent d'être gardés.",
+          "label": "Mémoires"
+        },
+        "tone": {
+          "hint": "Comment tu écris vraiment — longueur, chaleur, ce que tu ne dis jamais.",
+          "label": "Voix"
+        }
+      },
+      "table": {
+        "composerPlaceholder": "Ou écris-le avec tes mots",
+        "earlier": "{count} plus tôt",
+        "earlierHide": "Masquer plus tôt",
+        "greeting": "On va parcourir {items} comme une main de cartes. Choisis-en une, écris la tienne, ou passe.",
+        "legendAccept": "Entrée jouer",
+        "legendEdit": "E modifier",
+        "legendPick": "1–3 choisir",
+        "legendSkip": "S passer",
+        "noQuestion": "La table est vide. Chaque emplacement est en place.",
+        "openFields": "Tous les champs",
+        "openGuide": "La table",
+        "pickCard": "Choisir cette réponse",
+        "score": "Prêt",
+        "send": "Jouer",
+        "skip": "Passer cette carte",
+        "skipped": "Passé",
+        "stageLabel": "Étape",
+        "stageSetup": "Configuration",
+        "stageTraining": "Entraînement",
+        "thinking": "Distribution de la carte suivante",
+        "trailLabel": "Joué jusqu'ici",
+        "viewLabel": "Vue de configuration"
+      },
+      "title": "Construire ton twin",
+      "trainTitle": "Entraîner {name}",
+      "voice": {
+        "dictate": "Dicter",
+        "stop": "Arrêter d'écouter"
+      }
     }
   },
   "vault": {

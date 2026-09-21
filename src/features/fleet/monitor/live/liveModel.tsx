@@ -136,11 +136,13 @@ export const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string 
   channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
 };
 
-/** The contract every live-overlay variant renders against. The host owns the
- *  queue (accumulation + acknowledge bookkeeping); a variant owns its own
- *  layout, grouping, and presentation. There is NO auto-timeout: a pop-up
- *  stays until the operator acknowledges it (marking it read persistently)
- *  or opens the messaging UI. */
+/** How long a pop-up lives from arrival, while the operator is not holding the
+ *  island open. Overlapping lifetimes stack; each message keeps its own. */
+export const LIVE_LIFETIME_MS = 10_000;
+
+/** The contract the live overlay renders against. The host owns the queue
+ *  (accumulation, acknowledge bookkeeping and the per-message lifetimes); the
+ *  presentation owns layout, grouping, and the hold gesture that pauses them. */
 export interface LiveVariantProps {
   /** Non-dismissed messages, newest-first. */
   messages: LiveMessage[];
@@ -157,6 +159,11 @@ export interface LiveVariantProps {
    *  directly, and the channel default applies when there is none. */
   onOpenExternal?: (m: LiveMessage) => void;
   reducedMotion: boolean;
+  /** Epoch-ms expiry per message id (absent until the host has stamped it). */
+  deadlines?: ReadonlyMap<string, number>;
+  /** The presentation is being read (hovered / focused): pause every lifetime
+   *  while `true`, resume them — shifted by the held span — on `false`. */
+  onHoldChange?: (held: boolean) => void;
 }
 
 /** Project a live team-channel item into a render-ready LiveMessage. Resolution

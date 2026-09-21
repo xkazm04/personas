@@ -20843,6 +20843,257 @@
         "title": "Gewürfelte Stile",
         "use": "Diesen Stil verwenden"
       }
+    },
+    "experience_opus": {
+      "create": {
+        "cancel": "Nicht jetzt",
+        "creating": "Ihr Twin wird erstellt",
+        "footnote": "Nur Name, Sigill und Sprachen werden jetzt gespeichert. Alles andere wartet, bis Sie es behalten.",
+        "languages": "Sprachen, in denen Sie schreiben",
+        "languagesHint": "Tippen Sie sie der Reihe nach an. Ihr Twin schreibt in der ersten, es sei denn, eine Nachricht braucht eine andere.",
+        "languagesMain": "Haupt",
+        "name": "Name",
+        "nameNeeded": "Geben Sie Ihrem Twin zuerst einen Namen.",
+        "namePlaceholder": "Ihr Name, oder wie Ihr Twin heißen soll",
+        "sigil": "Sigill",
+        "styleFlipHint": "Bewegen Sie die Maus darüber, um zu hören, wie es klingt",
+        "styleHint": "Wählen Sie einen aus, und Ihr Twin entwirft Antworten für jeden Ihrer Kanäle, die Sie sich ansehen können. Oder überspringen Sie das: Ihre eigenen Antworten bringen ihm die Stimme besser bei als jede Voreinstellung.",
+        "styleNever": "Nie:",
+        "styleNone": "Keine Ausgangsstimme",
+        "styleNoneHint": "Bauen Sie sie stattdessen aus Ihren Antworten auf. Langsamer, aber näher daran, wie Sie wirklich schreiben.",
+        "styleRoll": "Drei austeilen",
+        "styleRollHint": "Drei Stile, spontan erfunden. Wählen Sie einen aus, oder fordern Sie drei weitere an.",
+        "styleTitle": "Eine Ausgangsstimme (optional)",
+        "submit": "Erstellen und starten",
+        "subtitle": "Ein Name genügt zum Start. Den Rest lernt Ihr Twin daraus, wie Sie antworten, eine Karte nach der anderen.",
+        "title": "Ihren Twin erstellen"
+      },
+      "keys": {
+        "close": "schließen",
+        "edit": "bearbeiten",
+        "move": "bewegen",
+        "pick": "wählen",
+        "play": "spielen",
+        "skip": "überspringen"
+      },
+      "launch": {
+        "body": "{score}% bereit. Machen Sie dort weiter, wo Sie aufgehört haben, oder beginnen Sie eine Trainingsrunde.",
+        "resume": "Mit der Einrichtung fortfahren",
+        "title": "{name}s Tisch",
+        "titleNoTwin": "Der Tisch Ihres Twins",
+        "train": "Eine Trainingsrunde beginnen"
+      },
+      "loot": {
+        "edit": "Bearbeiten",
+        "keep": "Behalten",
+        "kind": {
+          "bio": "Biografie",
+          "constraints": "Regel",
+          "examples": "Beispiel",
+          "role": "Rolle",
+          "voice": "Stimme"
+        },
+        "onChannel": "{kind} · {channel}",
+        "pass": "Passen",
+        "sampleReason": "Ihre eigenen Worte, exakt so beibehalten, wie Sie sie geschrieben haben.",
+        "stamp": {
+          "accepted": "Behalten",
+          "dismissed": "Gepasst",
+          "edited": "Bearbeitet"
+        }
+      },
+      "mode": {
+        "fields": "Felder",
+        "label": "Ansicht",
+        "studio": "Stapel",
+        "table": "Tisch"
+      },
+      "notices": {
+        "completeBody": "Jeder Bereich ist eingerichtet. Ihr Twin kann jetzt in Ihrer Stimme entwerfen, und jede Trainingsrunde lässt ihn noch mehr nach Ihnen klingen.",
+        "completeClose": "Vorerst fertig",
+        "completeTitle": "{name} ist bereit",
+        "completeTrain": "Weiter trainieren",
+        "fields": "Selbst eintippen",
+        "guideDown": "Der Guide konnte diese Karte nicht austeilen. Nichts wurde gespeichert, und der Bereich bleibt offen.",
+        "inviteBody": "In der Einrichtung geht es darum, wer Sie sind und wie Sie schreiben. Was Sie sich merken und was Sie denken, kommt aus den Trainingsrunden, und jede Antwort dort wird gespeichert, damit Sie sie genehmigen können.",
+        "inviteStart": "Eine Trainingsrunde beginnen",
+        "inviteTitle": "Erinnerungen kommen aus dem Training",
+        "retry": "Erneut austeilen"
+      },
+      "pile": {
+        "earlier": "{count} frühere",
+        "empty": "Hier landen Ihre Antworten.",
+        "hideEarlier": "Frühere ausblenden",
+        "label": "Ausgespielt",
+        "skipped": "Übersprungen",
+        "tally": "{played} gespielt · {kept} behalten",
+        "you": "Sie"
+      },
+      "stage": {
+        "label": "Phase",
+        "setup": "Einrichten",
+        "training": "Trainieren"
+      },
+      "style": {
+        "backToTable": "Zurück zum Tisch",
+        "candidatesReady": "Drei Stile warten auf Sie.",
+        "drafting": "Antworten im Stil {name} werden entworfen…",
+        "draftsReady": "Entwürfe im Stil {name} sind bereit zur Durchsicht.",
+        "hint": "Beginnen Sie mit einer Voreinstellung, oder lassen Sie sich drei austeilen. Es wird nichts gespeichert, bis Sie die Entwürfe behalten.",
+        "idle": "Wählen Sie eine Ausgangsstimme, oder lassen Sie sich drei austeilen.",
+        "open": "Das Stildeck öffnen",
+        "review": "Prüfen",
+        "rolling": "Drei Stile werden ausgeteilt…",
+        "saving": "Die behaltenen Entwürfe werden gespeichert",
+        "title": "Stil"
+      },
+      "suits": {
+        "channels": "Kanäle",
+        "identity": "Identität",
+        "label": "Einzurichten",
+        "memories": "Erinnerungen",
+        "openHub": "Erinnerungen im Gehirn genehmigen",
+        "statusLine": "{status} · {detail}",
+        "tone": "Stimme"
+      },
+      "table": {
+        "composerPick": "Oder sagen Sie es auf Ihre eigene Art",
+        "composerWrite": "Ihre Antwort eingeben",
+        "dealing": "Nächste Frage wird ausgeteilt",
+        "greeting": "Wir machen dort weiter, wo Sie aufgehört haben. Noch offen: {items}.",
+        "greetingFresh": "{name} liegt auf dem Tisch. Wir gehen {items} durch, eine Frage nach der anderen.",
+        "handLabel": "Antworten zur Auswahl",
+        "incoming": "Jemand schrieb",
+        "incomingFrom": "Auf {channel} schrieb jemand",
+        "noQuestion": "Nichts mehr zu fragen.",
+        "playHint": "Erneut drücken, um zu spielen",
+        "ready": "{score}% bereit",
+        "send": "Senden",
+        "subtitle": "Eine Frage nach der anderen. Es wird nichts gespeichert, bis Sie sie behalten.",
+        "training": "Training",
+        "writeHint": "Antworten Sie so, wie Sie es wirklich abschicken würden, mit Tippfehlern und allem. Sie können Ihre Antwort als Beispiel dafür behalten, wie Sie schreiben.",
+        "yourReply": "Ihre Antwort",
+        "yourReplyOn": "Ihre Antwort auf {channel}"
+      },
+      "topics": {
+        "asks": {
+          "blurb": "Die Fragen, die bei Ihnen landen, beantwortet auf Ihre Art.",
+          "label": "Was man Sie fragt",
+          "prompt": "Frag mich die Fragen, die mir bei der Arbeit normalerweise gestellt werden, und lass mich sie so beantworten, wie ich es bei einem Kollegen tun würde."
+        },
+        "coverage": "{tier}. Erinnerungen: {count}",
+        "drills": {
+          "blurb": "Realistische Nachrichten, beantwortet auf Ihre Art.",
+          "label": "Antwortübungen",
+          "prompt": "Gib mir realistische Nachrichten, die man mir schickt, eine nach der anderen, und lass mich genau so antworten, wie ich es wirklich tun würde: eine Bitte, die ich ablehne, eine vage Anfrage, jemand, der mir hinterherläuft, ein Dankeschön. Misch die Kanäle, die ich nutze."
+        },
+        "label": "Trainingsdeck",
+        "lines": {
+          "blurb": "Was Sie nicht tun, und was Ihr Twin niemals für Sie sagen darf.",
+          "label": "Ihre roten Linien",
+          "prompt": "Frag mich, was ich nicht tue, wozu ich schnell Ja sage, und was mein Twin in meinem Namen niemals sagen, versprechen oder zusagen darf."
+        },
+        "offClock": {
+          "blurb": "Das Leben außerhalb der Arbeit: was Sie tun, worüber Sie stundenlang reden könnten.",
+          "label": "Feierabend",
+          "prompt": "Frag mich nach meinem Leben außerhalb der Arbeit: womit ich meine Zeit verbringe, worüber ich stundenlang reden könnte, und worin ich schlecht bin und es trotzdem gern mache."
+        },
+        "sessions": "Beendete Runden: {count}",
+        "stories": {
+          "blurb": "Eine Szene nach der anderen: ein Tag, der schiefging, eine Entscheidung, die Sie richtig getroffen haben.",
+          "label": "Berufsgeschichten",
+          "prompt": "Frag mich nach konkreten Geschichten aus meiner Arbeit, eine Szene nach der anderen: ein Tag, der schiefging, eine Entscheidung, die ich richtig getroffen habe, wie ich überhaupt dazu gekommen bin. Frag, was passiert ist, nicht, was ich daraus gelernt habe."
+        },
+        "takes": {
+          "blurb": "Meinungen, für die Sie einstehen würden, in Ihrem Fachgebiet und darüber hinaus.",
+          "label": "Ihre Standpunkte",
+          "prompt": "Frag mich, was ich über Dinge in meinem Fachgebiet und darüber hinaus denke, die Standpunkte, für die ich beim Abendessen streiten würde. Wenn ich mich nicht festlege, hak einmal nach."
+        },
+        "tiers": {
+          "covered": "Gut abgedeckt",
+          "some": "Teilweise abgedeckt",
+          "thin": "Wenig abgedeckt"
+        }
+      },
+      "twinCard": {
+        "everywhere": "Überall",
+        "label": "Ihr Twin bisher",
+        "memories": "Erinnerungen: {detail}",
+        "noBio": "Die Biografie füllt sich, während Sie antworten.",
+        "noRole": "Noch keine Rolle",
+        "noVoice": "(noch keine Stimme)",
+        "samplesAndRules": "Beispiele: {samples}. Regeln: {rules}.",
+        "unnamed": "Ihr Twin",
+        "voices": "Stimme nach Kanal"
+      }
+    },
+    "experience_grok": {
+      "close": "Schließen",
+      "forge": {
+        "create": "Die erste Hand geben",
+        "creating": "Wird erstellt…",
+        "eyebrow": "Neuer Twin",
+        "gender": "Wie soll er auftreten?",
+        "hint": "Nichts wird gespeichert, bevor du eine Karte ausspielst.",
+        "name": "Rufname",
+        "namePlaceholder": "Der Name, den du wirklich benutzt",
+        "style": "Startstimme",
+        "styleHint": "Optional. Wähle eine Startstimme oder überspringe — wir finden sie im Training.",
+        "styleSkip": "Später entscheiden",
+        "styleSkipHint": "Wir lernen die Stimme aus deinen Antworten.",
+        "styleSurprise": "Überrasch mich",
+        "styleSurpriseHint": "Drei Stimmen ziehen, sobald dieser Twin existiert.",
+        "subtitle": "Ein Name reicht zum Start. Den Rest geben wir als Karten.",
+        "title": "Wer soll dieser Twin sein?"
+      },
+      "slots": {
+        "channels": {
+          "hint": "Wo du sprichst, zu wem, und wofür der Ort da ist.",
+          "label": "Kanäle"
+        },
+        "identity": {
+          "hint": "Wer du bist, wofür man dich kennt, woran du festhältst.",
+          "label": "Identität"
+        },
+        "memories": {
+          "hint": "Fakten, Meinungen und Geschichten, die bleiben sollen.",
+          "label": "Erinnerungen"
+        },
+        "tone": {
+          "hint": "Wie du wirklich schreibst — Länge, Hitze, was du nie sagst.",
+          "label": "Stimme"
+        }
+      },
+      "table": {
+        "composerPlaceholder": "Oder in eigenen Worten schreiben",
+        "earlier": "{count} früher",
+        "earlierHide": "Frühere ausblenden",
+        "greeting": "Wir gehen {items} als eine Hand Karten durch. Eine wählen, selbst schreiben oder überspringen.",
+        "legendAccept": "Enter ausspielen",
+        "legendEdit": "E bearbeiten",
+        "legendPick": "1–3 wählen",
+        "legendSkip": "S überspringen",
+        "noQuestion": "Der Tisch ist leer. Jedes Feld steht.",
+        "openFields": "Alle Felder",
+        "openGuide": "Der Tisch",
+        "pickCard": "Diese Antwort wählen",
+        "score": "Bereit",
+        "send": "Ausspielen",
+        "skip": "Diese Karte überspringen",
+        "skipped": "Übersprungen",
+        "stageLabel": "Phase",
+        "stageSetup": "Einrichtung",
+        "stageTraining": "Trainingsrunde",
+        "thinking": "Nächste Karte wird gegeben",
+        "trailLabel": "Bisher ausgespielt",
+        "viewLabel": "Einrichtungsansicht"
+      },
+      "title": "Deinen Twin bauen",
+      "trainTitle": "{name} trainieren",
+      "voice": {
+        "dictate": "Diktieren",
+        "stop": "Zuhören beenden"
+      }
     }
   },
   "vault": {

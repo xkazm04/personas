@@ -1,11 +1,12 @@
-// LIVE CHANNEL OVERLAY — the production host for the corner pop-up layer.
+// LIVE CHANNEL OVERLAY — the production host for the title-bar pop-up layer.
 //
 // Mounted at App root (sibling to ToastContainer) so it floats over the whole
 // app whether or not the Persona Monitor is open. It watches every team that
 // has a channel via the shared MergedChannels feed, projects genuinely-NEW
 // items into pop-ups (history present at mount is absorbed silently — no
-// startup blast), and owns the queue engine: click-to-dismiss, the natural
-// auto-timeout, and hover-pause. Presentation is the Comms Stack. The CHANNEL
+// startup blast), and owns the queue engine: acknowledge-to-read, the 10s
+// per-message lifetime (useLiveLifetimes), and hold-to-pause. Presentation is
+// the Signal Island (LiveCommsStack). The CHANNEL
 // feed is gated behind the persisted `monitorLiveMode` toggle, surfaced in the
 // Channels → Timeline view. External feeds (`liveExternal.ts` — Notepad thread
 // entries for a note whose card is not on screen) are not: they carry decisions
@@ -23,6 +24,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { LiveCommsStack } from './LiveCommsStack';
 import { onMockLiveMessage } from './liveDevHarness';
 import { liveSourceFor, onExternalLiveMessage } from './liveExternal';
+import { useLiveLifetimes } from './useLiveLifetimes';
 import { projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
 
 const CAP = 30;        // bound the accumulated window
@@ -203,9 +205,6 @@ export function LiveChannelOverlay() {
     setDismissed(loadReadIds());
   }, [enabled]);
 
-  // No auto-timeout (redesigned 2026-08-26): pop-ups showed and hid too
-  // quickly. A card now stays until the operator acknowledges it (the icon
-  // button — marks it read persistently) or opens the messaging UI from it.
 
   // Prune the tombstone set whenever the live window shrinks (CAP eviction or
   // an enqueue) — otherwise `dismissed` is a permanent set that only grows,
@@ -225,7 +224,16 @@ export function LiveChannelOverlay() {
   }, [incoming]);
 
   const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
-  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion };
+  // Each pop-up lives LIVE_LIFETIME_MS from arrival (paused while the operator
+  // holds the island open). Expiry drops it from the queue WITHOUT marking it
+  // read — it was not acknowledged, only not looked at in time.
+  const expire = useCallback((ids: ReadonlySet<string>) => {
+    setIncoming((prev) => prev.filter((m) => !ids.has(m.id)));
+  }, []);
+  const { deadlines, onHoldChange } = useLiveLifetimes(live, expire);
+  const props: LiveVariantProps = {
+    messages: live, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion, deadlines, onHoldChange,
+  };
 
   // Live mode off: no channel feed at all, but the stack still carries whatever
   // an external feed pushed (the queue holds only those once the mode is off).
