@@ -6703,7 +6703,6 @@
     "status_input_required": "需要输入",
     "status_queued": "已排队",
     "status_running": "运行中",
-    "stream_all": "全部",
     "stream_assignment_filter": "筛选此任务分配",
     "stream_empty": "这些频道中暂无消息。",
     "stream_empty_filtered": "没有匹配此过滤维度的消息。",
@@ -6735,7 +6734,10 @@
     "stream_memory_mode_list": "列表",
     "stream_memory_mode_timeline": "时间线",
     "stream_no_speakers": "无发言者",
-    "stream_none": "无",
+    "stream_speaker_system": "系统",
+    "stream_speaker_system_hint": "没有角色的机器记录——步骤切换、审议通知",
+    "stream_speaker_removed": "已删除的角色",
+    "stream_speaker_removed_hint": "由已被删除的角色写入的记录",
     "stream_search": "搜索消息",
     "stream_title": "消息流",
     "strip_aria": "舰队脉冲 — {running} 运行中，{queued} 排队中",
@@ -13605,7 +13607,19 @@
       "portfolio_risk_label": "有风险的项目",
       "portfolio_risk_none": "没有项目背负高危或严重风险。",
       "slot_qscore_no_runner": "测试得 0 分，是因为基线扫描在这个仓库里没有找到任何测试运行器，而不是因为改动小。",
-      "ctx_audit_kind_unmapped_file": "存在于磁盘，但不属于任何上下文"
+      "ctx_audit_kind_unmapped_file": "存在于磁盘，但不属于任何上下文",
+      "skills_registry_filter_hint": "点击仅显示此处的技能",
+      "skills_registry_filter_active_hint": "再次点击以显示全部技能",
+      "skills_registry_filter_clear": "清除 {name} 过滤",
+      "skills_registry_filter_empty": "{name} 中还没有技能",
+      "skills_registry_empty_title": "没有可显示的技能",
+      "skills_registry_name_details": "点击查看完整详情",
+      "skills_registry_legend_recent": "近 30 天内运行过",
+      "skills_registry_filter": "正在显示 {name} 中的技能",
+      "skills_registry_filter_clear_label": "清除",
+      "skills_registry_filter_aria": "筛选为 {name} 的技能",
+      "skills_registry_filter_clear_aria": "清除列筛选",
+      "skills_registry_cell_coverage": "覆盖率 {pct}% · 30 天内运行 {invokes} 次"
     },
     "dev_triage": {
       "action_label": "操作：",
@@ -14081,7 +14095,9 @@
       "skill_picker_close": "关闭技能选择器",
       "skill_picker_hint": "点击单元格即可将该技能和项目载入控制台。空单元格会先在那里安装该技能。",
       "skill_picker_open": "从注册表中选择技能",
-      "skill_picker_title": "技能注册表"
+      "skill_picker_title": "技能注册表",
+      "skill_picker_empty": "此工作区中还没有任何项目安装技能——请在 开发工具 → 技能 → 注册表 中采用一个。",
+      "skill_picker_hint_hover": "点击已填充的单元格即可将该技能和项目载入控制台。将指针悬停在名称上可查看说明。空单元格会先在那里安装该技能。"
     },
     "fleet": {
       "activity_empty": "未找到近期会话",

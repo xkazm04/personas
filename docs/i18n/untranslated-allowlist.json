@@ -3939,5 +3939,6 @@
   "*:monitor.usage_provider_claude",
   "*:monitor.usage_provider_codex",
   "*:monitor.usage_provider_grok",
-  "*:notepad.thread_author_athena"
+  "*:notepad.thread_author_athena",
+  "de:monitor.stream_speaker_system"
 ]

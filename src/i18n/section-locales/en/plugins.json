@@ -24,7 +24,9 @@
     "dispatched": "Dispatched — the session appears above",
     "recent_title": "Recent dispatches",
     "recent_empty": "Nothing dispatched yet",
-    "recent_open_aria": "Open the Fleet page"
+    "recent_open_aria": "Open the Fleet page",
+    "skill_picker_empty": "No project in this workspace has a skill installed yet — adopt one in Dev Tools → Skills → Registry.",
+    "skill_picker_hint_hover": "Click a filled cell to load that skill and project. Hover a name for its description. An empty cell installs it there first."
   },
   "fleet": {
     "search_placeholder": "Filter sessions…",
@@ -1827,7 +1829,19 @@
     "portfolio_radar_none": "Every technology in the fleet is used by more than one project.",
     "portfolio_risk_label": "Projects at risk",
     "portfolio_risk_none": "No project is carrying a high or critical risk.",
-    "slot_qscore_no_runner": "Tests scored 0 because the baseline scan found no test runner in this repo, not because the diff was small."
+    "slot_qscore_no_runner": "Tests scored 0 because the baseline scan found no test runner in this repo, not because the diff was small.",
+    "skills_registry_filter_hint": "Click to show only the skills here",
+    "skills_registry_filter_active_hint": "Click again to show every skill",
+    "skills_registry_filter_clear": "Clear the {name} filter",
+    "skills_registry_filter_empty": "No skills in {name} yet",
+    "skills_registry_empty_title": "No skills to show",
+    "skills_registry_name_details": "Click for full details",
+    "skills_registry_legend_recent": "ran in the last 30 days",
+    "skills_registry_filter": "Showing skills in {name}",
+    "skills_registry_filter_clear_label": "Clear",
+    "skills_registry_filter_aria": "Filter skills to {name}",
+    "skills_registry_filter_clear_aria": "Clear column filter",
+    "skills_registry_cell_coverage": "{pct}% coverage · {invokes} runs in 30 days"
   },
   "doc_signing": {
     "sign_heading": "Sign a Document",

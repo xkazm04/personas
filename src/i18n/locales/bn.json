@@ -6703,7 +6703,6 @@
     "status_input_required": "ইনপুট প্রয়োজন",
     "status_queued": "সারিতে",
     "status_running": "চলছে",
-    "stream_all": "সব",
     "stream_assignment_filter": "এই অ্যাসাইনমেন্টে ফিল্টার করুন",
     "stream_empty": "এই চ্যানেলগুলোতে এখনো কোনো সম্প্রচার নেই।",
     "stream_empty_filtered": "এই ফিল্টারের সাথে কোনো সম্প্রচার মেলে না।",
@@ -6735,7 +6734,10 @@
     "stream_memory_mode_list": "তালিকা",
     "stream_memory_mode_timeline": "টাইমলাইন",
     "stream_no_speakers": "কোনো বক্তা নেই",
-    "stream_none": "কিছু না",
+    "stream_speaker_system": "সিস্টেম",
+    "stream_speaker_system_hint": "পারসোনা ছাড়া যান্ত্রিক সারি — ধাপ পরিবর্তন, আলোচনার বিজ্ঞপ্তি",
+    "stream_speaker_removed": "মুছে ফেলা পারসোনা",
+    "stream_speaker_removed_hint": "পরে মুছে ফেলা পারসোনাদের লেখা সারি",
     "stream_search": "সম্প্রচার অনুসন্ধান করুন",
     "stream_title": "স্ট্রিম",
     "strip_aria": "ফ্লিট পালস — {running}টি চলছে, {queued}টি অপেক্ষায়",
@@ -13605,7 +13607,19 @@
       "portfolio_risk_label": "ঝুঁকিতে থাকা প্রকল্প",
       "portfolio_risk_none": "কোনো প্রকল্প উচ্চ বা সংকটজনক ঝুঁকি বহন করছে না।",
       "slot_qscore_no_runner": "টেস্ট 0 পেয়েছে কারণ বেসলাইন স্ক্যান এই রিপোতে কোনো টেস্ট রানার খুঁজে পায়নি, ডিফ ছোট বলে নয়।",
-      "ctx_audit_kind_unmapped_file": "ডিস্কে আছে, কোনো কন্টেক্সটের নয়"
+      "ctx_audit_kind_unmapped_file": "ডিস্কে আছে, কোনো কন্টেক্সটের নয়",
+      "skills_registry_filter_hint": "শুধু এখানকার স্কিল দেখাতে ক্লিক করুন",
+      "skills_registry_filter_active_hint": "সব স্কিল দেখাতে আবার ক্লিক করুন",
+      "skills_registry_filter_clear": "{name} ফিল্টার সরান",
+      "skills_registry_filter_empty": "{name}-এ এখনও কোনো স্কিল নেই",
+      "skills_registry_empty_title": "দেখানোর মতো কোনো স্কিল নেই",
+      "skills_registry_name_details": "পুরো বিবরণ দেখতে ক্লিক করুন",
+      "skills_registry_legend_recent": "গত ৩০ দিনে চলেছে",
+      "skills_registry_filter": "{name}-এ স্কিল দেখানো হচ্ছে",
+      "skills_registry_filter_clear_label": "মুছুন",
+      "skills_registry_filter_aria": "{name}-এ স্কিল ফিল্টার করুন",
+      "skills_registry_filter_clear_aria": "কলাম ফিল্টার মুছুন",
+      "skills_registry_cell_coverage": "{pct}% কভারেজ · ৩০ দিনে {invokes} রান"
     },
     "dev_triage": {
       "action_label": "ক্রিয়া:",
@@ -14081,7 +14095,9 @@
       "skill_picker_close": "স্কিল পিকার বন্ধ করুন",
       "skill_picker_hint": "একটি সেলে ক্লিক করে সেই স্কিল ও প্রজেক্ট কনসোলে লোড করুন। খালি সেল আগে সেখানে স্কিলটি ইনস্টল করে।",
       "skill_picker_open": "রেজিস্ট্রি থেকে একটি স্কিল বাছুন",
-      "skill_picker_title": "স্কিল রেজিস্ট্রি"
+      "skill_picker_title": "স্কিল রেজিস্ট্রি",
+      "skill_picker_empty": "এই ওয়ার্কস্পেসের কোনো প্রজেক্টে এখনও কোনো স্কিল ইনস্টল করা নেই — ডেভ টুলস → স্কিল → রেজিস্ট্রি থেকে একটি অ্যাডপ্ট করুন।",
+      "skill_picker_hint_hover": "ভরা সেলে ক্লিক করে সেই স্কিল ও প্রজেক্ট লোড করুন। নামের উপর হোভার করলে বিবরণ দেখা যায়। খালি সেল আগে সেখানে ইনস্টল করে।"
     },
     "fleet": {
       "activity_empty": "কোনো সাম্প্রতিক সেশন পাওয়া যায়নি",

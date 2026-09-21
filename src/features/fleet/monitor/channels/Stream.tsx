@@ -6,13 +6,16 @@ import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailMod
 import { memberColor, type EventFamily } from '@/lib/channel/eventModel';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import { useSystemStore } from '@/stores/systemStore';
+import { WorkspaceProjectSelector } from '@/features/plugins/dev-tools/sub_workspaces/WorkspaceProjectSelector';
 import { LensStream } from './LensStream';
 import { useLensFeed } from './useLensFeed';
 import { StreamMemoryViews } from './StreamMemoryViews';
 import { KIND_META } from './streamKinds';
 import {
   ALL_FAMILIES, STREAM_KINDS, EMPTY_LENS, activeLensCount, callsign, facetCounts, fetchKinds,
-  matchesLens, memoryModesAvailable, type LensState, type MemoryMode,
+  matchesLens, memoryModesAvailable, SPEAKER_REMOVED, SPEAKER_SYSTEM, type LensState, type MemoryMode,
 } from './lensModel';
 import type { StreamTeam, TaggedItem } from './types';
 import { cleanName } from '../grid/fleetGridModel';
@@ -27,10 +30,11 @@ import { cleanName } from '../grid/fleetGridModel';
  * `fetchKinds` never issues the blended read, so talk is not even fetched.
  *
  * THE LAYOUT ARGUMENT (the /prototype question, and its answer): five composable
- * lens dimensions — kind · event family · callsign · channel · search — cannot
+ * lens dimensions — kind · event family · callsign · project · search — cannot
  * live in a header without turning it into a control panel. So they don't. The
- * header keeps only what is genuinely global (search, clear-all); every lens
- * lives in the left TUNER rail, where it has vertical room to be a real faceted
+ * header keeps what is genuinely global — the PROJECT scope (centered, the
+ * app's universal selector), search, clear-all; every other lens lives in the
+ * left TUNER rail, where it has vertical room to be a real faceted
  * browser: a group per dimension, each value a row with a LIVE COUNT.
  *
  * The counts are the point. Before you filter anything, the rail already tells
@@ -103,7 +107,8 @@ function FacetGroup({ title, children }: { title: string; children: ReactNode })
 
 export interface StreamProps {
   teams: StreamTeam[];
-  onToggle: (teamId: string) => void;
+  /** Scope the log to ONE team (the project filter's pick). */
+  onSelectTeam: (teamId: string) => void;
   allOn: boolean;
   onSetAll: (on: boolean) => void;
   /** Deep-link scope: open with the callsign lens pre-set to this persona. */
@@ -115,7 +120,7 @@ export interface StreamProps {
   layoutControl?: ReactNode;
 }
 
-export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layoutControl }: StreamProps) {
+export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, layoutControl }: StreamProps) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const [lens, setLens] = useState<LensState>(() =>
@@ -143,16 +148,42 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
     });
 
   const setMemoryMode = (memoryMode: MemoryMode) => setLens((l) => ({ ...l, memoryMode }));
-  const clearAll = () => setLens(EMPTY_LENS);
+  /**
+   * THE PROJECT FILTER. A team channel IS a dev project's team
+   * (`dev_projects.team_id`), so the old Channel facet was a project filter
+   * wearing team names. It is now the app's universal project selector, in
+   * CONTROLLED mode: the pick scopes this log only and never moves the
+   * app-wide active project, so the Stream always opens on the full log.
+   *
+   * Derived, not stored: the shown project is the one whose team is the sole
+   * selected channel. That keeps it truthful when the map's drill-in scopes
+   * the log to a team from outside.
+   */
+  const projects = useSystemStore((s) => s.projects);
+  const teamIds = useMemo(() => new Set(teams.map((tm) => tm.teamId)), [teams]);
+  const hasChannel = useCallback(
+    (p: DevProject) => !!p.team_id && teamIds.has(p.team_id),
+    [teamIds],
+  );
+  const projectId = useMemo(() => {
+    if (allOn || selected.length !== 1) return null;
+    return projects.find((p) => p.team_id === selected[0]!.teamId)?.id ?? null;
+  }, [allOn, selected, projects]);
+  const pickProject = (id: string | null) => {
+    const team = id ? projects.find((p) => p.id === id)?.team_id : null;
+    if (team) onSelectTeam(team);
+    else onSetAll(true);
+  };
+  // A team scope with no project behind it (a map drill-in) still narrows the
+  // log, so it counts as a lens and clear-all widens it back out.
+  const scoped = !allOn;
+  const clearAll = () => {
+    setLens(EMPTY_LENS);
+    if (scoped) onSetAll(true);
+  };
 
-  const active = activeLensCount(lens);
+  const active = activeLensCount(lens) + (scoped ? 1 : 0);
   const memoryModes = memoryModesAvailable(lens, selected.length);
-
-  const teamCount = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) m.set(r.team.teamId, (m.get(r.team.teamId) ?? 0) + 1);
-    return m;
-  }, [rows]);
 
   /**
    * Kind counts come from SQL, summed over the scoped teams — NOT from `rows`.
@@ -180,7 +211,8 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
       {/* Header — ONLY what's global. No lens chips here, by design. */}
-      <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
+      <div className="flex-shrink-0 h-11 px-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
+        <div className="flex items-center gap-2.5 min-w-0">
         <div className="w-6 h-6 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
           <Radio className="w-3.5 h-3.5 text-status-error" />
         </div>
@@ -190,8 +222,18 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
           {visible.length !== rows.length && <span className="opacity-40"> / {rows.length}</span>}
         </span>
         {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
+        </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <WorkspaceProjectSelector
+          value={projectId}
+          onChange={pickProject}
+          noneLabel={t.chrome.workspace_all_projects}
+          projectFilter={hasChannel}
+          align="center"
+          testId="stream-project-filter"
+        />
+
+        <div className="flex items-center justify-end gap-2 min-w-0">
           {layoutControl}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground opacity-45 pointer-events-none" />
@@ -296,7 +338,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
             {facets.callsigns.length === 0 && (
               <p className="px-2 typo-caption text-foreground opacity-40">{t.monitor.stream_no_speakers}</p>
             )}
-            {facets.callsigns.slice(0, 12).map((f) => {
+            {facets.callsigns.filter((f) => personaIndex.has(f.key)).slice(0, 12).map((f) => {
               const persona = personaIndex.get(f.key);
               // The Red Room was single-team, so a callsign was unique. The
               // Stream is cross-team, and personas with the same name in
@@ -316,29 +358,27 @@ export function Stream({ teams, onToggle, allOn, onSetAll, initialCallsign, layo
                 />
               );
             })}
+            {/* The speakers that are not a persona — ONE row each, below the
+                named ones, instead of a "SYSTEM" row per unresolved id. Voiced
+                keys (__athena__ …) only occur if talk ever reaches the log. */}
+            {facets.callsigns.filter((f) => !personaIndex.has(f.key)).map((f) => {
+              const named =
+                f.key === SPEAKER_REMOVED ? [t.monitor.stream_speaker_removed, t.monitor.stream_speaker_removed_hint]
+                  : f.key === SPEAKER_SYSTEM ? [t.monitor.stream_speaker_system, t.monitor.stream_speaker_system_hint]
+                    : [callsign(f.key.replace(/_/g, ' ').trim()), undefined];
+              return (
+                <FacetRow
+                  key={f.key}
+                  label={named[0]!}
+                  count={f.count}
+                  on={lens.callsigns.has(f.key)}
+                  title={named[1]}
+                  onClick={() => toggle('callsigns', f.key)}
+                />
+              );
+            })}
           </FacetGroup>
 
-          <FacetGroup title={t.monitor.stream_group_channel}>
-            {teams.length > 1 && (
-              <button
-                type="button"
-                onClick={() => onSetAll(!allOn)}
-                className="w-full px-2 pb-1 text-left typo-caption text-foreground opacity-55 hover:opacity-100 transition-opacity"
-              >
-                {allOn ? t.monitor.stream_none : t.monitor.stream_all}
-              </button>
-            )}
-            {teams.map((tm) => (
-              <FacetRow
-                key={tm.teamId}
-                label={cleanName(tm.teamName)}
-                count={teamCount.get(tm.teamId) ?? 0}
-                on={tm.selected}
-                color={tm.selected ? tm.teamColor : undefined}
-                onClick={() => onToggle(tm.teamId)}
-              />
-            ))}
-          </FacetGroup>
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col min-h-0">

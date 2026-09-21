@@ -25,11 +25,26 @@ import { useTranslation } from '@/i18n/useTranslation';
 /** The stored-plan count the header chip is read against ("n/5 plans"). A design number, not a backend cap: the rows themselves have no slot limit. */
 export const PLAN_SLOTS = 5;
 
-/** The row grid: auto-fill columns of at least 400px, rows of exactly 28px. */
-export const ROW_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] auto-rows-[1.75rem] gap-x-4 gap-y-1';
+/**
+ * The row grid: FIVE accounts per strip row, a sixth wraps. Each column's floor
+ * is a fifth of the strip (`(100% − 4 gaps) / 5`), so exactly five fit at any
+ * normal width; the 14rem floor under it lets a narrow window drop to fewer
+ * columns instead of scrolling sideways. Rows are exactly 28px.
+ */
+export const ROW_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(max(14rem,calc((100%_-_4rem)/5)),1fr))] auto-rows-[1.75rem] gap-x-4 gap-y-1';
 
 /** One row's box — shared by the real row and its ghost so the swap moves nothing. */
-export const ROW_BOX = 'relative flex h-7 min-w-0 items-center gap-2 px-1.5';
+export const ROW_BOX = 'relative flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-input px-1.5';
+
+/** The live account's cell: a subtle success wash, so it is found at a glance. */
+export const ROW_ACTIVE = 'bg-status-success/10';
+
+/**
+ * Every other cell — standby plans, read-only providers, empty providers, the
+ * loading ghosts: a subtle black wash, so the content sits IN something rather
+ * than floating on the strip.
+ */
+export const ROW_REST = 'bg-black/20';
 
 export function StripFrame({
   planCount, titleRight, controls, children,
@@ -85,7 +100,7 @@ export function GhostRow() {
   return (
     <div
       aria-hidden
-      className={`${ROW_BOX} animate-fade-in typo-body`}
+      className={`${ROW_BOX} ${ROW_REST} animate-fade-in typo-body`}
       style={{ animationDelay: '150ms' }}
       data-testid="fleet-usage-ghost-row"
     >

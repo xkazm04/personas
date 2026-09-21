@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-21 13:25]**
+- **Paths:** `src/features/fleet/monitor/grid/AccountRows.tsx` · `src/features/fleet/monitor/grid/UsageStripShell.tsx`
+- **Status:** started
+
 ### spark-note-overview-cycle — spark: NoteOverview cycle mgmt, feedback bubbles, context menu, contest v2
 - **[2026-09-21 11:06]**
 - **Paths:** `src/features/notepad/**` · `src/i18n/locales/**`
@@ -902,6 +906,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-usage-rows — usage strip rows: five per strip row, green active / black-wash inactive backgrounds
 
 ### spark-usage-strip — usage strip: delete non-classic variants, one-row account format, 7d as bottom border
 

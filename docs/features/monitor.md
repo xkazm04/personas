@@ -119,8 +119,10 @@ The **header row** is permanent: the label and a *n/5 plans* count on the left;
 on the right the auto-rotate toggle, its threshold and the last rotation, then
 the "as of" stamp with a refresh button that is only live once the five-minute
 cache has elapsed. Under it, every account is **one 28px row**, across all three
-providers, laid out in an auto-filling grid (columns of at least 400px), so one
-account and eight both stay compact and the strip never scrolls sideways:
+providers, laid out **five to a strip row** — a sixth account wraps to the next
+row. Each column's floor is a fifth of the strip (`(100% − 4 gaps) / 5`) with a
+14rem minimum under it, so a narrow window drops to fewer columns instead of
+scrolling sideways:
 
 ```
 <provider mark>  <account>  <5h: timer · percent · pace>  <7d: calendar · percent · pace>
@@ -152,7 +154,10 @@ one) the cluster shows a dash, never a zero.
 
 **There are no status icons.** No check mark on the live plan, no slot number,
 no shield, no history mark. The **live** Claude plan is shown by emphasis alone:
-full opacity and a medium-weight name. Every other Claude plan recedes to 60%
+full opacity, a medium-weight name and a subtle success wash on its cell
+(`bg-status-success/10`). Every other cell — standby plans, the read-only CLIs,
+an empty provider, the loading ghosts — sits on a subtle black wash
+(`bg-black/20`) so its content does not float on the strip. Every other Claude plan recedes to 60%
 and comes to full on hover **or keyboard focus**; where no plan is known to be
 live (and for the read-only CLIs, which have no such notion) nothing recedes. A
 plan that cannot be read says why **in words** beside its name — *Needs login*

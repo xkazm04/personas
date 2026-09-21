@@ -112,6 +112,13 @@ export function useChannelWorkspace({ teams, personas, preset, needBridges }: Op
     [channelTeams],
   );
 
+  /** Scope the Timeline to ONE team — the Stream's project filter picks a
+   *  project and lands here with that project's team. */
+  const selectOnly = useCallback((teamId: string) => {
+    setTouched(true);
+    setSelected(new Set([teamId]));
+  }, []);
+
   // Map node click → Timeline scoped to that speaker. Stream remounts on a tab
   // switch, so the callsign lands through its initial-lens prop.
   const [drillCallsign, setDrillCallsign] = useState<string | null>(null);
@@ -146,6 +153,7 @@ export function useChannelWorkspace({ teams, personas, preset, needBridges }: Op
     workspaceTeams,
     bridges,
     toggle,
+    selectOnly,
     allOn,
     setAll,
     drillCallsign: drillCallsign ?? preset?.personaId ?? undefined,

@@ -208,7 +208,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // Everything the three channel surfaces share (roster, team filter, Slack
   // bridges, map drill-in). Bridges are only fetched once Conversations is up.
   const {
-    workspaceTeams, bridges, toggle, allOn, setAll,
+    workspaceTeams, bridges, selectOnly, allOn, setAll,
     drillCallsign, scopeToPersona, clearDrill, hasChannels,
   } = useChannelWorkspace({
     teams,
@@ -554,7 +554,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 {view === 'timeline' ? (
                   <Stream
                     teams={workspaceTeams}
-                    onToggle={toggle}
+                    onSelectTeam={selectOnly}
                     allOn={allOn}
                     onSetAll={setAll}
                     initialCallsign={drillCallsign}

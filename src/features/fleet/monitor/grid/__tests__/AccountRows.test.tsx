@@ -145,15 +145,21 @@ describe('AccountRows', () => {
     const live = row('sim-plan-1');
     expect(live).toHaveAttribute('data-active', 'true');
     expect(live.className).not.toContain('opacity-60');
+    // The live cell wears the success wash; every other cell the black one.
+    expect(live.className).toContain('bg-status-success/10');
+    expect(live.className).not.toContain('bg-black/20');
     expect(within(live).getByTestId('fleet-usage-name').className).toContain('font-medium');
 
     const standby = row('sim-plan-2');
     expect(standby.className).toContain('opacity-60');
+    expect(standby.className).toContain('bg-black/20');
+    expect(standby.className).not.toContain('bg-status-success');
     expect(standby.className).toContain('hover:opacity-100');
     expect(standby.className).toContain('focus-within:opacity-100');
     expect(within(standby).getByTestId('fleet-usage-switch').className).not.toContain('font-medium');
     // A read-only CLI has no notion of "live": it never recedes.
     expect(row('codex').className).not.toContain('opacity-60');
+    expect(row('codex').className).toContain('bg-black/20');
   });
 
   it('marks a projected plan with the approx sign and a half-strength border', () => {
