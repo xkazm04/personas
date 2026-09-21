@@ -3931,5 +3931,6 @@
   "fr:agents.responsibilities.profile_effort_label",
   "*:monitor.usage_provider_claude",
   "*:monitor.usage_provider_codex",
-  "*:monitor.usage_provider_grok"
+  "*:monitor.usage_provider_grok",
+  "de:monitor.stream_speaker_system"
 ]

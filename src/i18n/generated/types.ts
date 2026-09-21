@@ -310,9 +310,11 @@ export type Translations = {
     stream_memory_mode_list: string;
     stream_memory_mode_timeline: string;
     stream_memory_mode_diff: string;
-    stream_all: string;
-    stream_none: string;
     stream_no_speakers: string;
+    stream_speaker_system: string;
+    stream_speaker_system_hint: string;
+    stream_speaker_removed: string;
+    stream_speaker_removed_hint: string;
     stream_empty_filtered: string;
     stream_empty: string;
     stream_heard_by: string;
