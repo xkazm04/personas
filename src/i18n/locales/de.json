@@ -6703,7 +6703,6 @@
     "status_input_required": "Eingabe erforderlich",
     "status_queued": "In Warteschlange",
     "status_running": "Wird ausgeführt",
-    "stream_all": "Alle",
     "stream_assignment_filter": "Nach diesem Auftrag filtern",
     "stream_empty": "Noch keine Übertragungen in diesen Kanälen.",
     "stream_empty_filtered": "Keine Übertragungen entsprechen diesem Filter.",
@@ -6735,7 +6734,10 @@
     "stream_memory_mode_list": "Liste",
     "stream_memory_mode_timeline": "Zeitleiste",
     "stream_no_speakers": "Keine Sprecher",
-    "stream_none": "Keine",
+    "stream_speaker_system": "System",
+    "stream_speaker_system_hint": "Maschinenzeilen ohne Persona — Schrittwechsel, Beratungshinweise",
+    "stream_speaker_removed": "Entfernte Personas",
+    "stream_speaker_removed_hint": "Zeilen von Personas, die inzwischen gelöscht wurden",
     "stream_search": "Übertragungen durchsuchen",
     "stream_title": "Stream",
     "strip_aria": "Fleet-Puls — {running} aktiv, {queued} in Warteschlange",
@@ -13605,7 +13607,19 @@
       "portfolio_risk_label": "Projekte mit Risiko",
       "portfolio_risk_none": "Kein Projekt trägt ein hohes oder kritisches Risiko.",
       "slot_qscore_no_runner": "Tests wurden mit 0 bewertet, weil der Baseline-Scan in diesem Repository keinen Test-Runner gefunden hat, nicht weil das Diff klein war.",
-      "ctx_audit_kind_unmapped_file": "Auf der Festplatte, gehört zu keinem Kontext"
+      "ctx_audit_kind_unmapped_file": "Auf der Festplatte, gehört zu keinem Kontext",
+      "skills_registry_filter_hint": "Klicken, um nur die Skills hier anzuzeigen",
+      "skills_registry_filter_active_hint": "Erneut klicken, um alle Skills anzuzeigen",
+      "skills_registry_filter_clear": "Filter „{name}“ entfernen",
+      "skills_registry_filter_empty": "Noch keine Skills in {name}",
+      "skills_registry_empty_title": "Keine Skills zum Anzeigen",
+      "skills_registry_name_details": "Klicken für alle Details",
+      "skills_registry_legend_recent": "in den letzten 30 Tagen ausgeführt",
+      "skills_registry_filter": "Skills in {name}",
+      "skills_registry_filter_clear_label": "Aufheben",
+      "skills_registry_filter_aria": "Skills auf {name} filtern",
+      "skills_registry_filter_clear_aria": "Spaltenfilter aufheben",
+      "skills_registry_cell_coverage": "{pct} % Abdeckung · {invokes} Läufe in 30 Tagen"
     },
     "dev_triage": {
       "action_label": "Aktion:",
@@ -14081,7 +14095,9 @@
       "skill_picker_close": "Skill-Auswahl schließen",
       "skill_picker_hint": "Klicke auf eine Zelle, um diesen Skill und das Projekt in die Konsole zu laden. Eine leere Zelle installiert den Skill dort zuerst.",
       "skill_picker_open": "Skill aus der Registry wählen",
-      "skill_picker_title": "Skill-Registry"
+      "skill_picker_title": "Skill-Registry",
+      "skill_picker_empty": "In diesem Arbeitsbereich hat noch kein Projekt einen Skill installiert — übernimm einen unter Entwicklertools → Skills → Register.",
+      "skill_picker_hint_hover": "Klicke auf eine gefüllte Zelle, um diesen Skill und das Projekt zu laden. Fahre über einen Namen, um die Beschreibung zu sehen. Eine leere Zelle installiert ihn dort zuerst."
     },
     "fleet": {
       "activity_empty": "Keine aktuellen Sitzungen gefunden",

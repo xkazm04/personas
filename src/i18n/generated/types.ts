@@ -310,9 +310,11 @@ export type Translations = {
     stream_memory_mode_list: string;
     stream_memory_mode_timeline: string;
     stream_memory_mode_diff: string;
-    stream_all: string;
-    stream_none: string;
     stream_no_speakers: string;
+    stream_speaker_system: string;
+    stream_speaker_system_hint: string;
+    stream_speaker_removed: string;
+    stream_speaker_removed_hint: string;
     stream_empty_filtered: string;
     stream_empty: string;
     stream_heard_by: string;
@@ -14637,6 +14639,8 @@ export type Translations = {
       recent_title: string;
       recent_empty: string;
       recent_open_aria: string;
+      skill_picker_empty: string;
+      skill_picker_hint_hover: string;
     };
     fleet: {
       search_placeholder: string;
@@ -16440,6 +16444,18 @@ export type Translations = {
       portfolio_risk_label: string;
       portfolio_risk_none: string;
       slot_qscore_no_runner: string;
+      skills_registry_filter_hint: string;
+      skills_registry_filter_active_hint: string;
+      skills_registry_filter_clear: string;
+      skills_registry_filter_empty: string;
+      skills_registry_empty_title: string;
+      skills_registry_name_details: string;
+      skills_registry_legend_recent: string;
+      skills_registry_filter: string;
+      skills_registry_filter_clear_label: string;
+      skills_registry_filter_aria: string;
+      skills_registry_filter_clear_aria: string;
+      skills_registry_cell_coverage: string;
     };
     doc_signing: {
       sign_heading: string;
