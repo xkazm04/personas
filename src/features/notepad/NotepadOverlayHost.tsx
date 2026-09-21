@@ -29,6 +29,7 @@ const ConfirmDialog = lazyRetry(() =>
 import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
 import { useNoteSuggestions } from './athena/noteSuggestions';
+import { loadThreadUnread } from './thread/noteThreadStore';
 import { markNotepadPhase } from './notepadTiming';
 import { prefetchMarkdownRenderer } from '@/features/shared/components/editors/DeferredMarkdown';
 import {
@@ -160,6 +161,9 @@ export default function NotepadOverlayHost() {
       prefetchMarkdownRenderer();
     });
     void load().finally(() => markNotepadPhase('notes'));
+    // The desk's unread badges. Beside the notes read, never in its failure
+    // path: a pad whose notes loaded must open even when the thread read fails.
+    void loadThreadUnread();
     listProjects()
       .then(setProjects)
       .catch(silentCatch('notepad projects'))

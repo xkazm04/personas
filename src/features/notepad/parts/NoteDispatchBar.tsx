@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link2Off, ListChecks, Rocket, Sparkles, SquareTerminal, Target } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -12,13 +12,10 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 
 import { noteStatusMeta } from '../noteStatusMeta';
 import type { NoteActions } from '../notepadActions';
+import { reportSuggestionCount, startAsk, useNoteAsking } from '../notepadAskState';
+import { noteAskBlockedReasonKey } from '../noteGuards';
 import { useNotePlan } from '../plan/NotePlanContext';
 import { NoteMilestonePicker } from './NoteMilestonePicker';
-
-/** How long the pad waits for Athena before it stops claiming she is working.
- *  Two minutes is past her slowest observed turn; beyond it the honest reading
- *  is that she answered in chat rather than with a card. */
-const ASK_CEILING_MS = 120_000;
 
 interface NoteDispatchBarProps {
   note: DevNote;
@@ -63,38 +60,21 @@ export function NoteDispatchBar({
   const [focus, setFocus] = useState('');
 
   // ------------------------------------------------------------------
-  // "Asking Athena" is a state, not an instant.
+  // "Asking Athena" is a state, not an instant — and it belongs to the NOTE,
+  // not to this bar. The wait lives in `notepadAskState` (keyed by note id,
+  // with the 120 s ceiling and the three ways it ends), so the desk card's
+  // presence chip reads the same answer and stepping back to the desk no
+  // longer throws the wait away. Switching notes shows the other note's wait,
+  // which is none unless she was asked about that one too.
   //
-  // The click itself does almost nothing — it hands her a prompt and returns —
-  // so an `AsyncButton` that only tracks its own promise would flash busy for
-  // one frame and settle, which reads as a button that did nothing at all. The
-  // truth is that she is working and the answer arrives later, through a
-  // different surface, so the button holds its busy state until one of three
-  // things happens: a suggestion lands (the answer), the note leaves the pad,
-  // or the wait exceeds the ceiling below (she answered in chat, or not at
-  // all). It is never left spinning forever — an indicator that cannot end is
-  // worse than none.
+  // The bar still feeds the ONE signal it owns: the open-suggestion count the
+  // host hands it. A rise past the count at the ask is the answer arriving.
   // ------------------------------------------------------------------
-  const [asking, setAsking] = useState(false);
-  const suggestionsAtAsk = useRef(0);
+  const asking = useNoteAsking(note.id) !== null;
 
   useEffect(() => {
-    if (!asking) return;
-    if (suggestionCount > suggestionsAtAsk.current) setAsking(false);
-  }, [asking, suggestionCount]);
-
-  useEffect(() => {
-    if (!asking) return;
-    const id = setTimeout(() => setAsking(false), ASK_CEILING_MS);
-    return () => clearTimeout(id);
-  }, [asking]);
-
-  // Switching notes ends the wait: the indicator belongs to the note that was
-  // asked about, and carrying it to another one would be a lie about which
-  // note she is holding.
-  useEffect(() => {
-    setAsking(false);
-  }, [note.id]);
+    reportSuggestionCount(note.id, suggestionCount);
+  }, [note.id, suggestionCount]);
 
   const noProject = !note.projectId;
   const isDraft = note.status === 'draft';
@@ -105,17 +85,16 @@ export function NoteDispatchBar({
   const onPlan = scoped || cut;
 
   // Athena writes nothing, so she is available wherever the note is READABLE as
-  // itself: a draft being written, a brief being worked, a record being
-  // questioned. She stays blocked on the brainstorm rail's post-dispatch states
-  // (`published`, `in_progress`, `completed`), where the note belongs to a run.
-  const askBlocked = noProject || !(isDraft || onPlan || shipped);
+  // itself. The rule is shared with the desk card's menu (`noteGuards.ts`).
+  const askBlockedKey = noteAskBlockedReasonKey(note);
+  const askBlocked = askBlockedKey !== null;
   /** The brainstorm rail's precondition pair, unchanged. */
   const dispatchBlocked = noProject || !isDraft;
   const blockedHint = noProject ? t.notepad.dispatch_needs_project : t.notepad.dispatch_needs_draft;
-  const askHint = noProject ? t.notepad.dispatch_needs_project : t.notepad.dispatch_needs_draft;
+  const askHint = t.notepad[askBlockedKey ?? 'dispatch_needs_draft'];
 
   const runAsk = async () => {
-    suggestionsAtAsk.current = suggestionCount;
+    const baseline = suggestionCount;
     const result = await actions.askAthena(focus.trim() || undefined);
     if (!result.ok) {
       if (result.pending) useToastStore.getState().addToast(askHint, 'warning');
@@ -125,7 +104,7 @@ export function NoteDispatchBar({
     // not even be open; without this the only evidence of the click is a
     // button that re-enables.
     useToastStore.getState().addToast(t.notepad.ask_athena_sent, 'success');
-    setAsking(true);
+    startAsk(note.id, baseline);
     setFocus('');
   };
 
