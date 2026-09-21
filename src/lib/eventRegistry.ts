@@ -29,6 +29,7 @@ import type { AuthStateResponse } from '@/lib/bindings/AuthStateResponse';
 import type { TestScenario } from '@/lib/bindings/TestScenario';
 import type { TestScores } from '@/lib/bindings/TestScores';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
+import type { NoteComment } from '@/lib/bindings/NoteComment';
 // Not a generated binding yet: `BrowserTab` is WP0's hand-written wire contract
 // (`src/features/browser/types.ts`), which WP4 re-points at `@/lib/bindings`
 // once the Rust side carries `#[derive(TS)] #[ts(export)]`.
@@ -322,6 +323,9 @@ export const EventName = {
   // Notepad — emitted by the run-artifact sweeper after it flips a note's
   // status (published → in_progress → completed/failed).
   NOTEPAD_NOTE_CHANGED: 'notepad-note-changed',
+  // Notepad — one per-note thread entry written or answered (comment, review,
+  // verdict stamp, status milestone). Payload is the full row.
+  NOTEPAD_NOTE_COMMENT: 'notepad-note-comment',
 
   // Browser > Webview — the WHOLE tab list, every time any of it moves.
   // Emitted to the `main` webview only; page webviews never receive app events.
@@ -1190,6 +1194,8 @@ export interface EventPayloadMap {
   // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
   // so a renamed variant breaks here rather than at a switch default.
   [EventName.NOTEPAD_NOTE_CHANGED]: { noteId: string; status: NoteStatus };
+  // The full `dev_note_comments` row (e40), so no refetch is needed.
+  [EventName.NOTEPAD_NOTE_COMMENT]: NoteComment;
 
   // The embedded browser's whole tab list. Rust is authoritative: nothing in
   // the tab strip is local state, every mutation is a command, and the list

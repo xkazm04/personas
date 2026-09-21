@@ -3911,6 +3911,8 @@
   "zh:monitor.orch_col_lane",
   "zh:monitor.orch_col_persona",
   "cs:twin.style.dims.humor.label",
+  "cs:notepad.thread_author_agent",
+  "cs:notepad.thread_author_agent_named",
   "de:twin.style.dims.warmth.l2",
   "de:twin.style.dims.warmth.l4",
   "de:twin.style.dims.humor.label",
@@ -3926,10 +3928,16 @@
   "id:twin.style.dims.formality.l4",
   "id:twin.style.dims.detail.label",
   "de:agents.responsibilities.profile_difficulty_standard",
+  "de:notepad.thread_author_agent",
+  "de:notepad.thread_author_agent_named",
+  "de:notepad.thread_author_system",
   "fr:agents.responsibilities.profile_machine_exclusive",
   "fr:agents.responsibilities.profile_difficulty_standard",
   "fr:agents.responsibilities.profile_effort_label",
+  "fr:notepad.thread_author_agent",
+  "fr:notepad.thread_author_agent_named",
   "*:monitor.usage_provider_claude",
   "*:monitor.usage_provider_codex",
-  "*:monitor.usage_provider_grok"
+  "*:monitor.usage_provider_grok",
+  "*:notepad.thread_author_athena"
 ]

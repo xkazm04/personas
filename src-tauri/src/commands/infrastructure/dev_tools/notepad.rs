@@ -11,14 +11,17 @@ use tauri::{AppHandle, State};
 
 use crate::commands::infrastructure::notepad_ingest::sweep_notepad_runs_core;
 use crate::db::models::{
-    DevNote, DevNoteRun, NotePlanSummary, NotePromotion, NoteStatus, NotepadIngestReport,
+    DevNote, DevNoteRun, NoteComment, NotePlanSummary, NotePromotion, NoteReviewVerdict,
+    NoteStatus, NoteUnread, NotepadIngestReport,
 };
+use crate::db::repos::dev::note_comments as comments_repo;
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 use personas_core::events::event_name;
 use personas_core::models::serde_util::double_option;
+use personas_macros::requires;
 use tauri::Emitter;
 
 /// Patch body for `notepad_update_note`. ONE object rather than bare optional
@@ -330,6 +333,136 @@ pub async fn notepad_resolve_suggestion(
         &outcome,
         body_md.as_deref(),
     )
+}
+
+// ── The per-note thread (dev_note_comments, e40) ───────────────────────────
+
+/// Run one thread repo call off the IPC worker. The handle is awaited, so a
+/// panic in the blocking task reaches the caller as an `AppError` rather than
+/// vanishing while the command reports success.
+async fn on_db<T, F>(state: &AppState, op: &'static str, f: F) -> Result<T, AppError>
+where
+    T: Send + 'static,
+    F: FnOnce(&crate::db::DbPool) -> Result<T, AppError> + Send + 'static,
+{
+    let pool = state.db.clone();
+    tokio::task::spawn_blocking(move || f(&pool))
+        .await
+        .map_err(|e| AppError::Internal(format!("{op}: task failed: {e}")))?
+}
+
+/// Emit `NOTEPAD_NOTE_COMMENT` with the full row. The thread store and the
+/// card bubbles key off this; a failed emit is logged, never fatal — the row
+/// is already durable and the next load reads it.
+pub(crate) fn emit_note_comment(app: &AppHandle, comment: &NoteComment) {
+    if let Err(e) = app.emit(event_name::NOTEPAD_NOTE_COMMENT, comment) {
+        tracing::warn!(event = event_name::NOTEPAD_NOTE_COMMENT, error = %e, "notepad: note-comment emit failed");
+    }
+}
+
+/// One note's thread, oldest first.
+#[tauri::command]
+#[requires(auth)]
+pub async fn notepad_list_comments(
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+) -> Result<Vec<NoteComment>, AppError> {
+    on_db(&state, "notepad_list_comments", move |db| {
+        comments_repo::list_comments(db, &note_id)
+    })
+    .await
+}
+
+/// Every note with unread thread entries (absent = nothing unread).
+#[tauri::command]
+#[requires(auth)]
+pub async fn notepad_unread_counts(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<NoteUnread>, AppError> {
+    on_db(
+        &state,
+        "notepad_unread_counts",
+        comments_repo::unread_counts,
+    )
+    .await
+}
+
+/// The operator comments on a note. Born read (it is their own words).
+#[tauri::command]
+#[requires(auth)]
+pub async fn notepad_add_comment(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+    body_md: String,
+) -> Result<NoteComment, AppError> {
+    let comment = on_db(&state, "notepad_add_comment", move |db| {
+        comments_repo::insert_comment(
+            db,
+            &comments_repo::NewNoteComment::operator_comment(&note_id, &body_md),
+        )
+    })
+    .await?;
+    emit_note_comment(&app, &comment);
+    Ok(comment)
+}
+
+/// Stamp every unread entry of one note read (the popover calls this on open).
+#[tauri::command]
+#[requires(auth)]
+pub async fn notepad_mark_comments_read(
+    state: State<'_, Arc<AppState>>,
+    note_id: String,
+) -> Result<(), AppError> {
+    on_db(&state, "notepad_mark_comments_read", move |db| {
+        comments_repo::mark_read(db, &note_id).map(|_| ())
+    })
+    .await
+}
+
+/// The operator answers a review entry: `approved` or `rejected`.
+///
+/// `pending` is not an answer and is refused; a rejection must carry a
+/// non-empty `reason` — it is what the rework run is told, and a bare "no"
+/// is how the loop ping-pongs.
+#[tauri::command]
+#[requires(auth)]
+pub async fn notepad_set_review_verdict(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    comment_id: String,
+    verdict: NoteReviewVerdict,
+    reason: Option<String>,
+) -> Result<NoteComment, AppError> {
+    let reason = reason
+        .as_deref()
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .map(str::to_owned);
+    match verdict {
+        NoteReviewVerdict::Pending => {
+            return Err(AppError::Validation(
+                "A review verdict is `approved` or `rejected`, not `pending`".into(),
+            ))
+        }
+        NoteReviewVerdict::Rejected if reason.is_none() => {
+            return Err(AppError::Validation(
+                "Rejecting a review needs a reason".into(),
+            ))
+        }
+        _ => {}
+    }
+    let comment = on_db(&state, "notepad_set_review_verdict", move |db| {
+        // WP1: on `rejected` for a `ref_kind = run` review, post `reason` as an
+        // operator comment on the note and transition `Completed -> Published`
+        // (the rework move) before/with the verdict stamp. `reason` is already
+        // validated non-empty above for that branch.
+        let _rework_reason = reason;
+        comments_repo::set_verdict(db, &comment_id, verdict)
+    })
+    .await?;
+    emit_note_comment(&app, &comment);
+    Ok(comment)
 }
 
 /// The three branches of `notepad_promote_note`, driven through the core.
