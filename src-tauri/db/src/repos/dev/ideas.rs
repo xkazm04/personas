@@ -85,10 +85,14 @@ pub fn list_ideas(
 // the SQL is testable without a Tauri app handle.
 // ----------------------------------------------------------------------------
 
-/// Pseudo-origin the triage UI uses for classic Idea-Scanner ideas: only
-/// findings-spine sensors stamp a real `origin`, so "scanner" means
-/// `origin IS NULL`. Kept as a constant so the filter and the count bucket
-/// label can never drift apart.
+/// Pseudo-origin the triage UI uses for classic Idea-Scanner ideas.
+///
+/// It meant `origin IS NULL` back when only findings-spine sensors stamped an
+/// origin. The backlog contract made `origin` the source vocabulary and the
+/// `e41` backfill filled it on every row, so the pseudo-value now resolves to
+/// `BacklogSource::IdeaScanner` — the producer it always named — and keeps
+/// matching NULL for anything filed before the contract. Kept as a constant so
+/// the filter and the count bucket label can never drift apart.
 pub const TRIAGE_SCANNER_ORIGIN: &str = "scanner";
 
 /// Default / maximum page size for `triage_ideas`.
@@ -149,7 +153,15 @@ fn triage_scope_clauses(
         params.push(Box::new(pid.clone()));
     }
     match filter.origin.as_deref() {
-        Some(TRIAGE_SCANNER_ORIGIN) => clauses.push("origin IS NULL".to_string()),
+        // `scanner` predates the source vocabulary: it meant "no sensor
+        // stamped this", which before the `e41` backfill was spelled
+        // `origin IS NULL`. Post-backfill those rows carry their real producer,
+        // so the pseudo-value resolves to the producer it always meant — plus
+        // NULL, for any row filed before the contract.
+        Some(TRIAGE_SCANNER_ORIGIN) => clauses.push(format!(
+            "(origin IS NULL OR origin = '{}')",
+            BacklogSource::IdeaScanner.as_str()
+        )),
         Some(origin) => {
             clauses.push("origin = ?".to_string());
             params.push(Box::new(origin.to_string()));
@@ -851,31 +863,16 @@ pub fn scan_dedup_key(scan_type: &str, scope: Option<&str>, title: &str) -> Stri
 // outside this file moves, so the collapse lands without touching the four
 // command modules other sessions are editing right now.
 
-/// The upper bound of the three scales.
+/// The upper bound of the three scales, re-exported from the contract so this
+/// file and the door agree by construction.
 ///
-/// **This is 10, and `IdeaDraft`'s own doc says 5.** The doc is wrong against
-/// every piece of code that produces or consumes a score, measured 2026-09-21:
-///
-/// * `commands/infrastructure/idea_scanner.rs:192` — the prompt the scanner
-///   sends the model spells the contract out: `"effort": <1-10>, "impact":
-///   <1-10>, "risk": <1-10>`. That is the largest generated producer;
-/// * `repos/dev/cross_project.rs:228,345,351` — three shipped read models
-///   threshold on `risk >= 7` and `risk >= 8`;
-/// * `sub_triage/triageRuleSuggestions.ts:86,97` — the rule suggester derives
-///   `impact >= 7` / `risk >= 8` triage rules from the operator's own decided
-///   ideas, so those values exist in the live table;
-/// * `engine/src/headless.rs:1679` — a fixture files `impact = 7` and its
-///   test asserts the night reports it.
-///
-/// A door enforcing 1-5 would have refused every scanner item scoring above 5
-/// — an outage of the dominant producer dressed as a validation improvement.
-/// The brief's actual purpose survives intact at 1-10: a `0` is refused, and
-/// absent stays absent.
-///
-/// Recorded here rather than fixed in `personas_core`, which this package may
-/// not touch. Narrowing to 1-5 is a migration plus a re-scale of every stored
-/// score, not a constant.
-const SCALE_MAX: i32 = 10;
+/// It is 5, and the two producers that grade out of ten are converted on the
+/// way in rather than stored raw - see BacklogSource::native_scale_max and
+/// normalize_scale. An earlier revision of this door enforced 10 because the
+/// Idea Scanner prompt asks for 10 and a 1-5 door would have refused its
+/// output outright; the repair was to declare the exchange rate, not to widen
+/// the column every ranker reads.
+const SCALE_MAX: i32 = crate::models::IDEA_SCALE_MAX;
 
 /// The scales run 1-[`SCALE_MAX`]. `None` is absent and stays absent; a `0` is
 /// the shape the absent-value convention exists to refuse, because it reads as
@@ -963,10 +960,24 @@ fn file_draft(
         )));
     }
 
-    // (3) The three 1-5 scales.
-    check_scale("effort", draft.effort)?;
-    check_scale("impact", draft.impact)?;
-    check_scale("risk", draft.risk)?;
+    // (3) The three scales, CONVERTED into the queue's own scale before they
+    // are checked against it.
+    //
+    // Two scales reached this column: `propose_backlog` documents 1-5 with a
+    // meaning per band, while the Idea Scanner's prompt and the scan-sweep
+    // skill grade out of ten (75 rows exceeded 5, measured 2026-09-21). Passing
+    // both through would leave a ranker comparing a scanner's mid-range 5
+    // against a persona's top-of-range 5. `native_scale_max` declares each
+    // producer's curve and `normalize_scale` applies the exchange rate here, at
+    // the one door, explicitly and reviewably — which is the only place it can
+    // be applied once.
+    let from_max = draft.source.native_scale_max();
+    let effort = crate::models::normalize_scale(draft.effort, from_max);
+    let impact = crate::models::normalize_scale(draft.impact, from_max);
+    let risk = crate::models::normalize_scale(draft.risk, from_max);
+    check_scale("effort", effort)?;
+    check_scale("impact", impact)?;
+    check_scale("risk", risk)?;
 
     // The status vocabulary is closed as of this contract. The column carries
     // no CHECK, so this door is the only place it can be held closed on write.
@@ -1014,14 +1025,16 @@ fn file_draft(
         .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY)
         .as_str();
 
-    // CONTRACT GAP, recorded rather than papered over: `IdeaDraft.project_id`
-    // is a non-optional `String`, but `dev_ideas.project_id` is nullable and
-    // `dev_tools_create_idea` still reaches this door with `None` from the
-    // frontend (`commands/infrastructure/dev_tools.rs`). An empty string is
-    // therefore read here as SQL NULL — the one field whose absence this
-    // contract cannot express by omission. Widening the field is a change to
-    // `personas_core::models`, which is not this package's to make.
-    let project_id: Option<&str> = Some(draft.project_id.as_str()).filter(|p| !p.trim().is_empty());
+    // The column is nullable and so is the draft field, so absence travels as
+    // absence the whole way down. An empty string is still trimmed to NULL: a
+    // caller that spells absence that way is the shape the convention refuses,
+    // and refusing it outright would break the human form that predates this
+    // door.
+    let project_id: Option<&str> = draft
+        .project_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|p| !p.is_empty());
 
     // The repo's own emptiness vocabulary rather than a seventh open-coded
     // copy. It produces the identical sentence the two legacy doors already
@@ -1080,9 +1093,9 @@ fn file_draft(
                 draft.description,
                 draft.reasoning,
                 status.as_str(),
-                draft.effort,
-                draft.impact,
-                draft.risk,
+                effort,
+                impact,
+                risk,
                 draft.provider,
                 draft.model,
                 origin,
@@ -1149,7 +1162,10 @@ pub fn create_idea(
     model: Option<&str>,
 ) -> Result<DevIdea, AppError> {
     let source = BacklogSource::from_token(scan_type).unwrap_or(BacklogSource::Manual);
-    let mut draft = IdeaDraft::new(project_id.unwrap_or_default(), source, title);
+    let mut draft = match project_id {
+        Some(pid) => IdeaDraft::new(pid, source, title),
+        None => IdeaDraft::unassigned(source, title),
+    };
     draft.scan_type = Some(scan_type.to_string());
     draft.context_id = context_id.map(str::to_string);
     draft.category = category.map(str::to_string);
@@ -1237,17 +1253,27 @@ fn is_dedup_unique_violation(err: &AppError) -> bool {
     )
 }
 
-/// Reversible aging for the backlog: pending SCANNER ideas older than
+/// Reversible aging for the backlog: pending GENERATED ideas older than
 /// `older_than_days` that never became work (no linked task) move to
 /// `archived`. Mirrors the memory engine's `run_decay_forgetting` — nothing is
 /// deleted, the row keeps its `dedup_key` (so archiving can never reopen the
 /// duplication door), and a human can restore it by setting the status back to
 /// `pending`.
 ///
-/// Sensor FINDINGS (`origin IS NOT NULL`) are excluded: their lifecycle
-/// belongs to the sensors — every sweep re-measures them — and because dedup
-/// blocks re-emission in ANY status, aging one out would silence that sensor
-/// signal permanently on a 30-day timer nobody chose.
+/// Sensor FINDINGS are excluded: their lifecycle belongs to the sensors —
+/// every sweep re-measures them — and because dedup blocks re-emission in ANY
+/// status, aging one out would silence that sensor signal permanently on a
+/// 30-day timer nobody chose.
+///
+/// **The exclusion used to be spelled `origin IS NULL`, and that spelling died
+/// the day `origin` became the source vocabulary.** Before the backlog
+/// contract, only the findings spine stamped an origin, so NULL meant "not a
+/// finding" and the filter read correctly by accident. The `e41` backfill gave
+/// EVERY row its producer, at which point `origin IS NULL` matched nothing and
+/// this reaper silently stopped reaping — a live queue's only aging policy,
+/// disabled by a migration that was repairing something else. The condition is
+/// now asked of the vocabulary directly: a source that is one of the eleven
+/// measurement sensors is exempt, and everything else ages.
 ///
 /// Returns the number of ideas archived.
 pub fn archive_stale_ideas(
@@ -1266,19 +1292,36 @@ pub fn archive_stale_ideas(
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
+        // Interpolated, not bound: every token comes from the compile-time
+        // `FINDING_ORIGINS` array and none of them contains a quote. The same
+        // technique the undispatched sensor and `backlog_flow` already use for
+        // their own compile-time constants.
+        let sensor_list = crate::models::FINDING_ORIGINS
+            .iter()
+            .map(|o| format!("'{o}'"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        // A row filed before the contract can still carry NULL; it is not a
+        // sensor finding, so it ages like the generated idea it is.
+        let not_a_finding = format!("(origin IS NULL OR origin NOT IN ({sensor_list}))");
+
         let affected = match project_id {
             Some(pid) => conn.execute(
-                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
-                 WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
-                   AND origin IS NULL
-                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                &format!(
+                    "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                     WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
+                       AND {not_a_finding}
+                       AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)"
+                ),
                 params![now, cutoff, pid],
             )?,
             None => conn.execute(
-                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
-                 WHERE status = 'pending' AND created_at < ?2
-                   AND origin IS NULL
-                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                &format!(
+                    "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                     WHERE status = 'pending' AND created_at < ?2
+                       AND {not_a_finding}
+                       AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)"
+                ),
                 params![now, cutoff],
             )?,
         };
@@ -2738,15 +2781,58 @@ mod contract_tests {
 
         let mut rated = IdeaDraft::new(&pid, BacklogSource::Manual, "Rated");
         rated.effort = Some(1);
-        // 7 is deliberate: the Idea Scanner prompt declares 1-10 and the
-        // shipped read models threshold at 7 and 8. See SCALE_MAX.
-        rated.impact = Some(7);
+        rated.impact = Some(5);
         rated.risk = Some(3);
         let idea = file_idea(&pool, rated).unwrap().unwrap();
         assert_eq!(
             (idea.effort, idea.impact, idea.risk),
-            (Some(1), Some(7), Some(3))
+            (Some(1), Some(5), Some(3))
         );
+
+        // A five-point producer may not reach past its own curve. This door
+        // enforced 1-10 for one commit, because the Idea Scanner's prompt asks
+        // for ten and refusing it outright would have been an outage of the
+        // dominant producer. The repair was to declare the exchange rate rather
+        // than to widen the column every ranker reads.
+        let mut over = IdeaDraft::new(&pid, BacklogSource::Manual, "Over the top");
+        over.impact = Some(7);
+        let err = file_idea(&pool, over).unwrap_err();
+        assert!(
+            err.to_string().contains("must be 1-5"),
+            "a five-point producer's 7 should be refused, got: {err}"
+        );
+    }
+
+    /// The exchange rate, asserted through the door rather than through the
+    /// helper, so a producer whose prompt asks for ten keeps filing and its
+    /// scores land on the scale the rankers read.
+    #[test]
+    fn a_ten_point_producers_score_is_converted_rather_than_refused() {
+        let pool = pool();
+        let pid = project(&pool);
+
+        for (native, want) in [(1, 1), (2, 1), (5, 3), (7, 4), (10, 5)] {
+            let mut draft = IdeaDraft::new(
+                &pid,
+                BacklogSource::IdeaScanner,
+                format!("Scanner finding {native}"),
+            );
+            draft.effort = Some(native);
+            draft.impact = Some(native);
+            draft.risk = Some(native);
+            let idea = file_idea(&pool, draft).unwrap().unwrap();
+            assert_eq!(
+                (idea.effort, idea.impact, idea.risk),
+                (Some(want), Some(want), Some(want)),
+                "a 1-10 producer's {native} should land as {want}"
+            );
+        }
+
+        // Absent is still absent on the way through a conversion.
+        let mut unrated = IdeaDraft::new(&pid, BacklogSource::ScanSweep, "Unscored sweep finding");
+        unrated.impact = Some(9);
+        let idea = file_idea(&pool, unrated).unwrap().unwrap();
+        assert_eq!((idea.effort, idea.impact, idea.risk), (None, Some(5), None));
     }
 
     // --- 4. completeness -----------------------------------------------------

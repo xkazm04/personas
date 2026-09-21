@@ -66,41 +66,46 @@ export function suggestTriageRules(ideas: DevIdea[], rules: TriageRule[]): RuleS
   const decided = ideas.filter((i) => i.status === 'accepted' || i.status === 'rejected');
   if (decided.length < MIN_SAMPLE) return [];
 
-  const eff = (i: DevIdea) => i.effort ?? 5;
-  const imp = (i: DevIdea) => i.impact ?? 5;
-  const rsk = (i: DevIdea) => i.risk ?? 5;
+  // The stand-in for an unrated idea is the MIDPOINT of the scale
+  // (`personas_core::models::IDEA_SCALE_MAX` is 5), so an unrated row pulls a
+  // pattern in no direction. It read 5 while the column carried a ten-point
+  // scale, which was the midpoint then and is the ceiling now — an unrated
+  // idea would have been mined as maximally heavy, impactful and risky at once.
+  const eff = (i: DevIdea) => i.effort ?? 3;
+  const imp = (i: DevIdea) => i.impact ?? 3;
+  const rsk = (i: DevIdea) => i.risk ?? 3;
 
   const out: RuleSuggestion[] = [];
 
-  // Heavy ideas get rejected → reject effort >= 8
-  const heavy = decided.filter((i) => eff(i) >= 8);
+  // Heavy ideas get rejected → reject effort >= 4
+  const heavy = decided.filter((i) => eff(i) >= 4);
   const heavyRejected = heavy.filter((i) => i.status === 'rejected').length;
   if (heavy.length >= MIN_SAMPLE && heavyRejected / heavy.length >= MIN_RATE) {
     out.push({
       kind: 'reject_heavy', action: 'reject',
-      conditions: [{ field: 'effort', op: 'gte', value: 8 }],
+      conditions: [{ field: 'effort', op: 'gte', value: 4 }],
       matched: heavyRejected, total: heavy.length,
     });
   }
 
-  // Quick wins get accepted → accept effort <= 3 AND impact >= 7
-  const quick = decided.filter((i) => eff(i) <= 3 && imp(i) >= 7);
+  // Quick wins get accepted → accept effort <= 2 AND impact >= 4
+  const quick = decided.filter((i) => eff(i) <= 2 && imp(i) >= 4);
   const quickAccepted = quick.filter((i) => i.status === 'accepted').length;
   if (quick.length >= MIN_SAMPLE && quickAccepted / quick.length >= MIN_RATE) {
     out.push({
       kind: 'accept_quick', action: 'accept',
-      conditions: [{ field: 'effort', op: 'lte', value: 3 }, { field: 'impact', op: 'gte', value: 7 }],
+      conditions: [{ field: 'effort', op: 'lte', value: 2 }, { field: 'impact', op: 'gte', value: 4 }],
       matched: quickAccepted, total: quick.length,
     });
   }
 
-  // Risky ideas get rejected → reject risk >= 8
-  const risky = decided.filter((i) => rsk(i) >= 8);
+  // Risky ideas get rejected → reject risk >= 4
+  const risky = decided.filter((i) => rsk(i) >= 4);
   const riskyRejected = risky.filter((i) => i.status === 'rejected').length;
   if (risky.length >= MIN_SAMPLE && riskyRejected / risky.length >= MIN_RATE) {
     out.push({
       kind: 'reject_risky', action: 'reject',
-      conditions: [{ field: 'risk', op: 'gte', value: 8 }],
+      conditions: [{ field: 'risk', op: 'gte', value: 4 }],
       matched: riskyRejected, total: risky.length,
     });
   }

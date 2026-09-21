@@ -64,6 +64,7 @@ mod e38_project_enabled;
 mod e39_workspace_team_binding;
 mod e40_council;
 mod e41_backlog_contract;
+mod e42_one_idea_scale;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -124,6 +125,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e39_workspace_team_binding::run(conn)?;
     e40_council::run(conn)?;
     e41_backlog_contract::run(conn)?;
+    e42_one_idea_scale::run(conn)?;
 
     Ok(())
 }

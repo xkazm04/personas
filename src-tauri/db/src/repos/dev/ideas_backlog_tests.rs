@@ -49,15 +49,18 @@ fn backdate_idea(pool: &DbPool, idea_id: &str, days: i64) {
 
 /// NULL out `origin`, reproducing a row filed before the backlog contract.
 ///
-/// `archive_stale_ideas` filters `origin IS NULL`. Migration e41 backfilled an
-/// origin onto every row carrying a `scan_type`, and the one write door now
-/// stamps one on every new row — so on a current database that predicate
-/// matches NOTHING and the pending reaper is dead in practice. The two tests
-/// below therefore state both halves: a row filed through the door is out of
-/// its reach, and a legacy row still ages out exactly as before.
+/// Kept after the reaper was repaired, because the legacy shape is still real:
+/// a database that has not run `e41` yet, and any row whose `scan_type` was
+/// empty, carries a NULL origin. `archive_stale_ideas` must reach those too,
+/// and the test at the bottom of this file is what says so.
 ///
-/// Recorded, not repaired: changing `archive_stale_ideas` is a decision about
-/// which pile the pending reaper should own, not a test fixup.
+/// The history is worth keeping in view. This helper was introduced when the
+/// reaper's exclusion was still spelled `origin IS NULL` — a predicate that
+/// meant "not a sensor finding" only for as long as sensors were the only
+/// writers of that column. The `e41` backfill made it match nothing, which
+/// turned a live queue's only aging policy off without a single test going
+/// red, because the tests were written against the predicate rather than
+/// against its purpose.
 fn clear_origin(pool: &DbPool, idea_id: &str) {
     // The checkout propagates rather than panicking — see `pool-get-unwrapped`.
     let write = || -> Result<(), AppError> {
@@ -266,15 +269,17 @@ fn aging_archives_only_stale_untouched_pending_ideas() {
     backdate_idea(&pool, &stale_with_task.id, 60);
 
     // Every row above was filed through the one door, so every one of them
-    // carries an `origin` — and this sweep only reaches rows where it is NULL.
-    assert_eq!(
-        archive_stale_ideas(&pool, Some(&pid), 30).unwrap(),
-        0,
-        "the pending reaper cannot reach a row filed under the backlog contract"
-    );
-    for idea in [&stale, &fresh, &stale_accepted, &stale_with_task] {
-        clear_origin(&pool, &idea.id);
-    }
+    // carries an `origin` — and the reaper must still reach them.
+    //
+    // This assertion was briefly the opposite. The `e41` backfill gave every
+    // row a source, and the reaper's exclusion was spelled `origin IS NULL`
+    // from back when only sensors stamped one; overnight it matched nothing and
+    // a live queue's only aging policy was silently off. The first version of
+    // this test pinned that as the contract, which is the trap a regression test
+    // written after the change always sets: it recorded what the code now did
+    // rather than what the code was for. The exclusion is asked of the
+    // vocabulary now — a sensor FINDING is exempt, a generated idea ages — and
+    // this test asserts the purpose instead of the symptom.
 
     update_idea(
         &pool,

@@ -144,7 +144,10 @@ pub fn bulk_create_ideas_cross_project(
         ) in ideas
         {
             let source = BacklogSource::from_token(scan_type).unwrap_or(BacklogSource::Manual);
-            let mut draft = IdeaDraft::new(project_id.unwrap_or_default(), source, title);
+            let mut draft = match project_id {
+                Some(pid) => IdeaDraft::new(pid, source, title),
+                None => IdeaDraft::unassigned(source, title),
+            };
             draft.scan_type = Some(scan_type.to_string());
             draft.context_id = context_id.map(str::to_string);
             draft.category = Some(category.to_string());
@@ -225,7 +228,7 @@ pub fn get_portfolio_health(pool: &DbPool) -> Result<PortfolioHealthSummary, App
             params![p.id], |r| r.get(0),
         ).ok();
             let open_risk_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 7",
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 4",
             params![p.id], |r| r.get(0),
         )?;
 
@@ -342,13 +345,13 @@ pub fn get_risk_matrix(pool: &DbPool) -> Result<Vec<RiskMatrixEntry>, AppError> 
 
             // Check for high-risk pending ideas
             let high_risk_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 8",
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 4",
             params![p.id], |r| r.get(0),
         )?;
             if high_risk_count > 0 {
                 let affected: Vec<String> = {
                     let mut s = conn.prepare(
-                    "SELECT DISTINCT c.name FROM dev_ideas i JOIN dev_contexts c ON i.context_id = c.id WHERE i.project_id = ?1 AND i.status = 'pending' AND i.risk >= 8"
+                    "SELECT DISTINCT c.name FROM dev_ideas i JOIN dev_contexts c ON i.context_id = c.id WHERE i.project_id = ?1 AND i.status = 'pending' AND i.risk >= 4"
                 )?;
                     let rows = s.query_map(params![p.id], |r| r.get::<_, String>(0))?;
                     rows.filter_map(|r| r.ok()).collect()

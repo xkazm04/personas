@@ -65,3 +65,6 @@
 {"ts":"2026-09-20T19:10:00Z","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","pagination","filtering","loading-and-empty-states"],"deviations":1,"context":"overview-activity-metrics"}
 {"ts":"2026-09-21T09:00:00Z","bundle":"software-engineering","subjects":["canvas-graph","hitl-approval","async-ui-states","design-tokens"],"techniques":["render-budget","viewport-transform","decision-records","oracle-before-gate"],"deviations":0}
 {"ts":"2026-09-21T00:00:00Z","bundle":"software-engineering","subjects":["triage-queues"],"techniques":["queue-lifecycle","source-normalization","verdict-writeback"],"deviations":3}
+{"ts":"2026-09-21T13:01:00Z","bundle":"software-engineering","subjects":["eval-harness","mcp-tools","migrations"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
+{"ts":"2026-09-21T14:07:20Z","bundle":"software-engineering","subjects":["multi-project","voice-io"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}
+{"ts":"2026-09-21T14:07:20Z","bundle":"localization","subjects":["translation-quality-measurement"],"techniques":[],"deviations":0,"outcome":"missed","from":"consult-check"}

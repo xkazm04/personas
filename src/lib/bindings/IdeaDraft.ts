@@ -10,7 +10,14 @@ import type { IdeaPlan } from "./IdeaPlan";
  * the door writes SQL NULL. Never `0`, never `""` — the three scales run 1-5,
  * so a `0` is a validation error and not a missing value.
  */
-export type IdeaDraft = { projectId: string, 
+export type IdeaDraft = { 
+/**
+ * Nullable, because the column is: `dev_tools_create_idea` files an
+ * unassigned idea with no project, and `dev_ideas.project_id` has always
+ * allowed NULL. An empty string is NOT how absence is spelled here — that
+ * is exactly the shape the absent-value convention below refuses.
+ */
+projectId: string | null, 
 /**
  * The producer. Written to `dev_ideas.origin`.
  */

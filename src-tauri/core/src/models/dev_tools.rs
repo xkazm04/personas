@@ -1195,6 +1195,70 @@ impl BacklogSource {
     pub fn is_mechanical(&self) -> bool {
         matches!(self, Self::StaticScan | Self::HeadlessBenchSeed)
     }
+
+    /// The scale this producer's prompt actually asks for.
+    ///
+    /// **Two scales live in one column and this is where the exchange rate is
+    /// declared.** Measured on the live table 2026-09-21: `team_proposed`
+    /// scored 1-5 across 502 rows (its prompt documents a MEANING per band —
+    /// "3 = touches a route, a contract or a schema", "5 = unblocks a goal or a
+    /// money path"), while `idea_scanner.rs:192` asks the model for
+    /// `"effort": <1-10>, "impact": <1-10>, "risk": <1-10>` and the scan-sweep
+    /// skill emits up to 10. 75 rows exceeded 5.
+    ///
+    /// Left unconverted, a rank that compares producers compares unlike things:
+    /// a scanner's 5 is the middle of its range and a persona's 5 is the top of
+    /// its own. So the door converts INTO the queue's scale
+    /// ([`IDEA_SCALE_MAX`]) rather than passing the producer's number through,
+    /// and this function is the only place the difference is stated.
+    pub fn native_scale_max(&self) -> i32 {
+        match self {
+            // The Idea Scanner's prompt and the scan-sweep skill's JSONL both
+            // grade out of ten.
+            Self::IdeaScanner | Self::ScanSweep => 10,
+            // Everything else is filed against a 1-5 contract: the
+            // `propose_backlog` verb, the App Master write-back (which refuses
+            // a filing outside 1-5 at its own door), and the sensors.
+            _ => IDEA_SCALE_MAX,
+        }
+    }
+}
+
+/// The one scale `effort`, `impact` and `risk` are ranked on.
+///
+/// Chosen over the wider alternative because it is the only one whose bands
+/// carry documented MEANINGS: the `propose_backlog` contract spells out what
+/// each number claims ("1 = documentation or a reversible local change … 4 =
+/// touches ledger, settlement or security semantics … 5 = irreversible or
+/// external"), and a project's mechanical triage rules accept or hold an item
+/// by reading them. A number that means something is worth more to a ranker
+/// than a number with more room in it.
+///
+/// A producer grading out of ten is converted here rather than stored raw —
+/// see [`BacklogSource::native_scale_max`] and [`normalize_scale`].
+pub const IDEA_SCALE_MAX: i32 = 5;
+
+/// Convert a producer's score into [`IDEA_SCALE_MAX`].
+///
+/// Monotone and total: `ceil(v * IDEA_SCALE_MAX / from_max)`, so a 1-10 score
+/// folds 1,2 → 1 · 3,4 → 2 · 5,6 → 3 · 7,8 → 4 · 9,10 → 5. Order is preserved,
+/// the top of one range maps to the top of the other, and nothing collapses to
+/// zero — which matters because `0` is the value the absent-value convention
+/// exists to refuse.
+///
+/// `None` in, `None` out: absent is absent, and a producer that omitted a score
+/// must not acquire one by passing through a conversion.
+pub fn normalize_scale(value: Option<i32>, from_max: i32) -> Option<i32> {
+    let v = value?;
+    if from_max <= IDEA_SCALE_MAX || v <= 0 {
+        // Already on the queue's scale, or a value the door is about to refuse
+        // anyway — converting it would disguise the thing worth refusing.
+        return Some(v);
+    }
+    // Ceiling division written out: `i32::div_ceil` is still unstable on this
+    // toolchain, and both operands are small positive integers here.
+    let scaled = (v * IDEA_SCALE_MAX + from_max - 1) / from_max;
+    Some(scaled.clamp(1, IDEA_SCALE_MAX))
 }
 
 /// The states a backlog item may hold.
@@ -1358,7 +1422,11 @@ impl IdeaPlan {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaDraft {
-    pub project_id: String,
+    /// Nullable, because the column is: `dev_tools_create_idea` files an
+    /// unassigned idea with no project, and `dev_ideas.project_id` has always
+    /// allowed NULL. An empty string is NOT how absence is spelled here — that
+    /// is exactly the shape the absent-value convention below refuses.
+    pub project_id: Option<String>,
     /// The producer. Written to `dev_ideas.origin`.
     pub source: BacklogSource,
     /// The producer's own sub-key (an Idea-Scanner lens, a static tool name).
@@ -1388,6 +1456,17 @@ pub struct IdeaDraft {
 }
 
 impl IdeaDraft {
+    /// A draft belonging to no project.
+    ///
+    /// The human form behind dev_tools_create_idea files one, and the column
+    /// has always allowed it. Spelled as its own constructor so no caller has
+    /// to reach for an empty string to mean absence.
+    pub fn unassigned(source: BacklogSource, title: impl Into<String>) -> Self {
+        let mut draft = Self::new(String::new(), source, title);
+        draft.project_id = None;
+        draft
+    }
+
     /// Minimal draft; every optional field stays absent.
     pub fn new(
         project_id: impl Into<String>,
@@ -1395,7 +1474,7 @@ impl IdeaDraft {
         title: impl Into<String>,
     ) -> Self {
         Self {
-            project_id: project_id.into(),
+            project_id: Some(project_id.into()),
             source,
             scan_type: None,
             context_id: None,
