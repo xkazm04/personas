@@ -2,11 +2,29 @@
 
 ## Active
 
+### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
+- **[2026-09-21 16:00]**
+- **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin.rs` · `src/i18n/**`
+- **Status:** started
+
+### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
+- **[2026-09-21 15:23]**
+- **Paths:** `src/features/fleet/monitor/live/**`
+- **Status:** started
+
+- **[2026-09-21 15:16]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
+### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
+- **[2026-09-21 14:11]**
+- **Paths:** `src/features/plugins/dev-tools/sub_skills/registry/**` · `src/features/fleet/monitor/grid/DockSkillPicker.tsx` · `src/i18n/**`
+- **Status:** started
+
 - **[2026-09-21 13:25]**
 - **Paths:** `src/features/fleet/monitor/grid/AccountRows.tsx` · `src/features/fleet/monitor/grid/UsageStripShell.tsx`
 - **Status:** started
 
-### spark-note-overview-cycle — spark: NoteOverview cycle mgmt, feedback bubbles, context menu, contest v2
 - **[2026-09-21 11:06]**
 - **Paths:** `src/features/notepad/**` · `src/i18n/locales/**`
 - **Status:** started
@@ -906,6 +924,10 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-node-rows — usage row spacing; FleetNode split <=200 LOC, title/divider/symbols layout, full-width nodes in Lanes
+
+### spark-note-overview-cycle — spark: NoteOverview cycle mgmt, feedback bubbles, context menu, contest v2
 
 ### spark-usage-rows — usage strip rows: five per strip row, green active / black-wash inactive backgrounds
 
