@@ -834,14 +834,22 @@ pub struct NightProposal {
     /// parses it must accept both. Reporting what the row says is not the same
     /// as making it prettier.
     pub created_at: String,
-    /// `dev_ideas.origin`, **verbatim**: which sensor raised the idea (one of
-    /// `personas_db::models::FINDING_ORIGINS`), or `null` for a classic
-    /// Idea-Scanner idea.
+    /// `dev_ideas.origin`, **verbatim**: the PRODUCER that filed the idea, one
+    /// of `personas_db::models::BacklogSource`.
+    ///
+    /// It used to read "which sensor raised the idea, or `null` for a classic
+    /// Idea-Scanner idea", and `null` was a real answer. Since the backlog
+    /// contract (commit `8ae6711be`, which backfilled `origin` onto the whole
+    /// table, and the one write door that now stamps it on every new row) a
+    /// NULL means only "filed before that contract and never backfilled". What
+    /// marks a mechanical sensor sweep is membership of
+    /// `personas_db::models::FINDING_ORIGINS` — the eleven measurement
+    /// sensors, a strict subset of `BacklogSource` — not non-nullness.
     ///
     /// Paired with `createdAt` for the same reason: state alone cannot say
     /// whether a proposal came from the night's own reasoning or from a
     /// mechanical sensor sweep, and a bench grading a holder's judgement is
-    /// asking exactly that. `null` is a real answer here, not a gap.
+    /// asking exactly that.
     pub origin: Option<String>,
 }
 
@@ -2136,10 +2144,16 @@ mod tests {
             proposal("Close the decode seam").created_at,
             scanned.created_at
         );
+        let scanner_origin = proposal("Close the decode seam").origin.clone();
         assert_eq!(
-            proposal("Close the decode seam").origin,
-            None,
-            "a classic Idea-Scanner idea has no sensor, and null says so"
+            scanner_origin.as_deref(),
+            Some("manual"),
+            "every row carries its producer since the backlog contract"
+        );
+        assert!(
+            !personas_db::models::FINDING_ORIGINS
+                .contains(&scanner_origin.as_deref().unwrap_or_default()),
+            "a classic Idea-Scanner idea still has no SENSOR - now a question about FINDING_ORIGINS membership, not about null"
         );
         assert_eq!(
             proposal("Enforce the shape at the seam").created_at,
@@ -2151,7 +2165,11 @@ mod tests {
         );
         assert_eq!(backlog.declines.len(), 1);
         assert_eq!(backlog.declines[0].created_at, declined.created_at);
-        assert_eq!(backlog.declines[0].origin, None);
+        assert_eq!(
+            backlog.declines[0].origin.as_deref(),
+            Some("manual"),
+            "a decline carries its producer too"
+        );
 
         // Additive, and the addition is checked as such: the seven fields a
         // driver already deep-scans are still there, spelled the same way, on
@@ -2174,7 +2192,7 @@ mod tests {
         assert_eq!(row["size"], serde_json::json!("s"));
         assert_eq!(row["confidence"], serde_json::Value::Null);
         assert_eq!(row["createdAt"], serde_json::json!(scanned.created_at));
-        assert_eq!(row["origin"], serde_json::Value::Null);
+        assert_eq!(row["origin"], serde_json::json!("manual"));
         assert_eq!(
             row.as_object().unwrap().len(),
             9,
@@ -2185,7 +2203,7 @@ mod tests {
         assert_eq!(decline["title"], serde_json::json!("Rewrite the renderer"));
         assert_eq!(decline["reason"], serde_json::Value::Null);
         assert_eq!(decline["createdAt"], serde_json::json!(declined.created_at));
-        assert_eq!(decline["origin"], serde_json::Value::Null);
+        assert_eq!(decline["origin"], serde_json::json!("manual"));
         assert_eq!(decline.as_object().unwrap().len(), 4);
     }
 }

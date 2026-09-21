@@ -47,6 +47,31 @@ fn backdate_idea(pool: &DbPool, idea_id: &str, days: i64) {
         .unwrap();
 }
 
+/// NULL out `origin`, reproducing a row filed before the backlog contract.
+///
+/// `archive_stale_ideas` filters `origin IS NULL`. Migration e41 backfilled an
+/// origin onto every row carrying a `scan_type`, and the one write door now
+/// stamps one on every new row — so on a current database that predicate
+/// matches NOTHING and the pending reaper is dead in practice. The two tests
+/// below therefore state both halves: a row filed through the door is out of
+/// its reach, and a legacy row still ages out exactly as before.
+///
+/// Recorded, not repaired: changing `archive_stale_ideas` is a decision about
+/// which pile the pending reaper should own, not a test fixup.
+fn clear_origin(pool: &DbPool, idea_id: &str) {
+    // The checkout propagates rather than panicking — see `pool-get-unwrapped`.
+    let write = || -> Result<(), AppError> {
+        pool.get()?
+            .execute(
+                "UPDATE dev_ideas SET origin = NULL WHERE id = ?1",
+                params![idea_id],
+            )
+            .map(|_| ())
+            .map_err(AppError::Database)
+    };
+    write().expect("fixture origin clear")
+}
+
 #[test]
 fn normalize_collapses_rewordings_and_keeps_verbs() {
     // Filler words differ, subject identical -> same token.
@@ -239,6 +264,18 @@ fn aging_archives_only_stale_untouched_pending_ideas() {
     backdate_idea(&pool, &stale.id, 60);
     backdate_idea(&pool, &stale_accepted.id, 60);
     backdate_idea(&pool, &stale_with_task.id, 60);
+
+    // Every row above was filed through the one door, so every one of them
+    // carries an `origin` — and this sweep only reaches rows where it is NULL.
+    assert_eq!(
+        archive_stale_ideas(&pool, Some(&pid), 30).unwrap(),
+        0,
+        "the pending reaper cannot reach a row filed under the backlog contract"
+    );
+    for idea in [&stale, &fresh, &stale_accepted, &stale_with_task] {
+        clear_origin(&pool, &idea.id);
+    }
+
     update_idea(
         &pool,
         &stale_accepted.id,
@@ -307,6 +344,7 @@ fn archived_idea_keeps_its_key_so_it_cannot_be_re_proposed() {
     .unwrap()
     .unwrap();
     backdate_idea(&pool, &idea.id, 60);
+    clear_origin(&pool, &idea.id); // see `clear_origin` — the sweep needs a legacy row
 
     assert_eq!(archive_stale_ideas(&pool, Some(&pid), 30).unwrap(), 1);
     let again = create_idea_deduped(
