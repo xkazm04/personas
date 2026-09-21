@@ -15,6 +15,9 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { avatarBgFor, AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import { cleanName } from '../grid/fleetGridModel';
 
+/** Where a live message came from. Absent = `channel` (a team-channel item). */
+export type LiveMessageSource = 'channel' | 'notepad';
+
 /** A single channel message, projected for the corner live overlay. */
 export interface LiveMessage {
   /** Channel item id — stable identity for queue/dismiss bookkeeping. */
@@ -41,6 +44,18 @@ export interface LiveMessage {
   alert: boolean;
   /** Date.now() when the overlay first saw it — drives auto-dismiss timing. */
   receivedAt: number;
+  /** Absent = a team-channel item. A non-channel source pushes through
+   *  `liveExternal.ts` and supplies its own inline verbs there. Channel rows
+   *  never set any of the fields below, so their behaviour is unchanged. */
+  source?: LiveMessageSource;
+  /** Notepad: the note the entry belongs to. */
+  noteId?: string;
+  /** Notepad: the thread entry's id. */
+  commentId?: string;
+  /** Notepad: set on a review entry — what it reviews and whether it still waits. */
+  review?: { refKind: string; pending: boolean };
+  /** A secondary caption under the author (the note's title for a Notepad entry). */
+  context?: string;
 }
 
 /** Resolve the accent colour for a message's author (team-agnostic). */
@@ -127,6 +142,11 @@ export interface LiveVariantProps {
   onDismissAll: () => void;
   /** Redirect into the Channels → Timeline view (optionally team-scoped). */
   onOpenConversation: (teamId?: string, personaId?: string | null, itemId?: string | null) => void;
+  /** Body click on a NON-channel message (a feed registered in
+   *  `liveExternal.ts`). The host runs the feed's `open` and acknowledges the
+   *  message — opening it is reading it. Absent: the feed's `open` is called
+   *  directly, and the channel default applies when there is none. */
+  onOpenExternal?: (m: LiveMessage) => void;
   reducedMotion: boolean;
 }
 

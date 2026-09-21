@@ -137,6 +137,9 @@ export function NoteCardFooter({
   saveState,
   forecast,
   onOpen,
+  rail,
+  railShown = false,
+  onRailFocusChange,
 }: {
   note: DevNote;
   saveState: NoteSaveState;
@@ -144,6 +147,12 @@ export function NoteCardFooter({
    *  evidence bar — see `deskForecast.ts`. */
   forecast?: DeskForecast;
   onOpen: () => void;
+  /** The lifecycle rail. It shares the metadata's slot: while it is shown the
+   *  metadata fades out under it, so revealing it moves nothing on the card. */
+  rail?: ReactNode;
+  railShown?: boolean;
+  /** Keyboard focus entered / left the rail — focus alone reveals it. */
+  onRailFocusChange?: (focused: boolean) => void;
 }) {
   const { t, tx } = useTranslation();
   const length = visibleLength(note.bodyMd);
@@ -164,26 +173,40 @@ export function NoteCardFooter({
         </p>
       )}
       <div className="flex items-center gap-2 typo-caption text-foreground/60">
-        <RelativeTime timestamp={note.updatedAt} format="elapsed" />
-        <SaveDot state={saveState} />
-        {note.status === 'draft' && (
-          <>
-            <span aria-hidden>·</span>
-            <span
-              className={`tabular-nums ${length > CARD_TEXT_LIMIT ? 'text-status-warning' : ''}`}
-              data-testid={`notepad-card-count-${note.id}`}
-            >
-              {length}/{CARD_TEXT_LIMIT}
-            </span>
-          </>
-        )}
+        <div
+          className="relative flex-1 min-w-0 h-7 flex items-center"
+          onFocus={() => onRailFocusChange?.(true)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onRailFocusChange?.(false);
+          }}
+        >
+          <span
+            className={`flex items-center gap-2 min-w-0 transition-opacity duration-150 ${rail && railShown ? 'opacity-0' : 'opacity-100'}`}
+            aria-hidden={rail && railShown ? true : undefined}
+          >
+            <RelativeTime timestamp={note.updatedAt} format="elapsed" />
+            <SaveDot state={saveState} />
+            {note.status === 'draft' && (
+              <>
+                <span aria-hidden>·</span>
+                <span
+                  className={`tabular-nums ${length > CARD_TEXT_LIMIT ? 'text-status-warning' : ''}`}
+                  data-testid={`notepad-card-count-${note.id}`}
+                >
+                  {length}/{CARD_TEXT_LIMIT}
+                </span>
+              </>
+            )}
+          </span>
+          {rail}
+        </div>
         <Tooltip content={t.notepad.overview_open}>
           <button
             type="button"
             onClick={onOpen}
             aria-label={t.notepad.overview_open}
             data-testid={`notepad-card-open-${note.id}`}
-            className="ml-auto w-7 h-7 rounded-input flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-secondary/50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
+            className="shrink-0 w-7 h-7 rounded-input flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-secondary/50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
           >
             <Maximize2 className="w-3.5 h-3.5" aria-hidden />
           </button>

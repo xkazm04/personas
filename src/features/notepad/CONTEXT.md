@@ -34,6 +34,17 @@ project's Claude Code CLI) or **Turn into goals** (Athena decomposes it into
 | `thread/noteThreadStore.ts` | The per-note thread (`dev_note_comments`): unread counts for the whole desk (`loadThreadUnread` at pad open, kept live by `notepad-note-comment`), per-note threads in a `createModuleCache` (cap 16) fetched on popover open, optimistic `markThreadRead`, `setViewingThread` (an entry for the thread on screen is read on arrival), `ingestNoteComment` (event + command answers, de-duplicated by id), and `onNoteComment` — the bubble feed (new non-operator entries only). Hooks `useNoteThread` / `useNoteUnread` / `useNoteUnreadMap`. Listener started beside the sweeper's in `NotepadLayer`. |
 | `thread/threadActions.ts` | The thread's verbs: `commentOnNote` (store, THEN a `buildNoteCommentPrompt` pointer, THEN the Athena wait) · `approveReview` (a suggestion card accepts its open rows first) · `rejectReview` (a suggestion card rejects its rows; a `run` review requires a reason, the server moves the note `completed → published`, and the note is re-dispatched with the reason + the operator's comments since the review). |
 | `thread/useNoteWorking.ts` | The presence chip's reading — `athena` (open wait) › `fleet` (a working session named for the note) › `fleet` inferred from `in_progress` with no visible session. `useNoteWorking(noteId)` for one card, `useNotesWorkingMap()` for a grid (one fleet subscription). |
+| `thread/threadLabels.ts` | PURE naming of a thread entry — `threadAuthorLabel` / `threadEntryLabel` (a `run` review whose body is the bare token `failed` reads "Run failed"; a status row's token rides in `ref_id`) / `threadVerdictLabel` / `isPendingReview` / `clipThreadBody` / `splitElapsedTemplate`. One table for the popover, the bubble and the stack projection. |
+| `thread/ThreadControls.tsx` | The two shared controls: `ReviewVerdictActions` (Approve · Reject; a suggestion card rejects in one tap, a `run` review opens a REQUIRED reason field first; `AsyncButton`s that return their promise) and `ThreadComposer` (Enter sends via `commentOnNote`; cleared only once stored). Used by the popover, the card bubble and the LiveCommsStack row. |
+| `thread/NoteThreadPopover.tsx` · `thread/NoteThreadButton.tsx` | The thread as an anchored popover (portaled, `NOTEPAD_POPOVER_Z`, outside-click + `preventDefault`ed Escape so the pad's ladder stops): ghost rows under the chrome while the first read is in flight, entries animating in, verdict buttons on a pending review, composer at the foot. OPENING IS READING — `setViewingThread(noteId)` + `markThreadRead(noteId)` on mount, `setViewingThread(null)` on close. `NoteThreadButton` is its door (icon + unread count), docked on every desk card and in the editor's top row. |
+| `thread/cardVisibility.ts` | "Is this note's card on screen?" as a REFCOUNT of mounted desk cards. Mounting is the whole test: a card is mounted only while the pad is open, the overview is showing and the card passes both filters. |
+| `thread/NotepadLiveFeeder.tsx` | Mounted always (in `NotepadLayer`). Routes a new thread entry for a note whose card is NOT visible (and whose thread was not open) into Fleet's LiveCommsStack through `fleet/monitor/live/liveExternal.ts`, and registers the notepad verbs there (inline verdict + reply, open = `openNotepadThread`, acknowledge = `markThreadRead`). Fleet imports nothing from the notepad — the overlay is in the app's first chunk. |
+| `thread/threadDeepLink.ts` | `openNotepadThread(noteId)` — the stack's door: raises the pad and leaves a one-shot request the host consumes by opening that note's editor with the top-row thread popover up (the editor, not the card, because the card may be filtered out). |
+| `notepadLayers.ts` | `NOTEPAD_POPOVER_Z` — the level every desk popover/menu portals at, above the pad's own `z-[200]`. |
+| `overview/parts/NotePresenceChip.tsx` | The presence chip (Athena `Sparkles` violet / Fleet `SquareTerminal` blue + the translated `…{elapsed}…` template split around a ticking `RelativeTime`) and `WorkingEdge`, the breathing top edge (static under reduced motion). Fed by the grid's ONE `useNotesWorkingMap()` subscription. |
+| `overview/parts/NoteLifecycleRail.tsx` | The hover rail over `noteLifecycleFor(milestoneId)`; shares the footer metadata's slot (the metadata fades under it — nothing moves). `railNextStep` (pure) names the one offered step: brainstorm draft → `publishFleet`, linked draft → `toGoals`, `scoped`/`cut` → certify (host opens the editor with `certifyOnOpen`; `NotePlanProvider` honours a SHIP only when the verdict is `go`). Sweeper moves are never offered. |
+| `overview/parts/NoteCardMenu.tsx` | The right-click `ContextMenu` (`noteCardMenuItems`, pure) gated by the dispatch bar's predicates — `noteAskBlockedReasonKey`, draft-with-project, `noteDeleteBlocked` — with the refusal as the item's `hint`; Delete routes to the host's `ConfirmDialog` via `onDelete`. `NoteAskQuickInput` is the one-field Ask Athena popover at the click point. |
+| `overview/parts/NoteCardBubble.tsx` | `useCardBubble(noteId)` (the card's slot on `onNoteComment`; newest wins, except a system row does not bury a pending review) and `NoteCardBubble` — spring in/out above the card, 10 s clock that pauses on hover/focus, Read / Approve·Reject / Comment. Dismiss and timeout do not mark read. |
 | `parts/*` | Hoisted pieces shared by the variants: `NoteHeader`, `NoteStatusTimeline`, `NoteDispatchBar`, `SaveDot` (the tab strip's and the cards' save state), `SuggestionSlot` (Athena's inline suggestion blocks — Accept / Edit / Reject per row, a reply field on a `question` row, and no batch accept by design). |
 | `plan/planInk.ts` | The plan rail's colour vocabulary in DESIGN TOKENS, and the mapping from the Passport Wall's ink it replaced (teal→`primary`, emerald→`status-success`, amber→`status-warning`, red→`status-error`, blue→`status-info`, violet→`brand-purple`, the slate grey→`status-neutral`). Class strings (`PLAN_INK` / `PLAN_BORDER` / `PLAN_WASH` / `PLAN_FILL` / `PLAN_TINT`) for everything that owns its markup; `PLAN_HUE` as `var(--token)` VALUES for the two props still typed as a colour string, one of which also carries the Goals feature's own status colour and therefore stays a string. |
 | `plan/*` | **The plan rail.** A note linked to a milestone is that milestone's living brief, and this folder is the Ship tab's ledger rehosted here (moved wholesale out of the Factory's Ship tab on 2026-09-15 — `useProjectPlan.ts` is the old `useShipData.ts`). `NotePlanContext` fetches the milestone ONCE for both halves of the editor and carries the host-owned `tab` / `setTab` pair (`PlanTab`, `PLAN_TABS`); `NotePlanPane` is the two-column surface (brief left, scope right) `NoteBody` renders instead of the Workbench; `NotePlanLedger` is the cut; `NotePlanRuns` is `dev_note_runs`, newest first. The `Ship*` files are unchanged apart from their import paths; the Factory's `ShipPlannerTab` / `FactoryShipTab` that used to render them were deleted on 2026-09-15 and `useShipData(data)` collapsed into `useProjectPlan(projectId)`, its one surviving entry point. |
@@ -73,8 +84,9 @@ and the `note_id` extension to `show_ship_goals`).
 
 Either rail: any → `archived`, `archived → draft` (restore, cap-checked). Body and project are
 editable in `draft | scoped | cut` (`noteBodyEditable`) — a brief that freezes the moment the
-scope is named is a brief nobody updates. Delete is allowed for `draft` and `archived` only;
-everything else archives.
+scope is named is a brief nobody updates. Delete permanently is allowed on ANY status (the FK
+cascade removes the thread and runs) and is refused only while a Fleet session holds the note
+(`noteDeleteBlocked`); the desk menu and the archive drawer both confirm first.
 
 **Cap = 10 notes OCCUPYING A SLOT, not 10 non-archived notes.** The slot statuses are
 `draft | published | in_progress | scoped | cut` (`noteOccupiesSlot`), mirroring
@@ -123,3 +135,19 @@ The second round (2026-09-14) added the overview layer and compared Index cards,
 Lifecycle board and Project desk. **Project desk won**, with two refinements
 from the pick: no formatting toolbar on a card, and the last-touched and
 character-count rows merged into one footer.
+
+## Thread → bubble → stack (spark note-overview-cycle)
+
+1. A producer (Athena `comment_on_note`, note-task ingest, the milestone mirror)
+   inserts a `dev_note_comments` row and emits `notepad-note-comment`.
+2. `noteThreadStore.ingestNoteComment` counts it (unless its thread is being
+   viewed, in which case it is read on arrival) and fires `onNoteComment` for any
+   non-operator entry, once per id.
+3. Two subscribers, one router: the entry's desk CARD (mounted ⇒ visible, see
+   `cardVisibility.ts`) shows `NoteCardBubble`; otherwise `NotepadLiveFeeder`
+   pushes it into Fleet's LiveCommsStack (not gated by channel live mode; one row
+   per note, newest wins). `viewed` entries go nowhere.
+4. Reading: opening the thread popover (card icon, bubble **Read**, editor top
+   row, or a stack row's body via `openNotepadThread`) marks the thread read;
+   acknowledging a stack row does too. A bubble's dismiss/timeout does not, and a
+   timed-out bubble is never re-posted to the stack.

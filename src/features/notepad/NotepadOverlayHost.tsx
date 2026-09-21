@@ -30,6 +30,8 @@ import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
 import { useNoteSuggestions } from './athena/noteSuggestions';
 import { loadThreadUnread } from './thread/noteThreadStore';
+import { NoteThreadButton } from './thread/NoteThreadButton';
+import { consumeThreadRequest, useThreadRequest } from './thread/threadDeepLink';
 import { markNotepadPhase } from './notepadTiming';
 import { prefetchMarkdownRenderer } from '@/features/shared/components/editors/DeferredMarkdown';
 import {
@@ -145,6 +147,11 @@ export default function NotepadOverlayHost() {
   // `NotePlanProvider`, which is how the pane reads it.
   const [planTab, setPlanTab] = useState<PlanTab>('plan');
   const rootRef = useRef<HTMLDivElement>(null);
+  // The editor top row's thread popover, and the note a desk rail asked to
+  // certify (the plan provider honours it once the milestone has loaded).
+  const [editorThreadOpen, setEditorThreadOpen] = useState(false);
+  const [certifyNoteId, setCertifyNoteId] = useState<string | null>(null);
+  const clearCertify = useCallback(() => setCertifyNoteId(null), []);
 
   // First open fetches; later opens paint the notes already in memory and
   // refresh underneath them — a re-open must never re-ghost (loading law 1).
@@ -338,6 +345,33 @@ export default function NotepadOverlayHost() {
     [t.notepad.new_note_title],
   );
 
+  // THE STACK'S DOOR (`openNotepadThread`): a LiveCommsStack entry opens the
+  // pad on its note's editor with the thread popover up. Read on mount (the
+  // request raised the pad) and on every later request while it is open. The
+  // editor rather than the desk card because the card may be filtered out; the
+  // editor's top row always carries the thread.
+  const threadRequest = useThreadRequest();
+  // The note a request just opened: the close-on-navigate effect below must not
+  // shut the popover the request itself asked for.
+  const requestedThread = useRef<string | null>(null);
+  useEffect(() => {
+    if (!threadRequest || !loaded) return;
+    consumeThreadRequest();
+    if (!notes.some((n) => n.id === threadRequest)) return;
+    requestedThread.current = threadRequest;
+    openNote(threadRequest);
+    setEditorThreadOpen(true);
+  }, [threadRequest, loaded, notes, openNote]);
+
+  // A different note, or back to the desk, closes the editor's thread.
+  useEffect(() => {
+    if (view === 'editor' && requestedThread.current === active?.id) {
+      requestedThread.current = null;
+      return;
+    }
+    setEditorThreadOpen(false);
+  }, [active?.id, view]);
+
   // A note deleted or archived out from under the editor has nothing to show.
   useEffect(() => {
     if (view === 'editor' && loaded && !active) setView('overview');
@@ -365,6 +399,8 @@ export default function NotepadOverlayHost() {
         project={planNote.project}
         tab={planTab}
         onTabChange={setPlanTab}
+        certifyOnOpen={certifyNoteId === planNote.noteId}
+        onCertifyConsumed={clearCertify}
       >
         {children}
       </NotePlanProvider>
@@ -431,6 +467,16 @@ export default function NotepadOverlayHost() {
           </span>
         </div>
 
+        <div className="flex items-center gap-2">
+        {view === 'editor' && active && (
+          <NoteThreadButton
+            noteId={active.id}
+            noteTitle={active.title}
+            open={editorThreadOpen}
+            onOpenChange={setEditorThreadOpen}
+            testId="notepad-editor-thread"
+          />
+        )}
         <button
           type="button"
           onClick={close}
@@ -440,6 +486,7 @@ export default function NotepadOverlayHost() {
         >
           <X className="w-4 h-4" aria-hidden />
         </button>
+        </div>
       </div>
 
       {withPlan(
@@ -466,6 +513,11 @@ export default function NotepadOverlayHost() {
             onOpen={openNote}
             onPatch={patchNote}
             onCreate={(seed) => void handleOverviewCreate(seed)}
+            onDelete={(note) => handleDelete(note, true)}
+            onCertify={(id) => {
+              setCertifyNoteId(id);
+              openNote(id);
+            }}
           />
         )
       ) : showGhost ? (
