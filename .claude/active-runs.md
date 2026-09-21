@@ -6,7 +6,6 @@
 - **Paths:** `src-tauri/db/src/repos/dev/ideas.rs` · `src-tauri/db/src/repos/dev/ideas_backlog_tests.rs` · `src-tauri/db/src/repos/dev/bench_seed.rs` · `src-tauri/db/src/repos/dev/cross_project.rs`
 - **Status:** started
 
-### spark-backlog-unification — Unify backlog item generation across sources: shared schema, numbered execution steps, analysis gate, and the ACCEPTED->Dispatch->done lifecycle
 - **[2026-09-21 13:41]**
 - **Paths:** `src/features/fleet/monitor/grid/rail/**` · `src/features/plugins/dev-tools/**backlog**` · `src-tauri/src/**backlog**` · `src-tauri/db/**backlog**`
 - **Status:** started
@@ -925,6 +924,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-backlog-unification — Unify backlog item generation across sources: shared schema, numbered execution steps, analysis gate, and the ACCEPTED->Dispatch->done lifecycle
 
 ### wp1-backlog-one-door — WP1: collapse three dev_ideas write doors into file_idea; IdeaStatus at the CAS; mark_idea_delivered + expire_stale_accepted_ideas
 
