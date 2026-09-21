@@ -1488,7 +1488,7 @@ impl NoteStatus {
     /// | draft | published, scoped, archived |
     /// | published | in_progress, completed, scoped, archived |
     /// | in_progress | completed, scoped, archived |
-    /// | completed | archived |
+    /// | completed | published (rework), archived |
     /// | scoped | cut, draft (unlink), archived |
     /// | cut | shipped, archived |
     /// | shipped | archived |
@@ -1505,6 +1505,15 @@ impl NoteStatus {
     /// that has been cut has scope hanging off this brief, and unlinking it
     /// would leave that scope describing nothing.
     ///
+    /// `completed → published` is the REWORK move — the reject-and-rerun loop.
+    /// The operator rejected the run's review with a reason; the reason lands
+    /// on the note's thread and the note goes back to `published` so the pad
+    /// can re-dispatch it with that feedback appended to `note.md`. It is the
+    /// only way back from `completed` short of archiving, and it goes to
+    /// `published` (handed over), not `draft`: the requirement was not wrong,
+    /// the attempt was, and a draft would re-open the body for editing under
+    /// the dispatch that follows immediately.
+    ///
     /// A no-op move (`x` to the same `x`) is NOT legal: `notepad_set_status`
     /// stamps timestamps, and re-stamping `started_at` on a second
     /// `in_progress` write would quietly rewrite when the run began.
@@ -1520,6 +1529,8 @@ impl NoteStatus {
                 | (InProgress, Completed)
                 | (InProgress, Archived)
                 | (Completed, Archived)
+                // The rework move: a rejected run's note is sent back out.
+                | (Completed, Published)
                 | (Archived, Draft)
                 // ── the ship lane ──────────────────────────────────────────
                 | (Draft, Scoped)
@@ -1909,12 +1920,12 @@ mod notepad_tests {
         }
     }
 
-    /// The WHOLE 8x8 table, asserted cell by cell — the nineteen legal moves
-    /// and the forty-five illegal ones, self-loops included.
+    /// The WHOLE 8x8 table, asserted cell by cell — the twenty legal moves
+    /// and the forty-four illegal ones, self-loops included.
     #[test]
     fn transition_table_is_exactly_the_contract() {
         use NoteStatus::*;
-        let legal: [(NoteStatus, NoteStatus); 19] = [
+        let legal: [(NoteStatus, NoteStatus); 20] = [
             (Draft, Published),
             (Draft, Archived),
             (Published, InProgress),
@@ -1923,6 +1934,7 @@ mod notepad_tests {
             (InProgress, Completed),
             (InProgress, Archived),
             (Completed, Archived),
+            (Completed, Published),
             (Archived, Draft),
             (Draft, Scoped),
             (Published, Scoped),
@@ -1951,8 +1963,8 @@ mod notepad_tests {
             }
         }
         assert_eq!(
-            legal_seen, 19,
-            "the table must have exactly nineteen legal moves"
+            legal_seen, 20,
+            "the table must have exactly twenty legal moves"
         );
     }
 
@@ -2020,5 +2032,23 @@ mod notepad_tests {
             !Shipped.can_transition_to(Cut),
             "shipped → cut must be refused"
         );
+    }
+
+    /// The rework loop: a rejected run sends `completed` back to `published`,
+    /// and ONLY `completed` does — it is not a general "re-publish" door, and
+    /// it never lands in `draft` (the body stays frozen under the re-dispatch).
+    #[test]
+    fn completed_goes_back_to_published_for_rework() {
+        use NoteStatus::*;
+        assert!(Completed.can_transition_to(Published));
+        assert!(!Completed.can_transition_to(Draft));
+        assert!(!Completed.can_transition_to(InProgress));
+        for s in ALL {
+            assert_eq!(
+                s.can_transition_to(Published),
+                matches!(s, Draft | Completed),
+                "only draft (first publish) and completed (rework) reach published; saw {s:?}"
+            );
+        }
     }
 }

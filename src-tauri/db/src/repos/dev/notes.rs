@@ -15,9 +15,14 @@
 //! - **The cap is counted, not remembered.** `count_active_notes` is a live
 //!   `COUNT(*)`; the pad's ten-note ceiling is a property of the table, so it
 //!   cannot drift from a cached number the way a stored counter would.
-//! - **Delete is draft-or-archived only.** A published/in-progress/completed
-//!   note is the other half of a run that exists on disk; deleting it strands
-//!   `runs/<note_id>/` with nothing to ingest into.
+//! - **Delete takes any status.** It used to be draft-or-archived only, on the
+//!   grounds that a live note is the other half of a run on disk. That rule
+//!   moved to where it can actually be judged: the pad refuses the menu item
+//!   while a fleet session is RUNNING for the note. A deleted note's leftover
+//!   `runs/<note_id>/` is inert — the sweeper only walks run dirs of notes it
+//!   finds in `dev_notes`, so the files strand harmlessly rather than being
+//!   ingested into nothing. The thread (`dev_note_comments`) and the run
+//!   ledger (`dev_note_runs`) both go with the note via `ON DELETE CASCADE`.
 
 use crate::models::{DevNote, DevNoteRun, NotePlanSummary, NoteStatus};
 use crate::query_builder::QueryBuilder;
@@ -347,6 +352,18 @@ pub fn set_status(
         match next {
             NoteStatus::Published => {
                 qb.set("published_at", now.clone());
+                // The rework move (`completed → published`, a rejected run
+                // sent back out). The previous attempt's stamps go — a
+                // re-published note still claiming `completed_at` would read
+                // as finished work in every list that reads a timestamp — but
+                // `result_json` STAYS as the previous attempt's report (the
+                // next ingest overwrites it), and the dispatch metadata stays
+                // write-when-given, because the pad re-dispatches to the same
+                // target right after.
+                if current.status == NoteStatus::Completed {
+                    qb.set("started_at", None::<String>);
+                    qb.set("completed_at", None::<String>);
+                }
             }
             NoteStatus::InProgress => {
                 qb.set("started_at", now.clone());
@@ -438,20 +455,18 @@ pub fn set_result_json(pool: &DbPool, id: &str, result_json: &str) -> Result<Dev
     })
 }
 
-/// Delete a note. Allowed ONLY for `draft` or `archived` — see the module note.
+/// Delete a note, in any status — see the module note for why the old
+/// draft-or-archived rule moved to the pad.
+///
+/// ONE `DELETE`, and therefore one implicit transaction: the FK cascades that
+/// remove the note's thread and its run ledger run inside the same statement,
+/// so there is no state in which the note is gone and its rows are not (or the
+/// reverse). `PRAGMA foreign_keys = ON` is set on every pooled connection.
 pub fn delete_note(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("dev_notes", "dev_notes::delete", {
-        let current = get_note(pool, id)?;
-        if !matches!(current.status, NoteStatus::Draft | NoteStatus::Archived) {
-            return Err(AppError::Validation(format!(
-                "A note in status `{}` cannot be deleted — archive it first",
-                current.status.as_str()
-            )));
-        }
         let conn = pool.get()?;
         let deleted = conn.execute("DELETE FROM dev_notes WHERE id = ?1", params![id])?;
         if deleted == 0 {
-            // `get_note` above saw it; a sibling writer removed it in between.
             return Err(AppError::NotFound(format!("Note {id}")));
         }
         Ok(())

@@ -122,6 +122,24 @@ impl<'a> NewNoteComment<'a> {
             verdict: None,
         }
     }
+
+    /// A status milestone: the note reached `status_token` (`completed`,
+    /// `cut`, `shipped`). One row per transition — coalescing a burst of them
+    /// into one bubble is the UI's job, not the table's. The body IS the
+    /// token: the pad renders its own label from `ref_kind = status` +
+    /// `ref_id`, so no English is stored here.
+    pub fn status_milestone(note_id: &'a str, status_token: &'a str) -> Self {
+        Self {
+            note_id,
+            author_kind: NoteCommentAuthor::System,
+            author_name: None,
+            kind: NoteCommentKind::System,
+            body_md: status_token,
+            ref_kind: Some(NoteCommentRef::Status),
+            ref_id: Some(status_token),
+            verdict: None,
+        }
+    }
 }
 
 /// Append one entry to a note's thread. The note must exist (FK); the body is
@@ -198,6 +216,47 @@ pub fn list_comments(pool: &DbPool, note_id: &str) -> Result<Vec<NoteComment>, A
         let rows = stmt.query_map(params![note_id], row_to_comment)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
+    })
+}
+
+/// The newest `limit` entries of a note's thread, returned OLDEST FIRST (the
+/// order a reader reads them in). `describe_note` uses it so Athena reads the
+/// tail of the conversation before she answers it.
+pub fn recent_comments(
+    pool: &DbPool,
+    note_id: &str,
+    limit: usize,
+) -> Result<Vec<NoteComment>, AppError> {
+    timed_query!("dev_note_comments", "dev_note_comments::recent", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COMMENT_COLUMNS} FROM dev_note_comments WHERE note_id = ?1              ORDER BY created_at DESC, rowid DESC LIMIT ?2"
+        ))?;
+        let limit = i64::try_from(limit).unwrap_or(i64::MAX);
+        let rows = stmt.query_map(params![note_id, limit], row_to_comment)?;
+        let mut out = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        out.reverse();
+        Ok(out)
+    })
+}
+
+/// Whether this note already carries the review for run `run_id`. The ingest
+/// sweep keys its thread writes on this, so a re-sweep of the same run (a
+/// marker that failed to write, an on-demand sweep racing the ticker) never
+/// posts the same review twice.
+pub fn has_run_review(pool: &DbPool, note_id: &str, run_id: &str) -> Result<bool, AppError> {
+    timed_query!("dev_note_comments", "dev_note_comments::has_run_review", {
+        let conn = pool.get()?;
+        let found: i64 = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM dev_note_comments
+                            WHERE note_id = ?1 AND kind = 'review'
+                              AND ref_kind = 'run' AND ref_id = ?2) AS found",
+            params![note_id, run_id],
+            |row| row.get("found"),
+        )?;
+        Ok(found != 0)
     })
 }
 
@@ -376,6 +435,47 @@ mod tests {
             set_verdict(&p, "nope", NoteReviewVerdict::Approved),
             Err(AppError::NotFound(_))
         ));
+    }
+
+    #[test]
+    fn recent_comments_takes_the_tail_oldest_first() -> Result<(), AppError> {
+        let p = pool();
+        let note = create_note(&p, "n", None)?;
+        for body in ["a", "b", "c", "d"] {
+            insert_comment(&p, &NewNoteComment::operator_comment(&note.id, body))?;
+        }
+        let tail: Vec<String> = recent_comments(&p, &note.id, 2)?
+            .into_iter()
+            .map(|c| c.body_md)
+            .collect();
+        assert_eq!(tail, vec!["c".to_string(), "d".to_string()]);
+        Ok(())
+    }
+
+    #[test]
+    fn has_run_review_keys_on_the_run_id() -> Result<(), AppError> {
+        let p = pool();
+        let note = create_note(&p, "n", None)?;
+        assert!(!has_run_review(&p, &note.id, "run-1")?);
+        insert_comment(&p, &review(&note.id, "r"))?;
+        assert!(has_run_review(&p, &note.id, "run-1")?);
+        assert!(!has_run_review(&p, &note.id, "run-2")?);
+        Ok(())
+    }
+
+    #[test]
+    fn a_status_milestone_is_a_system_row_carrying_its_token() -> Result<(), AppError> {
+        let p = pool();
+        let note = create_note(&p, "n", None)?;
+        let row = insert_comment(&p, &NewNoteComment::status_milestone(&note.id, "cut"))?;
+        assert_eq!(row.kind, NoteCommentKind::System);
+        assert_eq!(row.author_kind, NoteCommentAuthor::System);
+        assert_eq!(row.ref_kind, Some(NoteCommentRef::Status));
+        assert_eq!(row.ref_id.as_deref(), Some("cut"));
+        assert_eq!(row.body_md, "cut");
+        assert!(row.verdict.is_none(), "a milestone carries no verdict");
+        assert!(row.read_at.is_none(), "a milestone is news to the operator");
+        Ok(())
     }
 
     #[test]

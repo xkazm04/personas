@@ -372,7 +372,13 @@ pub(crate) fn read_op_detail_budget(action: &str) -> usize {
 /// — and the tail is where the "body edits only apply while it is a DRAFT"
 /// rule lives, which is the one line that stops her proposing edits that
 /// cannot be applied.
-pub(crate) const READ_OP_DETAIL_CHARS_NOTE: usize = 6000;
+///
+/// Raised to 10,000 by note-overview-cycle: the answer now also carries the
+/// note's thread tail (8 entries × ≤400 characters plus a header line each,
+/// ~3,800 at worst), placed BEFORE the closing doctrine so the doctrine still
+/// ends the answer. 4,000 body + ~3,800 thread + header + doctrine fits with
+/// the same kind of margin the 6,000 had over the body alone.
+pub(crate) const READ_OP_DETAIL_CHARS_NOTE: usize = 10_000;
 
 /// Rows a single `list_teams` answer may carry.
 pub(super) const LIST_TEAMS_MAX_ROWS: usize = 25;
@@ -519,6 +525,7 @@ pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
     "show_ship_milestone",
     "show_ship_goals",
     "show_note_suggestions",
+    "comment_on_note",
     "show_persona_overview",
     "show_connected_services",
     "show_decisions",
@@ -702,6 +709,7 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("ship_milestone_lifecycle", Approval, "", r#"{milestone_id,transition:cut|ship}"#),
             op!("show_ship_goals", Card, "", r#"{milestone_id,note_id?,goals:[{title,description?}]}"#),
             op!("show_note_suggestions", Card, "", r#"{note_id,rows:[{kind:section|edit|question,anchor:{after_heading},body_md}]} (draft notes only)"#),
+            op!("comment_on_note", Auto, "", r#"{note_id,body_md} (reply on its thread)"#),
         ],
     },
     OpSection {

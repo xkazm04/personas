@@ -113,6 +113,23 @@ pub struct Dispatched {
     /// their own lightweight assistant episodes so the chat reads as a
     /// progressive back-and-forth, not one silent block then a wall of text.
     pub progress_beats: Vec<String>,
+    /// Notepad notes this turn's ops MOVED in the app database (a
+    /// `show_ship_goals` card stamping its note `in_progress`). The dispatcher
+    /// has no `AppHandle`; session.rs emits one `NOTEPAD_NOTE_CHANGED` per
+    /// entry so the pad hears the move instead of discovering it on reload.
+    pub notepad_status_changes: Vec<NoteStatusChange>,
+    /// Notepad thread entries this turn's ops wrote (`comment_on_note`).
+    /// session.rs emits one `NOTEPAD_NOTE_COMMENT` per entry. The suggestions
+    /// card's review entry is NOT here — it needs the chat card's id, which
+    /// session.rs mints when it persists the card, so it is written there.
+    pub note_comments: Vec<crate::db::models::NoteComment>,
+}
+
+/// One note the dispatcher moved: its id and the status AFTER the write.
+#[derive(Debug, Clone)]
+pub struct NoteStatusChange {
+    pub note_id: String,
+    pub status: crate::db::models::NoteStatus,
 }
 
 /// One inline chat-card request. `config` is widget-specific JSON the
