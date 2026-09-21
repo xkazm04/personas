@@ -1017,6 +1017,22 @@ pub struct DevIdea {
     /// The RE-MEASURED reading (same shape as `evidence`) — lets a verdict be
     /// audited before-vs-after rather than taken on trust.
     pub verify_evidence: Option<String>,
+    /// The numbered execution plan, as the JSON of an [`IdeaPlan`].
+    ///
+    /// Carried as the raw string rather than the parsed struct because this row
+    /// is read on every list and page and most readers only need to know
+    /// WHETHER there is a plan; `IdeaPlan::from_json` is one call away for the
+    /// ones that render it.
+    ///
+    /// It was write-only for two commits — `file_idea` serialised it and
+    /// nothing could read it back, because the column reached neither
+    /// `IDEA_COLUMNS` nor this struct. Two separate builders hit that wall from
+    /// opposite directions in the same wave, which is what a field with a
+    /// producer and no consumer always costs.
+    pub plan: Option<String>,
+    /// `full` or `draft` — whether the item carries everything a dispatch
+    /// needs. A `draft` is stored and visible; it simply cannot become a task.
+    pub completeness: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -1213,9 +1229,19 @@ impl BacklogSource {
     /// and this function is the only place the difference is stated.
     pub fn native_scale_max(&self) -> i32 {
         match self {
-            // The Idea Scanner's prompt and the scan-sweep skill's JSONL both
-            // grade out of ten.
-            Self::IdeaScanner | Self::ScanSweep => 10,
+            // The scan-sweep skill's JSONL still grades out of ten: its contract
+            // lives in a skill file outside this repo's build, so the exchange
+            // rate is the only place that difference can be held.
+            //
+            // The Idea Scanner USED to be here and is deliberately not any more.
+            // Its prompt now asks for 1-5, and the two facts have to move in the
+            // same commit: this function is consulted at WRITE time only, so for
+            // as long as the prompt said 5 and this arm said 10, a model
+            // answering `risk: 5` — "irreversible or external" — would have been
+            // stored as 3 and walked straight through the six live
+            // `accept risk below 4` triage rules. There is no transitional
+            // window in which both are right.
+            Self::ScanSweep => 10,
             // Everything else is filed against a 1-5 contract: the
             // `propose_backlog` verb, the App Master write-back (which refuses
             // a filing outside 1-5 at its own door), and the sensors.
@@ -1280,9 +1306,24 @@ pub enum IdeaStatus {
     Rejected,
     /// Aged out of `Pending` without ever being decided. Reversible.
     Archived,
-    /// The work exists in the repository, evidenced by the commit recorded in
-    /// `verify_evidence`. Reached from the write-back's own outcome, never
-    /// from an executor's say-so.
+    /// The work exists in the repository.
+    ///
+    /// Two paths reach this state and they do NOT carry the same evidence, so
+    /// the difference is recorded rather than smoothed over:
+    ///
+    /// * the App-Master write-back reports a COMMIT, which names the change in
+    ///   the repository's own durable history. That is evidence, and it closes
+    ///   the item outright (`verify_state` resolved).
+    /// * the in-app task runner has only the worktree BRANCH. A terminal task
+    ///   row is the orchestrator's observation that a process exited, which is
+    ///   a proxy for the work landing and not a proof of it. So the item still
+    ///   moves out of the queue — the queue has to be able to drain — but its
+    ///   `verify_state` stays `pending`, and the verification sweep re-measures
+    ///   whether shipping it actually moved the signal.
+    ///
+    /// The second grade is why `isVerifiable` admits `delivered` at all: the
+    /// weakly-evidenced closes are exactly the population worth re-measuring.
+    /// What this state never means is that an executor said so.
     Delivered,
     /// Aged out of `Accepted` without ever becoming work. A DISTINCT terminal
     /// state on purpose: an automated sweep must never write the same token a
@@ -1357,7 +1398,7 @@ impl IdeaCompleteness {
 /// `files` is what makes a wave computable: two items may run in parallel
 /// exactly when their plans' file sets do not intersect, which is a property
 /// to be CHECKED rather than a grouping to be guessed.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PlanStep {
@@ -1383,7 +1424,7 @@ pub struct PlanStep {
 /// expensive model analysed and the cheap model planned, which is backwards,
 /// and only ~8% of the largest producer's items contained so much as a
 /// numbered list.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaPlan {
@@ -1391,6 +1432,19 @@ pub struct IdeaPlan {
 }
 
 impl IdeaPlan {
+    /// Parse a stored `dev_ideas.plan`.
+    ///
+    /// `None` for absent AND for unparseable, deliberately: a plan that cannot
+    /// be read is not a plan, and the item it belongs to is correctly treated
+    /// as unplanned rather than as carrying something nobody can act on.
+    pub fn from_json(raw: Option<&str>) -> Option<Self> {
+        let raw = raw?.trim();
+        if raw.is_empty() {
+            return None;
+        }
+        serde_json::from_str(raw).ok()
+    }
+
     /// Every path any step touches, de-duplicated. The wave computation's input.
     pub fn file_scope(&self) -> Vec<String> {
         let mut seen: Vec<String> = Vec::new();

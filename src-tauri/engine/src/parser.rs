@@ -1,7 +1,5 @@
 use personas_core::models::{IdeaPlan, PlanStep};
-use personas_core::types::{
-    ExecutionMetrics, ProposedPlan, ProtocolMessage, StreamLineType, TodoItem,
-};
+use personas_core::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, TodoItem};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -804,7 +802,7 @@ pub fn parse_idea_plan(msg: &serde_json::Value) -> Option<IdeaPlan> {
 
 fn parse_propose_backlog(msg: &serde_json::Value) -> Option<ProtocolMessage> {
     Some(ProtocolMessage::ProposeBacklog {
-        plan: parse_idea_plan(msg).map(ProposedPlan),
+        plan: parse_idea_plan(msg),
         title: str_field_or(msg, "title", "Backlog item"),
         description: str_field(msg, "description"),
         category: str_field(msg, "category"),
@@ -1853,7 +1851,7 @@ mod tests {
         let line = r#"{"propose_backlog": {"title": "Extract the retry helper", "impact": 3, "effort": 2, "risk": 1, "plan": [{"n": 1, "action": "Add the shared retry helper", "files": ["src/lib/retry.rs"], "done_when": "`cargo test retry_helper` passes"}, {"n": 2, "action": "Retire the three copies", "files": ["src/a.rs", "src/lib/retry.rs"], "done_when": "`rg 'fn retry_' src/` returns one hit"}]}}"#;
         match extract_protocol_message(line).expect("parses") {
             ProtocolMessage::ProposeBacklog { plan, .. } => {
-                let plan = plan.expect("the plan parsed").0;
+                let plan = plan.expect("the plan parsed");
                 assert_eq!(plan.steps.len(), 2);
                 assert_eq!(plan.steps[0].n, 1);
                 assert_eq!(plan.steps[0].action, "Add the shared retry helper");
@@ -1929,7 +1927,7 @@ mod tests {
         let line = r#"{"propose_backlog": {"title": "Half-planned", "plan": [{"n": 3, "action": "Decide the shape", "done_when": "the ADR is merged"}, {"n": 1, "action": "Write it", "files": ["src/a.rs"], "doneWhen": "`cargo test shape` passes"}]}}"#;
         match extract_protocol_message(line).expect("parses") {
             ProtocolMessage::ProposeBacklog { plan, .. } => {
-                let plan = plan.expect("the plan survived").0;
+                let plan = plan.expect("the plan survived");
                 assert_eq!(plan.steps.len(), 2);
                 assert_eq!(plan.steps[0].n, 1, "renumbered from position, not from `n`");
                 assert_eq!(plan.steps[0].action, "Decide the shape");

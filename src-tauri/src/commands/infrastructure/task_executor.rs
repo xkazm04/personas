@@ -81,7 +81,16 @@ fn gather_task_context(
 ) -> TaskContext {
     let mut warnings = Vec::new();
 
-    let idea = match source_idea_id {
+    // ONE read. The prose and the plan are two fields of the same row, and for
+    // two commits they were not: `plan` reached neither `IDEA_COLUMNS` nor
+    // `DevIdea`, so the plan had to be fetched by a second query through a
+    // module that existed only because the column was unreadable. Both are on
+    // the row now, so both come off one `get_idea_by_id`.
+    //
+    // A read failure is a warning and never a refusal: the prompt degrades to
+    // the no-plan shape, which is exactly what every item filed before this
+    // contract will use.
+    let (idea, plan) = match source_idea_id {
         Some(idea_id) => match repo::get_idea_by_id(pool, idea_id) {
             Ok(idea) => {
                 let mut s = String::new();
@@ -93,30 +102,20 @@ fn gather_task_context(
                     s.push_str(reasoning);
                     s.push('\n');
                 }
-                Some(s)
+                // `is_actionable` rather than `is_some`: a plan whose steps name
+                // no file cannot be scheduled against anything, and handing one
+                // to a worker as if it were a plan is worse than handing it none.
+                let plan = crate::db::models::IdeaPlan::from_json(idea.plan.as_deref())
+                    .filter(|p| p.is_actionable());
+                (Some(s), plan)
             }
             Err(e) => {
                 tracing::warn!(idea_id, error = %e, "Failed to load linked idea context");
                 warnings.push(format!("Could not load linked idea {idea_id}: {e}"));
-                None
+                (None, None)
             }
         },
-        None => None,
-    };
-
-    // Read separately because `DevIdea` does not carry the column — the plan is
-    // an e41 addition the idea mapper predates. A read failure is a warning and
-    // never a refusal: the prompt degrades to the no-plan shape.
-    let plan = match source_idea_id {
-        Some(idea_id) => match crate::db::repos::dev::idea_plans::get_idea_plan(pool, idea_id) {
-            Ok(p) => p.filter(|p| p.is_actionable()),
-            Err(e) => {
-                tracing::warn!(idea_id, error = %e, "Failed to load the item's execution plan");
-                warnings.push(format!("Could not load the plan for idea {idea_id}: {e}"));
-                None
-            }
-        },
-        None => None,
+        None => (None, None),
     };
 
     let goal = match goal_id {

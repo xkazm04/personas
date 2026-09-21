@@ -33,6 +33,8 @@ pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         verify_state: row.get("verify_state").unwrap_or(None),
         verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
         verify_evidence: row.get("verify_evidence").unwrap_or(None),
+        plan: row.get("plan").unwrap_or(None),
+        completeness: row.get("completeness").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -343,7 +345,7 @@ pub fn find_idea_by_id_or_prefix(pool: &DbPool, id_ref: &str) -> Result<Option<D
 const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
      reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
      origin, use_case_id, evidence, dedup_key, goal_id, verify_state, verify_checked_at, \
-     verify_evidence, created_at, updated_at";
+     verify_evidence, plan, completeness, created_at, updated_at";
 
 /// Bind an idea to the goal it serves (G41). `None` clears the binding.
 /// Returns whether a row was touched; binding an idea that does not exist is
@@ -1367,9 +1369,15 @@ const DELIVERED_VERIFY_STATE: &str = "cleared";
 /// * `verify_evidence` — the branch and commit as JSON, so the claim can be
 ///   audited against the repository instead of taken on trust. Same role the
 ///   findings spine's `verify_evidence` already plays;
-/// * `verify_state` — resolved to [`DELIVERED_VERIFY_STATE`], which is the
-///   only thing in the codebase that ever clears the `pending` armed by
-///   `task_executor.rs`.
+/// * `verify_state` — resolved to [`DELIVERED_VERIFY_STATE`] **only when a
+///   commit was reported**. A commit names the change in the repository's own
+///   history and is evidence; a branch alone is a pointer to where the work was
+///   supposed to happen. A branch-only close therefore leaves `verify_state`
+///   at `pending`, which is not an oversight but the request that the
+///   verification sweep re-measure this one — and `isVerifiable` admits
+///   `delivered` so that it can. Resolving both grades identically would book
+///   an unverified close as a verified one and quietly retire the only
+///   instrument that could catch it.
 ///
 /// A missing row is `NotFound`, never a silent no-op: `execute` on a
 /// non-existent id returns `Ok(0)` and would otherwise read as success.
@@ -1393,6 +1401,15 @@ pub fn mark_idea_delivered(
         })
         .to_string();
 
+        // The evidence grade, decided by what the caller could actually
+        // report. `VERIFY_STATES[0]` is `pending` — named through the
+        // vocabulary rather than quoted, so this door cannot drift from the
+        // one the sweep reads.
+        let verify_state = match commit {
+            Some(c) if !c.trim().is_empty() => DELIVERED_VERIFY_STATE,
+            _ => crate::models::VERIFY_STATES[0],
+        };
+
         let conn = pool.get()?;
         conn.execute(
             "UPDATE dev_ideas
@@ -1401,7 +1418,7 @@ pub fn mark_idea_delivered(
               WHERE id = ?5",
             params![
                 IdeaStatus::Delivered.as_str(),
-                DELIVERED_VERIFY_STATE,
+                verify_state,
                 evidence,
                 now,
                 id
@@ -2812,10 +2829,18 @@ mod contract_tests {
         let pid = project(&pool);
 
         for (native, want) in [(1, 1), (2, 1), (5, 3), (7, 4), (10, 5)] {
+            // `ScanSweep`, not `IdeaScanner`. The scanner's prompt now asks
+            // for 1-5 and its arm of `native_scale_max` was dropped in the same
+            // commit, because that function is read at WRITE time and there is
+            // no window in which a 1-5 prompt and a from-ten door are both
+            // right: a model answering `risk: 5` would have been stored as 3
+            // and cleared the live `accept risk below 4` rules. The scan-sweep
+            // skill's contract lives outside this repo's build, so it is the
+            // producer that still grades out of ten.
             let mut draft = IdeaDraft::new(
                 &pid,
-                BacklogSource::IdeaScanner,
-                format!("Scanner finding {native}"),
+                BacklogSource::ScanSweep,
+                format!("Sweep finding {native}"),
             );
             draft.effort = Some(native);
             draft.impact = Some(native);
@@ -2829,7 +2854,7 @@ mod contract_tests {
         }
 
         // Absent is still absent on the way through a conversion.
-        let mut unrated = IdeaDraft::new(&pid, BacklogSource::ScanSweep, "Unscored sweep finding");
+        let mut unrated = IdeaDraft::new(&pid, BacklogSource::ScanSweep, "Another sweep finding");
         unrated.impact = Some(9);
         let idea = file_idea(&pool, unrated).unwrap().unwrap();
         assert_eq!((idea.effort, idea.impact, idea.risk), (None, Some(5), None));

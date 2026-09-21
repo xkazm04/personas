@@ -1530,7 +1530,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                             draft.effort = *effort;
                             draft.impact = *impact;
                             draft.risk = *risk;
-                            draft.plan = plan.as_ref().map(|p| p.0.clone());
+                            draft.plan = plan.clone();
                             draft.provider = provider.clone();
                             draft.model = model.clone();
                             draft.status = Some("pending".to_string());
@@ -1573,8 +1573,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                             match plan.as_ref() {
                                 Some(p) => ctx.logger.log(&format!(
                                     "[BACKLOG] Plan filed with '{title}': {} step(s) over {} file(s)",
-                                    p.0.steps.len(),
-                                    p.0.file_scope().len()
+                                    p.steps.len(),
+                                    p.file_scope().len()
                                 )),
                                 None => ctx.logger.log(&format!(
                                     "[BACKLOG] No plan filed with '{title}' — stored as draft; the filer is the analyst and the executor will not re-derive the analysis"
@@ -3024,16 +3024,14 @@ mod tests {
             risk: Some(1),
             target: None,
             goal: None,
-            plan: Some(personas_core::types::ProposedPlan(
-                crate::db::models::IdeaPlan {
-                    steps: vec![crate::db::models::PlanStep {
-                        n: 1,
-                        action: "Add the shared retry helper".into(),
-                        files: vec!["src/lib/retry.rs".into()],
-                        done_when: "`cargo test retry_helper` passes".into(),
-                    }],
-                },
-            )),
+            plan: Some(crate::db::models::IdeaPlan {
+                steps: vec![crate::db::models::PlanStep {
+                    n: 1,
+                    action: "Add the shared retry helper".into(),
+                    files: vec!["src/lib/retry.rs".into()],
+                    done_when: "`cargo test retry_helper` passes".into(),
+                }],
+            }),
         };
         dispatch_as(&pool, &persona_id, &planned);
         dispatch_as(

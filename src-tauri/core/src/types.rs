@@ -300,7 +300,7 @@ pub enum ProtocolMessage {
         /// no repo access cannot plan, and an unplanned filing is stored and
         /// graded `draft` rather than dropped.
         #[serde(default)]
-        plan: Option<ProposedPlan>,
+        plan: Option<crate::models::IdeaPlan>,
     },
     /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
     /// for user review. Never applied directly -- always goes through Lab UI.
@@ -476,34 +476,6 @@ pub struct ExecutionConfig {
     pub continuation_mode: String,
     /// Timestamp when this config was assembled.
     pub assembled_at: String,
-}
-
-/// An [`crate::models::IdeaPlan`] riding on a [`ProtocolMessage`].
-///
-/// `#[serde(transparent)]`, so the wire shape is the plan's own and nothing
-/// downstream can tell the wrapper exists. It is here for exactly one reason:
-/// `ProtocolMessage` derives `PartialEq` — its parser tests compare whole
-/// parsed messages — and the backlog contract declares `IdeaPlan` / `PlanStep`
-/// without one. The equality of a plan is content equality and nothing else (a
-/// data record, no identity, no interior mutability), so a
-/// `#[derive(PartialEq)]` beside those two structs is the better home for this
-/// and retires the wrapper in two words. That file belongs to the backlog
-/// contract's owner, not to the protocol, which is why the comparison is
-/// written here instead.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct ProposedPlan(pub crate::models::IdeaPlan);
-
-impl PartialEq for ProposedPlan {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.steps.len() == other.0.steps.len()
-            && self.0.steps.iter().zip(other.0.steps.iter()).all(|(a, b)| {
-                a.n == b.n
-                    && a.action == b.action
-                    && a.files == b.files
-                    && a.done_when == b.done_when
-            })
-    }
 }
 
 /// Model profile with auth tokens redacted for safe persistence.

@@ -2925,7 +2925,7 @@ pub async fn run_execution(
                                                 goal: input_val.get("goal").or_else(|| input_val.get("goalId")).or_else(|| input_val.get("goal_id")).and_then(|v| v.as_str()).map(String::from),
                                                 // The same tolerant reader the JSON-line door uses, so
                                                 // the two cannot produce different rows from one payload.
-                                                plan: personas_engine::parser::parse_idea_plan(&input_val).map(personas_core::types::ProposedPlan),
+                                                plan: personas_engine::parser::parse_idea_plan(&input_val),
                                             }),
                                             _ => None,
                                         };

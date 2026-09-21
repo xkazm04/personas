@@ -281,34 +281,35 @@ enum IdeaProtocol {
 /// converting FROM. The factor is READ from that declaration rather than
 /// written down here, so the day the `IdeaScanner` arm becomes 5 the factor is
 /// 1 and this function becomes the identity it should have been all along.
-fn native_scale_factor() -> i64 {
-    let native = crate::db::models::BacklogSource::IdeaScanner.native_scale_max() as i64;
-    let queue = crate::db::models::IDEA_SCALE_MAX as i64;
-    (native / queue).max(1)
-}
-
-/// Score fields (effort/impact/risk) must be present and inside 1..=10. The LLM
-/// can hallucinate any integer (negative, 0, 999, INT64_MAX) and that value
-/// would otherwise be persisted unchanged. Returns `None` if missing or out of
-/// range so the caller can drop the idea entirely.
+/// Score fields (effort/impact/risk) must be present and on the queue's scale.
 ///
-/// Both dialects are read, because a model does not stop answering the way it
-/// used to the moment a prompt changes: a value at or below the queue's own
-/// maximum is the 1-5 answer the prompt asks for and is expressed on the
-/// door's native scale (see [`native_scale_factor`]); a value above it is a
-/// ten-point answer already on that scale and passes through untouched.
+/// The LLM can hallucinate any integer (negative, 0, 999, INT64_MAX) and that
+/// value would otherwise be persisted unchanged, so anything outside 1..=10 is
+/// refused outright and the caller drops the idea.
+///
+/// Inside that range BOTH dialects are read, because a model does not stop
+/// answering the way it used to the moment a prompt changes. The prompt now
+/// asks for 1-5 and a value in that range is taken at face value; a 6-10 answer
+/// is a model still working from the retired ten-point contract and is folded
+/// with the same arithmetic the write door and migration `e42` use, rather than
+/// being refused. Losing a finding because a model answered on last week's
+/// scale is a worse outcome than converting it.
+///
+/// This conversion is deliberately HERE and not at the door: the door's
+/// exchange rate is declared per producer, and this producer's declared scale
+/// is now 1-5. A reader that tolerates an old dialect and a door that converts
+/// one are different things, and only the first of them is allowed to guess.
 fn validate_score(idea: &serde_json::Value, field: &str) -> Option<i32> {
+    const RETIRED_SCALE_MAX: i32 = 10;
     let raw = idea.get(field).and_then(|v| v.as_i64())?;
-    if !(1..=10).contains(&raw) {
+    if !(1..=RETIRED_SCALE_MAX as i64).contains(&raw) {
         return None;
     }
-    let queue_max = crate::db::models::IDEA_SCALE_MAX as i64;
-    let native = if raw <= queue_max {
-        raw * native_scale_factor()
-    } else {
-        raw
-    };
-    Some(native as i32)
+    let raw = raw as i32;
+    if raw <= crate::db::models::IDEA_SCALE_MAX {
+        return Some(raw);
+    }
+    crate::db::models::normalize_scale(Some(raw), RETIRED_SCALE_MAX)
 }
 
 fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
@@ -1582,7 +1583,7 @@ mod tests {
     /// declaration: the day the `IdeaScanner` arm becomes 5, this is the
     /// identity function and this test still passes.
     #[test]
-    fn a_five_point_answer_survives_the_door_that_still_converts_from_ten() {
+    fn an_answer_on_either_scale_lands_on_the_queues_own() {
         let scored = |v: i64| {
             validate_score(&json!({ "risk": v }), "risk").map(|raw| {
                 crate::db::models::normalize_scale(
@@ -1598,9 +1599,11 @@ mod tests {
                 "a {asked} the prompt asked for must be stored as {asked}"
             );
         }
-        // A model still answering on the old ten-point scale is not corrupted
-        // either: it is already native, so it passes through and the door
-        // converts it exactly as it always did.
+        // A model still answering on the retired ten-point scale is folded
+        // here rather than refused. This test was written to pass BOTH while
+        // the door still converted from ten and after that arm was dropped,
+        // which is why it survived the retirement unchanged: it asserts the
+        // OUTCOME a score lands on, never the mechanism that got it there.
         assert_eq!(scored(9), Some(Some(5)), "9/10 folds to the top band");
         assert_eq!(scored(6), Some(Some(3)), "6/10 folds to the middle");
         // Out of range in either direction is still a DROPPED idea, unchanged.
