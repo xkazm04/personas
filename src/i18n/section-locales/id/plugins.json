@@ -2991,7 +2991,8 @@
     "skills_registry_filter_empty": "Belum ada skill di {name}",
     "skills_registry_empty_title": "Tidak ada skill untuk ditampilkan",
     "skills_registry_name_details": "Klik untuk detail lengkap",
-    "skills_registry_legend_recent": "dijalankan dalam 30 hari terakhir"
+    "skills_registry_legend_recent": "dijalankan dalam 30 hari terakhir",
+    "skills_registry_context_coverage": "{covered} dari {contexts} konteks tersentuh ({pct})"
   },
   "dev_triage": {
     "action_label": "Tindakan:",
@@ -3468,7 +3469,15 @@
     "skill_picker_hint": "Klik sel untuk memuat skill dan proyek itu ke konsol. Sel kosong memasang skill di sana terlebih dahulu.",
     "skill_picker_open": "Pilih skill dari registri",
     "skill_picker_title": "Registri skill",
-    "skill_picker_empty": "Belum ada proyek di ruang kerja ini yang memasang skill — adopsi satu di Alat pengembang → Keterampilan → Registri."
+    "skill_picker_empty": "Belum ada proyek di ruang kerja ini yang memasang skill — adopsi satu di Alat pengembang → Keterampilan → Registri.",
+    "estimate_assumed_model": "Dihitung dengan model bawaan CLI. Pilih model untuk tarifnya sendiri.",
+    "estimate_cost_label": "Perkiraan biaya untuk pengiriman ini",
+    "estimate_disclaimer": "Perkiraan dari tarif model yang dipublikasikan dan ukuran sesi biasa — bukan harga pasti.",
+    "estimate_eta_label": "Perkiraan waktu hingga selesai",
+    "rest_tally_needs_you": "{count} butuh Anda",
+    "rest_tally_working": "{count} berjalan",
+    "status_armed": "SIAP",
+    "status_standby": "SIAGA"
   },
   "fleet": {
     "activity_empty": "Tidak ada sesi terbaru yang ditemukan",

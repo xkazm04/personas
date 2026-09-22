@@ -13614,7 +13614,8 @@
       "skills_registry_filter_empty": "В {name} пока нет навыков",
       "skills_registry_empty_title": "Нет навыков для отображения",
       "skills_registry_name_details": "Нажмите, чтобы открыть подробности",
-      "skills_registry_legend_recent": "запускался за последние 30 дней"
+      "skills_registry_legend_recent": "запускался за последние 30 дней",
+      "skills_registry_context_coverage": "{covered} из {contexts} контекстов затронуто ({pct})"
     },
     "dev_triage": {
       "action_label": "Действие:",
@@ -14091,7 +14092,15 @@
       "skill_picker_hint": "Нажмите на ячейку, чтобы загрузить этот навык и проект в консоль. Пустая ячейка сначала установит навык там.",
       "skill_picker_open": "Выбрать навык из реестра",
       "skill_picker_title": "Реестр навыков",
-      "skill_picker_empty": "Ни в одном проекте этого рабочего пространства пока не установлен навык — внедрите его в разделе Инструменты разработчика → Навыки → Реестр."
+      "skill_picker_empty": "Ни в одном проекте этого рабочего пространства пока не установлен навык — внедрите его в разделе Инструменты разработчика → Навыки → Реестр.",
+      "estimate_assumed_model": "Рассчитано по модели CLI по умолчанию. Выберите модель, чтобы увидеть её тариф.",
+      "estimate_cost_label": "Оценочные затраты на эту отправку",
+      "estimate_disclaimer": "Оценка по опубликованным тарифам моделей и типичному размеру сессии — не итоговая цена.",
+      "estimate_eta_label": "Оценочное время до завершения",
+      "rest_tally_needs_you": "{count} ждут вас",
+      "rest_tally_working": "{count} в работе",
+      "status_armed": "ГОТОВ",
+      "status_standby": "ОЖИДАНИЕ"
     },
     "fleet": {
       "activity_empty": "Недавние сессии не найдены",

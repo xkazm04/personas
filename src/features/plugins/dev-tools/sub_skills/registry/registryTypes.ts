@@ -26,6 +26,18 @@ export interface RegistryColumn {
   /** Coverage denominator: contexts in the project (workspace mode) or in the
    *  group (project mode). */
   units: number;
+  /**
+   * Coverage NUMERATOR: contexts of this column that any skill has touched
+   * recently — `dev_tools_memory_coverage().covered`, which is a DISTINCT
+   * count over memory nodes and therefore a true union, not a sum of the
+   * column's cells.
+   *
+   * Workspace mode only, and optional for exactly that reason. In project
+   * mode the columns are context GROUPS and the backend exposes no per-group
+   * union; summing the cells would double-count every context two skills have
+   * both touched. An absent value renders no figure rather than a wrong one.
+   */
+  coveredUnits?: number;
   /** How many of the matrix's skills are present in this column. */
   presentCount: number;
   /** Column accent; falls back to the model header colour when absent. */
@@ -100,4 +112,14 @@ export function cellStatus(
 /** Coverage % (0–100) for a cell against its column's denominator. */
 export function coveragePct(cell: RegistryCell, units: number): number {
   return units > 0 ? Math.round((cell.coveredUnits / units) * 100) : 0;
+}
+
+/**
+ * Coverage % (0–100) for a whole COLUMN — how much of this project any skill
+ * has touched. `null` when the column carries no union (project mode) or has
+ * no contexts at all, so a caller cannot render 0% for "unknown".
+ */
+export function columnCoveragePct(column: RegistryColumn): number | null {
+  if (column.coveredUnits == null || column.units <= 0) return null;
+  return Math.round((column.coveredUnits / column.units) * 100);
 }

@@ -13614,7 +13614,8 @@
       "skills_registry_filter_empty": "{name} में अभी कोई स्किल नहीं है",
       "skills_registry_empty_title": "दिखाने के लिए कोई स्किल नहीं",
       "skills_registry_name_details": "पूरा विवरण देखने के लिए क्लिक करें",
-      "skills_registry_legend_recent": "पिछले 30 दिनों में चली"
+      "skills_registry_legend_recent": "पिछले 30 दिनों में चली",
+      "skills_registry_context_coverage": "{contexts} में से {covered} कॉन्टेक्स्ट छुए गए ({pct})"
     },
     "dev_triage": {
       "action_label": "कार्य:",
@@ -14091,7 +14092,15 @@
       "skill_picker_hint": "किसी सेल पर क्लिक करके वह स्किल और प्रोजेक्ट कंसोल में लोड करें। खाली सेल पहले वहाँ स्किल इंस्टॉल करता है।",
       "skill_picker_open": "रजिस्ट्री से एक स्किल चुनें",
       "skill_picker_title": "स्किल रजिस्ट्री",
-      "skill_picker_empty": "इस वर्कस्पेस के किसी भी प्रोजेक्ट में अभी कोई स्किल इंस्टॉल नहीं है — डेव टूल्स → स्किल्स → रजिस्ट्री में से एक अपनाएँ।"
+      "skill_picker_empty": "इस वर्कस्पेस के किसी भी प्रोजेक्ट में अभी कोई स्किल इंस्टॉल नहीं है — डेव टूल्स → स्किल्स → रजिस्ट्री में से एक अपनाएँ।",
+      "estimate_assumed_model": "CLI के डिफ़ॉल्ट मॉडल के हिसाब से गणना। अपनी दर देखने के लिए मॉडल चुनें।",
+      "estimate_cost_label": "इस डिस्पैच का अनुमानित खर्च",
+      "estimate_disclaimer": "प्रकाशित मॉडल दरों और सामान्य सेशन आकार पर आधारित अनुमान — निश्चित मूल्य नहीं।",
+      "estimate_eta_label": "पूरा होने का अनुमानित समय",
+      "rest_tally_needs_you": "{count} को आपकी ज़रूरत",
+      "rest_tally_working": "{count} चल रहे",
+      "status_armed": "तैयार",
+      "status_standby": "प्रतीक्षारत"
     },
     "fleet": {
       "activity_empty": "कोई हालिया सत्र नहीं मिला",

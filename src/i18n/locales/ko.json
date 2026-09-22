@@ -13614,7 +13614,8 @@
       "skills_registry_filter_empty": "{name}에 아직 스킬이 없습니다",
       "skills_registry_empty_title": "표시할 스킬이 없습니다",
       "skills_registry_name_details": "클릭하여 전체 세부 정보 보기",
-      "skills_registry_legend_recent": "최근 30일 내 실행됨"
+      "skills_registry_legend_recent": "최근 30일 내 실행됨",
+      "skills_registry_context_coverage": "{contexts}개 컨텍스트 중 {covered}개 작업됨 ({pct})"
     },
     "dev_triage": {
       "action_label": "작업:",
@@ -14091,7 +14092,15 @@
       "skill_picker_hint": "셀을 클릭하면 해당 스킬과 프로젝트가 콘솔에 로드됩니다. 빈 셀은 먼저 그곳에 스킬을 설치합니다.",
       "skill_picker_open": "레지스트리에서 스킬 선택",
       "skill_picker_title": "스킬 레지스트리",
-      "skill_picker_empty": "이 워크스페이스의 어떤 프로젝트에도 아직 스킬이 설치되지 않았습니다 — 개발 도구 → 스킬 → 레지스트리에서 하나 채택하세요."
+      "skill_picker_empty": "이 워크스페이스의 어떤 프로젝트에도 아직 스킬이 설치되지 않았습니다 — 개발 도구 → 스킬 → 레지스트리에서 하나 채택하세요.",
+      "estimate_assumed_model": "CLI 기본 모델 기준으로 계산했습니다. 모델을 선택하면 해당 요금으로 계산합니다.",
+      "estimate_cost_label": "이 디스패치의 예상 비용",
+      "estimate_disclaimer": "공개된 모델 요금과 일반적인 세션 규모에 근거한 추정치이며, 확정 견적이 아닙니다.",
+      "estimate_eta_label": "완료까지 예상 시간",
+      "rest_tally_needs_you": "{count}개 확인 필요",
+      "rest_tally_working": "{count}개 작업 중",
+      "status_armed": "준비됨",
+      "status_standby": "대기"
     },
     "fleet": {
       "activity_empty": "최근 세션 없음",

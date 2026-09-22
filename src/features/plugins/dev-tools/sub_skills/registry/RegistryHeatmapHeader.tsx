@@ -14,8 +14,10 @@ import { X } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { formatPercent } from '@/lib/utils/formatters';
+
 import { FOCUS, HEAD_ROW, LABEL_COL, navId, tint } from './heatmapKit';
-import type { RegistryColumn, RegistryModel } from './registryTypes';
+import { columnCoveragePct, type RegistryColumn, type RegistryModel } from './registryTypes';
 
 const VERTICAL: React.CSSProperties = { writingMode: 'vertical-rl', transform: 'rotate(180deg)' };
 /** The header wash: primary/5 laid over the opaque background as an image, so
@@ -93,6 +95,15 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
           hint={mode === 'project'
             ? tx(d.skills_registry_group_hint, { name: c.name, present: c.presentCount, total: skills.length, contexts: c.units })
             : tx(d.skills_registry_project_hint, { name: c.name, adopted: c.presentCount, total: skills.length, contexts: c.units })}
+          coverageHint={
+            columnCoveragePct(c) == null
+              ? null
+              : tx(d.skills_registry_context_coverage, {
+                covered: c.coveredUnits ?? 0,
+                contexts: c.units,
+                pct: formatPercent(columnCoveragePct(c) ?? 0, { precision: 0 }),
+              })
+          }
           action={c.id === filterId ? d.skills_registry_filter_active_hint : d.skills_registry_filter_hint}
           tabIndex={tabFor(navId(HEAD_ROW, c.id))}
           onToggle={() => onToggle(c.id === filterId ? null : c.id)}
@@ -103,28 +114,37 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
   );
 }
 
-function ColumnHeader({ column: c, dot, index, selected, hint, action, tabIndex, onToggle }: {
+function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, action, tabIndex, onToggle }: {
   column: RegistryColumn;
   /** The column's accent, falling back to the matrix's own colour. */
   dot: string;
   index: number;
   selected: boolean;
   hint: string;
+  /** "n of m contexts touched (x%)" — null in project mode, which has no union. */
+  coverageHint: string | null;
   action: string;
   tabIndex: 0 | -1;
   onToggle: () => void;
 }) {
+  const coverage = columnCoveragePct(c);
   return (
     <div role="columnheader" className="flex justify-center px-px pt-1.5">
       <Tooltip
-        content={<span className="flex flex-col gap-0.5"><span>{hint}</span><span className="typo-label text-primary">{action}</span></span>}
+        content={(
+          <span className="flex flex-col gap-0.5">
+            <span>{hint}</span>
+            {coverageHint && <span>{coverageHint}</span>}
+            <span className="typo-label text-primary">{action}</span>
+          </span>
+        )}
         placement="top"
       >
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={selected}
-          aria-label={`${hint}. ${action}`}
+          aria-label={coverageHint ? `${hint}. ${coverageHint}. ${action}` : `${hint}. ${action}`}
           tabIndex={tabIndex}
           data-nav={navId(HEAD_ROW, c.id)} data-nav-r={0} data-nav-c={index + 1}
           data-testid={`registry-column-${c.id}`}
@@ -148,6 +168,20 @@ function ColumnHeader({ column: c, dot, index, selected, hint, action, tabIndex,
           >
             {c.presentCount}
           </span>
+          {/* How much of THIS repo the fleet has actually touched. The cells
+              below say how far one skill reached; this says how far anything
+              did. Reads from `dev_tools_memory_coverage().covered`, which the
+              matrix already fetched and used to discard. Hidden (not zeroed)
+              where no union exists — see `columnCoveragePct`. */}
+          {coverage != null && (
+            <span
+              className="typo-label flex-shrink-0 tabular-nums text-muted"
+              data-testid={`registry-column-coverage-${c.id}`}
+              aria-hidden
+            >
+              {formatPercent(coverage, { precision: 0 })}
+            </span>
+          )}
           {/* selected edge — the column's "tab" underline */}
           <span className={`absolute inset-x-1 bottom-0 h-0.5 rounded-pill bg-primary transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`} aria-hidden />
         </button>

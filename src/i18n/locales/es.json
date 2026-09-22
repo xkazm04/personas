@@ -13614,7 +13614,8 @@
       "skills_registry_filter_empty": "Aún no hay habilidades en {name}",
       "skills_registry_empty_title": "No hay habilidades que mostrar",
       "skills_registry_name_details": "Haz clic para ver todos los detalles",
-      "skills_registry_legend_recent": "ejecutada en los últimos 30 días"
+      "skills_registry_legend_recent": "ejecutada en los últimos 30 días",
+      "skills_registry_context_coverage": "{covered} de {contexts} contextos tocados ({pct})"
     },
     "dev_triage": {
       "action_label": "Acción:",
@@ -14091,7 +14092,15 @@
       "skill_picker_hint": "Haz clic en una celda para cargar esa habilidad y proyecto en la consola. Una celda vacía instala primero la habilidad allí.",
       "skill_picker_open": "Elegir una habilidad del registro",
       "skill_picker_title": "Registro de habilidades",
-      "skill_picker_empty": "Ningún proyecto de este espacio de trabajo tiene aún una habilidad instalada: adopta una en Herramientas de desarrollo → Habilidades → Registro."
+      "skill_picker_empty": "Ningún proyecto de este espacio de trabajo tiene aún una habilidad instalada: adopta una en Herramientas de desarrollo → Habilidades → Registro.",
+      "estimate_assumed_model": "Calculado con el modelo predeterminado de la CLI. Elige un modelo para ver su tarifa.",
+      "estimate_cost_label": "Gasto estimado para este envío",
+      "estimate_disclaimer": "Una estimación basada en las tarifas publicadas del modelo y el tamaño habitual de sesión, no un precio en firme.",
+      "estimate_eta_label": "Tiempo estimado para terminar",
+      "rest_tally_needs_you": "{count} te necesitan",
+      "rest_tally_working": "{count} en marcha",
+      "status_armed": "LISTO",
+      "status_standby": "EN ESPERA"
     },
     "fleet": {
       "activity_empty": "No se encontraron sesiones recientes",
