@@ -48,3 +48,38 @@ Judge these harder than the rubric alone would, in this repo:
   owner's first contest review (tracklight, 2026-09-18) bought with a rejected panel favourite.
 
 ## Skill improvement log
+
+- 2026-09-21 (kpi-descent) - **A brief that ASSIGNS the three variants fights the rendered
+  participant brief, which says the opposite.** `references/participant-brief.md` hard-codes
+  "each a genuinely different answer to the idea - a different metaphor", and this contest
+  needed variant-1/2/3 fixed to Map/Ledger/River. The host patched the paragraph in all three
+  rendered `PARTICIPANT.md` files by hand and md5'd them to prove they stayed identical. The
+  same template hard-codes a previous contest's filename in its data line
+  (`<script src="../data/knowledge.js">`). PROPOSAL for the registry (not applied - the
+  ai-registry checkout has a sibling's uncommitted edits on these exact files): template the
+  deliverable paragraph, and derive the data example from the staged directory.
+- 2026-09-21 (kpi-descent) - **A judge can report `completed` and produce no verdict.** The
+  codex seat exited 0 in 141s with an empty final message: on Windows its shell was
+  "rejected by policy" and its write was "blocked by read-only sandbox" despite
+  `--sandbox workspace-write` (see `runs/judge-*/stderr.log`). `aggregate` then built a
+  scoreboard from the host's verdict alone and called it a panel. Re-running the seat by hand
+  with `--dangerously-bypass-approvals-and-sandbox` produced a full verdict in ~8 min.
+  PROPOSAL: treat a completed judge that wrote no verdict as a failed judge, and say out loud
+  when the scoreboard has fewer than two panel verdicts.
+- 2026-09-21 (kpi-descent) - **The per-seat wall-clock ceiling did not fire for the grok
+  judge:** the record reads `timed-out in 11101.38s` against a 45-minute (2700 s) ceiling, so
+  it held the step for three hours. Grok's weekly balance was exhausted by the retry
+  (402 Payment Required), which cost the panel its second judge - budget grok's quota for the
+  judging pass, not only for the building pass.
+- 2026-09-21 (kpi-descent) - **Stage the data with its honesty rule, or the winners will
+  break it.** `data/SCHEMA.md` documented the `series` shape but never said which rows count
+  as an observation, and all three winning variants counted 39 `source: "simulation"` rows
+  across 37 KPIs as real readings - 25 of those KPIs are `unmeasured` in the live rollup. The
+  app's own `realPoints` already filters `env === "production"` plus a not-directly-measured
+  source set. Any future UI brief here must copy that filter into SCHEMA.md; the blind judge
+  caught it by reading code, and the visual pass could not have.
+- 2026-09-21 (kpi-descent) - **The two-eyes design worked exactly as intended and the
+  disagreement was the finding.** The code-reading judge and the pixel-reading host agreed
+  within 0.5 on seven of nine variants and differed by 3.4 and 3.6 on the other two: both
+  were logically sound surfaces that leave 40-70% of the window empty on the real data. A
+  panel of readers alone would have ranked them fourth and fifth.
