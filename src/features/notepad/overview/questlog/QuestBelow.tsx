@@ -23,14 +23,20 @@ export interface BelowEntry {
  * hides work — and it is the rule the card desk breaks sixteen times over by
  * fading the tail of every group.
  */
-export function QuestBelow({ column }: { column: HTMLElement | null }) {
+export function QuestBelow() {
   const { t, tx } = useTranslation();
   const [entries, setEntries] = useState<BelowEntry[]>([]);
+  // The strip lives INSIDE the column it describes, so it finds its own column
+  // rather than being handed one. A parent that passed the element down would
+  // have to hold a ref per column, and a ref callback created during render is a
+  // new function every render — React would detach and reattach it each time,
+  // and the state it wrote would re-render forever.
+  const [strip, setStrip] = useState<HTMLElement | null>(null);
+  const column = strip?.parentElement ?? null;
 
   const recompute = useCallback(() => {
-    if (!column) { setEntries([]); return; }
-    const strip = column.querySelector<HTMLElement>('[data-below]');
-    const fold = column.scrollTop + column.clientHeight - (strip?.offsetHeight ?? 0) - 4;
+    if (!column || !strip) { setEntries([]); return; }
+    const fold = column.scrollTop + column.clientHeight - strip.offsetHeight - 4;
     const next: BelowEntry[] = [];
     for (const zone of column.querySelectorAll<HTMLElement>('[data-zone-id]')) {
       if (zone.offsetTop + zone.offsetHeight <= fold) continue;
@@ -43,7 +49,7 @@ export function QuestBelow({ column }: { column: HTMLElement | null }) {
       });
     }
     setEntries(next);
-  }, [column]);
+  }, [column, strip]);
 
   useEffect(() => {
     if (!column) return;
@@ -52,10 +58,15 @@ export function QuestBelow({ column }: { column: HTMLElement | null }) {
     return () => column.removeEventListener('scroll', recompute);
   }, [column, recompute]);
 
-  if (entries.length === 0) return null;
-
+  // Always mounted, so it can measure itself and find its column; it simply
+  // renders nothing to see while there is nothing under the fold.
   return (
-    <div className="ql-below" data-below role="status">
+    <div
+      ref={setStrip}
+      className="ql-below"
+      data-below
+      role="status"
+      hidden={entries.length === 0}>
       <span>{t.notepad.desk_below}</span>
       {entries.map((entry, i) => (
         <span key={entry.id} className={entry.waiting ? 'is-waiting' : undefined}>

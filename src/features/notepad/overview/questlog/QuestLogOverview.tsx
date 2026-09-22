@@ -59,8 +59,11 @@ export function QuestLogOverview({
   const unread = useNoteUnreadMap();
   const summaries = useNotepadPlanSummaries();
 
-  const rootRef = useRef<HTMLDivElement>(null);
-  const caretRef = useRef<HTMLSpanElement>(null);
+  // ELEMENTS, not refs. This desk renders only after the pad stops loading, so
+  // a ref object read by an effect that depends on the ref (which never changes)
+  // is read once, while it is still null, and never looked at again.
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+  const [caretEl, setCaretEl] = useState<HTMLSpanElement | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [rail, setRail] = useState<DeskFilter>(readDeskFilter);
@@ -109,13 +112,8 @@ export function QuestLogOverview({
     () => `${rail}|${query.trim() ? '1' : '0'}|${zones.map((z) => `${z.id}:${z.goals.length}`).join(',')}`,
     [rail, query, zones],
   );
-  const layout = useQuestLayout(rootRef, zones.length, signature);
-  const placeCaret = useQuestCaret(rootRef, caretRef, currentZoneId);
-
-  const [columnEls, setColumnEls] = useState<(HTMLElement | null)[]>([]);
-  const setColumnRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
-    setColumnEls((prev) => (prev[index] === el ? prev : Object.assign([...prev], { [index]: el })));
-  }, []);
+  const layout = useQuestLayout(rootEl, zones.length, signature);
+  const placeCaret = useQuestCaret(rootEl, caretEl, currentZoneId);
 
   useEffect(() => { placeCaret(); }, [placeCaret, layout, signature]);
 
@@ -280,7 +278,7 @@ export function QuestLogOverview({
         </div>
       ) : (
         <div
-          ref={rootRef}
+          ref={setRootEl}
           className="ql-root flex-1 min-h-0 px-4 pb-2"
           data-testid="notepad-questlog-desk"
           // role declared literally, ids from the primitive so they cannot drift
@@ -289,12 +287,11 @@ export function QuestLogOverview({
           id={railPanel.id}
           aria-labelledby={railPanel["aria-labelledby"]}
         >
-          <span ref={caretRef} className="ql-caret" aria-hidden />
+          <span ref={setCaretEl} className="ql-caret" aria-hidden />
           <div className="ql-cols">
             {layout.groups.map(([start, end], column) => (
               <div
                 key={column}
-                ref={setColumnRef(column)}
                 className={`ql-col${layout.scrolling ? ' is-scrolling' : ''}`}
               >
                 {zones.slice(start, end).map((zone) => (
@@ -312,7 +309,7 @@ export function QuestLogOverview({
                     onOpenGoal={openGoal}
                   />
                 ))}
-                {layout.scrolling && <QuestBelow column={columnEls[column] ?? null} />}
+                {layout.scrolling && <QuestBelow />}
               </div>
             ))}
           </div>
