@@ -6,7 +6,10 @@
 // five member seats and the chosen member's reading on the right, and the
 // gate pinned in the footer where it is always in view.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
+
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import Button from '@/features/shared/components/buttons/Button';
@@ -97,7 +100,13 @@ export function RoundTable({
   );
 
   return (
-    <div
+    /* The table SLIDES IN over the queue it was opened from, on the app's
+       `gentle` rung - the same 400 ms the camera and the bench move on, so
+       opening a council reads as one gesture rather than three. */
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={MOTION_PRESETS.gentle.framer}
       ref={rootRef}
       className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_1fr_auto] lg:grid-cols-[minmax(340px,40%)_1fr]"
     >
@@ -229,7 +238,7 @@ export function RoundTable({
       <footer className="col-span-full border-t border-border px-7 py-3">
         <CouncilGateBay subject={subject} detail={detail} rubric={rubric} onReload={run.reload} />
       </footer>
-    </div>
+    </motion.div>
   );
 }
 

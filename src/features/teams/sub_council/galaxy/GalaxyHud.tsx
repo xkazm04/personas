@@ -3,7 +3,10 @@
 // toggles. The bench toggle is WP8's seam: it is real here and counts real
 // subjects, and the drawer it will raise does not exist yet.
 import { useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Focus, ScanSearch } from 'lucide-react';
+
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -51,9 +54,22 @@ export function GalaxyHud({ engine }: Props) {
       className="flex items-center gap-3 border-b border-primary/10 bg-primary/5 px-4 py-2"
       data-testid="council-hud"
     >
+      {/* A new crumb ARRIVES rather than appearing: the descent it records
+          took 400 ms, and a breadcrumb that snapped into place before the
+          camera had moved was the clearest piece of the suddenness. `snappy`
+          (150 ms) - a crumb is a toggle-sized change, not a panel. */}
       <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden" aria-label={g.breadcrumb_label}>
+        <AnimatePresence initial={false}>
         {steps.map((step, i) => (
-          <span key={`${step.tag}-${step.name}`} className="flex items-center gap-1">
+          <motion.span
+            key={`${step.tag}-${step.name}`}
+            layout
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -6 }}
+            transition={MOTION_PRESETS.snappy.framer}
+            className="flex items-center gap-1"
+          >
             {i > 0 ? <span className="typo-caption text-muted-dark">{'›'}</span> : null}
             <button
               type="button"
@@ -67,8 +83,9 @@ export function GalaxyHud({ engine }: Props) {
             >
               {step.name}
             </button>
-          </span>
+          </motion.span>
         ))}
+        </AnimatePresence>
       </nav>
 
       {fixtureOn ? (

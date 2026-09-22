@@ -3,6 +3,7 @@
 // printed beside the totals, never swallowed.
 import type { RefObject } from 'react';
 
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { Translations } from '@/i18n/en';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -54,7 +55,7 @@ function altitudeRows(layout: GalaxyLayout | null, focus: GalaxyFocus, g: Galaxy
 
 /** The panel's box is reserved by the label pass, so it needs a ref out. */
 export function CountsPanel({ cardRef }: { cardRef?: RefObject<HTMLDivElement | null> }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const g = t.council.galaxy;
   const layout = useCouncilStore((s) => s.layout);
   const focus = useCouncilStore((s) => s.focus);
@@ -83,8 +84,15 @@ export function CountsPanel({ cardRef }: { cardRef?: RefObject<HTMLDivElement | 
     >
       {rows.map((row) => (
         <div key={row.key} className="flex flex-col whitespace-nowrap">
+          {/* These figures change when the reader changes ALTITUDE, and a
+              number that swaps under you is the panel's share of the sudden
+              flip the owner objected to. `AnimatedCounter` cross-fades per
+              digit off the shared rAF engine; `Numeric` still owns the figure
+              style, which is the composition its own docs prescribe. */}
           <b className={`typo-heading ${row.accent ? 'text-accent' : 'text-foreground'}`}>
-            <Numeric value={row.value} />
+            <Numeric>
+              <AnimatedCounter value={row.value} formatFn={(v) => Math.round(v).toLocaleString(language)} />
+            </Numeric>
           </b>
           <span className="typo-label text-muted-dark">{row.label}</span>
         </div>

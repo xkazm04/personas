@@ -6,7 +6,9 @@
 // the engine derives into the store, and to give the canvas an accessible
 // name plus a pointer at the docked list, which IS the non-pointer path.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCouncilStore } from '../councilStore';
@@ -114,8 +116,15 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
         aria-describedby={describedBy}
         data-testid="council-galaxy-canvas"
       />
+      {/* The card FADES rather than blinking. `snappy` (150 ms) because it
+          follows a pointer, and anything slower lags behind the hand. */}
+      <AnimatePresence>
       {card && pointer ? (
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={MOTION_PRESETS.snappy.framer}
           className="pointer-events-none absolute z-20 max-w-[340px] rounded-card border border-primary/15 bg-secondary/95 px-3 py-2.5 shadow-elevation-3 backdrop-blur-sm"
           style={{ left: Math.min(pointer.x + 18, Math.max(0, (canvasRef.current?.clientWidth ?? 0) - 355)), top: Math.max(8, pointer.y - 14) }}
           data-testid="council-galaxy-hovercard"
@@ -130,8 +139,9 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
               {t.council.galaxy.technique_deepest}
             </div>
           ) : null}
-        </div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </div>
   );
 }

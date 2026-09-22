@@ -6,7 +6,10 @@
 // the stage; the galaxy layer mounts inside, and the bench takes the `bench`
 // slot below the field without ever hiding it.
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Scale } from 'lucide-react';
+
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -151,8 +154,19 @@ export default function CouncilPage() {
         <div data-testid="council-stage" className="relative flex min-h-0 flex-1 flex-col">
           <GalaxyStage
             bench={
-              benchOpen ? (
-                <section
+              /* The bench RISES. It is a drawer taking two thirds of the
+                 field, which is the app's `gentle` rung (400 ms, a large
+                 reveal) - the same rung the camera flies on, so the drawer
+                 and the field it re-frames move together. Framer is gated
+                 app-wide by `<MotionConfig reducedMotion="user">`, so a
+                 reader who asked for reduced motion gets it in place. */
+              <AnimatePresence>
+              {benchOpen ? (
+                <motion.section
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={MOTION_PRESETS.gentle.framer}
                   ref={benchRef}
                   data-testid="council-bench"
                   aria-label={tx(b.headline_many, { count: waiting })}
@@ -173,8 +187,9 @@ export default function CouncilPage() {
                   style={tableOpen ? undefined : { height: '66%', minHeight: 300 }}
                 >
                   <CouncilBench onFocusSubject={aim} />
-                </section>
-              ) : undefined
+                </motion.section>
+              ) : null}
+              </AnimatePresence>
             }
           />
         </div>

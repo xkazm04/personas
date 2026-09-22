@@ -150,6 +150,17 @@ export function GalaxyRail({ engine, filterRef, describedById }: Props) {
       >
         <RailList
           items={items}
+          /* The list is OF a place. Built from the focus rather than from the
+             rows, so a filter keystroke narrows the list in place while a
+             change of altitude flips it - and deliberately NOT from
+             `model.level`, which is the same word for every category. */
+          listKey={
+            focus.kind === 'council'
+              ? `council:${focus.subjectId}`
+              : focus.kind === 'node'
+                ? `node:${focus.domainSlug ?? ''}/${focus.categoryId ?? ''}/${focus.subjectSlug ?? ''}`
+                : 'sky'
+          }
           selectedIndex={selectedIndex}
           onSelect={activate}
           onHover={(row) => setHover(row?.node ?? null)}

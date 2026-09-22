@@ -1,6 +1,10 @@
 // The path rows above the list: Field / Domain / Category / Subject, or
 // Field / Council when a council is focused. The same steps the breadcrumb
 // shows, because both read the one focus in the store.
+import { AnimatePresence, motion } from 'framer-motion';
+
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
+
 import { useCouncilStore } from '../../councilStore';
 import type { GalaxyFocus, GalaxyLayout } from '../engine/types';
 
@@ -56,11 +60,19 @@ export function RailPath({ steps }: Props) {
   const setFocus = useCouncilStore((s) => s.setFocus);
   return (
     <div className="flex flex-col gap-0.5" data-testid="council-rail-path">
+      {/* The rail's own path rows are the breadcrumb's twin and enter on the
+          same rung, so the two never disagree about when a step arrived. */}
+      <AnimatePresence initial={false}>
       {steps.map((step, i) => {
         const current = i === steps.length - 1;
         return (
-          <button
+          <motion.button
             key={`${step.tag}-${step.name}`}
+            layout
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={MOTION_PRESETS.snappy.framer}
             type="button"
             onClick={() => setFocus(step.focus)}
             aria-current={current ? 'true' : undefined}
@@ -74,9 +86,10 @@ export function RailPath({ steps }: Props) {
               {step.tag}
             </span>
             <span className="flex-1 truncate">{step.name}</span>
-          </button>
+          </motion.button>
         );
       })}
+      </AnimatePresence>
     </div>
   );
 }
