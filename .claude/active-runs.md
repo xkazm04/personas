@@ -2,12 +2,14 @@
 
 ## Active
 
-### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
+- **[2026-09-21 21:39]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `.contest/**`
+- **Status:** started
+
 - **[2026-09-21 16:00]**
 - **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin.rs` · `src/i18n/**`
 - **Status:** started
 
-### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
 - **[2026-09-21 15:23]**
 - **Paths:** `src/features/fleet/monitor/live/**`
 - **Status:** started
@@ -16,7 +18,6 @@
 - **Paths:** `src/features/fleet/monitor/grid/**`
 - **Status:** started
 
-### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
 - **[2026-09-21 14:11]**
 - **Paths:** `src/features/plugins/dev-tools/sub_skills/registry/**` · `src/features/fleet/monitor/grid/DockSkillPicker.tsx` · `src/i18n/**`
 - **Status:** started
@@ -924,6 +925,14 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### contest-dock — /contest: QuickDispatchDock redesign (Opus xhigh vs Grok 4.7)
+
+### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
+
+### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
+
+### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
 
 ### spark-node-rows — usage row spacing; FleetNode split <=200 LOC, title/divider/symbols layout, full-width nodes in Lanes
 

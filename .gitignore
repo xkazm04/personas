@@ -245,3 +245,6 @@ src/test/e2e/cli-e2e-report.json
 
 # Stale top-level build transcripts (build-lite.log, build-arm64.log, ...) are
 # already covered by *.log above; this note exists so nobody re-adds them.
+
+# /contest arena and vault — entries are large and belong to no commit
+.contest/
