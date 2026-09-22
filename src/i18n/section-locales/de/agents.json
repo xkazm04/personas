@@ -2708,7 +2708,7 @@
     "all_saved": "Alle Änderungen gespeichert",
     "changed": "{sections} geändert",
     "cli_awareness": "Wahrnehmung der Claude-CLI-Sitzung",
-    "cli_awareness_desc": "Lässt diese Persona aktuelle Runden aus Ihrer aktiven, interaktiven Claude-CLI-Sitzung als zusätzlichen Kontext lesen. Erfordert außerdem, dass der globale Schalter unter Companion → Setup → Sensorische Signale aktiviert ist. Nur lesend — Ihre CLI-Sitzung wird nie verändert.",
+    "cli_awareness_desc": "Lässt diese Persona aktuelle Runden aus Ihrer aktiven, interaktiven Claude-CLI-Sitzung als zusätzlichen Kontext lesen. Erfordert außerdem, dass der globale Schalter unter Athena → Einrichtung → Sensorische Signale aktiviert ist. Nur lesend — Ihre CLI-Sitzung wird nie verändert.",
     "execution": "Ausführung",
     "execution_retention": "Ausführungsaufbewahrung",
     "failed_health_watch": "Gesundheitsüberwachungseinstellung konnte nicht aktualisiert werden",

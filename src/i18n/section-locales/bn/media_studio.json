@@ -168,7 +168,7 @@
   "voiceover_added": "টাইমলাইনে ভয়েসওভার যোগ করা হয়েছে",
   "voiceover_generate": "ভয়েসওভার তৈরি করুন",
   "voiceover_generating": "সংশ্লেষণ চলছে…",
-  "voiceover_not_installed": "স্থানীয় ভয়েস ইঞ্জিন ইনস্টল করা নেই — প্রথমে কম্প্যানিয়নের ভয়েস সেটিংসে এটি সেট আপ করুন।",
+  "voiceover_not_installed": "স্থানীয় ভয়েস ইঞ্জিন ইনস্টল করা নেই — প্রথমে Athena-র ভয়েস সেটিংসে এটি সেট আপ করুন।",
   "voiceover_text": "বর্ণনা",
   "voiceover_text_placeholder": "বর্ণনাকারী কী বলবে তা লিখুন…",
   "voiceover_voice": "কণ্ঠস্বর",

@@ -2708,7 +2708,7 @@
     "all_saved": "Všechny změny uloženy",
     "changed": "{sections} změněno",
     "cli_awareness": "Povědomí o relaci Claude CLI",
-    "cli_awareness_desc": "Umožní této personě číst poslední zprávy z vaší aktivní interaktivní relace Claude CLI jako doplňkový kontext. Vyžaduje také zapnutý globální přepínač v Companion → Nastavení → Smyslové signály. Pouze pro čtení — vaše relace CLI se nikdy neupravuje.",
+    "cli_awareness_desc": "Umožní této personě číst poslední zprávy z vaší aktivní interaktivní relace Claude CLI jako doplňkový kontext. Vyžaduje také zapnutý globální přepínač v Athena → Nastavení → Smyslové signály. Pouze pro čtení — vaše relace CLI se nikdy neupravuje.",
     "execution": "Spuštění",
     "execution_retention": "Uchování spuštění",
     "failed_health_watch": "Nepodařilo se aktualizovat hlídání zdraví",

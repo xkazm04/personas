@@ -2708,7 +2708,7 @@
     "all_saved": "所有更改已保存",
     "changed": "{sections} 已更改",
     "cli_awareness": "Claude CLI 会话感知",
-    "cli_awareness_desc": "允许此人格读取您当前活跃的交互式 Claude CLI 会话中的最近对话，作为附加上下文。还需要伴侣 → 设置 → 感官信号中的全局开关同时开启。只读——系统不会修改您的 CLI 会话。",
+    "cli_awareness_desc": "允许此人格读取您当前活跃的交互式 Claude CLI 会话中的最近对话，作为附加上下文。还需要 Athena → 设置 → 感官信号中的全局开关同时开启。只读——系统不会修改您的 CLI 会话。",
     "execution": "执行",
     "execution_retention": "执行记录保留",
     "failed_health_watch": "更新健康监控设置失败",

@@ -168,7 +168,7 @@
   "voiceover_added": "Locución añadida a la línea de tiempo",
   "voiceover_generate": "Generar locución",
   "voiceover_generating": "Sintetizando…",
-  "voiceover_not_installed": "El motor de voz local no está instalado — configúralo primero en los ajustes de voz del companion.",
+  "voiceover_not_installed": "El motor de voz local no está instalado — configúralo primero en los ajustes de voz de Athena.",
   "voiceover_text": "Narración",
   "voiceover_text_placeholder": "Escribe lo que debe decir el narrador…",
   "voiceover_voice": "Voz",

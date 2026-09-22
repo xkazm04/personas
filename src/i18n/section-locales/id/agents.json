@@ -2708,7 +2708,7 @@
     "all_saved": "Semua perubahan tersimpan",
     "changed": "{sections} berubah",
     "cli_awareness": "Kesadaran sesi CLI Claude",
-    "cli_awareness_desc": "Biarkan persona ini membaca giliran terbaru dari sesi CLI Claude interaktif Anda yang aktif sebagai konteks tambahan. Memerlukan sakelar global di Companion → Setup → Sensory signals agar juga AKTIF. Hanya-baca — sesi CLI Anda tidak pernah diubah.",
+    "cli_awareness_desc": "Biarkan persona ini membaca giliran terbaru dari sesi CLI Claude interaktif Anda yang aktif sebagai konteks tambahan. Memerlukan sakelar global di Athena → Pengaturan → Sinyal sensorik agar juga AKTIF. Hanya-baca — sesi CLI Anda tidak pernah diubah.",
     "execution": "Eksekusi",
     "execution_retention": "Retensi eksekusi",
     "failed_health_watch": "Gagal memperbarui pengaturan pemantauan kesehatan",

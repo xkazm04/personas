@@ -2708,7 +2708,7 @@
     "all_saved": "모든 변경 사항 저장됨",
     "changed": "{sections} 변경됨",
     "cli_awareness": "Claude CLI 세션 인식",
-    "cli_awareness_desc": "이 페르소나가 활성 대화형 Claude CLI 세션의 최근 턴을 추가 컨텍스트로 읽도록 허용합니다. Companion → 설정 → 감각 신호의 전역 토글도 ON이어야 합니다. 읽기 전용 — CLI 세션은 절대 수정되지 않습니다.",
+    "cli_awareness_desc": "이 페르소나가 활성 대화형 Claude CLI 세션의 최근 턴을 추가 컨텍스트로 읽도록 허용합니다. Athena → 설정 → 감각 신호의 전역 토글도 ON이어야 합니다. 읽기 전용 — CLI 세션은 절대 수정되지 않습니다.",
     "execution": "실행",
     "execution_retention": "실행 보존",
     "failed_health_watch": "상태 감시 설정 업데이트 실패",

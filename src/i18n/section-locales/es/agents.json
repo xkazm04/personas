@@ -2708,7 +2708,7 @@
     "all_saved": "Todos los cambios guardados",
     "changed": "{sections} cambiado(s)",
     "cli_awareness": "Conciencia de sesión de CLI de Claude",
-    "cli_awareness_desc": "Permite que esta persona lea los turnos recientes de su sesión interactiva activa de la CLI de Claude como contexto adicional. Requiere que el interruptor global en Companion → Configuración → Señales sensoriales también esté activado. Solo lectura — su sesión de CLI nunca se modifica.",
+    "cli_awareness_desc": "Permite que esta persona lea los turnos recientes de su sesión interactiva activa de la CLI de Claude como contexto adicional. Requiere que el interruptor global en Athena → Configuración → Señales sensoriales también esté activado. Solo lectura — su sesión de CLI nunca se modifica.",
     "execution": "Ejecución",
     "execution_retention": "Retención de ejecuciones",
     "failed_health_watch": "Error al actualizar la configuración de monitoreo de salud",

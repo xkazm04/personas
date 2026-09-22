@@ -2708,7 +2708,7 @@
     "all_saved": "Toutes les modifications enregistrées",
     "changed": "{sections} modifié(es)",
     "cli_awareness": "Connaissance de la session CLI Claude",
-    "cli_awareness_desc": "Permet à ce persona de lire les tours récents de votre session CLI Claude interactive active comme contexte supplémentaire. Nécessite que l’option globale de Companion → Configuration → Signaux sensoriels soit également activée. Lecture seule — votre session CLI n’est jamais modifiée.",
+    "cli_awareness_desc": "Permet à ce persona de lire les tours récents de votre session CLI Claude interactive active comme contexte supplémentaire. Nécessite que l’option globale d’Athena → Configuration → Signaux sensoriels soit également activée. Lecture seule — votre session CLI n’est jamais modifiée.",
     "execution": "Exécution",
     "execution_retention": "Rétention des exécutions",
     "failed_health_watch": "Échec de la mise à jour du paramètre de surveillance de santé",

@@ -168,7 +168,7 @@
   "voiceover_added": "Озвучка добавлена на таймлайн",
   "voiceover_generate": "Создать озвучку",
   "voiceover_generating": "Синтез…",
-  "voiceover_not_installed": "Локальный голосовой движок не установлен — сначала настройте его в настройках голоса компаньона.",
+  "voiceover_not_installed": "Локальный голосовой движок не установлен — сначала настройте его в настройках голоса Athena.",
   "voiceover_text": "Текст озвучки",
   "voiceover_text_placeholder": "Введите, что должен сказать диктор…",
   "voiceover_voice": "Голос",

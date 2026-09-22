@@ -2708,7 +2708,7 @@
     "all_saved": "Tất cả thay đổi đã được lưu",
     "changed": "{sections} đã thay đổi",
     "cli_awareness": "Nhận biết phiên Claude CLI",
-    "cli_awareness_desc": "Cho phép persona này đọc các lượt trao đổi gần đây trong phiên Claude CLI tương tác đang hoạt động của bạn để dùng làm ngữ cảnh bổ sung. Cũng cần bật công tắc toàn cục tại Companion → Cài đặt → Tín hiệu cảm nhận. Chỉ đọc — phiên CLI của bạn không bao giờ bị thay đổi.",
+    "cli_awareness_desc": "Cho phép persona này đọc các lượt trao đổi gần đây trong phiên Claude CLI tương tác đang hoạt động của bạn để dùng làm ngữ cảnh bổ sung. Cũng cần bật công tắc toàn cục tại Athena → Thiết lập → Tín hiệu cảm nhận. Chỉ đọc — phiên CLI của bạn không bao giờ bị thay đổi.",
     "execution": "Thực thi",
     "execution_retention": "Lưu giữ thực thi",
     "failed_health_watch": "Không cập nhật được cài đặt theo dõi sức khỏe",
