@@ -616,6 +616,18 @@
       ]
     },
     {
+      "doc": "docs/features/features.md",
+      "sourceGlobs": [
+        "src/features/teams/sub_features/**",
+        "src/api/devTools/features.ts",
+        "src-tauri/src/commands/infrastructure/dev_tools/features.rs",
+        "src-tauri/core/src/models/feature_board.rs",
+        "src-tauri/db/src/repos/dev/feature_board.rs",
+        "src-tauri/db/src/repos/dev/scenarios.rs",
+        "docs/design/features-reference/**"
+      ]
+    },
+    {
       "doc": "docs/features/council.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/sub_context/council*",
