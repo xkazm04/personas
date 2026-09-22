@@ -990,6 +990,65 @@ mod tests {
         Ok(())
     }
 
+    /// **Overseer regression (companions WP3).** Switching Overseer off — or
+    /// leaving him with nothing starred — must not silence the App master
+    /// probation review.
+    ///
+    /// The two share a *vocabulary* (`PACKET_SOURCE = "director"`, so a
+    /// probation decision produces the same synthesized memory an ordinary
+    /// coaching verdict does) and nothing else: probation raises its packet
+    /// through `director::create_probation_review`, a plain repo write, while
+    /// the gate sits on `run_director_cycle_for` / `run_director_cycle_batch`
+    /// and the storm subscription. The entry points were already split, so no
+    /// splitting was needed — this test is what keeps them split. If it ever
+    /// goes red, the gate has been pushed down into shared machinery and the
+    /// only live user of that machinery has been switched off with it.
+    #[test]
+    fn probation_still_raises_its_review_while_overseer_is_off(
+    ) -> Result<(), crate::error::AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        // Overseer explicitly OFF, and not one starred agent: both terms of
+        // `overseer_active` are false.
+        crate::db::repos::core::settings::set(
+            &pool,
+            crate::db::settings_keys::OVERSEER_ENABLED,
+            "false",
+        )?;
+        assert!(
+            !crate::commands::companions::overseer_active(&pool),
+            "fixture precondition: Overseer must be inactive for this test to mean anything"
+        );
+
+        // An App master with a closed probation window AND an execution to
+        // anchor the review to (without one the tick defers, which would pass
+        // this test for the wrong reason).
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p-probation', 'App Master', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        pool.get()?.execute(
+            "INSERT INTO persona_executions (id, persona_id, status, created_at)
+             VALUES ('exec-probation', 'p-probation', 'completed', datetime('now'))",
+            [],
+        )?;
+        let mut due = record();
+        due.persona_id = "p-probation".into();
+        due.project_id = "proj-probation".into();
+        due.probation_ends_at = "2020-01-01T00:00:00+00:00".into();
+        personas_engine::responsibility::store_mandate_record(&pool, &due)?;
+
+        let summary = probation_tick_summary_with(&pool, false, ProbationScope::default());
+        assert_eq!(summary.due, 1, "the closed window is due");
+        assert_eq!(
+            summary.raised, 1,
+            "the probation review must still be raised with Overseer switched off and \
+             nothing starred - it does not run through his coaching cycle"
+        );
+        assert_eq!(summary.deferred, 0);
+        Ok(())
+    }
+
     fn record() -> MandateRecord {
         MandateRecord {
             persona_id: "p1".into(),

@@ -421,6 +421,10 @@ pub(super) const ALLOWED_ROUTES: &[&str] = &[
     "plugins",
     "schedules",
     "settings",
+    // The Companions category: Athena, Overseer and Curator. A first-level
+    // section of its own since 2026-09-22 — she lived under Plugins >
+    // Companion before, which is a place she can no longer take anyone.
+    "companions",
     "monitor",
     // `mastermind` is a pseudo-route like `monitor` — it resolves to Teams →
     // Mastermind. It earns a route of its own because Athena can already
@@ -587,7 +591,7 @@ const OP_SECTIONS: &[OpSection] = &[
         ops: &[
             op!("use_connector", Auto, "a pinned connector or always-on builtin; reads run as a background job, writes become an approval card", r#"{"connector_name":"<slug>","capability":"<slug>","args":{...}}"#),
             op!("research", Auto, "background web research; react now in the same reply, the findings return as a follow-up turn", r#"{"question":"<one sentence>","context?":"<what prompted it>"}"#),
-            op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|monitor|mastermind"}"#),
+            op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|companions|monitor|mastermind"}"#),
             op!("open_lab", Auto, "a persona's Lab", r#"{"persona_id":"<uuid>","mode":"arena|ab|matrix|breed|evolve|versions|regression"}"#),
             op!("open_test_env", Approval, "a project's test-environment URL", r#"{"project_name":"<name>"}"#),
         ],

@@ -568,4 +568,11 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// conversation before joining it, and the two rules most likely to bite: an
 /// answer the pad asked for goes on the thread, not in the chat; and a body
 /// change is still a `show_note_suggestions` row, never a comment.
-pub const CONSTITUTION_VERSION: u32 = 66;
+///
+/// v67 (companions): `open_route` gains the `companions` destination — the
+/// first-level section Athena now lives in, beside Overseer and Curator — and
+/// the routes list plus a short paragraph teach her that she is no longer
+/// under Plugins, so she stops sending him there to find herself. Also fixes
+/// the `compose_dashboard` line, which had promised a `Companion → Dashboard`
+/// tab that was retired: a composed dashboard lands in Home → Cockpit.
+pub const CONSTITUTION_VERSION: u32 = 67;

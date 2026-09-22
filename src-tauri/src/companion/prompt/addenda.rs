@@ -374,6 +374,26 @@ Discipline:
     )
 }
 
+/// Identity is "fresh" if it still contains the placeholder bullets we seed it
+/// with. Once Athena writes a real identity (or the user edits it), those
+/// markers disappear.
+fn identity_is_placeholder(identity: &str) -> bool {
+    identity.contains("(seeded from intake interview)")
+        || identity.contains("(rhythms, patterns, what flow looks like for him)")
+}
+
+/// The fresh-install predicate: no prior conversation AND a still-placeholder
+/// identity.
+///
+/// Shared with the Companions status door (`commands::companions`), which asks
+/// the SAME question from the other side — whether Athena has been onboarded.
+/// The two must never drift: an install whose prompt is still in onboarding
+/// mode while the status says "onboarded" would offer no way to finish what she
+/// is asking for.
+pub(crate) fn needs_onboarding(identity: &str, no_episodes: bool) -> bool {
+    no_episodes && identity_is_placeholder(identity)
+}
+
 /// Detect a fresh-install state (no prior conversation + identity.md is
 /// still placeholder-shaped) and return a focused interview-mode addendum.
 /// Empty string in normal operation.
@@ -381,13 +401,7 @@ pub(super) fn onboarding_addendum_if_needed(
     identity: &str,
     episodes: &[episodic::Episode],
 ) -> String {
-    let no_episodes = episodes.is_empty();
-    // Identity is "fresh" if it still contains the placeholder bullets we
-    // seed it with. Once Athena writes a real identity (or the user edits
-    // it), those markers disappear.
-    let identity_is_placeholder = identity.contains("(seeded from intake interview)")
-        || identity.contains("(rhythms, patterns, what flow looks like for him)");
-    if !no_episodes || !identity_is_placeholder {
+    if !needs_onboarding(identity, episodes.is_empty()) {
         return String::new();
     }
     String::from(

@@ -413,6 +413,55 @@ pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD: &str = "director_weekly_experim
 /// ceiling (`personas_core::run_budget::DEFAULT_EVOLUTION_CEILING_USD`).
 pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT: f64 = 2.0;
 
+// -----------------------------------------------------------------------------
+// The Companions category — one switch per built-in companion
+// -----------------------------------------------------------------------------
+// Three companions, one runtime: Athena (the assistant), Overseer (keeps the
+// operator's agents running and worth their cost) and Curator (keeps a mapped
+// knowledge registry world-class). `enabled` is the OPERATOR'S INTENT and is
+// kept separately from eligibility, so losing a prerequisite never silently
+// rewrites the switch. Read by `commands::companions`.
+
+/// Whether Athena runs at all. OFF unmounts her orb, chat panel, guide layer
+/// and footer icon, refuses `companion_init`, and no-ops every companion
+/// background loop per tick (the proactive scheduler, the job worker, the
+/// execution-review debouncer, the remote-job seam). Her pages stay reachable
+/// so she can be switched back on. Stored `"true"` / `"false"`.
+///
+/// Default ON: she is the assistant the app is built around, and an install
+/// that has never seen this key is an install that has always had her.
+pub const ATHENA_ENABLED: &str = "athena_enabled";
+/// Default for [`ATHENA_ENABLED`] — on (unset means she runs).
+pub const ATHENA_ENABLED_DEFAULT: bool = true;
+
+/// RFC3339 timestamp Athena's onboarding wizard was finished, written by
+/// `athena_mark_onboarded`. PRESENCE is the whole contract — the value is a
+/// free-form timestamp for the operator's benefit and carries no typed
+/// validation.
+///
+/// The marker is newer than the wizard, so its absence does NOT mean
+/// "not onboarded": `commands::companions` also accepts the pre-existing
+/// brain-shaped predicate (episodes exist, or the identity layer has moved off
+/// its seeded placeholders) so an install that onboarded before this key
+/// existed still reads as onboarded.
+pub const ATHENA_ONBOARDED_AT: &str = "athena_onboarded_at";
+
+/// Whether Overseer runs. OFF (or no starred persona) makes the Director
+/// coaching entry points — `run_director_on_persona`, `run_director_batch` and
+/// the storm subscription — refuse instead of running. Does NOT reach the App
+/// master probation path, which raises its own review packets.
+/// Stored `"true"` / `"false"`. Default OFF: he spends LLM budget unattended.
+pub const OVERSEER_ENABLED: &str = "overseer_enabled";
+/// Default for [`OVERSEER_ENABLED`] — off (opt-in autonomy).
+pub const OVERSEER_ENABLED_DEFAULT: bool = false;
+
+/// Whether Curator runs. She has no backend loop yet (a later stage builds
+/// one), so today this key is the operator's intent and nothing reads it but
+/// the status door. Stored `"true"` / `"false"`. Default OFF.
+pub const CURATOR_ENABLED: &str = "curator_enabled";
+/// Default for [`CURATOR_ENABLED`] — off (opt-in).
+pub const CURATOR_ENABLED_DEFAULT: bool = false;
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -1117,6 +1166,11 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
+    // The Companions category's three switches + Athena's onboarding marker.
+    ATHENA_ENABLED,
+    ATHENA_ONBOARDED_AT,
+    OVERSEER_ENABLED,
+    CURATOR_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
@@ -1618,6 +1672,10 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     COMPANION_DAILY_ROLLUP_LAST,
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS_LAST,
+    // Athena's onboarding marker: stamped once by the wizard's finish step.
+    // Nobody sets it from Settings and nobody can unset it, so it is a
+    // milestone, not a config change the History tab should carry.
+    ATHENA_ONBOARDED_AT,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
@@ -1778,7 +1836,13 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
         | AUTONOMOUS_KPI_GOAL_DERIVATION
         | AUTONOMOUS_KPI_EVALUATION
-        | AUTONOMOUS_DIRECTOR_STORM => "autonomy",
+        | AUTONOMOUS_DIRECTOR_STORM
+        // The Companions category's three switches: switching a companion on
+        // or off is the most consequential autonomy change in the app, so it
+        // belongs in the History tab beside the loops it governs.
+        | ATHENA_ENABLED
+        | OVERSEER_ENABLED
+        | CURATOR_ENABLED => "autonomy",
         // Obsidian brain / dev-tools integrations.
         OBSIDIAN_BRAIN_CONFIG
         | OBSIDIAN_MIRROR_CONFIG
@@ -1874,6 +1938,43 @@ mod tests {
         );
         // Nobody set it, so it is not a settings change the History tab shows.
         assert_eq!(audit_category(MIGRATION_E31_NOTES_ADOPT_MILESTONES), None);
+    }
+
+    #[test]
+    fn companion_switches_registered_named_and_categorised() {
+        // An unregistered key is REJECTED on write, so a switch that is not in
+        // the allow-list can never persist: the toggle would appear to move and
+        // be back where it started on the next read. Pin all four names, their
+        // registration, their defaults and where the History tab files them.
+        assert_eq!(ATHENA_ENABLED, "athena_enabled");
+        assert_eq!(ATHENA_ONBOARDED_AT, "athena_onboarded_at");
+        assert_eq!(OVERSEER_ENABLED, "overseer_enabled");
+        assert_eq!(CURATOR_ENABLED, "curator_enabled");
+        for key in [
+            ATHENA_ENABLED,
+            ATHENA_ONBOARDED_AT,
+            OVERSEER_ENABLED,
+            CURATOR_ENABLED,
+        ] {
+            assert!(validate_key(key).is_ok(), "{key} is not registered");
+            // Free-form values: the switches are "true"/"false" and the marker
+            // is a timestamp; none carries a typed contract.
+            assert!(validate_value(key, "true").is_ok());
+        }
+        // Athena runs unless told otherwise; the other two are opt-in.
+        assert!(ATHENA_ENABLED_DEFAULT);
+        assert!(!OVERSEER_ENABLED_DEFAULT);
+        assert!(!CURATOR_ENABLED_DEFAULT);
+        // The switches are autonomy changes; the onboarding marker is not a
+        // change anyone made.
+        assert_eq!(audit_category(ATHENA_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(OVERSEER_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(CURATOR_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(ATHENA_ONBOARDED_AT), None);
+        // None of them is deprecated.
+        assert!(deprecated_replacement(ATHENA_ENABLED).is_none());
+        assert!(deprecated_replacement(OVERSEER_ENABLED).is_none());
+        assert!(deprecated_replacement(CURATOR_ENABLED).is_none());
     }
 
     #[test]

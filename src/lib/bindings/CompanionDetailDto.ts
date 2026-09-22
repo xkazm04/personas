@@ -2,8 +2,28 @@
 
 /**
  * The few live facts a surface may show beside a companion. Every field is
- * OPTIONAL and is omitted when unknown: a missing count is not zero. Counts
- * are `u32` (a `bigint` field would break arithmetic - census
- * `bigint-binding-field`).
+ * OPTIONAL and is omitted when it is unknown: a missing count is not zero.
+ * Counts are `u32` on purpose (ts-rs turns i64/u64/usize into `bigint`, which
+ * breaks arithmetic on the TS side - census `bigint-binding-field`).
  */
-export type CompanionDetailDto = { pendingDecisions?: number, starredCount?: number, agentsTotal?: number, registryName?: string, registryPath?: string, };
+export type CompanionDetailDto = { 
+/**
+ * Athena: decisions waiting for the operator right now.
+ */
+pendingDecisions?: number, 
+/**
+ * Overseer: how many personas are starred (his scope).
+ */
+starredCount?: number, 
+/**
+ * Overseer: how many personas exist at all, so "3 of 16" can be drawn.
+ */
+agentsTotal?: number, 
+/**
+ * Curator: the mapped registry's name, when one is mapped.
+ */
+registryName?: string, 
+/**
+ * Curator: the mapped registry's checkout path.
+ */
+registryPath?: string, };

@@ -629,6 +629,31 @@ pub fn count_conversation_after(pool: &UserDbPool, after: &str) -> Result<usize,
     Ok(n.max(0) as usize)
 }
 
+/// Whether this install has ever recorded a conversation episode, in ANY
+/// conversation — the "has the user ever talked to Athena" half of the
+/// fresh-install predicate (`prompt::needs_onboarding`).
+///
+/// Install-scoped rather than session-scoped on purpose: the Companions status
+/// door asks about the INSTALL, and every other reader here is keyed by
+/// `session_id`, which would answer "has this thread got history" instead.
+/// Machine-written correlator rows are excluded for the same reason the
+/// compress input excludes them — they are Athena talking to herself, not a
+/// conversation the operator had.
+pub fn any_conversation_episode(pool: &UserDbPool) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let sql = format!(
+        "SELECT EXISTS(
+           SELECT 1 FROM companion_node
+           WHERE kind = 'episode'
+             AND body_excerpt IS NOT NULL{}
+           LIMIT 1
+         )",
+        machine_marker_exclusion_sql()
+    );
+    let found: i64 = conn.query_row(&sql, [], |r| r.get(0))?;
+    Ok(found != 0)
+}
+
 /// Conversation episodes created STRICTLY AFTER `after` (RFC3339), across
 /// **every** conversation, oldest-first — the sleep cycle's compress input and
 /// the corpus its sleep-pressure gauge measures.

@@ -115,6 +115,25 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
 /// The whole inbound lifecycle for one job. Every exit path — success, turn
 /// error, panic, timeout — ends in exactly one `complete` or `fail`.
 async fn run_assignment(app: AppHandle, job: RemoteJobAssignment, handle: RemoteJobHandle) {
+    // Athena's master switch, read when the job ARRIVES rather than when the
+    // seam was installed: the executor is installed once at boot, so a switch
+    // flipped afterwards would otherwise never be seen. The job is FAILED with
+    // a reason rather than dropped — the paired device is waiting on a row and
+    // silence there reads as "this machine is broken", not as "her assistant is
+    // switched off".
+    let athena_off = app
+        .try_state::<Arc<AppState>>()
+        .map(|state| !crate::commands::companions::athena_enabled(&state.db))
+        .unwrap_or(false);
+    if athena_off {
+        let reason = "The assistant is switched off on that device.".to_string();
+        if let Err(e) = handle.fail(reason.clone()).await {
+            tracing::warn!(job_id = %job.job_id, error = %e, "remote job: fail() failed");
+        }
+        emit_turn_event(&app, &job, "failed", &reason);
+        return;
+    }
+
     let source = session::remote_device_source(&job.origin_display_name);
     emit_turn_event(&app, &job, "started", "");
 

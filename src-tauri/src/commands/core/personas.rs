@@ -78,17 +78,29 @@ pub fn get_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Person
     repo::get_by_id(&state.db, &id)
 }
 
-/// Star/unstar a persona. A starred persona is in the Director's coaching
-/// scope (the Director batch only reviews starred personas). Returns the new
-/// starred value.
+/// Star/unstar a persona. A starred persona is in Overseer's watch scope (his
+/// batch only reviews starred personas). Returns the new starred value.
+///
+/// Starring is a TERM OF THE COMPANIONS STATUS — it is Overseer's whole
+/// prerequisite — so the switch publishes `companions://status-changed` after
+/// the write commits. Without it, starring the first agent would leave his
+/// Setup toggle disabled and his landing column blocked until something else
+/// happened to re-read, which reads as "starring did not work".
+///
+/// Best-effort by construction: the write has already committed when the emit
+/// runs, so a failed emit costs a stale panel until the next read, never a lost
+/// star.
 #[tauri::command]
 #[requires(auth)]
 pub fn set_persona_starred(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     id: String,
     starred: bool,
 ) -> Result<bool, AppError> {
-    repo::set_starred(&state.db, &id, starred)
+    let value = repo::set_starred(&state.db, &id, starred)?;
+    crate::commands::companions::emit_status(&app, state.inner());
+    Ok(value)
 }
 
 /// Switch a whole persona on or off — the runtime gate the attention loop's
