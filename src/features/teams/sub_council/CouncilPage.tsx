@@ -1,7 +1,7 @@
 // Council - the descent from the registry galaxy, through the bench of
 // councils waiting on a person, to one council's round table and its gate.
 //
-// The visual contract is `docs/design/council-reference/index.html`: every
+// The visual contract is `.claude/council-reference/index.html`: every
 // build of this page is compared against it. This shell owns the header and
 // the stage; the galaxy layer mounts inside, and the bench takes the `bench`
 // slot below the field without ever hiding it.

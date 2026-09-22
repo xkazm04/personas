@@ -3,7 +3,7 @@
 // owns these objects for the lifetime of one dataset and mutates them in
 // place, which is what keeps drawing off the React render path entirely.
 //
-// The visual contract is `docs/design/council-reference/index.html`.
+// The visual contract is `.claude/council-reference/index.html`.
 import type { CouncilOverlaySubject } from '@/lib/bindings/CouncilOverlaySubject';
 
 /** Council signal on one star. `none` is "never councilled", never zero. */

@@ -11,10 +11,16 @@ councils waiting on a decision, and one council's round table with the gate
 pinned in its footer.
 
 The page is built against one artifact the owner approved and kept:
-`docs/design/council-reference/` (open `index.html` from `file://`, no build, no
+`.claude/council-reference/` (open `index.html` from `file://`, no build, no
 server). Every build of this surface is compared against it side by side, and
 the shots the comparison was made from live in `shots/` (the reference) and
 `shots-app/` (the app).
+
+That artifact is **machine-local**: 32 MB of screenshots and fixture data under
+the gitignored `.claude/` directory, so it is present in the owner's checkout
+and in no clone. Nothing in the build, the test suite or CI reads it; only the
+dev-only fixture door on the Council page does, and that door simply stays shut
+where the directory is absent.
 
 ---
 

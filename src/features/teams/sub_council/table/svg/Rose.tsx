@@ -7,7 +7,7 @@
 //   striped      = carried from an earlier round, not re-measured
 //   hatched at FULL reach = NOT MEASURED - absence is never a low score
 //
-// Ported from `docs/design/council-reference/index.html` `rose()`. Pure: it
+// Ported from `.claude/council-reference/index.html` `rose()`. Pure: it
 // takes seats and draws; it fetches nothing and holds no state.
 import { useId } from 'react';
 
