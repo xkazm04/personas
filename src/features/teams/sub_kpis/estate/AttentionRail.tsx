@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { AttentionPick } from './kpiPicks';
 import { moveKind, nextMoveOf, nextMoveText } from './kpiNextMove';
+import { KT } from './kpiType';
 
 const KIND_TONE: Record<string, string> = {
   off: 'var(--status-error)',
@@ -54,15 +55,15 @@ export function AttentionRail({
 
   return (
     <section className="space-y-2" aria-label={title}>
-      <h3 className="typo-heading text-foreground">{title}</h3>
+      <h3 className={KT.eyebrow}>{title}</h3>
       {picks.length === 0 ? (
-        <p className="typo-caption text-foreground">{o.rail_settled}</p>
+        <p className={KT.meta}>{o.rail_settled}</p>
       ) : (
         <div className="space-y-2.5">
           {groupPicks(picks).map((group) => (
             <div key={group.context ?? 'here'} className="space-y-0.5">
-              {group.context && <p className="px-1.5 typo-label text-foreground">{group.context}</p>}
-              <ol className="space-y-0.5">
+              {group.context && <p className={`px-1.5 pt-1 ${KT.meta}`}>{group.context}</p>}
+              <ol className="divide-y divide-primary/10">
                 {group.picks.map((pick) => {
                   const move = nextMoveOf(pick.tally);
                   return (
@@ -71,11 +72,11 @@ export function AttentionRail({
                         placement="left"
                         content={
                           <span className="block max-w-[18rem] space-y-0.5">
-                            <span className="block typo-title text-foreground">{pick.label}</span>
-                            <span className="block typo-caption text-foreground">
+                            <span className={`block ${KT.name}`}>{pick.label}</span>
+                            <span className="block typo-caption">
                               {tx(o.rail_counts, { measured: pick.tally.measured, total: pick.tally.total })}
                             </span>
-                            <span className="block typo-caption text-foreground">{nextMoveText(move, t, tx)}</span>
+                            <span className="block typo-caption">{nextMoveText(move, t, tx)}</span>
                           </span>
                         }
                       >
@@ -83,17 +84,17 @@ export function AttentionRail({
                           type="button"
                           onClick={() => onOpen(pick)}
                           data-testid={`kpi-rail-${pick.id}`}
-                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1 text-left transition-colors hover:bg-secondary/30 focus-ring"
+                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5 text-left transition-colors hover:bg-secondary/30 focus-ring"
                         >
                           <span
                             aria-hidden="true"
-                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-code tabular-nums"
+                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-label tabular-nums"
                             style={{ background: KIND_TONE[moveKind(move)], color: 'var(--background)' }}
                           >
                             {pick.rank}
                           </span>
-                          <span className="min-w-0 flex-1 truncate typo-title text-foreground">{pick.label}</span>
-                          <span className="shrink-0 typo-code text-foreground tabular-nums">
+                          <span className={`min-w-0 flex-1 truncate ${KT.text}`}>{pick.label}</span>
+                          <span className={`shrink-0 ${KT.metaFigure}`}>
                             {`${pick.tally.measured}/${pick.tally.total}`}
                           </span>
                         </button>

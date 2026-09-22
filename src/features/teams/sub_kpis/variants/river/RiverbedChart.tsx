@@ -18,19 +18,7 @@ const LAYERS = [
   { key: 'met', color: 'var(--status-success)' },
 ] as const;
 
-export function RiverbedChart({
-  bed,
-  height,
-  cursor,
-  onCursor,
-  compact = false,
-}: {
-  bed: Riverbed;
-  height: number;
-  cursor: number | null;
-  onCursor?: (week: number | null) => void;
-  compact?: boolean;
-}) {
+export function RiverbedChart({ bed, height }: { bed: Riverbed; height: number }) {
   const { t, tx } = useTranslation();
   const o = t.kpis.overview;
   const patternId = useId();
@@ -65,7 +53,6 @@ export function RiverbedChart({
       style={{ height }}
       role="img"
       aria-label={tx(o.river_bed_aria, { declared: bed.declared, dry: bed.dryWeeks })}
-      onMouseLeave={onCursor ? () => onCursor(null) : undefined}
     >
       <defs>
         <pattern id={patternId} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -122,27 +109,6 @@ export function RiverbedChart({
         ) : null,
       )}
 
-      {cursor != null &&
-        points.map((p, i) =>
-          p.week === cursor ? (
-            <line key={`c-${p.week}`} x1={x(i)} y1="0" x2={x(i)} y2={height} stroke="var(--primary)" strokeWidth="1.5" />
-          ) : null,
-        )}
-
-      {/* One hit column per week: the cursor is a week, never a pixel. */}
-      {onCursor &&
-        !compact &&
-        points.map((p, i) => (
-          <rect
-            key={`hit-${p.week}`}
-            x={x(i) - W / (n * 2)}
-            y="0"
-            width={W / n}
-            height={height}
-            fill="transparent"
-            onMouseEnter={() => onCursor(p.week)}
-          />
-        ))}
     </svg>
   );
 }

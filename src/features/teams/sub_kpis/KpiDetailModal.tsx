@@ -4,7 +4,7 @@
 // measure / pause / archive actions pinned to a footer bar. Built on the shared
 // BaseModal primitive; reuses the shared data hook + detail parts.
 import { useMemo, useState } from 'react';
-import { Archive, Cable, Gauge, Pause, Play, ShieldAlert } from 'lucide-react';
+import { Archive, Cable, Gauge, History, Pause, Play, Ruler } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
@@ -26,6 +26,7 @@ import { KpiStoryChart, KpiSourceSection } from './kpiDetailParts';
 import { KpiSteeringPanel } from './KpiSteeringPanel';
 import { KPIConnectWizard } from './KPIConnectWizard';
 import { useKpiDetail } from './useKpiDetail';
+import { KpiSection } from './KpiDetailSection';
 
 const TITLE_ID = 'kpi-detail-modal-title';
 
@@ -63,13 +64,18 @@ export function KpiDetailModal({
       <ModalHeader kpi={kpi} projectName={projectName} onClose={onClose} />
 
       <div className="flex-1 overflow-y-auto p-5">
-        <div className="max-w-[50rem] mx-auto space-y-5">
-          <HeroBlock kpi={kpi} />
-          <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
+        {/* One document, the Manifest's way: every block is a KpiSection and
+            the hairlines between them come from this divide-y, so a section
+            that has nothing to say (steering, source) leaves no gap behind. */}
+        <div className="max-w-[50rem] mx-auto divide-y divide-primary/10">
+          <section className="pb-5">
+            <HeroBlock kpi={kpi} />
+          </section>
+          <KpiSection title={t.kpis.chart_trend_title} icon={Gauge}>
             {/* P3 convergence: production stays the solid truth line; the sim
                 channel overlays dashed, and the readout names the gap. */}
             <StoryWithConvergence kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
-          </Panel>
+          </KpiSection>
           <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
           <HowMeasured kpi={kpi} />
           <KpiSourceSection kpi={kpi} bindings={detail.bindings} onConnect={() => setConnectOpen(true)} />
@@ -171,13 +177,13 @@ function HeroBlock({ kpi }: { kpi: DevKpi }) {
   const { t, tx } = useTranslation();
   const d = paceDescriptor(kpi);
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/20 p-4 space-y-2">
+    <div className="rounded-card border border-primary/15 bg-secondary/20 p-4 space-y-2.5">
       <div className="flex items-baseline gap-2">
         <span className="typo-hero text-foreground tabular-nums">
           {kpi.current_value != null ? <Numeric value={kpi.current_value} /> : '—'}
         </span>
         {kpi.target_value != null && (
-          <span className="typo-body text-foreground/80 tabular-nums">
+          <span className="typo-body-lg tabular-nums">
             / <Numeric value={kpi.target_value} /> {kpi.unit}
           </span>
         )}
@@ -190,7 +196,7 @@ function HeroBlock({ kpi }: { kpi: DevKpi }) {
           />
         </div>
       )}
-      <p className="typo-caption text-foreground/80">
+      <p className="typo-caption">
         {kpi.target_date ? tx(t.kpis.due_by, { date: kpi.target_date.slice(0, 10) }) : ''}
       </p>
     </div>
@@ -282,39 +288,46 @@ function StoryWithConvergence({
 function HowMeasured({ kpi }: { kpi: DevKpi }) {
   const { t, tx } = useTranslation();
   return (
-    <div className="space-y-1.5">
+    <KpiSection title={t.kpis.section_how} icon={Ruler}>
+      <div className="space-y-2">
       {/* The description is AUTHORED - the KPI scan writes it, an agent can
           rewrite it - so it renders as RichMarkdown: a scan may put a gauge,
           a card or a table of evidence in it, in the app's one block vocabulary. */}
-      {kpi.description && <RichMarkdown content={kpi.description} className="typo-body text-foreground" />}
-      <p className="typo-body text-foreground/90">{describeMeasurement(kpi, t, tx)}</p>
-      <details className="typo-caption text-foreground/70">
+      {kpi.description && <RichMarkdown content={kpi.description} className="typo-body-lg leading-relaxed" />}
+      <p className="typo-body">{describeMeasurement(kpi, t, tx)}</p>
+      <details className="typo-caption">
         <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
-        <code className="block mt-1 font-mono break-all">{kpi.measure_config}</code>
+        <code className="mt-1 block rounded-card bg-secondary/30 px-2.5 py-2 font-mono typo-code break-all">
+          {kpi.measure_config}
+        </code>
       </details>
-    </div>
+      </div>
+    </KpiSection>
   );
 }
 
 function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: ReturnType<typeof useKpiDetail>['measurements'] }) {
   const { t } = useTranslation();
   return (
-    <div>
-      <h3 className="typo-overline text-foreground mb-1.5">{t.kpis.history_title}</h3>
+    <KpiSection
+      title={t.kpis.history_title}
+      icon={History}
+      aside={measurements.length > 0 ? <span className="typo-caption tabular-nums">{measurements.length}</span> : undefined}
+    >
       {measurements.length === 0 ? (
-        <p className="typo-caption text-foreground/80">{t.kpis.history_empty}</p>
+        <p className="typo-caption">{t.kpis.history_empty}</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="divide-y divide-primary/10 rounded-card border border-primary/10">
           {measurements.map((m) => {
             const prov = summarizeEvidence(m.evidence);
             const sourceLabels = t.kpis.measurement_source as Record<string, string>;
             return (
-              <li key={m.id} className="rounded-card border border-border/15 bg-secondary/20 px-2 py-1.5">
-                <div className="flex items-center gap-2 typo-body text-foreground">
-                  <span className="tabular-nums font-medium">
-                    <Numeric value={m.value} /> {kpi.unit}
+              <li key={m.id} className="px-3 py-2">
+                <div className="flex items-center gap-3">
+                  <span className="typo-data tabular-nums">
+                    <Numeric value={m.value} /> <span className="typo-caption">{kpi.unit}</span>
                   </span>
-                  <span className="typo-caption text-foreground/80">
+                  <span className="typo-caption">
                     <RelativeTime timestamp={m.measured_at} />
                   </span>
                   <span className="ml-auto inline-flex items-center gap-1">
@@ -343,7 +356,7 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
           })}
         </ul>
       )}
-    </div>
+    </KpiSection>
   );
 }
 
@@ -410,20 +423,6 @@ function ActionBar({
       <Button size="sm" variant="ghost" icon={<Archive className="w-3.5 h-3.5" />} onClick={onArchive}>
         {t.kpis.archive_button}
       </Button>
-    </div>
-  );
-}
-
-// -- small shared panel ------------------------------------------------------
-
-function Panel({ title, icon: Icon, children }: { title: string; icon: typeof ShieldAlert; children: React.ReactNode }) {
-  return (
-    <div className="rounded-card border border-primary/15 bg-secondary/10 p-4">
-      <h3 className="flex items-center gap-1.5 typo-overline text-foreground mb-2">
-        <Icon className="w-3.5 h-3.5 text-primary" aria-hidden />
-        {title}
-      </h3>
-      {children}
     </div>
   );
 }

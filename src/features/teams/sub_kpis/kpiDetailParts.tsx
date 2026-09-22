@@ -16,6 +16,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ComposedByBadge } from './KPIConnectWizard';
+import { KpiSection } from './KpiDetailSection';
 
 // =============================================================================
 // Data source — the KPI's active binding (or the invitation to create one)
@@ -42,8 +43,7 @@ export function KpiSourceSection({
   if (!active && !degraded && !connectable) return null;
 
   return (
-    <div data-testid="kpi-source-section">
-      <h3 className="typo-overline text-foreground mb-1.5">{t.kpis.source_section_title}</h3>
+    <KpiSection title={t.kpis.source_section_title} icon={Cable} data-testid="kpi-source-section">
       {degraded && (
         <div className="rounded-card border border-status-error/25 bg-status-error/10 p-3 mb-2 space-y-2">
           <p className="typo-body text-foreground">
@@ -90,7 +90,7 @@ export function KpiSourceSection({
           </div>
         )
       )}
-    </div>
+    </KpiSection>
   );
 }
 

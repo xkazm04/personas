@@ -11,6 +11,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { Estate, EstateProject, KpiTally } from './kpiEstate';
 import { CoverageBar } from './CoverageBar';
+import { KT } from './kpiType';
 
 function coveragePct(tally: KpiTally): string {
   const pct = tally.coverage * 100;
@@ -31,11 +32,13 @@ export function EstateHeadline({
   const tally = project ? project.tally : estate.tally;
 
   return (
+    // The Manifest's header pattern: the title row, then a hairline, then the
+    // content - so where the page's own statement ends is visible.
     <header className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-primary/10 pb-3">
         <h2 className="flex items-baseline gap-2">
-          <span className="typo-hero text-foreground tabular-nums">{`${coveragePct(tally)}%`}</span>
-          <span className="typo-heading-lg text-primary">{o.headline_coverage}</span>
+          <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
+          <span className="typo-title-lg">{o.headline_coverage}</span>
         </h2>
         <nav className="flex flex-wrap items-center gap-1" aria-label={o.altitude_portfolio}>
           <Crumb
@@ -46,7 +49,7 @@ export function EstateHeadline({
           />
           {project && (
             <>
-              <span aria-hidden="true" className="typo-caption text-foreground">
+              <span aria-hidden="true" className="typo-caption">
                 /
               </span>
               <Crumb
@@ -90,8 +93,8 @@ function Crumb({
   }`;
   const body = (
     <>
-      <span className="typo-title text-foreground">{label}</span>{' '}
-      <span className="typo-caption text-foreground">{detail}</span>
+      <span className={KT.name}>{label}</span>{' '}
+      <span className="typo-caption">{detail}</span>
     </>
   );
   if (!onClick) {
@@ -126,8 +129,8 @@ function Stat({ label, value, tone }: { label: string; value: number | string | 
         className="absolute inset-x-0 top-0 h-px"
         style={{ background: `linear-gradient(90deg, ${tone}, transparent 75%)`, opacity: lit ? 0.9 : 0.3 }}
       />
-      <dt className="typo-caption text-foreground">{label}</dt>
-      <dd className="typo-data-lg tabular-nums leading-tight" style={{ color: lit ? tone : 'var(--foreground)' }}>
+      <dt className={KT.meta}>{label}</dt>
+      <dd className={`${KT.stat} leading-tight`} style={{ color: lit ? tone : 'var(--foreground)' }}>
         {value ?? t.kpis.overview.read_never}
       </dd>
     </div>

@@ -18,6 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { categoryMeta, paceSentence, TRACK_COLOR } from '../kpiMeta';
 import { HATCH_BG } from '../kpiChartTheme';
 import { bulletScale, type BulletRow } from './KpiGroupLayer.model';
+import { KT } from '../estate/kpiType';
 
 const TICK = 'absolute top-0 bottom-0 w-[2px] -translate-x-1/2';
 
@@ -82,7 +83,7 @@ export function KpiBulletStrip({ rows, onOpen }: { rows: BulletRow[]; onOpen: (k
         // The sentence is often longer than the column; the full text rides on
         // a tooltip rather than wrapping the row to two lines.
         render: (row) => (
-          <span className="block typo-caption text-foreground">
+          <span className="block typo-caption">
             <TruncateWithTooltip
               text={row.track === 'unmeasured' ? t.kpis.pace_unmeasured : paceSentence(row.kpi, t, tx)}
             />
@@ -95,7 +96,7 @@ export function KpiBulletStrip({ rows, onOpen }: { rows: BulletRow[]; onOpen: (k
 
   return (
     <section className="space-y-2" data-testid="kpi-layer-bullets">
-      <h3 className="typo-heading text-foreground">{o.layer_bullet_title}</h3>
+      <h3 className={KT.eyebrow}>{o.layer_bullet_title}</h3>
       <UnifiedTable
         columns={columns}
         data={rows}
@@ -153,7 +154,7 @@ function Value({ value, unit, strong = false }: { value: number | null; unit: st
       <span className={`typo-data tabular-nums ${strong ? 'font-semibold text-foreground' : 'text-foreground'}`}>
         {value}
       </span>
-      {unit ? <span className="min-w-0 truncate typo-caption text-foreground">{unit}</span> : null}
+      {unit ? <span className="min-w-0 truncate typo-caption">{unit}</span> : null}
     </span>
   );
 }

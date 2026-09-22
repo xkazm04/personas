@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { kpiNextMoveOf, nextMoveText } from '../../estate/kpiNextMove';
 import { ageDays } from '../../estate/kpiEstate';
 import { plotStyle } from './mapPlot';
+import { KT } from '../../estate/kpiType';
 
 export function MapPlotTip({ kpi, now, groupLabel }: { kpi: DevKpi; now: number; groupLabel: string }) {
   const { t, tx } = useTranslation();
@@ -30,15 +31,15 @@ export function MapPlotTip({ kpi, now, groupLabel }: { kpi: DevKpi; now: number;
             border: style.fill ? undefined : '1px solid var(--card-border)',
           }}
         />
-        <span className="typo-title text-foreground">{kpi.name}</span>
+        <span className={KT.name}>{kpi.name}</span>
       </div>
-      <p className="typo-caption text-foreground">{groupLabel}</p>
-      <p className="typo-caption text-foreground">
+      <p className="typo-caption">{groupLabel}</p>
+      <p className="typo-caption">
         {age == null
           ? o.map_never_read
           : tx(o.map_last_read, { days: Math.round(age), cadence: kpi.cadence ?? 'manual' })}
       </p>
-      <p className="typo-caption text-foreground">{nextMoveText(kpiNextMoveOf(kpi, now), t, tx)}</p>
+      <p className="typo-caption">{nextMoveText(kpiNextMoveOf(kpi, now), t, tx)}</p>
     </div>
   );
 }

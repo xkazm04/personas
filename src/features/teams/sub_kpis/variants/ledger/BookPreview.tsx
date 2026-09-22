@@ -1,80 +1,44 @@
-// What is below the row under the cursor, before you commit to going there.
+// What is below a row, before you commit to going there - as a tooltip on
+// the row's title.
 //
-// The panel that won wayfinding 10/10 from both judges of the kpi-descent
-// contest: descending stops being a gamble, because the next page is already
-// legible. It holds its own height so the page beside it never reflows while
-// the reader moves down the rows.
+// It was a fixed side pane. The pane held its own height, took a fifth of the
+// page from the table, and read as an empty panel until a row was hovered.
+// Anchored to the title it names, it appears only when there is something to
+// say and gives the table the full width. It is still the page the reader is
+// about to get, not a summary of it: the balance, the move, and the first
+// rows inside. Inert, like every tooltip - the row is the click target.
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { CoverageBar } from '../../estate/CoverageBar';
 import { nextMoveOf, nextMoveText } from '../../estate/kpiNextMove';
+import { KT } from '../../estate/kpiType';
 import type { BookRow } from './kpiBooks';
-import { RelativeReading } from './RelativeReading';
 
-export function BookPreview({
-  row,
-  below,
-  belowLabel,
-  onOpen,
-}: {
-  row: BookRow | null;
-  below: BookRow[];
-  belowLabel: string;
-  onOpen: (child: BookRow) => void;
-}) {
+export function BookPreviewTip({ row, below }: { row: BookRow; below: BookRow[] }) {
   const { t, tx } = useTranslation();
   const o = t.kpis.overview;
 
-  if (!row) {
-    return (
-      <aside className="min-h-[18rem] rounded-card border border-card-border bg-secondary/10 p-3">
-        <h3 className="typo-heading text-foreground">{o.preview_title}</h3>
-        <p className="typo-caption text-foreground">{o.preview_hint}</p>
-      </aside>
-    );
-  }
-
   return (
-    <aside className="min-h-[18rem] space-y-3 rounded-card border border-card-border bg-secondary/10 p-3">
-      <div className="space-y-1.5">
-        <p className="typo-label text-foreground">{belowLabel}</p>
-        <h3 className="typo-title-lg text-foreground">{row.label}</h3>
-        <CoverageBar tally={row.tally} />
-        <p className="typo-caption text-foreground tabular-nums">
-          {tx(o.preview_balance, {
-            total: row.tally.total,
-            measured: row.tally.measured,
-            owed: row.debts.reading,
-          })}
-        </p>
-        <p className="typo-caption text-foreground">{nextMoveText(nextMoveOf(row.tally), t, tx)}</p>
-        <p className="typo-caption text-foreground">
-          {o.preview_last_read} <RelativeReading at={row.lastReadAt} />
-        </p>
-      </div>
+    <span className="block w-[20rem] space-y-2 py-0.5">
+      <span className={`block ${KT.name}`}>{row.label}</span>
+      <CoverageBar tally={row.tally} height={6} />
+      <span className={`block ${KT.figure}`}>
+        {tx(o.preview_balance, { total: row.tally.total, measured: row.tally.measured, owed: row.debts.reading })}
+      </span>
+      <span className={`block ${KT.meta}`}>{nextMoveText(nextMoveOf(row.tally), t, tx)}</span>
 
       {below.length > 0 && (
-        <div className="space-y-1.5">
-          <h4 className="typo-label text-foreground">{o.preview_below}</h4>
-          <ul className="space-y-1">
-            {below.map((child) => (
-              <li key={child.id}>
-                <button
-                  type="button"
-                  onClick={() => onOpen(child)}
-                  className="flex w-full items-baseline gap-2 rounded-interactive px-1.5 py-1 text-left hover:bg-secondary/30 focus-ring"
-                >
-                  <span className="typo-code text-foreground tabular-nums">{child.rank}</span>
-                  <span className="min-w-0 flex-1 truncate typo-caption text-foreground">{child.label}</span>
-                  <span className="shrink-0 typo-code text-foreground tabular-nums">
-                    {`${child.tally.measured}/${child.tally.total}`}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <span className="block border-t border-primary/10 pt-1.5">
+          <span className={`mb-1 block ${KT.eyebrow}`}>{o.preview_below}</span>
+          {below.map((child) => (
+            <span key={child.id} className="flex items-baseline gap-2">
+              <span className={`w-4 shrink-0 ${KT.metaFigure}`}>{child.rank}</span>
+              <span className={`min-w-0 flex-1 truncate ${KT.text}`}>{child.label}</span>
+              <span className={`shrink-0 ${KT.metaFigure}`}>{`${child.tally.measured}/${child.tally.total}`}</span>
+            </span>
+          ))}
+        </span>
       )}
-    </aside>
+    </span>
   );
 }

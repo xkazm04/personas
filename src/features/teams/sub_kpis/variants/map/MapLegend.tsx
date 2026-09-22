@@ -64,7 +64,7 @@ export function MapLegend({
         />
       </ul>
 
-      <p className="typo-caption text-foreground">
+      <p className="typo-caption">
         {dropped > 0 ? tx(o.map_dropped, { count: dropped }) : tx(o.map_all_drawn, { count: tally.total })}
         {floored > 0 && ` ${tx(o.map_floored, { count: floored })}`}
       </p>
@@ -76,7 +76,7 @@ function Key({ swatch, label }: { swatch: React.CSSProperties; label: string }) 
   return (
     <li className="flex items-center gap-1.5">
       <span aria-hidden="true" className="block size-3 shrink-0 rounded-[2px]" style={swatch} />
-      <span className="typo-caption text-foreground">{label}</span>
+      <span className="typo-caption">{label}</span>
     </li>
   );
 }

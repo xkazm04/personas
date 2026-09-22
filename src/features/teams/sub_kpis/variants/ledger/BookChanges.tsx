@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Estate, EstateProject } from '../../estate/kpiEstate';
 import { stateChanges, type StateChange } from '../AttentionLedger.model';
 import type { LazyTrendsStatus } from '../../useKpiOverview';
+import { KT } from '../../estate/kpiType';
 
 const TRACK_TONE: Record<string, string> = {
   'off-track': 'var(--status-error)',
@@ -54,7 +55,7 @@ export function BookChanges({
   if (status === 'failed') {
     return (
       <div className="flex items-center gap-3">
-        <p className="typo-caption text-foreground">{o.trends_failed}</p>
+        <p className="typo-caption">{o.trends_failed}</p>
         <Button variant="ghost" size="sm" onClick={onRetry}>
           {o.retry}
         </Button>
@@ -64,11 +65,11 @@ export function BookChanges({
 
   return (
     <section className="space-y-1.5" data-testid="kpi-books-changes">
-      <h3 className="typo-heading text-foreground">
+      <h3 className={KT.eyebrow}>
         {changes.length > 0 ? tx(o.changes_count, { count: changes.length }) : o.changes_title}
       </h3>
       {changes.length === 0 ? (
-        <p className="typo-caption text-foreground">
+        <p className="typo-caption">
           {status === 'loading' ? o.changes_reading : o.changes_none}
         </p>
       ) : (
@@ -104,7 +105,7 @@ function ChangeChip({ change, onOpen }: { change: StateChange; onOpen: () => voi
       onClick={onOpen}
       className="flex max-w-[22rem] items-baseline gap-2 rounded-interactive border border-card-border bg-secondary/15 px-2 py-1 text-left hover:bg-secondary/35 focus-ring"
     >
-      <span className="min-w-0 flex-1 truncate typo-caption text-foreground">{change.kpi.name}</span>
+      <span className="min-w-0 flex-1 truncate typo-caption">{change.kpi.name}</span>
       <span className="shrink-0 typo-caption" style={{ color: TRACK_TONE[change.to] }}>
         {tx(o.changes_from_to, { from: label(change.from), to: label(change.to) })}
       </span>

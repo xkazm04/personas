@@ -29,6 +29,7 @@ import { brokenPromises, type MapLens } from './map/mapPlot';
 import { MapLegend } from './map/MapLegend';
 import { MapTerritory, type PlotHit } from './map/MapTerritory';
 import { MapPlotTip } from './map/MapPlotTip';
+import { KT } from '../estate/kpiType';
 
 /** Tall enough that 1,044 plots are individually visible at 1280px wide; the
  *  canvas is a fixed frame, never a page that grows with the estate. */
@@ -113,8 +114,8 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
                 data-testid={`kpi-map-frame-${frame.projectId}`}
                 className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-secondary/30 focus-ring"
               >
-                <span className="truncate typo-title text-foreground">{frame.label}</span>
-                <span className="shrink-0 typo-caption text-foreground tabular-nums">
+                <span className={`truncate ${KT.name}`}>{frame.label}</span>
+                <span className="shrink-0 typo-caption tabular-nums">
                   {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
                 </span>
                 {frame.groupsUnknown && (
