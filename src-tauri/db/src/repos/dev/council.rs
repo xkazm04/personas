@@ -327,6 +327,28 @@ pub fn insert_run(
     run: &NewRun,
     verdicts: &[NewVerdict],
 ) -> Result<CouncilRun, AppError> {
+    insert_run_full(pool, run, verdicts, &[])
+}
+
+/// [`insert_run`] plus the run's per-scenario results, in the SAME transaction.
+///
+/// Separate entry point rather than a fourth argument on `insert_run`: most
+/// callers have no scenarios and a `&[]` at every one of them would be noise.
+/// The atomicity is the point either way - a run row whose scenario results
+/// landed separately would read as an envelope that measured fewer branches
+/// than it did, and nothing downstream could tell that from the truth.
+///
+/// The scenario ROWS must already exist; the ingest door creates any it
+/// discovered before it reaches here, because a result needs an id to point
+/// at. That creation is deliberately outside this transaction: a `proposed`
+/// scenario with no result is a branch somebody named, which is a fact worth
+/// keeping even if the run it came with is then refused.
+pub fn insert_run_full(
+    pool: &DbPool,
+    run: &NewRun,
+    verdicts: &[NewVerdict],
+    scenario_results: &[crate::repos::dev::scenarios::NewScenarioResult],
+) -> Result<CouncilRun, AppError> {
     timed_query!("dev_council_runs", "council::insert_run", {
         let mut conn = pool.get()?;
         let id = uuid::Uuid::new_v4().to_string();
@@ -379,6 +401,27 @@ pub fn insert_run(
                     v.floor_hit as i64,
                     v.advisory as i64,
                     v.payload_json
+                ],
+            )?;
+        }
+        for s in scenario_results {
+            tx.execute(
+                "INSERT INTO dev_council_scenario_results
+                    (id, run_id, scenario_id, state, score, confidence, n, proof,
+                     floor_hit, advisory, summary)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+                params![
+                    uuid::Uuid::new_v4().to_string(),
+                    id,
+                    s.scenario_id,
+                    s.state,
+                    s.score,
+                    s.confidence,
+                    s.n,
+                    s.proof,
+                    s.floor_hit as i64,
+                    s.advisory as i64,
+                    s.summary
                 ],
             )?;
         }

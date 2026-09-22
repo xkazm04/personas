@@ -23,6 +23,7 @@ mod execution_annotation;
 #[cfg(feature = "p2p")]
 mod exposure;
 mod external_api_key;
+mod feature_board;
 mod frontend_crash;
 mod genome;
 mod gitlab;
@@ -105,6 +106,7 @@ pub use execution_annotation::*;
 #[cfg(feature = "p2p")]
 pub use exposure::*;
 pub use external_api_key::*;
+pub use feature_board::*;
 pub use frontend_crash::*;
 pub use genome::*;
 pub use gitlab::*;

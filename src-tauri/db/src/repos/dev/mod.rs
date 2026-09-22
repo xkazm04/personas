@@ -31,6 +31,9 @@ pub mod cross_project;
 /// Autopilot cycles as `dev_goals` rows: the `[cycle:<persona>:<n>]` marker,
 /// the claim, the successor filing and the close.
 pub mod cycle_goals;
+/// The Features page's ONE read: every context's role, every feature's council
+/// and scenarios, joined in memory from bulk reads rather than per feature.
+pub mod feature_board;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
 /// `dev_ideas.plan` — the execution plan an analysing model left for an
@@ -51,6 +54,9 @@ pub mod portfolio;
 pub mod projects;
 /// `dev_scans`.
 pub mod scans;
+/// `dev_use_case_scenarios` and `dev_council_scenario_results` - a feature
+/// applied to one condition, and what a council round found for it.
+pub mod scenarios;
 /// `dev_standards` — golden-standard scan findings (pipeline stage 3b).
 pub mod standards;
 /// `dev_tasks` — the run desk.
