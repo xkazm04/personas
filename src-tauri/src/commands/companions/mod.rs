@@ -133,24 +133,10 @@ pub struct CompanionsStatusDto {
 // The switches — the readers every gated call site uses
 // ---------------------------------------------------------------------------
 
-/// Read a `"true"` / `"false"` settings row, falling back to `default` when the
-/// row is absent OR the read fails. A failed read must not switch a companion
-/// off (or on) by accident: the fallback is the documented meaning of "unset".
-fn flag(db: &DbPool, key: &str, default: bool) -> bool {
-    match settings_repo::get(db, key) {
-        Ok(Some(v)) => v == "true",
-        Ok(None) => default,
-        Err(e) => {
-            tracing::warn!(key, error = %e, "companions: settings read failed - using the default");
-            default
-        }
-    }
-}
-
 /// Whether Athena runs. **Call this per tick, never once at boot** — the whole
 /// point of the switch is that flipping it takes effect on the live process.
 pub fn athena_enabled(db: &DbPool) -> bool {
-    flag(
+    settings_repo::get_bool(
         db,
         settings_keys::ATHENA_ENABLED,
         settings_keys::ATHENA_ENABLED_DEFAULT,
@@ -161,7 +147,7 @@ pub fn athena_enabled(db: &DbPool) -> bool {
 /// a call site that is about to DO Overseer's work: being on with nothing to
 /// watch is not the same as running.
 pub fn overseer_enabled(db: &DbPool) -> bool {
-    flag(
+    settings_repo::get_bool(
         db,
         settings_keys::OVERSEER_ENABLED,
         settings_keys::OVERSEER_ENABLED_DEFAULT,
@@ -172,7 +158,7 @@ pub fn overseer_enabled(db: &DbPool) -> bool {
 /// she has no loop (a later stage builds one); the status door and her Setup
 /// page are the only readers.
 pub fn curator_enabled(db: &DbPool) -> bool {
-    flag(
+    settings_repo::get_bool(
         db,
         settings_keys::CURATOR_ENABLED,
         settings_keys::CURATOR_ENABLED_DEFAULT,

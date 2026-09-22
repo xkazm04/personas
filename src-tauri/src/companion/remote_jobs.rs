@@ -104,8 +104,18 @@ pub struct AthenaRemoteJobs {
 #[async_trait::async_trait]
 impl RemoteJobExecutor for AthenaRemoteJobs {
     /// Runs on the inbound dispatch task — returns immediately, always.
+    ///
+    /// The one thing it does BEFORE spawning is read Athena's master switch,
+    /// which is a single indexed settings read. It belongs here rather than
+    /// inside the turn: spawning a task in order to have it refuse is work for
+    /// nothing, and the refusal itself is one row write, not a turn, so it does
+    /// not threaten the immediate-return contract above.
     async fn execute(&self, job: RemoteJobAssignment, handle: RemoteJobHandle) {
         let app = self.app.clone();
+        if athena_switched_off(&app) {
+            refuse_while_switched_off(&app, &job, &handle).await;
+            return;
+        }
         tokio::spawn(async move {
             run_assignment(app, job, handle).await;
         });
@@ -115,25 +125,6 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
 /// The whole inbound lifecycle for one job. Every exit path — success, turn
 /// error, panic, timeout — ends in exactly one `complete` or `fail`.
 async fn run_assignment(app: AppHandle, job: RemoteJobAssignment, handle: RemoteJobHandle) {
-    // Athena's master switch, read when the job ARRIVES rather than when the
-    // seam was installed: the executor is installed once at boot, so a switch
-    // flipped afterwards would otherwise never be seen. The job is FAILED with
-    // a reason rather than dropped — the paired device is waiting on a row and
-    // silence there reads as "this machine is broken", not as "her assistant is
-    // switched off".
-    let athena_off = app
-        .try_state::<Arc<AppState>>()
-        .map(|state| !crate::commands::companions::athena_enabled(&state.db))
-        .unwrap_or(false);
-    if athena_off {
-        let reason = "The assistant is switched off on that device.".to_string();
-        if let Err(e) = handle.fail(reason.clone()).await {
-            tracing::warn!(job_id = %job.job_id, error = %e, "remote job: fail() failed");
-        }
-        emit_turn_event(&app, &job, "failed", &reason);
-        return;
-    }
-
     let source = session::remote_device_source(&job.origin_display_name);
     emit_turn_event(&app, &job, "started", "");
 
@@ -302,6 +293,36 @@ fn emit_turn_event(app: &AppHandle, job: &RemoteJobAssignment, phase: &str, summ
     if let Err(e) = app.emit(REMOTE_JOB_TURN_EVENT, payload) {
         tracing::warn!(error = %e, "remote job turn event emit failed");
     }
+}
+
+/// Athena's master switch, read when a job ARRIVES rather than when the seam
+/// was installed: the executor is installed once at boot, so a switch flipped
+/// afterwards would otherwise never be seen on this process.
+///
+/// A missing `AppState` means the app is still coming up, which is not the
+/// operator switching her off — so the benefit of the doubt goes to running.
+fn athena_switched_off(app: &AppHandle) -> bool {
+    app.try_state::<Arc<AppState>>()
+        .map(|state| !crate::commands::companions::athena_enabled(&state.db))
+        .unwrap_or(false)
+}
+
+/// Refuse an arriving job because Athena is switched off on this device.
+///
+/// FAILED with a reason rather than dropped: the paired device is waiting on a
+/// row, and silence there reads as "this machine is broken" rather than as
+/// "her assistant is switched off". One event so the local Devices surface
+/// shows the same thing the remote one does.
+async fn refuse_while_switched_off(
+    app: &AppHandle,
+    job: &RemoteJobAssignment,
+    handle: &RemoteJobHandle,
+) {
+    let reason = "The assistant is switched off on that device.".to_string();
+    if let Err(e) = handle.fail(reason.clone()).await {
+        tracing::warn!(job_id = %job.job_id, error = %e, "remote job: fail() failed");
+    }
+    emit_turn_event(app, job, "failed", &reason);
 }
 
 /// This device's own name, for a progress note the OTHER device reads.

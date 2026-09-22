@@ -87,6 +87,31 @@ pub fn get(pool: &DbPool, key: &str) -> Result<Option<String>, AppError> {
     })
 }
 
+/// Read a BOOLEAN setting: the row's text decoded once, here, rather than by
+/// an ad-hoc comparison at each call site.
+///
+/// `app_settings.value` is TEXT, so every typed setting is decoded somewhere.
+/// `settings_keys::validate_value` already fixes one canonical token pair on
+/// WRITE, but nothing fixed how the value came back, and the tree grew six
+/// different spellings of the same decode — one of which accepts a token the
+/// writer would have rejected. This is the decode the golden path
+/// (`app-settings-store.md`) asks for: at the registry, where the key is
+/// declared, so a new consumer inherits it instead of inventing a seventh.
+///
+/// `default` is the documented meaning of "unset" for that key (each has a
+/// `<KEY>_DEFAULT` beside it), and it is ALSO what a failed read returns: a
+/// database error must not read as "the operator switched this off".
+pub fn get_bool(pool: &DbPool, key: &str, default: bool) -> bool {
+    match get(pool, key) {
+        Ok(Some(v)) => v.trim().eq_ignore_ascii_case("true"),
+        Ok(None) => default,
+        Err(e) => {
+            tracing::warn!(key, error = %e, "settings::get_bool failed - using the key's default");
+            default
+        }
+    }
+}
+
 /// Set a setting value. Creates or updates the row.
 ///
 /// Enforces the allowlist in [`settings_keys::validate_key`] and the typed-value
