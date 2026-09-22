@@ -11,6 +11,7 @@ import { persist } from "zustand/middleware";
 import { createCoreState, type SystemStore } from "./storeTypes";
 import type { DesignSubTab } from "@/lib/types/types";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
+import { ALL_SIDEBAR_SECTIONS } from "@/lib/navigation/registry";
 
 import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
@@ -108,6 +109,9 @@ export const useSystemStore = create<SystemStore>()(
         // Plugins section after navigating away or restarting restores the
         // last-viewed plugin instead of snapping back to the Browse grid.
         pluginTab: state.pluginTab,
+        // The Companions destination (landing, or `<companion>:<page>`) — one
+        // field, persisted like every sibling sub-tab above.
+        companionsPage: state.companionsPage,
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
@@ -179,6 +183,20 @@ export const useSystemStore = create<SystemStore>()(
         if ((state.sidebarSection as string) === 'goals') {
           state.sidebarSection = 'teams';
           state.teamsTab = 'goals';
+        }
+
+        // MEMBERSHIP GUARD — run after every section remap above, so a value
+        // with a recorded successor is migrated rather than discarded.
+        //
+        // An id this build does not know (a section retired since the blob was
+        // written, a value a NEWER build wrote before a rollback, or a bad
+        // writer — `CompanionAssignmentCards` shipped `'pipeline'` for months)
+        // is not merely cosmetic: `navSection()` returns undefined for it and
+        // `isSectionGated` — the FIRST statement of `PersonasPage.renderContent`
+        // — throws reading `.gates`. `sidebarSection` is persisted, so the crash
+        // survived a restart with no way out but clearing localStorage.
+        if (!(ALL_SIDEBAR_SECTIONS as readonly string[]).includes(state.sidebarSection)) {
+          state.sidebarSection = 'home';
         }
 
         // Guard against onboarding schema drift: if a persisted step id no

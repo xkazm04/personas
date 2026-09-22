@@ -369,6 +369,13 @@ export default function PersonasPage() {
       // Browse view — plugin cards with enable/disable toggles
       return renderSectionRoute('plugins', goHome);
     }
+    if (sidebarSection === 'companions') {
+      // Companions routes on ONE persisted page field, so its primary is a
+      // switch rather than a tab ladder here (see `CompanionsPage`). The
+      // skeleton is for THIS chunk's cold fetch; each destination inside it
+      // carries its own.
+      return renderSectionRoute('companions', goHome, <RouteChunkSkeleton />);
+    }
     // Leaf sections — registry-driven primary surface. Gates were already
     // checked above; personas/teams/plugins are handled by their bespoke
     // branches, so anything routable reaching here (home, overview,

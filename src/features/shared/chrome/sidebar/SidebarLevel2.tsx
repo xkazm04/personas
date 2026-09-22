@@ -23,6 +23,7 @@ import { filterByTier } from '@/features/shared/chrome/sidebar/sidebarData';
 import { AgentsSidebarNav } from '@/features/shared/chrome/sidebar/sections/AgentsSidebarNav';
 import TeamsSidebarNav from '@/features/shared/chrome/sidebar/sections/TeamsSidebarNav';
 import { PluginsSidebarNav } from '@/features/shared/chrome/sidebar/sections/PluginsSidebarNav';
+import { CompanionsSidebarNav } from '@/features/shared/chrome/sidebar/sections/CompanionsSidebarNav';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -308,6 +309,9 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 
     case 'plugins':
       return <PluginsSidebarNav />;
+
+    case 'companions':
+      return <CompanionsSidebarNav directorAttentionCount={directorAttentionCount} />;
 
     case 'settings':
       return (

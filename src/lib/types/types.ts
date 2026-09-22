@@ -406,7 +406,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "teams" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "studio" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "teams" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "companions" | "studio" | "schedules" | "settings";
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
 export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition" | "mastermind" | "council" | "features" | "whitelist" | "webview";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";

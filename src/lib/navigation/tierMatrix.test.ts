@@ -104,6 +104,7 @@ function declaredGates(): string[] {
  */
 const EXPECTED_TEAM_ONLY = [
   'connections-tab:databases',
+  'nav-section:companions',
   'nav-section:events',
   'nav-section:plugins',
   'nav-section:teams',

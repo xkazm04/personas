@@ -38,6 +38,7 @@ export const TriggersPage = lazyRetry(() => import('@/features/triggers/Triggers
 export const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 export const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
 export const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
+export const CompanionsPage = lazyRetry(() => import('@/features/companions/CompanionsPage'));
 export const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
 export const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
 
@@ -65,6 +66,7 @@ export const SECTION_ROUTES = {
   credentials:      { Component: CredentialManager,   boundaryName: 'Vault' },
   'design-reviews': { Component: DesignReviewsPage,   boundaryName: 'Design Reviews' },
   plugins:          { Component: PluginBrowsePage,    boundaryName: 'PluginBrowse' },
+  companions:       { Component: CompanionsPage,      boundaryName: 'Companions' },
   studio:           { Component: StudioPage,          boundaryName: 'Studio' },
   settings:         { Component: SettingsPage,        boundaryName: 'Settings' },
 } as const satisfies Record<RoutableSection, SectionRoute>;

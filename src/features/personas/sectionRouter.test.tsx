@@ -12,6 +12,7 @@ vi.mock('@/features/triggers/TriggersPage', () => ({ TriggersPage: () => <div da
 vi.mock('@/features/vault/sub_credentials/manager/CredentialManager', () => ({ CredentialManager: () => <div data-testid="route-credentials" /> }));
 vi.mock('@/features/templates/components/DesignReviewsPage', () => ({ default: () => <div data-testid="route-design-reviews" /> }));
 vi.mock('@/features/plugins/PluginBrowsePage', () => ({ default: () => <div data-testid="route-plugins" /> }));
+vi.mock('@/features/companions/CompanionsPage', () => ({ default: () => <div data-testid="route-companions" /> }));
 vi.mock('@/features/studio/StudioPage', () => ({ default: () => <div data-testid="route-studio" /> }));
 vi.mock('@/features/settings/components/SettingsPage', () => ({ default: () => <div data-testid="route-settings" /> }));
 

@@ -61,6 +61,15 @@ export interface SidebarNavGroup {
   accentClass?: string;
   /** Count shown next to a label-only heading. */
   count?: number;
+  /**
+   * Right-edge adornments for a LABEL-ONLY heading — the same two shapes a row
+   * already has (`badge` count pill, `indicator` presence dot). A navigable
+   * heading uses `groupItem.badge` / `groupItem.indicator` instead; this is the
+   * caption's half, so a group whose header is not a destination can still
+   * carry its own standing (e.g. a companion's state dot).
+   */
+  badge?: SubNavBadge;
+  indicator?: SubNavIndicator;
   items?: GroupNavItem[];
   /** Escape hatch: arbitrary body rendered inside the nested rail. */
   render?: ReactNode;
@@ -120,7 +129,10 @@ export const GROUP_BLOCK_CLASS = 'mt-3 pt-3 border-t border-primary/10';
 /** Label-only group heading. */
 export const GROUP_LABEL_CLASS = 'px-3 pb-1 typo-caption uppercase tracking-wider';
 
-function RightAdornments({ item }: { item: GroupNavItem }) {
+/** Everything that pins to a row's (or heading's) right edge. */
+type Adornments = Pick<GroupNavItem, 'badge' | 'indicator' | 'rightSlot'>;
+
+function RightAdornments({ item }: { item: Adornments }) {
   return (
     <>
       {item.badge && item.badge.count > 0 && (
@@ -223,6 +235,7 @@ export default function SidebarGroupNav({
                     {group.count != null && group.count > 0 && (
                       <span className="typo-caption font-mono opacity-70">{group.count}</span>
                     )}
+                    <RightAdornments item={group} />
                     <ChevronDown className={`w-3 h-3 ml-auto flex-shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
                   </button>
                 ) : (
@@ -235,6 +248,7 @@ export default function SidebarGroupNav({
                     {group.count != null && group.count > 0 && (
                       <span className="typo-caption font-mono opacity-70">{group.count}</span>
                     )}
+                    <RightAdornments item={group} />
                   </div>
                 )
               )}

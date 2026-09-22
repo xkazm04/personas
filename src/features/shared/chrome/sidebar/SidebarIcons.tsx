@@ -281,6 +281,47 @@ export function IconSettings({ active = false, className = '' }: IconProps) {
   );
 }
 
+// -- Companions: a trio of minds held by one shared orbit ----------------
+//
+// Three small cores in a loose triangle, ringed by ONE orbit that belongs to
+// none of them: three minds, one runtime. Deliberately unlike Athena's own
+// glyph (`IconCompanion` in PluginIcons — halo + orb + spark), which is a
+// SINGLE presence; the category is read at a glance by its plurality.
+//
+// Active: each core breathes out of phase (pi-breathe / pi-pulse / pi-pulse-d)
+// and the shared ring turns slowly (pi-orbit, centred on 12,12 like every
+// rotating part here). Inactive: completely static, per the file's law.
+
+export function IconCompanions({ active = false, className = '' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      {/* The shared orbit — one ring, owned by none of the three */}
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="0.7" opacity={active ? 0.2 : 0.1} />
+      <g className={a('pi-orbit', active)} style={active ? undefined : { transform: 'none' }}>
+        <circle cx="12" cy="2" r="1" fill="currentColor" opacity={active ? 0.6 : 0.3} />
+        <circle cx="20.66" cy="17" r="0.8" fill="currentColor" opacity={active ? 0.45 : 0.22} />
+        <circle cx="3.34" cy="17" r="0.8" fill="currentColor" opacity={active ? 0.45 : 0.22} />
+      </g>
+      {/* The triangle the three cores stand on */}
+      <path d="M12 5.4L18.2 16H5.8z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" opacity={active ? 0.35 : 0.2} />
+      {/* Core 1 — the apex */}
+      <circle cx="12" cy="6.4" r="3" fill="currentColor" opacity={active ? 0.12 : 0.05} />
+      <circle cx="12" cy="6.4" r="2" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.55} />
+      {/* Core 2 — lower right */}
+      <circle cx="17.2" cy="15.6" r="2.6" fill="currentColor" opacity={active ? 0.1 : 0.04} />
+      <circle cx="17.2" cy="15.6" r="1.7" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.9 : 0.45} />
+      {/* Core 3 — lower left */}
+      <circle cx="6.8" cy="15.6" r="2.6" fill="currentColor" opacity={active ? 0.1 : 0.04} />
+      <circle cx="6.8" cy="15.6" r="1.7" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.9 : 0.45} />
+      {/* What binds them: the runtime they share */}
+      <circle cx="12" cy="12.5" r="1.1" fill="currentColor" opacity={active ? 0.75 : 0.4} />
+      <line x1="12" y1="8.4" x2="12" y2="11.4" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="0.8" opacity={active ? 0.6 : 0.25} />
+      <line x1="15.8" y1="14.8" x2="13" y2="13.1" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="0.8" opacity={active ? 0.6 : 0.25} />
+      <line x1="8.2" y1="14.8" x2="11" y2="13.1" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="0.8" opacity={active ? 0.6 : 0.25} />
+    </svg>
+  );
+}
+
 // -- Plugins: Circuit chip with connector pins ----------------------------
 
 export function IconPlugins({ active = false, className = '' }: IconProps) {
@@ -353,6 +394,7 @@ export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Eleme
   credentials: IconKeys,
   'design-reviews': IconTemplates,
   plugins: IconPlugins,
+  companions: IconCompanions,
   team: IconTeams,
   cloud: IconCloud,
   settings: IconSettings,

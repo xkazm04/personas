@@ -34,7 +34,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home, BarChart3, Users, Bot, Radio, Key, FlaskConical,
-  Puzzle, Globe, Settings, CalendarClock,
+  Puzzle, Globe, Settings, CalendarClock, Orbit,
 } from 'lucide-react';
 import type { SidebarSection } from '@/lib/types/types';
 import { type Tier, TIERS } from '@/lib/constants/uiModes';
@@ -86,6 +86,11 @@ export const NAV_SECTIONS: readonly NavSectionEntry[] = [
   // Studio — the Athena web-dev companion preview. Dev-only while in
   // active development; still rail-rendered (behind the devOnly gate).
   { id: 'studio',         label: 'Studio',      labelKey: 'studio',         icon: Globe,         gates: { devOnly: true },       reachability: 'sidebar' },
+  // Companions — the category holding the three built-in agents (Athena,
+  // Overseer, Curator). Its own L2 nav (`CompanionsSidebarNav`) and one
+  // persisted destination field (`companionsPage`); the landing is the
+  // section's default page. TEAM-gated like the other multi-agent surfaces.
+  { id: 'companions',     label: 'Companions',  labelKey: 'companions',     icon: Orbit,         gates: { minTier: TIERS.TEAM }, reachability: 'sidebar' },
   // Schedules is summoned as a full-screen title-bar overlay
   // (see useTitleBarTray → headerOverlay==='schedules'), NOT a rail section.
   // It keeps a `SidebarSection` type member for legacy persisted state, but

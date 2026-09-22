@@ -112,6 +112,13 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
   // `cockpit` — companions/athena inbox helpers.
   plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
+  // `companions` — the category's own strings (nav, states, blockers, the
+  //   three identities, the landing, the Setup pages).
+  // `director` — Overseer's reviews page, which moved here from Overview.
+  // `council` — Curator's council page, which moved here from Projects.
+  // Athena's 1,196 keys are NOT listed: her section rides in BASE_SECTIONS
+  // because her orb, chat panel and footer icon mount on every route.
+  companions: ['companions', 'director', 'council'],
   // `studio` — the Athena web-build Studio surface. StudioAttention is mounted
   // app-wide (DEV-only) and reads this section too, but it only renders once a
   // Studio project is mid-build, i.e. after the Studio route has already

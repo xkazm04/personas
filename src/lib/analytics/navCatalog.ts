@@ -17,6 +17,7 @@
  * test (`summary.test.ts`) guards structural invariants (unique keys, non-empty
  * value sets, sections drawn from `SECTIONS`).
  */
+import { COMPANIONS_PAGES } from '@/features/companions/types';
 import { NAV_SECTIONS } from '@/lib/navigation/registry';
 import type {
   SidebarSection,
@@ -95,6 +96,9 @@ const DESIGN_SUB_TABS = exact<DesignSubTab>({ manifest: true, responsibilities: 
 const CLOUD_TABS = exact<CloudTab>({ cloud: true, gitlab: true, unified: true });
 const SETTINGS_TABS = exact<SettingsTab>({ account: true, appearance: true, notifications: true, radio: true, engine: true, byom: true, portability: true, network: true, devices: true, admin: true, 'api-keys': true, history: true, limits: true });
 const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, 'obsidian-brain': true, drive: true, twin: true, companion: true, scraper: true });
+// The Companions destination needs no `exact` Record: `CompanionsPage` IS
+// `typeof COMPANIONS_PAGES[number]`, so the union and the value set are the
+// same declaration and cannot drift apart.
 const DEV_TOOLS_TABS = exact<DevToolsTab>({ overview: true, 'llm-overview': true, 'context-map': true, 'task-runner': true, fleet: true, workspaces: true, skills: true });
 const EVENT_BUS_TABS = exact<EventBusTab>({ studio: true, shared: true, 'live-stream': true, 'rate-limits': true, test: true, 'smee-relay': true, 'cloud-webhooks': true, 'dead-letter': true });
 
@@ -118,6 +122,7 @@ export const TAB_DIMENSIONS: readonly TabDimension[] = [
   { key: 'cloudTab', store: 'system', section: 'personas', values: CLOUD_TABS },
   { key: 'settingsTab', store: 'system', section: 'settings', values: SETTINGS_TABS },
   { key: 'pluginTab', store: 'system', section: 'plugins', values: PLUGIN_TABS },
+  { key: 'companionsPage', store: 'system', section: 'companions', values: COMPANIONS_PAGES },
   { key: 'devToolsTab', store: 'system', section: 'plugins', values: DEV_TOOLS_TABS },
   { key: 'eventBusTab', store: 'system', section: 'events', values: EVENT_BUS_TABS },
 ];

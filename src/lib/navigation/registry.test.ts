@@ -32,6 +32,7 @@ const EXPECTED_SECTIONS: Record<SidebarSection, NavReachability> = {
   credentials: 'sidebar',
   'design-reviews': 'nested',
   plugins: 'sidebar',
+  companions: 'sidebar',
   studio: 'sidebar',
   schedules: 'overlay-only',
   settings: 'sidebar',
@@ -149,7 +150,7 @@ describe('navigation registry — gates', () => {
   });
 
   it('blocks TEAM-tier sections for a starter tier', () => {
-    for (const id of ['teams', 'events', 'plugins'] as const) {
+    for (const id of ['teams', 'events', 'plugins', 'companions'] as const) {
       expect(passesGates(navSection(id).gates, prodStarter)).toBe(false);
       expect(passesGates(navSection(id).gates, dev)).toBe(true);
     }

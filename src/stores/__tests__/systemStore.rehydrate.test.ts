@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSystemStore } from '../systemStore';
 import { _resetDedupCacheForTests } from '../util/dedupedStorage';
+import { ALL_SIDEBAR_SECTIONS } from '@/lib/navigation/registry';
 
 /**
  * Tests for the `persona-ui-system` persist `onRehydrateStorage` callback.
@@ -178,5 +179,50 @@ describe('systemStore onRehydrateStorage — editorTab migration', () => {
     const state = useSystemStore.getState();
     expect(state.editorTab).toBe('design');
     expect(state.designSubTab).toBe('manifest');
+  });
+});
+
+describe('systemStore onRehydrateStorage — sidebarSection membership', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({ sidebarSection: 'home', teamsTab: 'projects' });
+  });
+
+  it('keeps every section the registry declares', async () => {
+    for (const id of ALL_SIDEBAR_SECTIONS) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      seedPersistedSystemStore({ sidebarSection: id });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().sidebarSection).toBe(id);
+    }
+  });
+
+  it('lands an unknown persisted section on home instead of crashing the shell', async () => {
+    // `navSection()` returns undefined for an id outside the registry, and
+    // `isSectionGated` — the first statement of PersonasPage.renderContent —
+    // throws reading `.gates`. The value is persisted, so before this guard
+    // the crash survived a restart.
+    seedPersistedSystemStore({ sidebarSection: 'pipeline' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().sidebarSection).toBe('home');
+  });
+
+  it('migrates the retired `goals` section BEFORE the membership guard sees it', async () => {
+    // Order matters: a value with a recorded successor must be migrated, not
+    // discarded. `goals` is not in the registry, so a guard running first
+    // would send the user to Home and drop the Goals tab.
+    seedPersistedSystemStore({ sidebarSection: 'goals' });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('teams');
+    expect(s.teamsTab).toBe('goals');
+  });
+
+  it('survives a persisted section that is not a string at all', async () => {
+    seedPersistedSystemStore({ sidebarSection: 42 });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().sidebarSection).toBe('home');
   });
 });

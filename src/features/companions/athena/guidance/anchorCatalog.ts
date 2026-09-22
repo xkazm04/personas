@@ -45,6 +45,7 @@ export const ANCHOR_CATALOG: Record<string, GuidanceAnchor> = {
   nav_connections: { testId: 'sidebar-credentials', dest: 'credentials' },
   nav_templates: { testId: 'sidebar-design-reviews', dest: 'design-reviews' },
   nav_plugins: { testId: 'sidebar-plugins', dest: 'plugins' },
+  nav_companions: { testId: 'sidebar-companions', dest: 'companions' },
   nav_settings: { testId: 'sidebar-settings', dest: 'settings' },
 
   // Route-level content containers — carry a route so the surface mounts.

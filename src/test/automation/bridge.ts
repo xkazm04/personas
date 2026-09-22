@@ -24,7 +24,7 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const VALID_SECTIONS: SidebarSection[] = [
   "home", "overview", "personas", "teams", "events", "credentials",
-  "design-reviews", "plugins", "schedules", "settings", "studio",
+  "design-reviews", "plugins", "companions", "schedules", "settings", "studio",
 ];
 
 /**
