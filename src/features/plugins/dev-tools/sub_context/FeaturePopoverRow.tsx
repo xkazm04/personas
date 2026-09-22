@@ -16,6 +16,7 @@ import { usePercent } from '@/features/teams/sub_council/table/usePercent';
 import { toastCatch } from '@/lib/silentCatch';
 
 import type { TDevTools } from './contextLedgerShared';
+import { PromoteConfirm } from './PromoteConfirm';
 import {
   CouncilGlyph,
   councilCta,
@@ -61,6 +62,7 @@ export function FeaturePopoverRow({
   const roundNo = row.subject?.roundNo ?? null;
   const storedTier = row.subject?.tier ?? row.uc.tier;
   const [tier, setTier] = useState<string | null>(storedTier);
+  const [confirmingPromote, setConfirmingPromote] = useState(false);
   const isMajor = tier === 'major';
   const percent = usePercent();
   // The five words live in THIS section, not in `council`: the plugins route
@@ -167,15 +169,36 @@ export function FeaturePopoverRow({
         </AsyncButton>
       )}
 
+      {/* Promoting is a one-word edit with six consequences, one of which is
+          putting an unearned pass in front of a person. It asks first. */}
       {cta === 'promote' && (
         <AsyncButton
           variant="secondary"
           size="sm"
           className="shrink-0"
-          onClick={() => applyTier('major')}
+          data-testid="council-promote"
+          onClick={async () => setConfirmingPromote(true)}
         >
           {councilCtaLabel(cta, t)}
         </AsyncButton>
+      )}
+      {confirmingPromote && (
+        <PromoteConfirm
+          facts={{
+            name: row.uc.name,
+            overall: row.subject?.overall ?? null,
+            coverage: row.subject?.coverage ?? null,
+            trustState: row.subject?.trustState ?? null,
+          }}
+          t={t}
+          percent={percent}
+          tx={interpolate}
+          onConfirm={async () => {
+            setConfirmingPromote(false);
+            await applyTier('major');
+          }}
+          onCancel={() => setConfirmingPromote(false)}
+        />
       )}
     </li>
   );

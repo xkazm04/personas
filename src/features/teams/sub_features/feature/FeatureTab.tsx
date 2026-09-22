@@ -4,12 +4,15 @@
 // The ONE action comes from the ledger's CTA table plus this page's single
 // refinement (`featureCta`): ready AND major leaves for the Council page's
 // gate. The decision itself is never made here.
+import { useState } from 'react';
+
 import type { UpsertScenarioInput } from '@/lib/bindings/UpsertScenarioInput';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CouncilGlyph, councilCtaLabel, councilLabel } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
+import { PromoteConfirm } from '@/features/plugins/dev-tools/sub_context/PromoteConfirm';
 import { VerdictCaption } from '@/features/teams/sub_council/bench/chips';
 import { usePercent } from '@/features/teams/sub_council/table/usePercent';
 
@@ -57,6 +60,7 @@ export function FeatureTab({
   const cta = featureCta(row.kind, feature);
   const subjectId = feature.council?.id ?? null;
   const percent = usePercent();
+  const [confirmingPromote, setConfirmingPromote] = useState(false);
 
   return (
     <div className="flex flex-col gap-4 p-4" data-testid="features-feature-tab">
@@ -119,8 +123,14 @@ export function FeatureTab({
               {councilCtaLabel(cta, tDev)}
             </AsyncButton>
           ) : null}
+          {/* The same confirmation the ledger popover asks, for the same
+              reason: promoting hands an existing verdict to a human gate. */}
           {cta === 'promote' ? (
-            <AsyncButton variant="secondary" onClick={() => void onToggleTier(row)}>
+            <AsyncButton
+              variant="secondary"
+              data-testid="features-promote"
+              onClick={async () => setConfirmingPromote(true)}
+            >
               {councilCtaLabel(cta, tDev)}
             </AsyncButton>
           ) : null}
@@ -156,6 +166,25 @@ export function FeatureTab({
       />
 
       <HistoryPanel feature={feature} t={t} tx={tx} />
+
+      {confirmingPromote ? (
+        <PromoteConfirm
+          facts={{
+            name: feature.name,
+            overall: feature.council?.overall ?? null,
+            coverage: feature.council?.coverage ?? null,
+            trustState: feature.council?.trustState ?? null,
+          }}
+          t={tDev}
+          percent={percent}
+          tx={tx}
+          onConfirm={async () => {
+            setConfirmingPromote(false);
+            await onToggleTier(row);
+          }}
+          onCancel={() => setConfirmingPromote(false)}
+        />
+      ) : null}
     </div>
   );
 }

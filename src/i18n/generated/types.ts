@@ -16734,6 +16734,10 @@ export type Translations = {
       council_cta_run: string;
       council_cta_next_round: string;
       council_cta_promote: string;
+      council_promote_title: string;
+      council_promote_body: string;
+      council_promote_confirm: string;
+      council_promote_no_overall: string;
       council_cta_awaiting: string;
       council_report_path: string;
       council_report_path_unknown: string;
