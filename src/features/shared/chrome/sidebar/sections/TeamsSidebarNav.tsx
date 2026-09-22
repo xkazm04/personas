@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, Scale, Layers, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -48,9 +48,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council' | 'features'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council';
+  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council' | 'features';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -69,6 +69,7 @@ const DEV_ITEMS: Array<{
   { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
   { id: 'council', icon: Scale, labelKey: 'council', testId: 'teams-council-nav' },
+  { id: 'features', icon: Layers, labelKey: 'features', testId: 'teams-features-nav' },
 ];
 
 // "Browser" group — agent web-app control (spark browser-control, 2026-09-15).
