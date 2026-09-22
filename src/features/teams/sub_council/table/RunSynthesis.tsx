@@ -62,6 +62,54 @@ export interface SynthesisWords {
   must_address_deduped: string;
 }
 
+export interface SummaryWords {
+  summary_heading: string;
+  summary_none: string;
+}
+
+/**
+ * WHAT THE COUNCIL CONCLUDED, or the honest admission that it recorded
+ * nothing.
+ *
+ * `summary` is the one sentence `synthesis.md` calls "the one that must
+ * survive being read alone" - and on the kp run the column held the FEATURE'S
+ * OWN BLURB, because `result.json` shipped an empty summary and the ingest
+ * door substituted the description. A surface that printed that field as the
+ * verdict would present the subject's marketing line as what the council
+ * found.
+ *
+ * The door now refuses an empty summary, and it computes
+ * `summaryIsSubjectFallback` at READ time for every row written before it
+ * did. The flag is the only honest discriminator here: the store holds no
+ * subject summary, so the client cannot make the comparison itself, and a
+ * client-side string match is exactly the kind of guess this page is not
+ * allowed to make. Runs supersede and are never rewritten, so the old rows
+ * stay - the truth about them is exposed rather than repaired.
+ */
+export function RunSummary({
+  summary,
+  isSubjectFallback,
+  words,
+}: {
+  summary: string;
+  isSubjectFallback: boolean;
+  words: SummaryWords;
+}) {
+  const real = summary.trim().length > 0 && !isSubjectFallback;
+  return (
+    <section className="flex flex-col gap-2" data-testid="council-run-summary">
+      <h3 className="m-0 typo-label text-muted">{words.summary_heading}</h3>
+      {real ? (
+        <p className="m-0 max-w-[68ch] typo-body-lg text-foreground">{summary}</p>
+      ) : (
+        <p className="m-0 typo-caption text-muted-dark" data-testid="council-run-summary-none">
+          {words.summary_none}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function MustAddressList({
   mustAddressJson,
   seats,

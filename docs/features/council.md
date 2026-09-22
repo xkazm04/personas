@@ -221,6 +221,42 @@ the run recorded but that is not on disk renders a labelled placeholder frame,
 never a broken image. `council_media` is app-composed only: it is deliberately
 absent from Athena's constitution and from every Rust op allowlist.
 
+**What the round says about itself** sits under the open member's reading:
+the council's **synthesis** - the one sentence `synthesis.md` calls the one
+that must survive being read alone - and the **must-address** list.
+
+Both are rendered defensively, because the first real run showed why:
+
+- a `must_address` entry arrived at **1,269 characters**. The skill clamps
+  generated lines to 200 as of council 0.3.0, but runs supersede and are never
+  rewritten, so stored rows keep whatever they were written with. Items are
+  one-line items - clamped to two lines, with the whole text on hover.
+- another entry **repeated a finding title word for word**, a few centimetres
+  below the finding itself. An item that matches a finding already on screen is
+  dropped, and the number dropped is printed rather than swallowed.
+- the `summary` column held the **feature's own description**, not a verdict:
+  `result.json` shipped an empty summary and the ingest door substituted the
+  blurb. The door now **refuses** an empty summary rather than substituting,
+  and for the rows written before it did it computes
+  `summary_is_subject_fallback` at read time. The round table renders the
+  summary only when that flag is false; otherwise it says *"No synthesis was
+  recorded for this round."* The client never compares the two strings itself -
+  the store holds no subject description to compare against, which is why the
+  flag exists.
+
+#### Known gaps
+
+- **The envelope and the scenarios are not stored.** `result.json` carries
+  `scenarios` and `envelope`; `dev_council_runs` has no column for either and
+  `dev_council_verdicts.payload_json` holds only `{delta, evidence, findings,
+  techniques, unmeasuredReason}`. On a subject that declares branches, the page
+  prints an outcome with no way to say "weak for one branch, never measured for
+  another" - the exact failure the scenario machinery exists to prevent.
+- **The Features feature tab cannot list must-address.** It renders
+  `feature.council`, the list projection, which carries overall / coverage /
+  round / state and no run. Listing the items there needs a run fetch in that
+  panel, which is a new surface rather than a rendering change.
+
 ### The gate
 
 The gate opens **only** when the subject is `ready` **and** (`tier: major`
