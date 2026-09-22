@@ -10,11 +10,18 @@ import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import { CompanionsTriptych } from '../CompanionsTriptych';
 import type { CompanionStatusDto } from '../../types';
 
-vi.mock('@/i18n/useTranslation', async () => {
+// Only `useTranslation` is stubbed; the module also owns the real
+// `interpolate`, which `landingModel` uses to fill `{name}` / `{count}`, so
+// the rest of it is spread back in rather than replaced.
+vi.mock('@/i18n/useTranslation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/i18n/useTranslation')>();
   // INVARIANT: the en section file IS the `companions` subtree of the bundle -
   // the generator builds the types from it and check:i18n:strict gates drift.
   const companions = (await import('@/i18n/section-locales/en/companions.json')).default;
-  return { useTranslation: () => ({ t: { companions }, language: 'en', tx: (s: string) => s }) };
+  return {
+    ...actual,
+    useTranslation: () => ({ t: { companions }, language: 'en', tx: actual.interpolate }),
+  };
 });
 
 const STATUS: CompanionStatusDto[] = [

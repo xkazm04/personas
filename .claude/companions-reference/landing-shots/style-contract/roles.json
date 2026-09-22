@@ -36,17 +36,11 @@
     },
     "blocker": {
       "winner": ".wake",
-      "port": "[data-role=blocker]",
-      "accept": [
-        "width"
-      ]
+      "port": "[data-role=blocker]"
     },
     "facts": {
       "winner": ".count b",
-      "port": "[data-role=facts] b",
-      "accept": [
-        "width"
-      ]
+      "port": "[data-role=facts] b"
     },
     "open": {
       "winner": ".open",
@@ -55,7 +49,11 @@
     "portraitAthena": {
       "winner": ".col[data-id=athena] .portrait",
       "port": "[data-role=column][data-id=athena] [data-role=portrait]"
+    },
+    "fact": {
+      "winner": ".col[data-id=curator] .fact",
+      "port": "[data-role=column][data-id=curator] [data-role=fact]"
     }
   },
-  "$comment": "Heartlight promotion contract. `accept` records the only two departures, both MANDATED BY THE BRIEF (every word must come from the pre-seeded companions.* keys) and both pure TEXT LENGTH on a shrink-to-fit element - every style property on both roles matches the winner exactly. Winner 'Star an agent to watch' (201px) vs product `companions.blocker.no_starred_personas` = 'Star an agent for Overseer to watch.' (301px); winner count label 'decisions wait' (80px) vs product `companions.nav.page_decisions` = 'Decisions' (56px). Both close the moment the Director adds the short label/wake keys requested in wp4-key-requests.jsonl. `portrait` names Overseer's illustration on BOTH sides: it is the element whose art and framing did not change, while Athena's portrait was re-rendered at 2:3 by owner instruction - her column is measured separately as `portraitAthena`, which passes at the winner's own width."
+  "$comment": "Heartlight promotion contract, 13 roles. NO accepted departures: the seven keys the Director added (companions.landing.decisions_label / agents_label / wake_* / registry_fact) closed both text-length widths that the first pass had to accept. `portrait` names Overseer's illustration on BOTH sides - the element whose art and framing did not change - while Athena's portrait was re-rendered at 2:3 by owner instruction and is measured separately as `portraitAthena`. `fact` is scoped to Curator on both sides: it is the only column CompanionDetailDto can build a sentence for (registryName); the prototype's lastActive / lastWave / planNext have no wire field until stages 2 and 3."
 }

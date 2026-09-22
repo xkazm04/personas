@@ -40,20 +40,37 @@ describe('state -> visual treatment', () => {
     expect(v.target).toBe('athena:setup');
   });
 
+  it('the chip speaks in imperatives; the blocker.* sentences stay with Setup', () => {
+    const wakes = [
+      view(athena({ enabled: false })).blockerLine,
+      view(athena({ onboarded: false })).blockerLine,
+      view(overseer({ eligible: false, blocker: 'no_starred_personas' })).blockerLine,
+      view(curator({ eligible: false, blocker: 'no_registry' })).blockerLine,
+    ];
+    expect(wakes).toEqual([
+      T.landing.wake_off,
+      T.landing.wake_not_onboarded,
+      T.landing.wake_no_starred_personas,
+      T.landing.wake_no_registry,
+    ]);
+    for (const w of wakes) expect(w).not.toMatch(/\.$/);
+    expect(wakes).not.toContain(T.blocker.no_starred_personas);
+  });
+
   it('off: still herself, but dark, and the wake line says how to switch her on', () => {
     const v = view(athena({ enabled: false }));
     expect(v.state).toBe('off');
     expect(v.stateWord).toBe(T.state.off);
     expect(v.working).toBe(false);
     expect(v.beads).toBe(0);
-    expect(v.blockerLine).toBe(T.blocker.off);
+    expect(v.blockerLine).toBe(T.landing.wake_off);
   });
 
   it('needs_onboarding: a ring still being drawn, and the door is her own wizard', () => {
     const v = view(athena({ onboarded: false }));
     expect(v.state).toBe('needs_onboarding');
     expect(v.ring).toEqual({ kind: 'drawing' });
-    expect(v.blockerLine).toBe(T.blocker.not_onboarded);
+    expect(v.blockerLine).toBe(T.landing.wake_not_onboarded);
     expect(v.target).toBe('athena:create-athena');
   });
 
@@ -64,20 +81,20 @@ describe('state -> visual treatment', () => {
     }));
     expect(v.state).toBe('blocked');
     expect(v.ring).toEqual({ kind: 'broken', ticks: 16, missing: 'star' });
-    expect(v.blockerLine).toBe(T.blocker.no_starred_personas);
+    expect(v.blockerLine).toBe(T.landing.wake_no_starred_personas);
     expect(v.target).toBe('overseer:setup');
   });
 
   it("a missing registry breaks Curator's ring with a page, not a star", () => {
     const v = view(curator({ enabled: false, eligible: false, blocker: 'no_registry' }));
     expect(v.ring).toEqual({ kind: 'broken', ticks: 0, missing: 'page' });
-    expect(v.blockerLine).toBe(T.blocker.no_registry);
+    expect(v.blockerLine).toBe(T.landing.wake_no_registry);
   });
 
   it("Overseer's ring is one tick per agent, lit for the starred ones", () => {
     const v = view(overseer({ detail: { starredCount: 6, agentsTotal: 16 } }));
     expect(v.ring).toEqual({ kind: 'ticks', total: 16, lit: 6 });
-    expect(v.count).toEqual({ value: '6/16', label: T.setup.overseer_scope_title });
+    expect(v.count).toEqual({ value: '6/16', label: T.landing.agents_label });
   });
 });
 
@@ -102,6 +119,21 @@ describe('a missing count is never a zero', () => {
   });
 });
 
+describe('the fact line', () => {
+  it('names the registry Curator curates, from the one field the DTO carries', () => {
+    const v = view(curator({ detail: { registryName: 'ai-registry' } }));
+    expect(v.fact).toBe('Registry: ai-registry');
+    expect(v.fact).not.toContain('{');
+    expect(v.ariaLabel).toContain('ai-registry');
+  });
+
+  it('is absent for a companion with no fact on the wire', () => {
+    expect(view(athena({ detail: { pendingDecisions: 2 } })).fact).toBeNull();
+    expect(view(overseer({ detail: { starredCount: 6, agentsTotal: 16 } })).fact).toBeNull();
+    expect(view(curator()).fact).toBeNull();
+  });
+});
+
 describe('the words', () => {
   it('every column is worded from companions.* and keyed 1, 2, 3 in category order', () => {
     const views = columnsOf([athena(), overseer(), curator()], T);
@@ -109,7 +141,9 @@ describe('the words', () => {
     expect(views.map((v) => v.name)).toEqual([T.nav.group_athena, T.nav.group_overseer, T.nav.group_curator]);
     expect(views.map((v) => v.title)).toEqual([T.identity.athena_title, T.identity.overseer_title, T.identity.curator_title]);
     expect(views.map((v) => v.tagline)).toEqual([T.identity.athena_tagline, T.identity.overseer_tagline, T.identity.curator_tagline]);
-    for (const v of views) expect(`${v.name}${v.title}${v.openLine}${v.ariaLabel}`).not.toContain('{{');
+    // every placeholder is resolved by the shared `interpolate`, in either
+    // spelling - an unfilled `{name}` or a left-over `{{name}}` both fail here
+    for (const v of views) expect(`${v.name}${v.title}${v.openLine}${v.ariaLabel}`).not.toMatch(/\{/);
   });
 
   it('the accessible name carries the state, the quantity and the destination', () => {
@@ -117,6 +151,6 @@ describe('the words', () => {
     expect(label).toContain(T.nav.group_athena);
     expect(label).toContain(T.state.active);
     expect(label).toContain('2');
-    expect(label).not.toContain('{{count}}');
+    expect(label).not.toMatch(/\{/);
   });
 });

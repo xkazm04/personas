@@ -5,6 +5,7 @@
 // count is never drawn as 0. The four states come from `landingStateOf` and
 // the destination from `landingTarget` - this file invents neither.
 import type { Translations } from '@/i18n/generated/types';
+import { interpolate } from '@/i18n/useTranslation';
 
 import { landingStateOf } from '../status/landingState';
 import { landingTarget } from '../status/landingTarget';
@@ -35,6 +36,8 @@ export interface CompanionColumnView {
   stateWord: string;
   /** The one line that would wake a sleeping companion. Null while active. */
   blockerLine: string | null;
+  /** A live fact about this companion, when the DTO carries one. */
+  fact: string | null;
   openLine: string;
   /** The drawn quantity beside the ring. Null when nothing is known. */
   count: { value: string; label: string } | null;
@@ -46,20 +49,6 @@ export interface CompanionColumnView {
   portraitSrc: string;
   target: CompanionsPage;
   ariaLabel: string;
-}
-
-/**
- * `companions.*` writes placeholders as `{{name}}`; the shared `interpolate`
- * helper matches the single-brace `{name}` form and would leave `{Athena}`
- * behind. Two other surfaces hand-replace the double-brace form the same way
- * (`MemoryPanel.tsx:64`, `OverviewParts.tsx:103`). Requested for normalisation
- * in `wp4-key-requests.jsonl`; until then this is the reader.
- */
-function fill(template: string, vars: Record<string, string | number>): string {
-  if (typeof template !== 'string') return '';
-  return template.replace(/\{\{(\w+)\}\}/g, (whole, key: string) =>
-    vars[key] !== undefined ? String(vars[key]) : whole,
-  );
 }
 
 const NAME_KEY = { athena: 'group_athena', overseer: 'group_overseer', curator: 'group_curator' } as const;
@@ -74,12 +63,28 @@ function pageLabel(page: CompanionsPage, c: CompanionStrings): string {
   return c.nav.page_council;
 }
 
-/** The wake line: what a non-active companion is waiting for. */
+/**
+ * The wake line: what a non-active companion is waiting for, in the chip's own
+ * voice. `landing.wake_*` are short imperatives sized for the chip; the longer
+ * `blocker.*` sentences belong to the Setup pages, where there is room to
+ * explain rather than to point.
+ */
 function blockerOf(status: CompanionStatusDto, state: LandingState, c: CompanionStrings): string | null {
   if (state === 'active') return null;
-  if (state === 'off') return c.blocker.off;
-  if (state === 'needs_onboarding') return c.blocker.not_onboarded;
-  return status.blocker ? c.blocker[status.blocker] : c.blocker.off;
+  if (state === 'off') return c.landing.wake_off;
+  if (state === 'needs_onboarding') return c.landing.wake_not_onboarded;
+  if (status.blocker === 'no_starred_personas') return c.landing.wake_no_starred_personas;
+  if (status.blocker === 'no_registry') return c.landing.wake_no_registry;
+  return c.landing.wake_not_onboarded;
+}
+
+/**
+ * The prose line above the action. Only Curator has one today: the DTO carries
+ * a registry NAME and nothing else a sentence could be built from.
+ */
+function factOf(status: CompanionStatusDto, c: CompanionStrings): string | null {
+  const name = status.detail.registryName;
+  return name === undefined ? null : interpolate(c.landing.registry_fact, { name });
 }
 
 /**
@@ -95,8 +100,8 @@ function countOf(
   const d = status.detail;
   if (status.id === 'athena' && d.pendingDecisions !== undefined) {
     return {
-      count: { value: String(d.pendingDecisions), label: c.nav.page_decisions },
-      sentence: fill(c.landing.decisions_waiting, { count: d.pendingDecisions }),
+      count: { value: String(d.pendingDecisions), label: c.landing.decisions_label },
+      sentence: interpolate(c.landing.decisions_waiting, { count: d.pendingDecisions }),
     };
   }
   // `agentsTotal` of 0 is a real reading, but "0/0 agents" says nothing: on a
@@ -104,8 +109,8 @@ function countOf(
   // says so. The prototype guards the same way.
   if (status.id === 'overseer' && d.starredCount !== undefined && (d.agentsTotal ?? 0) > 0) {
     return {
-      count: { value: `${d.starredCount}/${d.agentsTotal}`, label: c.setup.overseer_scope_title },
-      sentence: fill(c.landing.agents_watched, { count: d.starredCount }),
+      count: { value: `${d.starredCount}/${d.agentsTotal}`, label: c.landing.agents_label },
+      sentence: interpolate(c.landing.agents_watched, { count: d.starredCount }),
     };
   }
   return { count: null, sentence: '' };
@@ -134,8 +139,9 @@ export function columnOf(status: CompanionStatusDto, index: number, c: Companion
   const name = c.nav[NAME_KEY[status.id]];
   const title = c.identity[TITLE_KEY[status.id]];
   const target = landingTarget(status);
-  const openLine = `${fill(c.landing.open_hint, { name })} › ${pageLabel(target, c)}`;
+  const openLine = `${interpolate(c.landing.open_hint, { name })} › ${pageLabel(target, c)}`;
   const blockerLine = blockerOf(status, state, c);
+  const fact = factOf(status, c);
   const { count, sentence } = countOf(status, c);
   const stateWord = c.state[state];
 
@@ -148,6 +154,7 @@ export function columnOf(status: CompanionStatusDto, index: number, c: Companion
     state,
     stateWord,
     blockerLine,
+    fact,
     openLine,
     count,
     ring: ringOf(status, state),
@@ -155,7 +162,7 @@ export function columnOf(status: CompanionStatusDto, index: number, c: Companion
     working: state === 'active',
     portraitSrc: `/companions/${status.id}/portrait.webp`,
     target,
-    ariaLabel: [`${name}, ${title}.`, `${stateWord}.`, sentence, blockerLine ?? openLine]
+    ariaLabel: [`${name}, ${title}.`, `${stateWord}.`, sentence, fact, blockerLine ?? openLine]
       .filter(Boolean)
       .join(' '),
   };

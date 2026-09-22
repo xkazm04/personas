@@ -52,6 +52,7 @@
   transition: max-height var(--duration-slow), opacity var(--duration-slow);
 }
 .hl-col:hover .hl-tag, .hl-col:focus-visible .hl-tag { max-height: 5em; opacity: 1; }
+.hl-fact { margin: 6px 0 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: rgba(226, 232, 240, 0.86); }
 .hl-wake {
   margin: 8px 0 0; justify-self: start;
   display: inline-flex; align-items: center; gap: 8px;

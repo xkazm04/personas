@@ -73,6 +73,11 @@ export const CompanionColumn = forwardRef<HTMLButtonElement, CompanionColumnProp
           <span className="hl-tag" data-role="tagline">
             {view.tagline}
           </span>
+          {view.fact ? (
+            <span className="hl-fact" data-role="fact">
+              {view.fact}
+            </span>
+          ) : null}
           {view.blockerLine ? (
             <span className="hl-wake" data-role="blocker">
               {view.blockerLine}
