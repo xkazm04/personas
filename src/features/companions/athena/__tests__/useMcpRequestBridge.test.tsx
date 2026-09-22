@@ -28,6 +28,14 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 const invokeMock = vi.fn();
+// Athena's master switch is its own contract with its own test
+// (`AthenaGate.test.tsx`). It is stubbed here so this file keeps measuring the
+// bridge's routing: without the stub the gate's `companions_status` read lands
+// in the same invoke mock these assertions count.
+vi.mock('@/features/companions/status/useAthenaEnabled', () => ({
+  useAthenaEnabled: () => ({ enabled: true, settled: true }),
+}));
+
 vi.mock('@/lib/tauriInvoke', () => ({
   invokeWithTimeout: (...args: unknown[]) => invokeMock(...args),
 }));
