@@ -95,9 +95,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   // success trend, status monitor, self-healing panel, leaderboard matrix)
   // render there now.
   { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },
-  // Dev-only: in-app viewer over the team-autonomy eval/certification bundles
-  // (docs/test/runs/). Never shipped in packaged installers.
-  { id: 'certification', icon: ShieldCheck, label: 'Certification', devOnly: true },
 ];
 
 export const credentialItems: SubNavItem[] = [
@@ -219,7 +216,7 @@ export interface SidebarItemGroupDef {
 /** Overview → Monitoring / Operations / Memory. */
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
-  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'certification', 'director', 'incidents', 'messages'] },
+  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'director', 'incidents', 'messages'] },
   { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'memory-graph'] },
 ];
 

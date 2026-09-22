@@ -282,7 +282,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "type_labels": {}
     },
     "health": {},
-    "certification": {},
     "leaderboard": {},
     "observability_extra": {},
     "widgets": {},

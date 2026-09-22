@@ -20,7 +20,6 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Events | Durable event log with search/filter and detail modal. Table columns are user-resizable. Since 2026-09-02 a snapshot fetch merges by id, so an event pushed while the request was in flight survives; a burst is written to the store once per frame; deploy/undeploy rows (client-minted, not persisted) ride at the live end of the feed unranked rather than taking a timestamp position they never earned. | `sub_events`, `commands/communication/events.rs` |
 | Memories · Patterns · Graph | **Three sidebar tabs** (Extracted — the execution-extracted knowledge graph — was retired 2026-08-26) (promoted 2026-07-29 from the former single "Knowledge" tab, whose in-page `SegmentedTabs` switcher and `KnowledgeHub.tsx` shell were deleted — the sidebar is the navigation). **Memories** is the persona memory inspector — a dense, sortable KPI-strip + matrix layout (the former Baseline list and the prototype variant switcher were retired 2026-06-17); the memory detail modal carries a **Disputes** section (Brainiac-adoption P3): file `wrong`/`outdated` claims against a memory (open claims demote it in recall via a bounded decay penalty and raise `memory_disputed` findings in Dev-Tools triage), and resolve every open claim with one decision — reverify, deprecate-and-archive, or dismiss; **Graph** is an SVG cluster view of the same memories grouped by category; **Patterns** is a reader over the organisation's knowledge registry — the **Subjects** and **Coverage** lanes described below. (Its third lane, **Practices**, rendered the in-app Workspace Knowledge library and was retired with it on 2026-09-14; see [`docs/features/plugins/dev tools/workspaces.md`](../plugins/dev%20tools/workspaces.md).) | `sub_memories`, `sub_patterns` |
 | Director | The Director coaching command center (relocated here from a top-level sidebar section). Thin subheader (scope + Brain memory toggle + add-to-scope + review-all + 7/30/90-day period selector), portfolio scorecard (value rate + a delivered/partial/blocked/no-input value-breakdown bar / avg verdict / cost-per-value / score distribution with a portfolio-average marker / model efficiency / issues-by-category rollup), and one coaching table with a portfolio attention-triage bar whose chips — plus the score-distribution bars — click-to-filter the roster; each starred agent row shows score · trend · value · attention tags, clicking opens a per-agent detail modal with category-tagged verdict history. See `docs/features/director/README.md`. | `sub_director` |
-| Certification | **Dev-only.** Read-only viewer over the team-autonomy eval/certification bundles in `docs/test/runs/` — per-team certification status, sortable run history, and per-run detail (dimensions, gates, standards compliance, grounding, trajectory, judge panel). Hidden from production builds. | `sub_certification`, `commands/eval_runs.rs` |
 
 > **Consolidated 2026-08-25:** the former **Health**, **Reliability (SLA)** and **Leaderboard** tabs were folded into Mission control — their surviving sections (self-healing effectiveness panel, status monitor, daily success-rate trend, scorecard matrix) render there. The scoring/data layers they used remain (`sub_health/libs`, `sub_leaderboard/libs`, `sub_sla` API + SLA breach events below); only the page components and sidebar tabs are gone.
 
@@ -177,44 +176,6 @@ Overview reads from:
 - Notification helpers for delivery stats and channel tests.
 
 Feature-specific contracts remain in [execution](../execution/README.md), [events](../events/README.md), and [personas](../personas/README.md).
-
-## Certification Command Center (dev-only)
-
-`sub_certification` is a **read-only viewer** over the team-autonomy
-evaluation/certification framework's on-disk bundles. The eval logic stays in
-the host-side CLI harness (`scripts/test/`) — which needs git, `npm
-build/lint/test`, and the test-automation bridge — and writes immutable JSON
-bundles to `docs/test/runs/<runId>/`. This tab only *reads* those bundles; it
-never runs an eval. The bundle JSON is the shared contract between the CLI
-writer and the Rust reader.
-
-**Three views** (`sub_certification/CertificationCommandCenter.tsx`):
-- **Overview** — one `TeamCertCard` per team: a 3-pip certification streak, the
-  latest verdict, and a verdict-distribution bar over the team's held-out runs.
-- **Run History** — a sortable `UnifiedTable` of every run (verdict, score,
-  gate markers, started-at). Click a row to drill in.
-- **Detail** — deterministic dimensions, build/lint/test gates + delivered
-  increment, **standards & branching compliance** (§7 — on code-track runs whose
-  bound project declares a `standards_config` policy: a per-rule pass/fail
-  breakdown of the pre-commit gates + branch-base flow the team was told to
-  honor, with an overall compliance %), citation grounding, score trajectory,
-  and (when scored) the LLM-judge panel.
-
-**Three commands** (`src-tauri/src/commands/eval_runs.rs` — unauthenticated,
-filesystem-only reads, acceptable because the surface is dev-only):
-- `list_eval_runs` → run summaries, newest first.
-- `get_cert_status` → per-team streak / `certified` flag / verdict counts.
-- `get_eval_run(runId)` → full per-run detail (reads only `scorecard.json` +
-  `run.json`, plus cheap same-team summaries for the trajectory; never the
-  large `executions.json` / `events.json` / `repo.patch`).
-
-**Source resolution:** `PERSONAS_EVAL_RUNS_DIR` env → `docs/test/runs` (dev cwd
-= repo root) → walk up from the executable. No directory found → an empty
-state. **Certification rule:** a team is *certified* after **3 consecutive
-PRODUCTION verdicts on held-out seeds** (the streak is capped at 3).
-
-The tab is gated `devOnly` in the sidebar and is not present in packaged
-installers.
 
 ## Progressive loading (no big-bang tables)
 

@@ -34,7 +34,6 @@ import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
-import type { CertificationSlice } from "./slices/overview/certificationSlice";
 import type { HomeSpineSlice } from "./slices/overview/homeSpineSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { FleetSlice } from "./slices/system/fleetSlice";
@@ -220,7 +219,6 @@ export type OverviewStore = CoreState &
   CronAgentsSlice &
   AlertSlice &
   PersonaHealthSlice &
-  CertificationSlice &
   ProcessActivitySlice &
   HomeSpineSlice;
 
