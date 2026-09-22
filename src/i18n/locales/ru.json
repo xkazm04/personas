@@ -13587,6 +13587,11 @@
       "council_state_running": "Идёт экспертный совет",
       "council_state_stalled": "Остановлено после 3-го раунда",
       "council_state_unknown": "Состояние не распознано",
+      "council_trust_uncalibrated": "не калибровано",
+      "council_trust_untrusted": "без доверия",
+      "council_trust_trusted": "с доверием",
+      "council_trust_unknown": "доверие неизвестно",
+      "council_trust_measured": "измерено {percent}",
       "council_tier_major": "Ключевая",
       "council_tier_toggle_label": "Отметить {name} как ключевую функцию"
     },
@@ -23126,6 +23131,13 @@
       "approved": "Одобрено",
       "approved_drifted": "Одобрено, устарело",
       "rejected": "Отклонено"
+    },
+    "trust": {
+      "uncalibrated": "не калибровано",
+      "untrusted": "без доверия",
+      "trusted": "с доверием",
+      "unknown": "доверие неизвестно",
+      "measured": "измерено {percent}"
     },
     "member": {
       "value": "ценность",

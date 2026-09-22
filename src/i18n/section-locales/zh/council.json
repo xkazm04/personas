@@ -215,6 +215,13 @@
     "approved_drifted": "已批准，已偏移",
     "rejected": "已驳回"
   },
+  "trust": {
+    "uncalibrated": "未校准",
+    "untrusted": "不可信",
+    "trusted": "可信",
+    "unknown": "可信度未知",
+    "measured": "已测量 {percent}"
+  },
   "member": {
     "value": "价值",
     "craft": "工艺",

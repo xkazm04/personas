@@ -215,6 +215,13 @@
     "approved_drifted": "承認済み、変化あり",
     "rejected": "却下済み"
   },
+  "trust": {
+    "uncalibrated": "未校正",
+    "untrusted": "信頼されていない",
+    "trusted": "信頼済み",
+    "unknown": "信頼度不明",
+    "measured": "{percent} 測定済み"
+  },
   "member": {
     "value": "価値",
     "craft": "品質",

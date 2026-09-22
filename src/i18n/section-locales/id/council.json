@@ -215,6 +215,13 @@
     "approved_drifted": "Disetujui, berubah",
     "rejected": "Ditolak"
   },
+  "trust": {
+    "uncalibrated": "belum dikalibrasi",
+    "untrusted": "tidak tepercaya",
+    "trusted": "tepercaya",
+    "unknown": "kepercayaan tidak diketahui",
+    "measured": "{percent} terukur"
+  },
   "member": {
     "value": "nilai",
     "craft": "keahlian",

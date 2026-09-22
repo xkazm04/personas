@@ -215,6 +215,13 @@
     "approved_drifted": "승인됨, 변경됨",
     "rejected": "거부됨"
   },
+  "trust": {
+    "uncalibrated": "미보정",
+    "untrusted": "신뢰 없음",
+    "trusted": "신뢰됨",
+    "unknown": "신뢰도 미상",
+    "measured": "{percent} 측정됨"
+  },
   "member": {
     "value": "가치",
     "craft": "완성도",

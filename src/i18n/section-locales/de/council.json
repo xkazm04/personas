@@ -215,6 +215,13 @@
     "approved_drifted": "Genehmigt, abgewichen",
     "rejected": "Abgelehnt"
   },
+  "trust": {
+    "uncalibrated": "nicht kalibriert",
+    "untrusted": "nicht vertrauenswürdig",
+    "trusted": "vertrauenswürdig",
+    "unknown": "Vertrauen unbekannt",
+    "measured": "{percent} gemessen"
+  },
   "member": {
     "value": "Wert",
     "craft": "Handwerk",

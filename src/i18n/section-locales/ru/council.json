@@ -215,6 +215,13 @@
     "approved_drifted": "Одобрено, устарело",
     "rejected": "Отклонено"
   },
+  "trust": {
+    "uncalibrated": "не калибровано",
+    "untrusted": "без доверия",
+    "trusted": "с доверием",
+    "unknown": "доверие неизвестно",
+    "measured": "измерено {percent}"
+  },
   "member": {
     "value": "ценность",
     "craft": "мастерство",

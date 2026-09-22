@@ -13587,6 +13587,11 @@
       "council_state_running": "審査会を実行中",
       "council_state_stalled": "ラウンド 3 で停滞",
       "council_state_unknown": "認識できない状態",
+      "council_trust_uncalibrated": "未校正",
+      "council_trust_untrusted": "信頼されていない",
+      "council_trust_trusted": "信頼済み",
+      "council_trust_unknown": "信頼度不明",
+      "council_trust_measured": "{percent} 測定済み",
       "council_tier_major": "主要",
       "council_tier_toggle_label": "{name} を主要な機能としてマーク"
     },
@@ -23126,6 +23131,13 @@
       "approved": "承認済み",
       "approved_drifted": "承認済み、変化あり",
       "rejected": "却下済み"
+    },
+    "trust": {
+      "uncalibrated": "未校正",
+      "untrusted": "信頼されていない",
+      "trusted": "信頼済み",
+      "unknown": "信頼度不明",
+      "measured": "{percent} 測定済み"
     },
     "member": {
       "value": "価値",

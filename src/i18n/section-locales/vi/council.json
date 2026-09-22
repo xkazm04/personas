@@ -215,6 +215,13 @@
     "approved_drifted": "Đã phê duyệt, đã trôi",
     "rejected": "Đã từ chối"
   },
+  "trust": {
+    "uncalibrated": "chưa hiệu chuẩn",
+    "untrusted": "không đáng tin",
+    "trusted": "đáng tin",
+    "unknown": "độ tin cậy chưa rõ",
+    "measured": "đã đo {percent}"
+  },
   "member": {
     "value": "giá trị",
     "craft": "tay nghề",

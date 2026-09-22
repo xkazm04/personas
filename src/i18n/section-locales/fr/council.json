@@ -215,6 +215,13 @@
     "approved_drifted": "Approuvé, a dérivé",
     "rejected": "Rejeté"
   },
+  "trust": {
+    "uncalibrated": "non calibré",
+    "untrusted": "non fiable",
+    "trusted": "fiable",
+    "unknown": "fiabilité inconnue",
+    "measured": "{percent} mesuré"
+  },
   "member": {
     "value": "valeur",
     "craft": "artisanat",

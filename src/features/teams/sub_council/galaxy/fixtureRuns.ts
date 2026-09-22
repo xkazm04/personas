@@ -109,6 +109,12 @@ export function fixtureRunDetail(
       hardFailuresJson: JSON.stringify(run.hard_failures ?? []),
       mustAddressJson: JSON.stringify(run.must_address ?? []),
       summary: run.summary ?? '',
+      // The same thing the read door computes for a real row: is this
+      // "summary" the SUBJECT'S own description rather than anything the
+      // council concluded? Computed here too, so the fixture cannot be the
+      // one place the page forgets to ask.
+      summaryIsSubjectFallback:
+        Boolean(run.summary) && run.summary === (run.subject.summary ?? ''),
       runDir: '',
       startedAt: run.started_at ?? null,
       finishedAt: run.finished_at ?? null,

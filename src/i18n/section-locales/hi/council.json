@@ -215,6 +215,13 @@
     "approved_drifted": "स्वीकृत, बदल गया",
     "rejected": "अस्वीकृत"
   },
+  "trust": {
+    "uncalibrated": "अंशांकित नहीं",
+    "untrusted": "अविश्वसनीय",
+    "trusted": "विश्वसनीय",
+    "unknown": "विश्वास अज्ञात",
+    "measured": "{percent} मापा गया"
+  },
   "member": {
     "value": "मूल्य",
     "craft": "शिल्प",

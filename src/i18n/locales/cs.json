@@ -13587,6 +13587,11 @@
       "council_state_running": "Rada běží",
       "council_state_stalled": "Zaseknuto po 3. kole",
       "council_state_unknown": "Neznámý stav",
+      "council_trust_uncalibrated": "nekalibrováno",
+      "council_trust_untrusted": "nedůvěryhodné",
+      "council_trust_trusted": "důvěryhodné",
+      "council_trust_unknown": "důvěra neznámá",
+      "council_trust_measured": "změřeno {percent}",
       "council_tier_major": "Hlavní",
       "council_tier_toggle_label": "Označit {name} jako hlavní funkci"
     },
@@ -23126,6 +23131,13 @@
       "approved": "Schváleno",
       "approved_drifted": "Schváleno, změněno",
       "rejected": "Odmítnuto"
+    },
+    "trust": {
+      "uncalibrated": "nekalibrováno",
+      "untrusted": "nedůvěryhodné",
+      "trusted": "důvěryhodné",
+      "unknown": "důvěra neznámá",
+      "measured": "změřeno {percent}"
     },
     "member": {
       "value": "hodnota",

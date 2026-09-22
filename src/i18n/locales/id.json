@@ -13587,6 +13587,11 @@
       "council_state_running": "Dewan tinjauan berjalan",
       "council_state_stalled": "Macet setelah ronde 3",
       "council_state_unknown": "Status tidak dikenali",
+      "council_trust_uncalibrated": "belum dikalibrasi",
+      "council_trust_untrusted": "tidak tepercaya",
+      "council_trust_trusted": "tepercaya",
+      "council_trust_unknown": "kepercayaan tidak diketahui",
+      "council_trust_measured": "{percent} terukur",
       "council_tier_major": "Utama",
       "council_tier_toggle_label": "Tandai {name} sebagai fitur utama"
     },
@@ -23126,6 +23131,13 @@
       "approved": "Disetujui",
       "approved_drifted": "Disetujui, berubah",
       "rejected": "Ditolak"
+    },
+    "trust": {
+      "uncalibrated": "belum dikalibrasi",
+      "untrusted": "tidak tepercaya",
+      "trusted": "tepercaya",
+      "unknown": "kepercayaan tidak diketahui",
+      "measured": "{percent} terukur"
     },
     "member": {
       "value": "nilai",

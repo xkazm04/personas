@@ -215,6 +215,13 @@
     "approved_drifted": "Schváleno, změněno",
     "rejected": "Odmítnuto"
   },
+  "trust": {
+    "uncalibrated": "nekalibrováno",
+    "untrusted": "nedůvěryhodné",
+    "trusted": "důvěryhodné",
+    "unknown": "důvěra neznámá",
+    "measured": "změřeno {percent}"
+  },
   "member": {
     "value": "hodnota",
     "craft": "řemeslo",

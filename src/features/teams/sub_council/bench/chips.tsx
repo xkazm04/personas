@@ -50,6 +50,71 @@ export function StateChip({ state }: { state: string }) {
   );
 }
 
+/**
+ * The five words the caption beside a state chip needs.
+ *
+ * Passed IN rather than read from `useTranslation` here, because this caption
+ * renders on the Council page (`council` section), in the Features feature
+ * tab and in the context ledger's feature popover (`plugins.dev_tools`
+ * section, on a route that never loads `council`). A component that reached
+ * for one section would render the key name on the other two surfaces.
+ */
+export interface TrustWords {
+  uncalibrated: string;
+  untrusted: string;
+  trusted: string;
+  unknown: string;
+  /** "{percent} measured" */
+  measured: string;
+}
+
+/**
+ * WHAT THE STATE WORD DOES NOT SAY, in the same glance as the state word.
+ *
+ * `machine_pass` reads as a pass. On the real kp run it stood over an overall
+ * of 0.63 - below the rubric's own 0.70 - and it was CORRECT, because that
+ * threshold only binds once the instrument is `trusted`. The word and the
+ * number are each right and together they overstate, so the trust state and
+ * the coverage sit beside the chip on every surface that shows one: the
+ * ledger popover row, the bench row, the Features feature tab header and the
+ * round table header.
+ *
+ * The bench header's one "uncalibrated" sentence stays; this is its per-row
+ * companion, not its replacement.
+ */
+export function VerdictCaption({
+  trustState,
+  coverage,
+  words,
+  percent,
+  tx,
+}: {
+  trustState: string | null;
+  coverage: number | null;
+  words: TrustWords;
+  percent: (ratio: number) => string;
+  tx: (template: string, vars: Record<string, string | number>) => string;
+}) {
+  const trust =
+    trustState === 'trusted'
+      ? words.trusted
+      : trustState === 'untrusted'
+        ? words.untrusted
+        : trustState === 'uncalibrated'
+          ? words.uncalibrated
+          : words.unknown;
+  const parts = [trust];
+  // Coverage is omitted rather than shown as 0%: "never measured" and
+  // "measured nothing" are different facts and this caption exists to stop
+  // exactly that kind of overstatement.
+  if (coverage != null) parts.push(tx(words.measured, { percent: percent(coverage) }));
+  return (
+    <span data-testid="council-verdict-caption" className="typo-caption text-muted">
+      {parts.join(' · ')}
+    </span>
+  );
+}
+
 /** A neutral fact about the subject: its project, its tier, its star count. */
 export function Tag({ children }: { children: React.ReactNode }) {
   return (

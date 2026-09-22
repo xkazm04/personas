@@ -13587,6 +13587,11 @@
       "council_state_running": "Comité en curso",
       "council_state_stalled": "Estancada tras la ronda 3",
       "council_state_unknown": "Estado no reconocido",
+      "council_trust_uncalibrated": "sin calibrar",
+      "council_trust_untrusted": "sin confianza",
+      "council_trust_trusted": "de confianza",
+      "council_trust_unknown": "confianza desconocida",
+      "council_trust_measured": "{percent} medido",
       "council_tier_major": "Principal",
       "council_tier_toggle_label": "Marcar {name} como funcionalidad principal"
     },
@@ -23126,6 +23131,13 @@
       "approved": "Aprobado",
       "approved_drifted": "Aprobado, desactualizado",
       "rejected": "Rechazado"
+    },
+    "trust": {
+      "uncalibrated": "sin calibrar",
+      "untrusted": "sin confianza",
+      "trusted": "de confianza",
+      "unknown": "confianza desconocida",
+      "measured": "{percent} medido"
     },
     "member": {
       "value": "valor",

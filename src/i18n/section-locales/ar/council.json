@@ -215,6 +215,13 @@
     "approved_drifted": "معتمد، منحرف",
     "rejected": "مرفوض"
   },
+  "trust": {
+    "uncalibrated": "غير معاير",
+    "untrusted": "غير موثوق",
+    "trusted": "موثوق",
+    "unknown": "الثقة غير معروفة",
+    "measured": "تم قياس {percent}"
+  },
   "member": {
     "value": "القيمة",
     "craft": "الحرفية",

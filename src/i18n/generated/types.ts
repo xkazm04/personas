@@ -1228,6 +1228,13 @@ export type Translations = {
       approved_drifted: string;
       rejected: string;
     };
+    trust: {
+      uncalibrated: string;
+      untrusted: string;
+      trusted: string;
+      unknown: string;
+      measured: string;
+    };
     member: {
       value: string;
       craft: string;
@@ -16719,6 +16726,11 @@ export type Translations = {
       council_state_approved_drifted: string;
       council_state_rejected: string;
       council_state_unknown: string;
+      council_trust_uncalibrated: string;
+      council_trust_untrusted: string;
+      council_trust_trusted: string;
+      council_trust_unknown: string;
+      council_trust_measured: string;
       council_cta_run: string;
       council_cta_next_round: string;
       council_cta_promote: string;

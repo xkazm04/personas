@@ -20,6 +20,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "gate": {},
     "evidence": {},
     "state": {},
+    "trust": {},
     "member": {}
   },
   "features": {},

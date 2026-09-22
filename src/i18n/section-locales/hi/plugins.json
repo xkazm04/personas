@@ -3012,6 +3012,11 @@
     "council_state_running": "समीक्षा परिषद चल रही है",
     "council_state_stalled": "राउंड 3 के बाद अटका",
     "council_state_unknown": "स्थिति पहचानी नहीं गई",
+    "council_trust_uncalibrated": "अंशांकित नहीं",
+    "council_trust_untrusted": "अविश्वसनीय",
+    "council_trust_trusted": "विश्वसनीय",
+    "council_trust_unknown": "विश्वास अज्ञात",
+    "council_trust_measured": "{percent} मापा गया",
     "council_tier_major": "प्रमुख",
     "council_tier_toggle_label": "{name} को प्रमुख फ़ीचर के रूप में चिह्नित करें"
   },

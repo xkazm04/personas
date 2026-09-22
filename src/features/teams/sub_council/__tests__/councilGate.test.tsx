@@ -101,12 +101,23 @@ describe('the closed gate', () => {
 });
 
 describe('the uncalibrated sentence', () => {
-  it('is said exactly once in the whole council vocabulary', () => {
+  // This asserted `['bench.lede']` - the word is EXPLAINED once, in the
+  // bench's header, and nowhere else. The owner's council review moved the
+  // line: a `machine_pass` over an uncalibrated 0.63 reads as a pass nothing
+  // has earned, so the trust state now also rides beside the state chip on
+  // every surface that shows one. That is a second appearance and it is
+  // deliberate, so the test records the two roles rather than the one count:
+  // ONE sentence that explains the word (`bench.lede`) and ONE label that
+  // names it per row (`trust.uncalibrated`). A third is still a regression.
+  it('is EXPLAINED once and LABELLED once, and nowhere else', () => {
     const said = Object.entries(en.council)
       .flatMap(([group, keys]) =>
         Object.entries(keys as Record<string, string>).map(([k, v]) => [`${group}.${k}`, v] as const),
       )
       .filter(([, v]) => typeof v === 'string' && /uncalibrated/i.test(v));
-    expect(said.map(([k]) => k)).toEqual(['bench.lede']);
+    expect(said.map(([k]) => k).sort()).toEqual(['bench.lede', 'trust.uncalibrated']);
+    // The label is a WORD, not a sentence: the explanation stays in one place.
+    const label = said.find(([k]) => k === 'trust.uncalibrated')?.[1] ?? '';
+    expect(label.split(/\s+/).length).toBeLessThanOrEqual(2);
   });
 });

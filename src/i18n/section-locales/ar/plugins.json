@@ -3012,6 +3012,11 @@
     "council_state_running": "المجلس قيد التشغيل",
     "council_state_stalled": "متعثّرة بعد الجولة 3",
     "council_state_unknown": "حالة غير معروفة",
+    "council_trust_uncalibrated": "غير معاير",
+    "council_trust_untrusted": "غير موثوق",
+    "council_trust_trusted": "موثوق",
+    "council_trust_unknown": "الثقة غير معروفة",
+    "council_trust_measured": "تم قياس {percent}",
     "council_tier_major": "رئيسية",
     "council_tier_toggle_label": "وضع علامة على {name} كميزة رئيسية"
   },

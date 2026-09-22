@@ -13587,6 +13587,11 @@
       "council_state_running": "评审团进行中",
       "council_state_stalled": "第 3 轮后停滞",
       "council_state_unknown": "无法识别状态",
+      "council_trust_uncalibrated": "未校准",
+      "council_trust_untrusted": "不可信",
+      "council_trust_trusted": "可信",
+      "council_trust_unknown": "可信度未知",
+      "council_trust_measured": "已测量 {percent}",
       "council_tier_major": "重点",
       "council_tier_toggle_label": "将 {name} 标记为重点功能"
     },
@@ -23126,6 +23131,13 @@
       "approved": "已批准",
       "approved_drifted": "已批准，已偏移",
       "rejected": "已驳回"
+    },
+    "trust": {
+      "uncalibrated": "未校准",
+      "untrusted": "不可信",
+      "trusted": "可信",
+      "unknown": "可信度未知",
+      "measured": "已测量 {percent}"
     },
     "member": {
       "value": "价值",

@@ -1222,6 +1222,13 @@
       "approved_drifted": "Approved, drifted",
       "rejected": "Rejected"
     },
+    "trust": {
+      "uncalibrated": "uncalibrated",
+      "untrusted": "untrusted",
+      "trusted": "trusted",
+      "unknown": "trust unknown",
+      "measured": "{percent} measured"
+    },
     "member": {
       "value": "value",
       "craft": "craft",
@@ -16713,6 +16720,11 @@
       "council_state_approved_drifted": "Approved, the code has moved since",
       "council_state_rejected": "Rejected",
       "council_state_unknown": "State not recognised",
+      "council_trust_uncalibrated": "uncalibrated",
+      "council_trust_untrusted": "untrusted",
+      "council_trust_trusted": "trusted",
+      "council_trust_unknown": "trust unknown",
+      "council_trust_measured": "{percent} measured",
       "council_cta_run": "Run council",
       "council_cta_next_round": "Run next round",
       "council_cta_promote": "Promote to major",

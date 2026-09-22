@@ -10,6 +10,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CouncilGlyph, councilCtaLabel, councilLabel } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
+import { VerdictCaption } from '@/features/teams/sub_council/bench/chips';
+import { usePercent } from '@/features/teams/sub_council/table/usePercent';
 
 import { featureCta, type FeatureRow } from '../featureRules';
 import { kindLabel, type ContextCell, type TFeatures } from '../featuresModel';
@@ -54,6 +56,7 @@ export function FeatureTab({
   const { feature } = row;
   const cta = featureCta(row.kind, feature);
   const subjectId = feature.council?.id ?? null;
+  const percent = usePercent();
 
   return (
     <div className="flex flex-col gap-4 p-4" data-testid="features-feature-tab">
@@ -68,6 +71,23 @@ export function FeatureTab({
             <CouncilGlyph kind={row.kind} t={tDev} />
             {councilLabel(row.kind, tDev)}
           </span>
+          {/* Beside the state, never under it: the state word alone reads as
+              a verdict the trust state has not earned. */}
+          {feature.council && (
+            <VerdictCaption
+              trustState={feature.council.trustState}
+              coverage={feature.council.coverage}
+              words={{
+                uncalibrated: tDev.council_trust_uncalibrated,
+                untrusted: tDev.council_trust_untrusted,
+                trusted: tDev.council_trust_trusted,
+                unknown: tDev.council_trust_unknown,
+                measured: tDev.council_trust_measured,
+              }}
+              percent={percent}
+              tx={tx}
+            />
+          )}
         </div>
 
         <div className="flex flex-none items-center gap-3 pt-0.5">

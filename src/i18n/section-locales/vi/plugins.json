@@ -3012,6 +3012,11 @@
     "council_state_running": "Hội đồng đang chạy",
     "council_state_stalled": "Dừng lại sau vòng 3",
     "council_state_unknown": "Không nhận dạng được trạng thái",
+    "council_trust_uncalibrated": "chưa hiệu chuẩn",
+    "council_trust_untrusted": "không đáng tin",
+    "council_trust_trusted": "đáng tin",
+    "council_trust_unknown": "độ tin cậy chưa rõ",
+    "council_trust_measured": "đã đo {percent}",
     "council_tier_major": "Trọng điểm",
     "council_tier_toggle_label": "Đánh dấu {name} là tính năng trọng điểm"
   },

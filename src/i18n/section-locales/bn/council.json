@@ -215,6 +215,13 @@
     "approved_drifted": "অনুমোদিত, পরিবর্তিত",
     "rejected": "প্রত্যাখ্যাত"
   },
+  "trust": {
+    "uncalibrated": "অক্যালিব্রেটেড",
+    "untrusted": "অবিশ্বস্ত",
+    "trusted": "বিশ্বস্ত",
+    "unknown": "বিশ্বাস অজানা",
+    "measured": "{percent} পরিমাপ করা"
+  },
   "member": {
     "value": "মূল্য",
     "craft": "কারুকাজ",

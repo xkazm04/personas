@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { resolveRubric } from '../table/rubrics';
 import { RowGlyph } from '../table/svg/RowGlyph';
 import { usePercent } from '../table/usePercent';
-import { StateChip } from './chips';
+import { StateChip, VerdictCaption } from './chips';
 
 export const QueueRow = memo(function QueueRow({
   subject,
@@ -65,6 +65,13 @@ export const QueueRow = memo(function QueueRow({
         <b className="block truncate typo-heading text-foreground">{subject.title}</b>
         <span className="mt-1.5 flex flex-wrap items-center gap-2">
           <StateChip state={subject.state} />
+          <VerdictCaption
+            trustState={subject.trustState}
+            coverage={subject.coverage}
+            words={t.council.trust}
+            percent={percent}
+            tx={tx}
+          />
           <span className="typo-body text-muted">
             {subject.roundNo == null
               ? tx(b.row_meta_no_round, { project: subject.projectName })

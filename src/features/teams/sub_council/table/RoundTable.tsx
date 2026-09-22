@@ -17,7 +17,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { useCouncilStore } from '../councilStore';
-import { StateChip, Tag, kindWord } from '../bench/chips';
+import { StateChip, Tag, VerdictCaption, kindWord } from '../bench/chips';
 import { CouncilGateBay } from '../gate/CouncilGateBay';
 import { whyLine } from './councilCopy';
 import { MemberReading } from './MemberReading';
@@ -48,6 +48,7 @@ export function RoundTable({
   const { t, tx } = useTranslation();
   const b = t.council.bench;
   const tbl = t.council.table;
+  const tbl_trust = t.council.trust;
   const percent = usePercent();
   const layout = useCouncilStore((s) => s.layout);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -125,6 +126,13 @@ export function RoundTable({
               {tbl.back_to_queue}
             </Button>
             <StateChip state={subject.state} />
+            <VerdictCaption
+              trustState={detail?.run.trustState ?? subject.trustState}
+              coverage={coverage}
+              words={tbl_trust}
+              percent={percent}
+              tx={tx}
+            />
             <Tag>{subject.projectName}</Tag>
             <Tag>{kindWord(subject, b)}</Tag>
             {detail ? <Tag>{tx(tbl.round, { round: detail.run.roundNo })}</Tag> : null}

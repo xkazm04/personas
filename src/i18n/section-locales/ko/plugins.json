@@ -3012,6 +3012,11 @@
     "council_state_running": "심의회 진행 중",
     "council_state_stalled": "3라운드 후 중단됨",
     "council_state_unknown": "알 수 없는 상태",
+    "council_trust_uncalibrated": "미보정",
+    "council_trust_untrusted": "신뢰 없음",
+    "council_trust_trusted": "신뢰됨",
+    "council_trust_unknown": "신뢰도 미상",
+    "council_trust_measured": "{percent} 측정됨",
     "council_tier_major": "주요",
     "council_tier_toggle_label": "{name}을(를) 주요 기능으로 표시"
   },

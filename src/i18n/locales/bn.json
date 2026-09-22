@@ -13587,6 +13587,11 @@
       "council_state_running": "কাউন্সিল চলছে",
       "council_state_stalled": "৩ রাউন্ডের পরেও আটকে আছে",
       "council_state_unknown": "অবস্থা শনাক্ত করা যায়নি",
+      "council_trust_uncalibrated": "অক্যালিব্রেটেড",
+      "council_trust_untrusted": "অবিশ্বস্ত",
+      "council_trust_trusted": "বিশ্বস্ত",
+      "council_trust_unknown": "বিশ্বাস অজানা",
+      "council_trust_measured": "{percent} পরিমাপ করা",
       "council_tier_major": "প্রধান",
       "council_tier_toggle_label": "{name}-কে প্রধান ফিচার হিসেবে চিহ্নিত করুন"
     },
@@ -23126,6 +23131,13 @@
       "approved": "অনুমোদিত",
       "approved_drifted": "অনুমোদিত, পরিবর্তিত",
       "rejected": "প্রত্যাখ্যাত"
+    },
+    "trust": {
+      "uncalibrated": "অক্যালিব্রেটেড",
+      "untrusted": "অবিশ্বস্ত",
+      "trusted": "বিশ্বস্ত",
+      "unknown": "বিশ্বাস অজানা",
+      "measured": "{percent} পরিমাপ করা"
     },
     "member": {
       "value": "মূল্য",

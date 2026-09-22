@@ -3012,6 +3012,11 @@
     "council_state_running": "Gremium läuft",
     "council_state_stalled": "Nach Runde 3 festgefahren",
     "council_state_unknown": "Status nicht erkannt",
+    "council_trust_uncalibrated": "nicht kalibriert",
+    "council_trust_untrusted": "nicht vertrauenswürdig",
+    "council_trust_trusted": "vertrauenswürdig",
+    "council_trust_unknown": "Vertrauen unbekannt",
+    "council_trust_measured": "{percent} gemessen",
     "council_tier_major": "Wichtig",
     "council_tier_toggle_label": "{name} als wichtige Funktion markieren"
   },

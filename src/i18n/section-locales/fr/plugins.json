@@ -3012,6 +3012,11 @@
     "council_state_running": "Comité en cours",
     "council_state_stalled": "Bloquée après le round 3",
     "council_state_unknown": "État non reconnu",
+    "council_trust_uncalibrated": "non calibré",
+    "council_trust_untrusted": "non fiable",
+    "council_trust_trusted": "fiable",
+    "council_trust_unknown": "fiabilité inconnue",
+    "council_trust_measured": "{percent} mesuré",
     "council_tier_major": "Principale",
     "council_tier_toggle_label": "Marquer {name} comme fonctionnalité principale"
   },

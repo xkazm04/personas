@@ -215,6 +215,13 @@
     "approved_drifted": "Approved, drifted",
     "rejected": "Rejected"
   },
+  "trust": {
+    "uncalibrated": "uncalibrated",
+    "untrusted": "untrusted",
+    "trusted": "trusted",
+    "unknown": "trust unknown",
+    "measured": "{percent} measured"
+  },
   "member": {
     "value": "value",
     "craft": "craft",
