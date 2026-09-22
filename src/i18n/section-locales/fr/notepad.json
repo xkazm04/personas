@@ -225,5 +225,16 @@
   "desk_no_matches_hint": "Appuyez sur Échap pour effacer, puis saisissez une recherche plus large.",
   "desk_search_label": "Filtrer les notes par titre ou contenu",
   "desk_search_placeholder": "Rechercher par titre ou contenu",
-  "desk_selected_note": "Note sélectionnée"
+  "desk_selected_note": "Note sélectionnée",
+  "desk_below": "En dessous",
+  "desk_below_continues": "continue {count}",
+  "desk_days_late": "{count}j de retard",
+  "desk_key_alphabetical": "Projet précédent / suivant",
+  "desk_key_column": "Descendre la colonne",
+  "desk_layout_cards": "Cartes",
+  "desk_layout_journal": "Journal",
+  "desk_layout_label": "Disposition du bureau",
+  "desk_needs_you": "Besoin de vous",
+  "desk_zone_none_live": "Aucun objectif actif",
+  "desk_zone_of": "{shown} sur {total}"
 }

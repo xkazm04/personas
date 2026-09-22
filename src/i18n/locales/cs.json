@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "Stiskněte Esc pro vymazání a zadejte obecnější dotaz.",
     "desk_search_label": "Filtrovat poznámky podle názvu nebo textu",
     "desk_search_placeholder": "Hledat podle názvu nebo textu",
-    "desk_selected_note": "Vybraná poznámka"
+    "desk_selected_note": "Vybraná poznámka",
+    "desk_below": "Níže",
+    "desk_below_continues": "pokračuje {count}",
+    "desk_days_late": "{count}d pozdě",
+    "desk_key_alphabetical": "Předchozí / další projekt",
+    "desk_key_column": "Dolů po sloupci",
+    "desk_layout_cards": "Karty",
+    "desk_layout_journal": "Deník",
+    "desk_layout_label": "Rozložení stolu",
+    "desk_needs_you": "Čeká na vás",
+    "desk_zone_none_live": "Žádné živé cíle",
+    "desk_zone_of": "{shown} z {total}"
   },
   "browser": {
     "webview": {

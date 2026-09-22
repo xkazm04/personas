@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "Tekan Esc untuk menghapus, lalu ketik kueri yang lebih luas.",
     "desk_search_label": "Saring catatan berdasarkan judul atau isi",
     "desk_search_placeholder": "Cari berdasarkan judul atau isi",
-    "desk_selected_note": "Catatan terpilih"
+    "desk_selected_note": "Catatan terpilih",
+    "desk_below": "Di bawah",
+    "desk_below_continues": "lanjut {count}",
+    "desk_days_late": "{count}h telat",
+    "desk_key_alphabetical": "Proyek sebelumnya / berikutnya",
+    "desk_key_column": "Turun kolom",
+    "desk_layout_cards": "Kartu",
+    "desk_layout_journal": "Jurnal",
+    "desk_layout_label": "Tata letak meja",
+    "desk_needs_you": "Butuh Anda",
+    "desk_zone_none_live": "Tidak ada tujuan aktif",
+    "desk_zone_of": "{shown} dari {total}"
   },
   "browser": {
     "webview": {

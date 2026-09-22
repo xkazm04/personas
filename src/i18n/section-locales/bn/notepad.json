@@ -225,5 +225,16 @@
   "desk_no_matches_hint": "মুছতে Esc চাপুন, তারপর আরও বিস্তৃত খোঁজ লিখুন।",
   "desk_search_label": "শিরোনাম বা মূল লেখা দিয়ে নোট ফিল্টার করুন",
   "desk_search_placeholder": "শিরোনাম বা মূল লেখা দিয়ে খুঁজুন",
-  "desk_selected_note": "নির্বাচিত নোট"
+  "desk_selected_note": "নির্বাচিত নোট",
+  "desk_below": "নিচে",
+  "desk_below_continues": "আরও {count}টি",
+  "desk_days_late": "{count}দিন দেরি",
+  "desk_key_alphabetical": "আগের / পরের প্রকল্প",
+  "desk_key_column": "কলাম বরাবর নিচে",
+  "desk_layout_cards": "কার্ড",
+  "desk_layout_journal": "জার্নাল",
+  "desk_layout_label": "ডেস্ক লেআউট",
+  "desk_needs_you": "আপনাকে দরকার",
+  "desk_zone_none_live": "কোনো সক্রিয় লক্ষ্য নেই",
+  "desk_zone_of": "{total}টির মধ্যে {shown}টি"
 }

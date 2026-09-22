@@ -3960,5 +3960,10 @@
   "fr:twin.experience_opus.mode.table",
   "fr:twin.experience_opus.style.title",
   "id:twin.experience_opus.create.sigil",
-  "id:twin.experience_opus.mode.studio"
+  "id:twin.experience_opus.mode.studio",
+  "de:notepad.desk_layout_journal",
+  "fr:notepad.desk_layout_journal",
+  "cs:kpis.overview.altitude_portfolio",
+  "de:kpis.overview.altitude_portfolio",
+  "fr:kpis.overview.debt_verdict"
 ]

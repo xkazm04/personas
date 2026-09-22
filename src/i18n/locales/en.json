@@ -23482,7 +23482,18 @@
     "menu_delete_confirm_body": "“{title}” will be removed for good, together with its comment thread and run history. This cannot be undone.",
     "stack_notepad_label": "Notepad",
     "stack_notepad_entry": "Notepad · {title}",
-    "stack_open_note": "Open note"
+    "stack_open_note": "Open note",
+    "desk_layout_label": "Desk layout",
+    "desk_layout_cards": "Cards",
+    "desk_layout_journal": "Journal",
+    "desk_needs_you": "Needs you",
+    "desk_days_late": "{count}d late",
+    "desk_zone_of": "{shown} of {total}",
+    "desk_zone_none_live": "No live goals",
+    "desk_below": "Below",
+    "desk_below_continues": "continues {count}",
+    "desk_key_column": "Down the column",
+    "desk_key_alphabetical": "Previous / next project"
   },
   "browser": {
     "whitelist": {

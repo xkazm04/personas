@@ -1,0 +1,313 @@
+/* The journal desk.
+ *
+ * Structural CSS only - grid tracks, the run wire, the caret, the sticky
+ * "below" strip. Everything a Tailwind utility can say is said in the JSX; what
+ * lives here is what it cannot: a two-track row grid sized from the running
+ * font size, an absolutely positioned wire between glyphs, and three custom
+ * properties the fit loop drives (`--ql-fs`, `--ql-lh`, `--ql-gap`).
+ *
+ * Colour comes from the app's tokens and nothing else. Same file pattern as
+ * `plugins/twin/experience/opus/experience.css`.
+ */
+
+.ql-root {
+  --ql-fs: 0.8125rem;
+  --ql-lh: 1.45;
+  --ql-gap: 10px;
+  --ql-line: calc(var(--ql-fs) * var(--ql-lh));
+  position: relative;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------- columns */
+
+.ql-cols {
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
+.ql-col {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 14px;
+  border-left: 1px solid var(--card-border);
+  position: relative;
+}
+
+.ql-col:first-child {
+  border-left: 0;
+  padding-left: 4px;
+}
+
+/* A column only scrolls when the fit ladder ran out of steps; when it does it
+   always carries a `.ql-below` naming what is under the fold. */
+.ql-col.is-scrolling {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ---------------------------------------------------------------- zones */
+
+.ql-zone {
+  position: relative;
+  margin: 0 0 var(--ql-gap);
+  padding: 2px 0;
+  border-radius: var(--radius-interactive);
+  transition: background var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.ql-zone.is-current {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.ql-zone-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 6px 1px 4px;
+  margin-bottom: 1px;
+  border-bottom: 1px solid var(--card-border);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
+.ql-zone-head h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+  color: var(--foreground);
+}
+
+.ql-zone.is-none .ql-zone-head h3 {
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+/* ---------------------------------------------------------------- one goal, one line */
+
+.ql-row {
+  display: grid;
+  grid-template-columns: 14px 18px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 4px;
+  padding: 0 6px 0 2px;
+  border-radius: var(--radius-sm);
+  font-size: var(--ql-fs);
+  line-height: var(--ql-lh);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  background: none;
+  border: 0;
+  transition: opacity var(--duration-normal), background var(--duration-fast);
+}
+
+.ql-row:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+.ql-row .ql-mark {
+  display: grid;
+  place-items: center;
+  height: var(--ql-line);
+}
+
+.ql-row .ql-glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: var(--ql-line);
+}
+
+.ql-row .ql-glyph > svg {
+  width: 12px;
+  height: 12px;
+  margin-top: calc((var(--ql-line) - 12px) / 2);
+  align-self: start;
+}
+
+/* THE WIRE. A run of one status draws its glyph once and wires the rest, so a
+   project's eleven scoped goals read as one bracket instead of eleven icons.
+   Its stroke says which rail the run belongs to without spending a legend. */
+.ql-row .ql-wire {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  margin-left: -1px;
+  width: 0;
+  border-left: 2px solid color-mix(in srgb, currentColor 70%, transparent);
+}
+
+.ql-row.is-rail-brainstorm .ql-wire { border-left-style: dotted; }
+.ql-row.is-rail-shared .ql-wire { border-left-style: dashed; }
+
+.ql-row .ql-title {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  text-wrap: pretty;
+}
+
+/* The needs-you row. Loud on purpose: an agent is stopped until this is read,
+   which is the most expensive state on the desk. */
+.ql-row.is-waiting {
+  background: color-mix(in srgb, var(--brand-rose) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-rose) 60%, transparent);
+}
+
+.ql-row.is-waiting .ql-title {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+/* Off the current rail: dimmed IN PLACE, never removed. The rail is a lens, so
+   switching it moves nothing and the desk stays learnable by position. */
+.ql-row.is-off { opacity: 0.3; }
+.ql-row.is-off.is-waiting { opacity: 0.55; }
+.ql-row.is-dim { opacity: 0.22; }
+.ql-row.is-hit { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+
+.ql-row.is-selected {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* The hairline where the plan rail hands over to the brainstorm rail. */
+.ql-split {
+  height: 5px;
+}
+
+/* ---------------------------------------------------------------- dense form */
+
+/* The last rungs of the fit ladder fold a run into one sentence. Every title
+   stays whole; only the line breaks are given up. */
+.ql-item {
+  border-radius: var(--radius-sm);
+  padding: 0 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  cursor: pointer;
+}
+
+.ql-item.is-waiting {
+  background: color-mix(in srgb, var(--brand-rose) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-rose) 60%, transparent);
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.ql-item.is-off { opacity: 0.3; }
+.ql-item.is-dim { opacity: 0.22; }
+.ql-item.is-hit { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.ql-item.is-selected { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); }
+
+.ql-sep {
+  color: var(--muted-dark);
+  font-style: normal;
+  padding: 0 3px;
+}
+
+/* ---------------------------------------------------------------- marks */
+
+.ql-tag {
+  margin-left: 6px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: 0;
+}
+
+.ql-tag > svg {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+.ql-bang {
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--brand-rose);
+  color: var(--btn-primary-fg);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ql-item .ql-bang {
+  display: inline-grid;
+  margin-right: 4px;
+  vertical-align: -2px;
+  height: 13px;
+}
+
+/* ---------------------------------------------------------------- below the fold */
+
+/* An overflowing column says what is under it, by name, with its count and
+   whether anything there is waiting. Nothing is ever hidden silently. */
+.ql-below {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  align-items: center;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  border-top: 1px solid var(--card-border);
+  backdrop-filter: blur(4px);
+}
+
+.ql-below b { color: var(--foreground); }
+.ql-below .is-waiting { color: var(--brand-rose); }
+
+/* ---------------------------------------------------------------- the caret */
+
+/* One cursor that travels between zones, the way a pause menu's does. It is the
+   only thing on this surface that moves at rest, and it moves only when the
+   operator does. */
+.ql-caret {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-left: 8px solid var(--accent);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 200ms cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ql-caret { transition: none; }
+  .ql-zone { transition: none; }
+  .ql-row { transition: none; }
+}
+
+/* Light themes: the washes above are mixed against a dark ground. */
+[data-theme^='light'] .ql-row:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+[data-theme^='light'] .ql-row .ql-title {
+  color: var(--foreground);
+}

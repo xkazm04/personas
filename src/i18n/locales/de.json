@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "Esc drücken zum Leeren, dann eine allgemeinere Suche eingeben.",
     "desk_search_label": "Notizen nach Titel oder Text filtern",
     "desk_search_placeholder": "Nach Titel oder Text suchen",
-    "desk_selected_note": "Ausgewählte Notiz"
+    "desk_selected_note": "Ausgewählte Notiz",
+    "desk_below": "Darunter",
+    "desk_below_continues": "weiter {count}",
+    "desk_days_late": "{count}T spät",
+    "desk_key_alphabetical": "Vorheriges / nächstes Projekt",
+    "desk_key_column": "Spalte abwärts",
+    "desk_layout_cards": "Karten",
+    "desk_layout_journal": "Journal",
+    "desk_layout_label": "Schreibtisch-Layout",
+    "desk_needs_you": "Braucht dich",
+    "desk_zone_none_live": "Keine laufenden Ziele",
+    "desk_zone_of": "{shown} von {total}"
   },
   "browser": {
     "webview": {

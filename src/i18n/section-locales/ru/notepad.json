@@ -225,5 +225,16 @@
   "desk_no_matches_hint": "Нажмите Esc, чтобы очистить, и введите запрос шире.",
   "desk_search_label": "Фильтровать заметки по заголовку или тексту",
   "desk_search_placeholder": "Искать по заголовку или тексту",
-  "desk_selected_note": "Выбранная заметка"
+  "desk_selected_note": "Выбранная заметка",
+  "desk_below": "Ниже",
+  "desk_below_continues": "ещё {count}",
+  "desk_days_late": "просрочено {count}д",
+  "desk_key_alphabetical": "Предыдущий / следующий проект",
+  "desk_key_column": "Вниз по столбцу",
+  "desk_layout_cards": "Карточки",
+  "desk_layout_journal": "Журнал",
+  "desk_layout_label": "Вид стола",
+  "desk_needs_you": "Ждёт вас",
+  "desk_zone_none_live": "Нет активных целей",
+  "desk_zone_of": "{shown} из {total}"
 }

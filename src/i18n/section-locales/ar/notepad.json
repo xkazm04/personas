@@ -225,5 +225,16 @@
   "desk_no_matches_hint": "اضغط Esc للمسح، ثم اكتب استعلامًا أوسع.",
   "desk_search_label": "تصفية الملاحظات بالعنوان أو النص",
   "desk_search_placeholder": "ابحث بالعنوان أو النص",
-  "desk_selected_note": "الملاحظة المحددة"
+  "desk_selected_note": "الملاحظة المحددة",
+  "desk_below": "أدناه",
+  "desk_below_continues": "يتابع {count}",
+  "desk_days_late": "متأخر {count}ي",
+  "desk_key_alphabetical": "المشروع السابق / التالي",
+  "desk_key_column": "أسفل العمود",
+  "desk_layout_cards": "بطاقات",
+  "desk_layout_journal": "يوميات",
+  "desk_layout_label": "تخطيط المكتب",
+  "desk_needs_you": "يحتاجك",
+  "desk_zone_none_live": "لا توجد أهداف نشطة",
+  "desk_zone_of": "{shown} من {total}"
 }

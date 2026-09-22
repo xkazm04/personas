@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "साफ़ करने के लिए Esc दबाएँ, फिर व्यापक खोज लिखें।",
     "desk_search_label": "नोट्स को शीर्षक या मुख्य पाठ से फ़िल्टर करें",
     "desk_search_placeholder": "शीर्षक या मुख्य पाठ से खोजें",
-    "desk_selected_note": "चुना गया नोट"
+    "desk_selected_note": "चुना गया नोट",
+    "desk_below": "नीचे",
+    "desk_below_continues": "आगे {count}",
+    "desk_days_late": "{count} दिन लेट",
+    "desk_key_alphabetical": "पिछला / अगला प्रोजेक्ट",
+    "desk_key_column": "कॉलम में नीचे",
+    "desk_layout_cards": "कार्ड्स",
+    "desk_layout_journal": "जर्नल",
+    "desk_layout_label": "डेस्क लेआउट",
+    "desk_needs_you": "आपकी ज़रूरत",
+    "desk_zone_none_live": "कोई सक्रिय लक्ष्य नहीं",
+    "desk_zone_of": "{total} में से {shown}"
   },
   "browser": {
     "webview": {

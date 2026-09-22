@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "Esc를 눌러 지운 뒤 더 넓은 검색어를 입력하세요.",
     "desk_search_label": "제목 또는 본문으로 노트 필터링",
     "desk_search_placeholder": "제목 또는 본문으로 찾기",
-    "desk_selected_note": "선택한 노트"
+    "desk_selected_note": "선택한 노트",
+    "desk_below": "아래",
+    "desk_below_continues": "{count}개 계속",
+    "desk_days_late": "{count}일 지연",
+    "desk_key_alphabetical": "이전 / 다음 프로젝트",
+    "desk_key_column": "열 아래로 이동",
+    "desk_layout_cards": "카드",
+    "desk_layout_journal": "저널",
+    "desk_layout_label": "데스크 레이아웃",
+    "desk_needs_you": "확인 필요",
+    "desk_zone_none_live": "활성 목표 없음",
+    "desk_zone_of": "{total}개 중 {shown}개"
   },
   "browser": {
     "webview": {

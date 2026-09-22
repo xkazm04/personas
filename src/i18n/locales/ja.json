@@ -23243,7 +23243,18 @@
     "desk_no_matches_hint": "Esc でクリアしてから、より広い条件で入力してください。",
     "desk_search_label": "タイトルまたは本文でメモを絞り込む",
     "desk_search_placeholder": "タイトルまたは本文で検索",
-    "desk_selected_note": "選択中のメモ"
+    "desk_selected_note": "選択中のメモ",
+    "desk_below": "以下",
+    "desk_below_continues": "続き{count}件",
+    "desk_days_late": "{count}日遅れ",
+    "desk_key_alphabetical": "前 / 次のプロジェクト",
+    "desk_key_column": "列を下へ",
+    "desk_layout_cards": "カード",
+    "desk_layout_journal": "ジャーナル",
+    "desk_layout_label": "デスクのレイアウト",
+    "desk_needs_you": "要対応",
+    "desk_zone_none_live": "進行中の目標なし",
+    "desk_zone_of": "{shown} / {total}"
   },
   "browser": {
     "webview": {

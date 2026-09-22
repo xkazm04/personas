@@ -23489,6 +23489,17 @@ export type Translations = {
     stack_notepad_label: string;
     stack_notepad_entry: string;
     stack_open_note: string;
+    desk_layout_label: string;
+    desk_layout_cards: string;
+    desk_layout_journal: string;
+    desk_needs_you: string;
+    desk_days_late: string;
+    desk_zone_of: string;
+    desk_zone_none_live: string;
+    desk_below: string;
+    desk_below_continues: string;
+    desk_key_column: string;
+    desk_key_alphabetical: string;
   };
   browser: {
     whitelist: {

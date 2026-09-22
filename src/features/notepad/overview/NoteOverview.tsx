@@ -4,10 +4,12 @@ import { CornerDownLeft, Search, Sparkles } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+
+import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 
 import { NOTE_CAP } from '../notepadStore';
 import { noteOccupiesSlot } from '../noteStatusMeta';
@@ -25,6 +27,7 @@ import {
   type CardAction,
 } from './deskModel';
 import { NoteDeskCard, type CardCommand } from './NoteDeskCard';
+import { QuestLogOverview } from './questlog/QuestLogOverview';
 import { DeskCheatSheet } from './parts/DeskCheatSheet';
 import { DeskHintRail } from './parts/DeskHintRail';
 import { DESK_KEY, Keycap } from './parts/Keycap';
@@ -63,7 +66,7 @@ const STATUS_KEYS = [DESK_KEY.rail1, DESK_KEY.rail2, DESK_KEY.rail3] as const;
  * pure reducer and keymap are `deskModel.ts`; the keyboard layer is
  * `useDeskKeyboard.ts`.
  */
-export function NoteOverview({
+function DeskOverview({
   loading,
   notes,
   projects,
@@ -423,6 +426,75 @@ export function NoteOverview({
       </div>
 
       <DeskCheatSheet open={chrome.cheatOpen} onClose={() => dispatch({ type: 'closeCheat' })} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TEMPORARY A/B SWITCHER — remove when the journal desk is signed off.
+//
+// TODO(prototype, 2026-09-22): consolidate this switcher. One layout ships; the
+// loser and this strip are deleted in the same commit. Tracked in
+// `.claude/active-runs.md` under `questlog-port`.
+//
+// Both layouts take the IDENTICAL `NoteOverviewProps`, so the host owns every
+// piece of state and neither variant can quietly grow its own. That is what
+// makes the comparison fair and the eventual deletion a one-file change.
+// ---------------------------------------------------------------------------
+
+type DeskLayout = 'cards' | 'journal';
+
+const LAYOUT_KEY = 'personas.notepad.deskLayout';
+const LAYOUT_PREFIX = 'notepad-desk-layout';
+
+/** Per-viewer convenience only, and never the authority for anything: blocked or
+ *  full storage silently falls back to the card desk, which is today's shipped
+ *  behaviour. */
+function readLayout(): DeskLayout {
+  return safeLocalGet(LAYOUT_KEY, 'notepad desk layout read') === 'journal' ? 'journal' : 'cards';
+}
+
+export function NoteOverview(props: NoteOverviewProps & { loading: boolean }) {
+  const { t } = useTranslation();
+  const [layout, setLayout] = useState<DeskLayout>(readLayout);
+
+  const pick = useCallback((next: DeskLayout) => {
+    setLayout(next);
+    safeLocalSet(LAYOUT_KEY, next, 'notepad desk layout write');
+  }, []);
+
+  const panel = segmentedTabPanelProps(LAYOUT_PREFIX, layout);
+
+  const tabs = useMemo(
+    () => [
+      { id: 'cards' as const, label: t.notepad.desk_layout_cards },
+      { id: 'journal' as const, label: t.notepad.desk_layout_journal },
+    ],
+    [t],
+  );
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      <div className="shrink-0 px-8 pt-3 flex justify-end">
+        <SegmentedTabs
+          tabs={tabs}
+          activeTab={layout}
+          onTabChange={pick}
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.notepad.desk_layout_label}
+          layoutId={LAYOUT_PREFIX}
+          idPrefix={LAYOUT_PREFIX}
+        />
+      </div>
+      <div
+        className="flex-1 min-h-0 flex flex-col"
+        role="tabpanel"
+        id={panel.id}
+        aria-labelledby={panel["aria-labelledby"]}
+      >
+        {layout === 'journal' ? <QuestLogOverview {...props} /> : <DeskOverview {...props} />}
+      </div>
     </div>
   );
 }

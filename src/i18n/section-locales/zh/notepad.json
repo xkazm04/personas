@@ -225,5 +225,16 @@
   "desk_no_matches_hint": "按 Esc 清除，然后输入更宽泛的查询。",
   "desk_search_label": "按标题或正文筛选笔记",
   "desk_search_placeholder": "按标题或正文查找",
-  "desk_selected_note": "选中的笔记"
+  "desk_selected_note": "选中的笔记",
+  "desk_below": "下方",
+  "desk_below_continues": "还有 {count} 条",
+  "desk_days_late": "逾期{count}天",
+  "desk_key_alphabetical": "上一个 / 下一个项目",
+  "desk_key_column": "沿列下移",
+  "desk_layout_cards": "卡片",
+  "desk_layout_journal": "日志",
+  "desk_layout_label": "工作台布局",
+  "desk_needs_you": "需要你",
+  "desk_zone_none_live": "没有进行中的目标",
+  "desk_zone_of": "{shown} / {total}"
 }
