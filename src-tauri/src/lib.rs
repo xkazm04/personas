@@ -1651,6 +1651,12 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_council_overlay,
             commands::infrastructure::dev_tools::dev_tools_council_read_media,
             commands::infrastructure::dev_tools::dev_tools_set_use_case_tier,
+            // Dev Tools -- the Features page: one board read, and the scenario
+            // layer nested under a feature.
+            commands::infrastructure::dev_tools::dev_tools_feature_board,
+            commands::infrastructure::dev_tools::dev_tools_list_scenarios,
+            commands::infrastructure::dev_tools::dev_tools_upsert_scenario,
+            commands::infrastructure::dev_tools::dev_tools_delete_scenario,
             // Lives beside the scan whose plumbing it shares, not in the
             // dev_tools tree: one background lane for use-case work.
             commands::infrastructure::use_case_scan::dev_tools_relink_use_cases,

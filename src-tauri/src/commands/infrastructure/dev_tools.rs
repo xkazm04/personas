@@ -9,6 +9,9 @@ pub mod council;
 /// The `/council` skill's one gated door back into the app.
 pub mod council_ingest;
 pub mod env_connectors;
+/// The Features page: the one board read, and the scenario layer under a
+/// feature.
+pub mod features;
 pub mod git_ops;
 pub mod goals;
 pub mod milestones;
@@ -34,6 +37,7 @@ pub use contexts::*;
 pub use council::*;
 pub use council_ingest::*;
 pub use env_connectors::*;
+pub use features::*;
 pub use git_ops::*;
 pub use goals::*;
 pub use milestones::*;
