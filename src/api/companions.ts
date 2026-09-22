@@ -5,14 +5,19 @@
 // registry work) keeps its own api module.
 import type { CompanionId } from "@/lib/bindings/CompanionId";
 import type { CompanionsStatusDto } from "@/lib/bindings/CompanionsStatusDto";
+import { EventName } from "@/lib/eventRegistry";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 /**
- * Emitted whenever a term of the status changes: a switch, a star, an
- * onboarding finish. Carries the whole `CompanionsStatusDto`, so a listener
+ * Emitted whenever a term of the status changes: a switch, a star, a delete,
+ * an onboarding finish. Carries the whole `CompanionsStatusDto`, so a listener
  * never has to read back.
+ *
+ * The literal now comes FROM the registry rather than repeating it: the name
+ * crosses the Rust -> JS boundary, and two copies of a string is one typo away
+ * from a surface that listens to nothing and says nothing about it.
  */
-export const COMPANIONS_STATUS_EVENT = "companions://status-changed";
+export const COMPANIONS_STATUS_EVENT = EventName.COMPANIONS_STATUS_CHANGED;
 
 /** The standing of all three companions, in category order. */
 export async function companionsStatus(): Promise<CompanionsStatusDto> {

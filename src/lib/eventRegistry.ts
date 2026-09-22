@@ -22,6 +22,7 @@ import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
+import type { CompanionsStatusDto } from '@/lib/bindings/CompanionsStatusDto';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -323,6 +324,7 @@ export const EventName = {
   MCP_APPROVAL_REQUEST: 'athena://mcp/approval-request',
   ORCHESTRATION_DIGEST_CHANGED: 'athena://orchestration/digest-changed',
   FLEET_AUTO_DECIDED: 'athena://fleet/auto-decided',
+  COMPANIONS_STATUS_CHANGED: 'companions://status-changed',
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
@@ -1201,6 +1203,10 @@ export interface EventPayloadMap {
   [EventName.MCP_APPROVAL_REQUEST]: McpRequestNoticePayload;
   [EventName.ORCHESTRATION_DIGEST_CHANGED]: unknown;
   [EventName.FLEET_AUTO_DECIDED]: { sessionId: string; projectLabel: string; text: string };
+  // The whole Companions status travels ON the event, so a listener never has
+  // to read back. Typed as the generated DTO so a field that moves in Rust
+  // breaks here rather than at the surface that draws it.
+  [EventName.COMPANIONS_STATUS_CHANGED]: CompanionsStatusDto;
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;

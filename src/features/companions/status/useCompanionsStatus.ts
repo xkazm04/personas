@@ -15,7 +15,7 @@
  * itself made - at which point the backend answers and `withRegistryOverride`
  * is deleted.
  */
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import {
   registryLinkSnapshot,
@@ -25,12 +25,7 @@ import {
 
 import type { CompanionId, CompanionStatusDto } from "../types";
 import { COMPANION_IDS } from "../types";
-import {
-  attachCompanionsStatus,
-  detachCompanionsStatus,
-  readCompanionsStatus,
-  useCompanionsStatusSlot,
-} from "./companionsStatusStore";
+import { readCompanionsStatus, useCompanionsStatusSlot } from "./companionsStatusStore";
 
 export interface CompanionsStatusView {
   /** One entry per companion, in category order. Null while the first read is in flight. */
@@ -85,11 +80,6 @@ export function useCompanionsStatus(): CompanionsStatusView {
     registryLinkSnapshot,
     registryLinkSnapshot,
   );
-
-  useEffect(() => {
-    attachCompanionsStatus();
-    return detachCompanionsStatus;
-  }, []);
 
   const companions = useMemo(
     () => withRegistryOverride(snap.companions, links),

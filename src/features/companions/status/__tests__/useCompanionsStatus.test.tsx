@@ -15,11 +15,12 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 const handlers = new Map<string, (event: { payload: unknown }) => void>();
 const unlisten = vi.fn();
 
+const listenMock = vi.fn((name: string, cb: (e: { payload: unknown }) => void) => {
+  handlers.set(name, cb);
+  return Promise.resolve(unlisten);
+});
 vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn((name: string, cb: (e: { payload: unknown }) => void) => {
-    handlers.set(name, cb);
-    return Promise.resolve(unlisten);
-  }),
+  listen: (...args: Parameters<typeof listenMock>) => listenMock(...args),
 }));
 
 const invokeMock = vi.fn();
@@ -59,6 +60,7 @@ const BACKEND_ANSWER = {
 
 beforeEach(() => {
   handlers.clear();
+  listenMock.mockClear();
   invokeMock.mockReset();
   links = { registries: {}, workspaceRegistry: {} };
   __resetCompanionsStatusForTests();
@@ -133,7 +135,9 @@ describe('useCompanionsStatus', () => {
       });
     });
 
-    expect(result.current.byId('athena')?.enabled).toBe(false);
+    // Delivery is coalesced per animation frame by the shared singleton
+    // listener, so this settles on the next frame rather than synchronously.
+    await waitFor(() => expect(result.current.byId('athena')?.enabled).toBe(false));
     expect(result.current.byId('overseer')?.detail.starredCount).toBe(2);
     // The event CARRIES the whole status, so nothing re-invokes on it.
     expect(invokeMock.mock.calls.length).toBe(callsAfterFirstRead);
@@ -146,6 +150,11 @@ describe('useCompanionsStatus', () => {
 
     await waitFor(() => expect(a.result.current.companions).not.toBeNull());
     await waitFor(() => expect(b.result.current.companions).not.toBeNull());
+    // Both mounted inside one tick, so their reads were deduped into one call
+    // and their subscriptions into one native listener.
     expect(invokeMock.mock.calls.filter((c) => c[0] === 'companions_status').length).toBe(1);
+    expect(listenMock.mock.calls.filter((c) => c[0] === 'companions://status-changed').length).toBe(
+      1,
+    );
   });
 });

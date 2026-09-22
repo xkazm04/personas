@@ -8,12 +8,13 @@
  * overlays), and lazy routes unmount completely on nav-away. So the state lives
  * here, not in each component: a remount paints the last answer instead of
  * re-ghosting, the `companions://status-changed` subscription is opened once
- * and ref-counted, and a burst of mounts collapses into a single
- * `companions_status` call.
+ * for the whole app by `createSingletonListener` (which owns the ref-counting,
+ * the async-registration race and the per-frame coalescing), and a burst of
+ * mounts collapses into a single `companions_status` call.
  *
- * A single slot, hand-rolled, is the sanctioned shape - `createModuleCache` is
- * for a cache with MULTIPLE keyed entries, which needs a declared cap. There is
- * exactly one companions status per app.
+ * A single slot, hand-rolled, is the sanctioned shape for the VALUE -
+ * `createModuleCache` is for a cache with MULTIPLE keyed entries, which needs a
+ * declared cap. There is exactly one companions status per app.
  *
  * ## Why this is its own file
  *
@@ -22,10 +23,10 @@
  * store and its API chain; the app-shell footer and the overlay gate need only
  * Athena's switch, and must not drag that chain into their bundle to get it.
  */
-import { useSyncExternalStore } from "react";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 import { COMPANIONS_STATUS_EVENT, companionsStatus } from "@/api/companions";
+import { createSingletonListener } from "@/hooks/realtime/createSingletonListener";
 import { extractMessage, silentCatch } from "@/lib/silentCatch";
 
 import type { CompanionStatusDto, CompanionsStatusDto } from "../types";
@@ -42,8 +43,11 @@ export interface CompanionsStatusSlot {
 let slot: CompanionsStatusSlot = { companions: null, loading: true, error: null };
 const listeners = new Set<() => void>();
 let inFlight: Promise<void> | null = null;
-let unlistenPromise: Promise<UnlistenFn> | null = null;
-let consumers = 0;
+
+/** ONE Tauri listener for the whole app, however many surfaces are mounted. */
+const onCompanionsStatusChanged = createSingletonListener<CompanionsStatusDto>(
+  COMPANIONS_STATUS_EVENT,
+);
 
 function notify(): void {
   listeners.forEach((l) => l());
@@ -82,35 +86,31 @@ export function readCompanionsStatus(): Promise<void> {
   return inFlight;
 }
 
-/** Open the status subscription once, however many surfaces are mounted. */
-export function attachCompanionsStatus(): void {
-  consumers += 1;
-  if (unlistenPromise) return;
-  unlistenPromise = listen<CompanionsStatusDto>(COMPANIONS_STATUS_EVENT, (event) => {
-    slot = { companions: event.payload.companions, loading: false, error: null };
-    notify();
-  });
-  unlistenPromise.catch(silentCatch("companions:status-listen"));
-  // Going from nobody-listening to somebody-listening is the one moment the
-  // slot can be stale: no listener was open to hear a change. Re-read.
-  void readCompanionsStatus();
-}
-
-export function detachCompanionsStatus(): void {
-  consumers = Math.max(0, consumers - 1);
-  if (consumers > 0 || !unlistenPromise) return;
-  const pending = unlistenPromise;
-  unlistenPromise = null;
-  void pending.then((fn) => fn()).catch(silentCatch("companions:status-unlisten"));
-}
-
-/** Subscribe a component to the slot. */
+/**
+ * Subscribe a component to the slot, and keep it fresh.
+ *
+ * Every consumer reads once on mount rather than only the first one: the read
+ * is deduped while in flight, so a burst of mounts is one IPC, and a surface
+ * that opens minutes later gets a current answer instead of whatever the last
+ * event happened to leave behind.
+ */
 export function useCompanionsStatusSlot(): CompanionsStatusSlot {
+  onCompanionsStatusChanged(
+    useCallback((payload: CompanionsStatusDto) => {
+      slot = { companions: payload.companions, loading: false, error: null };
+      notify();
+    }, []),
+  );
+
+  useEffect(() => {
+    void readCompanionsStatus();
+  }, []);
+
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 /**
- * Drop the warm slot and the subscription. Test-only: the module state is
+ * Drop the warm slot and detach the listener. Test-only: the module state is
  * deliberately process-wide, so a suite that does not reset it carries one
  * test's answer into the next.
  */
@@ -118,6 +118,5 @@ export function __resetCompanionsStatusForTests(): void {
   slot = { companions: null, loading: true, error: null };
   listeners.clear();
   inFlight = null;
-  unlistenPromise = null;
-  consumers = 0;
+  onCompanionsStatusChanged.__resetForTests();
 }

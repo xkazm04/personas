@@ -368,6 +368,10 @@ event_names! {
     MCP_APPROVAL_REQUEST         => "athena://mcp/approval-request",
     ORCHESTRATION_DIGEST_CHANGED => "athena://orchestration/digest-changed",
     FLEET_AUTO_DECIDED           => "athena://fleet/auto-decided",
+    // The Companions CATEGORY's standing, published whenever a term of it
+    // changes: a switch, a star, a delete, an onboarding finish. `companions`
+    // rather than `athena` because it carries all three companions.
+    COMPANIONS_STATUS_CHANGED    => "companions://status-changed",
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",

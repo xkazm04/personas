@@ -15,13 +15,7 @@
  * anything that FIRES something (`companion_init`, a bridge subscription)
  * waits for a real read rather than starting work it may have to undo.
  */
-import { useEffect } from "react";
-
-import {
-  attachCompanionsStatus,
-  detachCompanionsStatus,
-  useCompanionsStatusSlot,
-} from "./companionsStatusStore";
+import { useCompanionsStatusSlot } from "./companionsStatusStore";
 
 export interface AthenaEnabledView {
   /** Whether Athena runs. Optimistically true until the first read settles. */
@@ -32,11 +26,6 @@ export interface AthenaEnabledView {
 
 export function useAthenaEnabled(): AthenaEnabledView {
   const slot = useCompanionsStatusSlot();
-
-  useEffect(() => {
-    attachCompanionsStatus();
-    return detachCompanionsStatus;
-  }, []);
 
   const athena = slot.companions?.find((c) => c.id === "athena") ?? null;
   return { enabled: athena?.enabled ?? true, settled: athena !== null };

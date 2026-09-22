@@ -33,15 +33,13 @@ use tauri::{AppHandle, Emitter, State};
 use ts_rs::TS;
 
 use crate::db::{repos::core::settings as settings_repo, settings_keys, DbPool};
+// The event's NAME lives in the one registry both sides read, not beside its
+// emitter: a name that is only a literal here is a name the frontend can
+// mistype with nothing to catch it (census `unregistered-tauri-event-name`).
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
-
-/// Emitted whenever a term of the status changes: a switch, a star, an
-/// onboarding finish. Carries the whole [`CompanionsStatusDto`], so a listener
-/// never has to read back. Mirrored by `COMPANIONS_STATUS_EVENT` in
-/// `src/api/companions.ts`.
-pub const STATUS_EVENT: &str = "companions://status-changed";
 
 /// Which companion. The wire value is the lowercase id used everywhere else
 /// (settings keys, disk roots, the frontend's page ids).
@@ -325,7 +323,7 @@ pub fn status_snapshot(state: &Arc<AppState>) -> CompanionsStatusDto {
 /// a lost change. Call it from anywhere that changes a TERM of the status.
 pub fn emit_status(app: &AppHandle, state: &Arc<AppState>) {
     let payload = status_snapshot(state);
-    if let Err(e) = app.emit(STATUS_EVENT, &payload) {
+    if let Err(e) = app.emit(event_name::COMPANIONS_STATUS_CHANGED, &payload) {
         tracing::warn!(error = %e, "companions: status event emit failed");
     }
 }
@@ -364,7 +362,7 @@ pub fn companions_set_enabled(
     }
     settings_repo::set(&state.db, key, if enabled { "true" } else { "false" })?;
     let snapshot = status_snapshot(state.inner());
-    if let Err(e) = app.emit(STATUS_EVENT, &snapshot) {
+    if let Err(e) = app.emit(event_name::COMPANIONS_STATUS_CHANGED, &snapshot) {
         tracing::warn!(error = %e, "companions: status event emit failed");
     }
     Ok(snapshot)
