@@ -50,7 +50,7 @@ export function FeatureRowItem({
       data-feature-slug={feature.slug}
       onClick={() => onSelect(feature.id)}
       onDoubleClick={() => onOpen(feature.id)}
-      className={`flex w-full items-center gap-2.5 border-l-2 px-3 py-2 text-left focus-ring ${
+      className={`flex w-full items-start gap-2.5 border-l-2 px-3 py-2 text-left focus-ring ${
         selected
           ? 'border-l-primary bg-primary/10'
           : 'border-l-transparent hover:bg-secondary/50'
@@ -65,10 +65,15 @@ export function FeatureRowItem({
         label={tx(t.row_label, { name: feature.name, state: stateName })}
       />
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-start gap-1.5">
           <CouncilGlyph kind={row.kind} t={tDev} />
+          {/* At ~300px the row has room for two lines, and a truncated name
+              is the one thing a reader cannot recover from a glance. It wraps
+              to two and only then clips; the tooltip carries the rare third. */}
           <Tooltip content={feature.name}>
-            <span className="min-w-0 flex-1 truncate typo-body text-foreground">{feature.name}</span>
+            <span className="line-clamp-2 min-w-0 flex-1 break-words typo-body text-foreground">
+              {feature.name}
+            </span>
           </Tooltip>
           {feature.tier === 'major' ? (
             <Tooltip content={t.tier_major}>

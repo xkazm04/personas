@@ -46,7 +46,7 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
     <article
       data-testid="features-scenario-cell"
       data-scenario-scope={scenario.scope}
-      className="flex flex-col gap-2 rounded-card border border-border bg-secondary/30 p-3"
+      className="flex flex-col gap-2 rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-3"
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="min-w-0 typo-body text-foreground">{scenario.title}</h4>

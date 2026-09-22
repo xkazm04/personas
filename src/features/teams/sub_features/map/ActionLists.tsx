@@ -21,7 +21,7 @@ export interface ActionListsProps {
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-card border border-border bg-secondary/30 p-3">
+    <section className="rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-3">
       <h3 className="typo-body-lg text-foreground">{title}</h3>
       <p className="mt-0.5 typo-caption">{subtitle}</p>
       <div className="mt-2">{children}</div>

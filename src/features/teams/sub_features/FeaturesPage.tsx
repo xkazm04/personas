@@ -244,7 +244,7 @@ export default function FeaturesPage() {
           ) : loading && !board ? (
             /* A calm ghost UNDER the chrome, never a spinner for a surface. */
             <div className="flex-1 p-4" aria-hidden="true" data-testid="features-ghost">
-              <div className="h-full rounded-card border border-border bg-secondary/30 bg-secondary/25" />
+              <div className="h-full rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 bg-secondary/25" />
             </div>
           ) : board?.neverScanned ? (
             <div className="flex flex-1 items-center justify-center p-6">

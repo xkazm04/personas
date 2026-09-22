@@ -5,7 +5,7 @@
 // so a hundred real DOM rows would be paid for on every one of those renders.
 // Group headings are items in the same flat list and one of them is pinned via
 // the range extractor, which is how a sticky heading survives virtualisation.
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search } from 'lucide-react';
 
@@ -18,10 +18,11 @@ import { FEATURE_MOVES, sortRows, type FeatureMove, type FeatureRow, type Featur
 import { moveLabel, type TFeatures } from '../featuresModel';
 import { FeatureRowItem } from './FeatureRowItem';
 
-// Both item kinds are a FIXED height, which is why `measureElement` is not
-// wired up: dynamic measurement would put a ResizeObserver on every mounted
-// row and re-measure the list on every scroll frame, for an answer the
-// stylesheet already fixes. Change either constant if the row's geometry moves.
+// A row is one line of identity over one line of figures, but the NAME wraps
+// to two lines when it needs to, so a row is 54px or 77px and the virtualiser
+// has to measure rather than assume. These are the estimates it starts from;
+// `measureElement` corrects each mounted row, and `getItemKey` keys that
+// correction to the ITEM so a re-sort cannot hand a row a heading's height.
 const ROW_HEIGHT = 54;
 const HEADING_HEIGHT = 30;
 
@@ -94,30 +95,26 @@ export function FeatureColumn({
     },
   });
 
-  // The key change alone does not re-measure what is already cached under a key
-  // that survived; re-measuring when the item list changes identity does.
-  useEffect(() => { virtualizer.measure(); }, [items, virtualizer]);
 
   const virtualItems = virtualizer.getVirtualItems();
-  /* The band a reader is standing IN, derived from the scroll offset rather
-     than mutated inside the range extractor. An earlier version pinned the
-     heading by rendering that one virtual item `position: sticky` - which puts
-     it back in normal flow, so the item it was supposed to occupy lost its
-     slot and two rows drew on top of each other. The heading is now an OVERLAY
-     outside the virtual list, and every virtual item stays absolute. */
+  /* The band a reader is standing IN, read off the virtualiser's own MEASURED
+     offsets rather than from assumed heights (rows are not all the same height
+     any more) and rather than from a ref mutated inside the range extractor.
+     An earlier version pinned the heading by rendering that one virtual item
+     `position: sticky` - which puts it back in normal flow, so the item it was
+     supposed to occupy lost its slot and two rows drew on top of each other.
+     The heading is now an OVERLAY outside the list; every item stays absolute. */
   const offset = virtualizer.scrollOffset ?? 0;
   const standingIn = useMemo(() => {
     if (sort !== 'move') return null;
-    let seen: Extract<Item, { kind: 'heading' }> | null = null;
-    let y = 0;
-    for (const item of items) {
-      const h = item.kind === 'heading' ? HEADING_HEIGHT : ROW_HEIGHT;
-      if (item.kind === 'heading' && y <= offset + 1) seen = item;
-      y += h;
-      if (y > offset + 1 && seen) break;
+    const first = virtualItems.find((v) => v.end > offset + 1) ?? virtualItems[0];
+    if (!first) return null;
+    for (let i = first.index; i >= 0; i -= 1) {
+      const item = items[i];
+      if (item?.kind === 'heading') return item;
     }
-    return seen;
-  }, [items, offset, sort]);
+    return null;
+  }, [items, virtualItems, offset, sort]);
 
   const move = useCallback(
     (delta: number) => {
@@ -215,6 +212,7 @@ export function FeatureColumn({
               return (
                 <div
                   key={v.key}
+                  ref={virtualizer.measureElement}
                   data-index={v.index}
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)` }}
                 >

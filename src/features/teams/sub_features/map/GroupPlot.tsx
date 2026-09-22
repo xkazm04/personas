@@ -117,8 +117,8 @@ export function GroupPlotCard({
   return (
     <section
       data-testid="features-map-plot"
-      className={`rounded-card border bg-secondary/30 p-2.5 ${
-        plot.group.untouched ? 'border-dashed border-status-warning/50' : 'border-border'
+      className={`rounded-card border bg-primary/5 p-2.5 ${
+        plot.group.untouched ? 'border-dashed border-status-warning/50' : 'border-primary/15'
       }`}
     >
       <header className="mb-2 flex items-start justify-between gap-2">

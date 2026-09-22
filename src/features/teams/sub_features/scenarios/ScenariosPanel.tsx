@@ -49,7 +49,7 @@ export function ScenariosPanel({
   const worst = worstInScope(feature.scenarios);
 
   return (
-    <section className="rounded-card border border-border bg-secondary/30 p-4" data-testid="features-scenarios">
+    <section className="rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-4" data-testid="features-scenarios">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="typo-body-lg text-foreground">{t.scenarios_title}</h3>
