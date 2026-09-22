@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrainViewer, __resetBrainListCacheForTests } from '../BrainViewer';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { __resetCycleCacheForTests } from '../BrainCycleReports';
 import { __resetHealthCacheForTests } from '../BrainHealthPanel';
 
@@ -44,7 +44,7 @@ beforeEach(() => {
       lastCycleAt: null,
     },
   });
-  useCompanionStore.setState({ brainView: { open: true, kind: null, id: null } });
+  useAthenaStore.setState({ brainView: { open: true, kind: null, id: null } });
 });
 
 describe('BrainViewer root lanes', () => {

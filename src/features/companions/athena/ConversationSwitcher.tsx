@@ -9,7 +9,7 @@ import {
   companionRenameConversation,
 } from '@/api/companion';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from './athenaStore';
 
 type ThreadStatus = 'awaiting' | 'working' | 'idle';
 
@@ -35,12 +35,12 @@ function StatusDot({ status }: { status: ThreadStatus }) {
  */
 export function ConversationSwitcher() {
   const { t } = useTranslation();
-  const conversations = useCompanionStore((s) => s.conversations);
-  const activeId = useCompanionStore((s) => s.activeConversationId);
-  const streaming = useCompanionStore((s) => s.streaming);
-  const setConversations = useCompanionStore((s) => s.setConversations);
-  const setActiveConversationId = useCompanionStore((s) => s.setActiveConversationId);
-  const upsertConversation = useCompanionStore((s) => s.upsertConversation);
+  const conversations = useAthenaStore((s) => s.conversations);
+  const activeId = useAthenaStore((s) => s.activeConversationId);
+  const streaming = useAthenaStore((s) => s.streaming);
+  const setConversations = useAthenaStore((s) => s.setConversations);
+  const setActiveConversationId = useAthenaStore((s) => s.setActiveConversationId);
+  const upsertConversation = useAthenaStore((s) => s.upsertConversation);
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

@@ -37,8 +37,8 @@ const companion = vi.hoisted(() => {
   };
   return { state };
 });
-vi.mock('@/features/companions/athena/companionStore', () => ({
-  useCompanionStore: {
+vi.mock('@/features/companions/athena/athenaStore', () => ({
+  useAthenaStore: {
     getState: () => companion.state,
     subscribe: () => () => undefined,
   },

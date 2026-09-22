@@ -17,7 +17,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { Bubble } from '../Bubble';
 import { OperationalThread } from '../OperationalThread';
 import { RecallStrip } from '../RecallStrip';
@@ -63,11 +63,11 @@ export function AthenaChatStreamingTurn({
   onOpenInBrain: (kind: BrainKind, id: string) => void;
 }) {
   const { t } = useTranslation();
-  const streaming = useCompanionStore((s) => s.streaming);
-  const streamingBeat = useCompanionStore((s) => s.streamingBeat);
-  const streamingRecall = useCompanionStore((s) => s.streamingRecall);
-  const streamingSteps = useCompanionStore((s) => s.streamingSteps);
-  const pendingConnectorJobIds = useCompanionStore((s) => s.pendingConnectorJobIds);
+  const streaming = useAthenaStore((s) => s.streaming);
+  const streamingBeat = useAthenaStore((s) => s.streamingBeat);
+  const streamingRecall = useAthenaStore((s) => s.streamingRecall);
+  const streamingSteps = useAthenaStore((s) => s.streamingSteps);
+  const pendingConnectorJobIds = useAthenaStore((s) => s.pendingConnectorJobIds);
 
   return (
     <AnimatePresence initial={false}>

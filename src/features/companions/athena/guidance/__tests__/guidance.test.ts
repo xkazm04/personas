@@ -7,7 +7,7 @@ import {
   ADHOC_TOPIC,
 } from '../walkthroughs';
 import { buildPointAtWalkthrough, buildComposedWalkthrough } from '../composeAdHoc';
-import { useCompanionStore } from '../../companionStore';
+import { useAthenaStore } from '../../athenaStore';
 
 describe('walkthroughs registry', () => {
   it('exposes persona_creation with ordered steps', () => {
@@ -105,45 +105,45 @@ describe('composeAdHoc builders (point_at / compose_walkthrough)', () => {
   });
 });
 
-describe('companionStore guidance actions', () => {
+describe('athenaStore guidance actions', () => {
   beforeEach(() => {
-    useCompanionStore.getState().stopGuidance();
+    useAthenaStore.getState().stopGuidance();
   });
 
   it('startGuidance activates a topic at step 0, playing', () => {
-    useCompanionStore.getState().startGuidance('persona_creation');
-    const s = useCompanionStore.getState();
+    useAthenaStore.getState().startGuidance('persona_creation');
+    const s = useAthenaStore.getState();
     expect(s.activeWalkthrough).toBe('persona_creation');
     expect(s.guidanceStepIndex).toBe(0);
     expect(s.guidancePlaying).toBe(true);
   });
 
   it('advanceGuidance increments the step index', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.startGuidance('persona_creation');
     g.advanceGuidance();
     g.advanceGuidance();
-    expect(useCompanionStore.getState().guidanceStepIndex).toBe(2);
+    expect(useAthenaStore.getState().guidanceStepIndex).toBe(2);
   });
 
   it('pause/resume toggles guidancePlaying without ending the walkthrough', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.startGuidance('persona_creation');
     g.pauseGuidance();
-    expect(useCompanionStore.getState().guidancePlaying).toBe(false);
-    expect(useCompanionStore.getState().activeWalkthrough).toBe('persona_creation');
+    expect(useAthenaStore.getState().guidancePlaying).toBe(false);
+    expect(useAthenaStore.getState().activeWalkthrough).toBe('persona_creation');
     g.resumeGuidance();
-    expect(useCompanionStore.getState().guidancePlaying).toBe(true);
+    expect(useAthenaStore.getState().guidancePlaying).toBe(true);
   });
 
   it('stopGuidance clears all guidance state', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.startGuidance('persona_creation');
     g.setGuidanceHighlightTestId('persona-intent-input');
     g.setOrbGuideTarget({ left: 100, top: 200 });
     g.advanceGuidance();
     g.stopGuidance();
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     expect(s.activeWalkthrough).toBeNull();
     expect(s.guidanceStepIndex).toBe(0);
     expect(s.guidancePlaying).toBe(false);
@@ -152,47 +152,47 @@ describe('companionStore guidance actions', () => {
   });
 
   it('previousGuidance steps back, clamps at 0, and pauses (v2)', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.startGuidance('persona_creation');
     g.advanceGuidance(); // -> 1
     g.previousGuidance(); // -> 0, paused
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     expect(s.guidanceStepIndex).toBe(0);
     expect(s.guidancePlaying).toBe(false);
     g.previousGuidance(); // clamp at 0
-    expect(useCompanionStore.getState().guidanceStepIndex).toBe(0);
+    expect(useAthenaStore.getState().guidanceStepIndex).toBe(0);
   });
 
   it('jumpToStep sets an arbitrary step and pauses (v2)', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.startGuidance('persona_creation');
     g.jumpToStep(3);
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     expect(s.guidanceStepIndex).toBe(3);
     expect(s.guidancePlaying).toBe(false);
   });
 });
 
-describe('companionStore flashHighlight (v2 labeled pulse)', () => {
+describe('athenaStore flashHighlight (v2 labeled pulse)', () => {
   beforeEach(() => {
-    useCompanionStore.getState().stopGuidance();
+    useAthenaStore.getState().stopGuidance();
   });
 
   it('sets the testid + optional label, skipped while a walkthrough runs', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.flashHighlight('cockpit-panel', { label: 'Just composed' });
-    let s = useCompanionStore.getState();
+    let s = useAthenaStore.getState();
     expect(s.flashHighlightTestId).toBe('cockpit-panel');
     expect(s.flashHighlightLabel).toBe('Just composed');
 
     // Starting a walkthrough clears any pending flash...
     g.startGuidance('persona_creation');
-    s = useCompanionStore.getState();
+    s = useAthenaStore.getState();
     expect(s.flashHighlightTestId).toBeNull();
     expect(s.flashHighlightLabel).toBeNull();
 
     // ...and flashes fired while a walkthrough is active are ignored.
     g.flashHighlight('overview-page');
-    expect(useCompanionStore.getState().flashHighlightTestId).toBeNull();
+    expect(useAthenaStore.getState().flashHighlightTestId).toBeNull();
   });
 });

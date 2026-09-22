@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { listen } from '@tauri-apps/api/event';
 import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
 import { extractAssistantTextDelta } from '@/features/companions/athena/extractAssistantText';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
@@ -452,7 +452,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       stream: '',
       stopNoop: false,
     });
-    useCompanionStore.getState().pulseForwardAck();
+    useAthenaStore.getState().pulseForwardAck();
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
@@ -474,7 +474,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         decisionSelector: q ? (result.selector ?? null) : null,
         ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
       });
-      useCompanionStore.getState().pulseMessageReaction();
+      useAthenaStore.getState().pulseMessageReaction();
       const cur = get().runtimes[id];
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });

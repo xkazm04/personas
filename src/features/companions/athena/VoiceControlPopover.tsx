@@ -14,7 +14,7 @@ import { useTtsVoiceSelection } from './useTtsVoiceSelection';
  * button with a popover that bundles the three things a user actually wants
  * in one place:
  *   - enable / disable spoken replies,
- *   - a playback volume slider (writes `companionVoiceVolume`, applied in
+ *   - a playback volume slider (writes `athenaVoiceVolume`, applied in
  *     `voicePlayback.play()`),
  *   - a "Test voice" button that synthesizes + plays a sample sentence so
  *     the user can hear the current engine/voice/volume without waiting for
@@ -29,10 +29,10 @@ export function VoiceControlPopover() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
 
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
-  const volume = useSystemStore((s) => s.companionVoiceVolume);
-  const setVolume = useSystemStore((s) => s.setCompanionVoiceVolume);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
+  const setVoiceEnabled = useSystemStore((s) => s.setAthenaVoiceEnabled);
+  const volume = useSystemStore((s) => s.athenaVoiceVolume);
+  const setVolume = useSystemStore((s) => s.setAthenaVoiceVolume);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 

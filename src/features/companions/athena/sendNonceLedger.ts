@@ -1,7 +1,7 @@
 /**
  * Idempotency ledger for outbound companion chat turns.
  *
- * The in-flight re-entrancy guard in `CompanionPanel.send` (`sendingRef`) is
+ * The in-flight re-entrancy guard in `AthenaChatPanel.send` (`sendingRef`) is
  * a React ref — it protects against two rapid clicks in the SAME session,
  * but it's gone the instant the process restarts. If a turn is mid-flight
  * when the app restarts and whatever triggered the send (composer submit,

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { listClaudeAccounts } from '@/api/fleet/claudeAccounts';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 /** Provenance label for the handoff prompt (`[Automated request from …]`). */
@@ -44,10 +44,10 @@ export function useCreateAthenaHandoff(active: boolean, voiceReady: boolean): Cr
     const sys = useSystemStore.getState();
     sys.setAthenaOnboardingCompletedAt(new Date().toISOString());
     sys.setAthenaOnboardingStep(null);
-    if (voiceReady) sys.setCompanionVoiceEnabled(true);
+    if (voiceReady) sys.setAthenaVoiceEnabled(true);
 
     const c = t.plugins.companion;
-    const companion = useCompanionStore.getState();
+    const companion = useAthenaStore.getState();
     if (hasClaudeLogin) {
       companion.setPendingChatPrompt({ text: c.create_handoff_prompt, source: HANDOFF_SOURCE });
     } else {

@@ -7,7 +7,7 @@
  */
 
 import { memo } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { ConnectorCallCard } from '../ConnectorCallCard';
 import { TaskTag } from '../TaskTag';
 
@@ -16,7 +16,7 @@ export const AthenaChatMessageJobs = memo(function AthenaChatMessageJobs({
 }: {
   jobIds: string[];
 }) {
-  const jobsById = useCompanionStore((s) => s.jobsById);
+  const jobsById = useAthenaStore((s) => s.jobsById);
   if (jobIds.length === 0) return null;
   return (
     <>

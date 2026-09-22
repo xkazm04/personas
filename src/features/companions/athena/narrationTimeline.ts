@@ -7,7 +7,7 @@
  * trail persists under the completed bubble (same session-scoped model
  * as the recall strip / operational thread).
  *
- * Pure data + helpers only — store wiring lives in `companionStore.ts`,
+ * Pure data + helpers only — store wiring lives in `athenaStore.ts`,
  * rendering in `NarrationTimeline.tsx`.
  */
 

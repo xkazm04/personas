@@ -7,7 +7,7 @@ import {
   type CompanionChatCardRow,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Durable chat-cards — the read/write bridge.
@@ -63,8 +63,8 @@ export function useChatCardHydration(
         // Guard against a switch that landed while the fetch was in flight —
         // hydrating thread A's proposals into thread B would be worse than
         // not hydrating at all.
-        if (useCompanionStore.getState().activeConversationId !== conversationId) return;
-        useCompanionStore.getState().hydrateChatCards(rows.map(rowToCard));
+        if (useAthenaStore.getState().activeConversationId !== conversationId) return;
+        useAthenaStore.getState().hydrateChatCards(rows.map(rowToCard));
       })
       .catch(silentCatch('companion_list_chat_cards'));
     return () => {
@@ -86,7 +86,7 @@ export function resolveChatCard(
   resultJson?: string,
 ): void {
   if (!id) return;
-  const store = useCompanionStore.getState();
+  const store = useAthenaStore.getState();
   if (status === 'dismissed' || status === 'superseded') {
     store.removeChatCard(id);
   } else if (patch) {

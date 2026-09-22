@@ -11,7 +11,7 @@
 import { companionDispatchFleetPlan } from '@/api/companion';
 import { writeDispatchBrief } from '@/api/fleet/fleet';
 import { installSystemSkill } from '@/api/devTools/devTools';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { toastCatch } from '@/lib/silentCatch';
@@ -58,7 +58,7 @@ export const noteBriefPath = (noteId: string) => `.personas/notepad/${noteId}/no
  * an autonomous chain and tells her a button was pressed.
  */
 export function sendAthenaPointer(text: string): void {
-  useCompanionStore.getState().setPendingChatPrompt({ text, source: 'notepad' });
+  useAthenaStore.getState().setPendingChatPrompt({ text, source: 'notepad' });
 }
 const ask = sendAthenaPointer;
 

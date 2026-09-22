@@ -2,7 +2,7 @@
  * The side-effect half of turn sidecars: one fire-and-forget write at
  * attach time, one batched read at conversation-load time.
  *
- * Write — `persistTurnSidecar(episodeId)` is called from CompanionPanel
+ * Write — `persistTurnSidecar(episodeId)` is called from AthenaChatPanel
  * right after the store's attach actions have promoted the in-flight
  * channels onto the assistant episode id. It reads them straight back out
  * of the store (single source of truth, no duplicated parsing) and posts
@@ -23,7 +23,7 @@ import {
   type CompanionMessage,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { isEmptyHydration, parseSidecars, serializeSidecar } from './turnSidecars';
 
 /**
@@ -33,7 +33,7 @@ import { isEmptyHydration, parseSidecars, serializeSidecar } from './turnSidecar
  */
 export function persistTurnSidecar(episodeId: string): void {
   if (!episodeId) return;
-  const s = useCompanionStore.getState();
+  const s = useAthenaStore.getState();
   const payload = serializeSidecar(episodeId, {
     narration: s.narrationByEpisodeId[episodeId],
     steps: s.stepsByEpisodeId[episodeId],
@@ -88,7 +88,7 @@ export function useTurnSidecarHydration(messages: CompanionMessage[]): void {
         if (cancelled || rows.length === 0) return;
         const hydrated = parseSidecars(rows);
         if (isEmptyHydration(hydrated)) return;
-        useCompanionStore.getState().hydrateTurnSidecars(hydrated);
+        useAthenaStore.getState().hydrateTurnSidecars(hydrated);
       })
       .catch((e) => {
         // Allow a retry on the next transcript change — a transient IPC

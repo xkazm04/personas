@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { HoldToTalk } from '../useHoldToTalk';
 import { clamp, MARGIN, ORB_SIZE, type Viewport } from './athenaOrbGeometry';
 
@@ -42,7 +42,7 @@ export function useAthenaOrbGesture(args: {
 }): OrbGesture {
   const { talk, left, top, vp, guideActive } = args;
   const { start: startTalk, stop: stopTalk, abort: abortTalk } = talk;
-  const setOrbPos = useSystemStore((s) => s.setCompanionOrbPos);
+  const setOrbPos = useSystemStore((s) => s.setAthenaOrbPos);
 
   const [dragPx, setDragPx] = useState<{ left: number; top: number } | null>(null);
   const startRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
@@ -136,7 +136,7 @@ export function useAthenaOrbGesture(args: {
 
       // Plain tap — open the chat, recording the orb's centre so the panel can
       // morph out from here.
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       store.setOrbOpenOrigin({ x: left + ORB_SIZE / 2, y: top + ORB_SIZE / 2 });
       store.setState('open');
     },

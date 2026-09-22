@@ -3,7 +3,7 @@ import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { IconGoals } from '@/features/shared/chrome/sidebar/SidebarIcons';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -99,8 +99,8 @@ export default function GoalsPage() {
 
   // Open Athena with a preset question to help the user set up project goals.
   const handleAskAthena = () => {
-    useCompanionStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
+    useAthenaStore.getState().setState('open');
   };
 
   // Starter goals — one-click seeds for the empty state, so a non-technical

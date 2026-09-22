@@ -10,13 +10,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { FleetShipIcon } from '@/features/plugins/fleet/FleetShipIcon';
 import { FLEET_STATE_META, fleetStateCounts, laneOfState, FLEET_LANE_ORDER } from '@/features/plugins/fleet/fleetStateMeta';
 import { useNowTick, formatAgo } from '@/features/plugins/fleet/relativeAgo';
-import { CompanionSidePanel } from '../CompanionSidePanel';
+import { AthenaSidePanel } from '../AthenaSidePanel';
 import { useOperativeMemoryStore } from '../orchestration/operativeMemoryStore';
 import { parseDigest } from '../orchestration/parseDigest';
 
 /**
  * Live "what Athena has running" content for the companion chat's inner
- * side-panel slot (see `CompanionSidePanel`).
+ * side-panel slot (see `AthenaSidePanel`).
  *
  * Four lanes, ONE shape. Fleet terminals, her own live ops, Run Desk tasks and
  * her scheduled check-ins each render as `<PanelSection>` — a `Title (N)` header,
@@ -29,7 +29,7 @@ import { parseDigest } from '../orchestration/parseDigest';
  * lane doesn't exist" indistinguishable).
  *
  * Fleet reads the SAME `fleetSessions` slice the Fleet page and footer cluster
- * read — `useFleetCompanionBridge` (mounted at the app root) keeps it current
+ * read — `useAthenaFleetBridge` (mounted at the app root) keeps it current
  * independent of whether the Fleet page is open, so this panel is never stale
  * just because the operator is looking at chat. Exited sessions are dropped
  * (history, not something to glance at) and the rest are ordered attention-first,
@@ -52,8 +52,8 @@ import { parseDigest } from '../orchestration/parseDigest';
 export function FleetStatsSidePanel() {
   const { t } = useTranslation();
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
-  const open = useSystemStore((s) => s.companionSidePanelSlot === 'fleet');
-  const setSlot = useSystemStore((s) => s.setCompanionSidePanelSlot);
+  const open = useSystemStore((s) => s.athenaSidePanelSlot === 'fleet');
+  const setSlot = useSystemStore((s) => s.setAthenaSidePanelSlot);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -135,7 +135,7 @@ export function FleetStatsSidePanel() {
   };
 
   return (
-    <CompanionSidePanel
+    <AthenaSidePanel
       icon={<FleetShipIcon className="w-3.5 h-3.5 text-foreground" />}
       label={t.plugins.companion.side_panel_fleet_label}
       open={open}
@@ -267,7 +267,7 @@ export function FleetStatsSidePanel() {
         <ExternalLink className="w-3 h-3" />
         {t.plugins.fleet.footer_open_page}
       </button>
-    </CompanionSidePanel>
+    </AthenaSidePanel>
   );
 }
 

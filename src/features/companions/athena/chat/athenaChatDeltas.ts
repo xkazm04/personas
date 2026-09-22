@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useMemo, useRef } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export interface AthenaChatDeltas {
   /** Buffer a delta and schedule a flush. */
@@ -37,7 +37,7 @@ export function useAthenaChatDeltas(): AthenaChatDeltas {
       rafRef.current = null;
     }
     if (buffersRef.current.size === 0) return;
-    const { appendLiveText } = useCompanionStore.getState();
+    const { appendLiveText } = useAthenaStore.getState();
     for (const [conversationId, chunk] of buffersRef.current) {
       if (chunk) appendLiveText(conversationId, chunk);
     }

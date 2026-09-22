@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AthenaChatHeader } from '../chat/AthenaChatHeader';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 vi.mock('@/api/companion', () => ({
   companionRunSleepCycle: vi.fn(),
@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 function renderHeader(devModeAvailable: boolean) {
-  useCompanionStore.setState({ devModeAvailable });
+  useAthenaStore.setState({ devModeAvailable });
   return render(<AthenaChatHeader expandedStrip={null} onToggleStrip={() => {}} />);
 }
 

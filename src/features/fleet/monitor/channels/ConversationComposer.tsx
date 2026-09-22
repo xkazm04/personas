@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Sparkles, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { goalText, looksLikeGoal } from './conversationModel';
@@ -107,7 +107,7 @@ export function ConversationComposer({
     setDraft('');
     if (!isGoal && /@athena\b/i.test(text)) {
       // Athena replies INTO the channel rather than into her own panel.
-      useCompanionStore.getState().setPendingPrompt({
+      useAthenaStore.getState().setPendingPrompt({
         text: `You were tagged in the ${teamName} team channel (team_id: ${teamId}). The user wrote:
 
 "${text}"

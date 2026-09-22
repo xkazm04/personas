@@ -6,7 +6,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useConnectorAttention } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 import { ConnectorAttentionSection } from './ConnectorAttentionSection';
 
@@ -56,7 +56,7 @@ function useAskAthena(notification: PipelineNotification, title: string, body: s
   return useCallback(() => {
     markRead(notification.id);
     setHeaderOverlay('none');
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: tx(t.gitlab.notification_athena_prompt, {
         title,
         body,
@@ -64,7 +64,7 @@ function useAskAthena(notification: PipelineNotification, title: string, body: s
       }),
       autoSend: true,
     });
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setState('open');
   }, [notification, title, body, markRead, setHeaderOverlay, t, tx]);
 }
 

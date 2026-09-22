@@ -14,7 +14,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { ChevronUp } from 'lucide-react';
 import type { BrainKind, CompanionMessage } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { daySeparatorLabel, startsNewDay } from './athenaChatDay';
 import {
   AthenaChatMessageRow,
@@ -65,10 +65,10 @@ export const AthenaChatTranscript = memo(function AthenaChatTranscript({
   onSend,
 }: AthenaChatTranscriptProps) {
   const { t, tx } = useTranslation();
-  const recallByEpisodeId = useCompanionStore((s) => s.recallByEpisodeId);
-  const turnSummaryByEpisodeId = useCompanionStore((s) => s.turnSummaryByEpisodeId);
-  const stepsByEpisodeId = useCompanionStore((s) => s.stepsByEpisodeId);
-  const connectorJobIdsByEpisodeId = useCompanionStore(
+  const recallByEpisodeId = useAthenaStore((s) => s.recallByEpisodeId);
+  const turnSummaryByEpisodeId = useAthenaStore((s) => s.turnSummaryByEpisodeId);
+  const stepsByEpisodeId = useAthenaStore((s) => s.stepsByEpisodeId);
+  const connectorJobIdsByEpisodeId = useAthenaStore(
     (s) => s.connectorJobIdsByEpisodeId,
   );
 

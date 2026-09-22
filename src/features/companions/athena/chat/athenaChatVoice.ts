@@ -16,7 +16,7 @@
  *
  * The scanners subscribe to the store IMPERATIVELY rather than with a
  * selector. `streamingText` changes on every animation frame of a reply, and a
- * `useCompanionStore(s => s.streamingText)` here would re-render the entire
+ * `useAthenaStore(s => s.streamingText)` here would re-render the entire
  * chat body — and with it every mounted bubble — dozens of times a second, for
  * a value nothing renders. Audio channels live in `athenaChatAudio.ts`.
  */
@@ -25,7 +25,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useTtsSettings } from '../useTtsSettings';
 import { useTtsVoiceSelection, type ResolvedTtsVoice } from '../useTtsVoiceSelection';
 import { play as playAudio, synthesize as synthesizeTts } from '../voicePlayback';
@@ -61,7 +61,7 @@ export function useAthenaChatVoice(args: {
   const { streaming, lastStreamEventAtRef } = args;
   const { t } = useTranslation();
 
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
   const voiceActive = voiceEnabled && voice.configured;
@@ -195,8 +195,8 @@ export function useAthenaChatVoice(args: {
   // header for why this isn't a selector subscription.
   useEffect(() => {
     const chunker = createSpeechChunker();
-    let prevText = useCompanionStore.getState().streamingText;
-    return useCompanionStore.subscribe((state) => {
+    let prevText = useAthenaStore.getState().streamingText;
+    return useAthenaStore.subscribe((state) => {
       const text = state.streamingText;
       if (text === prevText) return;
       prevText = text;
@@ -220,7 +220,7 @@ export function useAthenaChatVoice(args: {
       for (let i = beatsFiredRef.current; i < beats.length; i++) {
         const beat = beats[i]!;
         beatFiredRef.current = true;
-        const store = useCompanionStore.getState();
+        const store = useAthenaStore.getState();
         store.setStreamingBeat(beat);
         // Log into the narration timeline so the beat survives in the persisted
         // turn sidecar rather than being latest-wins only.

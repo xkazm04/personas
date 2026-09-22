@@ -9,7 +9,7 @@ import {
   companionRunReflection,
 } from '@/api/companion';
 import { BrainViewer } from '../BrainViewer';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { ConsolidationReview } from './ConsolidationReview';
 
 type MemoryView = 'brain' | 'consolidation';
@@ -34,7 +34,7 @@ export default function MemoryPanel() {
   const [reflecting, setReflecting] = useState(false);
   const [decaying, setDecaying] = useState(false);
   const [reembedding, setReembedding] = useState(false);
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
 
   const addToast = useToastStore((s) => s.addToast);
 

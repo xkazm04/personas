@@ -8,7 +8,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { StoredTurnSummary } from './companionStore';
+import type { StoredTurnSummary } from './athenaStore';
 
 /**
  * Targets a turn-summary chip part can jump to. Anything in this union

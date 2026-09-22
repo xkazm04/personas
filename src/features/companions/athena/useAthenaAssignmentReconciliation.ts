@@ -23,7 +23,7 @@ const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
  * on event replay. This is what makes the hook fire reliably for
  * Athena-dispatched assignments created outside the pipeline store's cache.
  *
- * Mirrors `useFleetCompanionBridge` (event → companion record command). Sonnet
+ * Mirrors `useAthenaFleetBridge` (event → companion record command). Sonnet
  * still does the up-front decompose; this is reflection, not orchestration.
  */
 export function useAthenaAssignmentReconciliation() {

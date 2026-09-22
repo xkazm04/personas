@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
 import { resolveWalkthrough } from './walkthroughs';
 import { runPreAction } from './appActions';
@@ -109,10 +109,10 @@ function defaultDwell(text: string): number {
  * step or play/pause changes — never on unrelated companion-store churn.
  */
 export function useGuidanceRunner() {
-  const activeWalkthrough = useCompanionStore((s) => s.activeWalkthrough);
-  const stepIndex = useCompanionStore((s) => s.guidanceStepIndex);
-  const playing = useCompanionStore((s) => s.guidancePlaying);
-  const adHoc = useCompanionStore((s) => s.adHocWalkthrough);
+  const activeWalkthrough = useAthenaStore((s) => s.activeWalkthrough);
+  const stepIndex = useAthenaStore((s) => s.guidanceStepIndex);
+  const playing = useAthenaStore((s) => s.guidancePlaying);
+  const adHoc = useAthenaStore((s) => s.adHocWalkthrough);
   const appliedKeyRef = useRef<string | null>(null);
   const lastAdHocRef = useRef<GuidanceWalkthrough | null>(null);
   const clickCleanupRef = useRef<(() => void) | null>(null);
@@ -121,7 +121,7 @@ export function useGuidanceRunner() {
   // so the demo is visible). No-op if the orb is already showing.
   useEffect(() => {
     if (!activeWalkthrough) return;
-    const st = useCompanionStore.getState();
+    const st = useAthenaStore.getState();
     if (st.state !== 'minimized') st.setState('minimized');
   }, [activeWalkthrough]);
 
@@ -141,7 +141,7 @@ export function useGuidanceRunner() {
       ) {
         return;
       }
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       switch (e.key) {
         case 'ArrowRight':
           e.preventDefault();
@@ -170,7 +170,7 @@ export function useGuidanceRunner() {
   }, [activeWalkthrough]);
 
   useEffect(() => {
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
 
     if (!activeWalkthrough) {
       appliedKeyRef.current = null;
@@ -239,8 +239,8 @@ export function useGuidanceRunner() {
           : null;
         const target = live ?? el;
 
-        useCompanionStore.getState().setGuidanceHighlightTestId(step.highlightTestId ?? null);
-        useCompanionStore.getState().setOrbGuideTarget(
+        useAthenaStore.getState().setGuidanceHighlightTestId(step.highlightTestId ?? null);
+        useAthenaStore.getState().setOrbGuideTarget(
           computeOrbTarget(target, step.orbAnchor ?? 'auto'),
         );
 
@@ -251,7 +251,7 @@ export function useGuidanceRunner() {
         if (target) {
           const onClick = () => {
             if (cancelled) return;
-            useCompanionStore.getState().advanceGuidance();
+            useAthenaStore.getState().advanceGuidance();
           };
           target.addEventListener('click', onClick, { capture: true, once: true });
           clickCleanupRef.current = () =>
@@ -269,7 +269,7 @@ export function useGuidanceRunner() {
       const dwell = step.dwellMs ?? defaultDwell(step.narration(t));
       advanceTimer = setTimeout(() => {
         if (cancelled) return;
-        useCompanionStore.getState().advanceGuidance();
+        useAthenaStore.getState().advanceGuidance();
       }, dwell);
     }
 

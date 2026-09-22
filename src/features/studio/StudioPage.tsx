@@ -13,7 +13,7 @@ import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { previewTargetOrigin } from './studioBuildModel';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
 // browser-style tabs; all build runtime lives in studioStore so a project keeps
@@ -196,7 +196,7 @@ export default function StudioPage() {
   // iframe's viewport; add the iframe's screen offset to get a screen position.
   // Returns the orb to its dock when the decision clears or Studio unmounts.
   useEffect(() => {
-    const setTarget = useCompanionStore.getState().setOrbGuideTarget;
+    const setTarget = useAthenaStore.getState().setOrbGuideTarget;
     if (active?.question && pointerRect) {
       const iframe = document.querySelector<HTMLIFrameElement>(
         `iframe[data-tab="${CSS.escape(activeId ?? '')}"]`,
@@ -208,7 +208,7 @@ export default function StudioPage() {
     } else {
       setTarget(null);
     }
-    return () => useCompanionStore.getState().setOrbGuideTarget(null);
+    return () => useAthenaStore.getState().setOrbGuideTarget(null);
   }, [activeId, active?.question, pointerRect]);
 
   const onCreate = useCallback(

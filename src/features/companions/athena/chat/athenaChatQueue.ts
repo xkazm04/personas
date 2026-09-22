@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { classifyMidTurnIntent } from '../midTurnIntent';
 
 export function useAthenaChatQueue(args: {
@@ -28,7 +28,7 @@ export function useAthenaChatQueue(args: {
       // Gate on the LIVE store value (+ the in-flight ref), not a render
       // closure: the closure lags a render behind the streaming flip, so two
       // sends in one tick would both take the direct-send branch.
-      const s = useCompanionStore.getState();
+      const s = useAthenaStore.getState();
       if (!s.streaming && !isSending()) {
         send(trimmed, nonce);
         return;
@@ -58,7 +58,7 @@ export function useAthenaChatQueue(args: {
     prevStreamingRef.current = streaming;
     prevActiveRef.current = activeConversationId;
     if (was && !streaming && wasConversation === activeConversationId) {
-      const next = useCompanionStore.getState().shiftQueuedMessage(activeConversationId);
+      const next = useAthenaStore.getState().shiftQueuedMessage(activeConversationId);
       if (next) send(next.text, next.nonce);
     }
   }, [streaming, activeConversationId, send]);

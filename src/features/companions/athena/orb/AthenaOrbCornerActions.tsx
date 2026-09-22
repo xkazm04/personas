@@ -8,7 +8,7 @@
 
 import { Keyboard, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export function AthenaOrbCornerActions({
   quickInputOpen,
@@ -51,7 +51,7 @@ export function AthenaOrbCornerActions({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
-          useCompanionStore.getState().setState('collapsed');
+          useAthenaStore.getState().setState('collapsed');
         }}
         data-testid="companion-orb-dismiss"
         className="pointer-events-auto absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background border border-primary/20 text-foreground hover:bg-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-elevation-2"

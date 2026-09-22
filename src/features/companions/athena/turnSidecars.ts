@@ -21,7 +21,7 @@ import type { CompanionRecallPreview, CompanionTurnSidecar } from '@/api/compani
 import { silentCatch } from '@/lib/silentCatch';
 import type { StoredNarration } from './narrationTimeline';
 import type { TodoStep } from './operationalSteps';
-import type { StoredTurnSummary } from './companionStore';
+import type { StoredTurnSummary } from './athenaStore';
 
 /**
  * Cap on narration entries written per turn. A pathological turn (a long

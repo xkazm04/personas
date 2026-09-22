@@ -1,14 +1,14 @@
 import { useSystemStore } from '@/stores/systemStore';
 import {
-  normalizeCompanionTtsEngine,
-  type CompanionTtsEngine,
-} from '@/stores/slices/system/companionPluginSlice';
+  normalizeAthenaTtsEngine,
+  type AthenaTtsEngine,
+} from '@/stores/slices/system/athenaSlice';
 
 /**
  * Resolved TTS identity for the currently-selected engine.
  *
  * Both engines keep independent voice selections in the store
- * (`companionKokoroVoiceId` for Kokoro, `companionPocketVoiceId` for
+ * (`athenaKokoroVoiceId` for Kokoro, `athenaPocketVoiceId` for
  * Pocket). Every playback call site needs the same things: which voice to
  * synth with and whether the engine is fully configured. This hook
  * centralizes that resolution so a new engine is a one-line change here.
@@ -20,7 +20,7 @@ import {
  * engine.
  */
 export interface ResolvedTtsVoice {
-  engine: CompanionTtsEngine;
+  engine: AthenaTtsEngine;
   /** Voice id to pass to `synthesize()`. Null when nothing is selected. */
   voiceId: string | null;
   /** Always `null` post-descope; kept for call-site shape stability. */
@@ -30,11 +30,11 @@ export interface ResolvedTtsVoice {
 }
 
 export function useTtsVoiceSelection(): ResolvedTtsVoice {
-  const engine = normalizeCompanionTtsEngine(
-    useSystemStore((s) => s.companionVoiceEngine),
+  const engine = normalizeAthenaTtsEngine(
+    useSystemStore((s) => s.athenaVoiceEngine),
   );
-  const kokoroVoiceId = useSystemStore((s) => s.companionKokoroVoiceId);
-  const pocketVoiceId = useSystemStore((s) => s.companionPocketVoiceId);
+  const kokoroVoiceId = useSystemStore((s) => s.athenaKokoroVoiceId);
+  const pocketVoiceId = useSystemStore((s) => s.athenaPocketVoiceId);
 
   switch (engine) {
     case 'pocket_tts':

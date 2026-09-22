@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from '../athenaStore';
 
 // Multiconv P1 — per-conversation live-turn slices + the "keyed slices +
 // active mirror" invariant: the flat streaming fields always equal the
@@ -9,7 +9,7 @@ const A = DEFAULT_CONVERSATION_ID;
 const B = 'conv_background';
 
 beforeEach(() => {
-  useCompanionStore.setState({
+  useAthenaStore.setState({
     activeConversationId: A,
     liveTurns: {},
     streaming: false,
@@ -21,9 +21,9 @@ beforeEach(() => {
   });
 });
 
-describe('companionStore liveTurns partition', () => {
+describe('athenaStore liveTurns partition', () => {
   it('a background conversation turn never mutates the flat mirror', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.beginLiveTurn(B, 'turn_b1');
     s.appendLiveText(B, 'background text');
     s.patchLiveTurn(B, {
@@ -31,7 +31,7 @@ describe('companionStore liveTurns partition', () => {
       streamingBeat: 'Reading the logs…',
     });
 
-    const after = useCompanionStore.getState();
+    const after = useAthenaStore.getState();
     expect(after.liveTurns[B]).toMatchObject({
       turnId: 'turn_b1',
       streaming: true,
@@ -46,17 +46,17 @@ describe('companionStore liveTurns partition', () => {
   });
 
   it('an active-conversation turn mirrors into the flat fields in the same write', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.beginLiveTurn(A, 'turn_a1');
     s.appendLiveText(A, 'hello');
 
-    let after = useCompanionStore.getState();
+    let after = useAthenaStore.getState();
     expect(after.streaming).toBe(true);
     expect(after.streamingText).toBe('hello');
     expect(after.liveTurns[A]?.turnId).toBe('turn_a1');
 
     s.endLiveTurn(A);
-    after = useCompanionStore.getState();
+    after = useAthenaStore.getState();
     expect(after.streaming).toBe(false);
     expect(after.liveTurns[A]?.turnId).toBeNull();
     // endLiveTurn keeps the text until the next begin.
@@ -65,18 +65,18 @@ describe('companionStore liveTurns partition', () => {
   });
 
   it('switching the active conversation swaps the mirror to that slice and back', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.beginLiveTurn(B, 'turn_b1');
     s.appendLiveText(B, 'b text');
 
     s.setActiveConversationId(B);
-    let st = useCompanionStore.getState();
+    let st = useAthenaStore.getState();
     expect(st.streaming).toBe(true);
     expect(st.streamingText).toBe('b text');
     expect(st.liveTurns[B]?.turnId).toBe('turn_b1');
 
     s.setActiveConversationId(A);
-    st = useCompanionStore.getState();
+    st = useAthenaStore.getState();
     // A has no slice on record → mirror snaps to the idle default.
     expect(st.streaming).toBe(false);
     expect(st.streamingText).toBe('');
@@ -85,29 +85,29 @@ describe('companionStore liveTurns partition', () => {
   });
 
   it('keeps queues partitioned per conversation and shifts only the named one', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.enqueueMessage(A, 'a1', 'queue', 'nonce-a1');
     s.enqueueMessage(B, 'b1', 'queue', 'nonce-b1');
     s.enqueueMessage(B, 'b2', 'interrupt', 'nonce-b2');
 
     // Flat mirror shows only the ACTIVE (A) queue.
-    expect(useCompanionStore.getState().queuedMessages.map((m) => m.text)).toEqual(['a1']);
+    expect(useAthenaStore.getState().queuedMessages.map((m) => m.text)).toEqual(['a1']);
 
     // Draining A's edge shifts A's queue and leaves B's untouched.
-    const shifted = useCompanionStore.getState().shiftQueuedMessage(A);
+    const shifted = useAthenaStore.getState().shiftQueuedMessage(A);
     expect(shifted?.text).toBe('a1');
-    const st = useCompanionStore.getState();
+    const st = useAthenaStore.getState();
     expect(st.queuedByConversation[A]).toEqual([]);
     expect(st.queuedMessages).toEqual([]);
     expect(st.queuedByConversation[B]?.map((m) => m.text)).toEqual(['b1', 'b2']);
 
     // The queue mirror follows a thread switch.
     st.setActiveConversationId(B);
-    expect(useCompanionStore.getState().queuedMessages.map((m) => m.text)).toEqual(['b1', 'b2']);
+    expect(useAthenaStore.getState().queuedMessages.map((m) => m.text)).toEqual(['b1', 'b2']);
   });
 
   it('legacy flat setters delegate to the active conversation slice', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.setActiveConversationId(B);
 
     s.setStreaming(true);
@@ -115,7 +115,7 @@ describe('companionStore liveTurns partition', () => {
     s.setStreamingPhase({ kind: 'responding' });
     s.setStreamingBeat('beat');
 
-    let st = useCompanionStore.getState();
+    let st = useAthenaStore.getState();
     expect(st.liveTurns[B]).toMatchObject({
       streaming: true,
       streamingText: 'via legacy',
@@ -127,7 +127,7 @@ describe('companionStore liveTurns partition', () => {
     expect(st.streamingText).toBe('via legacy');
 
     s.resetStreamingText();
-    st = useCompanionStore.getState();
+    st = useAthenaStore.getState();
     expect(st.liveTurns[B]?.streamingText).toBe('');
     expect(st.streamingText).toBe('');
     // The non-active conversation was never touched.

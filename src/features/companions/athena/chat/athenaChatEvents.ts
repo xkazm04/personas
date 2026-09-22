@@ -25,7 +25,7 @@ import {
 } from '@/api/companion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { silentCatch } from '@/lib/silentCatch';
-import { isActionableChatCard, useCompanionStore } from '../companionStore';
+import { isActionableChatCard, useAthenaStore } from '../athenaStore';
 import { persistTurnSidecar } from '../useTurnSidecars';
 
 export function useAthenaChatEvents(): void {
@@ -37,7 +37,7 @@ export function useAthenaChatEvents(): void {
     useCallback((event) => {
       const preview = event.payload?.preview;
       if (!preview) return;
-      useCompanionStore.getState().setStreamingRecall(preview);
+      useAthenaStore.getState().setStreamingRecall(preview);
     }, []),
     'companion_recall_preview_listen',
   );
@@ -53,7 +53,7 @@ export function useAthenaChatEvents(): void {
       const { sessionId: _sid, turnId: _tid, assistantEpisodeId, ...summary } = ev;
       void _sid;
       void _tid;
-      useCompanionStore.getState().setTurnSummary(assistantEpisodeId, summary);
+      useAthenaStore.getState().setTurnSummary(assistantEpisodeId, summary);
       // Second write moment for the same sidecar row — the summary can land
       // after `finished`. The upsert COALESCEs, so this layers the summary on
       // without clobbering the trail/plan/recall.
@@ -70,7 +70,7 @@ export function useAthenaChatEvents(): void {
     useCallback((event) => {
       const job = event.payload;
       if (!job?.id) return;
-      useCompanionStore.getState().upsertJob(job);
+      useAthenaStore.getState().upsertJob(job);
     }, []),
     'companion_job_listen',
   );
@@ -84,7 +84,7 @@ export function useAthenaChatEvents(): void {
     useCallback((event) => {
       const cards = event.payload?.cards;
       if (!cards || cards.length === 0) return;
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       const arriving = new Set(cards.map((c) => c.id).filter(Boolean));
       const kept = store.chatCards.filter(
         (c) => isActionableChatCard(c) && !arriving.has(c.id),
@@ -99,7 +99,7 @@ export function useAthenaChatEvents(): void {
   useTauriEvent<ProactiveDeliveryEvent>(
     COMPANION_PROACTIVE_EVENT,
     useCallback((event) => {
-      const { appendProactive } = useCompanionStore.getState();
+      const { appendProactive } = useAthenaStore.getState();
       for (const m of event.payload.messages) appendProactive(m);
     }, []),
     'companion_proactive_listen',
@@ -112,7 +112,7 @@ export function useAthenaChatEvents(): void {
     COMPANION_APPROVALS_EVENT,
     useCallback(() => {
       companionListPendingApprovals()
-        .then((list) => useCompanionStore.getState().setApprovals(list))
+        .then((list) => useAthenaStore.getState().setApprovals(list))
         .catch(silentCatch('companion_list_pending_approvals'));
     }, []),
     'companion_approvals_listen',

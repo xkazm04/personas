@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { TurnSummaryChip, type TurnSummaryJumpTarget } from '../TurnSummaryChip';
-import type { StoredTurnSummary } from '../companionStore';
+import type { StoredTurnSummary } from '../athenaStore';
 
 function summary(over: Partial<StoredTurnSummary> = {}): StoredTurnSummary {
   return {

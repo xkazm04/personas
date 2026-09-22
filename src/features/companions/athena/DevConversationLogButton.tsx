@@ -8,7 +8,7 @@ import {
   companionListRecentMessages,
   type CompanionMessage,
 } from '@/api/companion';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { buildConversationLogMarkdown, buildLogFileStem } from './devConversationLog';
 import { cursorFromMessages, fetchAllOlderMessages } from './useTranscriptPages';
 import { parseSidecars } from './turnSidecars';
@@ -48,7 +48,7 @@ async function fetchFullTranscript(
  * `logs/athena-conversations/` directory for reflective development.
  *
  * The component carries no environment gate itself — the call site in
- * `CompanionPanel`'s header renders it behind `devModeAvailable`.
+ * `AthenaChatPanel`'s header renders it behind `devModeAvailable`.
  */
 export function DevConversationLogButton() {
   const { t, tx } = useTranslation();
@@ -59,7 +59,7 @@ export function DevConversationLogButton() {
     if (busy) return;
     setBusy(true);
     try {
-      const s = useCompanionStore.getState();
+      const s = useAthenaStore.getState();
       // Prefer the freshest FULL transcript from the backend (the store
       // only holds the loaded window); fall back to the store on error.
       const messages = await fetchFullTranscript(s.activeConversationId, s.messages);

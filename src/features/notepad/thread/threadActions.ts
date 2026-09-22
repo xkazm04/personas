@@ -12,7 +12,7 @@ import {
   setNoteReviewVerdict,
 } from '@/api/notepad';
 import { getProject } from '@/api/devTools/devTools';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { NoteComment } from '@/lib/bindings/NoteComment';
@@ -89,7 +89,7 @@ type RowOutcome = 'accepted' | 'rejected';
  */
 async function resolveCardRows(cardId: string | null, outcome: RowOutcome): Promise<string | null> {
   if (!cardId) return null;
-  const card = noteSuggestionCards(useCompanionStore.getState().chatCards).find((c) => c.cardId === cardId);
+  const card = noteSuggestionCards(useAthenaStore.getState().chatCards).find((c) => c.cardId === cardId);
   if (!card) {
     silentCatch('notepad review: suggestion card not in transcript')(
       new Error(`note_suggestions card ${cardId} is not loaded; stamping the verdict without resolving its rows`),

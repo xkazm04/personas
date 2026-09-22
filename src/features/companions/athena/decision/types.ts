@@ -35,7 +35,7 @@ export type DecisionSource =
 
 /**
  * A single decision awaiting the user's answer. Held one-at-a-time in
- * `companionStore.pendingDecision`. `options` are 1-indexed in the UI (the
+ * `athenaStore.pendingDecision`. `options` are 1-indexed in the UI (the
  * first option is "1"); `0` is reserved for "explain + recommend".
  */
 export interface PendingDecision {

@@ -1,6 +1,6 @@
 import { useReducedMotion } from 'framer-motion';
 import { useTrackedElementRect } from '@/hooks/utility/interaction/useTrackedElementRect';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 const GLOW_PADDING = 6;
 const BORDER_RADIUS = 12;
@@ -42,12 +42,12 @@ const TESTID_ATTR: Record<GlowSource, string> = {
  * `prefers-reduced-motion`.
  */
 export function TrackedGlowRing({ source }: { source: GlowSource }) {
-  const testId = useCompanionStore((s) =>
+  const testId = useAthenaStore((s) =>
     source === 'guide' ? s.guidanceHighlightTestId : s.flashHighlightTestId,
   );
   // Only the flash ring carries a label chip ("Just composed"); the guide ring
   // has the caption for narration, so it never needs one.
-  const label = useCompanionStore((s) => (source === 'flash' ? s.flashHighlightLabel : null));
+  const label = useAthenaStore((s) => (source === 'flash' ? s.flashHighlightLabel : null));
   const reduceMotion = useReducedMotion();
   const rect = useTrackedElementRect(testId, {
     padding: GLOW_PADDING,

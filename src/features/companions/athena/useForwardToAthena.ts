@@ -3,7 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { companionCreateConversation } from '@/api/companion';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { useTtsSettings } from './useTtsSettings';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 import { synthesize, play } from './voicePlayback';
@@ -25,7 +25,7 @@ function titleFromMessage(message: string): string {
  *  2. Fires the one-shot amber "message received" ack glow on the orb
  *     (`pulseForwardAck`) for immediate visual confirmation.
  *  3. Sends the turn through the always-mounted `voiceTurnRequest` consumer in
- *     `CompanionPanel`, so it runs with the panel closed (orb-only).
+ *     `AthenaChatPanel`, so it runs with the panel closed (orb-only).
  *  4. When voice is enabled + configured, speaks a short, scripted, translated
  *     acknowledgement ("Understood, processing the message.") — the real reply
  *     can take a long time, so this gives an instant audible cue.
@@ -35,15 +35,15 @@ function titleFromMessage(message: string): string {
 export function useForwardToAthena(): (message: string, source?: string) => void {
   const { t } = useTranslation();
   const voiceSettings = useTtsSettings();
-  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
   const voice = useTtsVoiceSelection();
   const ackSpeech = t.plugins.companion.forward_ack_speech;
 
   return useCallback(
     (message: string, source?: string) => {
       if (!message.trim()) return;
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       // Surface the orb (fall back to the panel when the orb is disabled so
       // the forwarded message is never invisible), then ack + send.
       store.setState(orbEnabled ? 'minimized' : 'open');
@@ -55,7 +55,7 @@ export function useForwardToAthena(): (message: string, source?: string) => void
       // consumer reads the active conversation id when it fires the turn.
       companionCreateConversation(titleFromMessage(message), 'forwarded')
         .then((row) => {
-          const s = useCompanionStore.getState();
+          const s = useAthenaStore.getState();
           s.upsertConversation(row);
           s.setActiveConversationId(row.id);
           s.setVoiceTurnRequest({ text: message, source });
@@ -64,7 +64,7 @@ export function useForwardToAthena(): (message: string, source?: string) => void
           // Never drop the message: if the thread couldn't be created, fall back
           // to sending it into the current conversation.
           silentCatch('companion_create_conversation')(err);
-          useCompanionStore.getState().setVoiceTurnRequest({ text: message, source });
+          useAthenaStore.getState().setVoiceTurnRequest({ text: message, source });
         });
 
       // Immediate spoken acknowledgement — the turn itself can take a while.

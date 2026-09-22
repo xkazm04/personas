@@ -81,7 +81,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
  */
 function commitWalkthroughToBuild(intent: string) {
   const sys = useSystemStore.getState();
-  sys.setCompanionPrefill({
+  sys.setAthenaPrefill({
     intent,
     name: null,
     autoLaunch: false,

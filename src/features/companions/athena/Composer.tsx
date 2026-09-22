@@ -11,11 +11,11 @@
  * Three input paths:
  *   - Direct typing into the textarea (auto-grows up to ~6 lines).
  *   - Dictation via the mic button, routed through `useSpeechInput` so it
- *     honours the user's `companionSttEngine` choice (browser Web Speech or
+ *     honours the user's `athenaSttEngine` choice (browser Web Speech or
  *     the on-device whisper engine) exactly like hold-to-talk on the orb.
  *     Interim text shown as a display tail; final chunks fold into the
  *     persistent draft.
- *   - External seeding via `useCompanionStore.pendingPrompt` (set by
+ *   - External seeding via `useAthenaStore.pendingPrompt` (set by
  *     "Play in chat" affordances on Overview surfaces). `autoSend` skips
  *     the manual click and fires onSend immediately; `__TEST_FORCE_DRAFT__`
  *     is a test-only escape hatch that downgrades autoSend to draft-only
@@ -33,7 +33,7 @@ import { Mic, MicOff, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { useSpeechInput } from './useSpeechInput';
 import { createSendNonce } from './sendNonceLedger';
 import {
@@ -64,13 +64,13 @@ export function Composer({
   compact?: boolean;
 }) {
   const { t } = useTranslation();
-  const conversationId = useCompanionStore((s) => s.activeConversationId);
-  const setPersistedDraft = useCompanionStore((s) => s.setDraft);
+  const conversationId = useAthenaStore((s) => s.activeConversationId);
+  const setPersistedDraft = useAthenaStore((s) => s.setDraft);
   // Seeded once from the store on mount, then owned locally so every
   // keystroke doesn't force a re-render off the store's `draftsByConversation`
   // map — `setDraft` below writes back through so it stays durable.
   const [draft, setDraftState] = useState(
-    () => useCompanionStore.getState().draftsByConversation[conversationId] ?? '',
+    () => useAthenaStore.getState().draftsByConversation[conversationId] ?? '',
   );
   const [slashIndex, setSlashIndex] = useState(0);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -83,7 +83,7 @@ export function Composer({
   useEffect(() => {
     if (prevConversationIdRef.current === conversationId) return;
     prevConversationIdRef.current = conversationId;
-    setDraftState(useCompanionStore.getState().draftsByConversation[conversationId] ?? '');
+    setDraftState(useAthenaStore.getState().draftsByConversation[conversationId] ?? '');
   }, [conversationId]);
 
   const setDraft = useCallback(
@@ -168,7 +168,7 @@ export function Composer({
     }
   }, [paletteOpen, filteredPresets.length, slashIndex]);
 
-  const pendingPrompt = useCompanionStore((s) => s.pendingPrompt);
+  const pendingPrompt = useAthenaStore((s) => s.pendingPrompt);
   useEffect(() => {
     if (!pendingPrompt) return;
     // Claim atomically: consumePendingPrompt reads-and-clears in the store, so
@@ -176,7 +176,7 @@ export function Composer({
     // same `pendingPrompt` closure) can't fire onSend twice — the second
     // invoke gets null here and bails. (Clearing the store but sending from the
     // closure value previously double-sent under StrictMode.)
-    const claimed = useCompanionStore.getState().consumePendingPrompt();
+    const claimed = useAthenaStore.getState().consumePendingPrompt();
     if (!claimed) return;
     const forceDraft = (globalThis as { __TEST_FORCE_DRAFT__?: boolean })
       .__TEST_FORCE_DRAFT__;

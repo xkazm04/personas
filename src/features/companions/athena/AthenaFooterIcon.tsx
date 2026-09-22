@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Play, Mic } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { companionInit } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
@@ -41,28 +41,28 @@ import { useConversationRoster, useThreadAttentionCount } from './useConversatio
  *   - Fire `companion_init` once on first mount (idempotent backend-side).
  *   - Reflect Athena's streaming/speaking state on the avatar.
  *   - Drive hold-to-talk dictation → `voiceTurnRequest` (consumed by the
- *     always-mounted CompanionPanel's `send()` pipeline).
+ *     always-mounted AthenaChatPanel's `send()` pipeline).
  *   - Play the reply chime when streaming flips false (a turn just finished).
  */
-export default function CompanionFooterIcon() {
+export default function AthenaFooterIcon() {
   const { t } = useTranslation();
   // Keep the multi-conversation roster live (hydrate + refresh on turn-summary)
   // from here, since the footer orb is always mounted — the chat panel isn't.
   useConversationRoster();
   const attentionCount = useThreadAttentionCount();
-  const state = useCompanionStore((s) => s.state);
-  const setState = useCompanionStore((s) => s.setState);
-  const initialized = useCompanionStore((s) => s.initialized);
-  const setInitialized = useCompanionStore((s) => s.setInitialized);
-  const setBrainPath = useCompanionStore((s) => s.setBrainPath);
-  const setInitError = useCompanionStore((s) => s.setInitError);
-  const streaming = useCompanionStore((s) => s.streaming);
-  const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
-  const setPlaybackAudioUrl = useCompanionStore((s) => s.setPlaybackAudioUrl);
-  const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
-  const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
-  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
-  const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
+  const state = useAthenaStore((s) => s.state);
+  const setState = useAthenaStore((s) => s.setState);
+  const initialized = useAthenaStore((s) => s.initialized);
+  const setInitialized = useAthenaStore((s) => s.setInitialized);
+  const setBrainPath = useAthenaStore((s) => s.setBrainPath);
+  const setInitError = useAthenaStore((s) => s.setInitError);
+  const streaming = useAthenaStore((s) => s.streaming);
+  const pendingPlayback = useAthenaStore((s) => s.pendingPlayback);
+  const setPlaybackAudioUrl = useAthenaStore((s) => s.setPlaybackAudioUrl);
+  const markPlaybackPlayed = useAthenaStore((s) => s.markPlaybackPlayed);
+  const footerEnabled = useSystemStore((s) => s.athenaFooterEnabled);
+  const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
+  const soundEnabled = useSystemStore((s) => s.athenaSoundEnabled);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 
@@ -82,7 +82,7 @@ export default function CompanionFooterIcon() {
   const isOpen = state === 'open';
 
   // Per-engine readiness check — resolved upstream by `useTtsVoiceSelection`
-  // (same predicate CompanionPanel's `voiceActive` uses).
+  // (same predicate AthenaChatPanel's `voiceActive` uses).
   const voiceConfigured = voice.configured;
   const synthesisCredentialId = voice.credentialId;
   const synthesisVoiceId = voice.voiceId;

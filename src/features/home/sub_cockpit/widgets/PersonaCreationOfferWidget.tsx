@@ -1,7 +1,7 @@
 import { Compass, Rocket, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -23,7 +23,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
 
   const buildItForMe = () => {
     const sys = useSystemStore.getState();
-    sys.setCompanionPrefill({
+    sys.setAthenaPrefill({
       intent,
       name: null,
       autoLaunch: false,
@@ -34,7 +34,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
   };
 
   const showMeHow = () => {
-    useCompanionStore.getState().startGuidance('persona_creation');
+    useAthenaStore.getState().startGuidance('persona_creation');
   };
 
   return (

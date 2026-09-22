@@ -3,7 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { FooterDivider, FooterSlot } from './FooterSlot';
 import {
-  AccountFooterIcon, CollapseFooterIcon, CompanionFooterIcon, DevicesFooterIcon,
+  AccountFooterIcon, CollapseFooterIcon, AthenaFooterIcon, DevicesFooterIcon,
   FleetDebugLogFooterPill, FleetFooterIcon, FooterSectionNav, NetworkFooterIcon,
   NotepadFooterIcon, OnboardingReplayFooterIcon, PluginContextSelectors, RadioFooter,
   ShortcutsFooterIcon, SystemLoadFooterIcon, ThemeFooterIcon,
@@ -66,7 +66,7 @@ export default function DesktopFooter() {
         {/* Athena companion — docked on the left, immediately right of the
             Network Settings icon. */}
         <FooterDivider />
-        <FooterSlot><CompanionFooterIcon /></FooterSlot>
+        <FooterSlot><AthenaFooterIcon /></FooterSlot>
       </div>
 
       {/* Center cluster, absolute-centered so left/right cluster widths don't

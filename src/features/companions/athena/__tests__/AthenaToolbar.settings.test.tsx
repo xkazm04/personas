@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { CompanionToolbar } from '../CompanionToolbar';
+import { AthenaToolbar } from '../AthenaToolbar';
 import { useSystemStore } from '@/stores/systemStore';
 
 vi.mock('@/api/companion', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/api/companion', () => ({
   companionSetPluginEnabled: vi.fn(),
 }));
 
-describe('CompanionToolbar settings gear', () => {
+describe('AthenaToolbar settings gear', () => {
   beforeEach(() => {
     useSystemStore.setState({
       sidebarSection: 'home',
@@ -23,7 +23,7 @@ describe('CompanionToolbar settings gear', () => {
 
   it('deep-links to Plugins > Companion > Setup', () => {
     render(
-      <CompanionToolbar
+      <AthenaToolbar
         onOpenBrain={() => {}}
         brainOpen={false}
         disabled={false}

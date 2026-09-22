@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react';
 import { useReducedMotion, type Transition, type TargetAndTransition } from 'framer-motion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { PANEL_BOTTOM_INSET_PX, panelWidthPx } from './athenaChatGeometry';
 
 /** Shared easing — the app's standard "settle" curve. */
@@ -37,7 +37,7 @@ export interface PanelMotion {
 }
 
 export function usePanelMotion(compact: boolean): PanelMotion {
-  const orbOpenOrigin = useCompanionStore((s) => s.orbOpenOrigin);
+  const orbOpenOrigin = useAthenaStore((s) => s.orbOpenOrigin);
   const reduceMotion = useReducedMotion();
   const width = panelWidthPx(compact);
 

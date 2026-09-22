@@ -3,7 +3,7 @@ import { Lightbulb, TriangleAlert } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { runDecisionOption } from '@/features/companions/athena/decision/resolveDecision';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTextClass } from './intentColors';
@@ -29,7 +29,7 @@ import { intentTextClass } from './intentColors';
 export function VerdictWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
-  const pendingDecision = useCompanionStore((s) => s.pendingDecision);
+  const pendingDecision = useAthenaStore((s) => s.pendingDecision);
 
   const headline = (config?.headline as string) ?? '';
   const reasoning = config?.reasoning as string | undefined;

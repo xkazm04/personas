@@ -11,10 +11,10 @@ import { Frame, TriangleAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CanvasNote } from './athenaChatCanvasSummary';
 
-type CompanionStrings = ReturnType<typeof useTranslation>['t']['plugins']['companion'];
+type AthenaStrings = ReturnType<typeof useTranslation>['t']['plugins']['companion'];
 
 /** Map an action kind to its localized "what just happened" sentence. */
-function actionLabel(c: CompanionStrings, kind: string): string {
+function actionLabel(c: AthenaStrings, kind: string): string {
   switch (kind) {
     case 'camera.read':
       return c.canvas_note_camera_read;
@@ -38,7 +38,7 @@ function actionLabel(c: CompanionStrings, kind: string): string {
 }
 
 /** Map a machine fail reason to plain language. Unknown reasons fall through. */
-function reasonLabel(c: CompanionStrings, reason: string | undefined): string | null {
+function reasonLabel(c: AthenaStrings, reason: string | undefined): string | null {
   switch (reason) {
     case 'unknown_slug':
       return c.canvas_note_reason_unknown_slug;
@@ -58,7 +58,7 @@ function reasonLabel(c: CompanionStrings, reason: string | undefined): string | 
 }
 
 /** Localized name for the detail level the camera settled at. */
-function bandLabel(c: CompanionStrings, band: CanvasNote['band']): string | null {
+function bandLabel(c: AthenaStrings, band: CanvasNote['band']): string | null {
   switch (band) {
     case 'far':
       return c.canvas_note_band_far;

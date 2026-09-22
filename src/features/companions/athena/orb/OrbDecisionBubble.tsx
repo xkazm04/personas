@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
 import { deferDecision, skipDecision } from '../decision/decisionDeferral';
 import type { DecisionOption, DecisionSource } from '../decision/types';
@@ -53,28 +53,28 @@ const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
 export function OrbDecisionBubble() {
   const { t, tx } = useTranslation();
   const reduceMotion = useReducedMotion();
-  const decision = useCompanionStore((s) => s.pendingDecision);
-  const companionState = useCompanionStore((s) => s.state);
-  const explained = useCompanionStore((s) => s.decisionExplained);
-  const composing = useCompanionStore((s) => s.explainComposing);
-  const composeError = useCompanionStore((s) => s.explainComposeError);
+  const decision = useAthenaStore((s) => s.pendingDecision);
+  const athenaState = useAthenaStore((s) => s.state);
+  const explained = useAthenaStore((s) => s.decisionExplained);
+  const composing = useAthenaStore((s) => s.explainComposing);
+  const composeError = useAthenaStore((s) => s.explainComposeError);
   // A picked option whose action failed. The decision stays pending on purpose;
   // this is the ONLY failure feedback the operator gets, and it must appear
   // right where they clicked (it used to be a detached toast).
-  const runError = useCompanionStore((s) => s.decisionError);
-  const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
+  const runError = useAthenaStore((s) => s.decisionError);
+  const orbTarget = useAthenaStore((s) => s.orbGuideTarget);
   // How many decisions the last queue build found, this one included. Without
   // it a twelve-item backlog looks exactly like a single question.
-  const queueDepth = useCompanionStore((s) => s.decisionQueueDepth);
-  const clearPendingDecision = useCompanionStore((s) => s.clearPendingDecision);
-  const orbPos = useSystemStore((s) => s.companionOrbPos);
+  const queueDepth = useAthenaStore((s) => s.decisionQueueDepth);
+  const clearPendingDecision = useAthenaStore((s) => s.clearPendingDecision);
+  const orbPos = useSystemStore((s) => s.athenaOrbPos);
   // Float above the Fleet grid overlay (z-200) while it's open — a key
   // orchestration decision must be visible/answerable over the grid, not
   // buried behind it (same lift as the orb + chat panel).
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
-  const setState = useCompanionStore((s) => s.setState);
-  const setGuidanceHighlightTestId = useCompanionStore((s) => s.setGuidanceHighlightTestId);
-  const flashHighlight = useCompanionStore((s) => s.flashHighlight);
+  const setState = useAthenaStore((s) => s.setState);
+  const setGuidanceHighlightTestId = useAthenaStore((s) => s.setGuidanceHighlightTestId);
+  const flashHighlight = useAthenaStore((s) => s.flashHighlight);
 
   const decisionId = decision?.id ?? null;
 
@@ -140,7 +140,7 @@ export function OrbDecisionBubble() {
   // decision stays pending and the bubble surfaces once the panel closes.
   useEffect(() => {
     if (!decisionId) return;
-    const presence = useCompanionStore.getState().state;
+    const presence = useAthenaStore.getState().state;
     if (presence === 'collapsed' || presence === 'closed') {
       setState('minimized');
     }
@@ -148,7 +148,7 @@ export function OrbDecisionBubble() {
       // Prefer the proactive one-shot flash (auto-clears, no walkthrough
       // needed); fall back to the durable guidance highlight if a walkthrough
       // is already holding the ring.
-      if (useCompanionStore.getState().activeWalkthrough) {
+      if (useAthenaStore.getState().activeWalkthrough) {
         setGuidanceHighlightTestId(highlightTestId);
       } else {
         flashHighlight(highlightTestId, { label: t.plugins.companion.decision_title });
@@ -175,7 +175,7 @@ export function OrbDecisionBubble() {
   // with the chat open, so a fleet orchestration decision MUST surface there —
   // otherwise an operator running the grid (often with the chat open to watch)
   // sees nothing to approve and Athena appears stuck. (User report 2026-06-25.)
-  if (!decision || (companionState !== 'minimized' && !fleetGridOpen)) return null;
+  if (!decision || (athenaState !== 'minimized' && !fleetGridOpen)) return null;
 
   // Click → run the option then clear. Shared with the `;`-leader key (Slice 5)
   // and spoken-number answering (Slice 7) via `runDecisionOption` so all three

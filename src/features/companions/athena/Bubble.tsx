@@ -11,7 +11,7 @@
  *     `<video>` AthenaAvatar) so per-bubble cost stays at zero decode.
  *
  * Streaming bubbles use `streaming=true` to flip the testid + dim the
- * opacity. The actual streaming text is filtered upstream (CompanionPanel
+ * opacity. The actual streaming text is filtered upstream (AthenaChatPanel
  * calls `stripModelDirectives` before passing it as children) so the user
  * never sees raw OP:/QR:/TTS: directive lines.
  *

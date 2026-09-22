@@ -13,7 +13,7 @@ import {
   type InstallState,
 } from './createAthenaTypes';
 
-type CompanionStrings = Translations['plugins']['companion'];
+type AthenaStrings = Translations['plugins']['companion'];
 
 export function stepIndexOf(id: CreateAthenaStepId): number {
   return CREATE_ATHENA_STEP_ORDER.indexOf(id);
@@ -91,7 +91,7 @@ export interface LineContext {
  * `TypedLine` re-types on the variant switch, not only on the step switch.
  */
 export function resolveLine(
-  c: CompanionStrings,
+  c: AthenaStrings,
   stepId: CreateAthenaStepId,
   ctx: LineContext,
 ): CreateAthenaLine {
@@ -137,7 +137,7 @@ export function resetWakeUpRotation(): void {
   wakeUpCalls = 0;
 }
 
-export function pickWakeUpLine(c: CompanionStrings, now: Date): string {
+export function pickWakeUpLine(c: AthenaStrings, now: Date): string {
   wakeUpCalls += 1;
   if (wakeUpCalls % 3 === 0) {
     return wakeUpCalls % 2 === 0 ? c.create_wake_generic_2 : c.create_wake_generic_1;

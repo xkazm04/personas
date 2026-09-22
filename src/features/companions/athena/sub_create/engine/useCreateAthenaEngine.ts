@@ -12,7 +12,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { SttEngineId, TtsEngineId } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { playReplyChime } from '@/features/companions/athena/chime';
 import {
   deriveSteps,
@@ -45,12 +45,12 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
       stored: s.athenaOnboardingStep,
       completedAt: s.athenaOnboardingCompletedAt,
       setStep: s.setAthenaOnboardingStep,
-      footer: s.companionFooterEnabled,
-      orb: s.companionOrbEnabled,
-      sound: s.companionSoundEnabled,
-      engine: s.companionVoiceEngine,
-      kokoroVoice: s.companionKokoroVoiceId,
-      pocketVoice: s.companionPocketVoiceId,
+      footer: s.athenaFooterEnabled,
+      orb: s.athenaOrbEnabled,
+      sound: s.athenaSoundEnabled,
+      engine: s.athenaVoiceEngine,
+      kokoroVoice: s.athenaKokoroVoiceId,
+      pocketVoice: s.athenaPocketVoiceId,
     })),
   );
   const stepId: CreateAthenaStepId = sys.stored ?? 'intro';
@@ -69,8 +69,8 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
   const selectVoice = useCallback(
     (voiceId: string) => {
       const s = useSystemStore.getState();
-      if (s.companionVoiceEngine === 'kokoro') s.setCompanionKokoroVoiceId(voiceId);
-      else s.setCompanionPocketVoiceId(voiceId);
+      if (s.athenaVoiceEngine === 'kokoro') s.setAthenaKokoroVoiceId(voiceId);
+      else s.setAthenaPocketVoiceId(voiceId);
     },
     [],
   );
@@ -119,23 +119,23 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
   // the step is left, unless a walkthrough took the ring over meanwhile.
   useEffect(() => {
     const s = useSystemStore.getState();
-    const companion = useCompanionStore.getState();
+    const companion = useAthenaStore.getState();
     const target =
       stepId === 'footer_icon'
         ? CREATE_ATHENA_HIGHLIGHT_TEST_IDS.footer_icon
         : stepId === 'orb'
           ? CREATE_ATHENA_HIGHLIGHT_TEST_IDS.orb
           : null;
-    if (stepId === 'footer_icon') s.setCompanionFooterEnabled(true);
-    else if (stepId === 'orb') s.setCompanionOrbEnabled(true);
+    if (stepId === 'footer_icon') s.setAthenaFooterEnabled(true);
+    else if (stepId === 'orb') s.setAthenaOrbEnabled(true);
     else if (stepId === 'chime') {
-      s.setCompanionSoundEnabled(true);
+      s.setAthenaSoundEnabled(true);
       playReplyChime();
     }
     if (!target || companion.activeWalkthrough) return;
     companion.setGuidanceHighlightTestId(target);
     return () => {
-      const now = useCompanionStore.getState();
+      const now = useAthenaStore.getState();
       if (!now.activeWalkthrough && now.guidanceHighlightTestId === target) {
         now.setGuidanceHighlightTestId(null);
       }
@@ -169,17 +169,17 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
       },
       keepFeature: (feature: CreateAthenaFeature, keep: boolean) => {
         const s = useSystemStore.getState();
-        if (feature === 'footer_icon') s.setCompanionFooterEnabled(keep);
-        else if (feature === 'orb') s.setCompanionOrbEnabled(keep);
-        else s.setCompanionSoundEnabled(keep);
+        if (feature === 'footer_icon') s.setAthenaFooterEnabled(keep);
+        else if (feature === 'orb') s.setAthenaOrbEnabled(keep);
+        else s.setAthenaSoundEnabled(keep);
         dispatch({ type: 'choice', feature, choice: keep ? 'keep' : 'off' });
       },
       confirmOrbPlace: () => dispatch({ type: 'orbConfirmed' }),
       replayChime: () => {
-        if (useSystemStore.getState().companionSoundEnabled) playReplyChime();
+        if (useSystemStore.getState().athenaSoundEnabled) playReplyChime();
       },
       selectEngine: (id: TtsEngineId) => {
-        useSystemStore.getState().setCompanionVoiceEngine(id);
+        useSystemStore.getState().setAthenaVoiceEngine(id);
         dispatch({ type: 'engineConfirmed', value: false });
       },
       confirmEngine: () => dispatch({ type: 'engineConfirmed', value: true }),
@@ -192,7 +192,7 @@ export function useCreateAthenaEngine(): CreateAthenaEngine {
       sttStart: stt.start,
       sttStop: stt.stop,
       sttPick: (id: SttEngineId) => {
-        useSystemStore.getState().setCompanionSttEngine(id);
+        useSystemStore.getState().setAthenaSttEngine(id);
         dispatch({ type: 'sttPicked', id });
       },
       finish: handoff.finish,

@@ -26,7 +26,7 @@ vi.mock('../useLocalDictation', () => ({
 }));
 
 import { Composer } from '../Composer';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from '../athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 const noop = () => {};
@@ -42,23 +42,23 @@ describe('Composer mic honours the selected STT engine', () => {
     browserStart.mockClear();
     localStart.mockClear();
     localStorage.clear();
-    useCompanionStore.setState({
+    useAthenaStore.setState({
       draftsByConversation: {},
       activeConversationId: DEFAULT_CONVERSATION_ID,
       pendingPrompt: null,
     });
   });
 
-  it('starts the on-device engine when companionSttEngine is whisper', () => {
-    useSystemStore.setState({ companionSttEngine: 'whisper' });
+  it('starts the on-device engine when athenaSttEngine is whisper', () => {
+    useSystemStore.setState({ athenaSttEngine: 'whisper' });
     renderComposer();
     fireEvent.click(screen.getByTestId('companion-mic'));
     expect(localStart).toHaveBeenCalledTimes(1);
     expect(browserStart).not.toHaveBeenCalled();
   });
 
-  it('starts the browser engine when companionSttEngine is browser', () => {
-    useSystemStore.setState({ companionSttEngine: 'browser' });
+  it('starts the browser engine when athenaSttEngine is browser', () => {
+    useSystemStore.setState({ athenaSttEngine: 'browser' });
     renderComposer();
     fireEvent.click(screen.getByTestId('companion-mic'));
     expect(browserStart).toHaveBeenCalledTimes(1);

@@ -27,7 +27,7 @@ import { ChevronsUpDown, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { BubbleReadAloud } from '../BubbleReadAloud';
 import { TypingDots } from '../TypingDots';
 import { useSpeechInput } from '../useSpeechInput';
@@ -40,8 +40,8 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
   const c = t.plugins.companion;
   const [text, setText] = useState('');
   const dictation = useSpeechInput();
-  const streaming = useCompanionStore((s) => s.streaming);
-  const messages = useCompanionStore((s) => s.messages);
+  const streaming = useAthenaStore((s) => s.streaming);
+  const messages = useAthenaStore((s) => s.messages);
   const lastReply = lastAssistantText(messages);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
@@ -66,7 +66,7 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
   const submit = () => {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
-    useCompanionStore.getState().setVoiceTurnRequest(trimmed);
+    useAthenaStore.getState().setVoiceTurnRequest(trimmed);
     setText('');
   };
 
@@ -99,7 +99,7 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
               )}
               <button
                 type="button"
-                onClick={() => useCompanionStore.getState().setState('open')}
+                onClick={() => useAthenaStore.getState().setState('open')}
                 data-testid="orb-quick-input-expand"
                 aria-label={c.orb_quick_input_expand}
                 title={c.orb_quick_input_expand}

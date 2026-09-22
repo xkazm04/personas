@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Composer } from '../Composer';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from '../athenaStore';
 
 const noop = () => {};
 
@@ -14,7 +14,7 @@ function renderComposer() {
 describe('Composer draft persistence', () => {
   beforeEach(() => {
     localStorage.clear();
-    useCompanionStore.setState({
+    useAthenaStore.setState({
       draftsByConversation: {},
       activeConversationId: DEFAULT_CONVERSATION_ID,
       pendingPrompt: null,
@@ -30,7 +30,7 @@ describe('Composer draft persistence', () => {
     const textarea = screen.getByTestId('companion-composer') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'unsent draft text' } });
     expect(textarea.value).toBe('unsent draft text');
-    expect(useCompanionStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
+    expect(useAthenaStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
       'unsent draft text',
     );
 
@@ -47,11 +47,11 @@ describe('Composer draft persistence', () => {
     fireEvent.change(textarea, { target: { value: 'draft for default thread' } });
     unmount();
 
-    useCompanionStore.setState({ activeConversationId: 'other-thread' });
+    useAthenaStore.setState({ activeConversationId: 'other-thread' });
     renderComposer();
     const otherThreadTextarea = screen.getByTestId('companion-composer') as HTMLTextAreaElement;
     expect(otherThreadTextarea.value).toBe('');
-    expect(useCompanionStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
+    expect(useAthenaStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
       'draft for default thread',
     );
   });
@@ -60,7 +60,7 @@ describe('Composer draft persistence', () => {
     renderComposer();
     const textarea = screen.getByTestId('companion-composer') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'ready to send' } });
-    expect(useCompanionStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
+    expect(useAthenaStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID]).toBe(
       'ready to send',
     );
 
@@ -68,7 +68,7 @@ describe('Composer draft persistence', () => {
 
     expect(textarea.value).toBe('');
     expect(
-      useCompanionStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID],
+      useAthenaStore.getState().draftsByConversation[DEFAULT_CONVERSATION_ID],
     ).toBeUndefined();
   });
 });

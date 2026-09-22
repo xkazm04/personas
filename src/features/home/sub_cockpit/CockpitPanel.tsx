@@ -11,7 +11,7 @@ import {
 } from '@/api/companion';
 import { getMetricsSummary } from '@/api/overview/observability';
 import type { MetricsSummary } from '@/lib/bindings/MetricsSummary';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -57,7 +57,7 @@ export default function CockpitPanel() {
   // without this both collapse to spec===null, so a first-boot fetch error shows
   // the "your cockpit is empty" CTA instead of an error + retry.
   const [error, setError] = useState<unknown>(null);
-  const setCompanionState = useCompanionStore((s) => s.setState);
+  const setCompanionState = useAthenaStore((s) => s.setState);
   const contextualCockpit = useSystemStore((s) => s.contextualCockpit);
   const setContextualCockpit = useSystemStore((s) => s.setContextualCockpit);
 
@@ -91,7 +91,7 @@ export default function CockpitPanel() {
   // sees the composition stream in. Mirrors ReportDetailModal's "Play in
   // chat" preset+autoSend pattern.
   const composePersonaCockpit = useCallback(() => {
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: t.overview.cockpit.compose_personas_prompt,
       autoSend: true,
     });

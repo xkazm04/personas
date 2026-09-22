@@ -41,11 +41,11 @@ import { useTourNarration } from '../useTourNarration';
 
 function setVoice(overrides: Partial<Record<string, unknown>> = {}) {
   mockStoreState = {
-    companionVoiceEnabled: true,
-    companionVoiceEngine: 'kokoro',
-    companionKokoroVoiceId: 'af_heart',
-    companionPocketVoiceId: null,
-    companionVoiceVolume: 0.5,
+    athenaVoiceEnabled: true,
+    athenaVoiceEngine: 'kokoro',
+    athenaKokoroVoiceId: 'af_heart',
+    athenaPocketVoiceId: null,
+    athenaVoiceVolume: 0.5,
     ...overrides,
   };
 }
@@ -61,7 +61,7 @@ const STEP = { active: true, stepId: 'appearance-setup', narration: 'Hello there
 
 describe('useTourNarration', () => {
   it('is unavailable and silent when voice is disabled', () => {
-    setVoice({ companionVoiceEnabled: false });
+    setVoice({ athenaVoiceEnabled: false });
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(false);
     expect(mockSynthesize).not.toHaveBeenCalled();
@@ -76,7 +76,7 @@ describe('useTourNarration', () => {
   });
 
   it('is unavailable when Kokoro is selected but no voice is set', () => {
-    setVoice({ companionKokoroVoiceId: null });
+    setVoice({ athenaKokoroVoiceId: null });
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(false);
   });
@@ -97,9 +97,9 @@ describe('useTourNarration', () => {
 
   it('uses the Pocket voice id and a null credential when Pocket is the engine', async () => {
     setVoice({
-      companionVoiceEngine: 'pocket_tts',
-      companionKokoroVoiceId: null,
-      companionPocketVoiceId: 'step4',
+      athenaVoiceEngine: 'pocket_tts',
+      athenaKokoroVoiceId: null,
+      athenaPocketVoiceId: 'step4',
     });
     const { result } = renderHook(() => useTourNarration(STEP));
     expect(result.current.available).toBe(true);

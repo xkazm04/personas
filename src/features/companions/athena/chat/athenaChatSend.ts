@@ -16,7 +16,7 @@ import {
 } from '@/api/companion';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { createSendNonce, hasAcceptedNonce, recordAcceptedNonce } from '../sendNonceLedger';
 import { lastAssistantText } from './athenaChatPreview';
 import type { AthenaChatVoice } from './athenaChatVoice';
@@ -47,8 +47,8 @@ export function useAthenaChatSend(args: {
   const { voice, lastStreamEventAtRef } = args;
   const { voiceActive, resetTurnProgress, playSpokenReply, wasProseSpoken } = voice;
 
-  const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
-  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
+  const recallSynthesisEnabled = useSystemStore((s) => s.athenaRecallSynthesisEnabled);
+  const autonomousMode = useSystemStore((s) => s.athenaAutonomousMode);
 
   // Synchronous re-entrancy guard. The streaming flip updates the store
   // synchronously, but a `streaming` value captured in a render closure stays
@@ -70,7 +70,7 @@ export function useAthenaChatSend(args: {
       recordAcceptedNonce(sendNonce);
       sendingRef.current = true;
 
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       const conversationId = store.activeConversationId;
       store.setSendError(null);
       // Quick replies + INFORMATIONAL chat cards are one-shot. Pending
@@ -116,14 +116,14 @@ export function useAthenaChatSend(args: {
         // The assistant turn is committed. Badge the orb — a send can start from
         // the orb's quick-input bar with the panel closed. (No-op while the
         // panel is open; the store owns that rule.)
-        useCompanionStore.getState().noteIncomingReply();
+        useAthenaStore.getState().noteIncomingReply();
         const fresh = await companionListRecentMessages(50, conversationId);
         // Give the badge its words. Separate from the count above on purpose:
         // the count must survive a refetch that fails, and the preview is only
         // available once the canonical transcript lands.
         const preview = lastAssistantText(fresh);
-        if (preview) useCompanionStore.getState().setUnreadPreview(preview);
-        const live = useCompanionStore.getState();
+        if (preview) useAthenaStore.getState().setUnreadPreview(preview);
+        const live = useAthenaStore.getState();
         if (live.activeConversationId === conversationId) {
           live.setMessages(fresh);
           if (result.quickReplies?.length) live.setQuickReplies(result.quickReplies);
@@ -137,7 +137,7 @@ export function useAthenaChatSend(args: {
           const proseSpoken = wasProseSpoken();
           // Stash for the footer Play button FIRST — the progress channel treats
           // a set `pendingPlayback` as "the real answer is coming, stand down".
-          useCompanionStore.getState().setPendingPlayback({
+          useAthenaStore.getState().setPendingPlayback({
             episodeId: result.assistantEpisodeId,
             ttsText: result.ttsText,
             played: proseSpoken,
@@ -148,14 +148,14 @@ export function useAthenaChatSend(args: {
       } catch (err: unknown) {
         // extractMessage keeps "[object Object]" out of the error chip when the
         // IPC rejection is a Tauri envelope rather than an Error.
-        useCompanionStore.getState().setSendError(extractMessage(err));
+        useAthenaStore.getState().setSendError(extractMessage(err));
         silentCatch('companion_send_message')(err);
       } finally {
         // Order matters for the streaming bubble's exit animation: unmount it
         // (streaming:false) before clearing the scratch fields, or it briefly
         // renders an empty body mid-exit. Both patches target the SEND-TIME
         // conversation, never whatever thread is focused now.
-        const s = useCompanionStore.getState();
+        const s = useAthenaStore.getState();
         s.patchLiveTurn(conversationId, { streaming: false, turnId: null });
         // The IPC-rejection path never reaches the stream channel, so the
         // `finished`/`error` handlers that normally reset these don't run.
@@ -189,7 +189,7 @@ export function useAthenaChatSend(args: {
   const interrupt = useCallback(() => {
     // The Stop control visually belongs to the focused thread, so it must never
     // kill a background thread's stream.
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     const conversationId = s.activeConversationId;
     const turnId = s.liveTurns[conversationId]?.turnId ?? null;
     if (!turnId) return;

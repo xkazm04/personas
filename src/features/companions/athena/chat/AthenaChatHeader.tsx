@@ -14,7 +14,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { useSystemStore } from '@/stores/systemStore';
 import { ConversationSwitcher } from '../ConversationSwitcher';
 import { DevConversationLogButton } from '../DevConversationLogButton';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { AthenaChatSleepButton } from './AthenaChatSleepButton';
 import { resetConversation, setAutonomousMode, setDevMode } from './athenaChatActions';
 
@@ -81,10 +81,10 @@ export function AthenaChatHeader({
 }) {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
-  const devMode = useSystemStore((s) => s.companionDevMode);
-  const devModeAvailable = useCompanionStore((s) => s.devModeAvailable);
-  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const autonomousMode = useSystemStore((s) => s.athenaAutonomousMode);
+  const devMode = useSystemStore((s) => s.athenaDevMode);
+  const devModeAvailable = useAthenaStore((s) => s.devModeAvailable);
+  const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
   // Reset wipes the SQL transcript with no undo anywhere in the product, and
   // the control sits in a cluster of cheap, reversible toggles - one slip on
   // the wrong icon used to destroy the thread. It asks first.
@@ -161,7 +161,7 @@ export function AthenaChatHeader({
           icon={X}
           label={t.common.close}
           onClick={() =>
-            useCompanionStore.getState().setState(orbEnabled ? 'minimized' : 'collapsed')
+            useAthenaStore.getState().setState(orbEnabled ? 'minimized' : 'collapsed')
           }
           testId="companion-close"
           tone="neutral"

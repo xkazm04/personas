@@ -24,8 +24,8 @@ import { COMPANION_VOICE_HOTKEY } from '@/api/companion';
 export function GlobalHotkeyCard() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const enabled = useSystemStore((s) => s.companionGlobalHotkeyEnabled);
-  const setEnabled = useSystemStore((s) => s.setCompanionGlobalHotkeyEnabled);
+  const enabled = useSystemStore((s) => s.athenaGlobalHotkeyEnabled);
+  const setEnabled = useSystemStore((s) => s.setAthenaGlobalHotkeyEnabled);
 
   return (
     <SectionCard

@@ -15,7 +15,7 @@ import { useTtsVoiceSelection } from '@/features/companions/athena/useTtsVoiceSe
  *     and `completeOn` advancement. This hook is purely additive audio — it
  *     never advances or blocks a step.
  *   - Narration plays ONLY when the companion's voice is configured (the
- *     `companionVoiceEnabled` master switch is on AND the selected engine has
+ *     `athenaVoiceEnabled` master switch is on AND the selected engine has
  *     a usable voice). With no voice set up, `available` is false and the
  *     tour behaves exactly as it did before — a silent text coach-mark.
  *   - Synthesis is live via `companion_tts` (ElevenLabs or local Piper),
@@ -62,7 +62,7 @@ export function useTourNarration({
   stepId,
   narration,
 }: UseTourNarrationParams): TourNarrationControl {
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
   const voice = useTtsVoiceSelection();
   const settings = useTtsSettings();
 

@@ -108,7 +108,7 @@ interface AudioContextCtor {
 }
 
 export function useLocalDictation({ lang }: { lang?: string } = {}): DictationState {
-  const modelId = useSystemStore((s) => s.companionSttModelId);
+  const modelId = useSystemStore((s) => s.athenaSttModelId);
 
   const supported =
     typeof navigator !== 'undefined' &&

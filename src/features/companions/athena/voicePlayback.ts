@@ -16,7 +16,7 @@ import { silentCatch } from '@/lib/silentCatch';
  *      browsers don't reject `play()` calls on rapid successive triggers
  *      due to their "media element already playing" guard.
  *
- * Audio URLs are cached on the playback record (see companionStore) so
+ * Audio URLs are cached on the playback record (see athenaStore) so
  * that "Replay" doesn't re-hit the engine. Caller is responsible for
  * `URL.revokeObjectURL` when discarding (currently we let the page
  * unload do it — ElevenLabs MP3 is ~50KB; Piper WAV is ~150-300KB).
@@ -53,9 +53,9 @@ export function play(url: string): { audio: HTMLAudioElement; done: Promise<void
   // the store so dragging the volume slider changes Athena's level *while
   // she's speaking*, not just on the next clip. Unsubscribed when the clip
   // ends / errors / is paused.
-  audio.volume = clampVol(useSystemStore.getState().companionVoiceVolume);
+  audio.volume = clampVol(useSystemStore.getState().athenaVoiceVolume);
   const unsubVolume = useSystemStore.subscribe((s) => {
-    audio.volume = clampVol(s.companionVoiceVolume);
+    audio.volume = clampVol(s.athenaVoiceVolume);
   });
   // Route through the shared analyser so UI (the orb's glow) can react to
   // the live speech level. Best-effort — never blocks or breaks playback.

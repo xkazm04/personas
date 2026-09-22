@@ -19,7 +19,7 @@ import {
   skillFilesRegistryRoot, type SkillEntry,
 } from '@/api/devTools/devTools';
 import { listSessions } from '@/api/fleet/fleet';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { mapWithConcurrency } from '@/lib/concurrency';
@@ -285,7 +285,7 @@ export function useSkillLaunch(activeProjectId: string | null): SkillLaunchData 
   const launch = useCallback((cell: ProjectLaunchCell) => {
     if (cell.status !== 'ready' || !selectedSkill) return;
     const hint = skills.find((s) => s.name === selectedSkill)?.argumentHint ?? null;
-    useCompanionStore.getState().setPendingChatPrompt({
+    useAthenaStore.getState().setPendingChatPrompt({
       text: composeLaunchAsk(selectedSkill, cell.project, hint),
       source: LAUNCH_SYSTEM_SOURCE,
     });

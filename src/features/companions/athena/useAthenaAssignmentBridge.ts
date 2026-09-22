@@ -4,14 +4,14 @@ import { EventName } from '@/lib/eventRegistry';
 import { getTeamAssignmentDetail } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
-import { useCompanionStore, type AthenaAssignmentRef } from './companionStore';
+import { useAthenaStore, type AthenaAssignmentRef } from './athenaStore';
 
 /** Listens to TEAM_ASSIGNMENT_PROGRESS globally and surfaces Athena-
  *  dispatched assignments as cards in the companion chat (above
- *  messages). Mounted in CompanionPanel so cards only refresh while the
+ *  messages). Mounted in AthenaChatPanel so cards only refresh while the
  *  panel is mounted; the store retains state across panel toggles. */
-export function useCompanionAssignmentBridge() {
-  const upsert = useCompanionStore((s) => s.upsertAthenaAssignment);
+export function useAthenaAssignmentBridge() {
+  const upsert = useAthenaStore((s) => s.upsertAthenaAssignment);
 
   useEffect(() => {
     let cancelled = false;

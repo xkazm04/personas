@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 /** How long the forward-ack bloom stays up. */
 const FORWARD_ACK_MS = 2600;
@@ -39,7 +39,7 @@ export function useAthenaOrbReactions(streaming: boolean): OrbReactions {
   }, [streaming]);
 
   // An outside surface asked for the reaction directly.
-  const messageReactionPulse = useCompanionStore((s) => s.messageReactionPulse);
+  const messageReactionPulse = useAthenaStore((s) => s.messageReactionPulse);
   const prevReactionPulseRef = useRef(messageReactionPulse);
   useEffect(() => {
     if (messageReactionPulse === prevReactionPulseRef.current) return;
@@ -47,7 +47,7 @@ export function useAthenaOrbReactions(streaming: boolean): OrbReactions {
     setMessageNonce((n) => n + 1);
   }, [messageReactionPulse]);
 
-  const forwardAckPulse = useCompanionStore((s) => s.forwardAckPulse);
+  const forwardAckPulse = useAthenaStore((s) => s.forwardAckPulse);
   const [forwardAck, setForwardAck] = useState(false);
   const prevForwardAckRef = useRef(forwardAckPulse);
   useEffect(() => {

@@ -1,7 +1,7 @@
 /**
  * Where the orb is, and where things dock against it.
  *
- * Position is stored as VIEWPORT FRACTIONS (`companionOrbPos`) rather than
+ * Position is stored as VIEWPORT FRACTIONS (`athenaOrbPos`) rather than
  * pixels, so it survives window resizes and app restarts; everything here is
  * the conversion in both directions plus the shared constants every surface
  * that docks to the orb (decision bubble, unread bubble, guide caption) needs.

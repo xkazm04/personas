@@ -17,7 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import {
   companionDevOpLedger,
   companionDevOpSelfReview,
@@ -37,7 +37,7 @@ export function DevOpLedger() {
   const [reviewing, setReviewing] = useState(false);
   // A new proactive card (dev reflection / interrupt) means a dev op just
   // changed state — refetch so the ledger stays live without polling.
-  const proactiveCount = useCompanionStore((s) => s.proactive.length);
+  const proactiveCount = useAthenaStore((s) => s.proactive.length);
 
   const refresh = useCallback(() => {
     companionDevOpLedger().then(setData).catch(silentCatch('companion_dev_op_ledger'));

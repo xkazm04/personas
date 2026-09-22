@@ -24,7 +24,7 @@ import { markReportRead } from '@/api/overview/reports';
 import { companionEngageProactive } from '@/api/companion';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { actionLabel } from '../athenaLabels';
 import { applyClientAction } from '../applyClientAction';
 import { actionRisk } from './actionRisk';
@@ -37,7 +37,7 @@ import type { DecisionOption, PendingDecision } from './types';
  * Aggregates the three live decision sources — pending approvals, blocking
  * incidents (proactive `incident_blocker` nudges), and pending human reviews —
  * into a single FIFO of {@link PendingDecision}s and feeds them one-at-a-time
- * into `companionStore.pendingDecision`, only when none is currently pending.
+ * into `athenaStore.pendingDecision`, only when none is currently pending.
  *
  * The auto-surfacing path is UNCONDITIONAL — Athena's orb is one of only two
  * communication dimensions (orb for quick info/decision, chat for the full
@@ -64,7 +64,7 @@ import type { DecisionOption, PendingDecision } from './types';
  * that one implementation.
  *
  * `navigate` behaviour is unchanged: the shared handler's `VALID_ROUTES` is the
- * same nine-route list `companionRoutes.COMPANION_NAV_ROUTES` carried, and an
+ * same nine-route list `athenaRoutes.ATHENA_NAV_ROUTES` carried, and an
  * unknown route is still dropped rather than thrown at the sidebar.
  */
 
@@ -91,7 +91,7 @@ function approvalToDecision(approval: PendingApproval): PendingDecision {
   ): Promise<void> => {
     try {
       const outcome = await run();
-      useCompanionStore.getState().removeApproval(approval.id);
+      useAthenaStore.getState().removeApproval(approval.id);
       if (outcome.clientAction) applyClientAction(outcome.clientAction);
     } catch (err) {
       silentCatch('companion/decision:approval')(err);
@@ -158,7 +158,7 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
         // decision on the orb right after the user just acted on it.
         try {
           await companionEngageProactive(message.id);
-          useCompanionStore.getState().removeProactive(message.id);
+          useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:incident-resolve')(err);
           // Propagate so runDecisionOption keeps the decision pending + toasts
@@ -174,7 +174,7 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
       run: async () => {
         try {
           await companionDismissProactive(message.id);
-          useCompanionStore.getState().removeProactive(message.id);
+          useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:incident-dismiss')(err);
         }
@@ -289,7 +289,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
   const engage = async (): Promise<void> => {
     try {
       await companionEngageProactive(message.id);
-      useCompanionStore.getState().removeProactive(message.id);
+      useAthenaStore.getState().removeProactive(message.id);
     } catch (err) {
       silentCatch('companion/decision:message-engage')(err);
     }
@@ -327,7 +327,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
       run: async () => {
         try {
           await companionDismissProactive(message.id);
-          useCompanionStore.getState().removeProactive(message.id);
+          useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:message-dismiss')(err);
         }
@@ -370,7 +370,7 @@ function credentialReauthToDecision(message: ProactiveMessage): PendingDecision 
   const engage = async (): Promise<void> => {
     try {
       await companionEngageProactive(message.id);
-      useCompanionStore.getState().removeProactive(message.id);
+      useAthenaStore.getState().removeProactive(message.id);
     } catch (err) {
       silentCatch('companion/decision:credential-engage')(err);
       // Propagate: without this the bubble clears on a failed engage and the
@@ -400,7 +400,7 @@ function credentialReauthToDecision(message: ProactiveMessage): PendingDecision 
       run: async () => {
         try {
           await companionDismissProactive(message.id);
-          useCompanionStore.getState().removeProactive(message.id);
+          useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:credential-dismiss')(err);
         }
@@ -493,7 +493,7 @@ export const buildDecisionQueueForTest = buildQueue;
 /**
  * The decision queue is ALWAYS active.
  *
- * It used to be gated behind `companionHandsFreeDecisions || companionAutonomousMode`.
+ * It used to be gated behind `athenaHandsFreeDecisions || athenaAutonomousMode`.
  * That gate was survivable only while a third notification dimension (footer
  * popover / toasts) carried Athena's messages; with that dimension deleted, the
  * orb IS the quick-decision surface and the chat IS the full one — a gated queue
@@ -502,13 +502,13 @@ export const buildDecisionQueueForTest = buildQueue;
  * govern how far Athena may act WITHOUT asking, not whether she may ask.
  */
 export function useDecisionQueue() {
-  const pending = useCompanionStore((s) => s.pendingDecision);
+  const pending = useAthenaStore((s) => s.pendingDecision);
   // Guard against overlapping pumps (each pump does 3 IPC round-trips).
   const pumping = useRef(false);
 
   const pump = useCallback(async () => {
     // Only surface when the bubble is free.
-    if (useCompanionStore.getState().pendingDecision) return;
+    if (useAthenaStore.getState().pendingDecision) return;
     if (pumping.current) return;
     pumping.current = true;
     try {
@@ -516,10 +516,10 @@ export function useDecisionQueue() {
       const next = queue[0];
       // Depth is recorded even when nothing is surfaced, so the bubble can say
       // how much is behind the question it is asking.
-      useCompanionStore.getState().setDecisionQueueDepth(queue.length);
+      useAthenaStore.getState().setDecisionQueueDepth(queue.length);
       // Re-check after the awaits — another path may have surfaced a decision.
-      if (next && !useCompanionStore.getState().pendingDecision) {
-        useCompanionStore.getState().setPendingDecision(next);
+      if (next && !useAthenaStore.getState().pendingDecision) {
+        useAthenaStore.getState().setPendingDecision(next);
       }
     } finally {
       pumping.current = false;

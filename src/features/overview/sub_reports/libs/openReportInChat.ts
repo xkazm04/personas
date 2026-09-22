@@ -1,5 +1,5 @@
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { CompanionCockpitSpecBody } from '@/api/companion';
 import type { PersonaReport } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -63,9 +63,9 @@ export function openReportInChat(
   useSystemStore.getState().setHomeTab('cockpit');
 
   // 3. Seed companion + auto-send + open the chat panel.
-  useCompanionStore.getState().setPendingPrompt({
+  useAthenaStore.getState().setPendingPrompt({
     text: buildSummariseChatPrompt(message, linkedReviews),
     autoSend: true,
   });
-  useCompanionStore.getState().setState('open');
+  useAthenaStore.getState().setState('open');
 }

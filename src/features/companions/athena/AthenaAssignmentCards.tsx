@@ -1,16 +1,16 @@
 import { ListChecks, X, CircleCheck, CircleX, Loader2, CircleDashed } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore, type AthenaAssignmentRef } from './companionStore';
+import { useAthenaStore, type AthenaAssignmentRef } from './athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 /** Compact strip of Athena-dispatched team assignments. Renders above
  *  the chat messages list when at least one card is present; hidden
  *  otherwise. Clicking a card routes to the pipeline page so the user
  *  can see the full panel (composer + checklist). */
-export function CompanionAssignmentCards() {
+export function AthenaAssignmentCards() {
   const { t } = useTranslation();
-  const cards = useCompanionStore((s) => s.athenaAssignments);
-  const dismiss = useCompanionStore((s) => s.dismissAthenaAssignment);
+  const cards = useAthenaStore((s) => s.athenaAssignments);
+  const dismiss = useAthenaStore((s) => s.dismissAthenaAssignment);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   if (cards.length === 0) return null;

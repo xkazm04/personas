@@ -7,7 +7,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { silentCatch } from '@/lib/silentCatch';
 import { companionDispatchFleetPlan, type FleetPlanRow } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { AthenaFleetPlanRow } from './AthenaFleetPlanRow';
 import { AthenaFleetPlanResult } from './AthenaFleetPlanResult';
 import { resolveChatCard } from '../useChatCards';
@@ -71,7 +71,7 @@ export function AthenaFleetPlanCard({
   );
 
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
-  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
+  const autonomousMode = useSystemStore((s) => s.athenaAutonomousMode);
 
   // Whenever this card is showing a dispatched outcome (freshly confirmed, or
   // restored from the persisted config after a close/reopen), pull a fresh
@@ -128,7 +128,7 @@ export function AthenaFleetPlanCard({
     if (rows.length === 0 || rows.some((r) => !r.objective.trim())) return;
     autoFired.current = true;
     void confirm().then(() => {
-      useCompanionStore.getState().recordAthenaAction({
+      useAthenaStore.getState().recordAthenaAction({
         id: `autoplan_${Date.now()}`,
         sessionId: cardId ?? 'fleet-plan',
         projectLabel: intent,

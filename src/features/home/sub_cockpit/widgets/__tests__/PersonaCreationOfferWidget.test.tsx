@@ -1,23 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
-const setCompanionPrefill = vi.fn();
+const setAthenaPrefill = vi.fn();
 const setSidebarSection = vi.fn();
 const startGuidance = vi.fn();
 
 vi.mock('@/stores/systemStore', () => {
   const hook = () => undefined;
   (hook as unknown as { getState: () => unknown }).getState = () => ({
-    setCompanionPrefill,
+    setAthenaPrefill,
     setSidebarSection,
   });
   return { useSystemStore: hook };
 });
 
-vi.mock('@/features/companions/athena/companionStore', () => {
+vi.mock('@/features/companions/athena/athenaStore', () => {
   const hook = () => undefined;
   (hook as unknown as { getState: () => unknown }).getState = () => ({ startGuidance });
-  return { useCompanionStore: hook };
+  return { useAthenaStore: hook };
 });
 
 import { PersonaCreationOfferWidget } from '../PersonaCreationOfferWidget';
@@ -31,7 +31,7 @@ import { PersonaCreationOfferWidget } from '../PersonaCreationOfferWidget';
 describe('PersonaCreationOfferWidget', () => {
   beforeEach(() => {
     cleanup();
-    setCompanionPrefill.mockReset();
+    setAthenaPrefill.mockReset();
     setSidebarSection.mockReset();
     startGuidance.mockReset();
   });
@@ -42,8 +42,8 @@ describe('PersonaCreationOfferWidget', () => {
     );
     fireEvent.click(screen.getByTestId('companion-offer-build'));
 
-    expect(setCompanionPrefill).toHaveBeenCalledTimes(1);
-    expect(setCompanionPrefill.mock.calls[0][0]).toMatchObject({
+    expect(setAthenaPrefill).toHaveBeenCalledTimes(1);
+    expect(setAthenaPrefill.mock.calls[0][0]).toMatchObject({
       intent: 'triage inbound support tickets',
       autoLaunch: false,
       mode: 'interactive',
@@ -54,7 +54,7 @@ describe('PersonaCreationOfferWidget', () => {
   it('never auto-launches a build from a chat card', () => {
     render(<PersonaCreationOfferWidget config={{ intent: 'anything' }} />);
     fireEvent.click(screen.getByTestId('companion-offer-build'));
-    expect(setCompanionPrefill.mock.calls[0][0]).toMatchObject({ autoLaunch: false });
+    expect(setAthenaPrefill.mock.calls[0][0]).toMatchObject({ autoLaunch: false });
   });
 
   it('starts the guided walkthrough instead, with no prefill or navigation', () => {
@@ -62,7 +62,7 @@ describe('PersonaCreationOfferWidget', () => {
     fireEvent.click(screen.getByTestId('companion-offer-show'));
 
     expect(startGuidance).toHaveBeenCalledWith('persona_creation');
-    expect(setCompanionPrefill).not.toHaveBeenCalled();
+    expect(setAthenaPrefill).not.toHaveBeenCalled();
     expect(setSidebarSection).not.toHaveBeenCalled();
   });
 });

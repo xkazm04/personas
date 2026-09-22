@@ -31,7 +31,7 @@ import {
   fetchAllOlderMessages,
   useTranscriptPages,
 } from '../useTranscriptPages';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 function msg(id: string, createdAt: string, role = 'user'): CompanionMessage {
   return { id, role, content: `body ${id}`, createdAt };
@@ -62,7 +62,7 @@ const scrollRef = createRef<HTMLDivElement>();
 
 beforeEach(() => {
   invokeMock.mockReset();
-  useCompanionStore.setState({ messages: [] });
+  useAthenaStore.setState({ messages: [] });
 });
 
 describe('cursor helpers', () => {
@@ -98,7 +98,7 @@ describe('useTranscriptPages', () => {
   }
 
   it('loads an older page and prepends it, keyed off the oldest message', async () => {
-    useCompanionStore.setState({ messages: [msg('m3', 'T3')] });
+    useAthenaStore.setState({ messages: [msg('m3', 'T3')] });
     invokeMock.mockResolvedValueOnce(pageOf([msg('m1', 'T1'), msg('m2', 'T2')]));
 
     const { result } = mount([msg('m3', 'T3')]);
@@ -109,11 +109,11 @@ describe('useTranscriptPages', () => {
       'companion_list_messages_before',
       expect.objectContaining({ beforeCreatedAt: 'T3', beforeId: 'm3', conversationId: 'default' }),
     );
-    expect(useCompanionStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+    expect(useAthenaStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
   });
 
   it('latches exhaustion on the newly-oldest message and stops loading', async () => {
-    useCompanionStore.setState({ messages: [msg('m2', 'T2')] });
+    useAthenaStore.setState({ messages: [msg('m2', 'T2')] });
     invokeMock.mockResolvedValueOnce(pageOf([msg('m1', 'T1')], true));
 
     const { result, rerender } = mount([msg('m2', 'T2')]);
@@ -122,7 +122,7 @@ describe('useTranscriptPages', () => {
 
     // The hook's `exhausted` compares against the CURRENT oldest, so the
     // caller must re-render with the prepended list for it to read true.
-    rerender({ messages: useCompanionStore.getState().messages });
+    rerender({ messages: useAthenaStore.getState().messages });
     expect(result.current.exhausted).toBe(true);
 
     act(() => result.current.loadOlder());
@@ -130,7 +130,7 @@ describe('useTranscriptPages', () => {
   });
 
   it('keeps walking when a page yields no visible message', async () => {
-    useCompanionStore.setState({ messages: [msg('m9', 'T9')] });
+    useAthenaStore.setState({ messages: [msg('m9', 'T9')] });
     // First page: all rows were fleet-event system rows → nothing visible.
     invokeMock.mockResolvedValueOnce(
       page({ nextBeforeCreatedAt: 'T5', nextBeforeId: 'm5', exhausted: false }),
@@ -146,7 +146,7 @@ describe('useTranscriptPages', () => {
       beforeCreatedAt: 'T5',
       beforeId: 'm5',
     });
-    expect(useCompanionStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm9']);
+    expect(useAthenaStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm9']);
   });
 
   it('does nothing without an anchor message', async () => {
@@ -183,15 +183,15 @@ describe('fetchAllOlderMessages', () => {
 
 describe('prependMessages', () => {
   it('dedupes by id so an overlapping page never doubles a bubble', () => {
-    useCompanionStore.setState({ messages: [msg('m2', 'T2'), msg('m3', 'T3')] });
-    useCompanionStore.getState().prependMessages([msg('m1', 'T1'), msg('m2', 'T2')]);
-    expect(useCompanionStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+    useAthenaStore.setState({ messages: [msg('m2', 'T2'), msg('m3', 'T3')] });
+    useAthenaStore.getState().prependMessages([msg('m1', 'T1'), msg('m2', 'T2')]);
+    expect(useAthenaStore.getState().messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
   });
 
   it('is a no-op when everything is already known', () => {
     const before = [msg('m1', 'T1')];
-    useCompanionStore.setState({ messages: before });
-    useCompanionStore.getState().prependMessages([msg('m1', 'T1')]);
-    expect(useCompanionStore.getState().messages).toBe(before);
+    useAthenaStore.setState({ messages: before });
+    useAthenaStore.getState().prependMessages([msg('m1', 'T1')]);
+    expect(useAthenaStore.getState().messages).toBe(before);
   });
 });

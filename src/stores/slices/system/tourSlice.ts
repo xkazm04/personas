@@ -219,7 +219,7 @@ export interface TourStepDef {
    * Spoken narration for this step, written for the ear rather than the
    * eye — conversational, 1-3 sentences, distinct from the on-screen
    * `description`. When the companion's voice is configured
-   * (`companionVoiceEnabled` + a usable engine/voice), `useTourNarration`
+   * (`athenaVoiceEnabled` + a usable engine/voice), `useTourNarration`
    * synthesizes this through Athena's live TTS (`companion_tts`) as the
    * step activates. Absent / undefined → the step is silent (the tour is
    * a normal text coach-mark, exactly as before voice was added).

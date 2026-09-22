@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useMcpRequestStore } from '../mcp/mcpRequestStore';
 import {
   EMPTY_ATTENTION_COUNTS,
@@ -18,10 +18,10 @@ import {
  */
 export function useAttentionCounts(): AttentionCounts {
   const mcpRequests = useMcpRequestStore((s) => s.pendingRequests);
-  const pendingDecision = useCompanionStore((s) => s.pendingDecision);
-  const proactive = useCompanionStore((s) => s.proactive);
-  const assignments = useCompanionStore((s) => s.athenaAssignments);
-  const actions = useCompanionStore((s) => s.athenaActions);
+  const pendingDecision = useAthenaStore((s) => s.pendingDecision);
+  const proactive = useAthenaStore((s) => s.proactive);
+  const assignments = useAthenaStore((s) => s.athenaAssignments);
+  const actions = useAthenaStore((s) => s.athenaActions);
 
   return useMemo(() => {
     const counts: AttentionCounts = { ...EMPTY_ATTENTION_COUNTS };

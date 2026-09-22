@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Open Athena's chat panel and seed the composer with a pre-composed draft,
@@ -14,7 +14,7 @@ import { useCompanionStore } from './companionStore';
 export function useSeedAthenaComposer(): (text: string) => void {
   return useCallback((text: string) => {
     if (!text.trim()) return;
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
     store.setState('open');
     store.setPendingPrompt({ text, autoSend: false });
   }, []);

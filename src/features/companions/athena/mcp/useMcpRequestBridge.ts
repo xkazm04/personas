@@ -22,7 +22,7 @@ import {
  * snapshot so a hard reload doesn't strand pending requests off-screen.
  *
  * Mount once near the top of the app — same site as
- * `useFleetCompanionBridge`.
+ * `useAthenaFleetBridge`.
  */
 export function useMcpRequestBridge(): void {
   useEffect(() => {

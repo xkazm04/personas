@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AttentionBar } from '../attention/AttentionBar';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useMcpRequestStore } from '../mcp/mcpRequestStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { ProactiveMessage } from '@/api/companion';
@@ -18,14 +18,14 @@ function nudge(id: string, triggerKind: string): ProactiveMessage {
 }
 
 beforeEach(() => {
-  useCompanionStore.setState({
+  useAthenaStore.setState({
     proactive: [],
     athenaAssignments: [],
     athenaActions: [],
     pendingDecision: null,
   });
   useMcpRequestStore.setState({ pendingRequests: [] });
-  useSystemStore.setState({ companionAlertsExpanded: ['blocked'] });
+  useSystemStore.setState({ athenaAlertsExpanded: ['blocked'] });
 });
 
 describe('AttentionBar', () => {
@@ -35,7 +35,7 @@ describe('AttentionBar', () => {
   });
 
   it('counts nudges by severity and hides empty kinds', () => {
-    useCompanionStore.setState({
+    useAthenaStore.setState({
       proactive: [
         nudge('a', 'fleet_failed'),
         nudge('b', 'incident_blocker'),
@@ -57,31 +57,31 @@ describe('AttentionBar', () => {
     useMcpRequestStore.setState({
       pendingRequests: [{ id: 'r1' }, { id: 'r2' }] as never,
     });
-    useCompanionStore.setState({ pendingDecision: { id: 'd1' } as never });
+    useAthenaStore.setState({ pendingDecision: { id: 'd1' } as never });
     render(<AttentionBar />);
     expect(screen.getByTestId('companion-attention-blocked')).toHaveTextContent('3');
   });
 
   it('toggling a chip writes through to the persisted store both ways', () => {
-    useCompanionStore.setState({ proactive: [nudge('a', 'fleet_failed')] });
+    useAthenaStore.setState({ proactive: [nudge('a', 'fleet_failed')] });
     render(<AttentionBar />);
     const chip = screen.getByTestId('companion-attention-errors');
     expect(chip).toHaveAttribute('aria-expanded', 'false');
 
     fireEvent.click(chip);
-    expect(useSystemStore.getState().companionAlertsExpanded).toContain('errors');
+    expect(useSystemStore.getState().athenaAlertsExpanded).toContain('errors');
     expect(screen.getByTestId('companion-attention-errors')).toHaveAttribute(
       'aria-expanded',
       'true',
     );
 
     fireEvent.click(screen.getByTestId('companion-attention-errors'));
-    expect(useSystemStore.getState().companionAlertsExpanded).not.toContain('errors');
+    expect(useSystemStore.getState().athenaAlertsExpanded).not.toContain('errors');
   });
 
   it('reflects a restored preference from a previous session', () => {
-    useSystemStore.setState({ companionAlertsExpanded: ['nudges'] });
-    useCompanionStore.setState({ proactive: [nudge('a', 'on_this_day')] });
+    useSystemStore.setState({ athenaAlertsExpanded: ['nudges'] });
+    useAthenaStore.setState({ proactive: [nudge('a', 'on_this_day')] });
     render(<AttentionBar />);
     expect(screen.getByTestId('companion-attention-nudges')).toHaveAttribute(
       'aria-expanded',

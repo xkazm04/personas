@@ -21,7 +21,7 @@ import { useSystemStore } from '@/stores/systemStore';
  *   • `fleetSlice`'s three lifecycle listeners never attach, so
  *     `FLEET_SESSION_STATE` never patches `fleetSessions[].state`. The
  *     awaiting-input badge in `PluginsSidebarNav` (the Dev Tools plugin row and
- *     the Fleet sub-tab) therefore never lights up. `useFleetCompanionBridge`
+ *     the Fleet sub-tab) therefore never lights up. `useAthenaFleetBridge`
  *     is *not* a substitute: it keeps a snapshot loosely fresh for Athena's
  *     episode recording, but a state event it can resolve returns without
  *     refreshing, and Rust emits `FLEET_SESSION_STATE` on its own — no paired

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { PendingDecision } from '../decision/types';
 
 /**
@@ -29,14 +29,14 @@ function makeDecision(): PendingDecision {
 
 describe('decision explain then re-ask flow (slice 4)', () => {
   beforeEach(() => {
-    useCompanionStore.getState().clearPendingDecision();
+    useAthenaStore.getState().clearPendingDecision();
   });
 
   it('picking 0 (explain) keeps the decision and its options intact', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.setPendingDecision(makeDecision());
     g.markDecisionExplained();
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     // Still pending — NOT cleared.
     expect(s.pendingDecision?.id).toBe('dec_explain');
     expect(s.pendingDecision?.options).toHaveLength(2);
@@ -46,28 +46,28 @@ describe('decision explain then re-ask flow (slice 4)', () => {
   });
 
   it('after explaining, picking a real option resolves (clears) the decision', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     const decision = makeDecision();
     g.setPendingDecision(decision);
     g.markDecisionExplained();
-    expect(useCompanionStore.getState().decisionExplained).toBe(true);
+    expect(useAthenaStore.getState().decisionExplained).toBe(true);
 
     // Simulate the bubble's pick handler: run the option, then clear.
     decision.options[0]!.run();
     g.clearPendingDecision();
 
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     expect(decision.options[0]!.run).toHaveBeenCalledTimes(1);
     expect(s.pendingDecision).toBeNull();
     expect(s.decisionExplained).toBe(false);
   });
 
   it('explaining is idempotent — repeating 0 stays explained, still pending', () => {
-    const g = useCompanionStore.getState();
+    const g = useAthenaStore.getState();
     g.setPendingDecision(makeDecision());
     g.markDecisionExplained();
     g.markDecisionExplained();
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     expect(s.decisionExplained).toBe(true);
     expect(s.pendingDecision?.id).toBe('dec_explain');
   });

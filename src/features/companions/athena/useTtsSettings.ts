@@ -10,7 +10,7 @@ import { useSystemStore } from '@/stores/systemStore';
  * verbatim and the backend applies its defaults.
  */
 export function useTtsSettings(): TtsSettings | undefined {
-  const speed = useSystemStore((s) => s.companionVoiceSpeed);
+  const speed = useSystemStore((s) => s.athenaVoiceSpeed);
 
   return useMemo<TtsSettings | undefined>(
     () => (speed == null ? undefined : { speed }),

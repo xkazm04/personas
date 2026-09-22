@@ -133,12 +133,12 @@ export default function PersonaOverviewPage() {
     usePersonaShareActions({ selectedIds, setSelectedIds });
 
   // First-run: the empty roster's intent field seeds the creator through the
-  // same `companionPrefill` channel Athena's `prefill_persona_create` uses, so
+  // same `athenaPrefill` channel Athena's `prefill_persona_create` uses, so
   // the build surface opens on the user's own words (and its own template
   // suggestion can then offer the match they picked) rather than a blank glyph.
   const handleStartFromIntent = useCallback(
     (intent: string, match: CompanionTemplateMatch | null) => {
-      useSystemStore.getState().setCompanionPrefill({
+      useSystemStore.getState().setAthenaPrefill({
         intent,
         name: match?.name ?? null,
         autoLaunch: false,

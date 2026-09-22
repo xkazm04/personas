@@ -154,7 +154,7 @@ export interface ToolEvents {
 /**
  * Parse a CLI line for tool-call lifecycle events: `tool_use` blocks on an
  * `assistant` line start a tool; `tool_result` blocks on a `user` line
- * finish one (keyed by `tool_use_id`). Used by CompanionPanel to time
+ * finish one (keyed by `tool_use_id`). Used by AthenaChatPanel to time
  * in-turn tool calls and surface the slow ones as tasks. Returns empty
  * arrays for lines that carry neither (the common case).
  */

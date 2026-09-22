@@ -1,11 +1,11 @@
 import { Clock, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Async-UX phase 4 — the strip of messages the user sent while a turn was
  * still streaming. Each waits its turn (FIFO) and is drained one-per-turn-
- * completion by CompanionPanel; the user can cancel any still-pending one
+ * completion by AthenaChatPanel; the user can cancel any still-pending one
  * here. Renders nothing when the queue is empty. Mounted just above the
  * composer so "what's waiting to send" sits next to where it was typed.
  */
@@ -13,9 +13,9 @@ export function QueuedMessages() {
   const { t } = useTranslation();
   // The flat mirror = the ACTIVE conversation's queue; removals target the
   // same conversation the strip is showing.
-  const queued = useCompanionStore((s) => s.queuedMessages);
-  const activeConversationId = useCompanionStore((s) => s.activeConversationId);
-  const remove = useCompanionStore((s) => s.removeQueuedMessage);
+  const queued = useAthenaStore((s) => s.queuedMessages);
+  const activeConversationId = useAthenaStore((s) => s.activeConversationId);
+  const remove = useAthenaStore((s) => s.removeQueuedMessage);
   if (queued.length === 0) return null;
 
   return (

@@ -25,7 +25,7 @@ import {
 } from '@/api/companion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { silentCatch } from '@/lib/silentCatch';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from '../athenaStore';
 import {
   extractAssistantText,
   extractAssistantTextDelta,
@@ -56,7 +56,7 @@ export function useAthenaChatStream(args: {
         // The backend stamps the conversation id (`sessionId` on the wire) on
         // every stream event; old events without one target the default thread.
         const conv = ev.sessionId ?? DEFAULT_CONVERSATION_ID;
-        const store = useCompanionStore.getState();
+        const store = useAthenaStore.getState();
         const isActive = conv === store.activeConversationId;
         // Silence is what we surface as "still working", so every focused-thread
         // event resets the clock. Background threads have no visible bubble.
@@ -158,7 +158,7 @@ export function useAthenaChatStream(args: {
           companionListRecentMessages(50, conv)
             .then((msgs) => {
               // Re-check focus — the user may have switched mid-refetch.
-              const live = useCompanionStore.getState();
+              const live = useAthenaStore.getState();
               if (live.activeConversationId === conv) live.setMessages(msgs);
               // Give the orb badge its words. `setUnreadPreview` no-ops when
               // the panel was opened in between, so a slow refetch can't

@@ -15,7 +15,7 @@ import {
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 /**
  * The "make this go away" button. Clears every UI channel immediately so the
@@ -24,7 +24,7 @@ import { useCompanionStore } from '../companionStore';
  * is still placeholder-shaped) re-enters onboarding mode.
  */
 export async function resetConversation(): Promise<void> {
-  const store = useCompanionStore.getState();
+  const store = useAthenaStore.getState();
   store.setMessages([]);
   store.setApprovals([]);
   store.setQuickReplies([]);
@@ -44,7 +44,7 @@ export async function resetConversation(): Promise<void> {
   } catch (err: unknown) {
     // Refetch so the UI reflects whatever actually stuck on the backend.
     companionListRecentMessages(50, conversationId)
-      .then((msgs) => useCompanionStore.getState().setMessages(msgs))
+      .then((msgs) => useAthenaStore.getState().setMessages(msgs))
       .catch(silentCatch('companion_list_recent_messages'));
     silentCatch('companion_reset_conversation')(err);
   }
@@ -56,7 +56,7 @@ export async function resetConversation(): Promise<void> {
  * see the Zustand flag.
  */
 export function setAutonomousMode(next: boolean): void {
-  useSystemStore.getState().setCompanionAutonomousMode(next);
+  useSystemStore.getState().setAthenaAutonomousMode(next);
   companionSetAutonomousMode(next).catch(silentCatch('companion_set_autonomous_mode'));
   if (!next) {
     // Switching OFF drops any scheduled continuation, so a tick that was about
@@ -67,6 +67,6 @@ export function setAutonomousMode(next: boolean): void {
 
 /** Flip dev mode. The prompt assembler and `dev_improve` read the settings row. */
 export function setDevMode(next: boolean): void {
-  useSystemStore.getState().setCompanionDevMode(next);
+  useSystemStore.getState().setAthenaDevMode(next);
   companionSetDevMode(next).catch(silentCatch('companion_set_dev_mode'));
 }

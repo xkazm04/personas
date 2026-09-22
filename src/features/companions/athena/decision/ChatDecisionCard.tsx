@@ -2,7 +2,7 @@ import { Lightbulb, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { explainDecision, runDecisionOption } from './resolveDecision';
 
 /**
@@ -27,17 +27,17 @@ import { explainDecision, runDecisionOption } from './resolveDecision';
  */
 export function ChatDecisionCard() {
   const { t } = useTranslation();
-  const decision = useCompanionStore((s) => s.pendingDecision);
-  const companionState = useCompanionStore((s) => s.state);
-  const explained = useCompanionStore((s) => s.decisionExplained);
-  const composing = useCompanionStore((s) => s.explainComposing);
-  const composeError = useCompanionStore((s) => s.explainComposeError);
-  const runError = useCompanionStore((s) => s.decisionError);
+  const decision = useAthenaStore((s) => s.pendingDecision);
+  const athenaState = useAthenaStore((s) => s.state);
+  const explained = useAthenaStore((s) => s.decisionExplained);
+  const composing = useAthenaStore((s) => s.explainComposing);
+  const composeError = useAthenaStore((s) => s.explainComposeError);
+  const runError = useAthenaStore((s) => s.decisionError);
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
 
   // Exact complement of `OrbDecisionBubble`'s visibility predicate — never both,
   // never neither.
-  const bubbleShowing = companionState === 'minimized' || fleetGridOpen;
+  const bubbleShowing = athenaState === 'minimized' || fleetGridOpen;
   if (!decision || bubbleShowing) return null;
 
   return (

@@ -32,23 +32,23 @@ import { SensorySignalsModal } from './SensorySignalsModal';
 export default function SetupPanel() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
-  const setFooterEnabled = useSystemStore((s) => s.setCompanionFooterEnabled);
-  const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
-  const setSoundEnabled = useSystemStore((s) => s.setCompanionSoundEnabled);
-  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
-  const setOrbEnabled = useSystemStore((s) => s.setCompanionOrbEnabled);
+  const footerEnabled = useSystemStore((s) => s.athenaFooterEnabled);
+  const setFooterEnabled = useSystemStore((s) => s.setAthenaFooterEnabled);
+  const soundEnabled = useSystemStore((s) => s.athenaSoundEnabled);
+  const setSoundEnabled = useSystemStore((s) => s.setAthenaSoundEnabled);
+  const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
+  const setOrbEnabled = useSystemStore((s) => s.setAthenaOrbEnabled);
   const recallSynthesisEnabled = useSystemStore(
-    (s) => s.companionRecallSynthesisEnabled,
+    (s) => s.athenaRecallSynthesisEnabled,
   );
   const setRecallSynthesisEnabled = useSystemStore(
-    (s) => s.setCompanionRecallSynthesisEnabled,
+    (s) => s.setAthenaRecallSynthesisEnabled,
   );
   const handsFreeDecisions = useSystemStore(
-    (s) => s.companionHandsFreeDecisions,
+    (s) => s.athenaHandsFreeDecisions,
   );
   const setHandsFreeDecisions = useSystemStore(
-    (s) => s.setCompanionHandsFreeDecisions,
+    (s) => s.setAthenaHandsFreeDecisions,
   );
 
   const [trackingEnabled, setTrackingEnabled] = useState<boolean | null>(null);
@@ -86,7 +86,7 @@ export default function SetupPanel() {
   );
 
   const [devAvailable, setDevAvailable] = useState<boolean | null>(null);
-  const devMode = useSystemStore((s) => s.companionDevMode);
+  const devMode = useSystemStore((s) => s.athenaDevMode);
   useEffect(() => {
     let cancelled = false;
     companionBetaFlags()

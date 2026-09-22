@@ -12,7 +12,7 @@ import { create } from 'zustand';
  * text format is allowed to evolve freely — the strip just renders
  * whatever the backend returns.
  *
- * Why a separate store from companionStore: digest mutations fire at
+ * Why a separate store from athenaStore: digest mutations fire at
  * sub-second cadence during active orchestration (every tool call,
  * every checkpoint). Mixing into the main store would cause the chat
  * panel and ApprovalCards to re-render on noise unrelated to them.

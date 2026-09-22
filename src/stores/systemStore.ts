@@ -28,7 +28,7 @@ import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
-import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import { createAthenaSlice, remapLegacyAthenaFields } from "./slices/system/athenaSlice";
 import { createRadioSlice } from "./slices/system/radioSlice";
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -51,7 +51,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createAmbientContextSlice(...a),
       ...createObsidianBrainSlice(...a),
       ...createTwinSlice(...a),
-      ...createCompanionPluginSlice(...a),
+      ...createAthenaSlice(...a),
       ...createRadioSlice(...a),
     }),
     {
@@ -112,26 +112,26 @@ export const useSystemStore = create<SystemStore>()(
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
         companionPluginTab: state.companionPluginTab,
-        companionFooterEnabled: state.companionFooterEnabled,
-        companionPanelCompact: state.companionPanelCompact,
-        companionSidePanelSlot: state.companionSidePanelSlot,
-        companionOrbEnabled: state.companionOrbEnabled,
-        companionOrbPos: state.companionOrbPos,
-        companionSttEngine: state.companionSttEngine,
-        companionSttModelId: state.companionSttModelId,
-        companionGlobalHotkeyEnabled: state.companionGlobalHotkeyEnabled,
-        companionSoundEnabled: state.companionSoundEnabled,
-        companionVoiceEnabled: state.companionVoiceEnabled,
-        companionVoiceEngine: state.companionVoiceEngine,
-        companionKokoroVoiceId: state.companionKokoroVoiceId,
-        companionPocketVoiceId: state.companionPocketVoiceId,
-        companionVoiceSpeed: state.companionVoiceSpeed,
-        companionVoiceVolume: state.companionVoiceVolume,
-        companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
-        companionAutonomousMode: state.companionAutonomousMode,
-        companionDevMode: state.companionDevMode,
-        companionHandsFreeDecisions: state.companionHandsFreeDecisions,
-        companionAlertsExpanded: state.companionAlertsExpanded,
+        athenaFooterEnabled: state.athenaFooterEnabled,
+        athenaPanelCompact: state.athenaPanelCompact,
+        athenaSidePanelSlot: state.athenaSidePanelSlot,
+        athenaOrbEnabled: state.athenaOrbEnabled,
+        athenaOrbPos: state.athenaOrbPos,
+        athenaSttEngine: state.athenaSttEngine,
+        athenaSttModelId: state.athenaSttModelId,
+        athenaGlobalHotkeyEnabled: state.athenaGlobalHotkeyEnabled,
+        athenaSoundEnabled: state.athenaSoundEnabled,
+        athenaVoiceEnabled: state.athenaVoiceEnabled,
+        athenaVoiceEngine: state.athenaVoiceEngine,
+        athenaKokoroVoiceId: state.athenaKokoroVoiceId,
+        athenaPocketVoiceId: state.athenaPocketVoiceId,
+        athenaVoiceSpeed: state.athenaVoiceSpeed,
+        athenaVoiceVolume: state.athenaVoiceVolume,
+        athenaRecallSynthesisEnabled: state.athenaRecallSynthesisEnabled,
+        athenaAutonomousMode: state.athenaAutonomousMode,
+        athenaDevMode: state.athenaDevMode,
+        athenaHandsFreeDecisions: state.athenaHandsFreeDecisions,
+        athenaAlertsExpanded: state.athenaAlertsExpanded,
         athenaOnboardingStep: state.athenaOnboardingStep,
         athenaOnboardingCompletedAt: state.athenaOnboardingCompletedAt,
         radioEnabled: state.radioEnabled,
@@ -142,6 +142,18 @@ export const useSystemStore = create<SystemStore>()(
         monitorCollapsedGroups: state.monitorCollapsedGroups,
         monitorLiveMode: state.monitorLiveMode,
         homeHiddenSections: state.homeHiddenSections,
+      }),
+      /**
+       * Zustand's default merge, plus the one rename this blob has to survive:
+       * Athena's settings were persisted under `companion*` names before the
+       * Companions rename. Doing it here rather than in `onRehydrateStorage`
+       * is deliberate — `merge` sees the stored blob itself, so the old value
+       * is on the new field before the store is ever `set`, and no consumer
+       * can read the default in between.
+       */
+      merge: (persisted, current) => ({
+        ...current,
+        ...remapLegacyAthenaFields(persisted),
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

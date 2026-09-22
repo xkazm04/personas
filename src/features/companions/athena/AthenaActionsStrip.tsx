@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Durable, in-chat ledger of everything Athena did WITHOUT asking this session
@@ -22,8 +22,8 @@ import { useCompanionStore } from './companionStore';
 export function AthenaActionsStrip() {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const actions = useCompanionStore((s) => s.athenaActions);
-  const clearAthenaActions = useCompanionStore((s) => s.clearAthenaActions);
+  const actions = useAthenaStore((s) => s.athenaActions);
+  const clearAthenaActions = useAthenaStore((s) => s.clearAthenaActions);
 
   if (actions.length === 0) return null;
 

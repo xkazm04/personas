@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createDedupedJSONStorage } from '@/stores/util/dedupedStorage';
-import type { CompanionState } from './types';
+import type { AthenaPanelState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
 import type { TodoStep } from './operationalSteps';
 import type { NarrationEntry, StoredNarration } from './narrationTimeline';
@@ -159,9 +159,9 @@ export interface AthenaAction {
   createdAt: number;
 }
 
-interface CompanionStore {
+interface AthenaStore {
   // UI state
-  state: CompanionState;
+  state: AthenaPanelState;
   // Init
   brainPath: string | null;
   initError: string | null;
@@ -232,7 +232,7 @@ interface CompanionStore {
   setUnreadPreview: (preview: string) => void;
   clearUnreadReplies: () => void;
 
-  setState: (state: CompanionState) => void;
+  setState: (state: AthenaPanelState) => void;
   setBrainPath: (path: string | null) => void;
   setInitError: (error: string | null) => void;
   setInitialized: (value: boolean) => void;
@@ -402,7 +402,7 @@ interface CompanionStore {
    * hold-to-talk affordance). Distinct from `pendingPrompt` on purpose:
    * `pendingPrompt` seeds the composer draft and is only consumed while
    * the panel — and therefore the Composer — is mounted. `voiceTurnRequest`
-   * is consumed by an always-mounted effect in `CompanionPanel` so the
+   * is consumed by an always-mounted effect in `AthenaChatPanel` so the
    * user can speak to Athena and hear her reply (via the existing TTS +
    * footer Play / notice pipeline) without ever opening the panel.
    *
@@ -418,7 +418,7 @@ interface CompanionStore {
    * Voice settings panel live in different trees: `SttPanel` reads this to
    * disable the STT-engine switch mid-capture. Switching engine while the mic
    * is live swaps the active dictation hook (selected purely from
-   * `companionSttEngine`) and would otherwise strand the running mic.
+   * `athenaSttEngine`) and would otherwise strand the running mic.
    */
   voiceCaptureActive: boolean;
   setVoiceCaptureActive: (value: boolean) => void;
@@ -457,7 +457,7 @@ interface CompanionStore {
 
   /**
    * Screen-space center (viewport px) of the orb at the moment the user
-   * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
+   * tapped it to open the chat. Lets `AthenaChatPanel` animate its entrance
    * from the orb's position (and exit back toward it) for an orb→panel
    * morph. Null when the panel was opened from somewhere other than the orb
    * (e.g. the footer), in which case the panel uses its default entrance.
@@ -515,7 +515,7 @@ interface CompanionStore {
   /**
    * Async-UX phase 4b — long in-turn tool calls surfaced as tasks. When a
    * tool_use block in Athena's CLI stream (WebFetch, Bash, a Task subagent,
-   * any MCP tool) stays pending past a threshold, CompanionPanel synthesizes
+   * any MCP tool) stays pending past a threshold, AthenaChatPanel synthesizes
    * a `BackgroundJob` here keyed by the tool_use id, so the slow call shows
    * in the activity tray + as an orb dot rather than as a frozen, silent
    * turn. These are NOT real `companion_background_job` rows (they live only
@@ -531,7 +531,7 @@ interface CompanionStore {
    * Async-UX phase 4 — non-blocking conversation. Messages the user sent
    * while a turn was still streaming, keyed by conversation id (each
    * thread drains its own queue when ITS turn completes). FIFO; drained
-   * one-per-turn-completion by CompanionPanel. `mode` records how the
+   * one-per-turn-completion by AthenaChatPanel. `mode` records how the
    * message was classified at send time: an `interrupt` also stopped the
    * in-flight turn; a `queue` simply waits its turn. The composer is never
    * disabled — this is where mid-turn input lands instead of being blocked.
@@ -702,7 +702,7 @@ interface CompanionStore {
   /**
    * Explain-in-Cockpit composing state. True from the moment `0` escalates
    * into a `decision-explain` turn until either the `explain_in_cockpit`
-   * event lands (CompanionPanel listener clears it) or the turn finishes
+   * event lands (AthenaChatPanel listener clears it) or the turn finishes
    * without emitting the op. Drives the orb's `composing` avatar clip and
    * the bubble's processing row. `explainComposeError` is a short token
    * (`'no-spec' | 'turn-failed'`) the bubble maps to a translated fallback
@@ -716,7 +716,7 @@ interface CompanionStore {
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
- *  a chat-side card. Populated by `useCompanionAssignmentBridge`. */
+ *  a chat-side card. Populated by `useAthenaAssignmentBridge`. */
 export interface AthenaAssignmentRef {
   assignmentId: string;
   teamId: string;
@@ -776,11 +776,11 @@ const IDLE_LIVE_TURN: LiveTurn = {
  * conversation, the flat mirror fields ride in the same patch.
  */
 function withLiveTurn(
-  s: CompanionStore,
+  s: AthenaStore,
   conversationId: string,
   next: LiveTurn,
-): Partial<CompanionStore> {
-  const patch: Partial<CompanionStore> = {
+): Partial<AthenaStore> {
+  const patch: Partial<AthenaStore> = {
     liveTurns: { ...s.liveTurns, [conversationId]: next },
   };
   if (conversationId === s.activeConversationId) {
@@ -794,11 +794,11 @@ function withLiveTurn(
 
 /** Same mirror-upholding patch builder for the per-conversation queue. */
 function withQueue(
-  s: CompanionStore,
+  s: AthenaStore,
   conversationId: string,
   next: QueuedMessage[],
-): Partial<CompanionStore> {
-  const patch: Partial<CompanionStore> = {
+): Partial<AthenaStore> {
+  const patch: Partial<AthenaStore> = {
     queuedByConversation: { ...s.queuedByConversation, [conversationId]: next },
   };
   if (conversationId === s.activeConversationId) {
@@ -807,7 +807,7 @@ function withQueue(
   return patch;
 }
 
-export const useCompanionStore = create<CompanionStore>()(
+export const useAthenaStore = create<AthenaStore>()(
   persist(
     (set, get) => ({
   state: 'collapsed',
@@ -1133,7 +1133,7 @@ export const useCompanionStore = create<CompanionStore>()(
   connectorJobIdsByEpisodeId: {},
   upsertJob: (job) =>
     set((s) => {
-      const next: Partial<CompanionStore> = {
+      const next: Partial<AthenaStore> = {
         jobsById: { ...s.jobsById, [job.id]: job },
       };
       // Pin tasks spawned by a turn under the spawning bubble (in-chat
@@ -1440,13 +1440,18 @@ export const useCompanionStore = create<CompanionStore>()(
  * row (title / unread / status) changes.
  */
 export function useActiveConversation(): ConversationRow | undefined {
-  return useCompanionStore((s) =>
+  return useAthenaStore((s) =>
     s.conversations.find((c) => c.id === s.activeConversationId),
   );
 }
 
 // Dev-only: expose for the test-automation bridge (e.g. verifying the orb-fly
 // target during Studio orb-pointer runs). Absent from production builds.
+//
+// THE GLOBAL'S NAME IS WIRE, not a symbol: harness scripts and ad-hoc
+// `/bridge-exec` probes reach it as `window.__companionStore` from outside the
+// bundle, where nothing would fail to compile if it were renamed. It keeps the
+// old spelling for the same reason the bridge method names do.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__companionStore = useCompanionStore;
+  (window as unknown as Record<string, unknown>).__companionStore = useAthenaStore;
 }

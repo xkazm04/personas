@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-const setCompanionPrefill = vi.fn();
+const setAthenaPrefill = vi.fn();
 const setSidebarSection = vi.fn();
 
 vi.mock('@/stores/systemStore', () => {
@@ -9,7 +9,7 @@ vi.mock('@/stores/systemStore', () => {
   const hook = (selector: (s: Record<string, unknown>) => unknown) =>
     selector(state);
   (hook as unknown as { getState: () => unknown }).getState = () => ({
-    setCompanionPrefill,
+    setAthenaPrefill,
     setSidebarSection,
   });
   return { useSystemStore: hook };
@@ -18,7 +18,7 @@ vi.mock('@/stores/systemStore', () => {
 import { PersonaReadyWidget } from '../PersonaReadyWidget';
 
 beforeEach(() => {
-  setCompanionPrefill.mockReset();
+  setAthenaPrefill.mockReset();
   setSidebarSection.mockReset();
 });
 
@@ -59,8 +59,8 @@ describe('PersonaReadyWidget', () => {
       />,
     );
     fireEvent.click(screen.getByTestId('companion-persona-ready-commit'));
-    expect(setCompanionPrefill).toHaveBeenCalledTimes(1);
-    const payload = setCompanionPrefill.mock.calls[0][0];
+    expect(setAthenaPrefill).toHaveBeenCalledTimes(1);
+    const payload = setAthenaPrefill.mock.calls[0][0];
     expect(payload.intent).toBe(
       'Triage support tickets by category and priority.',
     );
@@ -79,7 +79,7 @@ describe('PersonaReadyWidget', () => {
       />,
     );
     fireEvent.click(screen.getByTestId('companion-persona-ready-commit'));
-    const payload = setCompanionPrefill.mock.calls[0][0];
+    const payload = setAthenaPrefill.mock.calls[0][0];
     expect(payload.autoLaunch).toBe(true);
     expect(payload.mode).toBe('one_shot');
     expect(setSidebarSection).toHaveBeenCalledWith('personas');
@@ -95,7 +95,7 @@ describe('PersonaReadyWidget', () => {
       />,
     );
     fireEvent.click(screen.getByTestId('companion-persona-ready-commit'));
-    expect(setCompanionPrefill).not.toHaveBeenCalled();
+    expect(setAthenaPrefill).not.toHaveBeenCalled();
     expect(setSidebarSection).toHaveBeenCalledWith('design-reviews');
   });
 

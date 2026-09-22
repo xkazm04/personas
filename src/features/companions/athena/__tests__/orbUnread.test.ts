@@ -7,16 +7,16 @@
 // reading, and opening the chat is the ONLY thing that clears it.
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { ProactiveMessage } from '../types';
 
-const store = () => useCompanionStore.getState();
+const store = () => useAthenaStore.getState();
 
 const proactive = (id: string): ProactiveMessage =>
   ({ id, body: 'Something came up.' }) as unknown as ProactiveMessage;
 
 beforeEach(() => {
-  useCompanionStore.setState({ unreadReplies: 0, state: 'minimized', proactive: [] });
+  useAthenaStore.setState({ unreadReplies: 0, state: 'minimized', proactive: [] });
 });
 
 describe('orb unread indicator', () => {
@@ -27,14 +27,14 @@ describe('orb unread indicator', () => {
   });
 
   it('counts them while Athena is fully dismissed too', () => {
-    useCompanionStore.setState({ state: 'collapsed' });
+    useAthenaStore.setState({ state: 'collapsed' });
     store().noteIncomingReply();
     // Dismissed is not "read" — the badge must be waiting when she returns.
     expect(store().unreadReplies).toBe(1);
   });
 
   it('does NOT count a reply the user is already watching arrive', () => {
-    useCompanionStore.setState({ state: 'open' });
+    useAthenaStore.setState({ state: 'open' });
     store().noteIncomingReply();
     expect(store().unreadReplies).toBe(0);
   });
@@ -71,7 +71,7 @@ describe('orb unread indicator', () => {
   });
 
   it('does not badge a proactive message delivered into an open chat', () => {
-    useCompanionStore.setState({ state: 'open' });
+    useAthenaStore.setState({ state: 'open' });
     store().appendProactive(proactive('p1'));
     expect(store().proactive).toHaveLength(1);
     expect(store().unreadReplies).toBe(0);

@@ -7,7 +7,7 @@
  * decides anything. It names what is waiting, on which tab, and points at the
  * orb — which is already showing the numbered choice.
  *
- * Reading the pending item: `companionStore.pendingDecision` is the one the
+ * Reading the pending item: `athenaStore.pendingDecision` is the one the
  * orb is showing, and an approval-sourced decision carries its approval's
  * `action` + `params` in `payload` (built in `decision/useDecisionQueue.ts`).
  * That is a JSON STRING of a JSON STRING, so it is parsed defensively and
@@ -16,7 +16,7 @@
 import { AlertCircle } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 
 /** The browser ops that file an approval (WP3: `browser_act`, `browser_login`). */
 const BROWSER_ACTIONS = new Set(['browser_act', 'browser_login']);
@@ -51,7 +51,7 @@ export function pendingBrowserTabId(payload: string | undefined): number | null 
 
 export default function PendingApprovalBar({ tabId }: { tabId: number | null }) {
   const { t } = useTranslation();
-  const pending = useCompanionStore((s) => s.pendingDecision);
+  const pending = useAthenaStore((s) => s.pendingDecision);
 
   if (!pending || pending.source !== 'approval' || tabId === null) return null;
   if (pendingBrowserTabId(pending.payload) !== tabId) return null;

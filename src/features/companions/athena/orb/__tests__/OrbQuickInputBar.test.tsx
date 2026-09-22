@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { OrbQuickInputBar } from '../OrbQuickInputBar';
-import { useCompanionStore } from '../../companionStore';
+import { useAthenaStore } from '../../athenaStore';
 
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
@@ -42,7 +42,7 @@ describe('OrbQuickInputBar', () => {
     dictationState.listening = false;
     dictationState.finalText = '';
     dictationState.interimText = '';
-    useCompanionStore.setState({ messages: [], streaming: false, voiceTurnRequest: null });
+    useAthenaStore.setState({ messages: [], streaming: false, voiceTurnRequest: null });
   });
 
   afterEach(() => {
@@ -57,21 +57,21 @@ describe('OrbQuickInputBar', () => {
 
     // The orb's quick-input bar is the USER typing, so the request carries no
     // provenance source — it must stay indistinguishable from a composer send.
-    expect(useCompanionStore.getState().voiceTurnRequest).toEqual({ text: 'quick hello' });
+    expect(useAthenaStore.getState().voiceTurnRequest).toEqual({ text: 'quick hello' });
     expect(input.value).toBe('');
   });
 
   it('does not submit while a turn is already streaming', () => {
-    useCompanionStore.setState({ streaming: true });
+    useAthenaStore.setState({ streaming: true });
     render(<OrbQuickInputBar onClose={vi.fn()} />);
     const input = screen.getByTestId('orb-quick-input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'ignored while busy' } });
     expect(screen.getByTestId('orb-quick-input-send')).toBeDisabled();
-    expect(useCompanionStore.getState().voiceTurnRequest).toBeNull();
+    expect(useAthenaStore.getState().voiceTurnRequest).toBeNull();
   });
 
   it('shows the last assistant message above the input', () => {
-    useCompanionStore.setState({
+    useAthenaStore.setState({
       messages: [
         { id: '1', role: 'user', content: 'hi', createdAt: '' },
         { id: '2', role: 'assistant', content: 'Here is my reply', createdAt: '' },

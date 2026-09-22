@@ -26,7 +26,7 @@
  */
 import { useCallback } from 'react';
 
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 export type AskAthena = (source: string, text: string) => void;
 
@@ -34,6 +34,6 @@ export function useAskAthena(): AskAthena {
   return useCallback((source: string, text: string) => {
     const body = text.trim();
     if (!body) return;
-    useCompanionStore.getState().setPendingChatPrompt({ text: body, source });
+    useAthenaStore.getState().setPendingChatPrompt({ text: body, source });
   }, []);
 }

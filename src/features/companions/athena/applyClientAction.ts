@@ -31,7 +31,7 @@ const VALID_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
-const VALID_COMPANION_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions'] as const;
+const VALID_ATHENA_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions'] as const;
 
 export function applyClientAction(action: ClientAction): void {
   if (action.type === 'navigate') {
@@ -44,7 +44,7 @@ export function applyClientAction(action: ClientAction): void {
     // Phase F: stash the prefill payload, then switch to the personas
     // section. UnifiedBuildEntry consumes the payload on mount (or on
     // next render if it's already mounted) and clears it.
-    useSystemStore.getState().setCompanionPrefill({
+    useSystemStore.getState().setAthenaPrefill({
       intent: action.intent,
       name: action.name,
       autoLaunch: action.autoLaunch,
@@ -61,13 +61,13 @@ export function applyClientAction(action: ClientAction): void {
     // sub-tab inside the companion plugin. Order matters — sidebar
     // first so the route renders, then the tabs land before the
     // plugin page reads them on mount.
-    if (!(VALID_COMPANION_TABS as readonly string[]).includes(action.tab)) {
+    if (!(VALID_ATHENA_TABS as readonly string[]).includes(action.tab)) {
       return;
     }
     const sys = useSystemStore.getState();
     sys.setSidebarSection('plugins');
     sys.setPluginTab('companion');
-    sys.setCompanionPluginTab(action.tab as (typeof VALID_COMPANION_TABS)[number]);
+    sys.setCompanionPluginTab(action.tab as (typeof VALID_ATHENA_TABS)[number]);
     return;
   }
   if (action.type === 'open_external_url') {

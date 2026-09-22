@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
 import { useGlobalVoiceHotkey } from '../useGlobalVoiceHotkey';
 import { useHoldToTalk } from '../useHoldToTalk';
@@ -26,11 +26,11 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * Root-level host for Athena's floating orb. Mounted once in `App.tsx` (next
- * to `CompanionPanel`) and portal'd to `document.body` so the orb floats
+ * to `AthenaChatPanel`) and portal'd to `document.body` so the orb floats
  * above app content and survives route changes without re-mounting (its
  * video loop keeps running).
  *
- * The orb is shown only while `companionState === 'minimized'`. When the orb
+ * The orb is shown only while `athenaState === 'minimized'`. When the orb
  * feature is enabled and Athena is otherwise dormant (`collapsed`), this
  * promotes her to `minimized` once on mount so the presence is there from
  * launch; the user can dismiss it (→ `collapsed`) and it stays dismissed for
@@ -41,7 +41,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
  * dictation session — sharing one source of `talking`/caption state.
  */
 export default function AthenaOrbLayer() {
-  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
   // While a full-screen overlay is up, float the orb above it so Athena stays
   // visible and reactable there; otherwise the normal z-50.
   //
@@ -56,8 +56,8 @@ export default function AthenaOrbLayer() {
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const monitorOpen = useSystemStore((s) => s.headerOverlay === 'monitor');
   const overOverlay = fleetGridOpen || monitorOpen;
-  const state = useCompanionStore((s) => s.state);
-  const setState = useCompanionStore((s) => s.setState);
+  const state = useAthenaStore((s) => s.state);
+  const setState = useAthenaStore((s) => s.setState);
   const talk = useHoldToTalk();
   // Compact quick-message bar toggle (see OrbQuickInputBar). Local state, not
   // persisted — declared before the `orbEnabled`/`state` early return below so
@@ -76,7 +76,7 @@ export default function AthenaOrbLayer() {
 
   // Surface the orb on launch when enabled and Athena is dormant.
   useEffect(() => {
-    if (orbEnabled && useCompanionStore.getState().state === 'collapsed') {
+    if (orbEnabled && useAthenaStore.getState().state === 'collapsed') {
       setState('minimized');
     }
   }, [orbEnabled, setState]);
@@ -94,7 +94,7 @@ export default function AthenaOrbLayer() {
   // never drift into doing subtly different things on the same keys.
   const summonVoice = useCallback(() => {
     if (!orbEnabled) {
-      const cur = useCompanionStore.getState().state;
+      const cur = useAthenaStore.getState().state;
       setState(cur === 'open' ? 'collapsed' : 'open');
       return;
     }
@@ -102,7 +102,7 @@ export default function AthenaOrbLayer() {
       stop();
       return;
     }
-    if (useCompanionStore.getState().state !== 'minimized') {
+    if (useAthenaStore.getState().state !== 'minimized') {
       setState('minimized');
     }
     if (supported) start();
@@ -132,7 +132,7 @@ export default function AthenaOrbLayer() {
       // decision is pending and the user isn't typing into a field (`;` and
       // digits are common literals). Read `pendingDecision` via getState() so
       // the once-registered listener never stale-closes over it.
-      const decision = useCompanionStore.getState().pendingDecision;
+      const decision = useAthenaStore.getState().pendingDecision;
       const mods = e.ctrlKey || e.metaKey || e.altKey;
       if (decision && !mods && !isTypingTarget(e.target)) {
         if (leader.armed) {

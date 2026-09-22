@@ -25,7 +25,7 @@ const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
  * panel. (The former Dashboard tab was retired — Cockpit is the dynamic
  * dashboard surface now.)
  */
-export default function CompanionPluginPage() {
+export default function AthenaPage() {
   const { t } = useTranslation();
   const tab = useSystemStore((s) => s.companionPluginTab);
 

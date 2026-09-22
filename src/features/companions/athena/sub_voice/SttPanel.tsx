@@ -19,7 +19,7 @@ import { GlobalHotkeyCard } from './GlobalHotkeyCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { VoiceEngineInstallBlock } from './voiceEngineShared';
@@ -47,13 +47,13 @@ import {
  */
 export default function SttPanel() {
   const { t } = useTranslation();
-  const engine = useSystemStore((s) => s.companionSttEngine);
-  const setEngine = useSystemStore((s) => s.setCompanionSttEngine);
+  const engine = useSystemStore((s) => s.athenaSttEngine);
+  const setEngine = useSystemStore((s) => s.setAthenaSttEngine);
   // Block engine switching while a hold-to-talk capture is live: the active
   // dictation hook is selected purely from this value, so flipping it mid-
   // capture would swap the controller's hook reference and strand the running
   // mic. The capture hooks (footer/orb) mirror their state into this flag.
-  const captureActive = useCompanionStore((s) => s.voiceCaptureActive);
+  const captureActive = useAthenaStore((s) => s.voiceCaptureActive);
   const [compareOpen, setCompareOpen] = useState(false);
 
   return (
@@ -154,8 +154,8 @@ function EngineButton({ active, onClick, icon, label, caption, disabled = false 
 
 function WhisperConfig() {
   const { t, tx } = useTranslation();
-  const modelId = useSystemStore((s) => s.companionSttModelId);
-  const setModelId = useSystemStore((s) => s.setCompanionSttModelId);
+  const modelId = useSystemStore((s) => s.athenaSttModelId);
+  const setModelId = useSystemStore((s) => s.setAthenaSttModelId);
 
   const [models, setModels] = useState<WhisperModelListing[] | null>(null);
   const [modelsError, setModelsError] = useState<string | null>(null);

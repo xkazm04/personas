@@ -12,4 +12,4 @@
  *                   transcript). New in the orb-overlay work (Step 2).
  *  - `open`       — the full chat panel is open.
  */
-export type CompanionState = 'closed' | 'collapsed' | 'minimized' | 'open';
+export type AthenaPanelState = 'closed' | 'collapsed' | 'minimized' | 'open';

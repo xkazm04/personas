@@ -15,7 +15,7 @@ vi.mock('@/api/companion', async () => {
 
 import { ConnectorCallCard } from '../ConnectorCallCard';
 import type { BackgroundJob } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 function failedJob(over: Partial<BackgroundJob> = {}): BackgroundJob {
   return {
@@ -40,7 +40,7 @@ function failedJob(over: Partial<BackgroundJob> = {}): BackgroundJob {
 
 beforeEach(() => {
   companionEnqueueJob.mockReset();
-  useCompanionStore.getState().clearAllConnectorJobs();
+  useAthenaStore.getState().clearAllConnectorJobs();
 });
 
 describe('ConnectorCallCard retry', () => {
@@ -113,7 +113,7 @@ describe('ConnectorCallCard retry', () => {
       ).toBeInTheDocument();
     });
     // Feed a running update for the retried job into the store.
-    useCompanionStore.getState().upsertJob({
+    useAthenaStore.getState().upsertJob({
       ...failedJob({ id: 'job_retrynew12345', status: 'running', errorText: null }),
     });
     await waitFor(() => {
@@ -121,7 +121,7 @@ describe('ConnectorCallCard retry', () => {
       expect(row.getAttribute('data-retried-status')).toBe('running');
     });
     // Flip to completed.
-    useCompanionStore.getState().upsertJob({
+    useAthenaStore.getState().upsertJob({
       ...failedJob({
         id: 'job_retrynew12345',
         status: 'completed',

@@ -20,7 +20,7 @@ import { MessageSquareText, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { BubbleReadAloud } from '../BubbleReadAloud';
 import { useTtsSettings } from '../useTtsSettings';
 import { useTtsVoiceSelection } from '../useTtsVoiceSelection';
@@ -34,12 +34,12 @@ export function OrbUnreadBubble() {
   const c = t.plugins.companion;
   const reduceMotion = useReducedMotion();
 
-  const unreadReplies = useCompanionStore((s) => s.unreadReplies);
-  const unreadPreview = useCompanionStore((s) => s.unreadPreview);
-  const companionState = useCompanionStore((s) => s.state);
-  const hasDecision = useCompanionStore((s) => s.pendingDecision != null);
-  const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
-  const orbPos = useSystemStore((s) => s.companionOrbPos);
+  const unreadReplies = useAthenaStore((s) => s.unreadReplies);
+  const unreadPreview = useAthenaStore((s) => s.unreadPreview);
+  const athenaState = useAthenaStore((s) => s.state);
+  const hasDecision = useAthenaStore((s) => s.pendingDecision != null);
+  const orbTarget = useAthenaStore((s) => s.orbGuideTarget);
+  const orbPos = useSystemStore((s) => s.athenaOrbPos);
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
@@ -48,7 +48,7 @@ export function OrbUnreadBubble() {
   // A decision is a question addressed to the operator; a message is news.
   // Never stack them — the question wins and this returns the moment it clears.
   if (hasDecision) return null;
-  if (companionState !== 'minimized' && !fleetGridOpen) return null;
+  if (athenaState !== 'minimized' && !fleetGridOpen) return null;
 
   const dock = orbDock(orbTarget, orbPos);
   const clamped = unreadPreview.length > PREVIEW_CHARS;
@@ -58,7 +58,7 @@ export function OrbUnreadBubble() {
     ? `${unreadPreview.slice(0, unreadPreview.lastIndexOf(' ', PREVIEW_CHARS))}…`
     : unreadPreview;
 
-  const openChat = () => useCompanionStore.getState().setState('open');
+  const openChat = () => useAthenaStore.getState().setState('open');
 
   return (
     <motion.div
@@ -116,7 +116,7 @@ export function OrbUnreadBubble() {
             after the user has read the words here would make it lie. */}
         <button
           type="button"
-          onClick={() => useCompanionStore.getState().clearUnreadReplies()}
+          onClick={() => useAthenaStore.getState().clearUnreadReplies()}
           data-testid="athena-unread-dismiss"
           aria-label={c.orb_unread_dismiss}
           title={c.orb_unread_dismiss}

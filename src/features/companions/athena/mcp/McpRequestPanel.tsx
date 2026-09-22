@@ -18,7 +18,7 @@ import { resolveMcpRequest } from './useMcpRequestBridge';
 
 /**
  * Stack of inline cards for in-flight MCP requests. Mounted inside
- * CompanionPanel above the message list so the user sees blocking
+ * AthenaChatPanel above the message list so the user sees blocking
  * questions immediately. One card per pending request; resolves are
  * one-shot — the card disappears the moment the user clicks.
  *

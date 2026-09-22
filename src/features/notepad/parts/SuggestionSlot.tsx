@@ -7,7 +7,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { DeferredMarkdown } from '@/features/shared/components/editors/DeferredMarkdown';
 import { resolveNoteSuggestion } from '@/api/notepad';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 
@@ -72,7 +72,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
   const answerHer = async () => {
     const text = answer.trim();
     if (!text) return;
-    useCompanionStore.getState().setPendingChatPrompt({
+    useAthenaStore.getState().setPendingChatPrompt({
       text: `About the note suggestion "${row.bodyMd}" — ${text}`,
       source: 'notepad',
     });

@@ -22,8 +22,8 @@ const LEVELS: readonly FleetBoldnessLevel[] = ['cautious', 'balanced', 'bold'] a
 export function FleetBoldnessDial() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const level = useSystemStore((s) => s.companionFleetBoldness);
-  const setLevel = useSystemStore((s) => s.setCompanionFleetBoldness);
+  const level = useSystemStore((s) => s.athenaFleetBoldness);
+  const setLevel = useSystemStore((s) => s.setAthenaFleetBoldness);
 
   // Hydrate from the persisted server value on mount — the gate reads that row,
   // so the UI must reflect it rather than the store's default.

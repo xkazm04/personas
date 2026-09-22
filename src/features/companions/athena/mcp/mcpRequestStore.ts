@@ -19,7 +19,7 @@ import { create } from 'zustand';
  * Separate from the main companion store on purpose: MCP requests are
  * orthogonal to chat state (they can arrive when no chat turn is in
  * flight) and have their own UI affordance. Mixing them into
- * companionStore.ts would just bloat that already-large surface.
+ * athenaStore.ts would just bloat that already-large surface.
  */
 
 export type McpRequestKind = 'guidance' | 'approval';

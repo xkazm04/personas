@@ -33,7 +33,7 @@ function comparison(over: Partial<SttComparison> = {}): SttComparison {
 beforeEach(() => {
   vi.clearAllMocks();
   cmp.value = comparison();
-  useSystemStore.setState({ companionSttModelId: 'base.en' });
+  useSystemStore.setState({ athenaSttModelId: 'base.en' });
 });
 
 describe('SttCompareModal', () => {
@@ -93,7 +93,7 @@ describe('SttCompareModal', () => {
   });
 
   it('names the missing-model setup gap instead of a raw engine error', () => {
-    useSystemStore.setState({ companionSttModelId: null });
+    useSystemStore.setState({ athenaSttModelId: null });
     cmp.value = comparison({ whisper: take({ supported: false }) });
     render(<SttCompareModal isOpen onClose={vi.fn()} />);
     expect(screen.getByTestId('stt-compare-col-whisper')).toHaveTextContent(/Whisper model/i);
@@ -117,7 +117,7 @@ describe('SttCompareModal', () => {
 
 describe('SttCompareModal: adopt-after-compare', () => {
   beforeEach(() => {
-    useSystemStore.setState({ companionSttEngine: 'browser', companionSttModelId: 'base.en' });
+    useSystemStore.setState({ athenaSttEngine: 'browser', athenaSttModelId: 'base.en' });
   });
 
   it('offers to switch to Whisper once it has transcribed the take', () => {
@@ -138,7 +138,7 @@ describe('SttCompareModal: adopt-after-compare', () => {
     });
     render(<SttCompareModal isOpen onClose={onClose} />);
     fireEvent.click(screen.getByTestId('stt-compare-adopt'));
-    expect(useSystemStore.getState().companionSttEngine).toBe('whisper');
+    expect(useSystemStore.getState().athenaSttEngine).toBe('whisper');
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -150,7 +150,7 @@ describe('SttCompareModal: adopt-after-compare', () => {
     });
     render(<SttCompareModal isOpen onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
-    expect(useSystemStore.getState().companionSttEngine).toBe('browser');
+    expect(useSystemStore.getState().athenaSttEngine).toBe('browser');
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -166,7 +166,7 @@ describe('SttCompareModal: adopt-after-compare', () => {
   });
 
   it('does not offer a switch the panel is already on', () => {
-    useSystemStore.setState({ companionSttEngine: 'whisper' });
+    useSystemStore.setState({ athenaSttEngine: 'whisper' });
     cmp.value = comparison({ hasResult: true, whisper: take({ text: 'whisper heard this' }) });
     render(<SttCompareModal isOpen onClose={vi.fn()} />);
     expect(screen.queryByTestId('stt-compare-adopt')).not.toBeInTheDocument();

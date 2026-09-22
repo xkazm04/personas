@@ -11,7 +11,7 @@ import { useOperativeMemoryStore } from './operativeMemoryStore';
  * `companion_get_operative_memory_digest`, populates the
  * [`useOperativeMemoryStore`].
  *
- * Mount once near the app root (next to `useFleetCompanionBridge` and
+ * Mount once near the app root (next to `useAthenaFleetBridge` and
  * `useMcpRequestBridge`).
  *
  * Why debounce: fleet hooks can fire several events back-to-back when

@@ -4,9 +4,9 @@ import { Slider } from '@/features/shared/components/forms/Slider';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
-  normalizeCompanionTtsEngine,
-  type CompanionTtsEngine,
-} from '@/stores/slices/system/companionPluginSlice';
+  normalizeAthenaTtsEngine,
+  type AthenaTtsEngine,
+} from '@/stores/slices/system/athenaSlice';
 import KokoroVoicePanel from './KokoroVoicePanel';
 import PocketVoicePanel from './PocketVoicePanel';
 import SttPanel from './SttPanel';
@@ -20,8 +20,8 @@ import SttPanel from './SttPanel';
  * selections from before then normalize onto Kokoro.
  */
 export default function VoicePanel() {
-  const engine = normalizeCompanionTtsEngine(
-    useSystemStore((s) => s.companionVoiceEngine),
+  const engine = normalizeAthenaTtsEngine(
+    useSystemStore((s) => s.athenaVoiceEngine),
   );
   const { t } = useTranslation();
   return (
@@ -52,19 +52,19 @@ export default function VoicePanel() {
 
 function EngineSelectorCard() {
   const { t } = useTranslation();
-  const engine = normalizeCompanionTtsEngine(
-    useSystemStore((s) => s.companionVoiceEngine),
+  const engine = normalizeAthenaTtsEngine(
+    useSystemStore((s) => s.athenaVoiceEngine),
   );
-  const setEngine = useSystemStore((s) => s.setCompanionVoiceEngine);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
-  const volume = useSystemStore((s) => s.companionVoiceVolume);
-  const setVolume = useSystemStore((s) => s.setCompanionVoiceVolume);
+  const setEngine = useSystemStore((s) => s.setAthenaVoiceEngine);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
+  const setVoiceEnabled = useSystemStore((s) => s.setAthenaVoiceEnabled);
+  const volume = useSystemStore((s) => s.athenaVoiceVolume);
+  const setVolume = useSystemStore((s) => s.setAthenaVoiceVolume);
 
   // Switching engines invalidates the playback gate — disable until the
   // new engine reports it's configured. Avoids a state where the toggle
   // says "on" but the synthesis path silently falls back / errors.
-  const onSwitch = (next: CompanionTtsEngine) => {
+  const onSwitch = (next: AthenaTtsEngine) => {
     if (next === engine) return;
     setEngine(next);
     if (voiceEnabled) setVoiceEnabled(false);
@@ -94,7 +94,7 @@ function EngineSelectorCard() {
       </div>
 
       {/* Playback volume — engine-agnostic; mirrors the chat toolbar's
-          voice popover (both bind `companionVoiceVolume`). */}
+          voice popover (both bind `athenaVoiceVolume`). */}
       <div className="px-1 pt-1 pb-2 space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="typo-title">

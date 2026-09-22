@@ -9,12 +9,12 @@
 import { RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export function AthenaChatErrorNotice({ onSend }: { onSend: (text: string) => void }) {
   const { t } = useTranslation();
-  const sendError = useCompanionStore((s) => s.sendError);
-  const streaming = useCompanionStore((s) => s.streaming);
+  const sendError = useAthenaStore((s) => s.sendError);
+  const streaming = useAthenaStore((s) => s.streaming);
   if (!sendError) return null;
 
   return (
@@ -28,7 +28,7 @@ export function AthenaChatErrorNotice({ onSend }: { onSend: (text: string) => vo
           // On a failed turn the optimistic user bubble is still in `messages`,
           // so the newest user message is exactly what we re-send. Read it at
           // click time so this chip never subscribes to the transcript.
-          const store = useCompanionStore.getState();
+          const store = useAthenaStore.getState();
           const lastUser = [...store.messages].reverse().find((m) => m.role === 'user');
           if (!lastUser) return;
           store.setSendError(null);

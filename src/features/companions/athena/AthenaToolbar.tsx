@@ -22,8 +22,8 @@ import {
 import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal';
 import { ComposerBrandIcon } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerBrandIcon';
 import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
-import { useCompanionStore } from './companionStore';
-import { navigateToCompanionSetup } from './companionRoutes';
+import { useAthenaStore } from './athenaStore';
+import { navigateToAthenaSetup } from './athenaRoutes';
 import { VoiceControlPopover } from './VoiceControlPopover';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
@@ -48,7 +48,7 @@ import { useTtsVoiceSelection } from './useTtsVoiceSelection';
  * Layout: 44px wide, three groups separated by thin dividers, with
  * a flex spacer pushing connectors to the bottom edge.
  */
-export function CompanionToolbar(props: {
+export function AthenaToolbar(props: {
   /** Overrides the default store-backed brain toggle. */
   onOpenBrain?: () => void;
   brainOpen?: boolean;
@@ -69,23 +69,23 @@ export function CompanionToolbar(props: {
   // Self-sufficient by default: the chat renders this rail with no props and
   // lets it read the same store the rest of the panel does. Props stay
   // supported so tests (and any other host) can drive it explicitly.
-  const storeBrainOpen = useCompanionStore((s) => s.brainView.open);
-  const storeCompact = useSystemStore((s) => s.companionPanelCompact);
-  const setStoreCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  const storeBrainOpen = useAthenaStore((s) => s.brainView.open);
+  const storeCompact = useSystemStore((s) => s.athenaPanelCompact);
+  const setStoreCompact = useSystemStore((s) => s.setAthenaPanelCompact);
   const brainOpen = props.brainOpen ?? storeBrainOpen;
   const compact = props.compact ?? storeCompact;
   const onOpenBrain =
     props.onOpenBrain ??
     (() =>
-      useCompanionStore
+      useAthenaStore
         .getState()
         .setBrainView({ open: !storeBrainOpen, kind: null, id: null }));
   const onToggleCompact = props.onToggleCompact ?? (() => setStoreCompact(!storeCompact));
 
-  const connectors = useCompanionStore((s) => s.connectors);
-  const setConnectors = useCompanionStore((s) => s.setConnectors);
-  const pluginToggles = useCompanionStore((s) => s.pluginToggles);
-  const setPluginToggles = useCompanionStore((s) => s.setPluginToggles);
+  const connectors = useAthenaStore((s) => s.connectors);
+  const setConnectors = useAthenaStore((s) => s.setConnectors);
+  const pluginToggles = useAthenaStore((s) => s.pluginToggles);
+  const setPluginToggles = useAthenaStore((s) => s.setPluginToggles);
   const addToast = useToastStore((s) => s.addToast);
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -243,7 +243,7 @@ export function CompanionToolbar(props: {
       <ToolbarButton
         icon={<Settings className="w-4 h-4" />}
         label={t.plugins.companion.settings_open}
-        onClick={navigateToCompanionSetup}
+        onClick={navigateToAthenaSetup}
         testId="companion-open-settings"
       />
 

@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { companionEnqueueJob, type BackgroundJob } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
@@ -36,9 +36,9 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
   // status (queued → running → completed / failed) directly below the
   // failed card so the user doesn't have to scroll the panel hunting
   // for the new card. Reads as undefined until the first
-  // companion://job event arrives, which the existing CompanionPanel
+  // companion://job event arrives, which the existing AthenaChatPanel
   // listener already feeds into jobsById.
-  const retriedJob = useCompanionStore((s) =>
+  const retriedJob = useAthenaStore((s) =>
     retryingState.phase === 'fired' ? s.jobsById[retryingState.newId] : undefined,
   );
 

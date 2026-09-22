@@ -18,13 +18,13 @@ vi.mock('@/stores/tourStore', () => {
   return { useTourStore: hook };
 });
 
-vi.mock('@/features/companions/athena/companionStore', () => {
+vi.mock('@/features/companions/athena/athenaStore', () => {
   const hook = () => undefined;
   (hook as unknown as { getState: () => unknown }).getState = () => ({
     startGuidance,
     setPendingPrompt,
   });
-  return { useCompanionStore: hook };
+  return { useAthenaStore: hook };
 });
 
 import { WalkthroughOfferWidget } from '../WalkthroughOfferWidget';

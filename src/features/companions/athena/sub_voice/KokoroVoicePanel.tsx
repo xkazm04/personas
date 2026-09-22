@@ -37,10 +37,10 @@ import { SetupRow, VoiceEngineInstallBlock, PreviewButton, useVoicePreview } fro
  */
 export default function KokoroVoicePanel() {
   const { t } = useTranslation();
-  const kokoroVoiceId = useSystemStore((s) => s.companionKokoroVoiceId);
-  const setKokoroVoiceId = useSystemStore((s) => s.setCompanionKokoroVoiceId);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
+  const kokoroVoiceId = useSystemStore((s) => s.athenaKokoroVoiceId);
+  const setKokoroVoiceId = useSystemStore((s) => s.setAthenaKokoroVoiceId);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
+  const setVoiceEnabled = useSystemStore((s) => s.setAthenaVoiceEnabled);
 
   const [status, setStatus] = useState<KokoroStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);

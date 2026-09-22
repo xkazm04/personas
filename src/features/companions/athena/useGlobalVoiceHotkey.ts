@@ -12,7 +12,7 @@ import { getActiveTranslations } from '@/i18n/useTranslation';
 
 /**
  * Registers Athena's push-to-talk chord as an OS-level accelerator while
- * `companionGlobalHotkeyEnabled` is on, and runs `onFire` when it fires.
+ * `athenaGlobalHotkeyEnabled` is on, and runs `onFire` when it fires.
  *
  * This is the reachability half of the voice stack. Everything else — local
  * whisper capture, Kokoro playback, `useHoldToTalk`, the orb — already worked,
@@ -29,8 +29,8 @@ import { getActiveTranslations } from '@/i18n/useTranslation';
  * tear down the first's binding.
  */
 export function useGlobalVoiceHotkey(onFire: () => void) {
-  const enabled = useSystemStore((s) => s.companionGlobalHotkeyEnabled);
-  const setEnabled = useSystemStore((s) => s.setCompanionGlobalHotkeyEnabled);
+  const enabled = useSystemStore((s) => s.athenaGlobalHotkeyEnabled);
+  const setEnabled = useSystemStore((s) => s.setAthenaGlobalHotkeyEnabled);
 
   // `onFire` closes over `talking` and so changes identity most renders.
   // Holding it in a ref keeps the subscription effect's deps empty, so the

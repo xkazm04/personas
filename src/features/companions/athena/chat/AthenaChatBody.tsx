@@ -20,9 +20,9 @@ import type { BrainKind } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { BrainViewer } from '../BrainViewer';
-import { CompanionToolbar } from '../CompanionToolbar';
+import { AthenaToolbar } from '../AthenaToolbar';
 import { FleetStatsSidePanel } from '../fleet/FleetStatsSidePanel';
 import { WelcomeHero } from '../WelcomeHero';
 import { AthenaChatAlerts } from './AthenaChatAlerts';
@@ -54,8 +54,8 @@ export function AthenaChatBody({
 }) {
   const { t } = useTranslation();
   const view = useAthenaChatView(engine, ready);
-  const brainOpen = useCompanionStore((s) => s.brainView.open);
-  const hasProactive = useCompanionStore((st) => st.proactive.length > 0);
+  const brainOpen = useAthenaStore((s) => s.brainView.open);
+  const hasProactive = useAthenaStore((st) => st.proactive.length > 0);
 
   const approvalsAnchorRef = useRef<HTMLDivElement>(null);
   const chatCardsAnchorRef = useRef<HTMLDivElement>(null);
@@ -66,7 +66,7 @@ export function AthenaChatBody({
       // durable chat card. Route to whichever section actually has content so
       // the jump never lands on a blank region; if neither has anything, do
       // nothing rather than scroll the user to an empty window.
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       const approvalsHas = store.approvals.length > 0;
       const cardsHas = store.chatCards.length > 0;
       const el =
@@ -94,7 +94,7 @@ export function AthenaChatBody({
   // RecallStrip stage 2 / brain-link chips: open the Brain Viewer pinned to a
   // memory id, which paints itself over the transcript.
   const handleOpenInBrain = useCallback((kind: BrainKind, id: string) => {
-    useCompanionStore.getState().setBrainView({ open: true, kind, id });
+    useAthenaStore.getState().setBrainView({ open: true, kind, id });
   }, []);
 
   const showHero =
@@ -176,7 +176,7 @@ export function AthenaChatBody({
         {brainOpen && (
           <BrainViewer
             onClose={() =>
-              useCompanionStore
+              useAthenaStore
                 .getState()
                 .setBrainView({ open: false, kind: null, id: null })
             }
@@ -193,7 +193,7 @@ export function AthenaChatBody({
       {/* Compact hides the rail entirely so the shrunk panel is chat and
           nothing else; the expand handle it normally hosts moves to the panel
           edge (see AthenaChatCompactHandle). */}
-      {compact ? <AthenaChatCompactHandle /> : chromeReady && <CompanionToolbar />}
+      {compact ? <AthenaChatCompactHandle /> : chromeReady && <AthenaToolbar />}
     </div>
   );
 }

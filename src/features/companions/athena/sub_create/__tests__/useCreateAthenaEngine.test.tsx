@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import type { SttComparison } from '@/features/companions/athena/useSttComparison';
 import { useCreateAthenaEngine } from '../engine/useCreateAthenaEngine';
 import { resetWakeUpRotation } from '../engine/createAthenaSteps';
@@ -76,15 +76,15 @@ beforeEach(() => {
   useSystemStore.setState({
     athenaOnboardingStep: null,
     athenaOnboardingCompletedAt: null,
-    companionFooterEnabled: false,
-    companionOrbEnabled: true,
-    companionSoundEnabled: false,
-    companionVoiceEngine: 'kokoro',
-    companionKokoroVoiceId: null,
-    companionPocketVoiceId: null,
-    companionVoiceEnabled: false,
+    athenaFooterEnabled: false,
+    athenaOrbEnabled: true,
+    athenaSoundEnabled: false,
+    athenaVoiceEngine: 'kokoro',
+    athenaKokoroVoiceId: null,
+    athenaPocketVoiceId: null,
+    athenaVoiceEnabled: false,
   });
-  useCompanionStore.setState({ pendingChatPrompt: null, activeWalkthrough: null });
+  useAthenaStore.setState({ pendingChatPrompt: null, activeWalkthrough: null });
 });
 
 describe('useCreateAthenaEngine', () => {
@@ -114,8 +114,8 @@ describe('useCreateAthenaEngine', () => {
   it('entering footer_icon flips the real key on and holds the guide ring on the footer icon', () => {
     const { result } = renderHook(() => useCreateAthenaEngine());
     act(() => result.current.actions.next());
-    expect(useSystemStore.getState().companionFooterEnabled).toBe(true);
-    expect(useCompanionStore.getState().guidanceHighlightTestId).toBe('footer-companion');
+    expect(useSystemStore.getState().athenaFooterEnabled).toBe(true);
+    expect(useAthenaStore.getState().guidanceHighlightTestId).toBe('footer-companion');
     expect(result.current.card).toMatchObject({ kind: 'keep_toggle', feature: 'footer_icon', enabled: true, choice: null });
     act(() => result.current.actions.keepFeature('footer_icon', true));
     expect(result.current.canNext).toBe(true);
@@ -125,12 +125,12 @@ describe('useCreateAthenaEngine', () => {
     useSystemStore.setState({ athenaOnboardingStep: 'orb' });
     const { result } = renderHook(() => useCreateAthenaEngine());
     act(() => result.current.actions.keepFeature('orb', false));
-    expect(useSystemStore.getState().companionOrbEnabled).toBe(false);
+    expect(useSystemStore.getState().athenaOrbEnabled).toBe(false);
     act(() => result.current.actions.next());
     expect(result.current.stepId).toBe('chime');
     expect(result.current.steps.find((s) => s.id === 'orb_place')?.status).toBe('skipped');
     expect(api.playReplyChime).toHaveBeenCalledTimes(1);
-    expect(useSystemStore.getState().companionSoundEnabled).toBe(true);
+    expect(useSystemStore.getState().athenaSoundEnabled).toBe(true);
   });
 
   it('voice_install is passed over as done when the engine is already installed', async () => {
@@ -153,7 +153,7 @@ describe('useCreateAthenaEngine', () => {
     act(() => result.current.actions.previewVoice('af_heart'));
     await waitFor(() => expect(result.current.card).toMatchObject({ kind: 'voice_pick', wokeUp: true }));
     expect(api.synthesize.mock.calls[0]?.[0]).toMatch(/^Good morning/);
-    expect(useSystemStore.getState().companionKokoroVoiceId).toBe('af_heart');
+    expect(useSystemStore.getState().athenaKokoroVoiceId).toBe('af_heart');
     expect(result.current.line.id).toBe('voice_pick:woke');
     expect(result.current.canNext).toBe(true);
 
@@ -164,7 +164,7 @@ describe('useCreateAthenaEngine', () => {
   });
 
   it('finish with a Claude login stamps completion and hands the chat the prompt', async () => {
-    useSystemStore.setState({ athenaOnboardingStep: 'handoff', companionKokoroVoiceId: 'af_heart' });
+    useSystemStore.setState({ athenaOnboardingStep: 'handoff', athenaKokoroVoiceId: 'af_heart' });
     const { result } = renderHook(() => useCreateAthenaEngine());
     await waitFor(() => expect(result.current.card).toMatchObject({ kind: 'handoff', hasClaudeLogin: true, voiceReady: true }));
     expect(result.current.line.id).toBe('handoff:voice');
@@ -172,8 +172,8 @@ describe('useCreateAthenaEngine', () => {
     const sys = useSystemStore.getState();
     expect(sys.athenaOnboardingStep).toBeNull();
     expect(sys.athenaOnboardingCompletedAt).toBeTruthy();
-    expect(sys.companionVoiceEnabled).toBe(true);
-    expect(useCompanionStore.getState().pendingChatPrompt).toEqual({
+    expect(sys.athenaVoiceEnabled).toBe(true);
+    expect(useAthenaStore.getState().pendingChatPrompt).toEqual({
       text: 'Show me what you can do here — walk me through your main capabilities in this app, briefly.',
       source: 'Create Athena',
     });

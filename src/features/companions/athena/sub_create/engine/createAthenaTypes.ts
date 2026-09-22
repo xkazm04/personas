@@ -163,7 +163,7 @@ export interface CreateAthenaActions {
   confirmOrbPlace: () => void;
   /**
    * chime: play the reply chime again (the step already played it once on
-   * entry). No-op while `companionSoundEnabled` is off. Added by WP1 —
+   * entry). No-op while `athenaSoundEnabled` is off. Added by WP1 —
    * the card's "Play it again" button binds here.
    */
   replayChime: () => void;

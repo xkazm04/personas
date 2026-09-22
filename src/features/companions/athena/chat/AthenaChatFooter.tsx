@@ -16,7 +16,7 @@ import { ActivityTray } from '../ActivityTray';
 import { Composer } from '../Composer';
 import { QueuedMessages } from '../QueuedMessages';
 import { QuickReplies } from '../QuickReplies';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export function AthenaChatFooter({
   compact,
@@ -35,7 +35,7 @@ export function AthenaChatFooter({
   onSendOrQueue: (text: string, nonce: string) => void;
 }) {
   const { t } = useTranslation();
-  const quickReplies = useCompanionStore((s) => s.quickReplies);
+  const quickReplies = useAthenaStore((s) => s.quickReplies);
 
   return (
     <>

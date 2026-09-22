@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { spawnSession, killSession, removeSession, wakeSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -27,8 +27,8 @@ export function useFleetOverlayActions() {
   const setActiveSession = useSystemStore((s) => s.fleetSetActiveSession);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore(useShallow((s) => s.projects));
-  const approvals = useCompanionStore(useShallow((s) => s.approvals));
-  const removeApproval = useCompanionStore((s) => s.removeApproval);
+  const approvals = useAthenaStore(useShallow((s) => s.approvals));
+  const removeApproval = useAthenaStore((s) => s.removeApproval);
   const addToast = useToastStore((s) => s.addToast);
   const { t, tx } = useTranslation();
 

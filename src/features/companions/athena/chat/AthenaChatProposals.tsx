@@ -11,14 +11,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { companionListRecentMessages } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { ApprovalCard } from '../ApprovalCard';
 import { InlineChatCard } from '../InlineChatCard';
 import { CHAT_EASE } from './athenaChatMorph';
 
 export const AthenaChatApprovals = forwardRef<HTMLDivElement>(
   function AthenaChatApprovals(_props, ref) {
-    const approvals = useCompanionStore((s) => s.approvals);
+    const approvals = useAthenaStore((s) => s.approvals);
     return (
       <div ref={ref} data-companion-section="approvals">
         <AnimatePresence initial={false}>
@@ -33,12 +33,12 @@ export const AthenaChatApprovals = forwardRef<HTMLDivElement>(
               <ApprovalCard
                 approval={a}
                 onResolved={(id) => {
-                  const store = useCompanionStore.getState();
+                  const store = useAthenaStore.getState();
                   store.removeApproval(id);
                   // Pull the canonical transcript so the system episode the
                   // backend just logged (the action outcome) shows up.
                   companionListRecentMessages(50, store.activeConversationId)
-                    .then((msgs) => useCompanionStore.getState().setMessages(msgs))
+                    .then((msgs) => useAthenaStore.getState().setMessages(msgs))
                     .catch(silentCatch('companion_list_recent_messages'));
                 }}
               />
@@ -53,7 +53,7 @@ export const AthenaChatApprovals = forwardRef<HTMLDivElement>(
 export const AthenaChatCards = forwardRef<HTMLDivElement>(
   function AthenaChatCards(_props, ref) {
     const { t } = useTranslation();
-    const chatCards = useCompanionStore((s) => s.chatCards);
+    const chatCards = useAthenaStore((s) => s.chatCards);
     return (
       <div ref={ref} data-companion-section="chat-cards">
         {/* Recovery strip: proposals from PRIOR turns, re-hydrated from the

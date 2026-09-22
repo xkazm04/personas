@@ -3,7 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 
 /**
  * Regression pin for the stale-async defect in
- * `useCompanionAssignmentBridge`: the 300ms per-assignment debounce
+ * `useAthenaAssignmentBridge`: the 300ms per-assignment debounce
  * coalesces SCHEDULING of fetchDetail calls but not in-flight fetches. Two
  * TEAM_ASSIGNMENT_PROGRESS events >300ms apart, with the first
  * `getTeamAssignmentDetail` still resolving, could race with no ordering
@@ -26,8 +26,8 @@ vi.mock('@/api/pipeline/assignments', () => ({
 }));
 
 import * as assignmentsApi from '@/api/pipeline/assignments';
-import { useCompanionAssignmentBridge } from '../useCompanionAssignmentBridge';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaAssignmentBridge } from '../useAthenaAssignmentBridge';
+import { useAthenaStore } from '../athenaStore';
 
 const getDetailMock = vi.mocked(assignmentsApi.getTeamAssignmentDetail);
 
@@ -54,11 +54,11 @@ function detail(doneSteps: number, totalSteps = 5) {
   } as unknown as Awaited<ReturnType<typeof assignmentsApi.getTeamAssignmentDetail>>;
 }
 
-describe('useCompanionAssignmentBridge — stale-fetch guard', () => {
+describe('useAthenaAssignmentBridge — stale-fetch guard', () => {
   beforeEach(() => {
     handlers.clear();
     getDetailMock.mockReset();
-    useCompanionStore.setState({ athenaAssignments: [] });
+    useAthenaStore.setState({ athenaAssignments: [] });
   });
 
   it('discards an older in-flight fetch that resolves after a newer one', async () => {
@@ -67,7 +67,7 @@ describe('useCompanionAssignmentBridge — stale-fetch guard', () => {
     getDetailMock.mockReturnValueOnce(slow.promise as never);
     getDetailMock.mockReturnValueOnce(fast.promise as never);
 
-    renderHook(() => useCompanionAssignmentBridge());
+    renderHook(() => useAthenaAssignmentBridge());
 
     await waitFor(() => expect(handlers.has('team-assignment-progress')).toBe(true));
     const emit = handlers.get('team-assignment-progress')!;
@@ -92,7 +92,7 @@ describe('useCompanionAssignmentBridge — stale-fetch guard', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(useCompanionStore.getState().athenaAssignments[0]?.doneSteps).toBe(4);
+    expect(useAthenaStore.getState().athenaAssignments[0]?.doneSteps).toBe(4);
 
     // The stale slow fetch (older, lower doneSteps) finally resolves — it
     // must NOT regress the card backwards.
@@ -101,6 +101,6 @@ describe('useCompanionAssignmentBridge — stale-fetch guard', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(useCompanionStore.getState().athenaAssignments[0]?.doneSteps).toBe(4);
+    expect(useAthenaStore.getState().athenaAssignments[0]?.doneSteps).toBe(4);
   });
 });

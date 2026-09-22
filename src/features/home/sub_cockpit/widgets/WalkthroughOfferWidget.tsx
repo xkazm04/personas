@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Compass, MessageSquareText, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { WALKTHROUGHS } from '@/features/companions/athena/guidance/walkthroughs';
 import { useTourStore } from '@/stores/tourStore';
 import { composeTour, ingestComposedTour } from '@/stores/slices/system/dynamicTours';
@@ -38,7 +38,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
 
   const showMe = () => {
     if (staticWalkthrough) {
-      useCompanionStore.getState().startGuidance(topic);
+      useAthenaStore.getState().startGuidance(topic);
       return;
     }
     // Generative Tours: no static tour matches — compose one.
@@ -61,7 +61,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
   };
 
   const tellMe = () => {
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: tx(c.walkthrough_offer_tell_prompt, { topic: label.toLowerCase() }),
       autoSend: true,
     });

@@ -22,7 +22,7 @@ import { DailyGoalsBar } from '../DailyGoalsBar';
 import { DevOpLedger } from '../DevOpLedger';
 import { FleetBoldnessDial } from '../FleetBoldnessDial';
 import { WakeCadence } from '../WakeCadence';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { AthenaChatBody } from './AthenaChatBody';
 import { AthenaChatHeader, type ToolStrip } from './AthenaChatHeader';
 import { PANEL_HEIGHT_PX, PANEL_MAX_HEIGHT } from './athenaChatGeometry';
@@ -33,18 +33,18 @@ import { useAthenaChatShellEffects } from './athenaChatShell';
 
 export default function AthenaChatPanel() {
   const { t } = useTranslation();
-  const state = useCompanionStore((s) => s.state);
-  const streaming = useCompanionStore((s) => s.streaming);
+  const state = useAthenaStore((s) => s.state);
+  const streaming = useAthenaStore((s) => s.streaming);
   // TTS audio synthesized AND not yet finished. Until a `speaking` clip ships
   // the avatar falls back to the idle loop — this value is the signal carrier,
   // not the visual.
-  const isSpeaking = useCompanionStore(
+  const isSpeaking = useAthenaStore(
     (s) => !!s.pendingPlayback?.audioUrl && !s.pendingPlayback.played,
   );
-  const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
-  const devMode = useSystemStore((s) => s.companionDevMode);
-  const devModeAvailable = useCompanionStore((s) => s.devModeAvailable);
-  const compact = useSystemStore((s) => s.companionPanelCompact);
+  const autonomousMode = useSystemStore((s) => s.athenaAutonomousMode);
+  const devMode = useSystemStore((s) => s.athenaDevMode);
+  const devModeAvailable = useAthenaStore((s) => s.devModeAvailable);
+  const compact = useSystemStore((s) => s.athenaPanelCompact);
   // While the Fleet grid overlay (a z-200 portal) is open the chat must float
   // ABOVE it — otherwise tapping the orb opens the panel behind the overlay
   // ("orb disappears, no chat") and its decision/approval UI is unreachable.
@@ -66,7 +66,7 @@ export default function AthenaChatPanel() {
 
   return (
     <AnimatePresence
-      onExitComplete={() => useCompanionStore.getState().setOrbOpenOrigin(null)}
+      onExitComplete={() => useAthenaStore.getState().setOrbOpenOrigin(null)}
     >
       {isOpen && (
         <motion.div

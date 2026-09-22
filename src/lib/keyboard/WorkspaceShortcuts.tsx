@@ -52,11 +52,11 @@ export default function WorkspaceShortcuts() {
       // the chat panel directly. No-op when the companion footer is disabled.
       if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && (e.key === 'a' || e.key === 'A')) {
         const sys = useSystemStore.getState();
-        if (!sys.companionFooterEnabled) return false;
+        if (!sys.athenaFooterEnabled) return false;
         e.preventDefault();
-        void import('@/features/companions/athena/companionStore').then(({ useCompanionStore }) => {
-          const orbEnabled = useSystemStore.getState().companionOrbEnabled;
-          const { state, setState } = useCompanionStore.getState();
+        void import('@/features/companions/athena/athenaStore').then(({ useAthenaStore }) => {
+          const orbEnabled = useSystemStore.getState().athenaOrbEnabled;
+          const { state, setState } = useAthenaStore.getState();
           if (orbEnabled) {
             setState(state === 'minimized' ? 'collapsed' : 'minimized');
           } else {

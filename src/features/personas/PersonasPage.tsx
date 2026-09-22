@@ -12,7 +12,7 @@ import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialN
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import DesktopFooter from '@/features/shared/chrome/footer/DesktopFooter';
-import { useFleetCompanionBridge } from '@/features/companions/athena/useFleetCompanionBridge';
+import { useAthenaFleetBridge } from '@/features/companions/athena/useAthenaFleetBridge';
 import { useMcpRequestBridge } from '@/features/companions/athena/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/companions/athena/orchestration/useOperativeMemoryBridge';
 import { useCanvasControlBridge } from '@/features/teams/sub_mastermind/lib/useCanvasControlBridge';
@@ -57,7 +57,7 @@ const DevToolsPage = lazyRetry(() => import('@/features/plugins/dev-tools/DevToo
 const ObsidianBrainPage = lazyRetry(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
-const CompanionPluginPage = lazyRetry(() => import('@/features/companions/athena/CompanionPluginPage'));
+const AthenaPage = lazyRetry(() => import('@/features/companions/athena/AthenaPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
@@ -83,7 +83,7 @@ export default function PersonasPage() {
   // episodic memory regardless of which sidebar section is active.
   // Self-sufficient — it refreshes the fleet store on mount and on
   // registry/state events, so it records without the Fleet tab ever opening.
-  useFleetCompanionBridge();
+  useAthenaFleetBridge();
   // Same lifetime as the Fleet bridge: subscribes to MCP guidance /
   // approval requests from claude sessions so the chat panel can
   // render them inline (Direction 3).
@@ -361,7 +361,7 @@ export default function PersonasPage() {
         return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={<RouteChunkSkeleton />}><TwinPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'companion') {
-        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={<RouteChunkSkeleton />}><CompanionPluginPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={<RouteChunkSkeleton />}><AthenaPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'scraper' && import.meta.env.DEV) {
         return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={<RouteChunkSkeleton />}><ScraperPage /></Suspense></ErrorBoundary>;

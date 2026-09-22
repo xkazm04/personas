@@ -45,7 +45,7 @@ import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
-import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import type { AthenaSlice } from "./slices/system/athenaSlice";
 import type { RadioSlice } from "./slices/system/radioSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
@@ -261,6 +261,6 @@ export type SystemStore = CoreState &
   AmbientContextSlice &
   ObsidianBrainSlice &
   TwinSlice &
-  CompanionPluginSlice &
+  AthenaSlice &
   RadioSlice;
 

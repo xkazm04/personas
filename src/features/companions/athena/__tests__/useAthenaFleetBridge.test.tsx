@@ -1,5 +1,5 @@
 /**
- * Unit tests for useFleetCompanionBridge.
+ * Unit tests for useAthenaFleetBridge.
  *
  * The bridge subscribes to three Fleet Tauri events and, for each one,
  * looks up the matching FleetSession in the systemStore and calls the
@@ -79,8 +79,8 @@ vi.mock('@/stores/systemStore', () => {
   return { useSystemStore };
 });
 
-import { useFleetCompanionBridge } from '../useFleetCompanionBridge';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaFleetBridge } from '../useAthenaFleetBridge';
+import { useAthenaStore } from '../athenaStore';
 import { useToastStore } from '@/stores/toastStore';
 
 const FLEET_STATE = 'fleet-session-state';
@@ -88,17 +88,17 @@ const FLEET_EXITED = 'fleet-session-exited';
 const FLEET_REGISTRY = 'fleet-registry-changed';
 const FLEET_AUTO_DECIDED = 'athena://fleet/auto-decided';
 
-describe('useFleetCompanionBridge', () => {
+describe('useAthenaFleetBridge', () => {
   beforeEach(() => {
     handlers.clear();
     vi.mocked(tauriInvoke.invokeWithTimeout).mockClear();
     fleetRefresh.mockClear();
     unlisten.mockClear();
-    useCompanionStore.getState().clearAthenaActions();
+    useAthenaStore.getState().clearAthenaActions();
   });
 
   it('registers listeners for the three FLEET_* events on mount', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     // Listeners are registered async via Promise resolution; flush a microtask.
     await waitFor(() => {
       expect(handlers.has(FLEET_STATE)).toBe(true);
@@ -110,12 +110,12 @@ describe('useFleetCompanionBridge', () => {
   it('pulls an initial fleet snapshot on mount', async () => {
     // The bridge is the only thing keeping `fleetSessions` current when the
     // Fleet page is unmounted, so it must seed the slice once on mount.
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1));
   });
 
   it('routes FLEET_SESSION_STATE → companion_record_fleet_event { kind:"state_changed" }', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_STATE)).toBe(true));
 
     act(() => {
@@ -143,7 +143,7 @@ describe('useFleetCompanionBridge', () => {
   });
 
   it('routes FLEET_SESSION_EXITED → companion_record_fleet_event { kind:"exited", exitCode }', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_EXITED)).toBe(true));
 
     act(() => {
@@ -162,7 +162,7 @@ describe('useFleetCompanionBridge', () => {
   });
 
   it('schedules a snapshot refresh (records nothing) for a session not yet in the cache', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_STATE)).toBe(true));
     // mount already pulled one snapshot; isolate the event-driven refresh.
     await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1));
@@ -181,7 +181,7 @@ describe('useFleetCompanionBridge', () => {
   });
 
   it('FLEET_REGISTRY_CHANGED kind:"added" refreshes the slice and records once', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
     await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
 
@@ -211,7 +211,7 @@ describe('useFleetCompanionBridge', () => {
   });
 
   it('FLEET_REGISTRY_CHANGED kind:"updated" refreshes the slice but records nothing', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
     await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
 
@@ -229,7 +229,7 @@ describe('useFleetCompanionBridge', () => {
   });
 
   it('FLEET_REGISTRY_CHANGED kind:"removed" neither refreshes nor records', async () => {
-    renderHook(() => useFleetCompanionBridge());
+    renderHook(() => useAthenaFleetBridge());
     await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
     await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
 
@@ -251,9 +251,9 @@ describe('useFleetCompanionBridge', () => {
   describe('athena://fleet/auto-decided', () => {
     it('records a durable chat entry and pulses the orb — and raises NO toast', async () => {
       const addToast = vi.spyOn(useToastStore.getState(), 'addToast');
-      const beforePulse = useCompanionStore.getState().messageReactionPulse;
+      const beforePulse = useAthenaStore.getState().messageReactionPulse;
 
-      renderHook(() => useFleetCompanionBridge());
+      renderHook(() => useAthenaFleetBridge());
       await waitFor(() => expect(handlers.has(FLEET_AUTO_DECIDED)).toBe(true));
 
       act(() => {
@@ -267,7 +267,7 @@ describe('useFleetCompanionBridge', () => {
       });
 
       // CHAT — the durable record the operator can still read minutes later.
-      const actions = useCompanionStore.getState().athenaActions;
+      const actions = useAthenaStore.getState().athenaActions;
       expect(actions).toHaveLength(1);
       expect(actions[0]).toMatchObject({
         sessionId: SAMPLE_SESSION.id,
@@ -276,7 +276,7 @@ describe('useFleetCompanionBridge', () => {
       });
 
       // ORB — a state change, not a text surface.
-      expect(useCompanionStore.getState().messageReactionPulse).toBe(beforePulse + 1);
+      expect(useAthenaStore.getState().messageReactionPulse).toBe(beforePulse + 1);
 
       // The third dimension is gone: no toast, ever.
       expect(addToast).not.toHaveBeenCalled();
@@ -287,7 +287,7 @@ describe('useFleetCompanionBridge', () => {
       // Structural guard: even a future edit that reaches for `addToast` in a
       // different code path fails here, because the module must not depend on
       // the toast store. Athena speaks on the orb and in chat only.
-      const src = await import('../useFleetCompanionBridge?raw').then(
+      const src = await import('../useAthenaFleetBridge?raw').then(
         (m) => (m as { default: string }).default,
       );
       expect(src).toContain('athena://fleet/auto-decided'); // guard: source really loaded

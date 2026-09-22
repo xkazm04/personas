@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { classifyMidTurnIntent } from '../midTurnIntent';
-import { DEFAULT_CONVERSATION_ID, useCompanionStore } from '../companionStore';
+import { DEFAULT_CONVERSATION_ID, useAthenaStore } from '../athenaStore';
 
 describe('classifyMidTurnIntent', () => {
   it('interrupts on clear redirect / stop openers', () => {
@@ -48,35 +48,35 @@ describe('classifyMidTurnIntent', () => {
   });
 });
 
-describe('companionStore message queue', () => {
+describe('athenaStore message queue', () => {
   const CONV = DEFAULT_CONVERSATION_ID;
 
   beforeEach(() => {
-    useCompanionStore.getState().clearQueuedMessages(CONV);
+    useAthenaStore.getState().clearQueuedMessages(CONV);
   });
 
   it('enqueues and shifts FIFO with mode preserved', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.enqueueMessage(CONV, 'first', 'queue', 'nonce-first');
     s.enqueueMessage(CONV, 'second', 'interrupt', 'nonce-second');
-    expect(useCompanionStore.getState().queuedMessages).toHaveLength(2);
+    expect(useAthenaStore.getState().queuedMessages).toHaveLength(2);
 
-    const a = useCompanionStore.getState().shiftQueuedMessage(CONV);
+    const a = useAthenaStore.getState().shiftQueuedMessage(CONV);
     expect(a?.text).toBe('first');
     expect(a?.mode).toBe('queue');
-    const b = useCompanionStore.getState().shiftQueuedMessage(CONV);
+    const b = useAthenaStore.getState().shiftQueuedMessage(CONV);
     expect(b?.text).toBe('second');
     expect(b?.mode).toBe('interrupt');
-    expect(useCompanionStore.getState().shiftQueuedMessage(CONV)).toBeNull();
+    expect(useAthenaStore.getState().shiftQueuedMessage(CONV)).toBeNull();
   });
 
   it('removes a specific queued message by id', () => {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     s.enqueueMessage(CONV, 'keep', 'queue', 'nonce-keep');
     s.enqueueMessage(CONV, 'drop', 'queue', 'nonce-drop');
-    const drop = useCompanionStore.getState().queuedMessages.find((m) => m.text === 'drop')!;
+    const drop = useAthenaStore.getState().queuedMessages.find((m) => m.text === 'drop')!;
     s.removeQueuedMessage(CONV, drop.id);
-    const left = useCompanionStore.getState().queuedMessages;
+    const left = useAthenaStore.getState().queuedMessages;
     expect(left).toHaveLength(1);
     expect(left[0].text).toBe('keep');
   });

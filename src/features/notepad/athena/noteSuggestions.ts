@@ -10,12 +10,12 @@
 // Where the cards come from: `AthenaChatPanel` is mounted app-wide (App.tsx's
 // `OverlayIsland`), so its engine's chat-card listener and its durable-row
 // hydration both run whether or not the panel is open. That makes
-// `useCompanionStore().chatCards` a live, refresh-surviving source the pad can
+// `useAthenaStore().chatCards` a live, refresh-surviving source the pad can
 // read without owning a second fetch — and without the pad ever writing into
 // the companion store.
 import { useMemo } from 'react';
 
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 
 import type { NoteSuggestion } from '../types';
 
@@ -125,7 +125,7 @@ export function pendingSuggestionsFor(
  * immediate without the pad keeping a second copy of the card's state.
  */
 export function useNoteSuggestions(noteId: string | null | undefined): NoteSuggestion[] {
-  const cards = useCompanionStore((s) => s.chatCards);
+  const cards = useAthenaStore((s) => s.chatCards);
   return useMemo(() => pendingSuggestionsFor(noteSuggestionCards(cards), noteId), [cards, noteId]);
 }
 
@@ -142,7 +142,7 @@ export function markRowResolvedLocally(
   rowId: string,
   outcome: Exclude<NoteSuggestion['outcome'], null>,
 ): void {
-  const store = useCompanionStore.getState();
+  const store = useAthenaStore.getState();
   const card = store.chatCards.find((c) => c.id === cardId);
   const rows = card?.config?.rows;
   if (!Array.isArray(rows)) return;
@@ -157,7 +157,7 @@ export function markRowResolvedLocally(
 /** The open-suggestion count for one note, read from the live companion store
  *  — what `askAthena` records as the baseline of a wait. */
 export function openSuggestionCountFor(noteId: string): number {
-  return pendingSuggestionsFor(noteSuggestionCards(useCompanionStore.getState().chatCards), noteId).length;
+  return pendingSuggestionsFor(noteSuggestionCards(useAthenaStore.getState().chatCards), noteId).length;
 }
 
 /**
@@ -175,7 +175,7 @@ export function startNoteAskSuggestionWatch(
   report: (noteId: string, count: number) => void,
 ): void {
   if (stopAskWatch) return;
-  stopAskWatch = useCompanionStore.subscribe((state, prev) => {
+  stopAskWatch = useAthenaStore.subscribe((state, prev) => {
     if (state.chatCards === prev.chatCards) return;
     const ids = askingNoteIds();
     if (ids.length === 0) return;

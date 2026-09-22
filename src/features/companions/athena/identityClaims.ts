@@ -12,11 +12,11 @@
  */
 
 /** Heading paths the companion owns — its self-model, not a claim about the user. */
-const COMPANION_HEADINGS = new Set(['about me', 'about myself']);
+const ATHENA_HEADINGS = new Set(['about me', 'about myself']);
 
 /** True when this `#` heading introduces the companion's own self-model. */
-export function isCompanionSection(h1: string): boolean {
-  return COMPANION_HEADINGS.has(h1.trim().toLowerCase());
+export function isAthenaSection(h1: string): boolean {
+  return ATHENA_HEADINGS.has(h1.trim().toLowerCase());
 }
 
 export interface IdentityClaim {
@@ -41,7 +41,7 @@ export function parseIdentityClaims(content: string): IdentityClaim[] {
       h2 = '';
     } else if (t.startsWith('## ')) {
       h2 = t.slice(3).trim();
-    } else if (t.startsWith('- ') && h2 && !isCompanionSection(h1)) {
+    } else if (t.startsWith('- ') && h2 && !isAthenaSection(h1)) {
       const bullet = t.slice(2).trim();
       // Skip the placeholder seed bullets ("(seeded from intake interview)", …).
       if (bullet && !bullet.startsWith('(')) {

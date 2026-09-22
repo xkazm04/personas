@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrainViewer, __resetBrainListCacheForTests } from '../BrainViewer';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { BrainListItem } from '@/api/companion';
 
 const api = vi.hoisted(() => ({ list: vi.fn(), counts: vi.fn() }));
@@ -32,7 +32,7 @@ beforeEach(() => {
   __resetBrainListCacheForTests();
   api.counts.mockResolvedValue({});
   api.list.mockResolvedValue([]);
-  useCompanionStore.setState({ brainView: { open: true, kind: 'episode', id: null } });
+  useAthenaStore.setState({ brainView: { open: true, kind: 'episode', id: null } });
 });
 
 describe('BrainViewer ListView paging', () => {

@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { ActivityTray } from '../ActivityTray';
 import { TaskTag } from '../TaskTag';
 import type { BackgroundJob } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 function job(over: Partial<BackgroundJob> = {}): BackgroundJob {
   return {
@@ -28,8 +28,8 @@ function job(over: Partial<BackgroundJob> = {}): BackgroundJob {
 }
 
 beforeEach(() => {
-  useCompanionStore.getState().clearAllConnectorJobs();
-  useCompanionStore.getState().clearInTurnToolJobs();
+  useAthenaStore.getState().clearAllConnectorJobs();
+  useAthenaStore.getState().clearInTurnToolJobs();
 });
 
 describe('ActivityTray', () => {
@@ -39,7 +39,7 @@ describe('ActivityTray', () => {
   });
 
   it('shows queued + running tasks and ignores terminal ones', () => {
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
     store.upsertJob(job({ id: 'a', status: 'running' }));
     store.upsertJob(job({ id: 'b', status: 'queued' }));
     store.upsertJob(job({ id: 'c', status: 'completed' }));
@@ -52,7 +52,7 @@ describe('ActivityTray', () => {
   });
 
   it('collapses and expands the task list', () => {
-    useCompanionStore.getState().upsertJob(job({ id: 'a', status: 'running' }));
+    useAthenaStore.getState().upsertJob(job({ id: 'a', status: 'running' }));
     render(<ActivityTray />);
     expect(screen.getByTestId('companion-task-tag')).toBeInTheDocument();
     // Header is the only button.
@@ -61,7 +61,7 @@ describe('ActivityTray', () => {
   });
 
   it('merges in-turn tool tasks (phase 4b) alongside background jobs', () => {
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
     store.upsertJob(job({ id: 'bg', status: 'running', shortTitle: 'Scanning' }));
     store.upsertInTurnToolJob(
       job({ id: 'tool1', kind: 'in_turn_tool', status: 'running', shortTitle: 'Fetching · sentry.io' }),
@@ -75,7 +75,7 @@ describe('ActivityTray', () => {
   });
 
   it('drops an in-turn tool task once it completes', () => {
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
     store.upsertInTurnToolJob(job({ id: 'tool1', kind: 'in_turn_tool', status: 'running' }));
     const { rerender } = render(<ActivityTray />);
     expect(screen.getByTestId('companion-task-tag')).toBeInTheDocument();

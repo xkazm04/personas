@@ -11,7 +11,7 @@ vi.mock('@/api/companion', () => ({
 }));
 
 import { AthenaFleetPlanCard } from '../fleet/AthenaFleetPlanCard';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 function config(rowCount = 2) {
@@ -129,7 +129,7 @@ describe('AthenaFleetPlanCard', () => {
   });
 
   it('persists the dispatched outcome into the shared chatCards store on confirm', async () => {
-    useCompanionStore.setState({
+    useAthenaStore.setState({
       chatCards: [{ id: 'card_1', kind: 'fleet_plan', config: config(2) }],
     });
     render(<AthenaFleetPlanCard config={config(2)} cardId="card_1" />);
@@ -137,7 +137,7 @@ describe('AthenaFleetPlanCard', () => {
 
     await waitFor(() => expect(dispatchFleetPlan).toHaveBeenCalledTimes(1));
     await waitFor(() => {
-      const persisted = useCompanionStore.getState().chatCards[0]?.config;
+      const persisted = useAthenaStore.getState().chatCards[0]?.config;
       expect(persisted?.dispatched).toBe(true);
       expect(persisted?.resultMessage).toBe('Started 2 sessions.');
       expect(persisted?.dispatchedRows).toHaveLength(2);

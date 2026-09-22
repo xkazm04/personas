@@ -6,7 +6,7 @@ import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export interface DecisionGroup {
   key: string;
@@ -95,11 +95,11 @@ export function useDesignDecisions() {
   };
 
   const askAthenaToLogDecision = () => {
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: t.plugins.companion.decisions_panel_empty_prompt,
       autoSend: true,
     });
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setState('open');
   };
 
   return {

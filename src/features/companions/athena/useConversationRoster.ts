@@ -8,11 +8,11 @@ import {
   type CompanionTurnSummaryEvent,
 } from '@/api/companion';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
-import { NOTICES_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import { NOTICES_CONVERSATION_ID, useAthenaStore } from './athenaStore';
 
 /**
  * Keeps the multi-conversation roster live. Mounted once from the always-present
- * footer orb (`CompanionFooterIcon`) so unread counts stay fresh even when the
+ * footer orb (`AthenaFooterIcon`) so unread counts stay fresh even when the
  * chat panel is closed.
  *
  * - Hydrates `conversations` on mount.
@@ -31,11 +31,11 @@ import { NOTICES_CONVERSATION_ID, useCompanionStore } from './companionStore';
  *   unread is zeroed locally and persisted, so it never shows its own unread.
  */
 export function useConversationRoster() {
-  const setConversations = useCompanionStore((s) => s.setConversations);
+  const setConversations = useAthenaStore((s) => s.setConversations);
 
   const refresh = useCallback(async (): Promise<ConversationRow[]> => {
     const rows = await companionListConversations();
-    const active = useCompanionStore.getState().activeConversationId;
+    const active = useAthenaStore.getState().activeConversationId;
     const normalized = rows.map((r) =>
       r.id === active ? { ...r, unreadCount: 0n } : r,
     );
@@ -61,7 +61,7 @@ export function useConversationRoster() {
         const completedId = event.payload?.sessionId;
         refresh()
           .then((rows) => {
-            const active = useCompanionStore.getState().activeConversationId;
+            const active = useAthenaStore.getState().activeConversationId;
             // Only react for a BACKGROUND reply — the thread you're viewing
             // needs no cue, and the Notices thread has its own proactive cards.
             if (
@@ -79,7 +79,7 @@ export function useConversationRoster() {
             // react; WHICH thread (and its words) is carried by the thread
             // attention badge + the conversation switcher inside chat, which is
             // the full-information dimension.
-            useCompanionStore.getState().pulseMessageReaction();
+            useAthenaStore.getState().pulseMessageReaction();
           })
           .catch(silentCatch('companion_list_conversations'));
       },
@@ -92,7 +92,7 @@ export function useConversationRoster() {
 /** Number of OTHER threads awaiting the user (unread > 0). The active thread is
  *  kept read, so this naturally excludes it. Drives the orb attention badge. */
 export function useThreadAttentionCount(): number {
-  return useCompanionStore(
+  return useAthenaStore(
     (s) => s.conversations.filter((c) => c.unreadCount > 0n).length,
   );
 }

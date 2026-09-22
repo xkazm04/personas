@@ -2,7 +2,7 @@ import { Bot, Sparkles, MessageCircle } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /**
@@ -34,7 +34,7 @@ export default function WelcomeGetStarted() {
   const isLoading = useAgentStore((s) => s.isLoading);
   const startOnboarding = useSystemStore((s) => s.startOnboarding);
   const onboardingCompleted = useSystemStore((s) => s.onboardingCompleted);
-  const openCompanion = useCompanionStore((s) => s.setState);
+  const openCompanion = useAthenaStore((s) => s.setState);
 
   // Only a genuinely fresh profile, and never during the initial fetch (so it
   // can't flash for a returning user before their personas load).

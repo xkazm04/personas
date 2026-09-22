@@ -135,7 +135,7 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
    * Implemented here rather than layered on `useAthenaChatQueue`
    * (`companions/athena/chat/athenaChatQueue.ts`), which is the only other
    * non-blocking composer in the app: that hook reads and writes
-   * `useCompanionStore` directly — the queue lives in Athena's own store, keyed
+   * `useAthenaStore` directly — the queue lives in Athena's own store, keyed
    * by her conversation ids — so reusing it would mean a channel importing the
    * companion's state, which is the feature-to-feature edge the catalog exists
    * to prevent. What carries over is the SHAPE (accept always, drain on the

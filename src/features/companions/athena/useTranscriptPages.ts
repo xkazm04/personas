@@ -21,7 +21,7 @@ import {
   type CompanionMessagePage,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /** Page size for "load earlier" — matches the initial transcript load. */
 export const TRANSCRIPT_PAGE_SIZE = 50;
@@ -157,7 +157,7 @@ export function useTranscriptPages(args: {
 
           const next = cursorFromPage(page);
           if (page.messages.length > 0) {
-            useCompanionStore.getState().prependMessages(page.messages);
+            useAthenaStore.getState().prependMessages(page.messages);
             carryRef.current = null;
             if (page.exhausted) {
               // The newly-oldest message is the end of the line.

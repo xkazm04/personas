@@ -255,7 +255,7 @@ export const GUIDANCE_TOPICS = Object.keys(WALKTHROUGHS);
  * Sentinel topic for a walkthrough Athena composed at runtime rather than one
  * from the static registry — the `point_at` (single step) and
  * `compose_walkthrough` (multi step) ops. The composed steps live in
- * `companionStore.adHocWalkthrough`; `resolveWalkthrough` returns that when the
+ * `athenaStore.adHocWalkthrough`; `resolveWalkthrough` returns that when the
  * active topic is this sentinel.
  */
 export const ADHOC_TOPIC = '__adhoc__';

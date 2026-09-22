@@ -6,7 +6,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 
 /**
  * Tier-1 Companion ↔ Fleet bridge.
@@ -28,7 +28,7 @@ import { useCompanionStore } from './companionStore';
  * sessions Athena herself spawned). For now no JS-side spawn from
  * Athena exists yet (lands in Phase C), so this is always `false`.
  */
-export function useFleetCompanionBridge(): void {
+export function useAthenaFleetBridge(): void {
   // Pull session map via the existing slice. Cheap: useShallow would not
   // help here (we only read inside event callbacks via the ref).
   const sessions = useSystemStore((s) => s.fleetSessions);
@@ -55,14 +55,14 @@ export function useFleetCompanionBridge(): void {
       if (refreshTimer !== undefined) return;
       refreshTimer = window.setTimeout(() => {
         refreshTimer = undefined;
-        useSystemStore.getState().fleetRefresh().catch(silentCatch('useFleetCompanionBridge:refresh'));
+        useSystemStore.getState().fleetRefresh().catch(silentCatch('useAthenaFleetBridge:refresh'));
       }, 150);
     };
 
     // Pull an initial snapshot on mount so `findSession` resolves for sessions
     // that already exist (incl. `claude` started externally before the app),
     // independent of whether the Fleet tab has ever been opened.
-    useSystemStore.getState().fleetRefresh().catch(silentCatch('useFleetCompanionBridge:mount'));
+    useSystemStore.getState().fleetRefresh().catch(silentCatch('useAthenaFleetBridge:mount'));
 
     // Tracks the previous state per session so we can detect "added"
     // (no prior entry) vs "state_changed" (transition) without depending
@@ -89,7 +89,7 @@ export function useFleetCompanionBridge(): void {
           kind: 'state_changed',
           state: event.payload.state,
           reason: event.payload.reason ?? null,
-        }).catch(silentCatch('useFleetCompanionBridge:state'));
+        }).catch(silentCatch('useAthenaFleetBridge:state'));
       },
     );
 
@@ -109,7 +109,7 @@ export function useFleetCompanionBridge(): void {
           cwd: sess.cwd,
           kind: 'exited',
           exitCode: event.payload.exit_code,
-        }).catch(silentCatch('useFleetCompanionBridge:exited'));
+        }).catch(silentCatch('useAthenaFleetBridge:exited'));
       },
     );
 
@@ -134,7 +134,7 @@ export function useFleetCompanionBridge(): void {
             cwd: sess.cwd,
             kind: 'spawned',
             athenaOwned: false,
-          }).catch(silentCatch('useFleetCompanionBridge:added'));
+          }).catch(silentCatch('useAthenaFleetBridge:added'));
         }, 250);
       },
     );
@@ -152,7 +152,7 @@ export function useFleetCompanionBridge(): void {
     const unAutoP = listen<{ sessionId: string; projectLabel: string; text: string }>(
       'athena://fleet/auto-decided',
       (event) => {
-        const c = useCompanionStore.getState();
+        const c = useAthenaStore.getState();
         c.recordAthenaAction({
           id: `${event.payload.sessionId}:${Date.now()}`,
           sessionId: event.payload.sessionId,

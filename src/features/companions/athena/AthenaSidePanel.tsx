@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
-export interface CompanionSidePanelProps {
+export interface AthenaSidePanelProps {
   /** Small glanceable icon shown in the header and on the collapsed rail. */
   icon: ReactNode;
   /** Panel title / aria-label. */
@@ -16,7 +16,7 @@ export interface CompanionSidePanelProps {
 /**
  * Reusable inner side-panel slot for the companion chat window.
  *
- * Sits between the chat column and the outer `CompanionToolbar` edge rail —
+ * Sits between the chat column and the outer `AthenaToolbar` edge rail —
  * an INNER right-side dock, not a replacement for the toolbar. Any glanceable
  * feature surface (Fleet stats today; more later) can mount here without
  * touching the chat layout: this shell owns the collapse/expand affordance and
@@ -36,14 +36,14 @@ export interface CompanionSidePanelProps {
  *    that positions it clipped its outer half away, leaving a half-moon that
  *    read as sitting *behind* the chat column.
  */
-export function CompanionSidePanel({
+export function AthenaSidePanel({
   icon,
   label,
   open,
   onToggleOpen,
   testId,
   children,
-}: CompanionSidePanelProps) {
+}: AthenaSidePanelProps) {
   const { t } = useTranslation();
   const rootTestId = testId ?? 'companion-side-panel';
 

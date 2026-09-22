@@ -20,7 +20,7 @@
  */
 import { silentCatch } from '@/lib/silentCatch';
 import { companionSendMessage, companionRecordUxSignal } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
@@ -37,7 +37,7 @@ import type { DecisionOption, PendingDecision } from './types';
  * anywhere on screen and vanish before they read it.
  */
 export async function runDecisionOption(option: DecisionOption): Promise<void> {
-  const store = useCompanionStore.getState();
+  const store = useAthenaStore.getState();
   const source = store.pendingDecision?.source ?? 'unknown';
   // Clear any previous failure so a retry doesn't render a stale error.
   if (store.decisionError) store.setDecisionError(null);
@@ -45,7 +45,7 @@ export async function runDecisionOption(option: DecisionOption): Promise<void> {
     await option.run();
   } catch (err) {
     silentCatch('companion/resolveDecision:run')(err);
-    useCompanionStore.getState().setDecisionError('run-failed');
+    useAthenaStore.getState().setDecisionError('run-failed');
     return; // keep the decision pending; do NOT record it as resolved
   }
   // F3 — he resolved a decision hands-free via the orb (vs falling through to chat).
@@ -53,7 +53,7 @@ export async function runDecisionOption(option: DecisionOption): Promise<void> {
     'decision_resolved',
     JSON.stringify({ via: 'orb', source, option: option.key }),
   );
-  useCompanionStore.getState().clearPendingDecision();
+  useAthenaStore.getState().clearPendingDecision();
 }
 
 /**
@@ -64,7 +64,7 @@ export async function runDecisionOption(option: DecisionOption): Promise<void> {
  *     pre-baked recommendation (Slice 4 behaviour, unchanged).
  *  2. Escalation (Explain-in-Cockpit) — fires a synthetic
  *     `decision-explain` turn carrying the decision's full context.
- *     Athena replies with an `explain_in_cockpit` op; the CompanionPanel
+ *     Athena replies with an `explain_in_cockpit` op; the AthenaChatPanel
  *     listener renders it as a contextual cockpit overlay and clears
  *     `explainComposing`. While the turn runs, the orb plays the
  *     `composing` clip and the bubble shows a processing row.
@@ -74,7 +74,7 @@ export async function runDecisionOption(option: DecisionOption): Promise<void> {
  * translated fallback line. The static recommendation is the floor.
  */
 export function explainDecision(): void {
-  const store = useCompanionStore.getState();
+  const store = useAthenaStore.getState();
   const decision = store.pendingDecision;
   store.markDecisionExplained();
   if (!decision || store.explainComposing) return;
@@ -88,7 +88,7 @@ export function explainDecision(): void {
       // invoke resolves); if composing still holds after that, the turn
       // finished without emitting the op.
       setTimeout(() => {
-        const s = useCompanionStore.getState();
+        const s = useAthenaStore.getState();
         if (s.explainComposing) {
           s.setExplainComposing(false);
           s.setExplainComposeError('no-spec');
@@ -97,7 +97,7 @@ export function explainDecision(): void {
     })
     .catch((err) => {
       silentCatch('companion/resolveDecision:explain-turn')(err);
-      const s = useCompanionStore.getState();
+      const s = useAthenaStore.getState();
       s.setExplainComposing(false);
       s.setExplainComposeError('turn-failed');
     });

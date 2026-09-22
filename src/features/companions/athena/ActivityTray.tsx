@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Activity, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { TaskTag } from './TaskTag';
 
 /**
@@ -15,8 +15,8 @@ import { TaskTag } from './TaskTag';
 export function ActivityTray() {
   const { t, tx } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const jobsById = useCompanionStore((s) => s.jobsById);
-  const inTurnToolJobs = useCompanionStore((s) => s.inTurnToolJobs);
+  const jobsById = useAthenaStore((s) => s.jobsById);
+  const inTurnToolJobs = useAthenaStore((s) => s.inTurnToolJobs);
 
   const running = useMemo(
     () =>

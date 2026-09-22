@@ -21,9 +21,9 @@
 import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
-import { useCompanionStore } from "@/features/companions/athena/companionStore";
+import { useAthenaStore } from "@/features/companions/athena/athenaStore";
 import type { DevToolsTab, TwinTab, PluginTab, ObsidianBrainTab } from '@/lib/types/types';
-import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
+import type { CompanionPluginTab } from '@/stores/slices/system/athenaSlice';
 import { companionItems, devToolsItems, filterByTier, obsidianBrainItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import SidebarGroupNav, { type GroupNavItem, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
@@ -69,7 +69,7 @@ export function PluginsSidebarNav() {
   const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const fleetSessions = useSystemStore((s) => s.fleetSessions);
   const fleetWaitingCount = fleetSessions.filter((s) => s.state === 'awaiting_input').length;
-  const companionApprovalsCount = useCompanionStore((s) => s.approvals.length);
+  const companionApprovalsCount = useAthenaStore((s) => s.approvals.length);
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);

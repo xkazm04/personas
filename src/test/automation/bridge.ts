@@ -15,7 +15,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { storeBus } from "@/lib/storeBus";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { useCompanionStore } from "@/features/companions/athena/companionStore";
+import { useAthenaStore } from "@/features/companions/athena/athenaStore";
 import { sections as sidebarSections } from "@/features/shared/chrome/sidebar/sidebarData";
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
@@ -817,7 +817,7 @@ const bridge: TestBridge = {
         { label: 'Approve' },
         { label: 'Reject', danger: true },
       ];
-    useCompanionStore.getState().setPendingDecision({
+    useAthenaStore.getState().setPendingDecision({
       id,
       prompt: (o.prompt as string) ?? 'Synthetic decision (test harness)',
       options: rawOptions.map((opt, i) => ({
@@ -838,7 +838,7 @@ const bridge: TestBridge = {
 
   /** Snapshot of the Explain-in-Cockpit flow state for QA assertions. */
   getExplainState() {
-    const c = useCompanionStore.getState();
+    const c = useAthenaStore.getState();
     const sys = useSystemStore.getState();
     const ctx = sys.contextualCockpit;
     return {
@@ -2227,7 +2227,7 @@ const bridge: TestBridge = {
    * store + persistence layer.
    */
   getCompanionAutonomousMode(): { enabled: boolean } {
-    return { enabled: useSystemStore.getState().companionAutonomousMode };
+    return { enabled: useSystemStore.getState().athenaAutonomousMode };
   },
 
   /**
@@ -2235,9 +2235,16 @@ const bridge: TestBridge = {
    * test wants to verify autonomous-only UI affordances without
    * physically clicking the header toggle (which is fine to test
    * separately).
+   *
+   * NAME IS WIRE: bridge method names are resolved at runtime by `__exec__`
+   * from strings held on the other side of the boundary (Rust's
+   * `eval_bridge_method*`, `tests/playwright/companion-bridge.ts`, ad-hoc
+   * `/bridge-exec` callers), so the Athena rename deliberately stopped at the
+   * method body. Renaming it would break a test-driver endpoint with no
+   * compile error anywhere.
    */
   setCompanionAutonomousMode(enabled: boolean): { success: boolean } {
-    useSystemStore.getState().setCompanionAutonomousMode(enabled);
+    useSystemStore.getState().setAthenaAutonomousMode(enabled);
     return { success: true };
   },
 
@@ -2249,7 +2256,7 @@ const bridge: TestBridge = {
    * `companion-send` testids.
    */
   openCompanion(): { success: boolean } {
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setState('open');
     return { success: true };
   },
 
@@ -2277,12 +2284,12 @@ const bridge: TestBridge = {
       completedAt: null,
       ...(over ?? {}),
     };
-    useCompanionStore.getState().upsertJob(job as never);
+    useAthenaStore.getState().upsertJob(job as never);
     return { success: true, id: job.id as string };
   },
 
   /** Push a synthetic in-turn tool task (async-UX phase 4b) into the REAL
-   *  store — the same shape CompanionPanel synthesizes when a tool_use block
+   *  store — the same shape AthenaChatPanel synthesizes when a tool_use block
    *  in Athena's CLI stream runs past the threshold. Lets a test exercise the
    *  tray/orb merge of inTurnToolJobs without a live streaming turn. */
   pushInTurnToolJob(over?: Record<string, unknown>): { success: boolean; id: string } {
@@ -2304,7 +2311,7 @@ const bridge: TestBridge = {
       completedAt: null,
       ...(over ?? {}),
     };
-    useCompanionStore.getState().upsertInTurnToolJob(job as never);
+    useAthenaStore.getState().upsertInTurnToolJob(job as never);
     return { success: true, id: job.id as string };
   },
 
@@ -2347,7 +2354,7 @@ const bridge: TestBridge = {
    * verify Stop-button presence and click behavior without burning a
    * real Claude turn.
    *
-   * The Stop button reads `streaming` from companionStore; setting
+   * The Stop button reads `streaming` from athenaStore; setting
    * `streaming: true` makes it appear. `streamingText` populates the
    * streaming bubble so the test can assert content. Pass
    * `streaming: false` (no streamingText) to clear.
@@ -2372,7 +2379,7 @@ const bridge: TestBridge = {
       toolName?: string;
     } | null;
   }): { success: boolean } {
-    const store = useCompanionStore.getState();
+    const store = useAthenaStore.getState();
     store.setStreaming(params.streaming);
     if (params.streaming && typeof params.streamingText === "string") {
       store.resetStreamingText();
@@ -2428,7 +2435,7 @@ const bridge: TestBridge = {
       title: c.title ?? undefined,
       config: c.config ?? {},
     }));
-    useCompanionStore.getState().setChatCards(list);
+    useAthenaStore.getState().setChatCards(list);
     return { success: true, count: list.length };
   },
 
@@ -2458,7 +2465,7 @@ const bridge: TestBridge = {
       content: m.content,
       createdAt: m.createdAt ?? now,
     }));
-    useCompanionStore.getState().setMessages(msgs);
+    useAthenaStore.getState().setMessages(msgs);
     return { success: true, count: msgs.length };
   },
 
@@ -2576,7 +2583,7 @@ const bridge: TestBridge = {
       progressText?: string | null;
     }>;
   } {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     const lastAssistant = [...s.messages].reverse().find((m) => m.role === 'assistant');
     if (!lastAssistant) {
       return { success: false, error: 'no assistant message yet' };
@@ -2702,7 +2709,7 @@ const bridge: TestBridge = {
     let lastSeenAssistantId: string | null = null;
     let sawStreaming = false;
     while (Date.now() < deadline) {
-      const s = useCompanionStore.getState();
+      const s = useAthenaStore.getState();
       if (s.streaming) sawStreaming = true;
       const lastAssistant = [...s.messages].reverse().find((m) => m.role === 'assistant');
       if (lastAssistant && !s.streaming) {
@@ -2853,11 +2860,11 @@ const bridge: TestBridge = {
   // glided" / "element glowing" / "narration changed" don't depend on the
   // model emitting `start_guided_walkthrough`.
   startGuidedWalkthrough(topic: string) {
-    useCompanionStore.getState().startGuidance(topic);
+    useAthenaStore.getState().startGuidance(topic);
     return { success: true, topic };
   },
   guidanceState() {
-    const s = useCompanionStore.getState();
+    const s = useAthenaStore.getState();
     const rectOf = (sel: string) => {
       const el = document.querySelector(sel);
       if (!el) return null;

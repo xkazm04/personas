@@ -11,11 +11,11 @@
  */
 
 import { useMemo } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export function AthenaChatLiveRegion() {
-  const messages = useCompanionStore((s) => s.messages);
-  const streaming = useCompanionStore((s) => s.streaming);
+  const messages = useAthenaStore((s) => s.messages);
+  const streaming = useAthenaStore((s) => s.streaming);
 
   const latest = useMemo(() => {
     if (streaming) return '';

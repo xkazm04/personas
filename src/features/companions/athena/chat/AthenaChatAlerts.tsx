@@ -3,27 +3,27 @@
  *
  * LEVEL 1 is the counts bar (`AttentionBar`). Every surface below it is level
  * 2: revealed only when its chip is toggled on, and that choice persists
- * (`companionAlertsExpanded`). Six unconditional stacks used to live here and
+ * (`athenaAlertsExpanded`). Six unconditional stacks used to live here and
  * bury the conversation on a busy day; the default is now a row of numbers.
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { AttentionBar } from '../attention/AttentionBar';
 import { isCountableNudge, nudgeSeverity } from '../attention/attentionKinds';
 import { AthenaActionsStrip } from '../AthenaActionsStrip';
 import { ChatDecisionCard } from '../decision/ChatDecisionCard';
-import { CompanionAssignmentCards } from '../CompanionAssignmentCards';
+import { AthenaAssignmentCards } from '../AthenaAssignmentCards';
 import { LiveOpsStrip } from '../orchestration/LiveOpsStrip';
 import { McpRequestPanel } from '../mcp/McpRequestPanel';
 import { ProactiveCard } from '../ProactiveCard';
 import { CHAT_EASE } from './athenaChatMorph';
 
 export function AthenaChatAlerts({ onEngage }: { onEngage: (text: string) => void }) {
-  const proactive = useCompanionStore((s) => s.proactive);
-  const removeProactive = useCompanionStore((s) => s.removeProactive);
-  const alertsExpanded = useSystemStore((s) => s.companionAlertsExpanded);
+  const proactive = useAthenaStore((s) => s.proactive);
+  const removeProactive = useAthenaStore((s) => s.removeProactive);
+  const alertsExpanded = useSystemStore((s) => s.athenaAlertsExpanded);
 
   return (
     <>
@@ -34,7 +34,7 @@ export function AthenaChatAlerts({ onEngage }: { onEngage: (text: string) => voi
       <AttentionBar />
       {/* Phase C2 — Athena-dispatched team assignments; click routes to the
           pipeline page for the full panel. */}
-      {alertsExpanded.includes('assignments') && <CompanionAssignmentCards />}
+      {alertsExpanded.includes('assignments') && <AthenaAssignmentCards />}
       {/* Both of these mean something is WAITING on the user — a spawned claude
           session parked on its request, or a decision with no other surface
           while the panel is open — so they share the `blocked` chip, the one

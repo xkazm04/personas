@@ -63,8 +63,8 @@ export function AttentionBar() {
   const { t } = useTranslation();
   const c = t.plugins.companion;
   const counts = useAttentionCounts();
-  const expanded = useSystemStore((s) => s.companionAlertsExpanded);
-  const toggle = useSystemStore((s) => s.toggleCompanionAlertKind);
+  const expanded = useSystemStore((s) => s.athenaAlertsExpanded);
+  const toggle = useSystemStore((s) => s.toggleAthenaAlertKind);
 
   const label: Record<AttentionKind, string> = {
     blocked: c.attention_blocked,

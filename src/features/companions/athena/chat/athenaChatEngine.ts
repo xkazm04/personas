@@ -23,7 +23,7 @@
 
 import { useRef } from 'react';
 import type { CompanionMessage } from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useAthenaChatEvents } from './athenaChatEvents';
 import { useAthenaChatHydration } from './athenaChatHydration';
 import { useAthenaChatNavigation } from './athenaChatNavigation';
@@ -47,11 +47,11 @@ export interface AthenaChatEngine {
 }
 
 export function useAthenaChatEngine(): AthenaChatEngine {
-  const initialized = useCompanionStore((s) => s.initialized);
-  const initError = useCompanionStore((s) => s.initError);
-  const messages = useCompanionStore((s) => s.messages);
-  const streaming = useCompanionStore((s) => s.streaming);
-  const activeConversationId = useCompanionStore((s) => s.activeConversationId);
+  const initialized = useAthenaStore((s) => s.initialized);
+  const initError = useAthenaStore((s) => s.initError);
+  const messages = useAthenaStore((s) => s.messages);
+  const streaming = useAthenaStore((s) => s.streaming);
+  const activeConversationId = useAthenaStore((s) => s.activeConversationId);
 
   // Silence clock for the slow-progress chip and the spoken heartbeat. A ref,
   // not state: it ticks on every CLI line and must cost nothing to update.

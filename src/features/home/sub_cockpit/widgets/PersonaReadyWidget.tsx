@@ -85,7 +85,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
       return;
     }
     const oneShot = recommended === 'build_oneshot';
-    sys.setCompanionPrefill({
+    sys.setAthenaPrefill({
       intent: summary.intent_line,
       name: null,
       autoLaunch: oneShot,

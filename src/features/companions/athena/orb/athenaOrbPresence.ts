@@ -11,7 +11,7 @@ import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import type { AthenaState } from '../AthenaAvatar';
 import {
   resolveMention,
@@ -97,17 +97,17 @@ export function useAthenaOrbPresence(args: {
   // One Athena = aggregate presence. The flat `streaming` mirrors the FOCUSED
   // thread only; a turn running in a background conversation should still put
   // her in the thinking posture.
-  const anyConversationStreaming = useCompanionStore((s) => {
+  const anyConversationStreaming = useAthenaStore((s) => {
     if (s.streaming) return true;
     for (const turn of Object.values(s.liveTurns)) if (turn.streaming) return true;
     return false;
   });
-  const explainComposing = useCompanionStore((s) => s.explainComposing);
-  const hasUnreadPlayback = useCompanionStore(
+  const explainComposing = useAthenaStore((s) => s.explainComposing);
+  const hasUnreadPlayback = useAthenaStore(
     (s) => s.pendingPlayback != null && !s.pendingPlayback.played,
   );
-  const unreadReplies = useCompanionStore((s) => s.unreadReplies);
-  const runningTaskCount = useCompanionStore((s) => {
+  const unreadReplies = useAthenaStore((s) => s.unreadReplies);
+  const runningTaskCount = useAthenaStore((s) => {
     let n = 0;
     for (const j of Object.values(s.jobsById)) {
       if (j.status === 'running' || j.status === 'queued') n += 1;
@@ -133,7 +133,7 @@ export function useAthenaOrbPresence(args: {
   // A PRIMITIVE selector, deliberately: returning the message object would
   // re-render the orb on every store write that replaces the array, and this
   // component is mounted over every screen for the whole session.
-  const lastAthenaLine = useCompanionStore((s) => {
+  const lastAthenaLine = useAthenaStore((s) => {
     for (let i = s.messages.length - 1; i >= 0; i -= 1) {
       const m = s.messages[i];
       if (m && m.role === 'assistant' && m.content.trim()) return m.content;

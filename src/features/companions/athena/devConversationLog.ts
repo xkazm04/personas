@@ -6,14 +6,14 @@
  * into one markdown document for reflective development.
  *
  * Pure data in → string out: no store imports, no IPC. The button
- * gathers the inputs from `useCompanionStore.getState()` and ships the
+ * gathers the inputs from `useAthenaStore.getState()` and ships the
  * result to `companion_export_conversation_log` (debug builds only).
  */
 
 import type { CompanionMessage, CompanionRecallPreview } from '@/api/companion';
 import type { NarrationEntry, StoredNarration } from './narrationTimeline';
 import type { TodoStep } from './operationalSteps';
-import type { AthenaAction, StoredTurnSummary } from './companionStore';
+import type { AthenaAction, StoredTurnSummary } from './athenaStore';
 
 export interface ConversationLogInput {
   conversationId: string;

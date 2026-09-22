@@ -20,7 +20,7 @@ import { CircleAlert, CircleCheck, Laptop, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { activeRemoteJobNotice } from '@/lib/network/remoteJobNotice';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { ORB_SIZE } from './AthenaOrb';
 
 const CHIP_GAP = 12;
@@ -36,9 +36,9 @@ export function RemoteJobNoticeChip() {
   const notices = useSystemStore((s) => s.remoteJobNotices);
   const expireRemoteJobNotices = useSystemStore((s) => s.expireRemoteJobNotices);
   const dismissRemoteJobNotice = useSystemStore((s) => s.dismissRemoteJobNotice);
-  const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
-  const orbPos = useSystemStore((s) => s.companionOrbPos);
-  const decision = useCompanionStore((s) => s.pendingDecision);
+  const orbTarget = useAthenaStore((s) => s.orbGuideTarget);
+  const orbPos = useSystemStore((s) => s.athenaOrbPos);
+  const decision = useAthenaStore((s) => s.pendingDecision);
 
   const notice = activeRemoteJobNotice(notices);
   const hasNotices = notices.length > 0;

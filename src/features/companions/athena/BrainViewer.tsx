@@ -49,7 +49,7 @@ import {
   type BrainKind,
   type BrainListItem,
 } from '@/api/companion';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { titleCase } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
 import { BrainCycleReports } from './BrainCycleReports';
@@ -140,8 +140,8 @@ const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKe
  */
 export function BrainViewer({ onClose }: { onClose?: () => void }) {
   const { t } = useTranslation();
-  const brainView = useCompanionStore((s) => s.brainView);
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const brainView = useAthenaStore((s) => s.brainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
 
   const goBack = useCallback(() => {
     if (brainView.id) {
@@ -313,7 +313,7 @@ function kindLabel(
 
 function TypesView() {
   const { t } = useTranslation();
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
   const [counts, setCounts] = useState<Partial<Record<BrainKind, number>>>({});
 
   // One counts IPC for all kinds. Firing 13 parallel companionListBrainItems
@@ -401,7 +401,7 @@ async function fetchListPage(kind: BrainKind, offset: number): Promise<BrainList
 
 function ListView({ kind }: { kind: BrainKind }) {
   const { t } = useTranslation();
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
   const cached = useModuleSubscription(listCache, kind);
   const enter = useRevealTracker(kind);
 
@@ -571,7 +571,7 @@ function kindIcon(kind: BrainKind): LucideIcon {
  */
 function ListEmpty({ kind }: { kind: BrainKind }) {
   const { t, tx } = useTranslation();
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
   const addToast = useToastStore((s) => s.addToast);
   const [running, setRunning] = useState(false);
 
@@ -610,13 +610,13 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
   }, [addToast, t]);
 
   const askAthena = useCallback(() => {
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: tx(t.plugins.companion.brain_empty_ask_prompt, {
         kind: kindLabel(t, kind),
       }),
       autoSend: true,
     });
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setState('open');
   }, [t, tx, kind]);
 
   if (running) {
@@ -668,7 +668,7 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
 
 function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
   const { t } = useTranslation();
-  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
   const [detail, setDetail] = useState<BrainDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);

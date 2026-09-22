@@ -20,14 +20,14 @@ import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 
 export function useAthenaChatShellEffects(streaming: boolean): void {
   // Beta flags, fetched once on first mount. Cheap (a single bool) and it
   // decides whether the dev-mode wrench is rendered at all.
   useEffect(() => {
     companionBetaFlags()
-      .then((f) => useCompanionStore.getState().setDevModeAvailable(f.devModeAvailable))
+      .then((f) => useAthenaStore.getState().setDevModeAvailable(f.devModeAvailable))
       .catch(silentCatch('companion_beta_flags'));
   }, []);
 
@@ -40,7 +40,7 @@ export function useAthenaChatShellEffects(streaming: boolean): void {
   useEffect(() => {
     if (prevStreamingRef.current && !streaming) {
       companionListPendingApprovals()
-        .then((list) => useCompanionStore.getState().setApprovals(list))
+        .then((list) => useAthenaStore.getState().setApprovals(list))
         .catch(silentCatch('companion_list_pending_approvals'));
     }
     prevStreamingRef.current = streaming;
@@ -65,7 +65,7 @@ export function useAthenaChatShellEffects(streaming: boolean): void {
       }
       if (!body || !Array.isArray(body.widgets) || body.widgets.length === 0) return;
       // The explanation landed — drop the orb's composing posture.
-      const store = useCompanionStore.getState();
+      const store = useAthenaStore.getState();
       store.setExplainComposing(false);
       store.setExplainComposeError(null);
       const sys = useSystemStore.getState();
@@ -79,7 +79,7 @@ export function useAthenaChatShellEffects(streaming: boolean): void {
       });
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
-      sys.setCompanionPanelCompact(true);
+      sys.setAthenaPanelCompact(true);
       store.flashHighlight('cockpit-panel', {
         label: getActiveTranslations().plugins.companion.guide_flash_composed,
       });

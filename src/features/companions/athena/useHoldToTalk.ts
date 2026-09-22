@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCompanionStore } from './companionStore';
+import { useAthenaStore } from './athenaStore';
 import { parseSpokenDecision } from './decision/parseSpokenDecision';
 import { explainDecision, runDecisionOption } from './decision/resolveDecision';
 import { useSpeechInput } from './useSpeechInput';
@@ -8,13 +8,13 @@ import { useSpeechInput } from './useSpeechInput';
  * Shared hold-to-talk core for Athena's footer button and floating orb.
  *
  * Owns the dictation lifecycle and hands the final transcript to the
- * always-mounted `CompanionPanel` via `voiceTurnRequest`, which runs the
+ * always-mounted `AthenaChatPanel` via `voiceTurnRequest`, which runs the
  * full `send()` pipeline (streaming + TTS) WITHOUT opening the panel.
  * Callers own the gesture discrimination (tap vs hold vs drag) and drive
  * this hook imperatively via {@link start} / {@link stop}.
  *
  * STT routes through `useSpeechInput`, which picks the user's engine
- * (`companionSttEngine`): the browser Web Speech engine (cloud-routed on
+ * (`athenaSttEngine`): the browser Web Speech engine (cloud-routed on
  * WebView2) or the local on-device whisper engine (audio stays on device).
  * The mic is only ever armed by an explicit `start()`, never on mount.
  */
@@ -43,8 +43,8 @@ export interface HoldToTalk {
 }
 
 export function useHoldToTalk(): HoldToTalk {
-  const setVoiceTurnRequest = useCompanionStore((s) => s.setVoiceTurnRequest);
-  const setVoiceCaptureActive = useCompanionStore((s) => s.setVoiceCaptureActive);
+  const setVoiceTurnRequest = useAthenaStore((s) => s.setVoiceTurnRequest);
+  const setVoiceCaptureActive = useAthenaStore((s) => s.setVoiceCaptureActive);
   const dictation = useSpeechInput();
   const [talking, setTalking] = useState(false);
   const talkingRef = useRef(false);
@@ -105,7 +105,7 @@ export function useHoldToTalk(): HoldToTalk {
         // the final transcript; on a valid answer, resolve the decision (run
         // the option / explain) and skip the chat turn entirely. Anything that
         // isn't a decision answer falls through to the normal pipeline.
-        const decision = useCompanionStore.getState().pendingDecision;
+        const decision = useAthenaStore.getState().pendingDecision;
         const answer = decision
           ? parseSpokenDecision(text, decision.options.length)
           : null;

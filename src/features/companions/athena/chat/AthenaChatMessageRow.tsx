@@ -22,7 +22,7 @@ import { OperationalThread } from '../OperationalThread';
 import { RecallStrip } from '../RecallStrip';
 import { TurnSummaryChip } from '../TurnSummaryChip';
 import type { TodoStep } from '../operationalSteps';
-import type { StoredTurnSummary } from '../companionStore';
+import type { StoredTurnSummary } from '../athenaStore';
 import { systemMarkerOf } from '../systemMarkers';
 import { AthenaChatCanvasNote } from './AthenaChatCanvasNote';
 import { AthenaChatMessageJobs } from './AthenaChatMessageJobs';

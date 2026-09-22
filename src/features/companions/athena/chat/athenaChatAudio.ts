@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { play as playAudio, synthesize as synthesizeTts } from '../voicePlayback';
 import type { useTtsSettings } from '../useTtsSettings';
 import type { ResolvedTtsVoice } from '../useTtsVoiceSelection';
@@ -62,12 +62,12 @@ export function useAthenaChatAudio(args: {
   const playProgress = useCallback(
     (text: string) => {
       if (!voiceActive || !voiceId) return;
-      if (useCompanionStore.getState().pendingPlayback) return;
+      if (useAthenaStore.getState().pendingPlayback) return;
       stopProgress();
       synthesizeTts(text, credentialId, voiceId, voiceSettings, engine)
         .then((url) => {
           // Re-check: the reply may have landed while we were synthesizing.
-          if (useCompanionStore.getState().pendingPlayback) {
+          if (useAthenaStore.getState().pendingPlayback) {
             URL.revokeObjectURL(url);
             return;
           }
@@ -93,12 +93,12 @@ export function useAthenaChatAudio(args: {
       stopMain();
       synthesizeTts(text, credentialId, voiceId, voiceSettings, engine)
         .then((url) => {
-          useCompanionStore.getState().setPlaybackAudioUrl(url);
+          useAthenaStore.getState().setPlaybackAudioUrl(url);
           mainUrlRef.current = url;
           const { audio, done } = playAudio(url);
           mainAudioRef.current = audio;
           done
-            .then(() => useCompanionStore.getState().markPlaybackPlayed())
+            .then(() => useAthenaStore.getState().markPlaybackPlayed())
             .catch(silentCatch('companion_tts_play'))
             .finally(() => {
               if (mainUrlRef.current !== url) return;

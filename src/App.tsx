@@ -135,7 +135,7 @@ const HealingToast = lazyRetry(() => import("@/features/overview/components/feed
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
-const CompanionPanel = lazyRetry(() => import("@/features/companions/athena/chat/AthenaChatPanel"));
+const AthenaChatPanel = lazyRetry(() => import("@/features/companions/athena/chat/AthenaChatPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaOrbLayer"));
 const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 // Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
@@ -424,7 +424,7 @@ export default function App() {
                   <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
                   <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
                   <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
-                  <OverlayIsland name="companion-panel"><CompanionPanel /></OverlayIsland>
+                  <OverlayIsland name="companion-panel"><AthenaChatPanel /></OverlayIsland>
                   <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
                   <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
                   {import.meta.env.DEV && <OverlayIsland name="studio-attention"><StudioAttention /></OverlayIsland>}

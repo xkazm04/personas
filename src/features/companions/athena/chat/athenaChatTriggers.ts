@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { stripMarkdownForSpeech } from './athenaChatSpeech';
 
 export function useAthenaChatTriggers(args: {
@@ -24,23 +24,23 @@ export function useAthenaChatTriggers(args: {
 }): void {
   const { streaming, send, playProgressClip } = args;
 
-  const voiceTurnRequest = useCompanionStore((s) => s.voiceTurnRequest);
+  const voiceTurnRequest = useAthenaStore((s) => s.voiceTurnRequest);
   useEffect(() => {
     if (!voiceTurnRequest || streaming) return;
-    const req = useCompanionStore.getState().voiceTurnRequest;
+    const req = useAthenaStore.getState().voiceTurnRequest;
     if (!req) return;
-    useCompanionStore.getState().setVoiceTurnRequest(null);
+    useAthenaStore.getState().setVoiceTurnRequest(null);
     send(req.text, undefined, req.source);
   }, [voiceTurnRequest, streaming, send]);
 
-  const pendingChatPrompt = useCompanionStore((s) => s.pendingChatPrompt);
+  const pendingChatPrompt = useAthenaStore((s) => s.pendingChatPrompt);
   useEffect(() => {
     if (!pendingChatPrompt || streaming) return;
-    const req = useCompanionStore.getState().pendingChatPrompt;
+    const req = useAthenaStore.getState().pendingChatPrompt;
     if (!req) return;
-    useCompanionStore.getState().setPendingChatPrompt(null);
+    useAthenaStore.getState().setPendingChatPrompt(null);
     // App-initiated prompts OPEN the panel — they begin a guided conversation.
-    useCompanionStore.getState().setState('open');
+    useAthenaStore.getState().setState('open');
     // `req.source` is the provenance label. Passing it is what stops an
     // app-composed prompt from impersonating the operator — see
     // `AppPromptRequest`. A request without one is genuinely his words.
@@ -51,8 +51,8 @@ export function useAthenaChatTriggers(args: {
   // The decision text is NOT auto-read when the bubble surfaces (it is on
   // screen to read); Athena speaks only when the user picks `0`, reading the
   // `recommendation`. Keyed on the decision id so it speaks exactly once.
-  const decisionId = useCompanionStore((s) => s.pendingDecision?.id ?? null);
-  const decisionExplained = useCompanionStore((s) => s.decisionExplained);
+  const decisionId = useAthenaStore((s) => s.pendingDecision?.id ?? null);
+  const decisionExplained = useAthenaStore((s) => s.decisionExplained);
   const spokenForRef = useRef<string | null>(null);
   useEffect(() => {
     if (!decisionId) {
@@ -61,7 +61,7 @@ export function useAthenaChatTriggers(args: {
     }
     if (!decisionExplained || spokenForRef.current === decisionId) return;
     spokenForRef.current = decisionId;
-    const rec = useCompanionStore.getState().pendingDecision?.recommendation;
+    const rec = useAthenaStore.getState().pendingDecision?.recommendation;
     // Markdown is stripped first so she never reads `**` / `-` aloud.
     if (rec) playProgressClip(stripMarkdownForSpeech(rec));
   }, [decisionId, decisionExplained, playProgressClip]);

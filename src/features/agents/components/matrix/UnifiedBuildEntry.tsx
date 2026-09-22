@@ -143,8 +143,8 @@ export function UnifiedBuildEntry() {
     const s = useSystemStore.getState();
     // Phase F: Athena's prefill_persona_create wins over setup-goal
     // bridging — it's a more recent, more deliberate signal.
-    if (s.companionPrefill && s.companionPrefill.intent) {
-      return s.companionPrefill.intent;
+    if (s.athenaPrefill && s.athenaPrefill.intent) {
+      return s.athenaPrefill.intent;
     }
     const bridgeIsActive = s.onboardingActive || useTourStore.getState().tourActive;
     return bridgeIsActive && typeof s.setupGoal === 'string' ? s.setupGoal : '';
@@ -166,7 +166,7 @@ export function UnifiedBuildEntry() {
   // both fields filled. Cleared along with the prefill below.
   const [agentName, setAgentName] = useState(() => {
     const s = useSystemStore.getState();
-    return s.companionPrefill?.name ?? "";
+    return s.athenaPrefill?.name ?? "";
   });
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
@@ -202,22 +202,22 @@ export function UnifiedBuildEntry() {
   const pendingCompanionSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
     const s = useSystemStore.getState();
-    if (s.companionPrefill?.autoLaunch && s.companionPrefill.intent.trim()) {
+    if (s.athenaPrefill?.autoLaunch && s.athenaPrefill.intent.trim()) {
       pendingAutoLaunchRef.current = true;
     }
-    if (s.companionPrefill?.mode === 'one_shot') {
+    if (s.athenaPrefill?.mode === 'one_shot') {
       pendingBuildModeRef.current = 'one_shot';
-    } else if (s.companionPrefill?.mode === 'interactive') {
+    } else if (s.athenaPrefill?.mode === 'interactive') {
       pendingBuildModeRef.current = 'interactive';
     }
-    if (s.companionPrefill?.companionSessionId) {
-      pendingCompanionSessionIdRef.current = s.companionPrefill.companionSessionId;
+    if (s.athenaPrefill?.companionSessionId) {
+      pendingCompanionSessionIdRef.current = s.athenaPrefill.companionSessionId;
     }
     // Consume the prefill regardless — it's a one-shot bridge. If
     // autoLaunch was false, the user just sees a prefilled wizard
     // and decides for themselves.
-    if (s.companionPrefill) {
-      s.setCompanionPrefill(null);
+    if (s.athenaPrefill) {
+      s.setAthenaPrefill(null);
     }
   }, []);
 

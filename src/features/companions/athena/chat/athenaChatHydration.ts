@@ -13,7 +13,7 @@ import {
   type CompanionMessage,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from '../companionStore';
+import { useAthenaStore } from '../athenaStore';
 import { useChatCardHydration } from '../useChatCards';
 import { useTurnSidecarHydration } from '../useTurnSidecars';
 
@@ -29,8 +29,8 @@ export function useAthenaChatHydration(args: {
     companionListRecentMessages(50, activeConversationId)
       .then((msgs) => {
         // The user may have switched threads while this was in flight.
-        if (useCompanionStore.getState().activeConversationId === activeConversationId) {
-          useCompanionStore.getState().setMessages(msgs);
+        if (useAthenaStore.getState().activeConversationId === activeConversationId) {
+          useAthenaStore.getState().setMessages(msgs);
         }
       })
       .catch(silentCatch('companion_list_recent_messages'));
@@ -52,12 +52,12 @@ export function useAthenaChatHydration(args: {
     if (!initialized || fetchedRef.current) return;
     fetchedRef.current = true;
     companionListPendingApprovals()
-      .then((list) => useCompanionStore.getState().setApprovals(list))
+      .then((list) => useAthenaStore.getState().setApprovals(list))
       .catch(silentCatch('companion_list_pending_approvals'));
     // Phase E: surface unresolved nudges immediately on mount rather than only
     // after the next scheduler tick.
     companionListProactiveMessages(true, 20)
-      .then((list) => useCompanionStore.getState().setProactive(list))
+      .then((list) => useAthenaStore.getState().setProactive(list))
       .catch(silentCatch('companion_list_proactive_messages'));
   }, [initialized]);
 }

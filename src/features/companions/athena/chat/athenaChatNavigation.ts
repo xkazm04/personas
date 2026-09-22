@@ -27,8 +27,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { SidebarSection } from '@/lib/types/types';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
-import { COMPANION_NAV_ROUTES } from '../companionRoutes';
+import { useAthenaStore } from '../athenaStore';
+import { ATHENA_NAV_ROUTES } from '../athenaRoutes';
 import { buildComposedWalkthrough, buildPointAtWalkthrough } from '../guidance/composeAdHoc';
 
 /**
@@ -49,8 +49,8 @@ function goToCockpit(compact: boolean): void {
   const sys = useSystemStore.getState();
   sys.setSidebarSection('home');
   sys.setHomeTab('cockpit');
-  if (compact) sys.setCompanionPanelCompact(true);
-  useCompanionStore.getState().flashHighlight('cockpit-panel', {
+  if (compact) sys.setAthenaPanelCompact(true);
+  useAthenaStore.getState().flashHighlight('cockpit-panel', {
     label: getActiveTranslations().plugins.companion.guide_flash_composed,
   });
 }
@@ -74,12 +74,12 @@ export function useAthenaChatNavigation(): void {
         useSystemStore.getState().setTeamsTab('mastermind');
         return;
       }
-      if (!COMPANION_NAV_ROUTES.includes(route as SidebarSection)) return;
+      if (!ATHENA_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
       // The flash tracker waits for the element to mount, so firing right after
       // the route switch is fine; it self-clears and yields to any walkthrough.
       const flashAnchor = ROUTE_FLASH_ANCHORS[route as SidebarSection];
-      if (flashAnchor) useCompanionStore.getState().flashHighlight(flashAnchor);
+      if (flashAnchor) useAthenaStore.getState().flashHighlight(flashAnchor);
     }, []),
     'companion_navigate_listen',
   );
@@ -106,19 +106,19 @@ export function useAthenaChatNavigation(): void {
     useCallback((event) => {
       const topic = event.payload?.topic;
       if (topic) {
-        useCompanionStore.getState().startGuidance(topic);
+        useAthenaStore.getState().startGuidance(topic);
         return;
       }
       const pointAt = event.payload?.pointAt;
       if (pointAt?.anchor && pointAt.narration) {
         const wt = buildPointAtWalkthrough(pointAt.anchor, pointAt.narration);
-        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+        if (wt) useAthenaStore.getState().startAdHocGuidance(wt);
         return;
       }
       const composed = event.payload?.composeWalkthrough;
       if (composed?.steps?.length) {
         const wt = buildComposedWalkthrough(composed.steps, composed.title);
-        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+        if (wt) useAthenaStore.getState().startAdHocGuidance(wt);
       }
     }, []),
     'companion_guide_listen',
@@ -132,7 +132,7 @@ export function useAthenaChatNavigation(): void {
       // Order matters: pre-set the lab jump (the LabTab effect reads it on
       // mount), then select the persona so the editor has data to render
       // against, and only then switch the sidebar + editor tab.
-      useSystemStore.getState().setCompanionLabJump({ personaId, mode });
+      useSystemStore.getState().setAthenaLabJump({ personaId, mode });
       try {
         useAgentStore.getState().selectPersona(personaId);
       } catch (err) {

@@ -53,10 +53,10 @@ import { SetupRow, VoiceEngineInstallBlock, PreviewButton, useVoicePreview } fro
  */
 export default function PocketVoicePanel() {
   const { t } = useTranslation();
-  const pocketVoiceId = useSystemStore((s) => s.companionPocketVoiceId);
-  const setPocketVoiceId = useSystemStore((s) => s.setCompanionPocketVoiceId);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
+  const pocketVoiceId = useSystemStore((s) => s.athenaPocketVoiceId);
+  const setPocketVoiceId = useSystemStore((s) => s.setAthenaPocketVoiceId);
+  const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
+  const setVoiceEnabled = useSystemStore((s) => s.setAthenaVoiceEnabled);
 
   const [status, setStatus] = useState<PocketStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);

@@ -20,9 +20,9 @@ import { useSttComparison, type EngineTake } from '../useSttComparison';
 export function SttCompareModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
-  const modelId = useSystemStore((s) => s.companionSttModelId);
-  const engine = useSystemStore((s) => s.companionSttEngine);
-  const setEngine = useSystemStore((s) => s.setCompanionSttEngine);
+  const modelId = useSystemStore((s) => s.athenaSttModelId);
+  const engine = useSystemStore((s) => s.athenaSttEngine);
+  const setEngine = useSystemStore((s) => s.setAthenaSttEngine);
   const cmp = useSttComparison();
 
   const close = () => {
