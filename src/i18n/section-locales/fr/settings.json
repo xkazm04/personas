@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% de la fenêtre de 7 jours",
     "fleet_concurrency_label": "Sessions de la flotte",
     "fleet_concurrency_aria": "Nombre maximal de sessions de flotte en parallèle",
-    "fleet_concurrency_hint": "Sessions Claude Code pouvant s’exécuter en même temps, tous lanceurs confondus. Au-delà de cette ligne un lancement est admis en file et démarre de lui-même dès qu’un créneau se libère. Le compteur de l’en-tête du tableau Activité écrit le même réglage."
+    "fleet_concurrency_hint": "Sessions Claude Code pouvant s’exécuter en même temps, tous lanceurs confondus. Au-delà de cette ligne un lancement est admis en file et démarre de lui-même dès qu’un créneau se libère. Le compteur de l’en-tête du tableau Activité écrit le même réglage.",
+    "dynamic_budgets_hint": "Admet les exécutions de flotte selon les budgets en direct de machine, GPU et plan, en utilisant le profil de ressources de chaque mandat. Désactivez pour revenir au plafond de session fixe ci-dessus.",
+    "dynamic_budgets_label": "Budgets de flotte dynamiques"
   },
   "notifications": {
     "digest_description": "Notification hebdomadaire résumant les problèmes de santé de tous les agents avec un score de santé global",

@@ -35,6 +35,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ci.yml"
     },
+    "Composer.tsx": {"count":2,"sections":[7],"lines":["169-186","169"],"contexts":["| `Composer.tsx:169-186` (`pendingPrompt`, **8 producers**) | n/a (text) | — |"],"resolved":false},
     "CortexMap.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["effect (a documented, e2e-covered flash of the wrong target); `brainiac`'s `CortexMap.tsx:41,46-55`"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["and `IngestMonitor.tsx:41,46-55` both `useState(\"starchart\")` and then `setActive` from `?view=`"],"resolved":false},
     "LazyMount.tsx": {"count":1,"sections":[0],"lines":["15"],"contexts":["and `LazyMount.tsx:15`'s own comment claims the reserved height *\"keeps scroll-map anchors"],"resolved":false},
@@ -279,14 +280,6 @@
       "contexts": ["| `CompanionAssignmentCards.tsx:23` | `'pipeline'` | `as Parameters<typeof setSidebarSection>[0]` |"],
       "resolvedFrom": "basename",
       "verbatim": "CompanionAssignmentCards.tsx"
-    },
-    "src/features/plugins/companion/Composer.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["169-186","169"],
-      "contexts": ["| `Composer.tsx:169-186` (`pendingPrompt`, **8 producers**) | n/a (text) | — |"],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
     },
     "src/features/plugins/companion/ProactiveCard.tsx": {
       "count": 3,

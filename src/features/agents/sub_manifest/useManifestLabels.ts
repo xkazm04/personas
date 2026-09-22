@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { DocumentSurfaceLabels } from '@/features/shared/components/document';
+import type { DocumentAuthor, DocumentSurfaceLabels } from '@/features/shared/components/document';
 
 /**
  * The manifest's vocabulary for the shared document surface.
@@ -14,26 +14,31 @@ export function useManifestLabels(): DocumentSurfaceLabels {
   const m = t.agents.manifest;
   const common = t.common;
 
-  return useMemo<DocumentSurfaceLabels>(
-    () => ({
+  return useMemo<DocumentSurfaceLabels>(() => {
+    const pick = <T,>(a: DocumentAuthor, you: T, agent: T, neither: T) =>
+      a === 'you' ? you : a === 'agent' ? agent : neither;
+    const author = (a: DocumentAuthor) => pick(a, m.author_you, m.author_agent, m.author_neither);
+    return {
       railLabel: m.rail_label,
+      railCaption: { title: m.rail_caption_title, aside: m.rail_caption_aside },
       tabsLabel: m.tabs_label,
-      author: (author) =>
-        author === 'you' ? m.author_you : author === 'agent' ? m.author_agent : m.author_neither,
-      savesWhole: m.saves_whole,
+      mark: (a) => pick(a, m.mark_you, m.mark_agent, m.mark_neither),
+      sealQuiet: (a, canWrite) => `${author(a)} · ${canWrite ? m.saves_whole : m.accept_reject}`,
+      lede: (a) => pick(a, m.lede_you, m.lede_agent, m.lede_neither),
       writeHere: m.write_here,
       readOnlyNote: m.read_only_note,
       draftKept: m.draft_kept,
+      draftMark: m.draft_mark,
       empty: m.law_empty,
       lines: (count) => (count === 1 ? m.lines_one : tx(m.lines_other, { count })),
       waiting: (count) => (count === 1 ? m.waiting_one : tx(m.waiting_other, { count })),
+      scrollOn: (number, chapter) => tx(m.scroll_on, { number, chapter }),
+      scrollBack: (number, chapter) => tx(m.scroll_back, { number, chapter }),
       editor: (heading) => ({
         field: tx(m.editor_field, { section: heading }),
-        hint: m.law_no_headings,
+        hint: m.editor_hint,
         save: common.save,
-        stop: m.editor_stop,
       }),
-    }),
-    [m, common, tx],
-  );
+    };
+  }, [m, common, tx]);
 }

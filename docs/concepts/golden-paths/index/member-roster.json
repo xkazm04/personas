@@ -23,6 +23,7 @@
   "triggers": [],
   "citations": {
     "EventRenameModal.tsx": {"count":1,"sections":[9],"contexts":["`ChannelList.tsx` (2), `EventRenameModal.tsx` (2), `ByomComplianceRules.tsx` (2) and six more."],"resolved":false},
+    "JudgePanel.tsx": {"count":3,"sections":[0,7],"lines":["94","97"],"contexts":["(`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`) — so the UI simply"],"resolved":false},
     "Keys.tsx": {"count":1,"sections":[],"lines":["70-88"],"contexts":["table (`Keys.tsx:70-88`) which renders *scopes*, not roles."],"resolved":false},
     "MemberInvites.tsx": {
       "count": 2,
@@ -88,14 +89,6 @@
       "contexts": ["| `fleet/monitor/channels/map/ChannelMap.tsx:109-119` | node id `n.personaId` | `personaId` | correct |"],
       "resolvedFrom": "suffix",
       "verbatim": "fleet/monitor/channels/map/ChannelMap.tsx"
-    },
-    "src/features/overview/sub_certification/components/JudgePanel.tsx": {
-      "count": 3,
-      "sections": [0,7],
-      "lines": ["94","97"],
-      "contexts": ["(`JudgePanel.tsx:94`, `ConversationSidebar.tsx:136`, `TeamList.tsx:443`) — so the UI simply"],
-      "resolvedFrom": "basename",
-      "verbatim": "JudgePanel.tsx"
     },
     "src/features/overview/sub_director/components/PersonaCoachingTable.tsx": {
       "count": 1,

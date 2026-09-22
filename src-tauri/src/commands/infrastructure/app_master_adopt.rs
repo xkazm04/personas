@@ -2126,7 +2126,7 @@ mod tests {
     }
 
     /// A workspace that has never been through the live door (a row written
-    /// before `e39_workspace_team_binding`, or by a raw INSERT) still gets its
+    /// before `e42_workspace_team_binding`, or by a raw INSERT) still gets its
     /// group here: `ensure_workspace_team` is a door, not a lookup.
     #[test]
     fn filing_a_groupless_workspace_creates_its_group_once() {

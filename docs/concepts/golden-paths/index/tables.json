@@ -44,6 +44,7 @@
       "isDir": true
     },
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["against `master` @ `2a874e692`. `.claude/worktrees/**` excluded from all counts."],"resolved":false,"isDir":true},
+    "GroundingTable.tsx": {"count":1,"sections":[5],"lines":["76"],"contexts":["- **A non-deterministic `getRowKey`** — `GroundingTable.tsx:76` uses `row.file ?? Math.random().toString(36)`."],"resolved":false},
     "ToneConsole.tsx": {
       "count": 1,
       "sections": [8],
@@ -53,6 +54,7 @@
       ],
       "resolved": false
     },
+    "overview/sub_certification/components/GroundingTable.tsx": {"count":1,"sections":[7],"lines":["76"],"contexts":["- `overview/sub_certification/components/GroundingTable.tsx:76` — `getRowKey` using `Math.random()`."],"resolved":false},
     "overview/sub_patterns/KnowledgeTree.tsx": {"count":1,"sections":[6],"lines":["355"],"contexts":["- `overview/sub_patterns/KnowledgeTree.tsx:355` — the bulk-action path through to `DataGrid`'s floating toolbar."],"resolved":false},
     "plugins/twin/sub_tone/ToneConsole.tsx": {
       "count": 1,
@@ -175,14 +177,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_activity/components/LlmCallsTable.tsx"
-    },
-    "src/features/overview/sub_certification/components/GroundingTable.tsx": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["76"],
-      "contexts": ["- **A non-deterministic `getRowKey`** — `GroundingTable.tsx:76` uses `row.file ?? Math.random().toString(36)`."],
-      "resolvedFrom": "basename",
-      "verbatim": "GroundingTable.tsx"
     },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 3,

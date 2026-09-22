@@ -1,9 +1,16 @@
 import { MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ParsedOutput } from './outputParser';
 import { analyzeProvenance } from './provenance';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  ContentBullets,
+  ContentCard,
+  ContentEyebrow,
+  ContentPill,
+  ContentWell,
+} from '@/features/shared/components/content';
 
 /**
  * Trust signal for a report's traceability (UAT P7 — F-NO-PROVENANCE): green
@@ -40,25 +47,21 @@ export function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMe
   const { sourceCount, hasFigures } = analyzeProvenance(msg.content);
   const showHeader = Boolean(msg.title) || sourceCount > 0 || hasFigures;
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
-      {showHeader && (
-        <div className="px-4 py-3 border-b border-primary/8 flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-primary/60" />
-          {msg.title && <span className="typo-heading font-semibold text-foreground/90">{msg.title}</span>}
-          {msg.priority && msg.priority !== 'normal' && (
-            <span className={`typo-heading px-1.5 py-0.5 rounded-full font-semibold uppercase ${
-              msg.priority === 'high' || msg.priority === 'urgent'
-                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-            }`}>{msg.priority}</span>
-          )}
-          <span className="ml-auto"><ProvenanceBadge content={msg.content} /></span>
-        </div>
-      )}
-      <div className="px-4 py-3">
-        {msg.content && <MarkdownRenderer content={msg.content} className="typo-body" />}
-      </div>
-    </div>
+    <ContentCard
+      variant="framed"
+      icon={showHeader ? <MessageSquare /> : undefined}
+      title={showHeader ? msg.title : undefined}
+      badges={
+        showHeader && msg.priority && msg.priority !== 'normal' ? (
+          <ContentPill tone={msg.priority === 'high' || msg.priority === 'urgent' ? 'red' : 'amber'}>
+            {msg.priority}
+          </ContentPill>
+        ) : undefined
+      }
+      trailing={showHeader ? <ProvenanceBadge content={msg.content} /> : undefined}
+    >
+      {msg.content && <RichMarkdown content={msg.content} className="typo-body" />}
+    </ContentCard>
   );
 }
 
@@ -89,33 +92,28 @@ export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] })
   return (
     <div className="space-y-2.5">
       {reviews.map((r, i) => (
-        <div key={i} className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3.5 space-y-2">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            {typeof r.title === 'string' && <span className="typo-heading font-semibold text-foreground/85">{r.title}</span>}
-            {typeof r.severity === 'string' && (
-              <span className={`typo-heading px-1.5 py-0.5 rounded-full font-semibold uppercase ${
-                r.severity === 'high' || r.severity === 'critical'
-                  ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-              }`}>{String(r.severity)}</span>
-            )}
-          </div>
+        <ContentCard
+          key={i}
+          tone="amber"
+          icon={<AlertTriangle />}
+          title={typeof r.title === 'string' ? r.title : undefined}
+          badges={
+            typeof r.severity === 'string' ? (
+              <ContentPill tone={r.severity === 'high' || r.severity === 'critical' ? 'red' : 'amber'}>
+                {String(r.severity)}
+              </ContentPill>
+            ) : undefined
+          }
+        >
           {typeof r.description === 'string' && <p className="typo-body text-foreground leading-relaxed">{r.description}</p>}
-          {typeof r.context_data === 'string' && (
-            <div className="px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-foreground">{r.context_data}</div>
-          )}
+          {typeof r.context_data === 'string' && <ContentWell>{r.context_data}</ContentWell>}
           {Array.isArray(r.suggested_actions) && r.suggested_actions.length > 0 && (
             <div className="space-y-1 pt-1">
-              <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{t.shared.execution_detail.suggested_actions}</span>
-              {(r.suggested_actions as string[]).map((a, j) => (
-                <div key={j} className="flex items-start gap-2 typo-body text-foreground">
-                  <span className="text-primary/40 mt-0.5">&#8226;</span><span>{a}</span>
-                </div>
-              ))}
+              <ContentEyebrow>{t.shared.execution_detail.suggested_actions}</ContentEyebrow>
+              <ContentBullets items={r.suggested_actions as string[]} />
             </div>
           )}
-        </div>
+        </ContentCard>
       ))}
     </div>
   );
@@ -167,21 +165,25 @@ export function EventsList({ events }: { events: Record<string, unknown>[] }) {
 export function KnowledgeSection({ annotation }: { annotation: Record<string, unknown> }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3.5 space-y-2">
-      <div className="flex items-center gap-2">
-        <BookOpen className="w-4 h-4 text-emerald-400" />
-        <span className="typo-heading font-semibold text-foreground/85">{t.shared.execution_detail.knowledge_insight}</span>
-        {typeof annotation.confidence === 'number' && (
-          <span className="typo-body text-foreground ml-auto">{Math.round(annotation.confidence * 100)}{t.shared.execution_detail.confidence_suffix}</span>
-        )}
-      </div>
+    <ContentCard
+      tone="emerald"
+      icon={<BookOpen />}
+      title={t.shared.execution_detail.knowledge_insight}
+      trailing={
+        typeof annotation.confidence === 'number' ? (
+          <span className="typo-body text-foreground">
+            {Math.round(annotation.confidence * 100)}{t.shared.execution_detail.confidence_suffix}
+          </span>
+        ) : undefined
+      }
+    >
       {typeof annotation.scope === 'string' && (
         <span className="inline-block text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80 font-mono">{annotation.scope}</span>
       )}
       {typeof annotation.note === 'string' && (
         <p className="typo-body text-foreground leading-relaxed">{annotation.note}</p>
       )}
-    </div>
+    </ContentCard>
   );
 }
 

@@ -6,6 +6,6 @@ export {
   railBands,
   type DocumentAuthor,
   type DocumentBlock,
+  type DocumentBlockKind,
   type DocumentSection,
 } from './documentModel';
-export { AUTHOR_TONE, DOCUMENT_MEASURE, type AuthorTone } from './documentTokens';

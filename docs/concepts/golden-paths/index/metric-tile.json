@@ -73,6 +73,7 @@
     },
     "IdentityAtelier.tsx": {"count":2,"sections":[5,7],"lines":["119","326"],"contexts":["| **Hardcoded English in a tile label** | `label=\"fields\"` (`IdentityAtelier.tsx:119`) in a 14-locale app. |"],"resolved":false},
     "IncidentsKpiHeader.tsx": {"count":1,"sections":[6],"lines":["18"],"contexts":["desktop app 41 times** (e.g. `IncidentsKpiHeader.tsx:18` *\"The web counterpart to the desktop"],"resolved":false},
+    "JudgePanel.tsx": {"count":1,"sections":[7],"lines":["8"],"contexts":["`Stat` is defined at `DeckSummary.tsx:27`, `DryRunModal.tsx:242`, `JudgePanel.tsx:8`,"],"resolved":false},
     "KnowledgeAtelier.tsx": {"count":1,"sections":[7],"lines":["493"],"contexts":["`IdentityAtelier.tsx:326`, `KnowledgeAtelier.tsx:493`, `ToneAtelier.tsx:424`,"],"resolved":false},
     "LiveWarRoomStat.tsx": {
       "count": 1,
@@ -428,7 +429,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_activity/libs/executionMetricsHelpers.ts"
     },
-    "src/features/overview/sub_certification/components/JudgePanel.tsx": {"count":1,"sections":[7],"lines":["8"],"contexts":["`Stat` is defined at `DeckSummary.tsx:27`, `DryRunModal.tsx:242`, `JudgePanel.tsx:8`,"],"resolvedFrom":"basename","verbatim":"JudgePanel.tsx"},
     "src/features/overview/sub_director/components/CampaignReportPanel.tsx": {
       "count": 1,
       "sections": [7],

@@ -207,6 +207,13 @@
       ],
       "resolved": false
     },
+    "overview/sub_certification/components/GroundingTable.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["73"],
+      "contexts": ["| `overview/sub_certification/components/GroundingTable.tsx:73` | Grounding table settles to `\"No data\"` — no condition, no recovery |"],
+      "resolved": false
+    },
     "overview/sub_leaderboard/components/EmptyStates.tsx": {
       "count": 1,
       "sections": [7],
@@ -438,14 +445,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "DashboardEmptyState.tsx"
-    },
-    "src/features/overview/sub_certification/components/GroundingTable.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["73"],
-      "contexts": ["| `overview/sub_certification/components/GroundingTable.tsx:73` | Grounding table settles to `\"No data\"` — no condition, no recovery |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_certification/components/GroundingTable.tsx"
     },
     "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx": {
       "count": 1,

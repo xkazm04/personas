@@ -13,29 +13,34 @@ import type { DocumentAuthor } from './documentModel';
 export interface DocumentSurfaceLabels {
   /** Accessible name for the navigation rail. */
   railLabel: string;
+  /** The rail's caption — "The document" / "to scale". */
+  railCaption: { title: string; aside?: string };
   /** Accessible name for the chapter switcher. */
   tabsLabel: string;
-  /** How an author reads in words at a section header and on a closed row. */
-  author: (author: DocumentAuthor) => string;
-  /** Appended to the author line on a section the operator may write in. */
-  savesWhole: string;
-  /** Accessible verb on a clickable paragraph in a writable section. */
+  /** The author's one-word mark: seal, closed row, rail band. CSS uppercases it. */
+  mark: (author: DocumentAuthor) => string;
+  /** The quieter half of the seal, e.g. "your hand · saves whole". */
+  sealQuiet: (author: DocumentAuthor, canWrite: boolean) => string;
+  /** One sentence under the title saying who wrote this and what you may do. */
+  lede: (author: DocumentAuthor) => string;
+  /** Accessible verb on a clickable row in a writable section. */
   writeHere: string;
-  /** Shown when a block in a read-only section is selected. */
+  /** Shown when a row in a read-only section is clicked. */
   readOnlyNote: string;
   /** Shown when a section has an unsaved draft and is not being written in. */
   draftKept: string;
+  /** The word a closed row carries when its section holds an unsaved draft. */
+  draftMark: string;
   /** Shown in place of prose when a section is empty. */
   empty: string;
   /** "<n> lines" — the caller formats the number. */
   lines: (count: number) => string;
   /** "<n> waiting" — the caller formats the number. */
   waiting: (count: number) => string;
+  /** "Keep scrolling for 2 · Boundaries" — at the end of a chapter. */
+  scrollOn: (number: number, heading: string) => string;
+  /** "Scroll up for 1 · Mandate" — at the top of a chapter. */
+  scrollBack: (number: number, heading: string) => string;
   /** The editor's own words, built per section so the field can be named. */
-  editor: (heading: string) => {
-    field: string;
-    hint: string;
-    save: string;
-    stop: string;
-  };
+  editor: (heading: string) => { field: string; hint: string; save: string };
 }

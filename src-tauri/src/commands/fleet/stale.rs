@@ -275,8 +275,11 @@ pub fn spawn_ticker(app: AppHandle) {
             super::persist::recover_after_restart(&app);
             tick_once(&app);
             // A queued row gated by `not_before_ms` has no state emit to ride
-            // once its time comes; this tick is what promotes it.
-            super::queue::schedule_promote_head(&app);
+            // once its time comes; this tick is what promotes it. It is also
+            // the queue's one periodic re-measure: the RAM gate and the pace
+            // are re-read here, so a gate that reopened or a pace that
+            // recovered promotes without waiting for a session to end.
+            super::queue::schedule_budget_tick(&app);
         }
     });
 }

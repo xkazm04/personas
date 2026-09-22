@@ -41,6 +41,7 @@
       "resolved": false
     },
     "CostSparkline.tsx": {"count":1,"sections":[1],"contexts":["on the bar row versus `CostSparkline.tsx` printing no number anywhere. I measured the"],"resolved":false},
+    "DimensionBars.tsx": {"count":1,"sections":[4],"lines":["13-15"],"contexts":["(`DimensionBars.tsx:13-15`)."],"resolved":false},
     "DisputeBench.tsx": {"count":2,"sections":[4],"lines":["178-187","186-187"],"contexts":["spelling found anywhere is `brainiac/console`'s `DisputeBench.tsx:178-187`, which"],"resolved":false},
     "KnowledgeTree.tsx": {"count":3,"sections":[4],"lines":["133-135","118-149"],"contexts":["`KnowledgeTree.tsx:133-135`'s form: what the denominator is, and what the other option"],"resolved":false},
     "LanesView.tsx": {
@@ -122,6 +123,15 @@
       ],
       "resolved": false
     },
+    "overview/sub_certification/components/DimensionBars.tsx": {
+      "count": 2,
+      "sections": [3,6],
+      "lines": ["12-31"],
+      "contexts": [
+        "| **`overview/sub_certification/components/DimensionBars.tsx:12-31` → `DimBar`** | The reference handling of an **out-of-domain** value: `// Bars can exceed 100 … clamp the visual width but show the…"
+      ],
+      "resolved": false
+    },
     "overview/sub_health/components/heartbeats/VitalsLedger.tsx": {
       "count": 1,
       "sections": [6],
@@ -186,16 +196,6 @@
       "contexts": ["see.** `chart-component` cited `LlmSpendSection.tsx:68` printing `fmtCost(row.cost_usd)`"],
       "resolvedFrom": "basename",
       "verbatim": "LlmSpendSection.tsx"
-    },
-    "src/features/overview/sub_certification/components/DimensionBars.tsx": {
-      "count": 3,
-      "sections": [3,4,6],
-      "lines": ["12-31","13-15"],
-      "contexts": [
-        "| **`overview/sub_certification/components/DimensionBars.tsx:12-31` → `DimBar`** | The reference handling of an **out-of-domain** value: `// Bars can exceed 100 … clamp the visual width but show the…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_certification/components/DimensionBars.tsx"
     },
     "src/features/overview/sub_director/DirectorCoachingTab.tsx": {
       "count": 2,

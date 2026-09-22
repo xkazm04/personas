@@ -36,6 +36,8 @@
     "LiteratureSearchPanelWorkbench.tsx": {"count":1,"sections":[9],"lines":["309"],"contexts":["`SystemTraceViewer.tsx:251`, `LiteratureSearchPanelWorkbench.tsx:309`). The rest index icon,"],"resolved":false},
     "PermalinkPage.tsx": {"count":1,"sections":[],"lines":["185"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
     "TrailFinder.tsx": {"count":1,"sections":[],"lines":["264"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
+    "VerdictBadge.test.tsx": {"count":1,"sections":[7],"lines":["12-16"],"contexts":["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],"resolved":false},
+    "VerdictBadge.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],"resolved":false},
     "check-i18n-coverage.mjs": {"count":2,"sections":[7],"lines":["127","8-14"],"contexts":["`personas-web` does the exact opposite — missing keys hard-fail (`check-i18n-coverage.mjs:127`)"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["1362"],"contexts":["(`LabRunStatus.ts:3`), `dev_tasks.status` (`dev_tools.rs:1362`), `team_assignments.status`"],"resolved":false},
     "docs/tests/autonomy-eval/runs/_example-run/scorecard.json": {"count":1,"sections":[7],"contexts":["into `tokenLabel`, and the Rust side passes a `scorecard.json` string through unvalidated"],"resolvedFrom":"basename","verbatim":"scorecard.json"},
@@ -255,22 +257,6 @@
       "contexts": ["| `xhigh` | thinking | UI-selectable at `modelCatalog.ts:87` → stamped at `runner/mod.rs:1813-1818` | `LlmCallsTable.tsx:219`, `ExecutionValueBadges.tsx:44` |"],
       "resolvedFrom": "basename",
       "verbatim": "LlmCallsTable.tsx"
-    },
-    "src/features/overview/sub_certification/components/VerdictBadge.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": ["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],
-      "resolvedFrom": "basename",
-      "verbatim": "VerdictBadge.tsx"
-    },
-    "src/features/overview/sub_certification/components/__tests__/VerdictBadge.test.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["12-16"],
-      "contexts": ["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],
-      "resolvedFrom": "basename",
-      "verbatim": "VerdictBadge.test.tsx"
     },
     "src/features/overview/sub_director/components/PersonaDetailModal.tsx": {
       "count": 1,

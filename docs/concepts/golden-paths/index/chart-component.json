@@ -106,6 +106,7 @@
       "resolved": false
     },
     "TrafficErrorsChart.tsx": {"count":1,"sections":[7],"lines":["70"],"contexts":["`TrafficErrorsChart.tsx:70` `name=\"Traffic\"`, `:71` `name=\"Errors\"`. These render in"],"resolved":false},
+    "TrajectoryChart.tsx": {"count":1,"sections":[7],"lines":["33"],"contexts":["`sub_activity/MetricsCharts.tsx:56/82/106/128`, `TrajectoryChart.tsx:33`."],"resolved":false},
     "agents/sub_deployment/cloud/DailyBreakdownChart.tsx": {
       "count": 1,
       "sections": [6],
@@ -215,7 +216,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LlmSpendSection.tsx"
     },
-    "src/features/overview/sub_certification/components/TrajectoryChart.tsx": {"count":1,"sections":[7],"lines":["33"],"contexts":["`sub_activity/MetricsCharts.tsx:56/82/106/128`, `TrajectoryChart.tsx:33`."],"resolvedFrom":"basename","verbatim":"TrajectoryChart.tsx"},
     "src/features/overview/sub_director/ScoreSparkline.tsx": {"count":2,"sections":[6],"lines":["26-49","38"],"contexts":["consumed by `src/features/overview/sub_director/ScoreSparkline.tsx:26-49`.**"]},
     "src/features/overview/sub_director/directorScore.ts": {
       "count": 4,

@@ -11,13 +11,14 @@
 // the children ranked by who wants a human most, and a preview of the level
 // below the row under the cursor, so descending is a confirmation rather than
 // a gamble.
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiVariantProps } from '../KPIDashboard';
 import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
+import { KT } from '../estate/kpiType';
 import { nextMoveOf, nextMoveText } from '../estate/kpiNextMove';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { useLazyTrends } from '../useKpiOverview';
@@ -25,26 +26,27 @@ import { ledgerKpiIds } from './AttentionLedger.model';
 import { largestClaim, sumDebts } from './ledger/kpiBooks';
 import { childRows, kpiRows, rowsFor } from './ledger/bookRows';
 import { BookRowLine } from './ledger/BookRow';
-import { BookPreview } from './ledger/BookPreview';
 import { BookChanges } from './ledger/BookChanges';
 
 export default function AttentionLedger({ overview, loading, onFocus, onOpen }: KpiVariantProps) {
   const { t, tx } = useTranslation();
   const o = t.kpis.overview;
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-
   const estate = useMemo(() => buildEstate(overview), [overview]);
   const altitude = useKpiAltitude(estate);
   const rows = useMemo(() => rowsFor(estate, altitude.project), [estate, altitude.project]);
   const largest = useMemo(() => largestClaim(rows), [rows]);
   const owed = useMemo(() => sumDebts(rows), [rows]);
-  const focused = useMemo(() => rows.find((r) => r.id === focusedId) ?? null, [rows, focusedId]);
-  const below = useMemo(() => {
-    if (!focused) return [];
-    return focused.kind === 'project'
-      ? childRows(estate, focused)
-      : kpiRows(estate, focused.projectId, focused.groupId);
-  }, [estate, focused]);
+  // What each row's preview tooltip shows: its first rows one level down.
+  const belowOf = useMemo(
+    () =>
+      new Map(
+        rows.map((r) => [
+          r.id,
+          r.kind === 'project' ? childRows(estate, r) : kpiRows(estate, r.projectId, r.groupId),
+        ] as const),
+      ),
+    [estate, rows],
+  );
 
   // Bounded: at most LEDGER_ID_CAP ids, in attention order, so one overview
   // can never turn into a fleet-wide bulk read.
@@ -59,14 +61,14 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
     <div className="space-y-4" data-testid="kpi-ledger">
       <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} />
 
-      <p className="typo-body text-foreground">
+      <p className={KT.figure}>
         {tx(o.books_balance, {
           total: scopeTally.total,
           measured: scopeTally.measured,
           owed: scopeTally.unmeasured,
         })}
       </p>
-      <p className="typo-body text-foreground">{nextMoveText(nextMoveOf(scopeTally), t, tx)}</p>
+      <p className={KT.text}>{nextMoveText(nextMoveOf(scopeTally), t, tx)}</p>
 
       <BookChanges
         estate={estate}
@@ -77,76 +79,62 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
         onOpen={onOpen}
       />
 
-      <div className="flex flex-col gap-4 xl:flex-row">
-        <div className="min-w-0 flex-1 overflow-x-auto">
-          <table className="w-full min-w-[46rem] border-collapse" data-testid="kpi-books-table">
-            <caption className="sr-only">{o.books_caption}</caption>
-            <thead>
-              <tr className="border-b border-card-border">
-                <Th className="w-8 text-left">{o.books_rank}</Th>
-                <Th className="w-[34%] text-left">{altitude.project ? o.books_group : o.books_project}</Th>
-                <Th className="text-right">{o.books_declared}</Th>
-                <Th className="text-right">{o.books_observed}</Th>
-                <Th className="text-left">{o.books_composition}</Th>
-                <Th className="text-right">{o.debt_reading}</Th>
-                <Th className="text-right">{o.debt_verdict}</Th>
-                <Th className="text-right">{o.debt_refresh}</Th>
-                <Th className="text-right">{o.books_last_read}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <BookRowLine
-                  key={row.id}
-                  row={row}
-                  largest={largest}
-                  focused={focusedId === row.id}
-                  onFocus={() => setFocusedId(row.id)}
-                  onOpen={() =>
-                    row.kind === 'project'
-                      ? altitude.descend(row.projectId)
-                      : onFocus({ projectId: row.projectId, groupId: row.groupId ?? 'ungrouped' })
-                  }
-                />
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={5} className="py-2 pl-2 typo-caption text-foreground">
-                  {tx(o.books_footer, { rows: rows.length, total: scopeTally.total })}
-                </td>
-                <Td>{owed.reading}</Td>
-                <Td>{owed.verdict}</Td>
-                <Td>{owed.refresh}</Td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div className="w-full xl:w-[22rem] xl:shrink-0">
-          <BookPreview
-            row={focused}
-            below={below}
-            belowLabel={focused?.kind === 'project' ? o.preview_of_project : o.preview_of_group}
-            onOpen={(child) =>
-              child.kind === 'kpi'
-                ? onOpen(child.id)
-                : onFocus({ projectId: child.projectId, groupId: child.groupId ?? 'ungrouped' })
-            }
-          />
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[46rem] border-collapse" data-testid="kpi-books-table">
+          <caption className="sr-only">{o.books_caption}</caption>
+          <thead>
+            <tr className="border-b border-primary/10">
+              <Th className="w-8 text-left">{o.books_rank}</Th>
+              <Th className="w-[34%] text-left">{altitude.project ? o.books_group : o.books_project}</Th>
+              <Th className="text-right">{o.books_declared}</Th>
+              <Th className="text-right">{o.books_observed}</Th>
+              <Th className="text-left">{o.books_composition}</Th>
+              <Th className="text-right">{o.debt_reading}</Th>
+              <Th className="text-right">{o.debt_verdict}</Th>
+              <Th className="text-right">{o.debt_refresh}</Th>
+              <Th className="text-right">{o.books_last_read}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <BookRowLine
+                key={row.id}
+                row={row}
+                below={belowOf.get(row.id) ?? []}
+                largest={largest}
+                onOpen={() =>
+                  row.kind === 'project'
+                    ? altitude.descend(row.projectId)
+                    : onFocus({ projectId: row.projectId, groupId: row.groupId ?? 'ungrouped' })
+                }
+              />
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={5} className={`py-2.5 pl-2 ${KT.meta}`}>
+                {tx(o.books_footer, { rows: rows.length, total: scopeTally.total })}
+              </td>
+              <Td>{owed.reading}</Td>
+              <Td>{owed.verdict}</Td>
+              <Td>{owed.refresh}</Td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );
 }
 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <th className={`pb-1.5 pr-3 typo-label text-foreground ${className}`}>{children}</th>;
+  // The same header token UnifiedTable uses, so this table and the app's
+  // other tables have one header style.
+  return <th className={`pb-2 pr-3 typo-label ${className}`}>{children}</th>;
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="py-2 pr-3 text-right typo-data text-foreground tabular-nums">{children}</td>;
+  return <td className={`py-2.5 pr-3 text-right ${KT.figure}`}>{children}</td>;
 }
 
 /** Cold store, read in flight: the real geometry, invisible for its first

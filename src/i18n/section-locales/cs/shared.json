@@ -403,5 +403,9 @@
     "dropped": "Přesunuto do {column}. V této dráze je {count}.",
     "picked_up": "Zvednuto. Šipkami vyberte dráhu, Enter položí, Escape zruší.",
     "targeting": "Dráha: {column}"
+  },
+  "rich_markdown": {
+    "invalid_block": "Blok {name} se nepodařilo zobrazit ({reason}). Níže je ponechán tak, jak byl napsán.",
+    "unknown_block": "„{name}“ není známá značka, proto je zobrazena tak, jak byla napsána."
   }
 }

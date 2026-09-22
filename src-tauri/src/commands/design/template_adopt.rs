@@ -2578,6 +2578,9 @@ pub(crate) fn map_use_case_to_charter_input(
         // A legacy use case never described hiring, so it does not grant it.
         // `None` is read as `false`, and the operator opts a charter in.
         can_hire: None,
+        // A template never declares what a run costs; the charter starts on
+        // the fleet defaults until its persona or the operator says otherwise.
+        resource_profile: None,
     };
 
     CreatePersonaResponsibilityInput {

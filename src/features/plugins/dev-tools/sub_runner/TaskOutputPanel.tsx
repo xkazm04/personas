@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Code2, FileText } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 
 interface TaskOutputPanelProps {
   taskId: string;
@@ -63,7 +64,10 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
           ref={scrollRef}
           className="max-h-48 overflow-y-auto p-3 text-md"
         >
-          <MarkdownRenderer content={fullText} />
+          {/* Plain while it streams: a block tag is only readable once its
+              closing fence has arrived, and a half-written `:::stats` would
+              flash "could not be shown" on every chunk. Rich once finished. */}
+          {isRunning ? <MarkdownRenderer content={fullText} /> : <RichMarkdown content={fullText} />}
           {isRunning && <span className="inline-block w-1.5 h-3 bg-primary/60 animate-pulse ml-1" />}
         </div>
       )}

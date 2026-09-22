@@ -33,6 +33,15 @@
       "resolved": false
     },
     "ExecutionHeatmapCard.tsx": {"count":2,"sections":[],"lines":["11-12","76-96"],"contexts":["`ExecutionHeatmapCard.tsx:11-12` reads *\"Violet intensity ramp (0 = no activity … 4 = peak),"],"resolved":false},
+    "JudgePanel.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["43"],
+      "contexts": [
+        "| **false positive — the matcher fired on the COMPLIANT form** | 5 | `GoalsPage.tsx:347` (`key={lane}`), `CreativeStudioPanel.tsx:376` (`key={example}`), `JudgePanel.tsx:43` (`key={label}`), `SLADash…"
+      ],
+      "resolved": false
+    },
     "KnowledgeAtelier.tsx": {
       "count": 1,
       "sections": [9],
@@ -172,16 +181,6 @@
       "contexts": ["- **This repo already knows how to do it.** `ExecutionHeatmap.tsx` — the calendar heatmap, same"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionHeatmap.tsx"
-    },
-    "src/features/overview/sub_certification/components/JudgePanel.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["43"],
-      "contexts": [
-        "| **false positive — the matcher fired on the COMPLIANT form** | 5 | `GoalsPage.tsx:347` (`key={lane}`), `CreativeStudioPanel.tsx:376` (`key={example}`), `JudgePanel.tsx:43` (`key={label}`), `SLADash…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "JudgePanel.tsx"
     },
     "src/features/overview/sub_health/components/StatusPageView.tsx": {"count":1,"sections":[7],"lines":["144-145,182-191"],"contexts":["**`src/features/overview/sub_health/components/StatusPageView.tsx:144-145,182-191`** therefore"],"resolved":false},
     "src/features/overview/sub_health/libs/compositeHealthScore.ts": {

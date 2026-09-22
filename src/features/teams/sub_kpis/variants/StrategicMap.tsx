@@ -11,9 +11,10 @@
 // group, which scrolled sideways forever and had exactly one level. This one
 // descends: portfolio to project inside the surface, then the group layer,
 // then the KPI.
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { AnchoredTooltip } from '@/features/shared/components/display/Tooltip';
 import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -26,8 +27,9 @@ import { useKpiAltitude } from '../estate/useKpiAltitude';
 import { layoutMap } from './map/mapLayout';
 import { brokenPromises, type MapLens } from './map/mapPlot';
 import { MapLegend } from './map/MapLegend';
-import { MapTerritory } from './map/MapTerritory';
-import { MapFocusCard } from './map/MapFocusCard';
+import { MapTerritory, type PlotHit } from './map/MapTerritory';
+import { MapPlotTip } from './map/MapPlotTip';
+import { KT } from '../estate/kpiType';
 
 /** Tall enough that 1,044 plots are individually visible at 1280px wide; the
  *  canvas is a fixed frame, never a page that grows with the estate. */
@@ -37,7 +39,14 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
   const { t, tx } = useTranslation();
   const o = t.kpis.overview;
   const [lens, setLens] = useState<MapLens>('state');
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hit, setHit] = useState<PlotHit | null>(null);
+  // The lattice reports on every mouse move; only a CHANGE of plot is news, so
+  // the whole map does not re-render for each pixel the pointer travels.
+  const onHoverKpi = useCallback(
+    (next: PlotHit | null) => setHit((prev) => (prev?.kpiId === next?.kpiId ? prev : next)),
+    [],
+  );
+  const hovered = hit?.kpiId ?? null;
   const canvasRef = useRef<HTMLDivElement>(null);
   const { width } = useElementSize(canvasRef);
 
@@ -51,24 +60,22 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
   );
   const scope = altitude.project ?? estate;
   const promised = useMemo(() => brokenPromises(scope.kpis), [scope]);
-  const hoveredKpi = useMemo(
-    () => (hovered ? (estate.kpis.find((k) => k.id === hovered) ?? null) : null),
-    [hovered, estate],
-  );
+  const hoveredPlot = useMemo(() => {
+    if (!hovered) return null;
+    for (const p of estate.projects) {
+      for (const g of p.groups) {
+        const kpi = g.kpis.find((k) => k.id === hovered);
+        if (kpi) return { kpi, groupLabel: `${p.label} / ${g.label}` };
+      }
+    }
+    return null;
+  }, [hovered, estate]);
 
   if (loading && overview.length === 0) return <MapGhost />;
 
   return (
     <div className="space-y-3" data-testid="kpi-map">
       <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} />
-      <MapLegend
-        lens={lens}
-        tally={scope.tally}
-        brokenPromises={promised}
-        dropped={layout.dropped}
-        floored={layout.floored}
-      />
-
       {/* The lens strip and the canvas it swaps sit together, and declare each
           other: the strip is the tablist, the canvas is the tabpanel it
           controls (golden path: tab-strip.md). */}
@@ -107,8 +114,8 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
                 data-testid={`kpi-map-frame-${frame.projectId}`}
                 className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-secondary/30 focus-ring"
               >
-                <span className="truncate typo-title text-foreground">{frame.label}</span>
-                <span className="shrink-0 typo-caption text-foreground tabular-nums">
+                <span className={`truncate ${KT.name}`}>{frame.label}</span>
+                <span className="shrink-0 typo-caption tabular-nums">
                   {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
                 </span>
                 {frame.groupsUnknown && (
@@ -125,14 +132,13 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
               now={estate.now}
               dimmed={hovered != null && territory.group.kpis.every((k) => k.id !== hovered)}
               onOpen={() => onFocus({ projectId: territory.projectId, groupId: territory.groupId ?? 'ungrouped' })}
-              onHoverKpi={setHovered}
+              onHoverKpi={onHoverKpi}
               onOpenKpi={onOpen}
             />
           ))}
         </div>
 
-        <aside className="w-full space-y-4 lg:w-[320px] lg:shrink-0">
-          <MapFocusCard kpi={hoveredKpi} now={estate.now} onOpen={onOpen} />
+        <aside className="w-full lg:w-[300px] lg:shrink-0">
           <AttentionRail
             picks={picks}
             title={altitude.project ? o.rail_title_project : o.rail_title_portfolio}
@@ -140,6 +146,19 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
           />
         </aside>
       </div>
+
+      <MapLegend
+        lens={lens}
+        tally={scope.tally}
+        brokenPromises={promised}
+        dropped={layout.dropped}
+        floored={layout.floored}
+      />
+
+      <AnchoredTooltip
+        anchor={hit?.rect ?? null}
+        content={hoveredPlot ? <MapPlotTip kpi={hoveredPlot.kpi} now={estate.now} groupLabel={hoveredPlot.groupLabel} /> : null}
+      />
     </div>
   );
 }

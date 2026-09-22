@@ -30,6 +30,7 @@ import { GoalEditorModal } from '../sub_goals/GoalEditorModal';
 import { GoalStatusBadge } from '../sub_goals/GoalStatusBadge';
 import { kpiTrack } from './kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
+import { KpiSection } from './KpiDetailSection';
 
 const ts = (s: string) => new Date(s.replace(' ', 'T')).getTime();
 const round = (v: number) => Math.round(v * 100) / 100;
@@ -99,10 +100,7 @@ export function KpiSteeringPanel({
   if (linkedGoals.length === 0 && !offTrack) return null;
 
   return (
-    <div data-testid="kpi-steering-panel">
-      <h3 className="typo-overline text-foreground mb-1.5 flex items-center gap-1.5">
-        <GitBranch className="w-3.5 h-3.5" /> {t.kpis.steering_title}
-      </h3>
+    <KpiSection title={t.kpis.steering_title} icon={GitBranch} data-testid="kpi-steering-panel">
 
       {linkedGoals.length === 0 && offTrack && (
         <div className="flex flex-wrap items-center gap-2">
@@ -119,12 +117,13 @@ export function KpiSteeringPanel({
         </div>
       )}
 
-      <div className="space-y-2">
+      {open.length + done.length > 0 && (
+      <div className="divide-y divide-primary/10 rounded-card border border-primary/10">
         {open.map((g) => {
           const team = teams.get(g.id);
           const overdue = g.target_date != null && ts(g.target_date) < Date.now();
           return (
-            <div key={g.id} className="rounded-card border border-primary/15 bg-secondary/15 px-3 py-2">
+            <div key={g.id} className="px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <GoalStatusBadge status={g.status} />
                 <span className="flex-1 typo-body text-foreground truncate">{g.title}</span>
@@ -151,7 +150,7 @@ export function KpiSteeringPanel({
         {done.map((g) => {
           const o = outcomeFor(g, kpi, measurements);
           return (
-            <div key={g.id} className="rounded-card border border-primary/10 bg-secondary/10 px-3 py-2">
+            <div key={g.id} className="px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex-1 typo-body text-foreground truncate">{g.title}</span>
                 <span className="typo-caption text-foreground opacity-70 inline-flex items-center gap-1">
@@ -163,6 +162,7 @@ export function KpiSteeringPanel({
           );
         })}
       </div>
+      )}
 
       {createOpen && (
         <GoalEditorModal
@@ -173,7 +173,7 @@ export function KpiSteeringPanel({
           onSaved={() => { void fetchGoals(kpi.project_id); }}
         />
       )}
-    </div>
+    </KpiSection>
   );
 }
 

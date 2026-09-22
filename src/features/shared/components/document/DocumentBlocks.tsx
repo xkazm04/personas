@@ -1,32 +1,38 @@
+import type { ReactNode } from 'react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { DocumentBlock } from './documentModel';
 
 interface DocumentBlocksProps {
   blocks: readonly DocumentBlock[];
-  /** The block the reading mark sits on, or null. */
+  /** The row the reading mark sits on, or null. */
   selectedId: string | null;
-  /** A click selects a block. On an editable section it also opens the caret. */
+  /** A click selects a row. On a writable section it also opens it for writing. */
   onSelect: (block: DocumentBlock) => void;
-  /** True when a click will open the caret rather than only move the mark. */
+  /** True when a click will open the row rather than only move the mark. */
   editable: boolean;
-  /** Accessible verb for a block, e.g. "Write in this paragraph". */
+  /** Accessible verb for a row, e.g. "Write in this line". */
   blockActionLabel: string;
+  /** The row being written in, or null. */
+  editingIndex: number | null;
+  /** The in-place field for the row being written in. */
+  renderEditor: (block: DocumentBlock) => ReactNode;
 }
 
+const headingText = (text: string) => text.replace(/^\s{0,3}#{1,6}\s+/, '');
+
 /**
- * @catalog DocumentBlocks — a section's prose as individually clickable paragraphs, where one click selects and (where writable) opens the caret. Part of DocumentSurface, not a standalone primitive.
+ * @catalog DocumentBlocks — a section's prose as individually clickable rows (each heading, paragraph and list item), where one click selects and (where writable) opens that row for writing in place. Part of DocumentSurface, not a standalone primitive.
  *
- * A section's prose, as individually pointable blocks.
+ * ONE ROW PER BULLET. A click on a line moves the reading mark to it and —
+ * where the chapter is the operator's own — opens THAT row for writing, in
+ * place: the row keeps its bullet and its reading type, and every other row
+ * stays rendered. The row is the single bullet, not the list around it: a
+ * manifest is mostly bullets, and a click that lit the whole list was the
+ * regression the owner caught.
  *
- * ONE CLICK SELECTS AND OPENS. The interaction this carries is the one the
- * owner picked out of the contest field: a click on a paragraph both moves the
- * reading mark to it and — where the section is the operator's own — puts the
- * caret in it, rather than moving a mark and making the user find a second
- * gesture to start writing. Density follows attention: the selected block is
- * lifted, every other block stays exactly as calm as it was.
- *
- * On a section the operator may not write in, the click still selects, and the
- * surface says why typing is not on offer instead of silently doing nothing.
+ * Type comes from the page (`.ds-prose` in `documentSurface.css`), which beats
+ * MarkdownRenderer's own per-element tokens on specificity, so reading prose is
+ * the winner's 1rem / 1.75 rather than the renderer's body size.
  */
 export function DocumentBlocks({
   blocks,
@@ -34,30 +40,59 @@ export function DocumentBlocks({
   onSelect,
   editable,
   blockActionLabel,
+  editingIndex,
+  renderEditor,
 }: DocumentBlocksProps) {
   return (
-    <div className="space-y-1" data-testid="document-blocks">
+    <div data-testid="document-blocks">
       {blocks.map((block) => {
         const selected = block.id === selectedId;
+        const editing = block.index === editingIndex;
+        const ordered = block.kind === 'item' && /^\d/.test(block.marker);
+        const kindClass =
+          block.kind === 'item'
+            ? `ds-item ${ordered ? 'is-ordered' : ''}`
+            : block.kind === 'heading'
+              ? block.depth <= 2
+                ? 'ds-heading-2'
+                : 'ds-heading-3'
+              : '';
         return (
           <div
             key={block.id}
-            role="button"
-            tabIndex={0}
-            aria-label={editable ? blockActionLabel : undefined}
-            onClick={() => onSelect(block)}
+            role={editing ? undefined : 'button'}
+            tabIndex={editing ? undefined : 0}
+            aria-label={editable && !editing ? blockActionLabel : undefined}
+            aria-pressed={editing ? undefined : selected}
+            onClick={() => {
+              if (!editing) onSelect(block);
+            }}
             onKeyDown={(e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
+              if (editing || (e.key !== 'Enter' && e.key !== ' ')) return;
               e.preventDefault();
               onSelect(block);
             }}
-            className={`focus-ring relative rounded-input border-l-2 py-0.5 pl-3 transition-colors ${
-              selected ? 'border-l-primary bg-secondary/30' : 'border-l-transparent hover:bg-secondary/20'
-            } ${editable ? 'cursor-text' : 'cursor-default'}`}
-            data-testid={`document-block-${block.id}`}
+            style={block.kind === 'item' && block.indent ? { marginLeft: `${1.2 + block.indent * 0.55}rem` } : undefined}
+            className={`ds-block ${kindClass} ${selected ? 'is-mark' : ''} ${editable ? 'is-writable' : ''} ${
+              editing ? 'is-editing' : ''
+            }`}
+            data-role="doc-block"
+            data-kind={block.kind}
             data-selected={selected ? 'true' : undefined}
+            data-testid={`document-block-${block.id}`}
           >
-            <MarkdownRenderer content={block.text} variant="document" />
+            {editing ? (
+              renderEditor(block)
+            ) : block.kind === 'heading' ? (
+              headingText(block.text)
+            ) : ordered ? (
+              <span className="inline-flex gap-2">
+                <span>{block.marker}</span>
+                <MarkdownRenderer content={block.content} />
+              </span>
+            ) : (
+              <MarkdownRenderer content={block.kind === 'item' ? block.content : block.text} />
+            )}
           </div>
         );
       })}

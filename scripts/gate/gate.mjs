@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { computeOverlay, gitTopLevel, baseRootOf, dirtyAgainstHead, toPosix, sameDirectory } from './overlay.mjs';
@@ -58,27 +59,63 @@ const baseRoot = baseRootOf(root);
 
 // ---------------------------------------------------------------------------
 // daemon transport
-async function call(hs, method, route, body, timeoutMs) {
-  const res = await fetch(`http://127.0.0.1:${hs.port}${route}`, {
-    method,
-    headers: { 'x-gate-token': hs.token, 'content-type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(timeoutMs),
+/**
+ * node:http with `agent: false`, NOT fetch.
+ *
+ * undici's pooled keep-alive socket outlives finish()'s process.exit() on
+ * Windows and libuv aborts during teardown with
+ * `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\win\async.c:76`,
+ * exit 127 — AFTER a correct verdict has already been printed. That made
+ * `git push` fail with no remote: line and no visible reason, because the
+ * pre-push hook died rather than the gate. A `connection: close` header alone
+ * did not hold (1 clean run in 3). One request per run makes pooling worthless,
+ * so the agentless socket is also the cheaper shape. Measured 2026-09-20.
+ */
+function call(hs, method, route, body, timeoutMs) {
+  const payload = body ? JSON.stringify(body) : undefined;
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(
+      {
+        host: '127.0.0.1',
+        port: hs.port,
+        path: route,
+        method,
+        agent: false,
+        headers: {
+          'x-gate-token': hs.token,
+          'content-type': 'application/json',
+          connection: 'close',
+          ...(payload ? { 'content-length': Buffer.byteLength(payload) } : {}),
+        },
+      },
+      (res) => {
+        let text = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => (text += c));
+        res.on('end', () => {
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch {
+            json = { error: text.slice(0, 200) };
+          }
+          if (res.statusCode >= 400) {
+            const e = new Error(`${res.statusCode} ${json.error || ''}`.trim());
+            e.status = res.statusCode;
+            reject(e);
+            return;
+          }
+          resolve(json);
+        });
+      },
+    );
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`timeout after ${timeoutMs}ms`)));
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
   });
-  const text = await res.text();
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = { error: text.slice(0, 200) };
-  }
-  if (!res.ok) {
-    const e = new Error(`${res.status} ${json.error || ''}`.trim());
-    e.status = res.status;
-    throw e;
-  }
-  return json;
 }
+
 
 async function daemonAlive(hs) {
   if (!hs || !pidAlive(hs.pid)) return false;
@@ -207,14 +244,20 @@ function coldTsc() {
   return { ok: r.status === 0, errors, introduced: [], resolved: [], baseErrors: null, ms: r.ms, cold: true };
 }
 
+// Never the repo-root default `.eslintcache`: an eslint run without --cache deletes
+// that file (measured 2026-09-18, see lefthook.yml eslint-staged). Directory form, so
+// ESLint names the file by a hash of cwd and two checkouts sharing node_modules through
+// a junction keep separate caches.
+const ESLINT_CACHE_DIR = 'node_modules/.cache/eslint/gate/';
+
 function coldEslint(files) {
   const targets = files.filter((f) => /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(f) && f.startsWith('src/'));
   if (!targets.length && files.length) return { ok: true, files: 0, errors: 0, warnings: 0, ms: 0, cold: true, skipped: 'no lintable files' };
   const list = targets.length ? targets : ['src/'];
   const r = runNode(
     binOf('eslint/bin/eslint.js'),
-    ['--cache', '--cache-location', '.eslintcache', '--format', 'json', ...list],
-    ['eslint', '--cache', '--cache-location', '.eslintcache', '--format', 'json', ...list],
+    ['--cache', '--cache-location', ESLINT_CACHE_DIR, '--format', 'json', ...list],
+    ['eslint', '--cache', '--cache-location', ESLINT_CACHE_DIR, '--format', 'json', ...list],
   );
   let errors = 0;
   let warnings = 0;
@@ -329,7 +372,11 @@ function printTable(response, gates) {
       lines = list.map((e) => `  ${relToRoot(e.file)}(${e.line},${e.col}): TS${e.code}: ${e.message.split('\n')[0]}`);
       if (r.resolved && r.resolved.length) lines.push(`  (${r.resolved.length} base error(s) resolved by this root)`);
     } else if (g === 'eslint' && Array.isArray(r.messages)) {
-      lines = r.messages.map((e) => `  ${relToRoot(e.file)}(${e.line},${e.col}): ${e.code}: ${e.message}`);
+      // the warm worker names the rule `ruleId`, the cold path `code`; reading only `code` printed
+      // "undefined:" for every warm finding (found by parity.mjs, 2026-09-18)
+      lines = r.messages
+        .filter((e) => e.severity === undefined || e.severity === 'error')
+        .map((e) => `  ${relToRoot(e.file)}(${e.line},${e.col}): ${e.ruleId ?? e.code}: ${e.message}`);
     } else if (g === 'census') {
       if (r.delta) {
         const introduced = Array.isArray(r.introduced) ? r.introduced : [];

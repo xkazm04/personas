@@ -3022,7 +3022,15 @@
     "council_trust_unknown": "Vertrauen unbekannt",
     "council_trust_measured": "{percent} gemessen",
     "council_tier_major": "Wichtig",
-    "council_tier_toggle_label": "{name} als wichtige Funktion markieren"
+    "council_tier_toggle_label": "{name} als wichtige Funktion markieren",
+    "skills_registry_filter_hint": "Klicken, um nur die Skills hier anzuzeigen",
+    "skills_registry_filter_active_hint": "Erneut klicken, um alle Skills anzuzeigen",
+    "skills_registry_filter_clear": "Filter „{name}“ entfernen",
+    "skills_registry_filter_empty": "Noch keine Skills in {name}",
+    "skills_registry_empty_title": "Keine Skills zum Anzeigen",
+    "skills_registry_name_details": "Klicken für alle Details",
+    "skills_registry_legend_recent": "in den letzten 30 Tagen ausgeführt",
+    "skills_registry_context_coverage": "{covered} von {contexts} Kontexten berührt ({pct})"
   },
   "dev_triage": {
     "action_label": "Aktion:",
@@ -3498,7 +3506,16 @@
     "skill_picker_close": "Skill-Auswahl schließen",
     "skill_picker_hint": "Klicke auf eine Zelle, um diesen Skill und das Projekt in die Konsole zu laden. Eine leere Zelle installiert den Skill dort zuerst.",
     "skill_picker_open": "Skill aus der Registry wählen",
-    "skill_picker_title": "Skill-Registry"
+    "skill_picker_title": "Skill-Registry",
+    "skill_picker_empty": "In diesem Arbeitsbereich hat noch kein Projekt einen Skill installiert — übernimm einen unter Entwicklertools → Skills → Register.",
+    "estimate_assumed_model": "Berechnet mit dem Standardmodell der CLI. Wähle ein Modell für dessen eigenen Preis.",
+    "estimate_cost_label": "Geschätzte Kosten für diesen Dispatch",
+    "estimate_disclaimer": "Eine Schätzung aus veröffentlichten Modellpreisen und typischer Sitzungsgröße — kein Festpreis.",
+    "estimate_eta_label": "Geschätzte Dauer bis zum Abschluss",
+    "rest_tally_needs_you": "{count} brauchen dich",
+    "rest_tally_working": "{count} arbeiten",
+    "status_armed": "STARTBEREIT",
+    "status_standby": "BEREITSCHAFT"
   },
   "fleet": {
     "activity_empty": "Keine aktuellen Sitzungen gefunden",

@@ -7,17 +7,54 @@
 // workspaces on the left with live project counts, that workspace's projects
 // on the right, both sorted by name. Picking a workspace never leaves you
 // stranded — `useWorkspaceSwitch` re-points the active project into the new scope.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown, FolderGit2, Layers, Plus, X } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
-import { createWorkspace } from './workspaceStore';
+import type { DevProject } from '@/lib/bindings/DevProject';
+
+import { createWorkspace, setActiveWorkspace } from './workspaceStore';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 
 const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+const PANEL_W = 520;
+const GAP = 8;
+const EDGE = 8;
+
+/**
+ * Where the popover goes, in viewport coordinates.
+ *
+ * It used to be `absolute right-0` inside the trigger's own box, so it was
+ * clipped by any `overflow-hidden` ancestor and stacked under the app's left
+ * sidebar whenever the trigger sat near the left edge: the panel extended
+ * 520px LEFT of the trigger's right edge, straight under the chrome. It is now
+ * portalled to the body and placed against the trigger's rect, preferring to
+ * start at the trigger's left edge and clamped so no part of it leaves the
+ * viewport.
+ */
+function panelPosition(
+  trigger: DOMRect,
+  placement: 'up' | 'down',
+  panelH: number,
+  align: 'right' | 'center' = 'right',
+) {
+  const width = Math.min(PANEL_W, window.innerWidth - EDGE * 2);
+  // `center` (a trigger centred in its bar, e.g. the Monitor Stream header)
+  // centres the panel under the trigger; otherwise it starts at the trigger's
+  // left edge. Either way it is clamped inside the viewport.
+  const wanted = align === 'center' ? trigger.left + trigger.width / 2 - width / 2 : trigger.left;
+  const left = Math.max(EDGE, Math.min(wanted, window.innerWidth - width - EDGE));
+  const top =
+    placement === 'up'
+      ? Math.max(EDGE, trigger.top - GAP - panelH)
+      : Math.min(trigger.bottom + GAP, window.innerHeight - panelH - EDGE);
+  return { top: Math.max(EDGE, top), left, width };
+}
 
 interface WorkspaceProjectSelectorProps {
   /** Which way the popover opens. The footer opens up; page headers open down. */
@@ -29,25 +66,52 @@ interface WorkspaceProjectSelectorProps {
   testId?: string;
   /** Test id of the "New workspace" action (the onboarding tour anchors on the footer's). */
   newWorkspaceTestId?: string;
+  /**
+   * CONTROLLED MODE — a LOCAL project filter instead of the app-wide active
+   * project. Pass both `value` and `onChange`: the pick is reported, never
+   * written to the global selection, so a view (the Monitor Stream) can open
+   * unfiltered no matter which project is active elsewhere. The workspace pane
+   * still scopes the list, but picking a workspace no longer re-points the
+   * global project.
+   */
+  value?: string | null;
+  onChange?: (projectId: string | null) => void;
+  /** Label of the "none" option and of the trigger while nothing is picked. */
+  noneLabel?: string;
+  /** Narrow the project list (e.g. only projects that have a team channel). */
+  projectFilter?: (project: DevProject) => boolean;
+  /** Popover anchoring. `center` for a trigger centered in its bar. */
+  align?: 'right' | 'center';
 }
 
 export function WorkspaceProjectSelector({
   placement = 'down', variant = 'header', allowNone = true, testId, newWorkspaceTestId,
+  value, onChange, noneLabel, projectFilter, align = 'right',
 }: WorkspaceProjectSelectorProps) {
   const { t } = useTranslation();
   const c = t.chrome;
   const {
-    scoped, workspaces, activeId, activeProjectId, activeProject,
-    activeWorkspace, setActiveProject, switchWorkspace,
+    projects, scoped, workspaces, activeId, activeProjectId: globalProjectId, activeProject: globalProject,
+    activeWorkspace, setActiveProject: setGlobalProject, switchWorkspace: switchGlobalWorkspace,
   } = useWorkspaceSwitch();
+  const controlled = onChange !== undefined;
+  const activeProjectId = controlled ? (value ?? null) : globalProjectId;
+  const activeProject = controlled ? (projects.find((p) => p.id === value) ?? null) : globalProject;
+  const setActiveProject = (id: string | null) => (controlled ? onChange(id) : setGlobalProject(id));
+  const switchWorkspace = controlled ? setActiveWorkspace : switchGlobalWorkspace;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const loadedRef = useRef(false);
 
   const sortedWorkspaces = useMemo(() => [...workspaces].sort(byName), [workspaces]);
-  const sortedProjects = useMemo(() => [...scoped].sort(byName), [scoped]);
+  const sortedProjects = useMemo(
+    () => (projectFilter ? scoped.filter(projectFilter) : [...scoped]).sort(byName),
+    [scoped, projectFilter],
+  );
 
   useEffect(() => {
     if (loadedRef.current) return;
@@ -58,11 +122,35 @@ export function WorkspaceProjectSelector({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      // The panel is portalled out of the trigger's subtree, so "outside"
+      // has to mean outside BOTH of them.
+      if (ref.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  // Place the panel against the trigger once it has painted (so its real
+  // height is known), and follow the trigger on resize or any scroll.
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return; }
+    const place = () => {
+      const trigger = ref.current?.getBoundingClientRect();
+      if (!trigger) return;
+      setPos(panelPosition(trigger, placement, panelRef.current?.offsetHeight ?? 360, align));
+    };
+    place();
+    const raf = requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, placement, align]);
 
   const wsLabel = activeWorkspace?.name ?? c.workspace_all_projects;
   const wsColor = activeWorkspace?.color ?? 'var(--muted-foreground)';
@@ -86,14 +174,18 @@ export function WorkspaceProjectSelector({
           <span className={`${header ? 'typo-body max-w-[120px]' : 'text-[11px] font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
           <span className="text-foreground/40 flex-shrink-0" aria-hidden>/</span>
           <span className={`${header ? 'typo-body' : 'text-[11px] font-medium'} truncate min-w-0 ${activeProject ? 'text-indigo-300/90' : 'text-foreground/60'}`}>
-            {activeProject?.name ?? c.workspace_pick_project}
+            {activeProject?.name ?? noneLabel ?? c.workspace_pick_project}
           </span>
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${(placement === 'up') !== open ? 'rotate-180' : ''}`} />
         </button>
       </Tooltip>
 
-      {open && (
-        <div className={`animate-fade-slide-in absolute right-0 w-[520px] max-w-[90vw] rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-50 overflow-hidden ${placement === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+      {open && createPortal(
+        <div
+          ref={panelRef}
+          className="animate-fade-slide-in fixed rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-[9000] overflow-hidden"
+          style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, width: PANEL_W, visibility: 'hidden' }}
+        >
           <div className="grid grid-cols-[196px_1fr]">
             {/* LEFT — workspaces */}
             <div className="border-r border-primary/10 bg-secondary/20">
@@ -132,7 +224,7 @@ export function WorkspaceProjectSelector({
               <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
                 <FolderGit2 className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
                 <span className="typo-label text-foreground/90">{c.workspace_projects}</span>
-                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{scoped.length}</span>
+                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{sortedProjects.length}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {allowNone && (
@@ -142,7 +234,7 @@ export function WorkspaceProjectSelector({
                     className={`${row} typo-caption ${activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
                   >
                     <X className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-                    <span className="flex-1 truncate">{c.workspace_no_active_project}</span>
+                    <span className="flex-1 truncate">{noneLabel ?? c.workspace_no_active_project}</span>
                   </button>
                 )}
                 {sortedProjects.length === 0 ? (
@@ -175,7 +267,8 @@ export function WorkspaceProjectSelector({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

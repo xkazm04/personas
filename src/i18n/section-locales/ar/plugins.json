@@ -3022,7 +3022,15 @@
     "council_trust_unknown": "الثقة غير معروفة",
     "council_trust_measured": "تم قياس {percent}",
     "council_tier_major": "رئيسية",
-    "council_tier_toggle_label": "وضع علامة على {name} كميزة رئيسية"
+    "council_tier_toggle_label": "وضع علامة على {name} كميزة رئيسية",
+    "skills_registry_filter_hint": "انقر لعرض المهارات الموجودة هنا فقط",
+    "skills_registry_filter_active_hint": "انقر مرة أخرى لعرض جميع المهارات",
+    "skills_registry_filter_clear": "مسح تصفية {name}",
+    "skills_registry_filter_empty": "لا توجد مهارات في {name} بعد",
+    "skills_registry_empty_title": "لا توجد مهارات لعرضها",
+    "skills_registry_name_details": "انقر لعرض التفاصيل الكاملة",
+    "skills_registry_legend_recent": "شُغِّلت خلال آخر 30 يومًا",
+    "skills_registry_context_coverage": "{covered} من {contexts} سياقًا تم العمل عليها ({pct})"
   },
   "dev_triage": {
     "action_label": "الإجراء:",
@@ -3498,7 +3506,16 @@
     "skill_picker_close": "إغلاق منتقي المهارات",
     "skill_picker_hint": "انقر على خلية لتحميل تلك المهارة والمشروع إلى وحدة التحكم. الخلية الفارغة تثبّت المهارة هناك أولاً.",
     "skill_picker_open": "اختر مهارة من السجل",
-    "skill_picker_title": "سجل المهارات"
+    "skill_picker_title": "سجل المهارات",
+    "skill_picker_empty": "لا يوجد بعد أي مشروع في مساحة العمل هذه مثبَّتة فيه مهارة — اعتمد واحدة من أدوات المطور ← المهارات ← السجل.",
+    "estimate_assumed_model": "حُسب السعر وفق النموذج الافتراضي لواجهة الأوامر. اختر نموذجًا لعرض سعره الخاص.",
+    "estimate_cost_label": "الإنفاق المقدَّر لهذا الإرسال",
+    "estimate_disclaimer": "تقدير مبني على أسعار النماذج المنشورة وحجم الجلسة المعتاد — وليس عرض سعر.",
+    "estimate_eta_label": "الوقت المقدَّر للإنهاء",
+    "rest_tally_needs_you": "{count} بحاجة إليك",
+    "rest_tally_working": "{count} قيد العمل",
+    "status_armed": "جاهز",
+    "status_standby": "استعداد"
   },
   "fleet": {
     "activity_empty": "لم يُعثر على جلسات حديثة",

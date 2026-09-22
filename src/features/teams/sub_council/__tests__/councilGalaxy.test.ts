@@ -3,7 +3,7 @@
 //
 // These are the parts a screenshot cannot certify. The canvas itself is
 // verified by comparing rendered shots against
-// `docs/design/council-reference/shots/`.
+// `.claude/council-reference/shots/`.
 import { describe, expect, it } from 'vitest';
 
 import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';

@@ -16,7 +16,7 @@ ships in every build; it is not dev tooling). It opens on the desk; a card opens
 the full editor.
 
 **The Escape ladder**, one rung per press: a popover (a card's project picker, a
-ledger menu) dismisses itself first and the pad does not act; then a card's caret
+ledger menu, a thread, the quick Ask Athena input) dismisses itself first and the pad does not act; then a card's caret
 leaves the card; then the editor steps back to the desk; then the desk closes the
 pad. The plan tab is deliberately **not** a rung — it is a view of one note, not
 a layer stacked over it, and unwinding it would put two presses between a plan
@@ -24,7 +24,18 @@ note and the desk.
 
 ## Desk
 
-Every open note as a card in a four-column grid.
+Every open note as a card in a four-column grid, in a recessed well. The desk is
+**keyboard-first**: a primary-tinted **lamp** marks the selected note, which lifts,
+and the lamp slides from card to card as you move. Every card verb is a single
+key, the status tabs wear their `1` `2` `3` digit, and a rail under the grid shows
+the keys that apply to the selected note right now. The mouse still reaches every
+verb on the card. See [Keyboard](#keyboard).
+
+- **Find** — press `/` (or the Find chip in the rail) for a find field under the
+  capture line. It narrows the current lens and project to notes whose title and
+  body contain every word you type, ranks title hits first, highlights the first
+  word in each title, and the heading counts the matches. `Esc` clears the query,
+  then closes the field.
 
 - **Capture line** — type and press Enter: a new draft lands on the desk, titled
   from its first line, in whichever project the filter has selected.
@@ -85,6 +96,95 @@ Every open note as a card in a four-column grid.
   footer. **All notes** in the header returns; on a plan note that control
   becomes the first crumb of a breadcrumb — **Desk › _note title_ › _tab_**.
 
+### Keyboard
+
+Keys never fire while you are typing (capture line, find field, a card's text,
+Ask Athena, a thread or bubble composer) or while a menu or dialog has focus.
+Press `?` on the desk for the full sheet.
+
+| Key | Action |
+|---|---|
+| `↑` `↓` `←` `→` · `h` `l` | Move the lamp across the grid (stops at the edges; up and down move one row of the grid as it is laid out) |
+| `j` `k` | Next / previous note (wraps) |
+| `Home` `End` | First / last note |
+| `Enter` | Open the selected note in the editor |
+| `/` | Find by title or body |
+| `Esc` | Clear find, then close it; after that, the pad's own Escape ladder |
+| `1` `2` `3` | Drafts / Scoped / All |
+| `Shift+1`–`Shift+9` · `[` `]` | Jump to a project tab · cycle project tabs |
+| `a` | Ask Athena about the selected note |
+| `p` · `g` | Publish to Fleet · Turn into goals |
+| `t` | Open the thread |
+| `r` | Reply — in the card's bubble when one is up, otherwise in the thread |
+| `y` · `n` | Approve · Reject the pending review in the card's bubble (a run review asks for the reason first); with no pending review, open the thread |
+| `Del` | Delete permanently (after the confirm; refused while a fleet session holds the note) |
+| `?` | The key sheet |
+
+The selection survives filter and find changes: the same note stays selected
+while it is still shown; otherwise the lamp lands on the note now in its place.
+
+### The live desk
+
+Every card also says what is happening to the note right now, still without a
+permanent extra row:
+
+- **Presence** — while Athena is looking at the note (an Ask Athena or a comment
+  she has not answered yet) or a Fleet agent is running it, a chip above the
+  footer names who and for how long ("Athena is reviewing · 2 min", "Fleet agent
+  running · 14 min"), and the card's top edge breathes in the worker's colour
+  (violet for Athena, blue for Fleet). With Reduce Motion on the edge is coloured
+  but still.
+- **Status changes animate** — the status glyph crossfades when the note moves,
+  the card's tone eases to the new colour, and the grid slides survivors into
+  place when a filter changes or a card is deleted.
+- **Lifecycle rail** — hover a card (or tab into its footer) and the footer's
+  metadata gives way to the note's rail: every step, the current one filled, and
+  the **next legal step as a button**. Draft → Published publishes to Fleet; a
+  linked draft → Scoped runs Turn into goals; Scoped → Cut and Cut → Shipped open
+  the note with the certify dialog — and Ship is still refused unless every exit
+  criterion is met, exactly as on the dispatch bar. Steps the sweeper takes
+  (Published → In progress → Completed) are shown, never offered.
+- **Thread icon** — the note's [thread](#thread), with its unread count. While
+  nothing is unread it shows only on hover.
+- **Right-click menu** — Open note · Ask Athena… (a one-line input at the click
+  point; Enter sends) · Publish to Fleet · Turn into goals · Link milestone…
+  (opens the note on the dispatch bar's picker) · Archive · **Delete
+  permanently**. Each item is refused with the dispatch bar's own reason when the
+  bar would refuse it. Delete is offered on every status and always confirms; it
+  is disabled while a Fleet agent still holds the note.
+- **Bubbles** — a new thread entry from Athena, the note-task agent or the system
+  springs out of its card as a speech bubble for **10 seconds** (held while the
+  pointer or focus is on it): who and what, the first lines, and **Read** (opens
+  the thread) · **Approve / Reject** on a review waiting for you · **Comment**.
+  One bubble per card — a newer entry replaces the old one. Dismissing or timing
+  out does not mark it read; the unread count keeps it.
+
+**Card or corner.** A bubble needs its card on screen: the pad open, the desk
+showing, and the card passing both filters. Otherwise the same entry goes to the
+app-wide message stack in the bottom-right corner, with the same Approve /
+Reject / reply controls; clicking it opens the pad on that note with its thread
+up. Notepad entries show there **even when channel live mode is off** — live mode
+is the switch for channel chatter, and a review waiting on you is not chatter.
+A card bubble that times out is not re-posted to the corner.
+
+## Thread
+
+Every note carries a durable thread: reviews, comments and milestones from
+Athena, the note-task agent, the system and you. Open it from a card's thread
+icon or from the thread icon in the editor's top row; **opening it marks it
+read**, and an entry that lands while it is open is read on arrival.
+
+- **Entries** — author, kind (Comment, Suggestions ready, Run completed, Scope
+  cut, Shipped, Completed…), how long ago, the text, and a verdict chip on a
+  review (Awaiting your review · Approved · Rejected).
+- **Reviews** — a suggestion card's review: **Approve** accepts every open
+  suggestion on the card, **Reject** rejects them, one tap each. A finished run's
+  review: **Approve** records the verdict and changes nothing else; **Reject**
+  asks why, and the reason is required — the note goes back to Fleet with your
+  reason (and your comments since the run) attached as operator feedback.
+- **Composer** — write a comment and press Enter (Shift+Enter for a new line).
+  Athena is pointed at the thread and answers there.
+
 ## Notes and tabs
 
 - **Tabs** — one per open note, each led by its status glyph. A **linked** note's
@@ -143,8 +243,9 @@ cap-checked).
 
 **What is editable.** The body and the project are editable in **Draft, Scoped
 and Cut** — the server agrees (`NoteStatus::can_edit_body`). Everything else is a
-record; use **Fork to new draft** to iterate. Deleting is only possible for
-drafts and archived notes; everything else archives.
+record; use **Fork to new draft** to iterate. **Delete permanently** (desk
+menu, archive drawer) works on any status and always confirms; it is refused
+while a Fleet agent still holds the note. The note's thread goes with it.
 
 **What the cap counts.** Ten notes, and the ten are the ones **occupying a slot**:
 Draft, Published, In progress, Scoped, Cut. A **Completed** note is a finished

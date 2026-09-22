@@ -1,5 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import { splitBlocks, type DocumentBlock, type DocumentSection } from './documentModel';
+import {
+  removeRow,
+  spliceRow,
+  splitBlocks,
+  splitRowAt,
+  type DocumentBlock,
+  type DocumentSection,
+} from './documentModel';
 
 interface UseDocumentSurfaceArgs {
   sections: readonly DocumentSection[];
@@ -7,59 +14,91 @@ interface UseDocumentSurfaceArgs {
 }
 
 /**
- * Which section is open, which block the reading mark sits on, whether we are
- * writing, and the per-section drafts.
+ * Which chapter is open, which row the reading mark sits on, which row (if
+ * any) is being written in, and the per-chapter drafts.
  *
- * DRAFTS ARE KEPT, NEVER DISCARDED HERE. Stepping out of writing leaves the
- * draft in place under its section id, and navigating to another section and
- * back finds it again; the only thing that clears a draft is a save that
- * resolved. Nothing in this hook throws a draft away, which is what lets the
- * surface promise that its most-pressed key is not its most destructive one.
+ * WRITING IS PER ROW, SAVING IS PER CHAPTER. A click on a row of the
+ * operator's own chapter opens THAT row in place; every keystroke is a splice
+ * on the chapter's draft over the span the row came from, so the chapter's
+ * markdown outside the row never changes. The draft is the whole chapter, and
+ * a save writes the whole chapter — the server's rule.
+ *
+ * THE MARK STARTS ON THE FIRST ROW, as it does on the contest winner. Only an
+ * explicit click opens a row, and only an explicit click on a read-only row
+ * explains itself.
+ *
+ * DRAFTS ARE KEPT, NEVER DISCARDED HERE. Esc steps out and leaves the draft;
+ * navigating away and back finds it; only a save that resolved clears it.
  */
 export function useDocumentSurface({ sections, onSaveSection }: UseDocumentSurfaceArgs) {
   const [openId, setOpenId] = useState<string>(() => sections[0]?.id ?? '');
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [writing, setWriting] = useState(false);
-  const [caretAt, setCaretAt] = useState<number | null>(null);
+  const [markIndex, setMarkIndex] = useState(0);
+  const [clicked, setClicked] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [caret, setCaret] = useState<number | 'end'>('end');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
-  const open = useMemo(
-    () => sections.find((s) => s.id === openId) ?? sections[0],
-    [sections, openId],
-  );
-  const closed = useMemo(() => sections.filter((s) => s.id !== open?.id), [sections, open]);
+  const open = useMemo(() => sections.find((s) => s.id === openId) ?? sections[0], [sections, openId]);
   const body = open ? (drafts[open.id] ?? open.body) : '';
-  const blocks = useMemo(
-    () => (open ? splitBlocks(open.id, drafts[open.id] ?? open.body) : []),
-    [open, drafts],
-  );
-  const hasDraft = !!open && drafts[open.id] !== undefined;
+  const blocks = useMemo(() => (open ? splitBlocks(open.id, body) : []), [open, body]);
+  const hasDraft = useCallback((id: string) => drafts[id] !== undefined, [drafts]);
+  const selectedBlockId = blocks[Math.min(markIndex, blocks.length - 1)]?.id ?? null;
 
-  const openSection = useCallback((id: string) => {
-    setOpenId(id);
-    setSelectedBlockId(null);
-    setWriting(false);
-    setCaretAt(null);
-  }, []);
-
-  // One click selects, and on a section the operator owns it also puts the
-  // caret in the block that was clicked.
-  const selectBlock = useCallback(
-    (block: DocumentBlock, canWrite: boolean) => {
-      setSelectedBlockId(block.id);
-      if (!canWrite) return;
-      setCaretAt(block.offset);
-      setWriting(true);
-    },
-    [],
-  );
-
-  const setDraft = useCallback(
+  const write = useCallback(
     (next: string) => {
       if (!open) return;
       setDrafts((d) => ({ ...d, [open.id]: next }));
     },
     [open],
+  );
+
+  const openSection = useCallback((id: string) => {
+    setOpenId(id);
+    setMarkIndex(0);
+    setClicked(false);
+    setEditingIndex(null);
+  }, []);
+
+  const selectBlock = useCallback((block: DocumentBlock, canWrite: boolean) => {
+    setMarkIndex(block.index);
+    setClicked(true);
+    if (!canWrite) return;
+    setCaret('end');
+    setEditingIndex(block.index);
+  }, []);
+
+  const editRow = useCallback((block: DocumentBlock, next: string) => write(spliceRow(body, block, next)), [body, write]);
+
+  const splitRow = useCallback(
+    (block: DocumentBlock, at: number) => {
+      write(splitRowAt(body, block, at).body);
+      setCaret(0);
+      setEditingIndex(block.index + 1);
+      setMarkIndex(block.index + 1);
+    },
+    [body, write],
+  );
+
+  const deleteRow = useCallback(
+    (block: DocumentBlock) => {
+      write(removeRow(body, block));
+      const prev = Math.max(0, block.index - 1);
+      setCaret('end');
+      setEditingIndex(prev);
+      setMarkIndex(prev);
+    },
+    [body, write],
+  );
+
+  const moveRow = useCallback(
+    (from: DocumentBlock, delta: -1 | 1) => {
+      const to = from.index + delta;
+      if (to < 0 || to >= blocks.length) return;
+      setCaret(delta < 0 ? 'end' : 0);
+      setEditingIndex(to);
+      setMarkIndex(to);
+    },
+    [blocks.length],
   );
 
   const save = useCallback(async () => {
@@ -70,25 +109,26 @@ export function useDocumentSurface({ sections, onSaveSection }: UseDocumentSurfa
       delete next[open.id];
       return next;
     });
-    setWriting(false);
-    setCaretAt(null);
+    setEditingIndex(null);
   }, [open, onSaveSection, drafts]);
 
-  const stopWriting = useCallback(() => setWriting(false), []);
+  const stopWriting = useCallback(() => setEditingIndex(null), []);
 
   return {
     open,
-    closed,
-    body,
     blocks,
     hasDraft,
-    openId: open?.id ?? '',
     selectedBlockId,
-    writing,
-    caretAt,
+    clicked,
+    editingIndex,
+    writing: editingIndex !== null,
+    caret,
     openSection,
     selectBlock,
-    setDraft,
+    editRow,
+    splitRow,
+    deleteRow,
+    moveRow,
     save,
     stopWriting,
   };

@@ -23,7 +23,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
@@ -387,7 +387,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
 
       {goal.description && (
         <div className="mb-4 rounded-card border border-primary/10 bg-card/30 px-3.5 py-3">
-          <MarkdownRenderer content={goal.description} className="typo-body leading-relaxed" />
+          <RichMarkdown content={goal.description} className="typo-body leading-relaxed" />
         </div>
       )}
 

@@ -17,6 +17,18 @@ import { nextMoveOf, nextMoveText } from '../../estate/kpiNextMove';
 import { fitsLabel, plotArea, plotColumns, type GroupTerritory } from './mapLayout';
 import { plotStyle, type MapLens } from './mapPlot';
 
+/** What the lattice reports up: the plot under the pointer and where it is,
+ *  so the surface can anchor one shared tooltip to it. */
+export interface PlotHit {
+  kpiId: string;
+  rect: DOMRect;
+}
+
+/** A territory that does not hold the hovered plot recedes HALFWAY, so the
+ *  map keeps its shape while one place is read; the change eases in rather
+ *  than snapping, because a snap on every plot the pointer crosses flickers. */
+const DIMMED_OPACITY = 0.55;
+
 export function MapTerritory({
   territory,
   lens,
@@ -31,7 +43,7 @@ export function MapTerritory({
   now: number;
   dimmed: boolean;
   onOpen: () => void;
-  onHoverKpi: (kpiId: string | null) => void;
+  onHoverKpi: (hit: PlotHit | null) => void;
   onOpenKpi: (kpiId: string) => void;
 }) {
   const { t, tx } = useTranslation();
@@ -51,11 +63,16 @@ export function MapTerritory({
 
   const kpiAt = (e: MouseEvent<HTMLElement>): string | null =>
     (e.target as HTMLElement | null)?.dataset?.kpiId ?? null;
+  const hitAt = (e: MouseEvent<HTMLElement>): PlotHit | null => {
+    const el = e.target as HTMLElement | null;
+    const kpiId = el?.dataset?.kpiId;
+    return kpiId && el ? { kpiId, rect: el.getBoundingClientRect() } : null;
+  };
 
   return (
     <div
-      className="absolute transition-opacity"
-      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, opacity: dimmed ? 0.25 : 1 }}
+      className="absolute transition-opacity duration-300 ease-linear motion-reduce:transition-none"
+      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, opacity: dimmed ? DIMMED_OPACITY : 1 }}
     >
       <Tooltip content={`${summary} — ${nextMoveText(nextMoveOf(tally), t, tx)}`} delay={250}>
         <button
@@ -101,7 +118,7 @@ export function MapTerritory({
           gap: plotSize > 6 ? 1 : 0,
           alignContent: 'start',
         }}
-        onMouseMove={(e) => onHoverKpi(kpiAt(e))}
+        onMouseMove={(e) => onHoverKpi(hitAt(e))}
         onMouseLeave={() => onHoverKpi(null)}
         onClick={(e) => {
           const id = kpiAt(e);

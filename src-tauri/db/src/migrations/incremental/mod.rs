@@ -61,11 +61,14 @@ mod e35_use_cases_auto_approve;
 mod e36_fleet_queue;
 mod e37_dispatch_order_retired;
 mod e38_project_enabled;
-mod e39_workspace_team_binding;
-mod e40_council;
-mod e41_backlog_contract;
-mod e42_one_idea_scale;
-mod e43_feature_scenarios;
+mod e39_fleet_budgets;
+mod e40_lab_eval_method;
+mod e41_note_comments;
+mod e42_workspace_team_binding;
+mod e43_council;
+mod e44_backlog_contract;
+mod e45_one_idea_scale;
+mod e46_feature_scenarios;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -123,11 +126,14 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e36_fleet_queue::run(conn)?;
     e37_dispatch_order_retired::run(conn)?;
     e38_project_enabled::run(conn)?;
-    e39_workspace_team_binding::run(conn)?;
-    e40_council::run(conn)?;
-    e41_backlog_contract::run(conn)?;
-    e42_one_idea_scale::run(conn)?;
-    e43_feature_scenarios::run(conn)?;
+    e39_fleet_budgets::run(conn)?;
+    e40_lab_eval_method::run(conn)?;
+    e41_note_comments::run(conn)?;
+    e42_workspace_team_binding::run(conn)?;
+    e43_council::run(conn)?;
+    e44_backlog_contract::run(conn)?;
+    e45_one_idea_scale::run(conn)?;
+    e46_feature_scenarios::run(conn)?;
 
     Ok(())
 }

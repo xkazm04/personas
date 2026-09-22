@@ -32,7 +32,7 @@ This repo's material for a UI brief comes from the LIVE app, not from fixtures:
 **Never stage `~/.personas/companion-brain/constitution.md`.** It is the operator's own
 companion brain and is personal; cite its SIZE as the scale evidence and stage nothing from it.
 
-## Taste
+## Taste - UI contests
 
 Judge these harder than the rubric alone would, in this repo:
 
@@ -46,6 +46,35 @@ Judge these harder than the rubric alone would, in this repo:
   gets a real one. See `.claude/CLAUDE.md` "The spinner boundary".
 - **Levels, not one layer**, and heavy content gets its own surface - the two patterns the
   owner's first contest review (tracklight, 2026-09-18) bought with a rejected panel favourite.
+
+## Taste - design contests (vault subdir `Backend`)
+
+A **design contest** runs the same instrument on a backend architecture brief: a variant is a
+design report that opens in a browser, not a UI prototype, and it lands in the `Backend` vault
+subdir so the UI pattern ledger is not quoted at an architecture seat. Pass
+`--vault-subdir Backend` on `init`.
+
+Material is staged by the host into `.contest/staging/<id>/`. **Never stage row content from the
+live database.** `%APPDATA%/com.personas.desktop/personas.db` is 214 MB of this person's real
+work; read a COPY, stage table names and row counts only, and say in `SCHEMA.md` where a
+designer would need content to be sure of something. The same rule as the companion brain.
+
+The seven dimensions are read against a report: **wow** is the idea not the gradient, **clarity
+at scale** is an argument that survives the real system's complexity, **wayfinding** is report
+navigation, **interaction** earns its place only when it shows what static cannot, **craft**
+includes a wrong signature or an invented table, **concept** is a falsifiable architectural bet,
+and **utility** decides it - could the owner build from this tomorrow with the risks on the
+table. Judged harder: honesty about unknowns, an incremental migration path against the live
+214 MB database, failure modes named, `file:line` citation of the tree, diagrams that carry
+mechanism, and body text at 15 px or more.
+
+**Codex on Windows needs the bypass flag.** Re-probed 2026-09-22: `--sandbox workspace-write`
+still answers "the read-only filesystem policy blocked the write"; the runner now passes
+`--dangerously-bypass-approvals-and-sandbox` and the write succeeds. This closes the PROPOSAL
+recorded under 2026-09-21 below.
+
+**Grok Build balance is still exhausted** (402 Payment Required, the seat errors in ~6 s on
+2026-09-22). Probe the seat before counting on it.
 
 ## Skill improvement log
 

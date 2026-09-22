@@ -44,7 +44,7 @@ export function chance(rand: Rand, p: number): boolean {
 /** The board's shape, fixed by the brief: 20 projects, 3 agents in each. */
 export const SIM_PROJECTS = 20;
 export const SIM_AGENTS_PER_PROJECT = 3;
-/** The usage strip is built for five plan slots (`UsageStripShell.PLAN_SLOTS`). */
+/** Five Claude plans — the count the strip's header chip is read against (`UsageStripShell.PLAN_SLOTS`). */
 export const SIM_PLANS = 5;
 
 /** One seed per generator, so adding sessions never reshuffles the roster. */

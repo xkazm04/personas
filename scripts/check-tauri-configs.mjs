@@ -18,9 +18,28 @@ const CANONICAL = "tauri.conf.json";
 const OVERLAYS = ["tauri.lite.conf.json", "tauri.stable.conf.json"];
 
 // Keys an overlay is allowed to override. Expand intentionally.
+//
+// The point of this list is that an overlay stays a SMALL, readable delta from
+// the canonical config — not a second config that has quietly diverged. Every
+// entry needs a reason, written here, at the time it is added.
+//
+// - build.features        — the whole purpose of the lite/stable split.
+// - bundle.targets        — lite ships nsis only, stable nsis + msi.
+// - bundle.windows.nsis.compression
+//     Added 2026-09-20 for `tauri.lite.conf.json`. Tauri 2's default is `lzma`
+//     (schema: NsisConfig.compression, enum zlib | bzip2 | lzma | none — verified
+//     against node_modules/@tauri-apps/cli/config.schema.json, not guessed).
+//     LZMA compresses an installer that already carries ONNX Runtime and is the
+//     slowest stage of `tauri:build:lite`, whose entire reason to exist is a fast
+//     local iteration build nobody distributes. `"none"` trades installer bytes
+//     for wall time, which is the right trade for lite and the WRONG one for
+//     stable and canonical — so this is allowlisted as a key an overlay MAY set,
+//     not as a value any overlay should copy. Do not add it to
+//     tauri.stable.conf.json.
 const ALLOWED_OVERLAY_KEYS = new Set([
   "build.features",
   "bundle.targets",
+  "bundle.windows.nsis.compression",
 ]);
 
 const problems = [];

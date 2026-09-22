@@ -10,7 +10,7 @@
 // ignores. Assigning the expression to a probe's `color` and reading the
 // computed value gives a real `rgb()/rgba()` string in every case.
 //
-// Mapping (from `docs/design/council-reference/README.md` "Token mapping"):
+// Mapping (from `.claude/council-reference/README.md` "Token mapping"):
 //   --ink-1..4       -> foreground / muted-foreground / muted / muted-dark
 //   --sky            -> background   (the stage IS the page in this app)
 //   --panel*         -> card / secondary  (used by the HTML chrome, not here)

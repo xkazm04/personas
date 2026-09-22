@@ -58,6 +58,15 @@ surfaces and deleted Classic, Projects and Portfolio outright. The dispatcher
 (`KPIDashboard.tsx`) now has three renderers behind the persisted `kpi-variant`
 pill (default `map`), and a stored value naming a deleted one falls back.
 
+**One type scale.** `estate/kpiType.ts` (`KT`) is the scale all three
+surfaces and their tooltips share, taken from Events (one size in a row,
+hierarchy by weight) and the Manifest (a hairline under the header, tracked
+uppercase section heads, one muting). It avoids `typo-title`, which tints
+names toward the primary hue, and never pairs a `typo-*` with a `font-*`.
+The KPI detail uses the same grammar: every block is a `KpiSection`
+(`KpiDetailSection.tsx`) with the Manifest's tone-ruled heading, separated
+by hairlines.
+
 **One grammar, four altitudes.** Every surface reads the same estate
 (`estate/kpiEstate.ts`) built over `kpiOverviewModel.ts`, and descends
 Portfolio › Project › Group › KPI: the first two happen *inside* the surface
@@ -87,7 +96,9 @@ The estate carries what every surface prints:
   screen, lit only if ever read. A dashed edge is stale; an inset mark is a
   KPI that promised a daily or weekly reading and never got one. Two lenses
   (state, freshness), a rail with the ranked shortlist capped at two picks per
-  project, and a card naming the plot under the pointer. Projects below 2 % of
+  project (one row per pick, grouped under its project, the reason in a
+  tooltip), and a tooltip naming the plot under the pointer while every other
+  territory recedes halfway. Projects below 2 % of
   the estate are drawn at a floor and the legend SAYS their area is distorted,
   rather than dropping them.
 - **Ledger** — *the books*. `declared = observed + reading owed`, so the 900
@@ -95,16 +106,18 @@ The estate carries what every surface prints:
   debts, deliberately different work: **reading owed** (never measured),
   **verdict owed** (measured, ungradable), **refresh owed** (stale, and never
   double-counted against verdict owed). Rows rank by attention with a
-  composition bar, a square-root size bar, and a preview pane showing the
-  level below the row under the cursor.
+  composition bar and a square-root size bar, one line tall; the debt
+  columns are bare figures under their headings. What to do about a row and
+  what is inside it are a tooltip on its name.
 - **River** — *the riverbed*. The bed's width is every KPI declared; the water
   is what was actually read that week, mirrored around a centreline and
   stacked by verdict. A portfolio that stops measuring DRIES UP rather than
   drawing a thinner ribbon that still looks green. A dry week is a tick, never
   a zero, and the path is never drawn across it; a reading with no verdict is
   pale silt on the banks. Every tributary carries a computed sentence
-  ("Narrowing: 17 to 1 read"), and the water's width is a square root, which
-  the legend declares.
+  ("Narrowing: 17 to 1 read"); the water's width is a square root. The
+  mainstream and the tributaries run full width, with no legend and no
+  week-reading panel - the headline's stat cards carry the counts.
 
 **The honesty rule the surfaces share:** a state colour never appears without
 its denominator, and a simulated reading is not an observation. The weekly
@@ -117,12 +130,14 @@ Clicking a group, chip or rail row from any variant opens the same in-place
 
 **Project › Group layer** (`layer/KpiGroupLayer.tsx`; breadcrumb, Esc/back):
 the per-project controls (autopilot, simulation, sim suggestions, environment
-switcher) move here, above a zero-based **bullet strip** (current vs target
-vs baseline per KPI with the pace sentence) and **small multiples** — at
+switcher) move here, above a **where-we-stand ledger** — a `UnifiedTable`
+with one windowed row per KPI: name, a zero-based bullet bar, current, target
+and baseline in their own right-aligned columns, and the pace sentence (full
+text on hover) — and **small multiples** — at
 most 12 mini line charts on a shared 0–100 %-of-target scale over one window,
 each series bucketed to ≤ 8 points (`kpiSample.ts`), dots only below three
 points, dashed when simulated; the rest sit in a compact table with a
-sparkline column. A failed measurement read keeps the bullet strip and says
+sparkline column. A failed measurement read keeps the ledger and says
 so beside the charts. Clicking a KPI anywhere opens the detail modal.
 
 Chart conventions for the whole folder live in `kpiChartTheme.ts` (axis,

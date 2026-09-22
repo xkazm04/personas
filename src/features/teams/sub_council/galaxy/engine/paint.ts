@@ -1,6 +1,6 @@
 // One frame of the field.
 //
-// A structural port of `docs/design/council-reference/index.html:522-643`.
+// A structural port of `.claude/council-reference/index.html:522-643`.
 // Everything the reference wrote as an rgba literal is a token here; every
 // other number (radii, alphas, thresholds, the rim arc, the sunflower) is the
 // reference's, unchanged, because those numbers ARE the approved design.

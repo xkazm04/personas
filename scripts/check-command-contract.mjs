@@ -6,7 +6,7 @@
  * Rules:
  * 1. Every command literal used through invokeWithTimeout/safeInvoke must be
  *    present in commandNames.generated.ts or commandNames.overrides.ts.
- * 2. commandNames.generated.ts must match src-tauri/src/lib.rs.
+ * 2. commandNames.generated.ts must match the handler lists under src-tauri/src/.
  * 3. commandNames.overrides.ts may only contain truly unregistered commands.
  *    If a Rust #[tauri::command] with the same function name exists, register
  *    it or remove the frontend call.
@@ -30,9 +30,9 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { discoverCommandNames } from "./generate-command-names.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const LIB_RS = resolve(ROOT, "src-tauri/src/lib.rs");
 const GENERATED = resolve(ROOT, "src/lib/commandNames.generated.ts");
 const OVERRIDES = resolve(ROOT, "src/lib/commandNames.overrides.ts");
 const SRC = resolve(ROOT, "src");
@@ -52,23 +52,19 @@ function walk(dir, predicate, out = []) {
   return out;
 }
 
+// Registered commands come from the SAME directory scan the generator uses
+// (every handler list under src-tauri/src/, literals and comments masked). Until
+// 2026-09-18 this was a single-match regex against lib.rs, which stopped finding
+// anything the day the list moved into src-tauri/src/ipc_shards/.
 function extractRegisteredCommands() {
-  const libRs = read(LIB_RS);
-  const handlerMatch = libRs.match(/invoke_handler\(ipc_auth::wrap_invoke_handler\(tauri::generate_handler!\[\s*([\s\S]*?)\]\)\)/);
-  if (!handlerMatch) {
-    throw new Error("Could not find ipc_auth-wrapped invoke_handler block in src-tauri/src/lib.rs");
+  const { names, blocks, rejects } = discoverCommandNames(RUST_SRC);
+  if (blocks.length === 0) {
+    throw new Error("No handler list found under src-tauri/src/ (scan shared with generate-command-names.mjs)");
   }
-
-  const commands = [];
-  for (const line of handlerMatch[1].split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("#[")) continue;
-    const match = trimmed.match(/([\w:]+),?\s*$/);
-    if (!match) continue;
-    const fullPath = match[1];
-    commands.push(fullPath.includes("::") ? fullPath.split("::").pop() : fullPath);
+  if (rejects.length > 0) {
+    throw new Error(`Unparseable lines in a handler list: ${rejects.map((r) => `${r.file}: ${r.line}`).join("; ")}`);
   }
-  return new Set(commands);
+  return new Set(names);
 }
 
 function extractTsUnion(path) {
@@ -264,7 +260,7 @@ const implementedButUnregisteredOverrides = [...overrides]
 const errors = [];
 if (generatedDrift.length) {
   errors.push(
-    "commandNames.generated.ts is out of sync with lib.rs. Run `node scripts/generate-command-names.mjs`.\n" +
+    "commandNames.generated.ts is out of sync with the registered handler lists. Run `node scripts/generate-command-names.mjs`.\n" +
     generatedDrift.map((x) => `  - ${x}`).join("\n"),
   );
 }
@@ -282,7 +278,7 @@ if (staleOverrides.length) {
 }
 if (implementedButUnregisteredOverrides.length) {
   errors.push(
-    "Overrides point at implemented Rust commands that are not registered in lib.rs:\n" +
+    "Overrides point at implemented Rust commands that are not registered in any handler list:\n" +
     implementedButUnregisteredOverrides.map((c) => `  - ${c}: ${implemented.get(c)}`).join("\n"),
   );
 }

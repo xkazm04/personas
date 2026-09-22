@@ -41,6 +41,8 @@
     "MediaStudioToolbar.tsx": {"count":1,"sections":[7],"contexts":["`MediaStudioToolbar.tsx`)."],"resolved":false},
     "MetricsCharts.tsx": {"count":3,"sections":[7],"lines":["17","18"],"contexts":["(`AthenaUsageSection.tsx:16`, `LlmSpendSection.tsx:17`, `MetricsCharts.tsx:17` and `:18`,"],"resolved":false},
     "ObservabilitySpendPieChart.tsx": {"count":1,"sections":[],"lines":["20"],"contexts":["`ObservabilitySpendPieChart.tsx:20` 2dp, `AthenaUsageCard.tsx:113` *no precision at all — the raw"],"resolved":false},
+    "RunDetailView.tsx": {"count":1,"sections":[7],"lines":["84"],"contexts":["`LabEconomicsPanel.tsx:78` (3), `RunDetailView.tsx:84` (2), `AthenaSpendSection.tsx:115,136` (2),"],"resolved":false},
+    "TrajectoryChart.tsx": {"count":1,"sections":[7],"lines":["10"],"contexts":["`TrajectoryChart.tsx:10`, `ValueRollupSection.tsx:65`, `ExecutionMetricsDashboard.tsx:94`,"],"resolved":false},
     "artist/utils/format.ts": {"count":1,"sections":[7],"lines":["3"],"contexts":["`LogDiskUsageSection.tsx:11`, `artist/utils/format.ts:3`, `FleetProcessRow.tsx:8`,"],"resolved":false},
     "db.ts": {"count":2,"sections":[7],"lines":["246,362,412"],"contexts":["renders and 0 duration formatting. Money is `REAL` float in SQLite (`db.ts:246,362,412`), returned"],"resolved":false},
     "docs/concepts/shared-facts.json": {
@@ -225,22 +227,6 @@
       "contexts": ["`executionMetricsHelpers.ts:2` (`v < 0.01 ? '<$0.01' : …`), `QuickStatsBar.tsx:75`,"],
       "resolvedFrom": "basename",
       "verbatim": "executionMetricsHelpers.ts"
-    },
-    "src/features/overview/sub_certification/components/RunDetailView.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["84"],
-      "contexts": ["`LabEconomicsPanel.tsx:78` (3), `RunDetailView.tsx:84` (2), `AthenaSpendSection.tsx:115,136` (2),"],
-      "resolvedFrom": "basename",
-      "verbatim": "RunDetailView.tsx"
-    },
-    "src/features/overview/sub_certification/components/TrajectoryChart.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["10"],
-      "contexts": ["`TrajectoryChart.tsx:10`, `ValueRollupSection.tsx:65`, `ExecutionMetricsDashboard.tsx:94`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TrajectoryChart.tsx"
     },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {
       "count": 1,

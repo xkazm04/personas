@@ -1,4 +1,3 @@
-import { AUTHOR_TONE } from './documentTokens';
 import type { DocumentSection } from './documentModel';
 
 interface DocumentTabsProps {
@@ -29,23 +28,18 @@ export function documentTabId(idPrefix: string, sectionId: string): string {
 /**
  * @catalog DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the tabs and deliberately not the `role="tablist"` that holds them.
  *
- * The document's chapters as a top switcher: numbered, named, coloured by
- * author, carrying a live count of what is waiting in each.
- *
- * It is the fast route to a section that the navigation rail also reaches
- * slowly — deliberately two ways to the same place, because the rail answers
- * "how big is it and where am I" and this answers "take me to the third one".
+ * The document's chapters as a top switcher: numbered, named, underlined in
+ * the author's colour when open, carrying a live count of what is waiting.
+ * Styled by `documentSurface.css` (`.ds-tab`), ported from the contest winner.
  *
  * IT RENDERS THE TABS AND NOT THE `role="tablist"` THAT HOLDS THEM. The strip
  * element lives in `DocumentSurface` beside the `role="tabpanel"` it drives,
- * so the control and the region it claims to control are declared together and
- * an `aria-controls` written here cannot point at an element no file renders.
+ * so the control and the region it claims to control are declared together.
  */
 export function DocumentTabs({ sections, openId, onOpen, idPrefix }: DocumentTabsProps) {
   return (
     <>
       {sections.map((section, i) => {
-        const tone = AUTHOR_TONE[section.author];
         const open = section.id === openId;
         const pending = section.pendingCount ?? 0;
         return (
@@ -57,20 +51,14 @@ export function DocumentTabs({ sections, openId, onOpen, idPrefix }: DocumentTab
             aria-selected={open}
             aria-controls={documentPanelId(idPrefix, section.id)}
             onClick={() => onOpen(section.id)}
-            className={`focus-ring shrink-0 inline-flex items-center gap-1.5 rounded-interactive px-2.5 py-1.5 border-b-2 transition-colors ${
-              open
-                ? `${tone.text} border-current`
-                : 'text-foreground border-transparent hover:bg-secondary/40'
-            }`}
+            className={`focus-ring ds-tab ds-tone-${section.author} ${open ? 'is-on' : ''}`}
+            data-role="doc-tab"
             data-testid={`document-tab-${section.id}`}
           >
-            <span className={`typo-label ${open ? '' : tone.text}`}>{i + 1}</span>
-            <span className="typo-title">{section.heading}</span>
+            <span className="ds-tab-n">{i + 1}</span>
+            <span className="ds-tab-t">{section.heading}</span>
             {pending > 0 && (
-              <span
-                className={`typo-label rounded-pill px-1.5 ${tone.wash} ${tone.text}`}
-                data-testid={`document-tab-pending-${section.id}`}
-              >
+              <span className="ds-tab-p" data-testid={`document-tab-pending-${section.id}`}>
                 {pending}
               </span>
             )}

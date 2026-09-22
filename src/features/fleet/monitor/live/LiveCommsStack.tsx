@@ -1,196 +1,149 @@
-// LIVE COMMS STACK — the corner pop-up layer for incoming team-channel messages.
+// LIVE COMMS STACK — the SIGNAL ISLAND: incoming channel / Notepad messages as
+// a Dynamic-Island capsule grown out of the title bar's top-center.
 //
-// Presentation: a MESSENGER BUBBLE (chosen via /prototype over a flat toast and
-// a Slack-transcript row). Each incoming channel message reads like an agent DM:
-// the avatar sits OUTSIDE a rounded speech bubble (bottom-left, anchored by a
-// small tail) and the message itself is the hero. The author line is the author
-// and nothing else — the team/project tag was dropped (the persona name carries
-// recognition; a per-project logo is the future affordance) and so was the
-// relative time.
+// Chosen via /prototype (2026-09-21) over the bottom-right messenger bubbles
+// and a header-seated copy of them: the header is where the eye already rests,
+// and a single capsule there costs the page nothing.
 //
-// THE CORNER CLUSTER carries everything that is ABOUT the message rather than
-// part of it: the type glyph (directive / decision / channel, event text in its
-// tooltip) and the acknowledge button, side by side at the top-right. The glyph
-// used to sit beside the author name, where it interrupted the one line the eye
-// reads first and — being inside the body button — made an INDICATOR part of
-// the open target. Out here it indicates and nothing more, which is what it was
-// always for. Alerts tint the bubble + tail warning. Newest sits nearest the
-// corner; the latest 3 stay live and older ones fold into a "+N more · clear
-// all" chip.
+// THE CAPSULE carries the newest message: the author's accent washes in from
+// the left, the avatar wears an accent ring, the note/context caption and the
+// message follow on one line, then the "+N waiting" badge and the glyph +
+// acknowledge cluster. Its accent hairline is the LIFELINE — it drains over the
+// message's 10s lifetime. Older messages form a DECK: author-coloured slivers
+// peeking out under the capsule, so "how many, and from whom" reads wordlessly.
+// A feed's inline verbs (Notepad verdicts) ride in a tray under the capsule.
 //
-// Lifecycle (redesigned 2026-08-26): NO auto-timeout — cards showed and hid
-// too quickly. A card stays until the operator ACKNOWLEDGES it via the check
-// icon button (marks it read persistently; it is never displayed again) or
-// clicks the body — which opens CONVERSATIONS, the room with a composer in it,
-// rather than the merged Timeline it used to open.
+// Hover / keyboard focus OPENS the island into full cards (avatar, author,
+// event chip, context or team, three lines, cluster) with the overflow and
+// clear-all footer — and HOLDS it: the host pauses every lifetime while the
+// operator reads, and resumes them on leave.
+//
+// Lifecycle: each message lives 10s from arrival (host-owned, see
+// LiveChannelOverlay); overlapping lifetimes stack. Acknowledge marks it read
+// for good; a body click opens Conversations (or the feed's own `open`).
+//
+// Layering: the title bar is `z-index: 9999` and a window drag region, so the
+// island sits above it and carries `titlebar-nodrag` (a real right-click or
+// drag inside a drag region goes to the window frame).
 
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, MessagesSquare, Scale, User } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  LiveAvatar, authorAccent, authorName, liveMessageType, type LiveMessageType,
-  type LiveMessage, type LiveVariantProps,
-} from './liveModel';
+import { liveSourceFor } from './liveExternal';
+import { LIVE_LIFETIME_MS, authorAccent, type LiveVariantProps } from './liveModel';
+import { IslandCapsule, IslandCard, makeOpen, mix } from './LiveIslandParts';
 
 const MAX_VISIBLE = 3;
-// +20% over the original 352 (operator request) — the wider card gives the
-// message line room now that it is the only prose in the bubble.
-const STACK_WIDTH = 422;
 
-/** The corner cluster's type glyph. Tone matches the event label vocabulary
- *  the card used to spell out; the event text itself rides in the tooltip so
- *  no information is lost. */
-const TYPE_ICON: Record<LiveMessageType, { Icon: LucideIcon; cls: string }> = {
-  decision: { Icon: Scale, cls: 'text-status-warning' },
-  directive: { Icon: User, cls: 'text-emerald-400' },
-  channel: { Icon: MessagesSquare, cls: 'text-foreground/60' },
-};
-
-function BubbleRow({
-  m, onDismiss, onOpenConversation, reducedMotion,
-}: {
-  m: LiveMessage;
-  onDismiss: (id: string) => void;
-  onOpenConversation: (teamId?: string, personaId?: string | null, itemId?: string | null) => void;
-  reducedMotion: boolean;
-}) {
-  const { t } = useTranslation();
-  const accent = authorAccent(m);
-  const type = liveMessageType(m);
-  const TypeGlyph = TYPE_ICON[type];
-  return (
-    <motion.div
-      layout={!reducedMotion}
-      initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 40, scale: 0.96 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      className="group pointer-events-auto flex w-full items-end gap-2"
-    >
-      {/* Avatar anchored to the bubble's bottom-left, like a chat thread. */}
-      <LiveAvatar m={m} size="md" />
-
-      <div className="relative min-w-0 flex-1">
-        {/* Tail — a small rotated square fused to the bubble's lower-left. */}
-        <span
-          aria-hidden
-          className={`absolute -left-1 bottom-2.5 h-2.5 w-2.5 rotate-45 rounded-[2px] border-b border-l ${
-            m.alert ? 'border-status-warning/30 bg-status-warning/15' : 'border-primary/12 bg-secondary/40'
-          }`}
-        />
-        <Tooltip content={t.monitor.live_open_conversation} placement="left">
-          <button
-            type="button"
-            // The card knows exactly which line it is showing; handing over
-            // only its team throws that away at the one moment it is free.
-            onClick={() => onOpenConversation(m.teamId, m.personaId, m.id)}
-            className={`relative block w-full overflow-hidden rounded-2xl rounded-bl-md border px-3 py-2.5 text-left shadow-elevation-2 backdrop-blur-md transition-colors ${
-              m.alert
-                ? 'border-status-warning/35 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]'
-                : 'border-primary/12 bg-secondary/40 hover:bg-secondary/55'
-            }`}
-          >
-            {/* The author line is the author. No team/project tag (the persona
-                name carries recognition; a per-project logo is the future
-                affordance), no relative time (discarded with the timeout), and
-                since this pass no type glyph either — it is in the corner
-                cluster below. `pr-14` reserves that corner so a long name
-                truncates instead of sliding under the two icons. */}
-            <div className="flex items-center pr-14">
-              <span className="typo-caption font-semibold truncate" style={{ color: accent }}>{authorName(m)}</span>
-            </div>
-            {m.message && (
-              <p className="mt-1 typo-body text-foreground line-clamp-3">{m.message}</p>
-            )}
-          </button>
-        </Tooltip>
-
-        {/* THE CORNER CLUSTER — what this message IS, and the one act on it.
-            Outside the body button on purpose: nesting either inside it would
-            put a control inside a control (invalid, and the browser drops one
-            of them), and the glyph is an indicator that should not also be a
-            fifth of the open target. */}
-        <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
-          <Tooltip content={m.event} placement="top">
-            <span
-              role="img"
-              aria-label={m.event}
-              className="flex h-5 w-5 items-center justify-center"
-            >
-              <TypeGlyph.Icon className={`h-3.5 w-3.5 flex-shrink-0 ${TypeGlyph.cls}`} aria-hidden />
-            </span>
-          </Tooltip>
-          {/* Acknowledge — always visible (no auto-timeout anymore): marks the
-              message read and it is never displayed again. */}
-          <Tooltip content={t.monitor.live_dismiss} placement="top">
-            <button
-              type="button"
-              onClick={() => onDismiss(m.id)}
-              aria-label={t.monitor.live_dismiss}
-              className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/90 text-foreground transition-colors hover:text-status-success hover:border-status-success/40 focus-visible:text-status-success"
-            >
-              <Check className="h-3 w-3" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenConversation, reducedMotion }: LiveVariantProps) {
+function SignalIsland({
+  messages, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion, deadlines, onHoldChange,
+}: LiveVariantProps) {
   const { t, tx } = useTranslation();
-  if (messages.length === 0) return null;
-  const visible = messages.slice(0, MAX_VISIBLE);
-  const overflow = messages.length - visible.length;
+  const [open, setOpen] = useState(false);
+  const onOpen = makeOpen({ onOpenConversation, onOpenExternal });
+
+  // Holding the island open pauses the host's clock; unmounting releases it.
+  useEffect(() => { onHoldChange?.(open); }, [open, onHoldChange]);
+  useEffect(() => () => onHoldChange?.(false), [onHoldChange]);
+
+  const [head, ...rest] = messages;
+  const deck = rest.slice(0, MAX_VISIBLE - 1);
+  const overflow = messages.length - 1 - deck.length;
+  const deadline = deadlines?.get(head!.id);
+  const remainingMs = deadline === undefined ? LIVE_LIFETIME_MS : Math.max(0, deadline - Date.now());
+  const headActions = liveSourceFor(head!)?.renderActions?.(head!);
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2" style={{ width: STACK_WIDTH }}>
-      {/* Overflow + clear-all chip sits above the newest message. */}
-      <AnimatePresence initial={false}>
-        {overflow > 0 && (
-          <motion.div
-            key="overflow"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="pointer-events-auto flex items-center gap-2 self-end rounded-full border border-primary/12 bg-secondary/80 px-2.5 py-1 backdrop-blur-sm"
-          >
-            <span className="typo-caption text-foreground">{tx(t.monitor.live_more, { count: overflow })}</span>
-            <button
-              type="button"
-              onClick={onDismissAll}
-              className="typo-caption font-medium text-primary transition-colors hover:text-primary/80"
-            >
-              {t.monitor.live_clear_all}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="pointer-events-none fixed left-1/2 top-[5px] z-[10000] -translate-x-1/2" style={{ width: 'min(520px, 46vw)' }}>
+      <div
+        className="titlebar-nodrag pointer-events-auto relative"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}
+      >
+        {/* Collapsed deck — author-coloured slivers under the capsule. */}
+        {!open && deck.map((m, i) => (
+          <motion.span
+            key={m.id}
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute left-1/2 h-[38px] -translate-x-1/2 rounded-full border border-primary/10 bg-secondary/70 shadow-elevation-1"
+            style={{ top: 5 * (i + 1), width: `${92 - i * 6}%`, zIndex: -1 - i, borderBottomColor: mix(authorAccent(m), 70) }}
+          />
+        ))}
 
-      {/* Newest at the BOTTOM (nearest the corner), like a chat thread. */}
-      <div className="flex w-full flex-col-reverse gap-2">
-        <AnimatePresence initial={false}>
-          {visible.map((m) => (
-            <BubbleRow
-              key={m.id}
-              m={m}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={head!.id}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+          >
+            <IslandCapsule
+              m={head!}
+              waiting={messages.length - 1}
+              remainingMs={remainingMs}
+              lifetimeMs={LIVE_LIFETIME_MS}
+              paused={open || reducedMotion}
               onDismiss={onDismiss}
-              onOpenConversation={onOpenConversation}
-              reducedMotion={reducedMotion}
+              onOpen={onOpen}
             />
-          ))}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* The head's inline verbs (a Notepad verdict) — always in reach. */}
+        {headActions && (
+          <div className="mx-6 -mt-px rounded-b-card border border-t-0 border-primary/15 bg-background/95 px-3 py-2 shadow-elevation-2">
+            {headActions}
+          </div>
+        )}
+
+        {/* Opened island — the deck unfolds into full cards. The top padding
+            bridges the gap so the pointer never leaves the hover target. */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              className="absolute inset-x-0 top-full flex flex-col gap-2 pt-2"
+            >
+              <IslandCard m={head!} index={0} withActions={false} onDismiss={onDismiss} onOpen={onOpen} reducedMotion={reducedMotion} />
+              {deck.map((m, i) => (
+                <IslandCard key={m.id} m={m} index={i + 1} withActions onDismiss={onDismiss} onOpen={onOpen} reducedMotion={reducedMotion} />
+              ))}
+              {messages.length > 1 && (
+                <div className="flex items-center justify-end gap-3 px-1">
+                  {overflow > 0 && <span className="typo-caption text-foreground">{tx(t.monitor.live_more, { count: overflow })}</span>}
+                  <button
+                    type="button"
+                    onClick={onDismissAll}
+                    className="typo-caption rounded-full border border-primary/15 bg-background/90 px-2.5 py-1 text-primary transition-colors hover:text-primary/80"
+                  >
+                    {t.monitor.live_clear_all}
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </div>
   );
 }
 
+function LiveCommsStackImpl(props: LiveVariantProps) {
+  // Unmount the island when empty, so its open/hold state never outlives the
+  // messages it was about (a removed element never fires mouseleave).
+  if (props.messages.length === 0) return null;
+  return <SignalIsland {...props} />;
+}
+
 /**
- * @catalog Bottom-right chat-bubble stack of live channel-message pop-ups (latest 3 + overflow chip): acknowledge-to-mark-read (persistent, no auto-timeout), corner type glyph, open-in-Conversations on body click.
+ * @catalog Title-bar "Signal Island" for live channel / Notepad messages: newest in a top-center capsule with a draining 10s lifeline, older ones as a colour deck; hover opens full cards and pauses the clock; acknowledge-to-mark-read, open-in-Conversations on body click.
  */
 export const LiveCommsStack = memo(LiveCommsStackImpl);
 export default LiveCommsStack;

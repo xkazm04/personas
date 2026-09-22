@@ -403,5 +403,9 @@
     "dropped": "Movida a {column}. {count} en esta columna.",
     "picked_up": "Recogida. Usa las flechas para elegir una columna, Enter para soltar, Escape para cancelar.",
     "targeting": "Columna: {column}"
+  },
+  "rich_markdown": {
+    "invalid_block": "No se pudo mostrar el bloque {name} ({reason}). Se conserva abajo tal como se escribió.",
+    "unknown_block": "«{name}» no es una etiqueta reconocida, por lo que se muestra tal como se escribió."
   }
 }

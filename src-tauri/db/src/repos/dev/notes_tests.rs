@@ -237,23 +237,96 @@ fn restoring_to_draft_clears_the_previous_lifes_stamps_and_dispatch() {
     }
 }
 
+/// Delete takes ANY status now (the running-session guard lives in the pad),
+/// and a live note's thread and run ledger go with it in the same statement.
 #[test]
-fn delete_is_allowed_only_for_draft_or_archived() {
+fn delete_takes_any_status_and_cascades_thread_and_runs() -> Result<(), AppError> {
+    use crate::repos::dev::note_comments::{insert_comment, list_comments, NewNoteComment};
     let p = pool();
-    let draft = create_note(&p, "d", None).unwrap();
-    delete_note(&p, &draft.id).unwrap();
+    let draft = create_note(&p, "d", None)?;
+    delete_note(&p, &draft.id)?;
     assert!(matches!(
         get_note(&p, &draft.id).unwrap_err(),
         AppError::NotFound(_)
     ));
 
-    let live = create_note(&p, "p", None).unwrap();
-    let live = set_status(&p, &live.id, NoteStatus::Published, None, None, None, None).unwrap();
-    let err = delete_note(&p, &live.id).unwrap_err();
-    assert!(matches!(err, AppError::Validation(_)), "got {err:?}");
+    for target in [
+        NoteStatus::Published,
+        NoteStatus::InProgress,
+        NoteStatus::Completed,
+    ] {
+        let n = create_note(&p, "live", None)?;
+        set_status(&p, &n.id, NoteStatus::Published, None, None, None, None)?;
+        if target != NoteStatus::Published {
+            set_status(&p, &n.id, NoteStatus::InProgress, None, None, None, None)?;
+        }
+        if target == NoteStatus::Completed {
+            set_status(&p, &n.id, NoteStatus::Completed, None, None, None, None)?;
+        }
+        record_run_start(&p, &n.id, "note_task", None, None)?;
+        insert_comment(&p, &NewNoteComment::operator_comment(&n.id, "hi"))?;
+        delete_note(&p, &n.id)?;
+        assert!(
+            matches!(get_note(&p, &n.id).unwrap_err(), AppError::NotFound(_)),
+            "a {target:?} note deletes"
+        );
+        assert!(list_runs(&p, &n.id)?.is_empty(), "runs cascade");
+        assert!(list_comments(&p, &n.id)?.is_empty(), "thread cascades");
+    }
 
-    let live = set_status(&p, &live.id, NoteStatus::Archived, None, None, None, None).unwrap();
-    delete_note(&p, &live.id).unwrap();
+    assert!(matches!(
+        delete_note(&p, "nope").unwrap_err(),
+        AppError::NotFound(_)
+    ));
+    Ok(())
+}
+
+/// The rework move: `completed → published` wipes the previous attempt's
+/// stamps but keeps its report and its dispatch metadata — the pad
+/// re-dispatches to the same target right after, and the next ingest
+/// overwrites `result_json`.
+#[test]
+fn rework_clears_the_attempt_stamps_and_keeps_report_and_dispatch() -> Result<(), AppError> {
+    let p = pool();
+    let n = create_note(&p, "n", None)?;
+    set_status(
+        &p,
+        &n.id,
+        NoteStatus::Published,
+        Some("fleet"),
+        Some("note:k"),
+        Some("fs-1"),
+        None,
+    )?;
+    set_status(&p, &n.id, NoteStatus::InProgress, None, None, None, None)?;
+    let done = set_status(
+        &p,
+        &n.id,
+        NoteStatus::Completed,
+        None,
+        None,
+        None,
+        Some(r#"{"status":"completed"}"#),
+    )?;
+    let first_published = done.published_at.clone();
+    assert!(done.completed_at.is_some());
+
+    let back = set_status(&p, &n.id, NoteStatus::Published, None, None, None, None)?;
+    assert_eq!(back.status, NoteStatus::Published);
+    assert!(
+        back.completed_at.is_none(),
+        "the attempt's completion is gone"
+    );
+    assert!(back.started_at.is_none(), "the attempt's start is gone");
+    assert!(back.published_at.is_some());
+    assert_ne!(back.published_at, first_published, "re-publish re-stamps");
+    assert_eq!(
+        back.result_json.as_deref(),
+        Some(r#"{"status":"completed"}"#)
+    );
+    assert_eq!(back.dispatch_target.as_deref(), Some("fleet"));
+    assert_eq!(back.dispatch_key.as_deref(), Some("note:k"));
+    Ok(())
 }
 
 #[test]
@@ -340,6 +413,7 @@ fn note_cap_is_ten_and_the_client_copy_lives_in_src_api_notepad_ts() {
 
 use crate::repos::dev::milestones::{
     create_milestone, get_milestone_by_id, set_milestone_item, update_milestone,
+    update_milestone_tracked,
 };
 
 fn milestone(pool: &DbPool, project_id: &str, name: &str) -> String {
@@ -580,6 +654,50 @@ fn cutting_and_shipping_a_milestone_moves_its_brief() {
     let after = get_note(&p, &n.id).unwrap();
     assert_eq!(after.status, NoteStatus::Shipped);
     assert!(after.completed_at.is_some());
+}
+
+/// Every step the mirror takes is handed back as a `BriefMove` (the caller
+/// emits) AND recorded as a `system` status row on the note's thread (every
+/// door gets the row, whether or not it can emit), one per transition.
+#[test]
+fn the_mirror_returns_its_moves_and_records_each_on_the_thread() -> Result<(), AppError> {
+    use crate::models::{NoteCommentKind, NoteCommentRef};
+    use crate::repos::dev::note_comments::list_comments;
+    let p = pool();
+    let proj = project(&p, "repo-a");
+
+    let m = milestone(&p, &proj, "M1");
+    let n = linked(&p, &proj, "brief", &m);
+    let (_, moves) =
+        update_milestone_tracked(&p, &m, None, None, None, Some("active"), None, None)?;
+    assert_eq!(moves.len(), 1);
+    assert_eq!(moves[0].note_id, n.id);
+    assert_eq!(moves[0].status, NoteStatus::Cut);
+    assert!(
+        moves[0].comment.is_some(),
+        "the move carries its thread row"
+    );
+
+    let (_, moves) =
+        update_milestone_tracked(&p, &m, None, None, None, Some("shipped"), None, None)?;
+    assert_eq!(
+        moves.iter().map(|m| m.status).collect::<Vec<_>>(),
+        vec![NoteStatus::Shipped]
+    );
+    let thread = list_comments(&p, &n.id)?;
+    let tokens: Vec<&str> = thread
+        .iter()
+        .filter(|c| c.kind == NoteCommentKind::System && c.ref_kind == Some(NoteCommentRef::Status))
+        .filter_map(|c| c.ref_id.as_deref())
+        .collect();
+    assert_eq!(tokens, vec!["cut", "shipped"]);
+
+    // A text-only edit moves nothing and records nothing.
+    let (_, moves) =
+        update_milestone_tracked(&p, &m, Some("M1 renamed"), None, None, None, None, None)?;
+    assert!(moves.is_empty());
+    assert_eq!(list_comments(&p, &n.id)?.len(), 2);
+    Ok(())
 }
 
 /// The lane a link lands in is decided by the milestone's `cut_at`, not by the

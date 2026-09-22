@@ -2,6 +2,14 @@
 
 ## Active
 
+- **[2026-09-22 09:52]**
+- **Paths:** `src/features/teams/sub_kpis/**`
+- **Status:** started
+
+- **[2026-09-22 09:09]**
+- **Paths:** `src/features/shared/components/document/**` · `src/features/agents/sub_manifest/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
 - **[2026-09-22 08:57]**
 - **Paths:** `src/features/teams/sub_kpis/**` · `src/i18n/locales/*.json`
 - **Status:** started
@@ -9,6 +17,10 @@
 ### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
 - **[2026-09-21 23:26]**
 - **Paths:** `src/features/teams/sub_features/**` · `src/features/overview/sub_certification/**` · `src-tauri/src/commands/infrastructure/dev_tools/**`
+- **Status:** started
+
+- **[2026-09-22 15:03]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `.contest/**`
 - **Status:** started
 
 - **[2026-09-21 15:05]**
@@ -23,7 +35,6 @@
 - **Paths:** `src/features/council/**` · `src/features/plugins/dev-tools/sub_context/**` · `.claude/skills/council/**`
 - **Status:** started
 
-### contest-manifest-editor — Adopt /contest skill; run a design contest for the Manifest editor (Opus xhigh vs grok-4.6 high)
 - **[2026-09-20 13:37]**
 - **Paths:** `.claude/skills/contest` · `.claude/contest/**` · `.ai/manifest.yaml` · `.gitignore` · `.contest/**`
 - **Status:** started
@@ -66,6 +77,62 @@
 
 - **[2026-09-17 10:06]**
 - **Paths:** `.claude/worktrees/incr-load/**`
+### spark-rao-build — spark resource-aware-orchestration BUILD in worktree .claude/worktrees/spark-rao: fleet queue budgets, responsibility resourceProfile, decide-lane resource state, cli_usage reader, usage strip variants
+### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
+- **[2026-09-21 16:00]**
+- **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin.rs` · `src/i18n/**`
+- **Status:** started
+
+### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
+- **[2026-09-21 15:23]**
+- **Paths:** `src/features/fleet/monitor/live/**`
+- **Status:** started
+
+- **[2026-09-21 15:16]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
+### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
+- **[2026-09-21 14:11]**
+- **Paths:** `src/features/plugins/dev-tools/sub_skills/registry/**` · `src/features/fleet/monitor/grid/DockSkillPicker.tsx` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-09-21 13:25]**
+- **Paths:** `src/features/fleet/monitor/grid/AccountRows.tsx` · `src/features/fleet/monitor/grid/UsageStripShell.tsx`
+- **Status:** started
+
+- **[2026-09-21 11:06]**
+- **Paths:** `src/features/notepad/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-21 10:33]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
+- **[2026-09-21 10:27]**
+- **Paths:** `src/features/fleet/monitor/channels/**` · `src/features/teams/sub_collab/ChannelDetailModal.tsx` · `src/lib/channel/decisionTitle.ts` · `src/i18n/locales/*.json`
+- **Status:** started
+
+- **[2026-09-20 19:30]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
+- **[2026-09-18 19:21]**
+- **Paths:** `src-tauri/src/commands/fleet/queue.rs` · `src-tauri/src/commands/fleet/cli_usage/**` · `src-tauri/src/engine/subscription/attention*.rs` · `src-tauri/core/src/models/responsibility.rs` · `src/features/fleet/monitor/grid/UsageStrip*` · `src/features/fleet/monitor/grid/usage/**` · `src/features/agents/sub_responsibilities/**`
+- **Status:** started
+
+- **[2026-09-18 18:58]**
+- **Paths:** `src/features/fleet/monitor/grid/UsageStrip*` · `src/features/fleet/monitor/grid/usage/**` · `src-tauri/src/commands/fleet/**`
+- **Status:** started
+
+- **[2026-09-18 18:35]**
+- **Paths:** `scripts/build/**` · `src-tauri/Cargo.toml` · `src-tauri/.cargo/**` · `package.json` · `docs/development/**` · `.github/workflows/**`
+- **Status:** started
+
+- **[2026-09-18 18:33]**
+- **Paths:** `src/features/fleet/monitor/grid/**`
+- **Status:** started
+
 - **[2026-09-18 10:38]**
 - **Paths:** `src/features/plugins/companion/sub_create/**`
 - **Status:** started
@@ -934,7 +1001,14 @@
 
 ## Recently completed
 
+### kpi-surfaces-port — port the contest winners into sub_kpis (map/ledger/river)
+
+### contest-manifest-editor — Adopt /contest skill; run a design contest for the Manifest editor (Opus xhigh vs grok-4.6 high)
+
+### manifest-document-surface — Promote the contest fuse: shared DocumentSurface component (parametrized side panel) + apply it in ManifestTab
+
 ### contest-kpi-descent — contest: KPI dashboard variants - record verdict, delete classic/grid/treemap
+### contest-dock — /contest: QuickDispatchDock redesign (Opus xhigh vs Grok 4.7)
 
 ### spark-backlog-unification — Unify backlog item generation across sources: shared schema, numbered execution steps, analysis gate, and the ACCEPTED->Dispatch->done lifecycle
 
@@ -961,6 +1035,26 @@
 ### spark-drive-finder — Drive redesign to Apple-OS-quality file/folder environment; from-scratch variant built in parallel to compare
 
 ### incr-load-worktree — Implement all incremental-load findings in worktree, merge to master
+### spark-node-rows — usage row spacing; FleetNode split <=200 LOC, title/divider/symbols layout, full-width nodes in Lanes
+
+### spark-note-overview-cycle — spark: NoteOverview cycle mgmt, feedback bubbles, context menu, contest v2
+
+### spark-usage-rows — usage strip rows: five per strip row, green active / black-wash inactive backgrounds
+
+### spark-usage-strip — usage strip: delete non-classic variants, one-row account format, 7d as bottom border
+
+### stream-decision-log — Stream as decision log: drop Messages/Slack, kind icons, two-level titles, font variants
+
+### spark-monitor-tinted — spark monitor-orchestration consolidation: tinted node is the baseline, other styles deleted
+
+### spark-build-process-upgrade — /spark: build process upgrade - faster/lighter builds + artifact hygiene (design phase, read-only scouting first)
+
+### spark-rao-build — spark resource-aware-orchestration BUILD in worktree .claude/worktrees/spark-rao: fleet queue budgets, responsibility resourceProfile, decide-lane resource state, cli_usage reader, usage strip variants
+
+### spark-monitor-nodes2 — spark monitor-orchestration adjust wave 2: title-only row, symbolic second row, visibly distinct node styles
+
+### spark-resource-aware-orchestration — spark: resource-aware orchestration (responsibility resource tags, plan-headroom admission) + cross-CLI usage strip prototypes — DESIGN PHASE, read-only until build; overlaps spark-monitor-nodes2 on grid/** (will build in own worktree, UsageStrip* files only)
+
 ### spark-monitor-nodes — spark monitor-orchestration adjust wave: node prototypes, Runway wrap, descope Ranked/Horizon
 
 ### spark-athena-stage — Create Athena: consolidate Stage winner, caption layout, persistent step highlight

@@ -1,5 +1,5 @@
 // The reference fixture — a DEV-only door, so the built page can be put beside
-// `docs/design/council-reference/index.html` and compared pixel for pixel while
+// `.claude/council-reference/index.html` and compared pixel for pixel while
 // the real store still holds zero councils.
 //
 // It FETCHES the two reference data files from the dev server rather than
@@ -10,6 +10,11 @@
 //
 // Nothing here is ever written to the database, and the page says out loud
 // that it is showing a fixture.
+//
+// The reference itself is MACHINE-LOCAL - it lives under the gitignored
+// `.claude/` directory and is not in the repository. Where it is absent the
+// import below rejects, the dev-only door reports the failure, and nothing
+// else in the app is affected.
 import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';
 import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
@@ -20,7 +25,7 @@ import { fixtureRunDetail, type FixtureRun } from './fixtureRuns';
 /** Read ONCE, at module scope — never inline at a JSX site. */
 export const IS_DEV: boolean = import.meta.env.DEV;
 
-const BASE = '/docs/design/council-reference/data';
+const BASE = '/.claude/council-reference/data';
 export const FIXTURE_ROOT = '__council_reference_fixture__';
 
 /**
@@ -169,8 +174,8 @@ async function readFixture(file: string, name: string): Promise<unknown> {
 
 /**
  * Load the reference fixture. The two casts cross a data boundary and are
- * safe for one named reason: `docs/design/council-reference/data/SCHEMA.md`
- * fixes both shapes, the files are checked in beside it, and a mismatch
+ * safe for one named reason: `.claude/council-reference/data/SCHEMA.md`
+ * fixes both shapes, the files sit beside it on disk, and a mismatch
  * throws in `parseAssignment` before anything downstream sees it.
  */
 export async function loadReferenceFixture(): Promise<FixtureBundle> {

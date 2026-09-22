@@ -358,3 +358,66 @@ export function Tooltip({
     </>
   );
 }
+
+/**
+ * The same tooltip, anchored to a RECT instead of wrapping a child.
+ *
+ * For surfaces that track hover with ONE delegated handler rather than a
+ * listener per target - a lattice of a thousand cells cannot afford a
+ * `<Tooltip>` each (1,000 timers, 1,000 wrappers). The caller reports the
+ * hovered element's `getBoundingClientRect()` and this paints the identical
+ * surface, placement, flip, viewport clamp and arrow the wrapping form does.
+ * `anchor: null` hides it. It is inert like every tooltip: nothing inside may
+ * be focusable or clickable (golden path P7, `tooltip.md`).
+ */
+export function AnchoredTooltip({
+  anchor,
+  content,
+  placement = 'top',
+}: {
+  anchor: DOMRect | null;
+  content: ReactNode;
+  placement?: Placement;
+}) {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [resolvedPlacement, setResolvedPlacement] = useState<Placement>(placement);
+  const [arrowOffset, setArrowOffset] = useState<number | null>(null);
+  const tooltipId = useId();
+
+  useEffect(() => {
+    if (!anchor) {
+      setPos(null);
+      setArrowOffset(null);
+      return;
+    }
+    const rafId = requestAnimationFrame(() => {
+      const tooltip = tooltipRef.current;
+      if (!tooltip) return;
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const resolved = resolvePlacement(anchor, tooltipRect, placement);
+      const finalPos = clampToViewport(getPosition(anchor, tooltipRect, resolved), tooltipRect);
+      setResolvedPlacement(resolved);
+      setPos(finalPos);
+      setArrowOffset(computeArrowOffset(anchor, finalPos, tooltipRect, resolved));
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [anchor, placement, content]);
+
+  if (!anchor || !content) return null;
+  return createPortal(
+    <div
+      ref={tooltipRef}
+      id={tooltipId}
+      role="tooltip"
+      className="fixed z-[9999] pointer-events-none max-w-[480px] typo-caption text-foreground tooltip-surface surface-blur-tooltip rounded-lg px-2.5 py-1.5 shadow-elevation-2"
+      style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
+    >
+      {content}
+      {pos && arrowOffset !== null && (
+        <span aria-hidden="true" style={getArrowStyle(resolvedPlacement, arrowOffset)} />
+      )}
+    </div>,
+    document.body,
+  );
+}

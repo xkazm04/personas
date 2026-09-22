@@ -124,6 +124,14 @@
     "hooks/utility/interaction/{useVirtualList,useProgressiveReveal,useScrollRestoration,useEndReached}.ts": {"count":1,"sections":[],"contexts":["`hooks/utility/interaction/{useVirtualList,useProgressiveReveal,useScrollRestoration,useEndReached}.ts`,"],"resolved":false},
     "httpApi.ts": {"count":1,"sections":[6],"lines":["2372"],"contexts":["`httpApi.ts:2372`) — so it is **structurally absent** from this leaf, not silent about it. Effective"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["`golden-path-census` **pre-push** job (`lefthook.yml`). That matters: `ci.yml` is red on 10"]},
+    "overview/sub_certification/components/GroundingTable.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["73"],
+      "contexts": ["| `overview/sub_certification/components/GroundingTable.tsx:73` | `grounding` | per-file citation grounding, scorecard-sized |"],
+      "resolved": false
+    },
+    "overview/sub_certification/components/RunHistoryView.tsx": {"count":1,"sections":[7],"lines":["118"],"contexts":["| `overview/sub_certification/components/RunHistoryView.tsx:118` | `runs` | `list_eval_runs`, **no limit** |"],"resolved":false},
     "overview/sub_health/.../insights/CascadePanel.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`overview/sub_health/.../insights/CascadePanel.tsx:68` (12)."],"resolved":false},
     "overview/sub_memories/components/{MemoriesPage,MemoriesPageDense}.tsx": {"count":1,"sections":[],"contexts":["`overview/sub_memories/components/{MemoriesPage,MemoriesPageDense}.tsx`,"],"resolved":false},
     "package.json": {"count":2,"sections":[0,6],"lines":["45"],"contexts":["| virtualization libraries in `package.json` | **1** (`@tanstack/react-virtual ^3.13.24`, resolved 3.13.26) |"]},
@@ -226,22 +234,6 @@
       "contexts": ["`libs/useEventLog.ts`, `overview/sub_activity/components/LlmCallsTable.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_activity/components/LlmCallsTable.tsx"
-    },
-    "src/features/overview/sub_certification/components/GroundingTable.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["73"],
-      "contexts": ["| `overview/sub_certification/components/GroundingTable.tsx:73` | `grounding` | per-file citation grounding, scorecard-sized |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_certification/components/GroundingTable.tsx"
-    },
-    "src/features/overview/sub_certification/components/RunHistoryView.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["118"],
-      "contexts": ["| `overview/sub_certification/components/RunHistoryView.tsx:118` | `runs` | `list_eval_runs`, **no limit** |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_certification/components/RunHistoryView.tsx"
     },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 8,

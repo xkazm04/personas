@@ -11,6 +11,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { PersonaChip, usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { humanizePayload, type Artifact } from './payloadView';
 import { AUTHOR_KIND_META, authorName, isAuthorKind, itemAccent } from './collabRender';
+import { decisionTitle, STEP_VERB_KEY } from './decisionTitle';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /**
@@ -41,6 +42,12 @@ function fullBody(item: TeamChannelItem): { text: string | null; fields: Array<[
   // the content. A Slack row carries no payload to decompose; its author is
   // rendered by the header (authorName → the bridged display name).
   return { text: item.body, fields: [], artifact: null };
+}
+
+/** The decision-log kinds get a two-level body: a short headline, then the
+ *  long form (see decisionTitle). Talk keeps its body as the hero. */
+function isDecisionRow(item: TeamChannelItem): boolean {
+  return item.kind === 'step' || item.kind === 'event' || item.kind === 'memory' || !!item.deliberationId;
 }
 
 /** Pretty-print the raw payload when it's JSON (events), else null. */
@@ -86,6 +93,9 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
   const accent = item ? itemAccent(item, persona) : '#9ca3af';
   const detail = useMemo(() => (item ? fullBody(item) : { text: null, fields: [] as Array<[string, string]>, artifact: null }), [item]);
   const raw = useMemo(() => (item ? prettyRaw(item) : null), [item]);
+  const head = useMemo(() => (item && isDecisionRow(item) ? decisionTitle(item) : null), [item]);
+  // With a headline, the markdown hero is only the long form behind it.
+  const heroText = head ? head.detail : detail.text;
   const absolute = useMemo(() => {
     if (!item) return null;
     const d = new Date(item.at);
@@ -157,9 +167,15 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-            {detail.text ? (
-              <MarkdownRenderer content={detail.text} className="typo-body-lg leading-relaxed" />
-            ) : detail.fields.length === 0 ? (
+            {head && (
+              <p className="typo-heading-lg text-foreground leading-snug">
+                {head.verb && <span className="text-muted">{t.monitor[STEP_VERB_KEY[head.verb]]} · </span>}
+                {head.title}
+              </p>
+            )}
+            {heroText ? (
+              <MarkdownRenderer content={heroText} className="typo-body-lg leading-relaxed" />
+            ) : head ? null : detail.fields.length === 0 ? (
               <p className="typo-body text-foreground">{t.monitor.channel_no_body}</p>
             ) : null}
             {detail.fields.length > 0 && (

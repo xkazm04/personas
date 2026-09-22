@@ -636,7 +636,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "progress_extra": {},
     "terminal_extra": {},
     "use_cases_extra": {},
-    "kanban": {}
+    "kanban": {},
+    "rich_markdown": {}
   },
   "releases": {
     "whats_new": {}
@@ -711,6 +712,43 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "witty-wry": {},
         "close-informal": {}
       }
+    },
+    "experience_opus": {
+      "create": {},
+      "suits": {},
+      "stage": {},
+      "mode": {},
+      "table": {},
+      "loot": {
+        "kind": {},
+        "stamp": {}
+      },
+      "pile": {},
+      "twinCard": {},
+      "style": {},
+      "topics": {
+        "tiers": {},
+        "drills": {},
+        "stories": {},
+        "takes": {},
+        "asks": {},
+        "lines": {},
+        "offClock": {}
+      },
+      "notices": {},
+      "keys": {},
+      "launch": {}
+    },
+    "experience_grok": {
+      "forge": {},
+      "table": {},
+      "slots": {
+        "identity": {},
+        "tone": {},
+        "channels": {},
+        "memories": {}
+      },
+      "voice": {}
     }
   },
   "radio": {},

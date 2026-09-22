@@ -4,6 +4,7 @@ import type { JsonValue } from "./serde_json/JsonValue";
 import type { RecipeActivity } from "./RecipeActivity";
 import type { RecipeDescription } from "./RecipeDescription";
 import type { RecipeRef } from "./RecipeRef";
+import type { ResourceProfile } from "./ResourceProfile";
 import type { ResponsibilityErrorPolicy } from "./ResponsibilityErrorPolicy";
 import type { ResponsibilityPacing } from "./ResponsibilityPacing";
 
@@ -166,4 +167,10 @@ authority?: boolean,
  * [`Self::authority`] — the Architect, which designs the org, may staff
  * it. See `attention_decide::may_hire`.
  */
-canHire?: boolean, };
+canHire?: boolean, 
+/**
+ * What a run of this charter costs (machine, GPU, difficulty, effort).
+ * `None` reads as [`ResourceProfile::default`] everywhere it is consumed;
+ * the field stays absent on the wire until someone declares it.
+ */
+resourceProfile?: ResourceProfile, };
