@@ -720,7 +720,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "overview": {
       "variant_labels": {},
       "band_labels": {},
-      "band_hints": {}
+      "moves": {
+        "reasons": {},
+        "gaps": {}
+      }
     },
     "measurement_source": {},
     "env_labels": {}

@@ -43,47 +43,78 @@ KPIs that need a connector that isn't in the vault yet arrive parked as
 catalog is extendable (see `/add-credential`) as KPI use cases demand new
 analytics/traffic services.
 
-### Strategic overviews (2026-09-17, six variants behind one switch)
+### Strategic overviews (rebuilt 2026-09-22, three surfaces)
 
 The dashboard was built for a few dozen KPIs and the live database holds
-~1,500 across a dozen projects (~1,050 active, ~70 % of them still
-unmeasured). It is now a **dispatcher** (`KPIDashboard.tsx`) over six
-renderers behind a persisted pill (`kpi-variant` in local storage; default
-`map`); the classic board survives untouched as the `classic` option until
-the winner is picked and the rest are deleted, as Drive's Finder round did.
+~1,500 across a dozen projects (~1,050 active). **Only 144 of them have ever
+been measured**, and that — not health — is what these surfaces are about: a
+red/amber/green language describes 14 % of this estate and says nothing about
+the rest.
 
-Every strategic variant reads ONE model, `kpiOverviewModel.ts`: a project is
-a lane, a context group is a cell (KPIs without a group land in an
-**Ungrouped** cell per project), and a cell's **band** is a share ladder
-over the KPIs that were actually **measured** — `met` (all at target),
-`healthy` (< 25 % of verdicts off-track), `mixed` (≥ 25 %), `strained`
-(≥ 50 %), `unmeasured` (nothing measured; drawn hatched, never colored).
-Coverage (`measured/total`) travels beside the band as fill intensity and is
-printed as `n/N measured`, so a green cell with 2 of 40 measured cannot pass
-for one with 40 of 40. A project whose context-group read failed is marked
-*groups unknown* rather than painted as one cell — a failed read is not a
-grade. The overview fetches only KPI rows; measurements load lazily for the
-ids a variant or the layer actually shows (`useLazyTrends`).
+Six prototypes competed behind one switch from 2026-09-17. A blind design
+contest (`/contest kpi-descent`, 2026-09-21) rebuilt Map, Ledger and River in
+three seats and scored nine variants; the owner kept one seat's three
+surfaces and deleted Classic, Projects and Portfolio outright. The dispatcher
+(`KPIDashboard.tsx`) now has three renderers behind the persisted `kpi-variant`
+pill (default `map`), and a stored value naming a deleted one falls back.
 
-- **Map** — the pof `/status?tab=pipelines` grammar: one lane per project
-  (worst band first), one 132×40 cell per group with its name and `n/N`
-  inside, a legend whose band chips *highlight* (non-matching cells dim to
-  22 %), horizontal scroll per lane.
-- **Ledger** — exceptions first: per project exactly ONE ranked next move
-  (largest shortfall × urgency among off-track KPIs, or "nothing off-track"),
-  then the KPIs whose newest reading changed their state, with sparklines on
-  one shared window and 0–100 %-of-target axis; everything else is counts.
-- **Portfolio** — a squarified treemap: area = active KPIs, color = band,
-  a hatched sub-area = the unmeasured share; click zooms project → groups.
-- **Projects** — identical small-multiple cards: a stacked band bar with
-  its denominator, a 30-day measured-coverage sparkline on one fixed scale,
-  and the group chips worst-first.
-- **River** — per project a stacked weekly area of met / on-track /
-  off-track counts over the last 12 weeks, rebuilt from the append-only
-  measurement log; weeks with no reading are gaps, the open week is marked
-  partial, and every chart shares one Y max.
+**One grammar, four altitudes.** Every surface reads the same estate
+(`estate/kpiEstate.ts`) built over `kpiOverviewModel.ts`, and descends
+Portfolio › Project › Group › KPI: the first two happen *inside* the surface
+(`estate/useKpiAltitude.ts`, Escape climbs one rung), a group opens the
+in-place **Project › Group layer**, and a KPI opens the detail modal.
 
-Clicking a lane, cell, chip or rect from any variant opens the same in-place
+The estate carries what every surface prints:
+
+- **The tally** — total, measured, unmeasured, met / on-track / off-track /
+  unpaced, **stale**, verdicts, coverage, band. Absence is a quantity here,
+  never a blank.
+- **`stale`** — a KPI that HAS a reading, older than the cadence it promised
+  itself (`daily` 2 days, `weekly` 9, `manual` 30). Distinct from dark.
+- **`band`** — the share ladder over verdicts: `met`, `healthy` (< 25 % of
+  verdicts off-track), `mixed` (≥ 25 %), `strained` (≥ 50 %), **`watched`**
+  (measured, nothing judgeable yet) and `unmeasured` (nothing read at all).
+  `watched` was added in the rebuild: collapsing it into `unmeasured`
+  contradicted `kpiMath`'s own rule that the two are different claims.
+- **`attention`** — one ordering principle at every altitude:
+  `offTrack × 8 + stale × 2 + unpaced × 1.5 + unmeasured × 1`. A place that
+  owes nothing scores zero and never reaches a shortlist.
+- **The next move** (`estate/kpiNextMove.ts`) — one sentence per place, in
+  priority order, returned as a descriptor and worded by i18n.
+
+- **Map** — *the estate at night*. A squarified treemap where area is what a
+  project CLAIMS and light is what it WATCHES: one plot per KPI, all 1,044 on
+  screen, lit only if ever read. A dashed edge is stale; an inset mark is a
+  KPI that promised a daily or weekly reading and never got one. Two lenses
+  (state, freshness), a rail with the ranked shortlist capped at two picks per
+  project, and a card naming the plot under the pointer. Projects below 2 % of
+  the estate are drawn at a floor and the legend SAYS their area is distorted,
+  rather than dropping them.
+- **Ledger** — *the books*. `declared = observed + reading owed`, so the 900
+  never-read KPIs become a liability that every row balances in print. Three
+  debts, deliberately different work: **reading owed** (never measured),
+  **verdict owed** (measured, ungradable), **refresh owed** (stale, and never
+  double-counted against verdict owed). Rows rank by attention with a
+  composition bar, a square-root size bar, and a preview pane showing the
+  level below the row under the cursor.
+- **River** — *the riverbed*. The bed's width is every KPI declared; the water
+  is what was actually read that week, mirrored around a centreline and
+  stacked by verdict. A portfolio that stops measuring DRIES UP rather than
+  drawing a thinner ribbon that still looks green. A dry week is a tick, never
+  a zero, and the path is never drawn across it; a reading with no verdict is
+  pale silt on the banks. Every tributary carries a computed sentence
+  ("Narrowing: 17 to 1 read"), and the water's width is a square root, which
+  the legend declares.
+
+**The honesty rule the surfaces share:** a state colour never appears without
+its denominator, and a simulated reading is not an observation. The weekly
+counts come from `weeklyStateSeries`, which filters to production rows that
+were actually measured; the ledger's change strip goes through `stateChanges`,
+which does the same. The winning prototype did not, and a blind judge caught
+it counting 39 simulation rows as real readings.
+
+Clicking a group, chip or rail row from any variant opens the same in-place
+
 **Project › Group layer** (`layer/KpiGroupLayer.tsx`; breadcrumb, Esc/back):
 the per-project controls (autopilot, simulation, sim suggestions, environment
 switcher) move here, above a zero-based **bullet strip** (current vs target

@@ -21,9 +21,13 @@ const projects = [{ id: 'p1', name: 'Alpha' }, { id: 'p2', name: 'Beta' }] as De
 const groups = [{ id: 'g1', project_id: 'p1', name: 'Core', color: '#000', domain: 'feature' }] as DevContextGroup[];
 
 describe('bandOf — the share ladder over MEASURED KPIs', () => {
-  it('is unmeasured with nothing measured, and with measured-but-unpaced only', () => {
+  it('separates never-read from read-but-unjudgeable', () => {
+    // `watched` was `unmeasured` until the kpi-descent contest (2026-09-21).
+    // Collapsing them contradicted kpiMath's own rule that `unpaced` and
+    // `unmeasured` are different claims, and painted a group somebody IS
+    // reading as a blank.
     expect(bandOf({ measured: 0, met: 0, onTrack: 0, offTrack: 0 })).toBe('unmeasured');
-    expect(bandOf({ measured: 3, met: 0, onTrack: 0, offTrack: 0 })).toBe('unmeasured');
+    expect(bandOf({ measured: 3, met: 0, onTrack: 0, offTrack: 0 })).toBe('watched');
   });
   it('steps strained ≥ 50 %, mixed ≥ 25 %, met when all met, else healthy', () => {
     expect(bandOf({ measured: 4, met: 0, onTrack: 2, offTrack: 2 })).toBe('strained');

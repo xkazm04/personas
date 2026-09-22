@@ -1,50 +1,160 @@
-// The Strategic map (WP1, kpi-strategic-map spark) — the whole KPI portfolio
-// as one sheet: a lane per project (worst band first), a cell per context
-// group, color = share of MEASURED KPIs off-track, fill strength = how much of
-// the group is measured, hatch = nothing measured at all. Every cell prints its
-// own denominator, so a green cell with 2 of 40 measured can never pass for a
-// green cell with 40 of 40. The legend doubles as a highlight filter: picking a
-// band dims the rest instead of hiding it, because a map that removes cells
-// stops being a map. Fetches nothing — it reads the shared overview model.
-import { useMemo, useState } from 'react';
+// THE MAP - "the estate at night".
+//
+// Winner of the kpi-descent contest's Map seat (2026-09-21), rebuilt here in
+// the app's own idiom. The bet: AREA IS WHAT YOU CLAIM, LIGHT IS WHAT YOU
+// WATCH. Every active KPI is one plot of land - all 1,044 of them, nothing
+// capped and nothing aggregated away - lit only if it has ever been read. The
+// portfolio's real shape becomes the picture: the largest territory on screen
+// is also the darkest, and no amount of green elsewhere can hide it.
+//
+// What it replaced was a horizontal lane per project with one flat cell per
+// group, which scrolled sideways forever and had exactly one level. This one
+// descends: portfolio to project inside the surface, then the group layer,
+// then the KPI.
+import { useMemo, useRef, useState } from 'react';
+
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import type { KpiVariantProps } from '../KPIDashboard';
-import type { KpiBand } from '../kpiOverviewModel';
-import { bandCensus } from './StrategicMap.model';
-import { StrategicMapGhost } from './StrategicMapGhost';
-import { StrategicMapLane } from './StrategicMapLane';
-import { StrategicMapLegend } from './StrategicMapLegend';
+import { buildEstate } from '../estate/kpiEstate';
+import { EstateHeadline } from '../estate/EstateHeadline';
+import { AttentionRail } from '../estate/AttentionRail';
+import { picksFor } from '../estate/kpiPicks';
+import { useKpiAltitude } from '../estate/useKpiAltitude';
+import { layoutMap } from './map/mapLayout';
+import { brokenPromises, type MapLens } from './map/mapPlot';
+import { MapLegend } from './map/MapLegend';
+import { MapTerritory } from './map/MapTerritory';
+import { MapFocusCard } from './map/MapFocusCard';
 
-export default function StrategicMap({ overview, loading, onFocus }: KpiVariantProps) {
-  const [active, setActive] = useState<KpiBand | null>(null);
-  const census = useMemo(() => bandCensus(overview), [overview]);
+/** Tall enough that 1,044 plots are individually visible at 1280px wide; the
+ *  canvas is a fixed frame, never a page that grows with the estate. */
+const CANVAS_HEIGHT = 640;
 
-  // Data on screen is never hidden by a refetch: the ghost paints only while
-  // there is nothing at all to show.
-  if (loading && overview.length === 0) {
-    return (
-      <div data-testid="kpi-map" className="space-y-3">
-        <StrategicMapGhost />
-      </div>
-    );
-  }
+export default function StrategicMap({ overview, loading, onFocus, onOpen }: KpiVariantProps) {
+  const { t, tx } = useTranslation();
+  const o = t.kpis.overview;
+  const [lens, setLens] = useState<MapLens>('state');
+  const [hovered, setHovered] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const { width } = useElementSize(canvasRef);
+
+  const estate = useMemo(() => buildEstate(overview), [overview]);
+  const altitude = useKpiAltitude(estate);
+  const picks = useMemo(() => picksFor(estate, altitude.project, { limit: 6 }), [estate, altitude.project]);
+  const ranks = useMemo(() => new Map(picks.map((p) => [p.id, p.rank] as const)), [picks]);
+  const layout = useMemo(
+    () => layoutMap(estate, altitude.project, { x: 0, y: 0, w: Math.max(0, width), h: CANVAS_HEIGHT }, ranks),
+    [estate, altitude.project, width, ranks],
+  );
+  const scope = altitude.project ?? estate;
+  const promised = useMemo(() => brokenPromises(scope.kpis), [scope]);
+  const hoveredKpi = useMemo(
+    () => (hovered ? (estate.kpis.find((k) => k.id === hovered) ?? null) : null),
+    [hovered, estate],
+  );
+
+  if (loading && overview.length === 0) return <MapGhost />;
 
   return (
-    <div data-testid="kpi-map" className="space-y-3">
-      <StrategicMapLegend census={census} active={active} onToggle={setActive} />
-      <div className="overflow-x-auto pb-1">
-        <div className="flex flex-col gap-1.5">
-          {overview.map((lane) => (
-            <StrategicMapLane
-              key={lane.projectId}
-              lane={lane}
-              active={active}
-              onOpenProject={() => onFocus({ projectId: lane.projectId, groupId: null })}
-              onOpenGroup={(groupId) => onFocus({ projectId: lane.projectId, groupId })}
+    <div className="space-y-3" data-testid="kpi-map">
+      <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} />
+      <MapLegend
+        lens={lens}
+        tally={scope.tally}
+        brokenPromises={promised}
+        dropped={layout.dropped}
+        floored={layout.floored}
+      />
+
+      {/* The lens strip and the canvas it swaps sit together, and declare each
+          other: the strip is the tablist, the canvas is the tabpanel it
+          controls (golden path: tab-strip.md). */}
+      <SegmentedTabs<MapLens>
+        tabs={[
+          { id: 'state', label: o.map_lens_state, testId: 'kpi-map-lens-state' },
+          { id: 'freshness', label: o.map_lens_freshness, testId: 'kpi-map-lens-freshness' },
+        ]}
+        activeTab={lens}
+        onTabChange={setLens}
+        ariaLabel={o.map_lens_aria}
+        idPrefix="kpi-map-lens"
+        size="sm"
+        fullWidth={false}
+      />
+
+      <div className="flex flex-col gap-3 lg:flex-row">
+        <div
+          ref={canvasRef}
+          role="tabpanel"
+          id={`kpi-map-lens-panel-${lens}`}
+          aria-labelledby={`kpi-map-lens-tab-${lens}`}
+          className="relative w-full shrink-0 lg:flex-1"
+          style={{ height: CANVAS_HEIGHT }}
+          data-testid="kpi-map-canvas"
+        >
+          {layout.frames.map((frame) => (
+            <div
+              key={frame.projectId}
+              className="absolute rounded-card border border-primary/15"
+              style={{ left: frame.rect.x, top: frame.rect.y, width: frame.rect.w, height: frame.rect.h }}
+            >
+              <button
+                type="button"
+                onClick={() => (altitude.project ? altitude.climb() : altitude.descend(frame.projectId))}
+                data-testid={`kpi-map-frame-${frame.projectId}`}
+                className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-secondary/30 focus-ring"
+              >
+                <span className="truncate typo-title text-foreground">{frame.label}</span>
+                <span className="shrink-0 typo-caption text-foreground tabular-nums">
+                  {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
+                </span>
+                {frame.groupsUnknown && (
+                  <span className="shrink-0 typo-caption text-status-warning">{o.groups_unknown}</span>
+                )}
+              </button>
+            </div>
+          ))}
+          {layout.territories.map((territory) => (
+            <MapTerritory
+              key={territory.key}
+              territory={territory}
+              lens={lens}
+              now={estate.now}
+              dimmed={hovered != null && territory.group.kpis.every((k) => k.id !== hovered)}
+              onOpen={() => onFocus({ projectId: territory.projectId, groupId: territory.groupId ?? 'ungrouped' })}
+              onHoverKpi={setHovered}
+              onOpenKpi={onOpen}
             />
           ))}
         </div>
+
+        <aside className="w-full space-y-4 lg:w-[320px] lg:shrink-0">
+          <MapFocusCard kpi={hoveredKpi} now={estate.now} onOpen={onOpen} />
+          <AttentionRail
+            picks={picks}
+            title={altitude.project ? o.rail_title_project : o.rail_title_portfolio}
+            onOpen={(pick) => onFocus({ projectId: pick.projectId, groupId: pick.groupId ?? 'ungrouped' })}
+          />
+        </aside>
       </div>
+    </div>
+  );
+}
+
+/** The only moment the map has nothing at all: cold store, read in flight.
+ *  The real geometry, invisible for its first ~150 ms so a fast read never
+ *  flashes (docs/design/overview-loading.md). */
+function MapGhost() {
+  return (
+    <div className="space-y-3" data-testid="kpi-map-ghost" aria-hidden="true">
+      <span className="block h-8 w-64 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} />
+      <span
+        className="block rounded-card bg-primary/[0.06] animate-fade-in"
+        style={{ height: CANVAS_HEIGHT, animationDelay: '185ms' }}
+      />
     </div>
   );
 }

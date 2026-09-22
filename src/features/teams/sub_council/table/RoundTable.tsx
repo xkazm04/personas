@@ -25,7 +25,7 @@ import { CoverageRing } from './svg/CoverageRing';
 import { Rose } from './svg/Rose';
 import { RoundHistory } from './svg/RoundHistory';
 import { useCouncilRun } from './useCouncilRun';
-import { useElementSize } from './useElementSize';
+import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
 import { usePercent } from './usePercent';
 import type { CouncilRunView } from './useCouncilRun';
 

@@ -1,5 +1,11 @@
 // The size of one element, as React state.
 //
+// Two surfaces need a NUMBER that CSS cannot give them: the council's round
+// table sizes an SVG rose against the stage it was handed, and the KPI map
+// tiles a treemap into the box it was handed. Both are decisions about the
+// element's size rather than the window's, so a media query answers the wrong
+// question.
+//
 // The round table has a FIXED FRAME to fit - header, rose, reading, gate -
 // and two of those decisions cannot be made in CSS: how big to draw the rose
 // (an SVG needs a number, and it must shrink so the why-line and the
