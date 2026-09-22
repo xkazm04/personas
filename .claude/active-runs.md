@@ -2,6 +2,10 @@
 
 ## Active
 
+- **[2026-09-22 20:56]**
+- **Paths:** `.contest/**` · `src/features/notepad/overview/**`
+- **Status:** started
+
 - **[2026-09-22 09:52]**
 - **Paths:** `src/features/teams/sub_kpis/**`
 - **Status:** started
@@ -1000,6 +1004,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### contest-goal-desk-scale — /contest: next-gen goal desk (grouped + stacked by project, 90 goals/16 projects)
 
 ### kpi-surfaces-port — port the contest winners into sub_kpis (map/ledger/river)
 
