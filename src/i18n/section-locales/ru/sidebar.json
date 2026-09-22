@@ -104,5 +104,6 @@
   "whitelist": "Белый список",
   "navigation_drawer": "Панель навигации",
   "primary_nav": "Основная навигация",
-  "create_athena": "Создать Athena"
+  "create_athena": "Создать Athena",
+  "features": "Функции"
 }

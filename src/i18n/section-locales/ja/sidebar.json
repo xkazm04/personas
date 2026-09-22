@@ -104,5 +104,6 @@
   "whitelist": "ホワイトリスト",
   "navigation_drawer": "ナビゲーションドロワー",
   "primary_nav": "メインナビゲーション",
-  "create_athena": "Athenaを作る"
+  "create_athena": "Athenaを作る",
+  "features": "機能"
 }

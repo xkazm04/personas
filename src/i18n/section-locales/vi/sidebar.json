@@ -104,5 +104,6 @@
   "whitelist": "Danh sách cho phép",
   "navigation_drawer": "Ngăn điều hướng",
   "primary_nav": "Điều hướng chính",
-  "create_athena": "Tạo Athena"
+  "create_athena": "Tạo Athena",
+  "features": "Tính năng"
 }

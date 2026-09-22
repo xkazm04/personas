@@ -104,5 +104,6 @@
   "whitelist": "Lista blanca",
   "navigation_drawer": "Cajón de navegación",
   "primary_nav": "Navegación principal",
-  "create_athena": "Crear a Athena"
+  "create_athena": "Crear a Athena",
+  "features": "Funciones"
 }

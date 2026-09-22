@@ -104,5 +104,6 @@
   "whitelist": "白名单",
   "navigation_drawer": "导航抽屉",
   "primary_nav": "主导航",
-  "create_athena": "创建 Athena"
+  "create_athena": "创建 Athena",
+  "features": "功能"
 }
