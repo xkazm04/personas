@@ -1,0 +1,61 @@
+{
+  "roles": {
+    "page": {
+      "winner": ".stage",
+      "port": "[data-role=page]"
+    },
+    "column": {
+      "winner": ".col",
+      "port": "[data-role=column]"
+    },
+    "portrait": {
+      "winner": ".col[data-id=overseer] .portrait",
+      "port": "[data-role=column][data-id=overseer] [data-role=portrait]"
+    },
+    "heart": {
+      "winner": ".heart",
+      "port": "[data-role=heart]",
+      "position": true
+    },
+    "name": {
+      "winner": ".name",
+      "port": "[data-role=name]"
+    },
+    "title": {
+      "winner": ".title",
+      "port": "[data-role=title]"
+    },
+    "tagline": {
+      "winner": ".tag",
+      "port": "[data-role=tagline]"
+    },
+    "state": {
+      "winner": ".word",
+      "port": "[data-role=state]",
+      "position": true
+    },
+    "blocker": {
+      "winner": ".wake",
+      "port": "[data-role=blocker]",
+      "accept": [
+        "width"
+      ]
+    },
+    "facts": {
+      "winner": ".count b",
+      "port": "[data-role=facts] b",
+      "accept": [
+        "width"
+      ]
+    },
+    "open": {
+      "winner": ".open",
+      "port": "[data-role=open]"
+    },
+    "portraitAthena": {
+      "winner": ".col[data-id=athena] .portrait",
+      "port": "[data-role=column][data-id=athena] [data-role=portrait]"
+    }
+  },
+  "$comment": "Heartlight promotion contract. `accept` records the only two departures, both MANDATED BY THE BRIEF (every word must come from the pre-seeded companions.* keys) and both pure TEXT LENGTH on a shrink-to-fit element - every style property on both roles matches the winner exactly. Winner 'Star an agent to watch' (201px) vs product `companions.blocker.no_starred_personas` = 'Star an agent for Overseer to watch.' (301px); winner count label 'decisions wait' (80px) vs product `companions.nav.page_decisions` = 'Decisions' (56px). Both close the moment the Director adds the short label/wake keys requested in wp4-key-requests.jsonl. `portrait` names Overseer's illustration on BOTH sides: it is the element whose art and framing did not change, while Athena's portrait was re-rendered at 2:3 by owner instruction - her column is measured separately as `portraitAthena`, which passes at the winner's own width."
+}

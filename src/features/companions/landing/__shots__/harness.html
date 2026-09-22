@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+  The Companions landing on its own, for the promotion pass.
+
+  It is committed because the Council harness beside it learned the lesson the
+  hard way: the harness that produced the first round of shots was never kept,
+  so the next person had to build it again from scratch. The style contract in
+  `.claude/companions-reference/` is only reproducible with this page.
+
+  Served by the dev server at
+  /src/features/companions/landing/__shots__/harness.html
+    ?frame=winner|app &scenario=today|fresh|all-active|athena-off|mixed
+    &theme=dark|light &loading=1 &error=1
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Companions landing - shot harness</title>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+      }
+      /* The prototype's own chrome heights (a 52px bar, a 42px key row), so
+         the column's container-relative type is measured in the same box the
+         winner was judged in. Empty on purpose: this frame is not the app. */
+      .hl-shot-frame {
+        display: grid;
+        grid-template-rows: 52px 1fr 42px;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./harness.tsx"></script>
+  </body>
+</html>

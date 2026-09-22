@@ -1,17 +1,29 @@
 // Companions > Overview - the landing: three columns, one per companion.
 //
-// WP0 CONTRACT PLACEHOLDER: the path and the default export are frozen so the
-// Companions router can lazy-import it. WP4 replaces the body with the port of
-// the contest winner ("Heartlight"), whose whole idea is that the status lamp
-// is the light each portrait already carries. The behaviour it must keep lives
-// beside it and not in here: `useCompanionsStatus`, `landingStateOf`,
-// `landingTarget`, `navigateToCompanions`.
+// The thin wrapper. Everything it knows comes from beside it:
+// `useCompanionsStatus` reads the category, `landingStateOf` derives what a
+// column draws, `landingTarget` decides where it opens and
+// `navigateToCompanions` is the one way in. The look is `CompanionsTriptych`,
+// a port of the contest winner "Heartlight" - the status lamp is the light
+// each portrait already carries.
 import { Users } from 'lucide-react';
+import { useCallback } from 'react';
 
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
 
-export default function LandingPage() {
+import { CompanionsTriptych, type CompanionsTriptychProps } from './CompanionsTriptych';
+import type { CompanionColumnView } from './landingModel';
+import { navigateToCompanions } from '../navigation';
+import { useCompanionsStatus } from '../status/useCompanionsStatus';
+
+/**
+ * The page's chrome around the triptych, with its data injected. Exported so
+ * the shot harness photographs the INTEGRATED page - the same `ContentBox` /
+ * `ContentHeader` / `ContentBody` the app renders - rather than a component
+ * in isolation, which is the only version whose widths are real.
+ */
+export function LandingSurface(props: CompanionsTriptychProps) {
   const { t } = useTranslation();
 
   return (
@@ -20,10 +32,34 @@ export default function LandingPage() {
         icon={<Users className="w-4 h-4" />}
         title={t.companions.landing.title}
         subtitle={t.companions.landing.subtitle}
+        actions={
+          <span className="typo-caption hide-on-touch">{t.companions.landing.shortcut_hint}</span>
+        }
       />
-      <ContentBody>
-        <p className="typo-body-lg text-foreground">{t.companions.landing.subtitle}</p>
+      <ContentBody flex>
+        {/* Full-bleed: the triptych owns the whole body and scrolls nothing. */}
+        <div className="flex-1 min-h-0 flex">
+          <CompanionsTriptych {...props} />
+        </div>
       </ContentBody>
     </ContentBox>
+  );
+}
+
+export default function LandingPage() {
+  const { companions, loading, error, refresh } = useCompanionsStatus();
+
+  const open = useCallback((view: CompanionColumnView) => {
+    navigateToCompanions(view.target);
+  }, []);
+
+  return (
+    <LandingSurface
+      companions={companions}
+      loading={loading}
+      error={error}
+      onOpen={open}
+      onRetry={refresh}
+    />
   );
 }

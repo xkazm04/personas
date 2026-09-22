@@ -1,0 +1,77 @@
+/* Heartlight, part two: the words that sit ON the art, and the two states
+ * that have no art yet - the cold-load ghost and a read that failed.
+ * Split from `heartlight.css` only for size; the art layer owns the page,
+ * the column, the portrait and the ring, and this owns everything drawn
+ * over them. Both are loaded together by `CompanionsTriptych`.
+ */
+
+.hl-count {
+  position: absolute;
+  top: 58cqh;
+  left: calc(50% + min(10.4cqh, 29cqw) + 6px);
+  max-width: calc(50% - min(10.4cqh, 29cqw) - 12px);
+  transform: translateY(-50%);
+  display: grid; gap: 0;
+  pointer-events: none;
+  text-shadow: 0 1px 8px #000;
+}
+.hl-count b { font-size: clamp(20px, 4.2cqh, 34px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--hl-acc); }
+.hl-count span { font-size: 0.8125rem; line-height: 1.3; color: rgba(226, 232, 240, 0.78); }
+.hl-col[data-state]:not([data-state='active']) .hl-count b { color: rgba(226, 232, 240, 0.7); }
+
+/* ---------- the words, on the art ---------- */
+.hl-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 clamp(16px, 7cqw, 40px) clamp(16px, 4cqh, 34px); display: grid; gap: 4px; }
+.hl-key { position: absolute; top: 14px; left: 16px; z-index: 5; }
+.hl-key kbd {
+  font-family: inherit; font-size: 0.8125rem; font-weight: 600;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  display: inline-grid; place-items: center;
+  border-radius: 4px;
+  color: rgba(226, 232, 240, 0.8); border: 1px solid rgba(226, 232, 240, 0.3); background: rgba(0, 0, 0, 0.35);
+}
+.hl-word {
+  position: absolute; top: 14px; right: 16px; z-index: 5;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8125rem; font-weight: 600; line-height: normal; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(226, 232, 240, 0.82);
+}
+.hl-word i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+.hl-col[data-state='active'] .hl-word { color: var(--hl-acc); }
+.hl-col[data-state='off'] .hl-word i { background: transparent; border: 1.5px solid currentColor; box-shadow: none; }
+.hl-col[data-state='blocked'] .hl-word { color: var(--hl-cold-ink); }
+.hl-col[data-state='blocked'] .hl-word i { border-radius: 1px; width: 10px; height: 2px; box-shadow: none; }
+.hl-col[data-state='needs_onboarding'] .hl-word i { background: transparent; border: 1.5px dashed currentColor; box-shadow: none; }
+
+.hl-name { margin: 0; font-size: clamp(28px, 6.8cqh, 60px); font-weight: 650; letter-spacing: -0.025em; line-height: 1; color: var(--hl-ink-strong); }
+.hl-col[data-state]:not([data-state='active']) .hl-name { color: rgba(226, 232, 240, 0.78); }
+.hl-title { margin: 0; font-size: 0.875rem; font-weight: 600; line-height: normal; letter-spacing: 0.01em; color: var(--hl-acc); }
+.hl-col[data-state]:not([data-state='active']) .hl-title { color: color-mix(in srgb, var(--hl-acc) 55%, #94a3b8); }
+.hl-tag {
+  margin: 0; font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: rgba(226, 232, 240, 0.72);
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height var(--duration-slow), opacity var(--duration-slow);
+}
+.hl-col:hover .hl-tag, .hl-col:focus-visible .hl-tag { max-height: 5em; opacity: 1; }
+.hl-wake {
+  margin: 8px 0 0; justify-self: start;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.9375rem; font-weight: 600; line-height: normal; color: var(--hl-ink-strong);
+  padding: 7px 12px; border-radius: var(--radius-interactive);
+  background: var(--hl-chip-bg); border: 1px solid var(--hl-chip-edge);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.hl-wake svg, .hl-open svg { flex: none; }
+.hl-col:hover .hl-wake, .hl-col:focus-visible .hl-wake { background: color-mix(in srgb, var(--hl-acc) 22%, transparent); border-color: color-mix(in srgb, var(--hl-acc) 60%, transparent); }
+.hl-open { margin: 8px 0 0; font-size: 0.875rem; font-weight: 400; line-height: normal; color: rgba(226, 232, 240, 0.7); display: flex; align-items: center; gap: 6px; }
+.hl-col:hover .hl-open, .hl-col:focus-visible .hl-open { color: var(--hl-acc); }
+
+/* A failed read says so over the art rather than inventing a state. */
+.hl-error { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10; width: min(560px, calc(100% - 32px)); }
+
+/* Cold load: the chrome (the three columns, their dividers, their keys) is
+   permanent and paints at once; only the art and the words ghost in. Calm,
+   no spinner, no pulse - the surface never hides itself to fetch. */
+.hl-ghost { position: absolute; border-radius: var(--radius-interactive); background: rgba(226, 232, 240, 0.06); }
+.hl-ghost-ring { left: 50%; top: 58cqh; width: 25cqh; height: 25cqh; max-width: 70cqw; max-height: 70cqw; transform: translate(-50%, -50%); border-radius: 50%; background: none; border: 1px solid rgba(226, 232, 240, 0.08); }
+.hl-ghost-name { left: clamp(16px, 7cqw, 40px); bottom: calc(clamp(16px, 4cqh, 34px) + 34px); width: 46%; height: clamp(28px, 6.8cqh, 60px); }
+.hl-ghost-title { left: clamp(16px, 7cqw, 40px); bottom: clamp(16px, 4cqh, 34px); width: 28%; height: 14px; }
