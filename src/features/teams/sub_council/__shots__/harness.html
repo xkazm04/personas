@@ -1,0 +1,32 @@
+<!doctype html>
+<!--
+  The Council page, on its own, for the screenshot pass.
+
+  It exists because the pixel comparison against
+  `docs/design/council-reference/index.html` is the only check this surface
+  has that a test cannot make, and the harness that produced the first round
+  of shots was never committed - so the next person had to build it again
+  from scratch. This one is committed.
+
+  Served by the dev server at
+  /src/features/teams/sub_council/__shots__/harness.html?theme=dark|light.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Council - shot harness</title>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./harness.tsx"></script>
+  </body>
+</html>
