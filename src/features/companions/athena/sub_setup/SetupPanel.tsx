@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Puzzle, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
+import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Power, Puzzle, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useSystemStore } from '@/stores/systemStore';
@@ -17,6 +17,7 @@ import {
   projectTrackingRunNow,
 } from '@/api/companion/projectTracking';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { AthenaStatusSection } from './AthenaStatusSection';
 import { BrowserBridgePanel } from './BrowserBridgePanel';
 import { SensorySignalsModal } from './SensorySignalsModal';
 
@@ -144,6 +145,17 @@ export default function SetupPanel() {
   const [signalsModalOpen, setSignalsModalOpen] = useState(false);
 
   const sections: SettingsSection[] = [
+    {
+      // First, and deliberately: every section below it is a preference about
+      // an Athena who is running, and this is the one that decides whether she
+      // is. Its strings come from the `companions.*` section, not `athena.*` —
+      // the switch belongs to the category, and the other two companions'
+      // Setup pages carry the same control.
+      id: 'status',
+      label: t.companions.setup.enable_section,
+      icon: <Power className="w-4 h-4 text-cyan-400" />,
+      content: <AthenaStatusSection />,
+    },
     {
       id: 'chrome',
       label: c.setup_chrome_title,

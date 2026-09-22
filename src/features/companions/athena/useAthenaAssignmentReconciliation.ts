@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { companionRecordAssignmentOutcome } from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAthenaEnabled } from '../status/useAthenaEnabled';
 
 const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
 
@@ -27,9 +28,13 @@ const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
  * still does the up-front decompose; this is reflection, not orchestration.
  */
 export function useAthenaAssignmentReconciliation() {
+  // Athena's master switch: the outcome digest lands in HER OperativeMemory, so
+  // with her off there is nothing for a terminal assignment to reconcile into.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    if (!athenaEnabled) return;
     let cancelled = false;
     let unlisten: (() => void) | null = null;
     void listen<{ assignment_id: string; status: string; step_id: string | null }>(
@@ -59,5 +64,5 @@ export function useAthenaAssignmentReconciliation() {
       cancelled = true;
       if (unlisten) unlisten();
     };
-  }, []);
+  }, [athenaEnabled]);
 }

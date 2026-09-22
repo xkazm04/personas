@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Play, Mic } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore } from './athenaStore';
+import { useAthenaEnabled } from '../status/useAthenaEnabled';
 import { useSystemStore } from '@/stores/systemStore';
 import { companionInit } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
@@ -66,8 +67,14 @@ export default function AthenaFooterIcon() {
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 
+  // `companion_init` mints her disk layout, her system conversations and three
+  // background workers, and the backend REFUSES it while she is switched off.
+  // So this waits for a settled answer rather than firing on the optimistic
+  // one: calling it a moment before the status arrives would record a refusal
+  // as her init error on an install that is merely still reading.
+  const { enabled: athenaEnabled, settled: statusSettled } = useAthenaEnabled();
   useEffect(() => {
-    if (initialized) return;
+    if (initialized || !statusSettled || !athenaEnabled) return;
     void companionInit()
       .then((path) => {
         setBrainPath(path);
@@ -77,7 +84,7 @@ export default function AthenaFooterIcon() {
         setInitError(err instanceof Error ? err.message : String(err));
         silentCatch('companion_init')(err);
       });
-  }, [initialized, setBrainPath, setInitialized, setInitError]);
+  }, [initialized, statusSettled, athenaEnabled, setBrainPath, setInitialized, setInitError]);
 
   const isOpen = state === 'open';
 

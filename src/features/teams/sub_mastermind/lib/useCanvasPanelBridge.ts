@@ -14,6 +14,7 @@ import {
   COMPANION_COMPOSE_CANVAS_PANEL_EVENT,
   type CompanionComposeCanvasPanelEvent,
 } from '@/api/companion';
+import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -23,9 +24,15 @@ import { hydrateLayout, saveAthenaPanel } from './layoutStore';
 
 /** Subscribe to Athena's canvas-panel compositions. Safe to mount once. */
 export function useCanvasPanelBridge(): void {
+  // Athena's master switch. Guarded in the HANDLER rather than around the
+  // subscription: composing a panel navigates and rewrites the canvas layout,
+  // and a route-and-write for an assistant that is not running would be the
+  // most startling thing a switched-off companion could do.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   useTauriEvent<CompanionComposeCanvasPanelEvent>(
     COMPANION_COMPOSE_CANVAS_PANEL_EVENT,
     useCallback((event) => {
+      if (!athenaEnabled) return;
       const { slug, specVersion, spec } = event.payload ?? {};
       if (!slug || typeof spec !== 'string') return;
       let parsed: unknown;
@@ -52,7 +59,7 @@ export function useCanvasPanelBridge(): void {
         // DOM at all, so focus is a camera request, never a node lookup.
         focusCanvasProject(slug, true);
       });
-    }, []),
+    }, [athenaEnabled]),
     'companion_compose_canvas_panel_listen',
   );
 }

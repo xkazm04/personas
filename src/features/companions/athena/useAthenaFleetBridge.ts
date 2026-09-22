@@ -7,6 +7,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useAthenaStore } from './athenaStore';
+import { useAthenaEnabled } from '../status/useAthenaEnabled';
 
 /**
  * Tier-1 Companion ↔ Fleet bridge.
@@ -34,6 +35,17 @@ export function useAthenaFleetBridge(): void {
   const sessions = useSystemStore((s) => s.fleetSessions);
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
+
+  // Athena's master switch gates the WRITES, not the whole bridge — and that
+  // asymmetry is deliberate. This hook does two jobs: it records fleet events
+  // into her brain, and it is the ONLY thing that keeps
+  // `useSystemStore.fleetSessions` current while the Fleet page is unmounted
+  // (see the comment inside the effect). The second job is not hers; switching
+  // her off must not stale the Fleet badge for everyone else. Held in a ref so
+  // a flip does not tear down and rebuild three event subscriptions.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
+  const athenaEnabledRef = useRef(athenaEnabled);
+  athenaEnabledRef.current = athenaEnabled;
 
   useEffect(() => {
     const findSession = (id: string): FleetSession | undefined =>
@@ -81,6 +93,7 @@ export function useAthenaFleetBridge(): void {
           return;
         }
         lastState.set(event.payload.session_id, event.payload.state as FleetSessionState);
+        if (!athenaEnabledRef.current) return;
         companionRecordFleetEvent({
           sessionId: sess.id,
           claudeSessionId: sess.claudeSessionId,
@@ -102,6 +115,7 @@ export function useAthenaFleetBridge(): void {
           return;
         }
         lastState.set(event.payload.session_id, 'exited');
+        if (!athenaEnabledRef.current) return;
         companionRecordFleetEvent({
           sessionId: sess.id,
           claudeSessionId: sess.claudeSessionId,
@@ -127,6 +141,7 @@ export function useAthenaFleetBridge(): void {
           if (!sess) return;
           if (lastState.has(sess.id)) return; // already recorded via state path
           lastState.set(sess.id, sess.state);
+          if (!athenaEnabledRef.current) return;
           companionRecordFleetEvent({
             sessionId: sess.id,
             claudeSessionId: sess.claudeSessionId,

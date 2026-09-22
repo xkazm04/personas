@@ -6,6 +6,7 @@
  * the user can sign in and still have somewhere to start.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { athenaMarkOnboarded } from '@/api/companions';
 import { listClaudeAccounts } from '@/api/fleet/claudeAccounts';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -45,6 +46,14 @@ export function useCreateAthenaHandoff(active: boolean, voiceReady: boolean): Cr
     sys.setAthenaOnboardingCompletedAt(new Date().toISOString());
     sys.setAthenaOnboardingStep(null);
     if (voiceReady) sys.setAthenaVoiceEnabled(true);
+
+    // Stamp the durable marker too. The store value above is per-device UI
+    // state; this is what the Companions status reads, so without it her
+    // landing column and her Setup page would keep offering an onboarding the
+    // user has just finished. Best-effort: the status also accepts the
+    // brain-shaped proof (episodes exist, or the identity has moved off its
+    // placeholders), which this very conversation is about to create.
+    athenaMarkOnboarded().catch(silentCatch('createAthena.handoff.markOnboarded'));
 
     const c = t.athena;
     const companion = useAthenaStore.getState();

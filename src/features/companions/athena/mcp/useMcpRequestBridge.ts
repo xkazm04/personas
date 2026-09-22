@@ -5,6 +5,7 @@ import {
   companionMcpResolveRequest,
 } from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAthenaEnabled } from '../../status/useAthenaEnabled';
 import {
   useMcpRequestStore,
   type McpApprovalPayload,
@@ -25,7 +26,13 @@ import {
  * `useAthenaFleetBridge`.
  */
 export function useMcpRequestBridge(): void {
+  // Athena's master switch. This bridge exists so SHE can answer a session's
+  // guidance/approval request, so with her off it subscribes to nothing and
+  // fetches no snapshot; flipping her back on re-runs the effect, which pulls
+  // the snapshot and so recovers anything that arrived meanwhile.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   useEffect(() => {
+    if (!athenaEnabled) return;
     const add = useMcpRequestStore.getState().addRequest;
 
     // Initial snapshot for the hard-reload case. The live event listener
@@ -57,7 +64,7 @@ export function useMcpRequestBridge(): void {
       unGuidance.then((fn) => fn());
       unApproval.then((fn) => fn());
     };
-  }, []);
+  }, [athenaEnabled]);
 }
 
 interface RawRequestNotice {

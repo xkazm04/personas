@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { FooterDivider, FooterSlot } from './FooterSlot';
 import {
@@ -23,6 +24,11 @@ export default function DesktopFooter() {
   // climb above either of them to stay reachable — see the stacking-context
   // note under the createPortal call below.
   const notepadOpen = useSystemStore((s) => s.notepadOpen);
+  // Athena's master switch. Read HERE rather than inside `AthenaFooterIcon`
+  // because the divider beside it is the footer's to draw: a slot that renders
+  // null still reserves its width, so gating only the icon would leave a
+  // separator with nothing on either side of it.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   if (IS_MOBILE) return null;
 
   // PORTAL, not an in-place render — this is load-bearing, not tidiness.
@@ -64,9 +70,13 @@ export default function DesktopFooter() {
           </>
         )}
         {/* Athena companion — docked on the left, immediately right of the
-            Network Settings icon. */}
-        <FooterDivider />
-        <FooterSlot><AthenaFooterIcon /></FooterSlot>
+            Network Settings icon. Gone entirely while she is switched off. */}
+        {athenaEnabled && (
+          <>
+            <FooterDivider />
+            <FooterSlot><AthenaFooterIcon /></FooterSlot>
+          </>
+        )}
       </div>
 
       {/* Center cluster, absolute-centered so left/right cluster widths don't

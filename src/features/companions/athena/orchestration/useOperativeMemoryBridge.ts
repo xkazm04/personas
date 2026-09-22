@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { companionGetOperativeMemoryDigest } from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAthenaEnabled } from '../../status/useAthenaEnabled';
 import { useOperativeMemoryStore } from './operativeMemoryStore';
 
 /**
@@ -25,6 +26,9 @@ import { useOperativeMemoryStore } from './operativeMemoryStore';
  * before the first event fires.
  */
 export function useOperativeMemoryBridge(): void {
+  // Athena's master switch: the live-ops digest is HER reading of what the
+  // fleet is doing, so with her off nothing subscribes and nothing is fetched.
+  const { enabled: athenaEnabled } = useAthenaEnabled();
   const setDigest = useOperativeMemoryStore((s) => s.setDigest);
   const setFetching = useOperativeMemoryStore((s) => s.setFetching);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,6 +36,7 @@ export function useOperativeMemoryBridge(): void {
   const pendingRef = useRef(false);
 
   useEffect(() => {
+    if (!athenaEnabled) return;
     let cancelled = false;
 
     const doFetch = async () => {
@@ -80,7 +85,9 @@ export function useOperativeMemoryBridge(): void {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       un.then((fn) => fn());
     };
-    // setDigest / setFetching are stable zustand setters; one-shot mount is intended
+    // setDigest / setFetching are stable zustand setters; the only real dep is
+    // Athena's master switch, which re-runs the effect so a flip back on
+    // re-subscribes and re-fetches.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [athenaEnabled]);
 }

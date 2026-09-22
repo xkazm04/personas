@@ -152,6 +152,10 @@ const NotepadLayer = lazyRetry(() => import("@/features/notepad/NotepadLayer"));
 // see the two mounts below and FleetBootstrap's own header.
 const FleetBootstrap = lazyRetry(() => import("@/features/plugins/fleet/FleetBootstrap"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaGuideLayer"));
+// Athena's master switch, as a mount gate. Lazy like everything else in this
+// group: it is what decides whether her three overlays exist at all, and none
+// of them is needed for first paint.
+const AthenaGate = lazyRetry(() => import("@/features/companions/athena/AthenaGate"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
 // consented. Previously orphaned — built but never rendered (UAT L1
@@ -424,9 +428,17 @@ export default function App() {
                   <OverlayIsland name="command-palette"><CommandPalette /></OverlayIsland>
                   <OverlayIsland name="notification-center"><NotificationCenter /></OverlayIsland>
                   <OverlayIsland name="share-link"><ShareLinkHandler /></OverlayIsland>
-                  <OverlayIsland name="companion-panel"><AthenaChatPanel /></OverlayIsland>
-                  <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
-                  <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
+                  {/* Athena's three overlays live and die with her switch.
+                      Gated as a GROUP rather than each on its own: they are one
+                      presence, and mounting any of them while she is off would
+                      open subscriptions and timers for an assistant that is not
+                      running. Her pages stay reachable either way, so the
+                      control that brings her back is always there. */}
+                  <AthenaGate>
+                    <OverlayIsland name="companion-panel"><AthenaChatPanel /></OverlayIsland>
+                    <OverlayIsland name="athena-orb"><AthenaOrbLayer /></OverlayIsland>
+                    <OverlayIsland name="athena-guide"><AthenaGuideLayer /></OverlayIsland>
+                  </AthenaGate>
                   {import.meta.env.DEV && <OverlayIsland name="studio-attention"><StudioAttention /></OverlayIsland>}
                   {/* Fleet is TWO mounts, and the split is load-bearing.
                       The grid OVERLAY is dev tooling, so it stays gated — in a
