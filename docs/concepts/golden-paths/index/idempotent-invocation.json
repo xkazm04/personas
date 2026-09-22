@@ -112,6 +112,8 @@
         "| **a retry/backoff wrapper around a mutating IPC call** | **1** | — | Also near-absent: no `react-query`, no `swr`, no `p-retry` in `package.json`; `lazyRetry` retries a chunk fetch, and `_invokeCor…"
       ]
     },
+    "plugins/companion/fleet/AthenaFleetPlanCard.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["`fleet/monitor/channels/ReviewsRail.tsx:139` · `plugins/companion/fleet/AthenaFleetPlanCard.tsx:149` ·"],"resolved":false},
+    "plugins/companion/ship/AthenaShipMilestoneCard.tsx": {"count":1,"sections":[7],"lines":["160"],"contexts":["`plugins/companion/ship/AthenaShipMilestoneCard.tsx:160` · `plugins/drive/knowledge/KbPickerDialog.tsx:81` ·"],"resolved":false},
     "plugins/twin/sub_brain/ReflectionsPanel.tsx": {"count":1,"sections":[7],"lines":["153"],"contexts":["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],"resolved":false},
     "plugins/twin/sub_knowledge/ContactsPanel.tsx": {"count":1,"sections":[7],"lines":["206"],"contexts":["`plugins/twin/sub_knowledge/ContactsPanel.tsx:206` · `plugins/twin/sub_brain/ReflectionsPanel.tsx:153` ·"],"resolved":false},
     "registry-idempotent-invocation-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-idempotent-invocation-composer.json` — a filename unique to this"],"resolved":false},
@@ -243,6 +245,7 @@
       ],
       "resolved": false
     },
+    "src/features/companions/athena/sendNonceLedger.ts": {"count":2,"sections":[8,12],"contexts":["`sendNonceLedger.ts` is a correct restart-surviving nonce ledger in"],"resolvedFrom":"basename","verbatim":"sendNonceLedger.ts"},
     "src/features/fleet/monitor/channels/ReviewsRail.tsx": {
       "count": 1,
       "sections": [7],
@@ -252,28 +255,13 @@
       "verbatim": "fleet/monitor/channels/ReviewsRail.tsx"
     },
     "src/features/notepad/plan/ShipDispatch.tsx": {"count":1,"sections":[7],"lines":["136"],"contexts":["`src/features/notepad/plan/ShipDispatch.tsx:136` ·"]},
-    "src/features/plugins/companion/fleet/AthenaFleetPlanCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["149"],
-      "contexts": ["`fleet/monitor/channels/ReviewsRail.tsx:139` · `plugins/companion/fleet/AthenaFleetPlanCard.tsx:149` ·"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/fleet/AthenaFleetPlanCard.tsx"
-    },
     "src/features/plugins/companion/sendNonceLedger.ts": {
-      "count": 3,
-      "sections": [3,8,12],
+      "count": 1,
+      "sections": [3],
       "contexts": [
         "| `src/features/plugins/companion/sendNonceLedger.ts` | a restart-surviving **client** dedupe (localStorage, 200 entries, 24 h TTL) checked synchronously before IPC. Correct for its purpose and **nev…"
-      ]
-    },
-    "src/features/plugins/companion/ship/AthenaShipMilestoneCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["160"],
-      "contexts": ["`plugins/companion/ship/AthenaShipMilestoneCard.tsx:160` · `plugins/drive/knowledge/KbPickerDialog.tsx:81` ·"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/ship/AthenaShipMilestoneCard.tsx"
+      ],
+      "resolved": false
     },
     "src/features/plugins/dev-tools/sub_skills/analytics/DeepScanRecommendations.tsx": {
       "count": 1,

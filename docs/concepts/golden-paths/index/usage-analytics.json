@@ -131,14 +131,6 @@
     "src/stores/slices/": {"count":2,"sections":[9],"contexts":["block, and every nav-store slice under `src/stores/slices/`. Both usage"],"resolved":false,"isDir":true},
     "src/stores/slices/agents/personaSlice.ts": {"count":1,"sections":[7],"lines":["352"],"contexts":["(`personaSlice.ts:352`), has `persona_created` written to"],"resolvedFrom":"basename","verbatim":"personaSlice.ts"},
     "src/stores/slices/overview/alertSlice.ts": {"count":2,"sections":[7,9],"contexts":["`analyticsMiddleware.ts`, `silentFailureTelemetry.ts`, `alertSlice.ts`,"],"resolvedFrom":"basename","verbatim":"alertSlice.ts"},
-    "src/stores/slices/system/companionPluginSlice.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["114"],
-      "contexts": ["| `companionPluginTab` | `stores/slices/system/companionPluginSlice.ts:114` | — | no |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "stores/slices/system/companionPluginSlice.ts"
-    },
     "src/stores/slices/system/obsidianBrainSlice.ts": {
       "count": 1,
       "sections": [7],
@@ -152,6 +144,7 @@
     "src/stores/slices/system/uiSlice.ts": {"count":3,"sections":[7],"lines":["147","94"],"contexts":["informative: `pendingLifecycleSubTab` (`uiSlice.ts:147`) is"],"resolvedFrom":"basename","verbatim":"uiSlice.ts"},
     "src/stores/storeTypes.ts": {"count":2,"sections":[7,9],"contexts":["`researchLabSlice.ts`, `storeTypes.ts`."],"resolvedFrom":"basename","verbatim":"storeTypes.ts"},
     "stores/slices/system/artistSlice.ts": {"count":1,"sections":[7],"lines":["74"],"contexts":["| `artistTab` | `stores/slices/system/artistSlice.ts:74` | 3 | no |"],"resolved":false},
+    "stores/slices/system/companionPluginSlice.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["| `companionPluginTab` | `stores/slices/system/companionPluginSlice.ts:114` | — | no |"],"resolved":false},
     "track.ts": {"count":1,"sections":[6],"lines":["22-24"],"contexts":["`track.ts:22-24` — `if (!analyticsEnabled()) return;` is the first line of"],"resolved":false}
   }
 }

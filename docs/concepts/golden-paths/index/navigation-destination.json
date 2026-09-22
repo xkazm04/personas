@@ -41,6 +41,8 @@
     "brainiac/console/src/design/routes.ts": {"count":1,"sections":[6],"lines":["125-128"],"contexts":["`brainiac/console/src/design/routes.ts:125-128`, which goes one better by testing membership"],"resolved":false},
     "census-navdest-7b4e2d.json": {"count":1,"sections":[9],"contexts":["(`census-navdest-7b4e2d.json`; the pattern lives in a file, never in bash argv, and contains no"],"resolved":false},
     "check-guide-content.mjs": {"count":1,"sections":[],"contexts":["| | personas-web | `GuideTopic` record + `check-guide-content.mjs` | **0** across 116 topics × 46 deep links × 100 map entries |"],"resolved":false},
+    "companionPluginSlice.ts": {"count":1,"sections":[3],"contexts":["(`uiSlice.ts:19`, 4), `CompanionPluginTab` (`companionPluginSlice.ts`, 4). **24 vocabularies,"],"resolved":false},
+    "companionRoutes.ts": {"count":3,"sections":[5,7],"lines":["1-15","16"],"contexts":["- **A second allow-list of section ids.** `companionRoutes.ts:1-15`'s docstring says it is the"],"resolved":false},
     "dispatcher.rs": {
       "count": 2,
       "sections": [7],
@@ -101,6 +103,38 @@
       "contexts": ["first and swaps: `QuickStatsBar.tsx:93`, `useDecisionQueue.ts:302`, `ProactiveCard.tsx:65`,"],
       "resolvedFrom": "basename",
       "verbatim": "QuickStatsBar.tsx"
+    },
+    "src/features/companions/athena/ProactiveCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["65"],
+      "contexts": ["first and swaps: `QuickStatsBar.tsx:93`, `useDecisionQueue.ts:302`, `ProactiveCard.tsx:65`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "ProactiveCard.tsx"
+    },
+    "src/features/companions/athena/applyClientAction.ts": {
+      "count": 6,
+      "sections": [5,7],
+      "lines": ["21-31","37","21","35-40"],
+      "contexts": ["of this list.\"* `applyClientAction.ts:21-31` — the module that consolidation was performed"],
+      "resolvedFrom": "basename",
+      "verbatim": "applyClientAction.ts"
+    },
+    "src/features/companions/athena/chat/athenaChatNavigation.ts": {
+      "count": 4,
+      "sections": [5,7],
+      "lines": ["64-75","77-81","77"],
+      "contexts": ["`switch` and silently loses `teams`, `studio` and `schedules`; `athenaChatNavigation.ts:64-75`"],
+      "resolvedFrom": "basename",
+      "verbatim": "athenaChatNavigation.ts"
+    },
+    "src/features/companions/athena/decision/useDecisionQueue.ts": {
+      "count": 3,
+      "sections": [7],
+      "lines": ["57","302"],
+      "contexts": ["`applyClientAction.ts:37` + `useDecisionQueue.ts:57` + `athenaChatNavigation.ts:77-81` (Rust"],
+      "resolvedFrom": "basename",
+      "verbatim": "useDecisionQueue.ts"
     },
     "src/features/fleet/monitor/navigateToProcess.ts": {"count":1,"sections":[7],"contexts":["| `fleet/monitor/navigateToProcess.ts` | 4 | `:20,:25,:26,:28` |"],"resolvedFrom":"suffix","verbatim":"fleet/monitor/navigateToProcess.ts"},
     "src/features/home/components/HomePage.tsx": {
@@ -187,46 +221,6 @@
       "contexts": ["ever produce** (`goals`, `team`, `cloud`); `PLUGIN_ICONS` (`PluginIcons.tsx:117`) is"],
       "resolvedFrom": "basename",
       "verbatim": "PluginIcons.tsx"
-    },
-    "src/features/plugins/companion/ProactiveCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["65"],
-      "contexts": ["first and swaps: `QuickStatsBar.tsx:93`, `useDecisionQueue.ts:302`, `ProactiveCard.tsx:65`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "ProactiveCard.tsx"
-    },
-    "src/features/plugins/companion/applyClientAction.ts": {
-      "count": 6,
-      "sections": [5,7],
-      "lines": ["21-31","37","21","35-40"],
-      "contexts": ["of this list.\"* `applyClientAction.ts:21-31` — the module that consolidation was performed"],
-      "resolvedFrom": "basename",
-      "verbatim": "applyClientAction.ts"
-    },
-    "src/features/plugins/companion/chat/athenaChatNavigation.ts": {
-      "count": 4,
-      "sections": [5,7],
-      "lines": ["64-75","77-81","77"],
-      "contexts": ["`switch` and silently loses `teams`, `studio` and `schedules`; `athenaChatNavigation.ts:64-75`"],
-      "resolvedFrom": "basename",
-      "verbatim": "athenaChatNavigation.ts"
-    },
-    "src/features/plugins/companion/companionRoutes.ts": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["1-15","16"],
-      "contexts": ["- **A second allow-list of section ids.** `companionRoutes.ts:1-15`'s docstring says it is the"],
-      "resolvedFrom": "basename",
-      "verbatim": "companionRoutes.ts"
-    },
-    "src/features/plugins/companion/decision/useDecisionQueue.ts": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["57","302"],
-      "contexts": ["`applyClientAction.ts:37` + `useDecisionQueue.ts:57` + `athenaChatNavigation.ts:77-81` (Rust"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDecisionQueue.ts"
     },
     "src/features/plugins/fleet/FleetPage.tsx": {"count":2,"sections":[5,7],"lines":["37"],"contexts":["- **Putting a place in `useState`.** `FleetPage.tsx:37` (3 page-equivalent tabs),"],"resolvedFrom":"basename","verbatim":"FleetPage.tsx"},
     "src/features/plugins/twin/TwinPage.tsx": {
@@ -375,13 +369,6 @@
     },
     "src/main.tsx": {"count":4,"sections":[4,7],"lines":["167","161-171"],"contexts":["`partialize` + rehydrate block, and `main.tsx`'s boot read."],"resolvedFrom":"basename","verbatim":"main.tsx"},
     "src/stores/slices/overview/overviewSlice.ts": {"count":1,"sections":[7],"lines":["162"],"contexts":["**C2 — 20 more are store defaults** (`uiSlice.ts:379-418`, `overviewSlice.ts:162`,"],"resolvedFrom":"basename","verbatim":"overviewSlice.ts"},
-    "src/stores/slices/system/companionPluginSlice.ts": {
-      "count": 1,
-      "sections": [3],
-      "contexts": ["(`uiSlice.ts:19`, 4), `CompanionPluginTab` (`companionPluginSlice.ts`, 4). **24 vocabularies,"],
-      "resolvedFrom": "basename",
-      "verbatim": "companionPluginSlice.ts"
-    },
     "src/stores/slices/system/obsidianBrainSlice.ts": {
       "count": 1,
       "sections": [7],

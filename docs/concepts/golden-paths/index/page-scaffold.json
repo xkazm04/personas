@@ -124,6 +124,7 @@
     "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx": {"count":1,"sections":[7],"lines":["222"],"contexts":["`PresetLibraryPage.tsx:69` · `UnifiedDeploymentDashboard.tsx:222` ·"],"resolvedFrom":"basename","verbatim":"UnifiedDeploymentDashboard.tsx"},
     "src/features/agents/sub_deployment/components/cloud/CloudDeployPanel.tsx": {"count":3,"sections":[3,4,7],"lines":["192"],"contexts":["(`CloudDeployPanel.tsx:192`, `GitLabPanel.tsx:122`). Read §8 gap 4 before"],"resolvedFrom":"basename","verbatim":"CloudDeployPanel.tsx"},
     "src/features/agents/sub_editor/components/EditorBody.tsx": {"count":1,"sections":[7],"lines":["136"],"contexts":["swaps rather than degraded states: `EditorBody.tsx:136` → `<EditorEmptyState/>`"],"resolvedFrom":"basename","verbatim":"EditorBody.tsx"},
+    "src/features/companions/athena/sub_decisions/DecisionsPanel.tsx": {"count":2,"sections":[7,9],"lines":["55"],"contexts":["`DecisionsPanel.tsx:55` · `HeroHeader.tsx:97` ·"],"resolvedFrom":"basename","verbatim":"DecisionsPanel.tsx"},
     "src/features/home/components/HomePage.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["| `home/components/HomePage.tsx:68` | the home tab wrapper |"],"resolvedFrom":"suffix","verbatim":"home/components/HomePage.tsx"},
     "src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx": {
       "count": 1,
@@ -167,7 +168,6 @@
       "resolvedFrom": "basename",
       "verbatim": "sectionRouter.tsx"
     },
-    "src/features/plugins/companion/sub_decisions/DecisionsPanel.tsx": {"count":2,"sections":[7,9],"lines":["55"],"contexts":["`DecisionsPanel.tsx:55` · `HeroHeader.tsx:97` ·"],"resolvedFrom":"basename","verbatim":"DecisionsPanel.tsx"},
     "src/features/plugins/dev-tools/DevToolsPageHeader.tsx": {
       "count": 2,
       "sections": [7],

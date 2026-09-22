@@ -13,6 +13,7 @@
   "citationCount": 113,
   "triggers": [],
   "citations": {
+    "CompanionAssignmentCards.tsx": {"count":1,"sections":[9],"lines":["73"],"contexts":["apply-view button), `CompanionAssignmentCards.tsx:73` (a secondary action inside"],"resolved":false},
     "DriveFileList.tsx": {"count":1,"sections":[],"lines":["798"],"contexts":["keyboard/AT users now get two real buttons\"*), `DriveFileList.tsx:798`, and"],"resolved":false},
     "api_proxy.rs": {
       "count": 1,
@@ -26,6 +27,7 @@
     "check-*.mjs": {"count":1,"sections":[9],"contexts":["**zero** files that build a request. That is a `check-*.mjs` in the shape of"],"resolved":false},
     "crates/brainiac-server/src/mcp.rs": {"count":1,"sections":[],"contexts":["server side (`crates/brainiac-server/src/mcp.rs` — it *declares* an"],"resolved":false},
     "mcp_tools.rs": {"count":4,"sections":[9],"lines":["64","212","907","2063"],"contexts":["`MCP_TOOLS_LIST_MAX_PAGES = 50` (`mcp_tools.rs:64`), honours a clamped"],"resolved":false},
+    "plugins/companion/mcp/McpRequestPanel.tsx": {"count":1,"sections":[],"contexts":["`plugins/companion/mcp/McpRequestPanel.tsx` at 262 lines, and"],"resolved":false},
     "scripts/census/lib/instruments/matchJsxTags.mjs": {"count":1,"sections":[12],"contexts":["conclusion `scripts/census/lib/instruments/matchJsxTags.mjs` records in its"]},
     "scripts/check-unused-bindings.sh": {"count":1,"sections":[9],"contexts":["`check-unused-bindings.sh`, not a census rule. Specified here; not written,"],"resolvedFrom":"basename","verbatim":"check-unused-bindings.sh"},
     "src-tauri/core/src/models/persona.rs": {
@@ -73,15 +75,6 @@
       "verbatim": "KnowledgeGraphDashboard.tsx"
     },
     "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx": {"count":1,"sections":[12],"lines":["408"],"contexts":["- *Run 2 → 3 (8 → 7).* One survivor, `ReviewFocusFlow.tsx:408`, closed at the"],"resolvedFrom":"basename","verbatim":"ReviewFocusFlow.tsx"},
-    "src/features/plugins/companion/CompanionAssignmentCards.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["73"],
-      "contexts": ["apply-view button), `CompanionAssignmentCards.tsx:73` (a secondary action inside"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionAssignmentCards.tsx"
-    },
-    "src/features/plugins/companion/mcp/McpRequestPanel.tsx": {"count":1,"sections":[],"contexts":["`plugins/companion/mcp/McpRequestPanel.tsx` at 262 lines, and"],"resolvedFrom":"suffix","verbatim":"plugins/companion/mcp/McpRequestPanel.tsx"},
     "src/features/plugins/gitlab/components/JobRow.tsx": {"count":1,"sections":[9],"lines":["74"],"contexts":["the card button), `JobRow.tsx:74` (an `<a href target=\"_blank\">` inside the"],"resolvedFrom":"basename","verbatim":"JobRow.tsx"},
     "src/features/shared/chrome/CommandPaletteResults.tsx": {
       "count": 1,

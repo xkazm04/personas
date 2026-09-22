@@ -350,6 +350,22 @@
       "verbatim": "useChainTrace.ts"
     },
     "src/features/agents/sub_health/useHealthCheck.ts": {"count":2,"sections":[9,12],"lines":["406"],"contexts":["`src/features/agents/sub_health/useHealthCheck.ts:406`, whose handler body contains a nested `{…}`"]},
+    "src/features/companions/overseer/components/CampaignReportPanel.tsx": {
+      "count": 2,
+      "sections": [5],
+      "lines": ["49"],
+      "contexts": ["`useMorningBriefing.ts`, `useDirector.ts`, `CampaignReportPanel.tsx`, `useChainTrace.ts`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "CampaignReportPanel.tsx"
+    },
+    "src/features/companions/overseer/useDirector.ts": {
+      "count": 4,
+      "sections": [0,5,7],
+      "lines": ["88-106","90"],
+      "contexts": ["`useMorningBriefing.ts`, `useDirector.ts`, `CampaignReportPanel.tsx`, `useChainTrace.ts`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "useDirector.ts"
+    },
     "src/features/home/sub_cockpit/briefing/sessionDelta.ts": {
       "count": 4,
       "sections": [0,7],
@@ -374,22 +390,6 @@
       "contexts": ["(`OverviewPage.tsx:5`), writing to a store slice whose `pipelineErrors` key is read by exactly"],
       "resolvedFrom": "basename",
       "verbatim": "OverviewPage.tsx"
-    },
-    "src/features/overview/sub_director/components/CampaignReportPanel.tsx": {
-      "count": 2,
-      "sections": [5],
-      "lines": ["49"],
-      "contexts": ["`useMorningBriefing.ts`, `useDirector.ts`, `CampaignReportPanel.tsx`, `useChainTrace.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "CampaignReportPanel.tsx"
-    },
-    "src/features/overview/sub_director/useDirector.ts": {
-      "count": 4,
-      "sections": [0,5,7],
-      "lines": ["88-106","90"],
-      "contexts": ["`useMorningBriefing.ts`, `useDirector.ts`, `CampaignReportPanel.tsx`, `useChainTrace.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDirector.ts"
     },
     "src/features/overview/sub_health/libs/compositeHealthScore.ts": {
       "count": 5,

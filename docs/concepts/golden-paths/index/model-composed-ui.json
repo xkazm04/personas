@@ -31,6 +31,13 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["non-optional, and the one `ci.yml` keeps violating. This check must **fail, not skip**, when: the"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "CompanionPluginPage.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["23"],
+      "contexts": ["| Page | `CompanionPluginPage.tsx:23` — *\"The former Dashboard tab was retired — Cockpit is the dynamic dashboard surface now.\"* |"],
+      "resolved": false
+    },
     "DocReader.tsx": {"count":1,"sections":[],"lines":["426-451"],"contexts":["same invariant client-side** and `DocReader.tsx:426-451` renders a visible \"read with care\" banner."],"resolved":false},
     "dispatcher.rs": {
       "count": 3,
@@ -149,6 +156,30 @@
       "resolvedFrom": "basename",
       "verbatim": "ChatMessageContent.tsx"
     },
+    "src/features/companions/athena/applyClientAction.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["33"],
+      "contexts": ["| Client | `applyClientAction.ts:33` — `VALID_COMPANION_TABS = ['setup','memory','voice','decisions']` → `\"dashboard\"` fails the check → **bare `return`** |"],
+      "resolvedFrom": "basename",
+      "verbatim": "applyClientAction.ts"
+    },
+    "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx": {
+      "count": 1,
+      "sections": [4],
+      "lines": ["86-92"],
+      "contexts": ["`AthenaChatStreamingTurn.tsx:86-92` chose, *citing this exact leakage*. Do not choose \"render"],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaChatStreamingTurn.tsx"
+    },
+    "src/features/companions/athena/chat/athenaChatDeltas.ts": {
+      "count": 1,
+      "sections": [],
+      "lines": ["47-57"],
+      "contexts": ["(`athenaChatDeltas.ts:47-57`, `studioStore.ts:171-175`) do converge with each other — but intra-repo"],
+      "resolvedFrom": "basename",
+      "verbatim": "athenaChatDeltas.ts"
+    },
     "src/features/home/sub_cockpit/CockpitPanel.tsx": {
       "count": 2,
       "sections": [4,6],
@@ -158,37 +189,12 @@
       "verbatim": "CockpitPanel.tsx"
     },
     "src/features/home/sub_cockpit/briefing/actionTypes.ts": {"count":1,"sections":[6],"lines":["36-62"],"contexts":["[`src/features/home/sub_cockpit/briefing/actionTypes.ts:36-62`](../../../src/features/home/sub_cockpit/briefing/actionTypes.ts)"]},
-    "src/features/plugins/companion/CompanionPluginPage.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["23"],
-      "contexts": ["| Page | `CompanionPluginPage.tsx:23` — *\"The former Dashboard tab was retired — Cockpit is the dynamic dashboard surface now.\"* |"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionPluginPage.tsx"
-    },
-    "src/features/plugins/companion/applyClientAction.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["33"],
-      "contexts": ["| Client | `applyClientAction.ts:33` — `VALID_COMPANION_TABS = ['setup','memory','voice','decisions']` → `\"dashboard\"` fails the check → **bare `return`** |"],
-      "resolvedFrom": "basename",
-      "verbatim": "applyClientAction.ts"
-    },
     "src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx": {
-      "count": 2,
-      "sections": [4,6],
-      "lines": ["86-92"],
-      "contexts": ["`AthenaChatStreamingTurn.tsx:86-92` chose, *citing this exact leakage*. Do not choose \"render"],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaChatStreamingTurn.tsx"
-    },
-    "src/features/plugins/companion/chat/athenaChatDeltas.ts": {
       "count": 1,
-      "sections": [],
-      "lines": ["47-57"],
-      "contexts": ["(`athenaChatDeltas.ts:47-57`, `studioStore.ts:171-175`) do converge with each other — but intra-repo"],
-      "resolvedFrom": "basename",
-      "verbatim": "athenaChatDeltas.ts"
+      "sections": [6],
+      "lines": ["86-92"],
+      "contexts": ["- [`src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx:86-92`](../../../src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx) —"],
+      "resolved": false
     },
     "src/features/shared/components/editors/MarkdownRenderer.tsx": {
       "count": 1,

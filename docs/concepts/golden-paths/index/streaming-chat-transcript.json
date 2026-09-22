@@ -23,6 +23,7 @@
   "triggers": [],
   "citations": {
     "chat.rs": {"count":3,"sections":[7,12],"lines":["376-386","355-365"],"contexts":["`to_message` (`chat.rs:376-386`) — against the operator's real brain: **1,068"],"resolved":false},
+    "companionStore.ts": {"count":7,"sections":[0,7,9],"lines":["808-818","808","851-858"],"contexts":["`useTranscriptPages.ts` and `companionStore.ts` — and its backend half"],"resolved":false},
     "components/sections/platform-command/index.tsx": {"count":1,"sections":[],"contexts":["`components/sections/platform-command/index.tsx` (`stickToBottomRef`,"],"resolved":false},
     "ingest-data.ts": {"count":1,"sections":[],"lines":["64"],"contexts":["(`ingest-data.ts:64`, `kind: \"session_transcript\"`) and never renders one."],"resolved":false},
     "orchestrator/src/httpApi.ts": {"count":1,"sections":[],"lines":["1690-1750"],"contexts":["(`orchestrator/src/httpApi.ts:1690-1750`, `text/event-stream`, offset paging, 500 ms"],"resolved":false},
@@ -30,6 +31,22 @@
     "personas-web/src/app/dashboard/executions/executions-page/ExecutionOutput.tsx": {"count":1,"sections":[],"contexts":["**`personas-web/src/app/dashboard/executions/executions-page/ExecutionOutput.tsx` first"],"resolved":false},
     "personas-web/src/components/feature-sections/lab/components/ChatTab.tsx": {"count":1,"sections":[],"lines":["43-48"],"contexts":["`personas-web/src/components/feature-sections/lab/components/ChatTab.tsx:43-48`, which"],"resolved":false},
     "personas-web/src/stores/eventStore.ts": {"count":4,"sections":[0,2,7],"lines":["91-117","95-112"],"contexts":["down why.** `personas-web/src/stores/eventStore.ts:91-117` merges instead of replacing,"],"resolved":false},
+    "plugins/companion/useChatScroll.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| `plugins/companion/useChatScroll.ts` | Bottom-aware autoscroll: `scrollRef`, `atBottom` (state, for the pill), `atBottomRef` (the mirror that keeps `maybeAutoScroll` stable), `scrollToBottom(behavi…"
+      ],
+      "resolved": false
+    },
+    "plugins/companion/useTranscriptPages.ts": {
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| `plugins/companion/useTranscriptPages.ts` | Keyset paging with the cursor **derived** from the oldest loaded row, prepend anchoring, an `exhausted` marker compared against the current oldest id so…"
+      ],
+      "resolved": false
+    },
     "scripts/analysis/orphan-modules.mjs": {"count":1,"sections":[],"contexts":["- `npm run orphans` (`scripts/analysis/orphan-modules.mjs`) — 758 orphans — plus"]},
     "src-tauri/core/src/retrieval/mod.rs": {
       "count": 1,
@@ -56,10 +73,7 @@
       "verbatim": "useDeckDialog.tsx"
     },
     "src/features/agents/sub_connectors/libs/useAutomationSetup.ts": {"count":1,"sections":[12],"lines":["238-241"],"contexts":["**`src/features/agents/sub_connectors/libs/useAutomationSetup.ts:238-241`**:"]},
-    "src/features/plugins/companion/__tests__/": {"count":1,"sections":[9],"contexts":["`src/features/plugins/companion/__tests__/`, that replays exactly §0: open (50) → four"],"resolved":false,"isDir":true},
-    "src/features/plugins/companion/chat/": {"count":1,"sections":[],"contexts":["`src/features/plugins/companion/chat/` plus `useChatScroll.ts`,"],"resolved":false,"isDir":true},
-    "src/features/plugins/companion/chat/**": {"count":1,"sections":[12],"contexts":["`src/features/plugins/companion/chat/**` (56 files). A brief-scoped composer would have"],"resolved":false,"isDir":true},
-    "src/features/plugins/companion/chat/AthenaChatBody.tsx": {
+    "src/features/companions/athena/chat/AthenaChatBody.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["116-120"],
@@ -67,8 +81,8 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaChatBody.tsx"
     },
-    "src/features/plugins/companion/chat/AthenaChatJumpToLatest.tsx": {"count":1,"sections":[3],"contexts":["| `chat/AthenaChatJumpToLatest.tsx` | The affordance `atBottom === false` earns. |"],"resolvedFrom":"suffix","verbatim":"chat/AthenaChatJumpToLatest.tsx"},
-    "src/features/plugins/companion/chat/AthenaChatProposals.tsx": {
+    "src/features/companions/athena/chat/AthenaChatJumpToLatest.tsx": {"count":1,"sections":[3],"contexts":["| `chat/AthenaChatJumpToLatest.tsx` | The affordance `atBottom === false` earns. |"],"resolvedFrom":"suffix","verbatim":"chat/AthenaChatJumpToLatest.tsx"},
+    "src/features/companions/athena/chat/AthenaChatProposals.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["40-41"],
@@ -76,7 +90,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "chat/AthenaChatProposals.tsx"
     },
-    "src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx": {
+    "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx": {
       "count": 2,
       "sections": [2,7],
       "lines": ["86-92"],
@@ -84,7 +98,7 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaChatStreamingTurn.tsx"
     },
-    "src/features/plugins/companion/chat/AthenaChatTranscript.tsx": {
+    "src/features/companions/athena/chat/AthenaChatTranscript.tsx": {
       "count": 1,
       "sections": [],
       "lines": ["24-25"],
@@ -92,7 +106,7 @@
       "resolvedFrom": "basename",
       "verbatim": "AthenaChatTranscript.tsx"
     },
-    "src/features/plugins/companion/chat/athenaChatActions.ts": {
+    "src/features/companions/athena/chat/athenaChatActions.ts": {
       "count": 1,
       "sections": [7],
       "lines": ["46-47"],
@@ -100,7 +114,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "chat/athenaChatActions.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatDeltas.ts": {
+    "src/features/companions/athena/chat/athenaChatDeltas.ts": {
       "count": 4,
       "sections": [2,3,5],
       "lines": ["34-57","69-75"],
@@ -108,7 +122,7 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatDeltas.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatEarlier.ts": {
+    "src/features/companions/athena/chat/athenaChatEarlier.ts": {
       "count": 3,
       "sections": [0,2,3],
       "lines": ["29-40"],
@@ -116,8 +130,8 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatEarlier.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatEngine.ts": {"count":1,"sections":[],"contexts":["(`athenaChatEngine.ts` vs `athenaChatSession.ts`). Stage only *rendering* behind the"],"resolvedFrom":"basename","verbatim":"athenaChatEngine.ts"},
-    "src/features/plugins/companion/chat/athenaChatHydration.ts": {
+    "src/features/companions/athena/chat/athenaChatEngine.ts": {"count":1,"sections":[],"contexts":["(`athenaChatEngine.ts` vs `athenaChatSession.ts`). Stage only *rendering* behind the"],"resolvedFrom":"basename","verbatim":"athenaChatEngine.ts"},
+    "src/features/companions/athena/chat/athenaChatHydration.ts": {
       "count": 1,
       "sections": [7],
       "lines": ["29-34"],
@@ -125,7 +139,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "chat/athenaChatHydration.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatSend.ts": {
+    "src/features/companions/athena/chat/athenaChatSend.ts": {
       "count": 3,
       "sections": [7],
       "lines": ["103-111","125-129"],
@@ -133,7 +147,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "chat/athenaChatSend.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatSession.ts": {
+    "src/features/companions/athena/chat/athenaChatSession.ts": {
       "count": 6,
       "sections": [2,5],
       "lines": ["80-88","33-41","63-77","44-49"],
@@ -141,7 +155,7 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatSession.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatStream.ts": {
+    "src/features/companions/athena/chat/athenaChatStream.ts": {
       "count": 5,
       "sections": [2,3,7,12],
       "lines": ["56-63","158-162","160-162"],
@@ -149,7 +163,7 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatStream.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatVoice.ts": {
+    "src/features/companions/athena/chat/athenaChatVoice.ts": {
       "count": 1,
       "sections": [7],
       "lines": ["109-111"],
@@ -157,7 +171,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "chat/athenaChatVoice.ts"
     },
-    "src/features/plugins/companion/chat/athenaChatWindow.ts": {
+    "src/features/companions/athena/chat/athenaChatWindow.ts": {
       "count": 6,
       "sections": [2,3,12],
       "lines": ["56-84","29-46","97-115","112-115","32-42"],
@@ -165,23 +179,19 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatWindow.ts"
     },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 7,
-      "sections": [0,7,9],
-      "lines": ["808-818","808","851-858"],
-      "contexts": ["`useTranscriptPages.ts` and `companionStore.ts` — and its backend half"],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
-    },
-    "src/features/plugins/companion/useChatScroll.ts": {"count":7,"sections":[2,3],"lines":["33-64","20-27"],"contexts":["`src/features/plugins/companion/chat/` plus `useChatScroll.ts`,"],"resolvedFrom":"basename","verbatim":"useChatScroll.ts"},
-    "src/features/plugins/companion/useTranscriptPages.ts": {
-      "count": 6,
-      "sections": [0,2,3],
+    "src/features/companions/athena/useChatScroll.ts": {"count":5,"sections":[2],"lines":["33-64","20-27"],"contexts":["`src/features/plugins/companion/chat/` plus `useChatScroll.ts`,"],"resolvedFrom":"basename","verbatim":"useChatScroll.ts"},
+    "src/features/companions/athena/useTranscriptPages.ts": {
+      "count": 5,
+      "sections": [0,2],
       "lines": ["11-14","188","180-195"],
       "contexts": ["`useTranscriptPages.ts` and `companionStore.ts` — and its backend half"],
       "resolvedFrom": "basename",
       "verbatim": "useTranscriptPages.ts"
     },
+    "src/features/plugins/companion/__tests__/": {"count":1,"sections":[9],"contexts":["`src/features/plugins/companion/__tests__/`, that replays exactly §0: open (50) → four"],"resolved":false,"isDir":true},
+    "src/features/plugins/companion/chat/": {"count":1,"sections":[],"contexts":["`src/features/plugins/companion/chat/` plus `useChatScroll.ts`,"],"resolved":false,"isDir":true},
+    "src/features/plugins/companion/chat/**": {"count":1,"sections":[12],"contexts":["`src/features/plugins/companion/chat/**` (56 files). A brief-scoped composer would have"],"resolved":false,"isDir":true},
+    "src/features/plugins/companion/useChatScroll.ts": {"count":1,"sections":[],"contexts":["**`src/features/plugins/companion/useChatScroll.ts`** for the autoscroll, and"],"resolved":false},
     "src/features/shared/components/feedback/LoadingSpinner.tsx": {
       "count": 1,
       "sections": [3],

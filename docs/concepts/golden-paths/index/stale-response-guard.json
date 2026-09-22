@@ -181,6 +181,10 @@
       "resolvedFrom": "basename",
       "verbatim": "useToolRunner.ts"
     },
+    "src/features/companions/athena/ApprovalCard.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["`ApprovalCard.tsx:41`,`:56`."],"resolvedFrom":"basename","verbatim":"ApprovalCard.tsx"},
+    "src/features/companions/athena/ProactiveCard.tsx": {"count":1,"sections":[7],"lines":["75"],"contexts":["`ConsolidationReview.tsx:427`,`:451` · `ProactiveCard.tsx:75` ·"],"resolvedFrom":"basename","verbatim":"ProactiveCard.tsx"},
+    "src/features/companions/athena/sub_memory/ConsolidationReview.tsx": {"count":1,"sections":[7],"lines":["427"],"contexts":["`ConsolidationReview.tsx:427`,`:451` · `ProactiveCard.tsx:75` ·"],"resolvedFrom":"basename","verbatim":"ConsolidationReview.tsx"},
+    "src/features/companions/athena/useLocalDictation.ts": {"count":1,"sections":[7],"lines":["257"],"contexts":["`useAthenaHealth.ts:24` · `useRenderPlan.ts:34` · `useLocalDictation.ts:257` ·"],"resolvedFrom":"basename","verbatim":"useLocalDictation.ts"},
     "src/features/fleet/monitor/channels/useConversation.ts": {"count":1,"sections":[7],"lines":["48"],"contexts":["`useConversation.ts:48` (`[teamId, …]`) · `IncidentDiagnosisCard.tsx:28`"],"resolvedFrom":"basename","verbatim":"useConversation.ts"},
     "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx": {"count":1,"sections":[7],"lines":["48"],"contexts":["`home/sub_cockpit/widgets/DecisionDrawer.tsx:48` ·"],"resolvedFrom":"suffix","verbatim":"home/sub_cockpit/widgets/DecisionDrawer.tsx"},
     "src/features/home/sub_learning/powerMoves/flashSpotlight.ts": {
@@ -261,17 +265,14 @@
     },
     "src/features/overview/sub_observability/libs/useAthenaHealth.ts": {"count":1,"sections":[7],"lines":["24"],"contexts":["`useAthenaHealth.ts:24` · `useRenderPlan.ts:34` · `useLocalDictation.ts:257` ·"],"resolvedFrom":"basename","verbatim":"useAthenaHealth.ts"},
     "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx": {"count":1,"sections":[7],"lines":["56"],"contexts":["`ToolPerformancePanel.tsx:56` (`[since, personaId, limit]`) ·"],"resolvedFrom":"basename","verbatim":"ToolPerformancePanel.tsx"},
-    "src/features/plugins/companion/ApprovalCard.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["`ApprovalCard.tsx:41`,`:56`."],"resolvedFrom":"basename","verbatim":"ApprovalCard.tsx"},
-    "src/features/plugins/companion/ProactiveCard.tsx": {"count":1,"sections":[7],"lines":["75"],"contexts":["`ConsolidationReview.tsx:427`,`:451` · `ProactiveCard.tsx:75` ·"],"resolvedFrom":"basename","verbatim":"ProactiveCard.tsx"},
     "src/features/plugins/companion/__tests__/useCompanionAssignmentBridge.test.tsx": {
       "count": 1,
       "sections": [6],
       "contexts": [
         "- **The five regression tests** — `src/stores/slices/system/__tests__/twinSlice.fetchTwinTones.test.ts`, `src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts`, `src/features/agents/sub_exec…"
-      ]
+      ],
+      "resolved": false
     },
-    "src/features/plugins/companion/sub_memory/ConsolidationReview.tsx": {"count":1,"sections":[7],"lines":["427"],"contexts":["`ConsolidationReview.tsx:427`,`:451` · `ProactiveCard.tsx:75` ·"],"resolvedFrom":"basename","verbatim":"ConsolidationReview.tsx"},
-    "src/features/plugins/companion/useLocalDictation.ts": {"count":1,"sections":[7],"lines":["257"],"contexts":["`useAthenaHealth.ts:24` · `useRenderPlan.ts:34` · `useLocalDictation.ts:257` ·"],"resolvedFrom":"basename","verbatim":"useLocalDictation.ts"},
     "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx": {
       "count": 1,
       "sections": [7],

@@ -59,6 +59,15 @@
       ],
       "resolved": false
     },
+    "features/plugins/companion/companionStore.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["1382"],
+      "contexts": [
+        "| `features/plugins/companion/companionStore.ts:1382` | Persists `draftsByConversation` — unsent user chat text with Athena — to localStorage in plaintext. Privacy, not a secret; worth a decision eit…"
+      ],
+      "resolved": false
+    },
     "keys.ts": {
       "count": 1,
       "sections": [9],
@@ -322,16 +331,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "memoryActions.ts"
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1382"],
-      "contexts": [
-        "| `features/plugins/companion/companionStore.ts:1382` | Persists `draftsByConversation` — unsent user chat text with Athena — to localStorage in plaintext. Privacy, not a secret; worth a decision eit…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/plugins/companion/companionStore.ts"
     },
     "src/features/plugins/drive/hooks/useDrive.ts": {
       "count": 1,

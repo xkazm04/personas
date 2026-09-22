@@ -371,6 +371,14 @@
       "resolvedFrom": "basename",
       "verbatim": "CapabilityChip.tsx"
     },
+    "src/features/companions/overseer/components/CampaignReportPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["119-123"],
+      "contexts": ["`CampaignReportPanel.tsx:119-123` (5 ×`report?.x ?? 0`), `WorkspacesAtlas.tsx:74-75`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "CampaignReportPanel.tsx"
+    },
     "src/features/home/sub_cockpit/widgets/ExecutionFactsWidget.tsx": {
       "count": 1,
       "sections": [7],
@@ -428,14 +436,6 @@
       "contexts": ["- **`overview/sub_activity/libs/executionMetricsHelpers.ts:1-2`** — `fmtCost` / `fmtMs`. A local"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_activity/libs/executionMetricsHelpers.ts"
-    },
-    "src/features/overview/sub_director/components/CampaignReportPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["119-123"],
-      "contexts": ["`CampaignReportPanel.tsx:119-123` (5 ×`report?.x ?? 0`), `WorkspacesAtlas.tsx:74-75`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "CampaignReportPanel.tsx"
     },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {"count":1,"sections":[7],"lines":["142"],"contexts":["`HealingEffectivenessPanel.tsx:142`, `AthenaHealthPanel.tsx:19`,"],"resolvedFrom":"basename","verbatim":"HealingEffectivenessPanel.tsx"},
     "src/features/overview/sub_knowledge/libs/knowledgeHelpers.ts": {

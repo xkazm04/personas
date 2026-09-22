@@ -163,6 +163,14 @@
     "src/": {"count":5,"sections":[3,4,6],"contexts":["**Sweep.** All **4,829** `.ts`/`.tsx` files under `src/` (the census engine's own `walked`"],"resolved":false,"isDir":true},
     "src/api/system/system.ts": {"count":4,"sections":[0,3,9],"lines":["36-41","33","42","39"],"contexts":["`src/api/system/system.ts:36-41` (*\"this app does NOT ship `@tauri-apps/plugin-shell`, so the"]},
     "src/features/agents/sub_executions/components/runner/PersonaRunner.tsx": {"count":1,"sections":[7],"lines":["110"],"contexts":["`PersonaRunner.tsx:110`."],"resolvedFrom":"basename","verbatim":"PersonaRunner.tsx"},
+    "src/features/companions/athena/applyClientAction.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["75"],
+      "contexts": ["Unsanitized outbound: `applyClientAction.ts:75` (`action.url` — safe today only because"],
+      "resolvedFrom": "basename",
+      "verbatim": "applyClientAction.ts"
+    },
     "src/features/home/sub_cockpit/widgets/IssueListWidget.tsx": {
       "count": 1,
       "sections": [7],
@@ -178,14 +186,6 @@
       "contexts": ["`overview/components/health/InstallButton.tsx` carries both an anchor (`:86`) and a"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/components/health/InstallButton.tsx"
-    },
-    "src/features/plugins/companion/applyClientAction.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["75"],
-      "contexts": ["Unsanitized outbound: `applyClientAction.ts:75` (`action.url` — safe today only because"],
-      "resolvedFrom": "basename",
-      "verbatim": "applyClientAction.ts"
     },
     "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx": {
       "count": 1,

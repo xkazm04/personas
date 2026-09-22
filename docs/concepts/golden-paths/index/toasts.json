@@ -56,6 +56,7 @@
       ],
       "resolved": false
     },
+    "CompanionToolbar.tsx": {"count":1,"sections":[7],"contexts":["`extractMessage(err)` as the **entire** first argument. Concentration: `CompanionToolbar.tsx` 4 ·"],"resolved":false},
     "ExecuteToast.tsx": {
       "count": 4,
       "sections": [],
@@ -107,6 +108,14 @@
       "resolvedFrom": "basename",
       "verbatim": "App.tsx"
     },
+    "src/features/companions/athena/DevConversationLogButton.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["96"],
+      "contexts": ["| `DevConversationLogButton.tsx:96`, `useFleetDebugLog.ts:56` | success | **30000** | ten times the success default; holds 1 of 3 render slots for half a minute at the lowest priority |"],
+      "resolvedFrom": "basename",
+      "verbatim": "DevConversationLogButton.tsx"
+    },
     "src/features/overview/components/feedback/HealingToast.tsx": {"count":1,"sections":[],"contexts":["`AlertToastContainer.tsx`, `HealingToast.tsx`, `useSettingsSaveToast.ts`, `silentCatch.ts`,"],"resolvedFrom":"basename","verbatim":"HealingToast.tsx"},
     "src/features/overview/sub_incidents/components/IncidentDetailModal.tsx": {
       "count": 1,
@@ -147,21 +156,6 @@
       "contexts": ["`AlertToastContainer.tsx`, `HealingToast.tsx`, `useSettingsSaveToast.ts`, `silentCatch.ts`,"],
       "resolvedFrom": "basename",
       "verbatim": "AlertToastContainer.tsx"
-    },
-    "src/features/plugins/companion/CompanionToolbar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`extractMessage(err)` as the **entire** first argument. Concentration: `CompanionToolbar.tsx` 4 ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionToolbar.tsx"
-    },
-    "src/features/plugins/companion/DevConversationLogButton.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": ["| `DevConversationLogButton.tsx:96`, `useFleetDebugLog.ts:56` | success | **30000** | ten times the success default; holds 1 of 3 render slots for half a minute at the lowest priority |"],
-      "resolvedFrom": "basename",
-      "verbatim": "DevConversationLogButton.tsx"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
       "count": 3,

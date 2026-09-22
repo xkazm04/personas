@@ -45,6 +45,15 @@
     "overview/sub_patterns/graph/useGraphCanvas.ts": {"count":1,"sections":[7],"lines":["130"],"contexts":["`overview/sub_patterns/graph/useGraphCanvas.ts:130`,"],"resolved":false},
     "plugins/artist/sub_gallery/Gallery2D.tsx": {"count":1,"sections":[7],"lines":["281"],"contexts":["`plugins/artist/sub_gallery/Gallery2D.tsx:281`, `plugins/companion/orb/athenaOrbGesture.ts:65`,"],"resolved":false},
     "plugins/artist/sub_media_studio/TimelineClip.tsx": {"count":2,"sections":[7],"lines":["161"],"contexts":["`plugins/artist/sub_media_studio/TimelineClip.tsx`,"],"resolved":false},
+    "plugins/companion/orb/OrbQuickInputBar.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["55"],
+      "contexts": ["| `scrollTop = 0` | **2** — `plugins/companion/orb/OrbQuickInputBar.tsx:55`, and `useScrollRestoration.ts:95` (the primitive itself) |"],
+      "resolved": false
+    },
+    "plugins/companion/orb/athenaOrbGesture.ts": {"count":1,"sections":[7],"lines":["65"],"contexts":["`plugins/artist/sub_gallery/Gallery2D.tsx:281`, `plugins/companion/orb/athenaOrbGesture.ts:65`,"],"resolved":false},
+    "plugins/companion/useChatScroll.ts": {"count":1,"sections":[7],"lines":["9-13"],"contexts":["them handles the case the others do not: `plugins/companion/useChatScroll.ts:9-13` documents that the"],"resolved":false},
     "plugins/drive/components/DriveFileList.tsx": {"count":2,"sections":[7],"lines":["325,738"],"contexts":["`plugins/drive/components/DriveFileList.tsx`, `settings/components/SettingsPage.tsx`,"],"resolved":false},
     "rules-uilayoutnav-2be17a89.json": {"count":1,"sections":[9],"contexts":["(`rules-uilayoutnav-2be17a89.json` — filename unique to this composer, per the doctrine's"],"resolved":false},
     "scripts/census/lib/instruments/": {"count":1,"sections":[],"contexts":["`scripts/census/lib/instruments/` so a generic-typed component's `>` cannot close a tag early. They"],"resolved":false,"isDir":true},
@@ -149,30 +158,6 @@
       "contexts": ["`overview/sub_manual-review/components/ReviewInboxPanel.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_manual-review/components/ReviewInboxPanel.tsx"
-    },
-    "src/features/plugins/companion/orb/OrbQuickInputBar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["55"],
-      "contexts": ["| `scrollTop = 0` | **2** — `plugins/companion/orb/OrbQuickInputBar.tsx:55`, and `useScrollRestoration.ts:95` (the primitive itself) |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/orb/OrbQuickInputBar.tsx"
-    },
-    "src/features/plugins/companion/orb/athenaOrbGesture.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["65"],
-      "contexts": ["`plugins/artist/sub_gallery/Gallery2D.tsx:281`, `plugins/companion/orb/athenaOrbGesture.ts:65`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/orb/athenaOrbGesture.ts"
-    },
-    "src/features/plugins/companion/useChatScroll.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["9-13"],
-      "contexts": ["them handles the case the others do not: `plugins/companion/useChatScroll.ts:9-13` documents that the"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/useChatScroll.ts"
     },
     "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx": {
       "count": 1,

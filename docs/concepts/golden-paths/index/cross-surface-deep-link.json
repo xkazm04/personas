@@ -35,6 +35,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ci.yml"
     },
+    "CompanionAssignmentCards.tsx": {"count":2,"sections":[7,9],"lines":["23"],"contexts":["| `CompanionAssignmentCards.tsx:23` | `'pipeline'` | `as Parameters<typeof setSidebarSection>[0]` |"],"resolved":false},
     "Composer.tsx": {"count":2,"sections":[7],"lines":["169-186","169"],"contexts":["| `Composer.tsx:169-186` (`pendingPrompt`, **8 producers**) | n/a (text) | — |"],"resolved":false},
     "CortexMap.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["effect (a documented, e2e-covered flash of the wrong target); `brainiac`'s `CortexMap.tsx:41,46-55`"],"resolved":false},
     "IngestMonitor.tsx": {"count":1,"sections":[0],"lines":["41,46-55"],"contexts":["and `IngestMonitor.tsx:41,46-55` both `useState(\"starchart\")` and then `setActive` from `?view=`"],"resolved":false},
@@ -175,6 +176,46 @@
     },
     "src/design/routes.ts": {"count":1,"sections":[0],"lines":["206-217"],"contexts":["`src/design/routes.ts:206-217` — `ConsoleAddress { module; view?; sel?; asOf?; filters }`, where"],"resolved":false},
     "src/features/agents/sub_editor/components/QuickStatsBar.tsx": {"count":1,"sections":[7],"lines":["94"],"contexts":["(`CommandPalette.tsx:207`, `TriggersPage.tsx:64`, `QuickStatsBar.tsx:94`,"],"resolvedFrom":"basename","verbatim":"QuickStatsBar.tsx"},
+    "src/features/companions/athena/ProactiveCard.tsx": {
+      "count": 3,
+      "sections": [2,4,7],
+      "lines": ["65-66","56-58","39-70"],
+      "contexts": ["(`ProactiveCard.tsx:65-66` lands on Overview → Messages, `useDecisionQueue.ts:302` on"],
+      "resolvedFrom": "basename",
+      "verbatim": "ProactiveCard.tsx"
+    },
+    "src/features/companions/athena/chat/athenaChatNavigation.ts": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["129-148"],
+      "contexts": ["| Tauri `companion_open_lab` (`athenaChatNavigation.ts:129-148`) | yes (+ editor tab) | **yes — `personaId`** | truthiness only |"],
+      "resolvedFrom": "basename",
+      "verbatim": "athenaChatNavigation.ts"
+    },
+    "src/features/companions/athena/decision/useDecisionQueue.ts": {
+      "count": 1,
+      "sections": [2],
+      "lines": ["302"],
+      "contexts": ["(`ProactiveCard.tsx:65-66` lands on Overview → Messages, `useDecisionQueue.ts:302` on"],
+      "resolvedFrom": "basename",
+      "verbatim": "useDecisionQueue.ts"
+    },
+    "src/features/companions/athena/guidance/appActions.ts": {
+      "count": 2,
+      "sections": [5,7],
+      "lines": ["31-33"],
+      "contexts": ["- **`storeBus.emit` as the only carrier of an intent.** `appActions.ts:31-33` navigates and then"],
+      "resolvedFrom": "basename",
+      "verbatim": "appActions.ts"
+    },
+    "src/features/companions/athena/guidance/useGuidanceRunner.ts": {
+      "count": 9,
+      "sections": [0,2,3,4,7],
+      "lines": ["33-58","25","33","35"],
+      "contexts": ["each, `incidentDeepLink.ts`, `flashSpotlight.ts`, `useGuidanceRunner.ts`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "useGuidanceRunner.ts"
+    },
     "src/features/fleet/monitor/PersonaMonitor.tsx": {
       "count": 3,
       "sections": [0,7],
@@ -273,54 +314,7 @@
       "verbatim": "PersonasPage.tsx"
     },
     "src/features/personas/sectionRouter.tsx": {"count":2,"sections":[7],"contexts":["a **Vitest run against the real `registry.ts` / `sectionRouter.tsx` / `storeBus.ts` /"],"resolvedFrom":"basename","verbatim":"sectionRouter.tsx"},
-    "src/features/plugins/companion/CompanionAssignmentCards.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["23"],
-      "contexts": ["| `CompanionAssignmentCards.tsx:23` | `'pipeline'` | `as Parameters<typeof setSidebarSection>[0]` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionAssignmentCards.tsx"
-    },
-    "src/features/plugins/companion/ProactiveCard.tsx": {
-      "count": 3,
-      "sections": [2,4,7],
-      "lines": ["65-66","56-58","39-70"],
-      "contexts": ["(`ProactiveCard.tsx:65-66` lands on Overview → Messages, `useDecisionQueue.ts:302` on"],
-      "resolvedFrom": "basename",
-      "verbatim": "ProactiveCard.tsx"
-    },
-    "src/features/plugins/companion/chat/athenaChatNavigation.ts": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["129-148"],
-      "contexts": ["| Tauri `companion_open_lab` (`athenaChatNavigation.ts:129-148`) | yes (+ editor tab) | **yes — `personaId`** | truthiness only |"],
-      "resolvedFrom": "basename",
-      "verbatim": "athenaChatNavigation.ts"
-    },
-    "src/features/plugins/companion/decision/useDecisionQueue.ts": {
-      "count": 1,
-      "sections": [2],
-      "lines": ["302"],
-      "contexts": ["(`ProactiveCard.tsx:65-66` lands on Overview → Messages, `useDecisionQueue.ts:302` on"],
-      "resolvedFrom": "basename",
-      "verbatim": "useDecisionQueue.ts"
-    },
-    "src/features/plugins/companion/guidance/appActions.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["31-33"],
-      "contexts": ["- **`storeBus.emit` as the only carrier of an intent.** `appActions.ts:31-33` navigates and then"],
-      "resolvedFrom": "basename",
-      "verbatim": "appActions.ts"
-    },
-    "src/features/plugins/companion/guidance/useGuidanceRunner.ts": {
-      "count": 11,
-      "sections": [0,2,3,4,6,7],
-      "lines": ["33-58","25","33","35","219-229"],
-      "contexts": ["each, `incidentDeepLink.ts`, `flashSpotlight.ts`, `useGuidanceRunner.ts`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useGuidanceRunner.ts"
-    },
+    "src/features/plugins/companion/guidance/useGuidanceRunner.ts": {"count":2,"sections":[6],"lines":["33-58","219-229"],"contexts":["`src/features/plugins/companion/guidance/useGuidanceRunner.ts:33-58` with the same 4,000 ms/80 ms"],"resolved":false},
     "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx": {
       "count": 7,
       "sections": [0,4,7,9],

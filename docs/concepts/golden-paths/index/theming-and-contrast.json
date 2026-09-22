@@ -106,15 +106,7 @@
       "resolvedFrom": "basename",
       "verbatim": "BudgetRecoveryCard.tsx"
     },
-    "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["33-35"],
-      "contexts": ["`CustomThemeCreator.tsx` lets a user build a theme from a primary colour and a base mode."],
-      "resolvedFrom": "basename",
-      "verbatim": "CustomThemeCreator.tsx"
-    },
-    "src/features/teams/sub_council/galaxy/engine/theme.ts": {
+    "src/features/companions/curator/council/galaxy/engine/theme.ts": {
       "count": 1,
       "sections": [],
       "lines": ["14"],
@@ -123,6 +115,14 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "theme.ts"
+    },
+    "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["33-35"],
+      "contexts": ["`CustomThemeCreator.tsx` lets a user build a theme from a primary colour and a base mode."],
+      "resolvedFrom": "basename",
+      "verbatim": "CustomThemeCreator.tsx"
     },
     "src/features/teams/sub_factory/passport/improve/monitoringCard.tsx": {
       "count": 1,

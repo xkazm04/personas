@@ -36,7 +36,26 @@
         "8. **Zero automated enforcement.** No ESLint rule, no check script, no test asserts any of the five laws; `UnifiedTable` has no test file. Contrast `custom/enforce-base-modal`, which does gate the mo…"
       ]
     },
+    "overview/sub_director/components/CampaignReportPanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["107"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "overview/sub_health/components/PersonaHealthDashboard.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["| `overview/sub_health/components/PersonaHealthDashboard.tsx:149` | Centred `py-16` text block. |"],"resolved":false},
+    "plugins/companion/BrainViewer.tsx": {"count":2,"sections":[6,7],"lines":["400-425","632"],"contexts":["- `plugins/companion/BrainViewer.tsx:400-425` — clean local ghost; cascade at `:356-361`."],"resolved":false},
+    "plugins/companion/sub_voice/voiceEngineShared.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["266"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "plugins/research-lab/sub_experiments/ExperimentRunsDrawer.tsx": {
       "count": 1,
       "sections": [7],
@@ -229,6 +248,15 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_model_config/components/EffectiveConfigPanel.tsx"
     },
+    "src/features/companions/athena/BrainViewer.tsx": {
+      "count": 1,
+      "sections": [8],
+      "contexts": [
+        "5. **The cascade cap is duplicated, not shared.** `REVEAL_CASCADE_ROWS = 14` in `UnifiedTable.tsx:202`, `CASCADE_ROWS = 14` in `GlobalExecutionList.tsx:59`, `LIST_CASCADE_ROWS` in `BrainViewer.tsx`;…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "BrainViewer.tsx"
+    },
     "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx": {
       "count": 1,
       "sections": [7],
@@ -321,16 +349,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_analytics/components/ExecutionHeatmap.tsx"
     },
-    "src/features/overview/sub_director/components/CampaignReportPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["107"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_director/components/CampaignReportPanel.tsx"
-    },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 1,
       "sections": [7],
@@ -374,24 +392,6 @@
       "contexts": ["| `personas/sub_foundry/CreatePersonaEntry.tsx:28` | Full-height empty div. |"],
       "resolvedFrom": "suffix",
       "verbatim": "personas/sub_foundry/CreatePersonaEntry.tsx"
-    },
-    "src/features/plugins/companion/BrainViewer.tsx": {
-      "count": 3,
-      "sections": [6,7,8],
-      "lines": ["400-425","632"],
-      "contexts": ["- `plugins/companion/BrainViewer.tsx:400-425` — clean local ghost; cascade at `:356-361`."],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/BrainViewer.tsx"
-    },
-    "src/features/plugins/companion/sub_voice/voiceEngineShared.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["266"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/sub_voice/voiceEngineShared.tsx"
     },
     "src/features/plugins/dev-tools/components/DevToolsProjectDropdown.tsx": {
       "count": 1,

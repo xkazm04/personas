@@ -32,6 +32,7 @@
     "**If you are about to write** `useState<string | null>(null)` named `expanded*`,"
   ],
   "citations": {
+    "CompanionFooterIcon.tsx": {"count":1,"sections":[9],"lines":["204"],"contexts":["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],"resolved":false},
     "ComplianceRow.tsx": {"count":3,"sections":[4],"lines":["37","34-38"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
     "DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolved":false},
     "DebuggerControls.tsx": {"count":2,"sections":[9],"lines":["106"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
@@ -44,7 +45,9 @@
     "ToneConsole.tsx": {"count":6,"sections":[4,5,7,8,9],"lines":["158-241","159-167","159"],"contexts":["with the summary row in a `<Fragment key={row.id}>` — `ToneConsole.tsx:158-241` and"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["[`shared-facts.json`](../shared-facts.json); everything else was measured during"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the reason to put it here rather than in `eslint.config.js` — as"]},
+    "overview/sub_director/components/PersonaDetailModal.tsx": {"count":1,"sections":[7],"contexts":["- `overview/sub_director/components/PersonaDetailModal.tsx` — the **row** disclosure at"],"resolved":false},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
+    "plugins/companion/orchestration/LiveOpsStrip.tsx": {"count":1,"sections":[7],"contexts":["- `plugins/companion/orchestration/LiveOpsStrip.tsx` — **two buttons toggling the same"],"resolved":false},
     "plugins/twin/sub_tone/ToneConsole.tsx": {"count":1,"sections":[6],"lines":["158-241"],"contexts":["- `plugins/twin/sub_tone/ToneConsole.tsx:158-241` and `scraper/ScraperControlRoom.tsx:157-241`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
@@ -97,13 +100,38 @@
       "resolvedFrom": "basename",
       "verbatim": "UseCaseHistory.tsx"
     },
-    "src/features/overview/sub_director/components/PersonaDetailModal.tsx": {
+    "src/features/companions/athena/DevOpLedger.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["117"],
+      "contexts": ["`DevOpLedger.tsx:117`, `PrBridge.tsx:341`). Cause: the pattern's terminating `>` was"],
+      "resolvedFrom": "basename",
+      "verbatim": "DevOpLedger.tsx"
+    },
+    "src/features/companions/athena/chat/AthenaChatSystemNote.tsx": {"count":1,"sections":[9],"lines":["110"],"contexts":["(`ExecutionSummaryCard.tsx:32`, `:69`, `AthenaChatSystemNote.tsx:110`,"],"resolvedFrom":"basename","verbatim":"AthenaChatSystemNote.tsx"},
+    "src/features/companions/athena/orb/AthenaOrbCornerActions.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["49"],
+      "contexts": ["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaOrbCornerActions.tsx"
+    },
+    "src/features/companions/athena/orchestration/LiveOpsStrip.tsx": {
       "count": 3,
       "sections": [7,9],
+      "lines": ["41"],
+      "contexts": ["| `useState<Record<string, boolean>>` | many open | **1** — `LiveOpsStrip.tsx:41` |"],
+      "resolvedFrom": "basename",
+      "verbatim": "LiveOpsStrip.tsx"
+    },
+    "src/features/companions/overseer/components/PersonaDetailModal.tsx": {
+      "count": 2,
+      "sections": [7,9],
       "lines": ["65-70"],
-      "contexts": ["- `overview/sub_director/components/PersonaDetailModal.tsx` — the **row** disclosure at"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_director/components/PersonaDetailModal.tsx"
+      "contexts": ["(on `execution.id`), `UseCaseHistory.tsx:39-45` (on refetch), `PersonaDetailModal.tsx:65-70`"],
+      "resolvedFrom": "basename",
+      "verbatim": "PersonaDetailModal.tsx"
     },
     "src/features/overview/sub_incidents/components/IncidentsInbox.tsx": {
       "count": 4,
@@ -121,39 +149,6 @@
       "contexts": ["individually correct as code.** There is no bug to find in `HealingTimeline.tsx:47`; the"],
       "resolvedFrom": "basename",
       "verbatim": "HealingTimeline.tsx"
-    },
-    "src/features/plugins/companion/CompanionFooterIcon.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["204"],
-      "contexts": ["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionFooterIcon.tsx"
-    },
-    "src/features/plugins/companion/DevOpLedger.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["117"],
-      "contexts": ["`DevOpLedger.tsx:117`, `PrBridge.tsx:341`). Cause: the pattern's terminating `>` was"],
-      "resolvedFrom": "basename",
-      "verbatim": "DevOpLedger.tsx"
-    },
-    "src/features/plugins/companion/chat/AthenaChatSystemNote.tsx": {"count":1,"sections":[9],"lines":["110"],"contexts":["(`ExecutionSummaryCard.tsx:32`, `:69`, `AthenaChatSystemNote.tsx:110`,"],"resolvedFrom":"basename","verbatim":"AthenaChatSystemNote.tsx"},
-    "src/features/plugins/companion/orb/AthenaOrbCornerActions.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["49"],
-      "contexts": ["regex does not (`CompanionFooterIcon.tsx:204`, `AthenaOrbCornerActions.tsx:49`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaOrbCornerActions.tsx"
-    },
-    "src/features/plugins/companion/orchestration/LiveOpsStrip.tsx": {
-      "count": 4,
-      "sections": [7,9],
-      "lines": ["41"],
-      "contexts": ["| `useState<Record<string, boolean>>` | many open | **1** — `LiveOpsStrip.tsx:41` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "LiveOpsStrip.tsx"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx": {
       "count": 4,

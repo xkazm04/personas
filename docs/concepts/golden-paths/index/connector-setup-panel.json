@@ -24,6 +24,13 @@
   "triggers": [],
   "citations": {
     "ReauthBanner.tsx": {"count":1,"sections":[0],"lines":["80"],"contexts":["(`ReauthBanner.tsx:80`). The setup panel — the one surface with an Authorize button —"],"resolved":false},
+    "companion/sub_setup/BrowserBridgePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["58"],
+      "contexts": ["| `companion/sub_setup/BrowserBridgePanel.tsx:58` | 2 (`connected ? success : dim`) | checking, never-paired, error — the status error is swallowed at `:27` |"],
+      "resolved": false
+    },
     "console/src/home/Home.tsx": {
       "count": 1,
       "sections": [],
@@ -119,14 +126,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "CloudConnectionForm.tsx"
-    },
-    "src/features/plugins/companion/sub_setup/BrowserBridgePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["58"],
-      "contexts": ["| `companion/sub_setup/BrowserBridgePanel.tsx:58` | 2 (`connected ? success : dim`) | checking, never-paired, error — the status error is swallowed at `:27` |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "companion/sub_setup/BrowserBridgePanel.tsx"
     },
     "src/features/plugins/gitlab/components/GitLabConnectionForm.tsx": {
       "count": 1,

@@ -216,6 +216,69 @@
       "resolvedFrom": "basename",
       "verbatim": "AddressBar.tsx"
     },
+    "src/features/companions/athena/NarrationThread.tsx": {
+      "count": 5,
+      "sections": [5,7,9],
+      "lines": ["72","77","80"],
+      "contexts": ["`NarrationThread.tsx:72`, `DataHealthBar.tsx:21` are the live instances."],
+      "resolvedFrom": "basename",
+      "verbatim": "NarrationThread.tsx"
+    },
+    "src/features/companions/athena/chat/AthenaChatLiveRegion.tsx": {"count":1,"sections":[4],"lines":["21"],"contexts":["streams. `AthenaChatLiveRegion.tsx:21` is the worked example."],"resolvedFrom":"basename","verbatim":"AthenaChatLiveRegion.tsx"},
+    "src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["93"],
+      "contexts": ["`AthenaChatStreamingTurn.tsx:93` — which is the right company for a compliant population"],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaChatStreamingTurn.tsx"
+    },
+    "src/features/companions/athena/decision/ChatDecisionCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["81"],
+      "contexts": ["for a *walkthrough offer*, and `ChatDecisionCard.tsx:81` / `OrbDecisionBubble.tsx:255`"],
+      "resolvedFrom": "basename",
+      "verbatim": "ChatDecisionCard.tsx"
+    },
+    "src/features/companions/athena/orb/AthenaOrbLayer.tsx": {
+      "count": 2,
+      "sections": [7,9],
+      "lines": ["173"],
+      "contexts": [
+        "| **early-return (9)** | `EstimatedProgressBar.tsx:96` · `CharBudget.tsx:56` · `BulkRerunStrip.tsx:24` · `LabProgress.tsx:38` · `NarrationThread.tsx:77` · `DataHealthBar.tsx:23` · `RemoteJobNoticeChi…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaOrbLayer.tsx"
+    },
+    "src/features/companions/athena/orb/OrbDecisionBubble.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["255"],
+      "contexts": ["for a *walkthrough offer*, and `ChatDecisionCard.tsx:81` / `OrbDecisionBubble.tsx:255`"],
+      "resolvedFrom": "basename",
+      "verbatim": "OrbDecisionBubble.tsx"
+    },
+    "src/features/companions/athena/orb/OrbQuickInputBar.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["95"],
+      "contexts": [
+        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "OrbQuickInputBar.tsx"
+    },
+    "src/features/companions/athena/orb/RemoteJobNoticeChip.tsx": {
+      "count": 3,
+      "sections": [7,9],
+      "lines": ["81"],
+      "contexts": [
+        "| **early-return (9)** | `EstimatedProgressBar.tsx:96` · `CharBudget.tsx:56` · `BulkRerunStrip.tsx:24` · `LabProgress.tsx:38` · `NarrationThread.tsx:77` · `DataHealthBar.tsx:23` · `RemoteJobNoticeChi…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "RemoteJobNoticeChip.tsx"
+    },
     "src/features/home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx": {
       "count": 3,
       "sections": [7,9],
@@ -267,69 +330,7 @@
       "verbatim": "GlobalExecutionList.tsx"
     },
     "src/features/overview/sub_observability/components/AlertToastContainer.tsx": {"count":4,"sections":[3,5,7],"contexts":["`src/features/overview/sub_observability/components/AlertToastContainer.tsx`, which has"]},
-    "src/features/plugins/companion/NarrationThread.tsx": {
-      "count": 5,
-      "sections": [5,7,9],
-      "lines": ["72","77","80"],
-      "contexts": ["`NarrationThread.tsx:72`, `DataHealthBar.tsx:21` are the live instances."],
-      "resolvedFrom": "basename",
-      "verbatim": "NarrationThread.tsx"
-    },
-    "src/features/plugins/companion/chat/AthenaChatLiveRegion.tsx": {"count":3,"sections":[3,4,6],"lines":["21"],"contexts":["- **`src/features/plugins/companion/chat/AthenaChatLiveRegion.tsx`** — the reference for a"]},
-    "src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["93"],
-      "contexts": ["`AthenaChatStreamingTurn.tsx:93` — which is the right company for a compliant population"],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaChatStreamingTurn.tsx"
-    },
-    "src/features/plugins/companion/decision/ChatDecisionCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["81"],
-      "contexts": ["for a *walkthrough offer*, and `ChatDecisionCard.tsx:81` / `OrbDecisionBubble.tsx:255`"],
-      "resolvedFrom": "basename",
-      "verbatim": "ChatDecisionCard.tsx"
-    },
-    "src/features/plugins/companion/orb/AthenaOrbLayer.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["173"],
-      "contexts": [
-        "| **early-return (9)** | `EstimatedProgressBar.tsx:96` · `CharBudget.tsx:56` · `BulkRerunStrip.tsx:24` · `LabProgress.tsx:38` · `NarrationThread.tsx:77` · `DataHealthBar.tsx:23` · `RemoteJobNoticeChi…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaOrbLayer.tsx"
-    },
-    "src/features/plugins/companion/orb/OrbDecisionBubble.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["255"],
-      "contexts": ["for a *walkthrough offer*, and `ChatDecisionCard.tsx:81` / `OrbDecisionBubble.tsx:255`"],
-      "resolvedFrom": "basename",
-      "verbatim": "OrbDecisionBubble.tsx"
-    },
-    "src/features/plugins/companion/orb/OrbQuickInputBar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["95"],
-      "contexts": [
-        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "OrbQuickInputBar.tsx"
-    },
-    "src/features/plugins/companion/orb/RemoteJobNoticeChip.tsx": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["81"],
-      "contexts": [
-        "| **early-return (9)** | `EstimatedProgressBar.tsx:96` · `CharBudget.tsx:56` · `BulkRerunStrip.tsx:24` · `LabProgress.tsx:38` · `NarrationThread.tsx:77` · `DataHealthBar.tsx:23` · `RemoteJobNoticeChi…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "RemoteJobNoticeChip.tsx"
-    },
+    "src/features/plugins/companion/chat/AthenaChatLiveRegion.tsx": {"count":2,"sections":[3,6],"contexts":["- **`src/features/plugins/companion/chat/AthenaChatLiveRegion.tsx`** — the reference for a"],"resolved":false},
     "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx": {"count":1,"sections":[7],"lines":["130"],"contexts":["`RecipeAlternativeModal.tsx:130`, `GitHubRepoSelector.tsx:130`,"],"resolvedFrom":"basename","verbatim":"GitHubRepoSelector.tsx"},
     "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx": {
       "count": 1,

@@ -113,6 +113,7 @@
     "packages/shared/src/types.ts": {"count":1,"sections":[],"lines":["234-235"],"contexts":["`packages/shared/src/types.ts:234-235` — `/** The payload from the manual_review persona protocol"],"resolved":false},
     "personas-cloud/packages/orchestrator/src/dispatcher.ts": {"count":1,"sections":[],"lines":["1599"],"contexts":["whatever state the request carried (`personas-cloud/packages/orchestrator/src/dispatcher.ts:1599`"],"resolved":false},
     "personas-web/sentry.client.config.ts": {"count":2,"sections":[12],"lines":["3"],"contexts":["error-telemetry SDK boots before it — 0 of 2.** `personas-web/sentry.client.config.ts:3` →"],"resolved":false},
+    "plugins/companion/ApprovalCard.tsx": {"count":1,"sections":[],"contexts":["`settings/shared/useConfirmClick.ts`, `plugins/companion/ApprovalCard.tsx`,"],"resolved":false},
     "process_cmds.rs": {"count":2,"sections":[],"lines":["60"],"contexts":["into **every** headless spawn (`claude_cmds.rs:525`, `process_cmds.rs:60`) and exposes a bulk"],"resolved":false},
     "prompt.ts": {"count":2,"sections":[],"lines":["725-742","727,742"],"contexts":["(`prompt.ts:725-742`) returns `['--dangerously-skip-permissions']` when there is no policy"],"resolved":false},
     "publish/render.rs": {"count":1,"sections":[],"lines":["50"],"contexts":["(`health.rs:126,155`) and stamps rendered pages stale (`publish/render.rs:50`). `personas-web`'s"],"resolved":false},
@@ -245,6 +246,32 @@
       "verbatim": "agents/sub_executions/components/runner/ExecutionPreviewPanel.tsx"
     },
     "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx": {"count":1,"sections":[7],"lines":["78"],"contexts":["`PersonaAssertionsSection.tsx:78`, `PatternGraphHost.tsx:509`,"],"resolvedFrom":"basename","verbatim":"PersonaAssertionsSection.tsx"},
+    "src/features/companions/athena/ApprovalCard.tsx": {
+      "count": 2,
+      "sections": [2,5],
+      "lines": ["88-101","84-101"],
+      "contexts": ["collapse them** (`ApprovalCard.tsx:88-101` collapses them). **Escape, backdrop and close must all"],
+      "resolvedFrom": "basename",
+      "verbatim": "ApprovalCard.tsx"
+    },
+    "src/features/companions/athena/chat/AthenaChatHeader.tsx": {
+      "count": 1,
+      "sections": [0],
+      "lines": ["111-118"],
+      "contexts": [
+        "| the switch | `AthenaChatHeader.tsx:111-118` — `<IconToggle icon={InfinityIcon} … onClick={() => setAutonomousMode(!autonomousMode)}>`. No dialog, no summary, no confirmation. Its only copy is a too…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaChatHeader.tsx"
+    },
+    "src/features/companions/athena/sub_voice/PocketVoicePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["192"],
+      "contexts": ["`WidgetActionBar.tsx:132` · `PocketVoicePanel.tsx:192` · `WorkspacesAtlas.tsx:165` ·"],
+      "resolvedFrom": "basename",
+      "verbatim": "PocketVoicePanel.tsx"
+    },
     "src/features/home/sub_cockpit/briefing/WidgetActionBar.tsx": {
       "count": 1,
       "sections": [7],
@@ -277,32 +304,6 @@
       "contexts": ["`shared/components/overlays/FirstUseConsentModal.tsx`, `overview/components/BlastRadiusPanel.tsx`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/components/BlastRadiusPanel.tsx"
-    },
-    "src/features/plugins/companion/ApprovalCard.tsx": {
-      "count": 3,
-      "sections": [2,5],
-      "lines": ["88-101","84-101"],
-      "contexts": ["`settings/shared/useConfirmClick.ts`, `plugins/companion/ApprovalCard.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/ApprovalCard.tsx"
-    },
-    "src/features/plugins/companion/chat/AthenaChatHeader.tsx": {
-      "count": 1,
-      "sections": [0],
-      "lines": ["111-118"],
-      "contexts": [
-        "| the switch | `AthenaChatHeader.tsx:111-118` — `<IconToggle icon={InfinityIcon} … onClick={() => setAutonomousMode(!autonomousMode)}>`. No dialog, no summary, no confirmation. Its only copy is a too…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaChatHeader.tsx"
-    },
-    "src/features/plugins/companion/sub_voice/PocketVoicePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["192"],
-      "contexts": ["`WidgetActionBar.tsx:132` · `PocketVoicePanel.tsx:192` · `WorkspacesAtlas.tsx:165` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "PocketVoicePanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {
       "count": 2,

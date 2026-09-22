@@ -170,6 +170,14 @@
       "resolvedFrom": "basename",
       "verbatim": "HealingCard.tsx"
     },
+    "src/features/companions/athena/chat/athenaChatVoice.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["96"],
+      "contexts": ["`autoCredHelpers.ts:97`, `AnalyzingPhase.tsx:39`, plus `athenaChatVoice.ts:96` at 1ms."],
+      "resolvedFrom": "basename",
+      "verbatim": "athenaChatVoice.ts"
+    },
     "src/features/fleet/monitor/PersonaMonitor.tsx": {
       "count": 2,
       "sections": [7],
@@ -258,14 +266,6 @@
       "contexts": ["`overview/sub_activity/libs/executionMetricsHelpers.ts:6`, `overview/sub_usage/components/DayRangePicker.tsx:46`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/components/DayRangePicker.tsx"
-    },
-    "src/features/plugins/companion/chat/athenaChatVoice.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": ["`autoCredHelpers.ts:97`, `AnalyzingPhase.tsx:39`, plus `athenaChatVoice.ts:96` at 1ms."],
-      "resolvedFrom": "basename",
-      "verbatim": "athenaChatVoice.ts"
     },
     "src/features/plugins/drive/__tests__/designTokens.test.ts": {
       "count": 1,

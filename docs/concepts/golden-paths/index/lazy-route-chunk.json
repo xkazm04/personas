@@ -164,6 +164,15 @@
       "resolved": false
     },
     "plugins/artist/sub_gallery/ThreeViewer.tsx": {"count":1,"sections":[7],"lines":["137"],"contexts":["`plugins/artist/sub_gallery/ThreeViewer.tsx:137` (inner R3F probe under an outer"],"resolved":false},
+    "plugins/companion/CompanionPluginPage.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["13-16"],
+      "contexts": [
+        "| `plugins/companion/CompanionPluginPage.tsx:13-16` · `plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:36-39` · `agents/sub_editor/components/EditorLazyTabs.tsx:3-14` · `shared/chrome/DesktopFoote…"
+      ],
+      "resolved": false
+    },
     "plugins/research-lab/ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["11-18"],"contexts":["| `plugins/research-lab/ResearchLabPage.tsx:11-18` | 8 | every Research Lab tab |"],"resolved":false},
     "plugins/twin/sub_tone/TonePage.tsx": {
       "count": 1,
@@ -321,16 +330,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "sectionRouter.tsx"
-    },
-    "src/features/plugins/companion/CompanionPluginPage.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["13-16"],
-      "contexts": [
-        "| `plugins/companion/CompanionPluginPage.tsx:13-16` · `plugins/dev-tools/sub_skills/SkillsManagerPage.tsx:36-39` · `agents/sub_editor/components/EditorLazyTabs.tsx:3-14` · `shared/chrome/DesktopFoote…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/CompanionPluginPage.tsx"
     },
     "src/features/plugins/dev-tools/DevToolsPage.tsx": {
       "count": 2,

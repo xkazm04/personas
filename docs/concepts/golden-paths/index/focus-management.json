@@ -182,6 +182,17 @@
     },
     "src/features/agents/sub_new_persona/capabilityView/CapabilityRowHeader.tsx": {"count":1,"sections":[7],"lines":["32,39"],"contexts":["`CapabilityRowHeader.tsx:32,39` · `PersonaSelector.tsx:103` ·"],"resolvedFrom":"basename","verbatim":"CapabilityRowHeader.tsx"},
     "src/features/agents/sub_new_persona/capabilityView/CapabilityRowTabs.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["`CapabilityRowTabs.tsx:63` · `HealingIssuesPanel.tsx:186` ·"],"resolvedFrom":"basename","verbatim":"CapabilityRowTabs.tsx"},
+    "src/features/companions/athena/FleetBoldnessDial.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["59"],
+      "contexts": ["`WakeCadence.tsx:64` · `FleetBoldnessDial.tsx:59` · `UnattendedModeSection.tsx:66` ·"],
+      "resolvedFrom": "basename",
+      "verbatim": "FleetBoldnessDial.tsx"
+    },
+    "src/features/companions/athena/WakeCadence.tsx": {"count":1,"sections":[7],"lines":["64"],"contexts":["`WakeCadence.tsx:64` · `FleetBoldnessDial.tsx:59` · `UnattendedModeSection.tsx:66` ·"],"resolvedFrom":"basename","verbatim":"WakeCadence.tsx"},
+    "src/features/companions/athena/guidance/useGuidanceRunner.ts": {"count":1,"sections":[7],"lines":["168"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useGuidanceRunner.ts"},
+    "src/features/companions/overseer/components/AddToScopeModal.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolvedFrom":"basename","verbatim":"AddToScopeModal.tsx"},
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {"count":1,"sections":[7],"lines":["242"],"contexts":["`N8nUploadStep.tsx:203` · `ChannelMap.tsx:242`."],"resolvedFrom":"basename","verbatim":"ChannelMap.tsx"},
     "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx": {
       "count": 1,
@@ -191,7 +202,6 @@
       "resolvedFrom": "basename",
       "verbatim": "DecisionDrawer.tsx"
     },
-    "src/features/overview/sub_director/components/AddToScopeModal.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["`AddToScopeModal.tsx:60` · `TagEditorModal.tsx:114` · `Composer.tsx:310` ·"],"resolvedFrom":"basename","verbatim":"AddToScopeModal.tsx"},
     "src/features/overview/sub_incidents/components/IncidentsInbox.tsx": {
       "count": 3,
       "sections": [4,7],
@@ -223,16 +233,6 @@
       "verbatim": "IssuesList.tsx"
     },
     "src/features/overview/sub_sla/components/SLACard.tsx": {"count":1,"sections":[7],"lines":["83"],"contexts":["`ByomApiKeyManager.tsx:361,497` · `TableListSidebar.tsx:107,144` · `SLACard.tsx:83` ·"],"resolvedFrom":"basename","verbatim":"SLACard.tsx"},
-    "src/features/plugins/companion/FleetBoldnessDial.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["59"],
-      "contexts": ["`WakeCadence.tsx:64` · `FleetBoldnessDial.tsx:59` · `UnattendedModeSection.tsx:66` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "FleetBoldnessDial.tsx"
-    },
-    "src/features/plugins/companion/WakeCadence.tsx": {"count":1,"sections":[7],"lines":["64"],"contexts":["`WakeCadence.tsx:64` · `FleetBoldnessDial.tsx:59` · `UnattendedModeSection.tsx:66` ·"],"resolvedFrom":"basename","verbatim":"WakeCadence.tsx"},
-    "src/features/plugins/companion/guidance/useGuidanceRunner.ts": {"count":1,"sections":[7],"lines":["168"],"contexts":["`Gallery2D.tsx:262` · `useGuidanceRunner.ts:168` · `useFleetHotkeys.ts:82` ·"],"resolvedFrom":"basename","verbatim":"useGuidanceRunner.ts"},
     "src/features/plugins/dev-tools/components/DevToolsProjectDropdown.tsx": {"count":1,"sections":[7],"lines":["90"],"contexts":["`DevToolsProjectDropdown.tsx:90` · `GitHubRepoSelector.tsx:218` ·"],"resolvedFrom":"basename","verbatim":"DevToolsProjectDropdown.tsx"},
     "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx": {"count":1,"sections":[7],"lines":["31"],"contexts":["`ScanOverlay.tsx:31`, `CreatedKeyDialog.tsx:85`, `IngestDirectoryPicker.tsx:77`,"],"resolvedFrom":"basename","verbatim":"ScanOverlay.tsx"},
     "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx": {"count":1,"sections":[7],"lines":["301"],"contexts":["`CrossProjectMetadataModal.tsx:301`, `MemoryDetailModal.tsx:35`,"],"resolvedFrom":"basename","verbatim":"CrossProjectMetadataModal.tsx"},

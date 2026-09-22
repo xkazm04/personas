@@ -39,6 +39,7 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["opening a PR, and of the `golden-path-census` pre-push job. That matters here: `ci.yml` is red on 10"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "CompanionPluginPage.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["`CompanionPluginPage.tsx:41`, `DrivePage.tsx:630`, `ObsidianBrainPage.tsx:59`,"],"resolved":false},
     "IntegrationErrorBoundary.tsx": {
       "count": 1,
       "sections": [6],
@@ -221,14 +222,6 @@
       "contexts": ["`ErrorBoundary.tsx`, `App.tsx`, `main.tsx`, `sectionRouter.tsx`, `PersonasPage.tsx`,"],
       "resolvedFrom": "basename",
       "verbatim": "sectionRouter.tsx"
-    },
-    "src/features/plugins/companion/CompanionPluginPage.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": ["`CompanionPluginPage.tsx:41`, `DrivePage.tsx:630`, `ObsidianBrainPage.tsx:59`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompanionPluginPage.tsx"
     },
     "src/features/plugins/drive/DrivePage.tsx": {"count":1,"sections":[7],"lines":["630"],"contexts":["`CompanionPluginPage.tsx:41`, `DrivePage.tsx:630`, `ObsidianBrainPage.tsx:59`,"],"resolvedFrom":"basename","verbatim":"DrivePage.tsx"},
     "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx": {"count":1,"sections":[7],"lines":["59"],"contexts":["`CompanionPluginPage.tsx:41`, `DrivePage.tsx:630`, `ObsidianBrainPage.tsx:59`,"],"resolvedFrom":"basename","verbatim":"ObsidianBrainPage.tsx"},

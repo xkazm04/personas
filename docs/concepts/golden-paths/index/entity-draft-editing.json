@@ -36,6 +36,7 @@
     "api/org/branding/route.ts": {"count":1,"sections":[6],"lines":["38-42"],"contexts":["coerces absent → `null` (`api/org/branding/route.ts:38-42`), and the repo's own audit records the"],"resolved":false},
     "branding.ts": {"count":1,"sections":[6],"lines":["43-50"],"contexts":["**One idea to steal.** `ascent`'s write returns what was *actually stored* (`branding.ts:43-50`) so"],"resolved":false},
     "cliExecutionManager.ts": {"count":1,"sections":[6],"lines":["150"],"contexts":["`cliExecutionManager.ts:150`, closes SSE connections). `ascent` ships a bug report *documenting the"],"resolved":false},
+    "companionStore.ts": {"count":1,"sections":[7],"lines":["1382"],"contexts":["full link graph and prunes nothing; `companionStore.ts:1382` persists per-conversation drafts and its"],"resolved":false},
     "console/app/console/modules/standards/triage.ts": {
       "count": 1,
       "sections": [6],
@@ -241,14 +242,6 @@
       "contexts": ["own `clearDraft` (`:300`) **has zero call sites repo-wide**; `ConversationComposer.tsx:48-63` keys a"],
       "resolvedFrom": "basename",
       "verbatim": "ConversationComposer.tsx"
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["1382"],
-      "contexts": ["full link graph and prunes nothing; `companionStore.ts:1382` persists per-conversation drafts and its"],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
     },
     "src/features/recipes/sub_editor/components/RecipeEditor.tsx": {
       "count": 5,

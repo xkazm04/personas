@@ -74,6 +74,16 @@
     "src-tauri/src/commands/design/team_synthesis.rs": {"count":3,"sections":[0,7,9],"lines":["918-920"],"contexts":["server:** `team_synthesis.rs:918-920`,"],"resolvedFrom":"basename","verbatim":"team_synthesis.rs"},
     "src/components/org/members/MembersPanel.tsx": {"count":1,"sections":[],"lines":["146-229"],"contexts":["- **`ascent` — yes**, and it is a real one: `src/components/org/members/MembersPanel.tsx:146-229`."],"resolved":false},
     "src/features/agents/sub_connectors/components/channels/ChannelList.tsx": {"count":1,"sections":[9],"contexts":["`ChannelList.tsx` (2), `EventRenameModal.tsx` (2), `ByomComplianceRules.tsx` (2) and six more."],"resolvedFrom":"basename","verbatim":"ChannelList.tsx"},
+    "src/features/companions/overseer/components/PersonaCoachingTable.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["149"],
+      "contexts": [
+        "| `PersonaCoachingTable.tsx:149` | **none** on `name` — everything else on the row is guarded (`—` for score `:153`, trend `:192`, flags `:207`; `t.director.roster_never` for last review `:224`) | n/…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "PersonaCoachingTable.tsx"
+    },
     "src/features/fleet/monitor/channels/ConversationSidebar.tsx": {
       "count": 2,
       "sections": [0,7],
@@ -89,16 +99,6 @@
       "contexts": ["| `fleet/monitor/channels/map/ChannelMap.tsx:109-119` | node id `n.personaId` | `personaId` | correct |"],
       "resolvedFrom": "suffix",
       "verbatim": "fleet/monitor/channels/map/ChannelMap.tsx"
-    },
-    "src/features/overview/sub_director/components/PersonaCoachingTable.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["149"],
-      "contexts": [
-        "| `PersonaCoachingTable.tsx:149` | **none** on `name` — everything else on the row is guarded (`—` for score `:153`, trend `:192`, flags `:207`; `t.director.roster_never` for last review `:224`) | n/…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaCoachingTable.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal.tsx": {
       "count": 3,

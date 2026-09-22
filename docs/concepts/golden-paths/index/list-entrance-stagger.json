@@ -43,6 +43,20 @@
       ],
       "resolved": false
     },
+    "overview/sub_director/components/PersonaCoachingTable.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["144"],
+      "contexts": ["| `overview/sub_director/components/PersonaCoachingTable.tsx:144` | `Math.min(i,12) * 25` | 300 ms | **none** | branches `reduceMotion` | 300 ms |"],
+      "resolved": false
+    },
+    "overview/sub_director/components/ScoreDistribution.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["74"],
+      "contexts": ["| `overview/sub_director/components/ScoreDistribution.tsx:74` | `i * 50` | **none** | **none** | CSS only | ~500 ms over 11 bands |"],
+      "resolved": false
+    },
     "plugins/twin/sub_brain/RecallPreviewPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -84,17 +98,10 @@
       "resolvedFrom": "basename",
       "verbatim": "VirtualizedTableBody.tsx"
     },
+    "src/features/companions/overseer/components/PersonaCoachingTable.tsx": {"count":1,"sections":[],"contexts":["`VirtualizedTableBody.tsx`, `LeaderboardMatrixView.tsx`, `PersonaCoachingTable.tsx`,"],"resolvedFrom":"basename","verbatim":"PersonaCoachingTable.tsx"},
+    "src/features/companions/overseer/components/ScoreDistribution.tsx": {"count":1,"sections":[],"contexts":["`ScoreDistribution.tsx`, `ReviewInboxPanel.tsx`, `themeStore.ts`, and the four"],"resolvedFrom":"basename","verbatim":"ScoreDistribution.tsx"},
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {"count":1,"sections":[6],"lines":["512-522"],"contexts":["**The one site to copy: `src/features/overview/sub_activity/components/GlobalExecutionList.tsx:512-522`.**"]},
     "src/features/overview/sub_activity/components/LlmCallsTable.tsx": {"count":1,"sections":[4],"lines":["318"],"contexts":["reset context right (`LlmCallsTable.tsx:318`, `EventLogList.tsx:459`,"],"resolvedFrom":"basename","verbatim":"LlmCallsTable.tsx"},
-    "src/features/overview/sub_director/components/PersonaCoachingTable.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["144"],
-      "contexts": ["`VirtualizedTableBody.tsx`, `LeaderboardMatrixView.tsx`, `PersonaCoachingTable.tsx`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaCoachingTable.tsx"
-    },
-    "src/features/overview/sub_director/components/ScoreDistribution.tsx": {"count":2,"sections":[7],"lines":["74"],"contexts":["`ScoreDistribution.tsx`, `ReviewInboxPanel.tsx`, `themeStore.ts`, and the four"],"resolvedFrom":"basename","verbatim":"ScoreDistribution.tsx"},
     "src/features/overview/sub_events/components/EventLogList.tsx": {"count":2,"sections":[4,6],"lines":["459"],"contexts":["reset context right (`LlmCallsTable.tsx:318`, `EventLogList.tsx:459`,"],"resolvedFrom":"basename","verbatim":"EventLogList.tsx"},
     "src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx": {
       "count": 3,

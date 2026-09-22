@@ -35,6 +35,7 @@
     "artistSlice.ts": {"count":1,"sections":[9],"lines":["193"],"contexts":["`executionSink.ts:291,334`, `artistSlice.ts:193`, `devToolsTaskSlice.ts:220` drain an in-memory"],"resolved":false},
     "ascent/src/components/QuotaMeter.tsx": {"count":1,"sections":[6],"lines":["24"],"contexts":["(`useRenderPlan.ts:31-45`, `ascent/src/components/QuotaMeter.tsx:24`) are both on **reads**."],"resolved":false},
     "ascent/src/components/org/executive/BrandingSettings.tsx": {"count":1,"sections":[6],"lines":["42"],"contexts":["`ascent/src/components/org/executive/BrandingSettings.tsx:42` (4000 ms). A second save inside the"],"resolved":false},
+    "companionStore.ts": {"count":2,"sections":[6,7],"lines":["1379"],"contexts":["(`themeStore.ts:360`, `systemStore.ts:57`, `agentStore.ts:40`, `companionStore.ts:1379`)."],"resolved":false},
     "exportContextMap.ts": {"count":1,"sections":[6],"lines":["401-418"],"contexts":["`exportContextMap.ts:401-418` is cancel-only *by design* and says so."],"resolved":false},
     "index.ts": {"count":1,"sections":[6],"lines":["12"],"contexts":["re-exported from the barrel at `index.ts:12` with a usage `@example` in its docstring. Grepping"],"resolved":false},
     "kafka.ts": {"count":2,"sections":[6,7],"lines":["108-117","102-117,275"],"contexts":["(2 consumers, and unexported outside `sub_editor/libs`) and `kafka.ts:108-117` (a backend). No repo"],"resolved":false},
@@ -134,14 +135,6 @@
       "lines": ["31-45"],
       "contexts": ["| `src/features/plugins/artist/sub_media_studio/hooks/useRenderPlan.ts:31-45` | a monotonic sequence guard (`compileSeqRef`) — the ordering fix, correctly built, on a **read** |"],
       "resolved": false
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["1379"],
-      "contexts": ["(`themeStore.ts:360`, `systemStore.ts:57`, `agentStore.ts:40`, `companionStore.ts:1379`)."],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {
       "count": 1,

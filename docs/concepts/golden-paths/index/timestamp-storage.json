@@ -142,6 +142,15 @@
       ],
       "resolved": false
     },
+    "plugins/companion/inbox/utils/formatRelativeTime.ts": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["34"],
+      "contexts": [
+        "7. **The frontend has two parallel correct parsers and five incorrect ones.** `normalizeTimestamp` (`formatters.ts:11`) and `toEpochUtc` (`eventModel.ts:13`) are independent reimplementations of the…"
+      ],
+      "resolved": false
+    },
     "scripts/build/run-rust-tests.mjs": {"count":1,"sections":[9],"contexts":["`scripts/build/run-rust-tests.mjs` passes `--lib` against the ROOT manifest,"]},
     "scripts/check-event-registry.mjs": {
       "count": 1,
@@ -594,16 +603,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/libs/formatRelativeShort.ts"
-    },
-    "src/features/plugins/companion/inbox/utils/formatRelativeTime.ts": {
-      "count": 1,
-      "sections": [8],
-      "lines": ["34"],
-      "contexts": [
-        "7. **The frontend has two parallel correct parsers and five incorrect ones.** `normalizeTimestamp` (`formatters.ts:11`) and `toEpochUtc` (`eventModel.ts:13`) are independent reimplementations of the…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/inbox/utils/formatRelativeTime.ts"
     },
     "src/features/plugins/drive/designTokens.ts": {
       "count": 1,

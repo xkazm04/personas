@@ -151,6 +151,24 @@
       ],
       "resolved": false
     },
+    "plugins/companion/fleet/FleetStatsSidePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["96"],
+      "contexts": [
+        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
+      ],
+      "resolved": false
+    },
+    "plugins/companion/sub_setup/BrowserBridgePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["33"],
+      "contexts": [
+        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
+      ],
+      "resolved": false
+    },
     "reviews.rs": {
       "count": 1,
       "sections": [],
@@ -797,26 +815,6 @@
       ],
       "resolved": false,
       "isDir": true
-    },
-    "src/features/plugins/companion/fleet/FleetStatsSidePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["96"],
-      "contexts": [
-        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/fleet/FleetStatsSidePanel.tsx"
-    },
-    "src/features/plugins/companion/sub_setup/BrowserBridgePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["33"],
-      "contexts": [
-        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/sub_setup/BrowserBridgePanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/useUseCases.ts": {"count":2,"sections":[7],"lines":["81"],"contexts":["| `SystemLoadFooterIcon.tsx:86` · `useUseCases.ts:81` | 2 s | 5s | 2.5× slower |"],"resolvedFrom":"basename","verbatim":"useUseCases.ts"},
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {

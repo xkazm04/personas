@@ -102,6 +102,15 @@
       "resolvedFrom": "basename",
       "verbatim": "ComposerEventTemplateList.tsx"
     },
+    "src/features/companions/athena/inbox/hooks/useIllustration.ts": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["109"],
+      "contexts": ["`useIllustration.ts:109` (`(h<<5) - h + c`) — are **literally the same algorithm**"],
+      "resolvedFrom": "basename",
+      "verbatim": "useIllustration.ts"
+    },
+    "src/features/companions/overseer/DirectorCoachingTab.tsx": {"count":1,"sections":[7],"contexts":["`ComposerBrandIcon.tsx`, `DirectorCoachingTab.tsx`, `CompositionPreview.tsx`,"],"resolvedFrom":"basename","verbatim":"DirectorCoachingTab.tsx"},
     "src/features/fleet/monitor/channels/ConversationSidebar.tsx": {
       "count": 2,
       "sections": [7,9],
@@ -128,7 +137,6 @@
       "verbatim": "fleetGridModel.ts"
     },
     "src/features/home/sub_welcome/HeroHeader.tsx": {"count":1,"sections":[7],"lines":["12"],"contexts":["| 5 | `src/features/home/sub_welcome/HeroHeader.tsx:12` | FNV-1a → u32 | private `hashString` | background pick |"]},
-    "src/features/overview/sub_director/DirectorCoachingTab.tsx": {"count":1,"sections":[7],"contexts":["`ComposerBrandIcon.tsx`, `DirectorCoachingTab.tsx`, `CompositionPreview.tsx`,"],"resolvedFrom":"basename","verbatim":"DirectorCoachingTab.tsx"},
     "src/features/overview/sub_manual-review/components/FocusedDecisionCard.tsx": {
       "count": 1,
       "sections": [7],
@@ -138,12 +146,11 @@
       "verbatim": "FocusedDecisionCard.tsx"
     },
     "src/features/plugins/companion/inbox/hooks/useIllustration.ts": {
-      "count": 2,
-      "sections": [5,7],
-      "lines": ["109","106"],
-      "contexts": ["`useIllustration.ts:109` (`(h<<5) - h + c`) — are **literally the same algorithm**"],
-      "resolvedFrom": "basename",
-      "verbatim": "useIllustration.ts"
+      "count": 1,
+      "sections": [7],
+      "lines": ["106"],
+      "contexts": ["| 2 | `src/features/plugins/companion/inbox/hooks/useIllustration.ts:106` | `(h<<5) - h + c`, `\\|0`, `abs` | exported `hashId` | **persona illustration category** |"],
+      "resolved": false
     },
     "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx": {
       "count": 1,

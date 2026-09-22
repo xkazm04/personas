@@ -132,6 +132,15 @@
       ],
       "resolved": false
     },
+    "overview/sub_director/components/ValueLeakBar.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["55-79"],
+      "contexts": [
+        "| `overview/sub_director/components/ValueLeakBar.tsx:55-79` | A stacked strip that declares itself: `// Stacked proportion bar — decorative; the legend below is the semantic content`, `aria-hidden` o…"
+      ],
+      "resolved": false
+    },
     "overview/sub_health/components/heartbeats/VitalsLedger.tsx": {
       "count": 1,
       "sections": [6],
@@ -179,6 +188,32 @@
       "resolvedFrom": "basename",
       "verbatim": "CapabilityRowSummary.tsx"
     },
+    "src/features/companions/athena/OperationalThread.tsx": {"count":1,"sections":[7],"lines":["56"],"contexts":["`BacklogFocusDeck.tsx:154` · `OperationalThread.tsx:56`."],"resolvedFrom":"basename","verbatim":"OperationalThread.tsx"},
+    "src/features/companions/athena/sub_voice/SttPanel.tsx": {"count":1,"sections":[7],"lines":["448"],"contexts":["`ArenaResultsView.tsx:57` · `CapabilityRowSummary.tsx:33` · `SttPanel.tsx:448` ·"],"resolvedFrom":"basename","verbatim":"SttPanel.tsx"},
+    "src/features/companions/overseer/DirectorCoachingTab.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["345","281"],
+      "contexts": ["`CategoryRollup.tsx:44` · `DirectorCoachingTab.tsx:345` · `StrategyLeaderboard.tsx:62` ·"],
+      "resolvedFrom": "basename",
+      "verbatim": "DirectorCoachingTab.tsx"
+    },
+    "src/features/companions/overseer/components/CategoryRollup.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["44"],
+      "contexts": ["`CategoryRollup.tsx:44` · `DirectorCoachingTab.tsx:345` · `StrategyLeaderboard.tsx:62` ·"],
+      "resolvedFrom": "basename",
+      "verbatim": "CategoryRollup.tsx"
+    },
+    "src/features/companions/overseer/components/ValueLeakBar.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["56","61"],
+      "contexts": ["(`ValueLeakBar.tsx:56`, `FacetedDecisionTable.tsx:343`, `MonitorRow.tsx:98`, …) are"],
+      "resolvedFrom": "basename",
+      "verbatim": "ValueLeakBar.tsx"
+    },
     "src/features/overview/sub_activity/components/AthenaUsageSection.tsx": {
       "count": 8,
       "sections": [5,7,9],
@@ -197,32 +232,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LlmSpendSection.tsx"
     },
-    "src/features/overview/sub_director/DirectorCoachingTab.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["345","281"],
-      "contexts": ["`CategoryRollup.tsx:44` · `DirectorCoachingTab.tsx:345` · `StrategyLeaderboard.tsx:62` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "DirectorCoachingTab.tsx"
-    },
-    "src/features/overview/sub_director/components/CategoryRollup.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["44"],
-      "contexts": ["`CategoryRollup.tsx:44` · `DirectorCoachingTab.tsx:345` · `StrategyLeaderboard.tsx:62` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "CategoryRollup.tsx"
-    },
-    "src/features/overview/sub_director/components/ValueLeakBar.tsx": {
-      "count": 3,
-      "sections": [6,7],
-      "lines": ["55-79","56","61"],
-      "contexts": [
-        "| `overview/sub_director/components/ValueLeakBar.tsx:55-79` | A stacked strip that declares itself: `// Stacked proportion bar — decorative; the legend below is the semantic content`, `aria-hidden` o…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_director/components/ValueLeakBar.tsx"
-    },
     "src/features/overview/sub_health/components/heartbeats/primitives.tsx": {"count":1,"sections":[7],"lines":["26"],"contexts":["`CrossProjectMetadataModal.tsx:438` · `heartbeats/primitives.tsx:26` ·"],"resolvedFrom":"suffix","verbatim":"heartbeats/primitives.tsx"},
     "src/features/overview/sub_manual-review/components/backlog/BacklogFocusDeck.tsx": {"count":1,"sections":[7],"lines":["154"],"contexts":["`BacklogFocusDeck.tsx:154` · `OperationalThread.tsx:56`."],"resolvedFrom":"basename","verbatim":"BacklogFocusDeck.tsx"},
     "src/features/overview/sub_observability/components/AnomalyDrilldownPanel.tsx": {"count":1,"sections":[7],"contexts":["(`MonitorRow.tsx`, `AnomalyDrilldownPanel.tsx`'s `CorrelatedEventRow`, `DimBar`,"],"resolvedFrom":"basename","verbatim":"AnomalyDrilldownPanel.tsx"},
@@ -236,8 +245,6 @@
       "verbatim": "SystemTraceViewer.tsx"
     },
     "src/features/overview/sub_patterns/KnowledgeTree.tsx": {"count":1,"sections":[6],"lines":["118-149"],"contexts":["**The ONE site to copy: `src/features/overview/sub_patterns/KnowledgeTree.tsx:118-149`,"],"resolved":false},
-    "src/features/plugins/companion/OperationalThread.tsx": {"count":1,"sections":[7],"lines":["56"],"contexts":["`BacklogFocusDeck.tsx:154` · `OperationalThread.tsx:56`."],"resolvedFrom":"basename","verbatim":"OperationalThread.tsx"},
-    "src/features/plugins/companion/sub_voice/SttPanel.tsx": {"count":1,"sections":[7],"lines":["448"],"contexts":["`ArenaResultsView.tsx:57` · `CapabilityRowSummary.tsx:33` · `SttPanel.tsx:448` ·"],"resolvedFrom":"basename","verbatim":"SttPanel.tsx"},
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx": {
       "count": 3,
       "sections": [6,7],

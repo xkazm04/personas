@@ -113,16 +113,25 @@
       "resolvedFrom": "basename",
       "verbatim": "GlyphDialogueCinemaLayout.tsx"
     },
+    "src/features/companions/athena/AthenaAvatar.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["2"],
+      "contexts": ["they are always mounted: `AthenaAvatar.tsx:2`, `AthenaOrb.tsx:17`, `ChannelMap.tsx:2`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaAvatar.tsx"
+    },
+    "src/features/companions/athena/orb/AthenaOrb.tsx": {"count":1,"sections":[7],"lines":["17"],"contexts":["they are always mounted: `AthenaAvatar.tsx:2`, `AthenaOrb.tsx:17`, `ChannelMap.tsx:2`,"],"resolvedFrom":"basename","verbatim":"AthenaOrb.tsx"},
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {"count":1,"sections":[7],"lines":["2"],"contexts":["they are always mounted: `AthenaAvatar.tsx:2`, `AthenaOrb.tsx:17`, `ChannelMap.tsx:2`,"],"resolvedFrom":"basename","verbatim":"ChannelMap.tsx"},
     "src/features/plugins/companion/AthenaAvatar.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["31,88,149","2"],
+      "count": 1,
+      "sections": [6],
+      "lines": ["31,88,149"],
       "contexts": [
         "| `src/features/plugins/companion/AthenaAvatar.tsx:31,88,149` | The strongest form of suppression: under reduced motion it mounts **no `<video>` at all**. Not \"pause the clip\" — never decode it. Also…"
-      ]
+      ],
+      "resolved": false
     },
-    "src/features/plugins/companion/orb/AthenaOrb.tsx": {"count":1,"sections":[7],"lines":["17"],"contexts":["they are always mounted: `AthenaAvatar.tsx:2`, `AthenaOrb.tsx:17`, `ChannelMap.tsx:2`,"],"resolvedFrom":"basename","verbatim":"AthenaOrb.tsx"},
     "src/features/shared/chrome/TitleBarDock.tsx": {
       "count": 2,
       "sections": [4,6],

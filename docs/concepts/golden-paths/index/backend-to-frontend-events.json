@@ -367,6 +367,8 @@
       "resolvedFrom": "basename",
       "verbatim": "useRunnerState.ts"
     },
+    "src/features/companions/athena/decision/useDecisionQueue.ts": {"count":1,"sections":[7],"lines":["437,440"],"contexts":["sites — `useDecisionQueue.ts:437,440`, `useMcpRequestBridge.ts:50,53`,"],"resolvedFrom":"basename","verbatim":"useDecisionQueue.ts"},
+    "src/features/companions/athena/mcp/useMcpRequestBridge.ts": {"count":1,"sections":[7],"lines":["50,53"],"contexts":["sites — `useDecisionQueue.ts:437,440`, `useMcpRequestBridge.ts:50,53`,"],"resolvedFrom":"basename","verbatim":"useMcpRequestBridge.ts"},
     "src/features/onboarding/components/ExecutionStep.tsx": {"count":2,"sections":[5,7],"lines":["55"],"contexts":["them (`ExecutionStep.tsx:55`) has been waiting on an event nobody emits."],"resolvedFrom":"basename","verbatim":"ExecutionStep.tsx"},
     "src/features/overview/components/feedback/HealingToast.tsx": {
       "count": 1,
@@ -377,8 +379,6 @@
       "verbatim": "HealingToast.tsx"
     },
     "src/features/overview/sub_events/libs/useEventLog.ts": {"count":2,"sections":[6],"lines":["227-230"],"contexts":["`useEventLog.ts:227-230`, and the CDC startup replay that depends on it). This"],"resolvedFrom":"basename","verbatim":"useEventLog.ts"},
-    "src/features/plugins/companion/decision/useDecisionQueue.ts": {"count":1,"sections":[7],"lines":["437,440"],"contexts":["sites — `useDecisionQueue.ts:437,440`, `useMcpRequestBridge.ts:50,53`,"],"resolvedFrom":"basename","verbatim":"useDecisionQueue.ts"},
-    "src/features/plugins/companion/mcp/useMcpRequestBridge.ts": {"count":1,"sections":[7],"lines":["50,53"],"contexts":["sites — `useDecisionQueue.ts:437,440`, `useMcpRequestBridge.ts:50,53`,"],"resolvedFrom":"basename","verbatim":"useMcpRequestBridge.ts"},
     "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts": {
       "count": 1,
       "sections": [7],

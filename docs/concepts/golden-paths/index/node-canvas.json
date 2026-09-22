@@ -112,6 +112,7 @@
       ],
       "resolved": false
     },
+    "companion/BrainViewer.tsx": {"count":1,"sections":[7],"contexts":["`companion/BrainViewer.tsx` (`grep -c \"<svg\"` = **0** in both — stat tiles and lists named \"graph\");"],"resolved":false},
     "cortex-data.ts": {
       "count": 2,
       "sections": [6,12],
@@ -221,13 +222,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "PersonasPage.tsx"
-    },
-    "src/features/plugins/companion/BrainViewer.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`companion/BrainViewer.tsx` (`grep -c \"<svg\"` = **0** in both — stat tiles and lists named \"graph\");"],
-      "resolvedFrom": "suffix",
-      "verbatim": "companion/BrainViewer.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx": {
       "count": 5,

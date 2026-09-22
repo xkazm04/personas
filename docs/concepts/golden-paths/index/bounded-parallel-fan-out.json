@@ -248,7 +248,7 @@
       "lines": ["214"],
       "contexts": ["| 5 | `src/features/agents/sub_executions/libs/useBulkRerun.ts:214` | *(inline, unnamed)* | `MAX_CONCURRENT = 3` | ✅ `cancelledRef.current` | `Math.min(…)` only |"]
     },
-    "src/features/plugins/companion/useTurnSidecars.ts": {"count":1,"sections":[7],"lines":["54-63"],"contexts":["- **`src/features/plugins/companion/useTurnSidecars.ts:54-63`** — the same shape, chunking by"]},
+    "src/features/plugins/companion/useTurnSidecars.ts": {"count":1,"sections":[7],"lines":["54-63"],"contexts":["- **`src/features/plugins/companion/useTurnSidecars.ts:54-63`** — the same shape, chunking by"],"resolved":false},
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/NewCompetitionModal.tsx": {"count":4,"sections":[0,5,7],"lines":["60"],"contexts":["`src/features/plugins/dev-tools/sub_lifecycle/competitions/NewCompetitionModal.tsx:60`:"]},
     "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx": {
       "count": 2,

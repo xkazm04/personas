@@ -234,6 +234,30 @@
       "resolvedFrom": "basename",
       "verbatim": "LabResultModal.tsx"
     },
+    "src/features/companions/athena/orb/RemoteJobNoticeChip.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["57"],
+      "contexts": ["(`const st = t.sharing;` — `RemoteJobNoticeChip.tsx:57`, `TeamPublishButton.tsx:23`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "RemoteJobNoticeChip.tsx"
+    },
+    "src/features/companions/athena/voicePlayback.ts": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["36"],
+      "contexts": ["a pure false positive (`voicePlayback.ts:36`, `bytes as BlobPart`). **A gate that fires on correct"],
+      "resolvedFrom": "basename",
+      "verbatim": "voicePlayback.ts"
+    },
+    "src/features/companions/overseer/components/PersonaDetailModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["21-30"],
+      "contexts": ["- **`severity.warning` renders correctly-coloured and wrongly-worded.** `PersonaDetailModal.tsx:21-30`"],
+      "resolvedFrom": "basename",
+      "verbatim": "PersonaDetailModal.tsx"
+    },
     "src/features/home/sub_cockpit/CockpitPanel.tsx": {
       "count": 2,
       "sections": [7],
@@ -258,14 +282,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LlmCallsTable.tsx"
     },
-    "src/features/overview/sub_director/components/PersonaDetailModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["21-30"],
-      "contexts": ["- **`severity.warning` renders correctly-coloured and wrongly-worded.** `PersonaDetailModal.tsx:21-30`"],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaDetailModal.tsx"
-    },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -289,22 +305,6 @@
       "contexts": ["`ChartErrorBoundary.tsx:44` — `en.overview.chart_error.chart_unavailable`, read inside a class"],
       "resolvedFrom": "basename",
       "verbatim": "ChartErrorBoundary.tsx"
-    },
-    "src/features/plugins/companion/orb/RemoteJobNoticeChip.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["57"],
-      "contexts": ["(`const st = t.sharing;` — `RemoteJobNoticeChip.tsx:57`, `TeamPublishButton.tsx:23`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "RemoteJobNoticeChip.tsx"
-    },
-    "src/features/plugins/companion/voicePlayback.ts": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["36"],
-      "contexts": ["a pure false positive (`voicePlayback.ts:36`, `bytes as BlobPart`). **A gate that fires on correct"],
-      "resolvedFrom": "basename",
-      "verbatim": "voicePlayback.ts"
     },
     "src/features/recipes/shared/SchemaParseErrorBanner.tsx": {
       "count": 1,

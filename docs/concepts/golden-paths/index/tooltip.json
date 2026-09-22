@@ -70,6 +70,7 @@
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the whole reason to put it here rather than in `eslint.config.js` — as"]},
     "overview/sub_analytics/ExecutionHeatmap.tsx": {"count":1,"sections":[7],"lines":["444"],"contexts":["| `overview/sub_analytics/ExecutionHeatmap.tsx:444` | **justified** (SVG `<rect>` trigger), reasoning at `:440-442` |"],"resolved":false},
     "overview/sub_certification/GateBreakdown.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["`overview/sub_certification/GateBreakdown.tsx:29` (the gate log tail, available nowhere"],"resolved":false},
+    "plugins/companion/Bubble.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"lines":["19-38"],"contexts":["contract (`run-census.mjs:19-38`) was exercised against this exact rule:"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Parsed, not grepped. Every JSX opening tag in `src/**/*.tsx` was read with a"],"resolved":false},
@@ -170,6 +171,16 @@
       "resolvedFrom": "basename",
       "verbatim": "LabVersionsTable.tsx"
     },
+    "src/features/companions/athena/DailyGoalsBar.tsx": {"count":1,"sections":[9],"contexts":["`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`"],"resolvedFrom":"basename","verbatim":"DailyGoalsBar.tsx"},
+    "src/features/companions/athena/DevOpLedger.tsx": {"count":1,"sections":[9],"contexts":["`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`"],"resolvedFrom":"basename","verbatim":"DevOpLedger.tsx"},
+    "src/features/companions/overseer/components/PersonaCoachingTable.tsx": {
+      "count": 2,
+      "sections": [7,9],
+      "lines": ["163,211"],
+      "contexts": ["`DispatchTable.tsx:106` · `PersonaCoachingTable.tsx:163,211` · `contextMapPerf.tsx:261,317`"],
+      "resolvedFrom": "basename",
+      "verbatim": "PersonaCoachingTable.tsx"
+    },
     "src/features/fleet/monitor/PersonaMonitor.tsx": {
       "count": 1,
       "sections": [7],
@@ -223,15 +234,7 @@
       "verbatim": "LlmCallsTable.tsx"
     },
     "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx": {"count":3,"sections":[6,8,9],"lines":["438-465","440-442"],"contexts":["- `src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx:438-465` — the"]},
-    "src/features/overview/sub_director/components/PersonaCoachingTable.tsx": {
-      "count": 2,
-      "sections": [7,9],
-      "lines": ["163,211"],
-      "contexts": ["`DispatchTable.tsx:106` · `PersonaCoachingTable.tsx:163,211` · `contextMapPerf.tsx:261,317`"],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaCoachingTable.tsx"
-    },
-    "src/features/overview/sub_director/components/ScoreDistribution.tsx": {"count":1,"sections":[6],"lines":["55"],"contexts":["- `src/features/overview/sub_director/components/ScoreDistribution.tsx:55` — `tx()` with"]},
+    "src/features/overview/sub_director/components/ScoreDistribution.tsx": {"count":1,"sections":[6],"lines":["55"],"contexts":["- `src/features/overview/sub_director/components/ScoreDistribution.tsx:55` — `tx()` with"],"resolved":false},
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 2,
       "sections": [7,9],
@@ -264,9 +267,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/components/ChartTooltip.tsx"
     },
-    "src/features/plugins/companion/Bubble.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolvedFrom":"suffix","verbatim":"plugins/companion/Bubble.tsx"},
-    "src/features/plugins/companion/DailyGoalsBar.tsx": {"count":1,"sections":[9],"contexts":["`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`"],"resolvedFrom":"basename","verbatim":"DailyGoalsBar.tsx"},
-    "src/features/plugins/companion/DevOpLedger.tsx": {"count":1,"sections":[9],"contexts":["`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`"],"resolvedFrom":"basename","verbatim":"DevOpLedger.tsx"},
     "src/features/plugins/dev-tools/sub_context/contextLedgerShared.tsx": {"count":1,"sections":[9],"contexts":["`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`"],"resolvedFrom":"basename","verbatim":"contextLedgerShared.tsx"},
     "src/features/plugins/dev-tools/sub_context/contextMapPerf.tsx": {
       "count": 2,

@@ -160,6 +160,15 @@
       ],
       "resolved": false
     },
+    "overview/sub_director/directorScore.ts": {
+      "count": 2,
+      "sections": [3,7],
+      "lines": ["38"],
+      "contexts": [
+        "| **`overview/sub_director/directorScore.ts` → `sparklinePoints(scores, w, h, pad)`** (`:38`) | **The exemplar for hand-rolled plots.** Projects a series onto an SVG box anchored to a *fixed* `SCORE_…"
+      ],
+      "resolved": false
+    },
     "rootPropsSlice.js": {"count":1,"sections":[7],"lines":["14"],"contexts":["(`CartesianChart.js:31`, `PolarChart.js:39`, `rootPropsSlice.js:14`), and the layer"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked first that it is not already gated.** `scripts/census/rules.json` holds"]},
     "scripts/check-themes.mjs": {"count":2,"sections":[1,8],"contexts":["(`#818cf8`, `#6366f1`, `#a78bfa`, `#34d399`) invisible to `check-themes.mjs`, and"],"resolvedFrom":"basename","verbatim":"check-themes.mjs"},
@@ -182,6 +191,15 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_deployment/components/DeploymentHealthSparkline.tsx"
     },
+    "src/features/companions/overseer/ScoreSparkline.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["38"],
+      "contexts": ["- **The scale is visible** — `ScoreSparkline.tsx:38` draws a faint baseline `<line>`"],
+      "resolvedFrom": "basename",
+      "verbatim": "ScoreSparkline.tsx"
+    },
+    "src/features/companions/overseer/directorScore.ts": {"count":1,"sections":[4],"lines":["38"],"contexts":["The exemplar `sparklinePoints(scores, w, h, pad)` (`directorScore.ts:38`) is right"],"resolvedFrom":"basename","verbatim":"directorScore.ts"},
     "src/features/overview/components/dashboard/widgets/DashboardChartCard.tsx": {
       "count": 1,
       "sections": [7],
@@ -216,17 +234,8 @@
       "resolvedFrom": "basename",
       "verbatim": "LlmSpendSection.tsx"
     },
-    "src/features/overview/sub_director/ScoreSparkline.tsx": {"count":2,"sections":[6],"lines":["26-49","38"],"contexts":["consumed by `src/features/overview/sub_director/ScoreSparkline.tsx:26-49`.**"]},
-    "src/features/overview/sub_director/directorScore.ts": {
-      "count": 4,
-      "sections": [3,4,6,7],
-      "lines": ["38","31-50"],
-      "contexts": [
-        "| **`overview/sub_director/directorScore.ts` → `sparklinePoints(scores, w, h, pad)`** (`:38`) | **The exemplar for hand-rolled plots.** Projects a series onto an SVG box anchored to a *fixed* `SCORE_…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_director/directorScore.ts"
-    },
+    "src/features/overview/sub_director/ScoreSparkline.tsx": {"count":1,"sections":[6],"lines":["26-49"],"contexts":["consumed by `src/features/overview/sub_director/ScoreSparkline.tsx:26-49`.**"],"resolved":false},
+    "src/features/overview/sub_director/directorScore.ts": {"count":1,"sections":[6],"lines":["31-50"],"contexts":["**The ONE site to copy: `src/features/overview/sub_director/directorScore.ts:31-50`,"],"resolved":false},
     "src/features/overview/sub_observability/components/MetricsCharts.tsx": {
       "count": 4,
       "sections": [6,7],

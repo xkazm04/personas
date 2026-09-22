@@ -86,8 +86,17 @@
       "verbatim": "src/engine/runner/mod.rs"
     },
     "src/companion/prompt.rs": {"count":2,"sections":[2],"lines":["44-137","102-137"],"contexts":["**Reach for:** `summarize_recall` + `RecallPreview` (`src/companion/prompt.rs:44-137`),"],"resolved":false},
-    "src/features/plugins/companion/RecallStrip.tsx": {"count":4,"sections":[0,2],"contexts":["`src/features/plugins/companion/RecallStrip.tsx`), the persona-memory recall"]},
-    "src/features/plugins/companion/useTurnSidecars.ts": {"count":2,"sections":[0,7],"lines":["44"],"contexts":["(`src/features/plugins/companion/useTurnSidecars.ts:44`,"]},
+    "src/features/companions/athena/RecallStrip.tsx": {"count":2,"sections":[0,2],"contexts":["retrieval — is unrepresentable on this path. `RecallStrip.tsx` renders it, and"],"resolvedFrom":"basename","verbatim":"RecallStrip.tsx"},
+    "src/features/companions/athena/useTurnSidecars.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["44"],
+      "contexts": ["`useTurnSidecars.ts:44` fires `companionSaveTurnSidecar` and swallows failures via"],
+      "resolvedFrom": "basename",
+      "verbatim": "useTurnSidecars.ts"
+    },
+    "src/features/plugins/companion/RecallStrip.tsx": {"count":2,"sections":[2],"contexts":["`src/features/plugins/companion/RecallStrip.tsx`), the persona-memory recall"],"resolved":false},
+    "src/features/plugins/companion/useTurnSidecars.ts": {"count":1,"sections":[0],"lines":["44"],"contexts":["(`src/features/plugins/companion/useTurnSidecars.ts:44`,"],"resolved":false},
     "src/features/vault/shared/vector/": {"count":1,"sections":[],"contexts":["`src/features/vault/shared/vector/`), the shared retrieval lane"],"resolved":false,"isDir":true},
     "src/features/vault/shared/vector/search/SearchResultCard.tsx": {
       "count": 1,

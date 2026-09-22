@@ -214,6 +214,14 @@
       "contexts": ["| `overview/sub_certification/components/GroundingTable.tsx:73` | Grounding table settles to `\"No data\"` — no condition, no recovery |"],
       "resolved": false
     },
+    "overview/sub_director/components/AddToScopeModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
     "overview/sub_leaderboard/components/EmptyStates.tsx": {
       "count": 1,
       "sections": [7],
@@ -237,6 +245,15 @@
       "sections": [7],
       "contexts": [
         "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
+    "plugins/companion/sub_decisions/sharedBlocks.tsx": {
+      "count": 2,
+      "sections": [6,7],
+      "lines": ["120-154","122"],
+      "contexts": [
+        "- `plugins/companion/sub_decisions/sharedBlocks.tsx:120-154` — `DecisionsEmpty({ filtered })` — the two-condition split extracted into one component with a boolean discriminator, each branch with its…"
       ],
       "resolved": false
     },
@@ -456,15 +473,6 @@
       "resolvedFrom": "basename",
       "verbatim": "CronAgentsPage.tsx"
     },
-    "src/features/overview/sub_director/components/AddToScopeModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_director/components/AddToScopeModal.tsx"
-    },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 5,
       "sections": [4,6,9],
@@ -528,16 +536,6 @@
       "contexts": ["| `overview/sub_usage/components/ToolPerformancePanel.tsx:214` | `emptyTitle={t.overview.events.no_filter_match}` with no filter guard |"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_usage/components/ToolPerformancePanel.tsx"
-    },
-    "src/features/plugins/companion/sub_decisions/sharedBlocks.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["120-154","122"],
-      "contexts": [
-        "- `plugins/companion/sub_decisions/sharedBlocks.tsx:120-154` — `DecisionsEmpty({ filtered })` — the two-condition split extracted into one component with a boolean discriminator, each branch with its…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/sub_decisions/sharedBlocks.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/ContextGroupRowsStats.tsx": {
       "count": 1,

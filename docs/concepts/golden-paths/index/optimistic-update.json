@@ -160,6 +160,14 @@
       "resolvedFrom": "suffix",
       "verbatim": "features/agents/sub_editor/libs/useDebouncedSaveGroup.ts"
     },
+    "src/features/companions/athena/inbox/hooks/useInboxActions.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["63,78"],
+      "contexts": ["`useBacklogQueue.ts:105-118`, `useDevToolsActions.ts:56-59`, `useInboxActions.ts:63,78`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "useInboxActions.ts"
+    },
     "src/features/fleet/monitor/channels/useConversation.ts": {
       "count": 3,
       "sections": [0,7],
@@ -191,14 +199,6 @@
       "contexts": ["calls `refreshWorkspaces()` from outside the store is `PatternsPanel.tsx:57`, on mount. **Until the"],
       "resolvedFrom": "basename",
       "verbatim": "PatternsPanel.tsx"
-    },
-    "src/features/plugins/companion/inbox/hooks/useInboxActions.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["63,78"],
-      "contexts": ["`useBacklogQueue.ts:105-118`, `useDevToolsActions.ts:56-59`, `useInboxActions.ts:63,78`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "useInboxActions.ts"
     },
     "src/features/plugins/dev-tools/hooks/useDevToolsActions.ts": {
       "count": 1,
