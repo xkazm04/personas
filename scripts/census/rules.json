@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 143,
-        "matches": 196
+        "files": 142,
+        "matches": 195
       },
       "floor": 2500
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 294,
-        "matches": 647
+        "files": 293,
+        "matches": 646
       },
       "floor": 4000
     },
@@ -1175,8 +1175,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 36,
-        "matches": 45
+        "files": 35,
+        "matches": 44
       },
       "floor": 4000
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 471,
-        "matches": 876
+        "files": 469,
+        "matches": 874
       },
       "floor": 2000
     },
@@ -1751,8 +1751,8 @@
         "description": "an identifier naming a monetary quantity (cost/Cost/spend/Spend) collapsed to the literal 0 by a zero-default operator (`unwrap_or(0`, `unwrap_or_default()`, `?? 0`, `|| 0`). PROXY FOR the stack-free condition: *unknown* and *free* are rendered as the same value, so a total that omits a call is indistinguishable from one that includes a free call, and any ceiling computed from that total silently rises. Precision measured 25/25 on a full read of every match. The two highest-severity are engine/background.rs:2510 and engine/mod.rs:2778, both `get_monthly_spend(...).unwrap_or(0.0)` — a database error there reads as '$0 spent this month' and OPENS the monthly budget cap, so the failure mode of the measurement becomes a bypass of the control. Seven more are DB row-mappers (`row.get::<_, Option<f64>>(\"cost_usd\")?.unwrap_or(0.0)`) that destroy a NULL the nullable column was holding correctly; the remainder are TS reducers and adapters where a span, day-bucket or dashboard field of unknown cost contributes 0 to a displayed or gated total (ChainSpanRow/useChainTrace feed the chain-cost accumulator that CHAIN_MAX_COST_USD gates). CASE-SENSITIVITY IS LOAD-BEARING: an `i` flag matches `haSPENDing`, admitting six `hasPending = (x?.length ?? 0)` false positives in src/features/agents/sub_glyph — do not add it. PRECONDITION (measured, must be re-derived per repo): this repo names money with the tokens cost/spend, expresses absence as Rust `Option` or TS `null|undefined`, and spells the collapse with `unwrap_or`/`??`/`||`. A repo naming money `amount`/`price`/`charge`, or using a Money newtype with a total function, scores zero while the condition is present — and the sibling `personas-cloud` has the identical defect spelled `costUsd: msg.totalCostUsd ?? 0` (dispatcher.ts:461) feeding its own budget gate, while `brainiac` refuses it in a comment (providers/openai.rs:196) and has no dollar field to falsify. LEGAL FIX: keep the money `Option<f64>` / `number | null` from the parse site to the column (both ends already are — it is the carrier struct in between that destroys it), and make the consumer handle absence explicitly. For a spend read that gates a budget, fail CLOSED: propagate the error rather than substituting 0."
       },
       "baseline": {
-        "files": 17,
-        "matches": 20
+        "files": 16,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -3609,8 +3609,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 26,
-        "matches": 35
+        "files": 25,
+        "matches": 33
       },
       "floor": 3000
     },
@@ -3688,8 +3688,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 12,
-        "matches": 20
+        "files": 11,
+        "matches": 19
       },
       "floor": 1800
     },
@@ -4368,8 +4368,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 11
+        "files": 10,
+        "matches": 10
       },
       "floor": 1500
     },
@@ -4698,8 +4698,8 @@
         }
       ],
       "baseline": {
-        "files": 15,
-        "matches": 22
+        "files": 14,
+        "matches": 21
       },
       "floor": 4000
     },

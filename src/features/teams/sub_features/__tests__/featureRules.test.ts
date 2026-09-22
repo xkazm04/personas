@@ -158,12 +158,14 @@ describe('a null score is never a zero', () => {
   });
 });
 
+/*
+ * The product path renders `BoardFeature.envelope` straight off the board. One
+ * fold exists in this language, in the fixture mapper, and only because the
+ * fixture has nothing behind it. The test below is the tripwire: if a component
+ * ever grows a second fold, it fails.
+ */
 describe('the envelope is read, never recomputed', () => {
   it('has exactly one fold in the frontend, and it is the fixture mapper', () => {
-    // The product path renders `BoardFeature.envelope` straight from the board.
-    // `aggregate_scenarios` is the ONE implementation; the only TypeScript
-    // mirror exists because the fixture has no Rust behind it. If a component
-    // ever grows a second fold, this fails.
     const root = join(process.cwd(), 'src/features/teams/sub_features');
     const owners = [
       'fixture/featuresFixture.ts',

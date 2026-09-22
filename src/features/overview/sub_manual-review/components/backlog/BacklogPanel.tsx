@@ -43,6 +43,7 @@ import {
   type LevelRange,
 } from './backlogModel';
 import type { BacklogQueue, BacklogStatus } from './useBacklogQueue';
+import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
 
 const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'];
 /** Mirrors `backlog_triage::MAX_BATCH_IDEAS` — the backend rejects more, so the
@@ -58,9 +59,6 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const categoryLabel = useCategoryLabel();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const addToast = useToastStore((s) => s.addToast);
 
   const [view, setView] = useState<BacklogView>('table');
@@ -196,9 +194,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       queue.reload();
       const first = result.dispatched[0];
       if (first) setPendingTaskFocusId(first.taskId);
-      setSidebarSection('plugins');
-      setPluginTab('dev-tools');
-      setDevToolsTab('task-runner');
+      // Through the shared gated door: the dispatch still happened, but a
+      // person who has switched Dev Tools off is not dragged onto it.
+      arriveAtDevTools('task-runner');
     } catch (err) {
       toastCatch('BacklogPanel:executeAccepted')(err);
     } finally {
@@ -206,7 +204,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     }
   }, [
     targetRows, addToast, tx, r.backlog_execute_none, r.backlog_execute_queued,
-    queue, setPendingTaskFocusId, setSidebarSection, setPluginTab, setDevToolsTab,
+    queue, setPendingTaskFocusId,
   ]);
 
   function closeDetail() {

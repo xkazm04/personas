@@ -13,15 +13,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
-import { deleteScenario, upsertScenario } from '@/api/devTools/features';
-import { setUseCaseTier } from '@/api/devTools/council';
 import { Button } from '@/features/shared/components/buttons';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
+import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { buildCouncilDispatch } from '@/features/plugins/dev-tools/sub_context/councilDispatch';
 import { isCouncilRunning, useCouncilStates } from '@/features/plugins/dev-tools/sub_context/useCouncilStates';
@@ -36,6 +35,7 @@ import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { BoardBand, type BandFilter } from './band/BoardBand';
+import { removeScenario, saveScenario, toggleTier } from './featureActions';
 import { FeatureColumn } from './column/FeatureColumn';
 import { FeatureTab } from './feature/FeatureTab';
 import { buildFeaturesModel } from './featuresModel';
@@ -53,8 +53,7 @@ export default function FeaturesPage() {
 
   const activeProject = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const devToolsReachable = useSystemStore((s) => s.enabledPlugins.has('dev-tools'));
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
 
@@ -122,14 +121,14 @@ export default function FeaturesPage() {
     [board?.groups],
   );
 
-  /* Typed navigation, as the ledger does it: the section, the plugin and the
-     dev-tools tab are all members of their own closed unions, so nothing is
-     parsed out of a label on the way and a rename is a compile error. */
+  /* Typed navigation through the shared GATED door: the plugin and the
+     dev-tools tab are members of their own closed unions, so nothing is parsed
+     out of a label on the way and a rename is a compile error - and the door
+     reads `enabledPlugins` first, so a person who has switched Dev Tools off is
+     never landed on it. The affordance is hidden when it would refuse. */
   const openContext = useCallback(() => {
-    setSidebarSection('plugins');
-    setPluginTab('dev-tools');
-    setDevToolsTab('context-map');
-  }, [setSidebarSection, setPluginTab, setDevToolsTab]);
+    arriveAtDevTools('context-map');
+  }, []);
 
   const openDecision = useCallback((subjectId: string) => {
     setPendingCouncilSubjectId(subjectId);
@@ -153,21 +152,22 @@ export default function FeaturesPage() {
     );
   }, [activeProject]);
 
-  const toggleTier = useCallback(async (row: FeatureRow) => {
+  /* Every write is refused outright while the fixture is on: the fixture is a
+     comparison view over checked-in bytes, and nothing it shows has a row
+     behind it to update. */
+  const doToggleTier = useCallback(async (row: FeatureRow) => {
     if (fixtureBoard) return;
-    await setUseCaseTier(row.feature.id, row.feature.tier === 'major' ? 'standard' : 'major')
-      .then(() => refresh())
-      .catch(toastCatch('features:setUseCaseTier'));
+    await toggleTier(row.feature.id, row.feature.tier, refresh);
   }, [fixtureBoard, refresh]);
 
   const doUpsert = useCallback(async (input: UpsertScenarioInput) => {
     if (fixtureBoard) return;
-    await upsertScenario(input).then(() => refresh()).catch(toastCatch('features:upsertScenario'));
+    await saveScenario(input, refresh);
   }, [fixtureBoard, refresh]);
 
   const doDelete = useCallback(async (id: string) => {
     if (fixtureBoard) return;
-    await deleteScenario(id).then(() => refresh()).catch(toastCatch('features:deleteScenario'));
+    await removeScenario(id, refresh);
   }, [fixtureBoard, refresh]);
 
   const pickFeature = useCallback((featureId: string) => setSelectedId(featureId), []);
@@ -251,7 +251,7 @@ export default function FeaturesPage() {
               <ScenarioEmptyState
                 title={f.never_scanned_title}
                 subtitle={f.never_scanned_subtitle}
-                action={{ label: f.never_scanned_action, onClick: openContext }}
+                action={devToolsReachable ? { label: f.never_scanned_action, onClick: openContext } : undefined}
               />
             </div>
           ) : board && board.features.length === 0 ? (
@@ -259,7 +259,7 @@ export default function FeaturesPage() {
               <ScenarioEmptyState
                 title={f.no_features_title}
                 subtitle={f.no_features_subtitle}
-                action={{ label: f.no_features_action, onClick: openContext }}
+                action={devToolsReachable ? { label: f.no_features_action, onClick: openContext } : undefined}
               />
             </div>
           ) : model && board ? (
@@ -305,7 +305,14 @@ export default function FeaturesPage() {
                   />
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto">
+                {/* The strip promises it selects among mutually exclusive
+                    regions, so the region DECLARES that it is one of them:
+                    `segmentedTabPanelProps` closes the aria-controls the strip
+                    emits, which would otherwise dangle. */}
+                <div
+                  {...segmentedTabPanelProps('features-tab', tab)}
+                  className="min-h-0 flex-1 overflow-y-auto"
+                >
                   {tab === 'map' ? (
                     <MapTab
                       model={model}
@@ -326,7 +333,7 @@ export default function FeaturesPage() {
                       onOpenContext={openContext}
                       onOpenDecision={openDecision}
                       onRunCouncil={runCouncil}
-                      onToggleTier={toggleTier}
+                      onToggleTier={doToggleTier}
                       onUpsertScenario={doUpsert}
                       onDeleteScenario={doDelete}
                       t={f}

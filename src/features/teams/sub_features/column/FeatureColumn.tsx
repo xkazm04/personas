@@ -10,7 +10,7 @@ import { defaultRangeExtractor, useVirtualizer, type Range } from '@tanstack/rea
 import { Search } from 'lucide-react';
 
 import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
+
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
 import { councilLabel } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
 
@@ -114,7 +114,7 @@ export function FeatureColumn({
     [items, onSelect, selectedId, virtualizer],
   );
 
-  const sortTabs: SegmentedTab<FeatureSort>[] = [
+  const sortTabs: Array<{ id: FeatureSort; label: string }> = [
     { id: 'move', label: t.sort_move },
     { id: 'name', label: t.sort_name },
     { id: 'score', label: t.sort_score },
@@ -136,15 +136,27 @@ export function FeatureColumn({
             className="min-w-0 flex-1 bg-transparent typo-body text-foreground outline-none placeholder:text-foreground/50"
           />
         </label>
-        <SegmentedTabs
-          tabs={sortTabs}
-          activeTab={sort}
-          onTabChange={onSort}
-          ariaLabel={t.sort_label}
-          size="sm"
-          fullWidth
-          idPrefix="features-sort"
-        />
+        {/* A sort selector, NOT a tab strip: it reorders ONE region rather
+            than selecting among several, so it makes no tablist promise it
+            would then have to keep. A row of pressed buttons is what it is. */}
+        <div role="group" aria-label={t.sort_label} className="flex items-center gap-1">
+          {sortTabs.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={sort === option.id}
+              data-testid={`features-sort-${option.id}`}
+              onClick={() => onSort(option.id)}
+              className={`flex-1 rounded-interactive border px-2 py-1 typo-caption focus-ring ${
+                sort === option.id
+                  ? 'border-primary/60 bg-primary/15 text-primary'
+                  : 'border-border text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {items.length === 0 ? (
