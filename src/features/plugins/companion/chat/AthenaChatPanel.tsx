@@ -30,6 +30,8 @@ import { useAthenaChatEngine } from './athenaChatEngine';
 import { useChatMount } from './athenaChatMount';
 import { usePanelMotion } from './athenaChatMorph';
 import { useAthenaChatShellEffects } from './athenaChatShell';
+import { ChatVariantPanel, ChatVariantTabs, useChatVariantStore } from './next/ChatVariantTabs';
+import { ChatVariantHost } from './next/ChatVariantHost';
 
 export default function AthenaChatPanel() {
   const { t } = useTranslation();
@@ -63,12 +65,21 @@ export default function AthenaChatPanel() {
   const isOpen = state === 'open';
   const motionProps = usePanelMotion(compact);
   const mount = useChatMount(isOpen, motionProps.settleMs);
+  // TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
+  const variant = useChatVariantStore((s) => s.variant);
 
   return (
+    <>
+    {isOpen && <ChatVariantTabs lifted={fleetGridOpen} />}
+    {isOpen && variant !== 'current' && (
+      <ChatVariantPanel>
+        <ChatVariantHost variant={variant} engine={engine} lifted={fleetGridOpen} />
+      </ChatVariantPanel>
+    )}
     <AnimatePresence
       onExitComplete={() => useCompanionStore.getState().setOrbOpenOrigin(null)}
     >
-      {isOpen && (
+      {isOpen && variant === 'current' && (
         <motion.div
           key="companion-panel"
           initial={motionProps.initial}
@@ -135,5 +146,6 @@ export default function AthenaChatPanel() {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 }

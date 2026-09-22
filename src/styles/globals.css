@@ -5628,6 +5628,49 @@ html[data-motion="reduce"] .companion-autonomous {
   border-color: color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
+/* Athena chat prototypes (two-layer) — the modal's state frame. The border is
+   a conic gradient built from the live workforce (one irregular arc per active
+   project, sized by its process count, coloured by its worst state), so the
+   frame itself is the fleet at a glance. A blurred copy of the same gradient
+   sits behind as the glow: it breathes only while Athena is working and flares
+   once when something new starts waiting. TODO(prototype, 2026-09-22):
+   consolidate with the chat switcher. */
+.athena-frame {
+  position: relative;
+  isolation: isolate;
+  padding: 1.5px;
+  background: var(--athena-frame, color-mix(in srgb, var(--foreground) 14%, transparent));
+}
+.athena-frame::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--athena-frame, transparent);
+  filter: blur(18px);
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.athena-frame[data-working="true"]::before {
+  animation: athena-frame-breathe 2.6s ease-in-out infinite;
+}
+.athena-frame[data-flare="true"]::before {
+  animation: athena-frame-flare 1.4s ease-out 1;
+}
+@keyframes athena-frame-breathe {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.6; }
+}
+@keyframes athena-frame-flare {
+  0% { opacity: 0.9; filter: blur(8px); }
+  100% { opacity: 0.28; filter: blur(18px); }
+}
+html[data-motion="reduce"] .athena-frame::before {
+  animation: none;
+}
+
 /* Companion transcript — soft top/bottom scroll fades so messages dissolve
    into the panel chrome at the edges instead of hard-cutting. The 14px fade
    sits inside the scroll area's vertical padding, so message text isn't

@@ -1,0 +1,80 @@
+/**
+ * English copy for the two-layer chat PROTOTYPES only.
+ *
+ * TODO(prototype, 2026-09-22): the winning variant moves every string here into
+ * `plugins.companion` in en.json and through the translate pipeline (Phase 5 of
+ * /prototype). Keeping prototype copy out of the locale files means a losing
+ * variant costs no translation work across 13 languages.
+ */
+
+export const NEXT_COPY = {
+  you: 'You',
+  athena: 'Athena',
+  autonomousTurn: 'On her own',
+  proactiveTurn: 'She reached out',
+  fleetTurn: 'Fleet',
+  idle: 'Idle',
+  working: 'Working',
+  fleetWorking: (n: number) => `${n} working`,
+  fleetWaiting: (n: number) => `${n} waiting`,
+  fleetStale: (n: number) => `${n} stuck`,
+  waitingOnYou: 'Waiting on you',
+  autonomyOn: 'Autonomous',
+  autonomyOff: 'Autonomy off',
+  more: 'More',
+  earlierTurns: (n: number) => `${n} earlier turns`,
+  machineTicks: (n: number) => `${n} things she looked up, dispatched or heard. Open the turn to read them.`,
+  movedAside: 'Set aside for you',
+  approvalsN: (n: number) => `${n} approval${n === 1 ? '' : 's'}`,
+  cardsN: (n: number) => `${n} card${n === 1 ? '' : 's'}`,
+  continues: 'continues on her own',
+  memories: (n: number) => `Consulted ${n} memories`,
+  about: 'About',
+  clearAbout: 'Stop replying about this',
+  hints: {
+    send: 'send',
+    newline: 'new line',
+    waiting: 'waiting on you',
+    back: 'back to chat',
+    reply: 'quick reply',
+  },
+  backToChat: 'Back to the conversation',
+  nothingWaiting: 'Nothing is waiting on you.',
+  nothingWaitingSub: 'When she needs a call, it lands here as a card.',
+  noProcesses: 'No sessions running',
+  opsLabel: 'Athena herself',
+  threadsLabel: 'Other threads',
+  kind: {
+    session_request: 'Session asks',
+    decision: 'Decision',
+    approval: 'Approval',
+    plan: 'Plan',
+    failure: 'Failure',
+    warning: 'Warning',
+    nudge: 'She reached out',
+    assignment: 'Assignment',
+  },
+  tone: {
+    needs_you: 'needs you',
+    stale: 'stuck',
+    working: 'working',
+    queued: 'queued',
+    idle: 'idle',
+  },
+  machine: {
+    lookup: 'lookup',
+    fleet: 'fleet event',
+    blocked: 'blocked',
+    report: 'report or approval',
+    rejected: 'failed or rejected',
+    canvas: 'canvas',
+    note: 'note',
+  },
+  turnDetail: 'Behind this turn',
+  modes: 'Modes and tools',
+  of: (i: number, n: number) => `${i} of ${n}`,
+  processes: 'Processes',
+  waitingHere: 'Waiting here',
+  roomEmpty: 'Nothing is waiting in this thread.',
+  allProjects: 'All work',
+} as const;
