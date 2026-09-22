@@ -34,6 +34,7 @@
     "hover_domain": "{subjects} subjek · {categories} kategori · {laws} hukum",
     "hover_subject": "{category} · {techniques} teknik · {state}",
     "hover_technique": "{laws} hukum",
+    "technique_deepest": "Teknik adalah lapisan terdalam. Escape naik kembali.",
     "lens_hint": "Perbesar di bawah kursor tanpa mengubah zoom (L)",
     "lens_toggle": "Lensa",
     "level_category": "Kategori",

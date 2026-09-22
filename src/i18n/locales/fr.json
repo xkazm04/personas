@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} sujets · {categories} catégories · {laws} lois",
       "hover_subject": "{category} · {techniques} techniques · {state}",
       "hover_technique": "{laws} lois",
+      "technique_deepest": "Une technique est la couche la plus profonde. Échap remonte d'un niveau.",
       "lens_hint": "Agrandir sous le pointeur sans changer le zoom (L)",
       "lens_toggle": "Loupe",
       "level_category": "Catégorie",

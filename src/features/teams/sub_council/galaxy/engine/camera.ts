@@ -74,9 +74,51 @@ export function fitToSet(v: Viewport, points: Array<{ x: number; y: number }>): 
   return { x: (x0 + x1) / 2, y: (y0 + y1) / 2, k };
 }
 
-/** The cubic used by every flight. */
-export function easeInOutCubic(p: number): number {
-  return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+/**
+ * The APP'S easing curve, not a curve of the canvas's own.
+ *
+ * `animationPresets.ts:27` declares `[0.22, 1, 0.36, 1]` and every framer
+ * transition and every `duration-*` class in the app runs on it. The camera
+ * used an `easeInOutCubic` it had invented, so a descent and the rail flip it
+ * is supposed to arrive with moved on two different curves - the DOM easing
+ * out of the gate while the canvas was still easing in. One curve, evaluated
+ * here, is what makes them read as one movement.
+ */
+export const EASE_CURVE: readonly [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const [X1, Y1, X2, Y2] = EASE_CURVE;
+const CX = 3 * X1;
+const BX = 3 * (X2 - X1) - CX;
+const AX = 1 - CX - BX;
+const CY = 3 * Y1;
+const BY = 3 * (Y2 - Y1) - CY;
+const AY = 1 - CY - BY;
+
+const sampleX = (t: number): number => ((AX * t + BX) * t + CX) * t;
+const sampleY = (t: number): number => ((AY * t + BY) * t + CY) * t;
+const slopeX = (t: number): number => (3 * AX * t + 2 * BX) * t + CX;
+
+/**
+ * `cubic-bezier(0.22, 1, 0.36, 1)` at progress `p`.
+ *
+ * Newton on the x polynomial, then y. Eight iterations is more than this
+ * curve ever needs and is still nothing beside the frame it is drawing. The
+ * clamp at both ends is load-bearing: the flight's last frame snaps to the
+ * target and `climb()` promises the camera returns EXACTLY where it was.
+ */
+export function easeStandard(p: number): number {
+  const x = Math.min(1, Math.max(0, p));
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  let t = x;
+  for (let i = 0; i < 8; i += 1) {
+    const err = sampleX(t) - x;
+    if (Math.abs(err) < 1e-6) break;
+    const d = slopeX(t);
+    if (Math.abs(d) < 1e-6) break;
+    t -= err / d;
+  }
+  return sampleY(t);
 }
 
 /**
@@ -84,7 +126,7 @@ export function easeInOutCubic(p: number): number {
  * Exported so the tween is testable without a frame loop.
  */
 export function tweenCamera(from: CameraState, to: CameraState, p: number): CameraState {
-  const e = easeInOutCubic(Math.min(1, Math.max(0, p)));
+  const e = easeStandard(p);
   return {
     x: from.x + (to.x - from.x) * e,
     y: from.y + (to.y - from.y) * e,

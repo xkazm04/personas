@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} chủ đề · {categories} danh mục · {laws} quy luật",
       "hover_subject": "{category} · {techniques} kỹ thuật · {state}",
       "hover_technique": "{laws} quy luật",
+      "technique_deepest": "Kỹ thuật là lớp sâu nhất. Escape quay trở lên.",
       "lens_hint": "Phóng to khu vực dưới con trỏ mà không thay đổi mức thu phóng (L)",
       "lens_toggle": "Kính lúp",
       "level_category": "Danh mục",

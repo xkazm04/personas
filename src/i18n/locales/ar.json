@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} موضوع · {categories} فئة · {laws} قاعدة",
       "hover_subject": "{category} · {techniques} تقنية · {state}",
       "hover_technique": "{laws} قاعدة",
+      "technique_deepest": "التقنية هي أعمق طبقة. زر Escape يعيدك إلى الأعلى.",
       "lens_hint": "التكبير تحت المؤشر دون تغيير مستوى التكبير (L)",
       "lens_toggle": "العدسة",
       "level_category": "الفئة",

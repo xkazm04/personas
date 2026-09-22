@@ -22,7 +22,8 @@ import {
 } from './camera';
 import { LabelQueue, type Rect } from './labels';
 import { LENS_R, type LensState } from './lens';
-import { paintFrame, type CanvasCaptions, type PickTarget } from './paint';
+import { paintFrame, type CanvasCaptions } from './paint';
+import type { PickTarget } from './types';
 import type { CanvasTheme } from './theme';
 import type {
   Altitude,
@@ -41,9 +42,28 @@ export interface EngineCallbacks {
   onFocusChange: (focus: GalaxyFocus) => void;
   onHoverChange: (node: GalaxyNode | null) => void;
   onCounts: (counts: GalaxyCounts) => void;
-  /** Screen-space anchor for the hover card, or null to hide it. */
-  onPointerTarget: (target: { node: GalaxyNode; x: number; y: number } | null) => void;
+  /**
+   * Screen-space anchor for the hover card, or null to hide it. `pinned` is
+   * true for the card a CLICK on a technique left standing: a technique has
+   * no layer under it, so the click that would descend opens its card and
+   * keeps it open until Escape.
+   */
+  onPointerTarget: (target: { node: GalaxyNode; x: number; y: number; pinned: boolean } | null) => void;
 }
+
+/**
+ * Every flight in this layer, in milliseconds.
+ *
+ * `--duration-slow`, the app's rung for a page transition or a large reveal
+ * (`Design.md` section 6), paired with the app's one easing curve in
+ * `camera.ts`. The descent used to run 700 ms on a curve of its own while the
+ * rail beside it flipped on the app's 250 ms one, so the list landed well
+ * before the camera it was supposed to arrive with.
+ */
+const FLIGHT_MS = 400;
+
+/** A press-and-release inside this many pixels of movement is a CLICK. */
+const CLICK_SLOP = 4;
 
 interface CameraFrame extends CameraState {
   focus: GalaxyFocus;
@@ -105,6 +125,15 @@ export class GalaxyEngine {
   private dirty = false;
 
   private drag: { id: number; sx: number; sy: number; cx: number; cy: number; moved: number } | null = null;
+
+  /**
+   * The hover card a click on a TECHNIQUE left standing.
+   *
+   * Frozen at the moment of the click rather than recomputed: nothing that
+   * can move the card (a wheel, a drag, a flight) survives the pin, so the
+   * anchor it was pinned at is the anchor it still has.
+   */
+  private pinned: { node: GalaxyNode; x: number; y: number } | null = null;
 
   constructor(callbacks: EngineCallbacks, captions: CanvasCaptions) {
     this.callbacks = callbacks;
@@ -221,7 +250,7 @@ export class GalaxyEngine {
     return { ...this.camera };
   }
 
-  restoreCamera(camera: CameraState, ms = 520): void {
+  restoreCamera(camera: CameraState, ms = FLIGHT_MS): void {
     this.flyTo(camera, ms);
   }
 
@@ -276,7 +305,7 @@ export class GalaxyEngine {
         this.domain = [...domains][0] ?? null;
       }
       const target = fitToSet(this.viewport(), stars);
-      if (target && fly) this.flyTo(target, 700);
+      if (target && fly) this.flyTo(target, FLIGHT_MS);
       return;
     }
 
@@ -330,8 +359,15 @@ export class GalaxyEngine {
     this.emitFocus();
   }
 
-  /** Climb one layer. The camera returns EXACTLY where it was. */
+  /**
+   * Climb one layer. The camera returns EXACTLY where it was.
+   *
+   * A pinned technique card is the FIRST thing a climb takes down, which is
+   * what makes four clicks down and four Escapes up symmetrical: the fourth
+   * click opened a card rather than a layer, so the first Escape closes it.
+   */
   climb(): boolean {
+    if (this.unpin()) return true;
     const frame = this.stack.pop();
     if (!frame) {
       if (this.focus.kind === 'none') return false;
@@ -345,7 +381,7 @@ export class GalaxyEngine {
     }
     this.focus = frame.focus;
     this.applyFocus(frame.focus, false);
-    this.flyTo({ x: frame.x, y: frame.y, k: frame.k }, 420);
+    this.flyTo({ x: frame.x, y: frame.y, k: frame.k }, FLIGHT_MS);
     this.callbacks.onFocusChange(this.focus);
     return true;
   }
@@ -367,7 +403,7 @@ export class GalaxyEngine {
 
   /** Centre one node without changing altitude — the rail's "show me this". */
   aimAt(node: GalaxyNode): void {
-    this.flyTo({ x: node.x, y: node.y, k: this.camera.k }, 520);
+    this.flyTo({ x: node.x, y: node.y, k: this.camera.k }, FLIGHT_MS);
   }
 
   // ── geometry ─────────────────────────────────────────────────────────────
@@ -411,7 +447,7 @@ export class GalaxyEngine {
     });
   }
 
-  private flyTo(target: CameraState, ms = 620): void {
+  private flyTo(target: CameraState, ms = FLIGHT_MS): void {
     if (this.flight) cancelAnimationFrame(this.flight);
     const from = { ...this.camera };
     const t0 = performance.now();
@@ -485,12 +521,28 @@ export class GalaxyEngine {
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
+  /**
+   * What is under this point.
+   *
+   * TEXT WINS OVER GEOMETRY. A title is painted on top of the node it names
+   * and reaches beyond it, so a rect target is tested by containment first
+   * and returned before any disc is considered; otherwise the current
+   * subject's own title would be swallowed by the disc behind it and the
+   * canvas would have no way back up. Discs are then resolved by distance,
+   * so the nearest of several overlapping 24 px child targets wins.
+   */
   private hit(x: number, y: number): PickTarget | null {
+    for (let i = this.picks.length - 1; i >= 0; i -= 1) {
+      const p = this.picks[i];
+      const r = p?.rect;
+      if (!r) continue;
+      if (x >= r.a && x <= r.c && y >= r.b && y <= r.d) return p;
+    }
     let best: PickTarget | null = null;
     let bd = Infinity;
     for (let i = this.picks.length - 1; i >= 0; i -= 1) {
       const p = this.picks[i];
-      if (!p) continue;
+      if (!p || p.rect) continue;
       const d = Math.hypot(p.x - x, p.y - y);
       if (d < p.r && d < bd) {
         bd = d;
@@ -500,8 +552,29 @@ export class GalaxyEngine {
     return best;
   }
 
+  /** Open a technique's card and leave it open. */
+  private pin(node: GalaxyNode, x: number, y: number): void {
+    this.pinned = { node, x, y };
+    this.hover = node;
+    this.callbacks.onHoverChange(node);
+    this.callbacks.onPointerTarget({ node, x, y, pinned: true });
+    this.invalidate();
+  }
+
+  /** Take a pinned card down. True when there was one. */
+  private unpin(): boolean {
+    if (!this.pinned) return false;
+    this.pinned = null;
+    this.callbacks.onPointerTarget(null);
+    this.invalidate();
+    return true;
+  }
+
   private readonly onWheel = (e: WheelEvent): void => {
     e.preventDefault();
+    // The card is anchored in screen space; moving the field under it would
+    // leave it pointing at nothing.
+    this.unpin();
     const { x, y } = this.stagePoint(e);
     const v = this.viewport();
     const { cx, cy } = viewportCentre(v);
@@ -527,8 +600,15 @@ export class GalaxyEngine {
       const dx = e.clientX - this.drag.sx;
       const dy = e.clientY - this.drag.sy;
       this.drag.moved = Math.max(this.drag.moved, Math.abs(dx) + Math.abs(dy));
+      if (this.drag.moved > CLICK_SLOP) this.unpin();
       this.camera.x = this.drag.cx - dx / this.camera.k;
       this.camera.y = this.drag.cy - dy / this.camera.k;
+      this.invalidate();
+      return;
+    }
+    // A pinned card owns the card slot until Escape: the pointer may keep
+    // lighting nodes underneath, but it may not replace what is being read.
+    if (this.pinned) {
       this.invalidate();
       return;
     }
@@ -538,7 +618,9 @@ export class GalaxyEngine {
       this.hover = node;
       this.callbacks.onHoverChange(node);
     }
-    this.callbacks.onPointerTarget(target ? { node: target.node, x: target.x, y: target.y } : null);
+    this.callbacks.onPointerTarget(
+      target && !target.climb ? { node: target.node, x: target.x, y: target.y, pinned: false } : null,
+    );
     this.invalidate();
   };
 
@@ -553,6 +635,11 @@ export class GalaxyEngine {
 
   private readonly onPointerLeave = (): void => {
     this.lens = { ...this.lens, x: null, y: null };
+    // A pinned card is being READ; leaving the canvas must not take it away.
+    if (this.pinned) {
+      this.invalidate();
+      return;
+    }
     if (this.hover) {
       this.hover = null;
       this.callbacks.onHoverChange(null);
@@ -561,15 +648,38 @@ export class GalaxyEngine {
     this.invalidate();
   };
 
+  /**
+   * ONE CLICK ALWAYS UNCOVERS THE LAYER UNDER WHAT YOU CLICKED.
+   *
+   * Sky to a domain to a category to a subject to that subject's techniques
+   * orbiting it, and then a technique's own card, which is where the descent
+   * ends because there is nothing under a technique. Four clicks from the sky
+   * reach a technique with no zoom gesture, and four Escapes undo them.
+   *
+   * The ONE click that goes the other way is a click on the title of the node
+   * you are already standing in - the canvas twin of the breadcrumb. It
+   * arrives here carrying `climb`, minted by the label pass.
+   *
+   * What this replaced did nothing at all for a technique, and nothing for a
+   * click on the domain or category you were already in, so three of the five
+   * things a reader could click were inert.
+   */
   private readonly onClick = (e: MouseEvent): void => {
-    if (this.drag && this.drag.moved > 4) return;
+    if (this.drag && this.drag.moved > CLICK_SLOP) return;
     const { x, y } = this.stagePoint(e);
     const target = this.hit(x, y);
     if (!target) return;
+    if (target.climb) {
+      this.climb();
+      return;
+    }
     const node = target.node;
-    if (node.kind === 'domain' && this.domain !== node) this.descend(node);
-    else if (node.kind === 'category' && this.category !== node) this.descend(node);
-    else if (node.kind === 'subject') this.descend(node);
+    if (node.kind === 'technique') {
+      this.pin(node, target.x, target.y);
+      return;
+    }
+    this.unpin();
+    this.descend(node);
   };
 
   /**

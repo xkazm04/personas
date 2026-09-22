@@ -34,6 +34,7 @@
     "hover_domain": "{subjects} тем · {categories} категорий · {laws} законов",
     "hover_subject": "{category} · {techniques} техник · {state}",
     "hover_technique": "{laws} законов",
+    "technique_deepest": "Техника - самый глубокий слой. Escape возвращает наверх.",
     "lens_hint": "Увеличить область под курсором, не меняя масштаб (L)",
     "lens_toggle": "Линза",
     "level_category": "Категория",

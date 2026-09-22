@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} Themen · {categories} Kategorien · {laws} Gesetze",
       "hover_subject": "{category} · {techniques} Techniken · {state}",
       "hover_technique": "{laws} Gesetze",
+      "technique_deepest": "Eine Technik ist die unterste Ebene. Escape führt wieder hinauf.",
       "lens_hint": "Unter dem Zeiger vergrößern, ohne den Zoom zu ändern (L)",
       "lens_toggle": "Lupe",
       "level_category": "Kategorie",

@@ -82,6 +82,27 @@ export interface DomainNode {
 
 export type GalaxyNode = DomainNode | CategoryNode | SubjectNode | TechniqueNode;
 
+/**
+ * One thing a click can land on, in STAGE pixels.
+ *
+ * Lives here rather than in `paint.ts` because the label pass produces some
+ * of them too - a placed title is a click target - and `labels.ts` must not
+ * import the painter it is called by.
+ *
+ * `rect` is set for a target that is a piece of TEXT rather than a disc; a
+ * rect target is tested by containment and always wins over a disc, because
+ * a title sits on top of the node it names. `climb` marks the one target
+ * whose meaning is "go back up a layer" instead of "go into this".
+ */
+export interface PickTarget {
+  x: number;
+  y: number;
+  r: number;
+  node: GalaxyNode;
+  rect?: { a: number; b: number; c: number; d: number };
+  climb?: boolean;
+}
+
 export interface Dust {
   x: number;
   y: number;

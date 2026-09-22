@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects}件の主題 · {categories}件のカテゴリー · {laws}件の法則",
       "hover_subject": "{category} · {techniques}件の技法 · {state}",
       "hover_technique": "{laws}件の法則",
+      "technique_deepest": "テクニックが最も深い階層です。Escape で上に戻ります。",
       "lens_hint": "ズームを変えずにポインター下を拡大 (L)",
       "lens_toggle": "ルーペ",
       "level_category": "カテゴリー",

@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} विषय · {categories} श्रेणियाँ · {laws} नियम",
       "hover_subject": "{category} · {techniques} तकनीकें · {state}",
       "hover_technique": "{laws} नियम",
+      "technique_deepest": "तकनीक सबसे गहरी परत है। Escape दबाने पर वापस ऊपर जाएँ।",
       "lens_hint": "ज़ूम बदले बिना पॉइंटर के नीचे बड़ा करें (L)",
       "lens_toggle": "लेंस",
       "level_category": "श्रेणी",

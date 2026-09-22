@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects}개 주제 · {categories}개 카테고리 · {laws}개 법칙",
       "hover_subject": "{category} · {techniques}개 기법 · {state}",
       "hover_technique": "{laws}개 법칙",
+      "technique_deepest": "기법이 가장 깊은 계층입니다. Escape 를 누르면 위로 올라갑니다.",
       "lens_hint": "확대/축소를 바꾸지 않고 포인터 아래를 확대 (L)",
       "lens_toggle": "렌즈",
       "level_category": "카테고리",

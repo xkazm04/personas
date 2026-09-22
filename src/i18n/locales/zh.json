@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} 个主题 · {categories} 个类别 · {laws} 条法则",
       "hover_subject": "{category} · {techniques} 项技术 · {state}",
       "hover_technique": "{laws} 条法则",
+      "technique_deepest": "技法是最深的一层。按 Escape 返回上一层。",
       "lens_hint": "在不改变缩放级别的情况下放大指针下方区域 (L)",
       "lens_toggle": "透镜",
       "level_category": "类别",

@@ -26,7 +26,9 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<GalaxyEngine | null>(null);
   const emittedRef = useRef<GalaxyFocus | null>(null);
-  const [pointer, setPointer] = useState<{ node: GalaxyNode; x: number; y: number } | null>(null);
+  const [pointer, setPointer] = useState<{ node: GalaxyNode; x: number; y: number; pinned: boolean } | null>(
+    null,
+  );
 
   const layout = useCouncilStore((s) => s.layout);
   const focus = useCouncilStore((s) => s.focus);
@@ -120,6 +122,14 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
         >
           <div className="typo-heading text-foreground">{card.title}</div>
           <div className="typo-caption text-muted">{card.detail}</div>
+          {/* A pinned card is the END of the descent, and it says so rather
+              than leaving the reader clicking at a technique that will never
+              open. */}
+          {pointer.pinned ? (
+            <div className="mt-1.5 typo-caption text-accent" data-testid="council-galaxy-pinned">
+              {t.council.galaxy.technique_deepest}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

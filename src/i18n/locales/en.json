@@ -1059,6 +1059,7 @@
       "hover_category": "{subjects} subjects · {subcategories} subcategories",
       "hover_subject": "{category} · {techniques} techniques · {state}",
       "hover_technique": "{laws} laws",
+      "technique_deepest": "A technique is the deepest layer. Escape climbs back.",
       "never_councilled": "never councilled",
       "mark_approved": "approved",
       "mark_rejected": "rejected",

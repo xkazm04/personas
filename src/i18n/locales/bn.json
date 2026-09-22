@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects}টি বিষয় · {categories}টি ক্যাটাগরি · {laws}টি নিয়ম",
       "hover_subject": "{category} · {techniques}টি কৌশল · {state}",
       "hover_technique": "{laws}টি নিয়ম",
+      "technique_deepest": "কৌশলই সবচেয়ে গভীর স্তর। Escape চাপলে উপরে ফিরে যাবেন।",
       "lens_hint": "জুম না বদলে পয়েন্টারের নিচে বড় করুন (L)",
       "lens_toggle": "লেন্স",
       "level_category": "ক্যাটাগরি",

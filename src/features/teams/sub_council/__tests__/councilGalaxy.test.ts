@@ -10,7 +10,7 @@ import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';
 import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
 
 import { decidable, pressureRamp } from '../councilRules';
-import { fitToSet, sameCamera, tweenCamera, type Viewport } from '../galaxy/engine/camera';
+import { EASE_CURVE, easeStandard, fitToSet, sameCamera, tweenCamera, type Viewport } from '../galaxy/engine/camera';
 import { allocateLabels, MIN_LABEL_PX, type LabelRequest } from '../galaxy/engine/labels';
 import { normaliseFixtureTechnique, normaliseFixtureTitle } from '../galaxy/fixture';
 import { buildLayout, markOf } from '../galaxy/engine/layout';
@@ -154,14 +154,51 @@ describe('fitToSet — the council-focus camera', () => {
 });
 
 describe('tweenCamera', () => {
+  // This used to read `tweenCamera(0.1 -> 10, 0.5).k` is 1, which pinned TWO
+  // things at once: the log-space scale AND a symmetric easing where
+  // `e(0.5) === 0.5`. The camera now runs on the app's own curve
+  // (`cubic-bezier(0.22, 1, 0.36, 1)`, which is nowhere near symmetric), so
+  // the probe is rewritten to pin only the property it names.
   it('interpolates scale in LOG space, so a long flight reads as one movement', () => {
+    const e = easeStandard(0.5);
     const half = tweenCamera({ x: 0, y: 0, k: 0.1 }, { x: 0, y: 0, k: 10 }, 0.5);
-    expect(half.k).toBeCloseTo(1, 5);
+    expect(Math.log(half.k)).toBeCloseTo(Math.log(0.1) + e * (Math.log(10) - Math.log(0.1)), 5);
+    // The discriminating half: a LINEAR tween of the same eased progress
+    // would be higher, because a straight line between two scales overshoots
+    // the geometric path every time.
+    expect(half.k).toBeLessThan(0.1 + e * (10 - 0.1));
   });
 
   it('lands exactly on the target, which is what Esc restoring a view depends on', () => {
     const target = { x: 12.5, y: -7.25, k: 3.5 };
     expect(sameCamera(tweenCamera({ x: 0, y: 0, k: 0.3 }, target, 1), target)).toBe(true);
+  });
+});
+
+describe('easeStandard — the canvas runs on the app’s curve, not its own', () => {
+  it('is the cubic-bezier the rest of the app animates on', () => {
+    expect(EASE_CURVE).toEqual([0.22, 1, 0.36, 1]);
+  });
+
+  it('is pinned at both ends, which is what makes a flight land exactly', () => {
+    expect(easeStandard(0)).toBe(0);
+    expect(easeStandard(1)).toBe(1);
+    expect(easeStandard(-3)).toBe(0);
+    expect(easeStandard(9)).toBe(1);
+  });
+
+  it('runs out hard, so most of the movement is over early', () => {
+    // The whole character of this curve: by a quarter of the way through the
+    // duration it has already covered more than half the distance.
+    expect(easeStandard(0.25)).toBeGreaterThan(0.5);
+    expect(easeStandard(0.5)).toBeGreaterThan(0.9);
+    // and it never runs backwards
+    let previous = 0;
+    for (let p = 0.05; p <= 1; p += 0.05) {
+      const now = easeStandard(p);
+      expect(now).toBeGreaterThanOrEqual(previous);
+      previous = now;
+    }
   });
 });
 

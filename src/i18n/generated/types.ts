@@ -1065,6 +1065,7 @@ export type Translations = {
       hover_category: string;
       hover_subject: string;
       hover_technique: string;
+      technique_deepest: string;
       never_councilled: string;
       mark_approved: string;
       mark_rejected: string;

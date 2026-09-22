@@ -17,15 +17,31 @@ import type {
   DomainNode,
   GalaxyLayout,
   GalaxyNode,
+  PickTarget,
   SubjectNode,
 } from './types';
 
-export interface PickTarget {
-  x: number;
-  y: number;
-  r: number;
-  node: GalaxyNode;
-}
+export type { PickTarget } from './types';
+
+/**
+ * The CHILDREN of the node the reader is standing on are the readable,
+ * clickable things at every altitude - the owner's fourth note ("each click
+ * should always uncover nested layer, balance typography of children to be
+ * readable and clickable"). Two numbers carry it.
+ *
+ * `CHILD_HIT_R` is a RADIUS, so the smallest target a child can offer is a
+ * 24 px disc - the floor a pointer target is expected to clear - however few
+ * pixels of ink the field actually spends on it at that altitude.
+ *
+ * `CHILD_LABEL_PX` is the chrome's `typo-heading` size, so a child on the
+ * canvas reads at exactly the size a row of the rail beside it reads at.
+ */
+export const CHILD_HIT_R = 12;
+export const CHILD_LABEL_PX = 14;
+
+/** Lower wins. The node you stand on, then its children, then everything. */
+const P_CURRENT = 0;
+const P_CHILD = 1;
 
 /**
  * The three captions the canvas prints that are PROSE, not data. They are
@@ -66,6 +82,34 @@ function markColour(theme: CanvasTheme, mark: CouncilMark): string {
   if (mark === 'rejected') return theme.err;
   if (mark === 'pending') return theme.pend;
   return theme.uncouncilled;
+}
+
+/**
+ * The ring that says "a click here lands on this".
+ *
+ * Drawn at the node's real hit radius rather than at its ink radius, because
+ * the two differ by a lot for a child the field draws as three pixels of dot
+ * and accepts a click on across 24. Without it the reader has to guess, which
+ * is the complaint this pass exists to answer.
+ */
+function drawHitHalo(f: FrameInput, x: number, y: number, r: number): void {
+  const { ctx, theme } = f;
+  ctx.save();
+  ctx.strokeStyle = theme.accent;
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TAU);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Push a pick and, when the pointer is on it, show what the click will do. */
+function pickChild(f: FrameInput, x: number, y: number, inkR: number, node: GalaxyNode): void {
+  const r = Math.max(inkR, CHILD_HIT_R);
+  f.picks.push({ x, y, r, node });
+  if (f.hover === node) drawHitHalo(f, x, y, r);
 }
 
 interface Projector {
@@ -162,21 +206,23 @@ function drawTechniques(f: FrameInput, p: Projector, s: SubjectNode): void {
     ctx.beginPath();
     ctx.arc(x, y, tr, 0, TAU);
     ctx.fill();
-    f.picks.push({ x, y, r: tr + 5, node: t });
-    if (tr > 4.2) {
-      f.labels.push({
-        x,
-        y: y - tr - 6,
-        text: `${t.rank}. ${t.slug.replace(/-/g, ' ')}`,
-        size: 13,
-        color: shared ? theme.purple : theme.ink2,
-        weight: 580,
-        align: 'center',
-        // At subject altitude the technique names ARE the content. They yield
-        // to the subject's own title (priority 0) and to nothing else.
-        priority: 1,
-      });
-    }
+    // A technique is a CHILD of the subject the reader is standing on: 24 px
+    // of target and a name at the chrome's heading size, unconditionally. It
+    // used to be named only above 4.2 px of ink, which left the small ones
+    // clickable but anonymous - a click you cannot read is not a click.
+    pickChild(f, x, y, tr + 5, t);
+    f.labels.push({
+      x,
+      y: y - Math.max(tr, CHILD_HIT_R) - 6,
+      text: `${t.rank}. ${t.slug.replace(/-/g, ' ')}`,
+      size: CHILD_LABEL_PX,
+      color: shared ? theme.purple : theme.ink2,
+      weight: 580,
+      align: 'center',
+      // At subject altitude the technique names ARE the content. They yield
+      // to the subject's own title and to nothing else.
+      priority: P_CHILD,
+    });
   }
 }
 
@@ -191,7 +237,11 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
   else if (f.subject && !isSelected) ctx.globalAlpha = base * 0.2;
 
   const r = Math.max(2, Math.min(11, (1.7 + camera.k * 0.55) * m));
-  f.picks.push({ x, y, r: Math.max(r + 4, 8), node: s });
+  // A subject is a child when the reader is standing in its category and has
+  // not yet gone into a subject.
+  const isChild = inCategory && f.subject === null;
+  if (isChild) pickChild(f, x, y, r + 4, s);
+  else f.picks.push({ x, y, r: Math.max(r + 4, 8), node: s });
 
   if (s.mark !== 'none') {
     const colour = markColour(theme, s.mark);
@@ -244,20 +294,32 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
   // subject's techniques for the same space. Not queued at all, so it can
   // neither win a slot nor be counted as a label the view withheld.
   const dimmedBySibling = f.subject !== null && !isSelected;
-  const wantName =
-    isSelected || threaded || f.hover === s || lensed || (inCategory && r > 5.6 && !dimmedBySibling);
+  const wantName = isSelected || threaded || f.hover === s || lensed || (isChild && !dimmedBySibling);
   if (isSelected) {
-    f.labels.push({ x, y: y - r * 2.9, text: `${s.rank}. ${s.title}`, size: 20, color: theme.ink1, weight: 670, align: 'center', priority: 0 });
+    // The node the reader is standing on. Its own title is the ONE caption
+    // that outranks its children, and it is the way back up: clicking it
+    // climbs, which is the canvas twin of clicking the breadcrumb.
+    f.labels.push({
+      x,
+      y: y - r * 2.9,
+      text: `${s.rank}. ${s.title}`,
+      size: 20,
+      color: theme.ink1,
+      weight: 670,
+      align: 'center',
+      priority: P_CURRENT,
+      climb: s,
+    });
   } else if (wantName) {
     f.labels.push({
       x,
-      y: y - r - 8,
+      y: y - Math.max(r, isChild ? CHILD_HIT_R : r) - 8,
       text: s.title,
-      size: lensed ? 15 : 13.5,
-      color: threaded ? theme.accent : f.hover === s ? theme.ink1 : lensed ? theme.ink1 : theme.ink2,
-      weight: lensed ? 680 : 620,
+      size: isChild || lensed ? CHILD_LABEL_PX : 13.5,
+      color: threaded ? theme.accent : f.hover === s ? theme.ink1 : lensed || isChild ? theme.ink1 : theme.ink2,
+      weight: lensed || isChild ? 680 : 620,
       align: 'center',
-      priority: threaded ? 1 : f.hover === s ? 0 : lensed ? 2 : 6,
+      priority: isChild || threaded ? P_CHILD : f.hover === s ? P_CURRENT : lensed ? 2 : 6,
     });
   }
   if (isSelected) {
@@ -284,23 +346,30 @@ function drawCategory(f: FrameInput, p: Projector, c: CategoryNode, dimmedByDoma
   if (ccx + cr < -90 || ccx - cr > width + 90 || ccy + cr < -90 || ccy - cr > viewport.y1 + 90) return;
   const isCurrent = f.category === c;
   const dimmedByCategory = f.category != null && f.category !== c;
+  // A category is a child when the reader is standing in ITS domain and has
+  // not yet gone into a category.
+  const isChild = !dimmedByDomain && f.domain === c.domain && f.category === null;
   ctx.globalAlpha = dimmedByDomain ? 0.15 : dimmedByCategory ? 0.2 : 1;
   ctx.beginPath();
   ctx.arc(ccx, ccy, cr, 0, TAU);
   ctx.strokeStyle = isCurrent ? theme.accent : theme.hair2;
   ctx.lineWidth = isCurrent ? 1.6 : 1;
   ctx.stroke();
-  f.picks.push({ x: ccx, y: ccy, r: cr, node: c });
-  if (cr > 24) {
+  if (isChild) pickChild(f, ccx, ccy, cr, c);
+  else f.picks.push({ x: ccx, y: ccy, r: cr, node: c });
+  if (cr > 24 || isChild) {
     f.labels.push({
       x: ccx,
-      y: ccy - cr - 8,
+      y: ccy - Math.max(cr, isChild ? CHILD_HIT_R : cr) - 8,
       text: `${c.rank}. ${c.title}`,
-      size: isCurrent ? 15.5 : 13.6,
-      color: isCurrent ? theme.accent : theme.ink2,
-      weight: isCurrent ? 670 : 620,
+      size: isCurrent ? 15.5 : CHILD_LABEL_PX,
+      color: isCurrent ? theme.accent : isChild ? theme.ink1 : theme.ink2,
+      weight: isCurrent || isChild ? 670 : 620,
       align: 'center',
-      priority: isCurrent ? 1 : 4,
+      priority: isCurrent ? P_CURRENT : isChild ? P_CHILD : 4,
+      // Only while it IS the node being stood in — a category title at
+      // sky or domain altitude descends, it does not climb.
+      climb: isCurrent && f.subject === null ? c : undefined,
     });
   }
   if (isCurrent && cr > 150 && c.wedges.length > 1) {
@@ -349,7 +418,9 @@ function drawDomain(f: FrameInput, p: Projector, d: DomainNode): void {
   ctx.beginPath();
   ctx.arc(dx, dy, dr, 0, TAU);
   ctx.stroke();
-  f.picks.push({ x: dx, y: dy, r: dr, node: d });
+  // At sky altitude every domain is a child of the field.
+  if (f.altitude === 'sky') pickChild(f, dx, dy, dr, d);
+  else f.picks.push({ x: dx, y: dy, r: dr, node: d });
   drawRimArc(f, d, dx, dy, dr);
 
   if (f.altitude === 'sky' && !dimmed) {
@@ -362,11 +433,11 @@ function drawDomain(f: FrameInput, p: Projector, d: DomainNode): void {
       x: dx,
       y: dy + dr + 22,
       text: `${d.rank}. ${d.title}`,
-      size: Math.max(14, Math.min(22, dr * 0.14)),
+      size: Math.max(CHILD_LABEL_PX, Math.min(22, dr * 0.14)),
       color: f.hover === d ? theme.accent : theme.ink1,
       weight: 660,
       align: 'center',
-      priority: shadowed ? 6 : 2,
+      priority: shadowed ? 6 : P_CHILD,
     });
     if (!shadowed) {
       f.labels.push({
@@ -455,5 +526,7 @@ export function paintFrame(f: FrameInput): number {
   for (const d of f.layout.domains) drawDomain(f, p, d);
   if (f.thread) drawThreads(f, p, f.thread);
   drawLensCircle(f);
-  return f.labels.flush(ctx, theme, width, f.viewport.y1, f.reserved);
+  // The label pass mints the last picks: a title is only clickable once it
+  // has actually been PLACED, which nothing but the occupancy pass knows.
+  return f.labels.flush(ctx, theme, width, f.viewport.y1, f.reserved, f.picks);
 }

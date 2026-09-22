@@ -34,6 +34,7 @@
     "hover_domain": "{subjects} sujetos · {categories} categorías · {laws} leyes",
     "hover_subject": "{category} · {techniques} técnicas · {state}",
     "hover_technique": "{laws} leyes",
+    "technique_deepest": "Una técnica es la capa más profunda. Escape sube de nuevo.",
     "lens_hint": "Ampliar bajo el puntero sin cambiar el zoom (L)",
     "lens_toggle": "Lupa",
     "level_category": "Categoría",

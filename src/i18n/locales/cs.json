@@ -22946,6 +22946,7 @@
       "hover_domain": "{subjects} předmětů · {categories} kategorií · {laws} zákonů",
       "hover_subject": "{category} · {techniques} technik · {state}",
       "hover_technique": "{laws} zákonů",
+      "technique_deepest": "Technika je nejhlubší vrstva. Escape se vrátí o úroveň výš.",
       "lens_hint": "Zvětšit pod ukazatelem beze změny přiblížení (L)",
       "lens_toggle": "Lupa",
       "level_category": "Kategorie",

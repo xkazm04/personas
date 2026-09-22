@@ -22,6 +22,7 @@
 // The lens queues its own names at the top priority, which is how a lens
 // caption displaces a field caption instead of overprinting it.
 import type { CanvasTheme } from './theme';
+import type { GalaxyNode, PickTarget } from './types';
 
 export interface LabelRequest {
   x: number;
@@ -37,6 +38,13 @@ export interface LabelRequest {
    * technique names ARE the content, so they yield only to the subject title).
    */
   priority: number;
+  /**
+   * The node this caption NAMES, when clicking the caption should climb out
+   * of it. Only the title of the node the reader is standing on carries it,
+   * and only once it has actually been placed does it become clickable -
+   * which is why the pick is minted here and not by the painter.
+   */
+  climb?: GalaxyNode;
 }
 
 /** A placed or reserved box, in stage pixels. */
@@ -107,6 +115,7 @@ export class LabelQueue {
     width: number,
     bottom: number,
     reserved: Rect[] = [],
+    picks?: PickTarget[],
   ): number {
     const used: Rect[] = reserved.slice();
     this.dropped = 0;
@@ -123,6 +132,16 @@ export class LabelQueue {
         continue;
       }
       used.push(rect);
+      if (label.climb && picks) {
+        picks.push({
+          x: (rect.a + rect.c) / 2,
+          y: (rect.b + rect.d) / 2,
+          r: 0,
+          rect,
+          node: label.climb,
+          climb: true,
+        });
+      }
       // Painted twice: a halo in the sky colour so a caption stays legible
       // wherever it lands, then the ink itself.
       ctx.lineWidth = 3.2;
