@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "landing": "Vue d'ensemble",
+    "group_athena": "Athena",
+    "group_overseer": "Superviseur",
+    "group_curator": "Curateur",
+    "page_athena": "Athena",
+    "page_setup": "Configuration",
+    "page_memory": "Mémoire",
+    "page_voice": "Voix",
+    "page_decisions": "Décisions",
+    "page_overseer": "Superviseur",
+    "page_council": "Conseil"
+  },
+  "state": {
+    "active": "Actif",
+    "off": "Désactivé",
+    "needs_onboarding": "Non intégré",
+    "blocked": "Configuration requise",
+    "loading": "Vérification du statut"
+  },
+  "blocker": {
+    "not_onboarded": "Termine l'intégration pour rencontrer Athena.",
+    "no_starred_personas": "Marque un agent d'une étoile pour que Superviseur le surveille.",
+    "no_registry": "Associe un registre de connaissances à un espace de travail.",
+    "off": "Désactivé. Ouvre la Configuration pour l'activer."
+  },
+  "identity": {
+    "athena_title": "Assistante",
+    "athena_tagline": "Ton assistante pour tout dans l'application : elle planifie, construit, se souvient et répond.",
+    "overseer_title": "Gardien de la flotte",
+    "overseer_tagline": "Veille à ce que chaque agent fonctionne sans erreur et vaille ce qu'il coûte.",
+    "curator_title": "Gardien du registre",
+    "curator_tagline": "Maintient ton registre de connaissances de niveau mondial et veille à ce qu'il soit appliqué dans chaque projet qui y est abonné."
+  },
+  "landing": {
+    "title": "Compagnons",
+    "subtitle": "Trois agents intégrés qui veillent sur l'application, tes agents et tes connaissances.",
+    "open_hint": "Ouvrir {{name}}",
+    "decisions_waiting": "Décisions en attente : {{count}}",
+    "agents_watched": "Agents surveillés : {{count}}",
+    "registry_subjects": "{{name}} : {{count}} sujets",
+    "shortcut_hint": "Appuie sur 1, 2 ou 3 pour ouvrir un compagnon"
+  },
+  "setup": {
+    "enable_section": "Statut",
+    "athena_enable": "Athena est activée",
+    "athena_enable_desc": "Une fois désactivée, son orbe, son panneau de discussion et son icône dans le pied de page disparaissent, et son travail en arrière-plan s'arrête. Ses pages restent ici pour que tu puisses la réactiver.",
+    "overseer_enable": "Superviseur est activé",
+    "overseer_enable_desc": "Superviseur surveille les agents que tu marques d'une étoile : leur fonctionnement, leur coût et ce qu'ils produisent.",
+    "overseer_prerequisite": "Marque au moins un agent d'une étoile pour activer Superviseur.",
+    "overseer_scope_title": "Agents surveillés",
+    "overseer_scope_desc": "Superviseur surveille les agents que tu marques d'une étoile. Marquer un agent ici en fait aussi un favori.",
+    "overseer_scope_empty": "Aucun agent n'est encore marqué d'une étoile.",
+    "overseer_scope_add": "Ajouter des agents",
+    "overseer_scope_remove": "Arrêter la surveillance",
+    "curator_enable": "Curateur est activé",
+    "curator_enable_desc": "Curateur fait grandir le registre de connaissances associé et vérifie tes projets par rapport à lui.",
+    "curator_prerequisite": "Associe un registre de connaissances à un espace de travail pour activer Curateur.",
+    "curator_registry_title": "Registres associés",
+    "curator_registry_row": "{{workspace}} utilise {{registry}}",
+    "curator_registry_path": "Chemin",
+    "curator_registry_empty": "Aucun espace de travail n'a encore de registre associé.",
+    "curator_map_action": "Associer un registre"
+  },
+  "errors": {
+    "overseer_needs_star": "Superviseur a besoin d'au moins un agent marqué d'une étoile.",
+    "curator_needs_registry": "Curateur a besoin d'un espace de travail avec un registre de connaissances associé.",
+    "toggle_failed": "Impossible d'activer ou de désactiver {{name}}.",
+    "status_failed": "Impossible de lire le statut des compagnons."
+  }
+}

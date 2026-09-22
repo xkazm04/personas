@@ -17600,7 +17600,8 @@
     "navigation_drawer": "Ngăn điều hướng",
     "primary_nav": "Điều hướng chính",
     "create_athena": "Tạo Athena",
-    "features": "Tính năng"
+    "features": "Tính năng",
+    "companions": "Bạn đồng hành"
   },
   "status_tokens": {
     "automation": {
@@ -23755,5 +23756,77 @@
     "unreadable_retry": "Thử lại",
     "unreadable_title": "Không thể đọc được bảng",
     "weakness_title": "Điểm yếu lớn nhất"
+  },
+  "companions": {
+    "nav": {
+      "landing": "Tổng quan",
+      "group_athena": "Athena",
+      "group_overseer": "Giám sát",
+      "group_curator": "Quản thủ",
+      "page_athena": "Athena",
+      "page_setup": "Thiết lập",
+      "page_memory": "Bộ nhớ",
+      "page_voice": "Giọng nói",
+      "page_decisions": "Quyết định",
+      "page_overseer": "Giám sát",
+      "page_council": "Hội đồng"
+    },
+    "state": {
+      "active": "Đang hoạt động",
+      "off": "Tắt",
+      "needs_onboarding": "Chưa làm quen",
+      "blocked": "Cần thiết lập",
+      "loading": "Đang kiểm tra trạng thái"
+    },
+    "blocker": {
+      "not_onboarded": "Hoàn tất làm quen để gặp Athena.",
+      "no_starred_personas": "Gắn sao cho một tác nhân để Giám sát theo dõi.",
+      "no_registry": "Ánh xạ một sổ đăng ký kiến thức vào không gian làm việc.",
+      "off": "Đã tắt. Mở Thiết lập để bật lại."
+    },
+    "identity": {
+      "athena_title": "Trợ lý",
+      "athena_tagline": "Trợ lý của bạn cho mọi việc trong ứng dụng: cô ấy lên kế hoạch, xây dựng, ghi nhớ và trả lời.",
+      "overseer_title": "Người trông coi đội ngũ",
+      "overseer_tagline": "Đảm bảo mọi tác nhân hoạt động không lỗi và xứng đáng với chi phí bỏ ra.",
+      "curator_title": "Người trông coi sổ đăng ký",
+      "curator_tagline": "Giữ cho sổ đăng ký kiến thức của bạn đạt đẳng cấp thế giới và được áp dụng trong mọi dự án có kết nối với nó."
+    },
+    "landing": {
+      "title": "Bạn đồng hành",
+      "subtitle": "Ba tác nhân dựng sẵn trông coi ứng dụng, các tác nhân của bạn và kiến thức của bạn.",
+      "open_hint": "Mở {{name}}",
+      "decisions_waiting": "Quyết định đang chờ: {{count}}",
+      "agents_watched": "Tác nhân đang theo dõi: {{count}}",
+      "registry_subjects": "{{name}}: {{count}} chủ đề",
+      "shortcut_hint": "Nhấn 1, 2 hoặc 3 để mở một bạn đồng hành"
+    },
+    "setup": {
+      "enable_section": "Trạng thái",
+      "athena_enable": "Athena đang bật",
+      "athena_enable_desc": "Khi tắt, quả cầu, bảng trò chuyện và biểu tượng ở chân trang của cô ấy sẽ biến mất, và công việc chạy ngầm của cô ấy sẽ dừng lại. Các trang của cô ấy vẫn ở đây để bạn có thể bật lại bất cứ lúc nào.",
+      "overseer_enable": "Giám sát đang bật",
+      "overseer_enable_desc": "Giám sát theo dõi các tác nhân bạn gắn sao: cách chúng hoạt động, chi phí và kết quả mang lại.",
+      "overseer_prerequisite": "Gắn sao cho ít nhất một tác nhân để bật Giám sát.",
+      "overseer_scope_title": "Tác nhân đang theo dõi",
+      "overseer_scope_desc": "Giám sát theo dõi các tác nhân bạn gắn sao. Gắn sao cho một tác nhân ở đây cũng đánh dấu tác nhân đó là yêu thích.",
+      "overseer_scope_empty": "Chưa có tác nhân nào được gắn sao.",
+      "overseer_scope_add": "Thêm tác nhân",
+      "overseer_scope_remove": "Ngừng theo dõi",
+      "curator_enable": "Quản thủ đang bật",
+      "curator_enable_desc": "Quản thủ giúp sổ đăng ký kiến thức đã ánh xạ không ngừng phát triển và đối chiếu các dự án của bạn với nó.",
+      "curator_prerequisite": "Ánh xạ một sổ đăng ký kiến thức vào không gian làm việc để bật Quản thủ.",
+      "curator_registry_title": "Sổ đăng ký đã ánh xạ",
+      "curator_registry_row": "{{workspace}} sử dụng {{registry}}",
+      "curator_registry_path": "Đường dẫn",
+      "curator_registry_empty": "Chưa có không gian làm việc nào được ánh xạ sổ đăng ký.",
+      "curator_map_action": "Ánh xạ sổ đăng ký"
+    },
+    "errors": {
+      "overseer_needs_star": "Giám sát cần ít nhất một tác nhân được gắn sao.",
+      "curator_needs_registry": "Quản thủ cần một không gian làm việc có sổ đăng ký kiến thức đã ánh xạ.",
+      "toggle_failed": "Không thể chuyển đổi {{name}}.",
+      "status_failed": "Không thể đọc trạng thái của các bạn đồng hành."
+    }
   }
 }

@@ -8,6 +8,12 @@ use crate::{cloud, commands, notifications, test_automation};
 pub(super) fn shard(
 ) -> Shard<impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> {
     personas_macros::ipc_shard!(tauri::generate_handler![
+        // Companions -- the CATEGORY: who exists, who may be switched on, who is
+        // on. Each companion's own surface keeps its own module; `companion_*`
+        // is the shared runtime, `athena_*` is what only she has.
+        commands::companions::companions_status,
+        commands::companions::companions_set_enabled,
+        commands::companions::athena_mark_onboarded,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,

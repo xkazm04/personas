@@ -1670,6 +1670,7 @@ export type Translations = {
     primary_nav: string;
     navigation_drawer: string;
     create_athena: string;
+    companions: string;
   };
   home: {
     get_started: {
@@ -23760,6 +23761,78 @@ export type Translations = {
       chip_formal: string;
       chip_question: string;
       untitled_box: string;
+    };
+  };
+  companions: {
+    nav: {
+      landing: string;
+      group_athena: string;
+      group_overseer: string;
+      group_curator: string;
+      page_athena: string;
+      page_setup: string;
+      page_memory: string;
+      page_voice: string;
+      page_decisions: string;
+      page_overseer: string;
+      page_council: string;
+    };
+    state: {
+      active: string;
+      off: string;
+      needs_onboarding: string;
+      blocked: string;
+      loading: string;
+    };
+    blocker: {
+      not_onboarded: string;
+      no_starred_personas: string;
+      no_registry: string;
+      off: string;
+    };
+    identity: {
+      athena_title: string;
+      athena_tagline: string;
+      overseer_title: string;
+      overseer_tagline: string;
+      curator_title: string;
+      curator_tagline: string;
+    };
+    landing: {
+      title: string;
+      subtitle: string;
+      open_hint: string;
+      decisions_waiting: string;
+      agents_watched: string;
+      registry_subjects: string;
+      shortcut_hint: string;
+    };
+    setup: {
+      enable_section: string;
+      athena_enable: string;
+      athena_enable_desc: string;
+      overseer_enable: string;
+      overseer_enable_desc: string;
+      overseer_prerequisite: string;
+      overseer_scope_title: string;
+      overseer_scope_desc: string;
+      overseer_scope_empty: string;
+      overseer_scope_add: string;
+      overseer_scope_remove: string;
+      curator_enable: string;
+      curator_enable_desc: string;
+      curator_prerequisite: string;
+      curator_registry_title: string;
+      curator_registry_row: string;
+      curator_registry_path: string;
+      curator_registry_empty: string;
+      curator_map_action: string;
+    };
+    errors: {
+      overseer_needs_star: string;
+      curator_needs_registry: string;
+      toggle_failed: string;
+      status_failed: string;
     };
   };
 };

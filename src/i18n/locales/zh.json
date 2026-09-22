@@ -17600,7 +17600,8 @@
     "navigation_drawer": "导航抽屉",
     "primary_nav": "主导航",
     "create_athena": "创建 Athena",
-    "features": "功能"
+    "features": "功能",
+    "companions": "伙伴"
   },
   "status_tokens": {
     "automation": {
@@ -23755,5 +23756,77 @@
     "unreadable_retry": "重试",
     "unreadable_title": "无法读取看板",
     "weakness_title": "最大薄弱点"
+  },
+  "companions": {
+    "nav": {
+      "landing": "概览",
+      "group_athena": "Athena",
+      "group_overseer": "监督者",
+      "group_curator": "策展人",
+      "page_athena": "Athena",
+      "page_setup": "设置",
+      "page_memory": "记忆",
+      "page_voice": "语音",
+      "page_decisions": "决策",
+      "page_overseer": "监督者",
+      "page_council": "评议会"
+    },
+    "state": {
+      "active": "运行中",
+      "off": "已关闭",
+      "needs_onboarding": "未完成引导",
+      "blocked": "需要设置",
+      "loading": "正在检查状态"
+    },
+    "blocker": {
+      "not_onboarded": "完成引导以认识 Athena。",
+      "no_starred_personas": "给一个智能体加星标，供监督者监视。",
+      "no_registry": "为工作区关联一个知识注册库。",
+      "off": "已关闭。打开设置以重新开启。"
+    },
+    "identity": {
+      "athena_title": "助手",
+      "athena_tagline": "应用中任何事情的助手：她能规划、构建、记忆与解答。",
+      "overseer_title": "舰队守护者",
+      "overseer_tagline": "让每个智能体都无错运行，并物有所值。",
+      "curator_title": "注册库守护者",
+      "curator_tagline": "让你的知识注册库保持世界一流水准，并应用到每个订阅它的项目中。"
+    },
+    "landing": {
+      "title": "伙伴",
+      "subtitle": "三个内置智能体，照看应用、你的智能体与你的知识。",
+      "open_hint": "打开{{name}}",
+      "decisions_waiting": "待处理决策：{{count}}",
+      "agents_watched": "监视中的智能体：{{count}}",
+      "registry_subjects": "{{name}}：{{count}}个主题",
+      "shortcut_hint": "按 1、2 或 3 打开一个伙伴"
+    },
+    "setup": {
+      "enable_section": "状态",
+      "athena_enable": "Athena 已开启",
+      "athena_enable_desc": "关闭后，她的光球、聊天面板和页脚图标都会消失，后台工作也会停止。她的页面仍会保留在此处，方便你随时重新开启。",
+      "overseer_enable": "监督者已开启",
+      "overseer_enable_desc": "监督者监视你加星标的智能体：它们如何运行、花费多少、交付了什么。",
+      "overseer_prerequisite": "至少为一个智能体加星标，才能开启监督者。",
+      "overseer_scope_title": "受监视的智能体",
+      "overseer_scope_desc": "监督者监视你加星标的智能体。在此为智能体加星标，也会将其标记为收藏。",
+      "overseer_scope_empty": "还没有加星标的智能体。",
+      "overseer_scope_add": "添加智能体",
+      "overseer_scope_remove": "停止监视",
+      "curator_enable": "策展人已开启",
+      "curator_enable_desc": "策展人让关联的知识注册库不断增长，并用它检查你的项目。",
+      "curator_prerequisite": "为工作区关联一个知识注册库，才能开启策展人。",
+      "curator_registry_title": "已关联的注册库",
+      "curator_registry_row": "{{workspace}} 使用 {{registry}}",
+      "curator_registry_path": "路径",
+      "curator_registry_empty": "还没有工作区关联注册库。",
+      "curator_map_action": "关联一个注册库"
+    },
+    "errors": {
+      "overseer_needs_star": "监督者需要至少一个加星标的智能体。",
+      "curator_needs_registry": "策展人需要一个已关联知识注册库的工作区。",
+      "toggle_failed": "无法切换{{name}}。",
+      "status_failed": "无法读取伙伴的状态。"
+    }
   }
 }

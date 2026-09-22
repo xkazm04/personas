@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "landing": "Overview",
+    "group_athena": "Athena",
+    "group_overseer": "Overseer",
+    "group_curator": "Curator",
+    "page_athena": "Athena",
+    "page_setup": "Setup",
+    "page_memory": "Memory",
+    "page_voice": "Voice",
+    "page_decisions": "Decisions",
+    "page_overseer": "Overseer",
+    "page_council": "Council"
+  },
+  "state": {
+    "active": "Active",
+    "off": "Off",
+    "needs_onboarding": "Not onboarded",
+    "blocked": "Needs setup",
+    "loading": "Checking status"
+  },
+  "blocker": {
+    "not_onboarded": "Finish onboarding to meet Athena.",
+    "no_starred_personas": "Star an agent for Overseer to watch.",
+    "no_registry": "Map a knowledge registry to a workspace.",
+    "off": "Switched off. Open Setup to switch on."
+  },
+  "identity": {
+    "athena_title": "Assistant",
+    "athena_tagline": "Your assistant for anything in the app: she plans, builds, remembers and answers.",
+    "overseer_title": "Keeper of the fleet",
+    "overseer_tagline": "Keeps every agent running without error and worth what it costs.",
+    "curator_title": "Keeper of the registry",
+    "curator_tagline": "Keeps your knowledge registry world-class and applied in every project that subscribes to it."
+  },
+  "landing": {
+    "title": "Companions",
+    "subtitle": "Three built-in agents who look after the app, your agents and your knowledge.",
+    "open_hint": "Open {{name}}",
+    "decisions_waiting": "Decisions waiting: {{count}}",
+    "agents_watched": "Agents watched: {{count}}",
+    "registry_subjects": "{{name}}: {{count}} subjects",
+    "shortcut_hint": "Press 1, 2 or 3 to open a companion"
+  },
+  "setup": {
+    "enable_section": "Status",
+    "athena_enable": "Athena is on",
+    "athena_enable_desc": "When off, her orb, chat panel and footer icon disappear and her background work stops. Her pages stay here so you can switch her back on.",
+    "overseer_enable": "Overseer is on",
+    "overseer_enable_desc": "Overseer watches the agents you star: how they run, what they cost and what they deliver.",
+    "overseer_prerequisite": "Star at least one agent to switch Overseer on.",
+    "overseer_scope_title": "Watched agents",
+    "overseer_scope_desc": "Overseer watches the agents you star. Starring an agent here also marks it as a favourite.",
+    "overseer_scope_empty": "No agent is starred yet.",
+    "overseer_scope_add": "Add agents",
+    "overseer_scope_remove": "Stop watching",
+    "curator_enable": "Curator is on",
+    "curator_enable_desc": "Curator keeps the mapped knowledge registry growing and checks your projects against it.",
+    "curator_prerequisite": "Map a knowledge registry to a workspace to switch Curator on.",
+    "curator_registry_title": "Mapped registries",
+    "curator_registry_row": "{{workspace}} uses {{registry}}",
+    "curator_registry_path": "Path",
+    "curator_registry_empty": "No workspace has a registry mapped yet.",
+    "curator_map_action": "Map a registry"
+  },
+  "errors": {
+    "overseer_needs_star": "Overseer needs at least one starred agent.",
+    "curator_needs_registry": "Curator needs a workspace with a mapped knowledge registry.",
+    "toggle_failed": "Could not switch {{name}}.",
+    "status_failed": "Could not read the companions' status."
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "landing": "개요",
+    "group_athena": "Athena",
+    "group_overseer": "감독관",
+    "group_curator": "큐레이터",
+    "page_athena": "Athena",
+    "page_setup": "설정",
+    "page_memory": "메모리",
+    "page_voice": "음성",
+    "page_decisions": "결정",
+    "page_overseer": "감독관",
+    "page_council": "평의회"
+  },
+  "state": {
+    "active": "활성",
+    "off": "꺼짐",
+    "needs_onboarding": "온보딩 미완료",
+    "blocked": "설정 필요",
+    "loading": "상태 확인 중"
+  },
+  "blocker": {
+    "not_onboarded": "온보딩을 마치고 Athena를 만나보세요.",
+    "no_starred_personas": "감독관이 지켜볼 에이전트에 별표를 추가하세요.",
+    "no_registry": "워크스페이스에 지식 레지스트리를 연결하세요.",
+    "off": "꺼져 있습니다. 설정을 열어 켜세요."
+  },
+  "identity": {
+    "athena_title": "어시스턴트",
+    "athena_tagline": "앱의 모든 일을 돕는 어시스턴트입니다. 계획하고, 만들고, 기억하고, 답합니다.",
+    "overseer_title": "플릿의 수호자",
+    "overseer_tagline": "모든 에이전트가 오류 없이 돌아가게 하고, 비용만큼의 가치를 하게 합니다.",
+    "curator_title": "레지스트리의 수호자",
+    "curator_tagline": "지식 레지스트리를 세계적 수준으로 유지하고, 구독하는 모든 프로젝트에 적용합니다."
+  },
+  "landing": {
+    "title": "동반자",
+    "subtitle": "앱과 당신의 에이전트, 그리고 지식을 돌보는 세 개의 내장 에이전트입니다.",
+    "open_hint": "{{name}} 열기",
+    "decisions_waiting": "대기 중인 결정: {{count}}건",
+    "agents_watched": "감시 중인 에이전트: {{count}}개",
+    "registry_subjects": "{{name}}: 주제 {{count}}개",
+    "shortcut_hint": "1, 2, 3 중 하나를 눌러 동반자를 여세요"
+  },
+  "setup": {
+    "enable_section": "상태",
+    "athena_enable": "Athena 켜짐",
+    "athena_enable_desc": "끄면 오브, 채팅 패널, 푸터 아이콘이 사라지고 백그라운드 작업도 멈춥니다. 페이지는 여기 그대로 남아 있어 언제든 다시 켤 수 있습니다.",
+    "overseer_enable": "감독관 켜짐",
+    "overseer_enable_desc": "감독관은 별표를 추가한 에이전트를 지켜봅니다. 어떻게 실행되는지, 비용은 얼마인지, 무엇을 만들어내는지를 확인합니다.",
+    "overseer_prerequisite": "감독관을 켜려면 에이전트를 하나 이상 별표로 추가하세요.",
+    "overseer_scope_title": "감시 중인 에이전트",
+    "overseer_scope_desc": "감독관은 별표를 추가한 에이전트를 지켜봅니다. 여기서 에이전트에 별표를 추가하면 즐겨찾기로도 표시됩니다.",
+    "overseer_scope_empty": "아직 별표가 추가된 에이전트가 없습니다.",
+    "overseer_scope_add": "에이전트 추가",
+    "overseer_scope_remove": "감시 중지",
+    "curator_enable": "큐레이터 켜짐",
+    "curator_enable_desc": "큐레이터는 연결된 지식 레지스트리를 계속 성장시키고, 이를 기준으로 프로젝트를 점검합니다.",
+    "curator_prerequisite": "큐레이터를 켜려면 워크스페이스에 지식 레지스트리를 연결하세요.",
+    "curator_registry_title": "연결된 레지스트리",
+    "curator_registry_row": "{{workspace}}가 {{registry}}를 사용",
+    "curator_registry_path": "경로",
+    "curator_registry_empty": "아직 레지스트리가 연결된 워크스페이스가 없습니다.",
+    "curator_map_action": "레지스트리 연결"
+  },
+  "errors": {
+    "overseer_needs_star": "감독관에는 별표가 추가된 에이전트가 하나 이상 필요합니다.",
+    "curator_needs_registry": "큐레이터에는 지식 레지스트리가 연결된 워크스페이스가 필요합니다.",
+    "toggle_failed": "{{name}}을(를) 전환하지 못했습니다.",
+    "status_failed": "동반자 상태를 불러오지 못했습니다."
+  }
+}

@@ -105,5 +105,6 @@
   "webview": "Webview",
   "primary_nav": "Primary",
   "navigation_drawer": "Navigation drawer",
-  "create_athena": "Create Athena"
+  "create_athena": "Create Athena",
+  "companions": "Companions"
 }

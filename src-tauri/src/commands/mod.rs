@@ -1,6 +1,7 @@
 pub mod browser;
 pub mod communication;
 pub mod companion;
+pub mod companions;
 pub mod core;
 pub mod credentials;
 pub mod design;

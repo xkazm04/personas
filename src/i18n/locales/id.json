@@ -17600,7 +17600,8 @@
     "navigation_drawer": "Laci navigasi",
     "primary_nav": "Navigasi utama",
     "create_athena": "Buat Athena",
-    "features": "Fitur"
+    "features": "Fitur",
+    "companions": "Pendamping"
   },
   "status_tokens": {
     "automation": {
@@ -23755,5 +23756,77 @@
     "unreadable_retry": "Coba lagi",
     "unreadable_title": "Papan tidak dapat dibaca",
     "weakness_title": "Kelemahan utama"
+  },
+  "companions": {
+    "nav": {
+      "landing": "Ringkasan",
+      "group_athena": "Athena",
+      "group_overseer": "Pengawas",
+      "group_curator": "Kurator",
+      "page_athena": "Athena",
+      "page_setup": "Pengaturan",
+      "page_memory": "Memori",
+      "page_voice": "Suara",
+      "page_decisions": "Keputusan",
+      "page_overseer": "Pengawas",
+      "page_council": "Dewan"
+    },
+    "state": {
+      "active": "Aktif",
+      "off": "Nonaktif",
+      "needs_onboarding": "Perlu Pengenalan",
+      "blocked": "Perlu Pengaturan",
+      "loading": "Memeriksa Status"
+    },
+    "blocker": {
+      "not_onboarded": "Selesaikan pengenalan untuk bertemu Athena.",
+      "no_starred_personas": "Beri bintang pada agen agar Pengawas bisa mengawasinya.",
+      "no_registry": "Petakan registri pengetahuan ke ruang kerja.",
+      "off": "Nonaktif. Buka Pengaturan untuk mengaktifkannya."
+    },
+    "identity": {
+      "athena_title": "Asisten",
+      "athena_tagline": "Asisten Anda untuk apa pun di aplikasi ini: dia merencanakan, membangun, mengingat, dan menjawab.",
+      "overseer_title": "Penjaga Armada",
+      "overseer_tagline": "Menjaga setiap agen berjalan tanpa kesalahan dan sepadan dengan biayanya.",
+      "curator_title": "Penjaga Registri",
+      "curator_tagline": "Menjaga registri pengetahuan Anda tetap kelas dunia dan diterapkan di setiap proyek yang berlangganan padanya."
+    },
+    "landing": {
+      "title": "Pendamping",
+      "subtitle": "Tiga agen bawaan yang menjaga aplikasi, agen-agen Anda, dan pengetahuan Anda.",
+      "open_hint": "Buka {{name}}",
+      "decisions_waiting": "Keputusan menunggu: {{count}}",
+      "agents_watched": "Agen diawasi: {{count}}",
+      "registry_subjects": "{{name}}: {{count}} topik",
+      "shortcut_hint": "Tekan 1, 2, atau 3 untuk membuka pendamping"
+    },
+    "setup": {
+      "enable_section": "Status",
+      "athena_enable": "Athena aktif",
+      "athena_enable_desc": "Saat nonaktif, orb, panel obrolan, dan ikon footer miliknya akan hilang, dan pekerjaan latar belakangnya berhenti. Halamannya tetap ada di sini agar Anda bisa mengaktifkannya kembali.",
+      "overseer_enable": "Pengawas aktif",
+      "overseer_enable_desc": "Pengawas mengawasi agen yang Anda beri bintang: caranya berjalan, biayanya, dan hasil yang diberikannya.",
+      "overseer_prerequisite": "Beri bintang pada setidaknya satu agen untuk mengaktifkan Pengawas.",
+      "overseer_scope_title": "Agen yang diawasi",
+      "overseer_scope_desc": "Pengawas mengawasi agen yang Anda beri bintang. Memberi bintang pada agen di sini juga menandainya sebagai favorit.",
+      "overseer_scope_empty": "Belum ada agen yang diberi bintang.",
+      "overseer_scope_add": "Tambah agen",
+      "overseer_scope_remove": "Berhenti mengawasi",
+      "curator_enable": "Kurator aktif",
+      "curator_enable_desc": "Kurator terus mengembangkan registri pengetahuan yang dipetakan dan memeriksa proyek Anda terhadapnya.",
+      "curator_prerequisite": "Petakan registri pengetahuan ke ruang kerja untuk mengaktifkan Kurator.",
+      "curator_registry_title": "Registri yang dipetakan",
+      "curator_registry_row": "{{workspace}} menggunakan {{registry}}",
+      "curator_registry_path": "Jalur",
+      "curator_registry_empty": "Belum ada ruang kerja yang memiliki registri terpetakan.",
+      "curator_map_action": "Petakan registri"
+    },
+    "errors": {
+      "overseer_needs_star": "Pengawas membutuhkan setidaknya satu agen berbintang.",
+      "curator_needs_registry": "Kurator membutuhkan ruang kerja dengan registri pengetahuan yang dipetakan.",
+      "toggle_failed": "Tidak dapat mengalihkan {{name}}.",
+      "status_failed": "Tidak dapat membaca status para pendamping."
+    }
   }
 }

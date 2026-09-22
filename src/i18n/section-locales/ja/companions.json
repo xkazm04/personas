@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "landing": "概要",
+    "group_athena": "Athena",
+    "group_overseer": "監督者",
+    "group_curator": "キュレーター",
+    "page_athena": "Athena",
+    "page_setup": "設定",
+    "page_memory": "記憶",
+    "page_voice": "音声",
+    "page_decisions": "決定",
+    "page_overseer": "監督者",
+    "page_council": "評議会"
+  },
+  "state": {
+    "active": "稼働中",
+    "off": "オフ",
+    "needs_onboarding": "未導入",
+    "blocked": "設定が必要",
+    "loading": "状態を確認中"
+  },
+  "blocker": {
+    "not_onboarded": "オンボーディングを完了してAthenaに会いましょう。",
+    "no_starred_personas": "監督者に見守らせるエージェントにスターを付けてください。",
+    "no_registry": "ワークスペースにナレッジレジストリを紐付けてください。",
+    "off": "オフになっています。設定を開いてオンにしてください。"
+  },
+  "identity": {
+    "athena_title": "アシスタント",
+    "athena_tagline": "アプリのあらゆることをサポートするアシスタント。計画し、構築し、記憶し、答えます。",
+    "overseer_title": "フリートの番人",
+    "overseer_tagline": "すべてのエージェントをエラーなく稼働させ、コストに見合う働きを保ちます。",
+    "curator_title": "レジストリの番人",
+    "curator_tagline": "ナレッジレジストリを世界最高水準に保ち、購読するすべてのプロジェクトに適用します。"
+  },
+  "landing": {
+    "title": "コンパニオン",
+    "subtitle": "アプリとあなたのエージェント、そしてナレッジを見守る3つの組み込みエージェント。",
+    "open_hint": "{{name}}を開く",
+    "decisions_waiting": "保留中の決定: {{count}}件",
+    "agents_watched": "監視中のエージェント: {{count}}",
+    "registry_subjects": "{{name}}: {{count}}件のトピック",
+    "shortcut_hint": "1、2、3のいずれかを押してコンパニオンを開く"
+  },
+  "setup": {
+    "enable_section": "ステータス",
+    "athena_enable": "Athenaはオン",
+    "athena_enable_desc": "オフにすると、オーブ、チャットパネル、フッターアイコンが非表示になり、バックグラウンド処理も停止します。ページ自体はここに残るため、いつでも再度オンにできます。",
+    "overseer_enable": "監督者はオン",
+    "overseer_enable_desc": "監督者はスターを付けたエージェントを見守ります。動作状況、コスト、成果を確認します。",
+    "overseer_prerequisite": "監督者をオンにするには、少なくとも1つのエージェントにスターを付けてください。",
+    "overseer_scope_title": "監視対象のエージェント",
+    "overseer_scope_desc": "監督者はスターを付けたエージェントを見守ります。ここでエージェントにスターを付けると、お気に入りにも登録されます。",
+    "overseer_scope_empty": "まだスターの付いたエージェントはありません。",
+    "overseer_scope_add": "エージェントを追加",
+    "overseer_scope_remove": "監視を解除",
+    "curator_enable": "キュレーターはオン",
+    "curator_enable_desc": "キュレーターは紐付けられたナレッジレジストリを育て、あなたのプロジェクトをそれと照合します。",
+    "curator_prerequisite": "キュレーターをオンにするには、ワークスペースにナレッジレジストリを紐付けてください。",
+    "curator_registry_title": "紐付けられたレジストリ",
+    "curator_registry_row": "{{workspace}}は{{registry}}を使用",
+    "curator_registry_path": "パス",
+    "curator_registry_empty": "まだレジストリが紐付けられたワークスペースはありません。",
+    "curator_map_action": "レジストリを紐付ける"
+  },
+  "errors": {
+    "overseer_needs_star": "監督者には、スターを付けたエージェントが少なくとも1つ必要です。",
+    "curator_needs_registry": "キュレーターには、ナレッジレジストリが紐付けられたワークスペースが必要です。",
+    "toggle_failed": "{{name}}を切り替えられませんでした。",
+    "status_failed": "コンパニオンの状態を取得できませんでした。"
+  }
+}

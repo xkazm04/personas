@@ -783,5 +783,14 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "detail": {},
     "webview": {},
     "twin": {}
+  },
+  "companions": {
+    "nav": {},
+    "state": {},
+    "blocker": {},
+    "identity": {},
+    "landing": {},
+    "setup": {},
+    "errors": {}
   }
 } as Record<string, Record<string, unknown>>);

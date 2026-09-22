@@ -1,0 +1,72 @@
+{
+  "nav": {
+    "landing": "Übersicht",
+    "group_athena": "Athena",
+    "group_overseer": "Aufseher",
+    "group_curator": "Kurator",
+    "page_athena": "Athena",
+    "page_setup": "Einrichtung",
+    "page_memory": "Gedächtnis",
+    "page_voice": "Stimme",
+    "page_decisions": "Entscheidungen",
+    "page_overseer": "Aufseher",
+    "page_council": "Rat"
+  },
+  "state": {
+    "active": "Aktiv",
+    "off": "Aus",
+    "needs_onboarding": "Onboarding ausstehend",
+    "blocked": "Einrichtung erforderlich",
+    "loading": "Status wird geprüft"
+  },
+  "blocker": {
+    "not_onboarded": "Schließe das Onboarding ab, um Athena kennenzulernen.",
+    "no_starred_personas": "Markiere einen Agenten mit einem Stern, damit Aufseher ihn beobachtet.",
+    "no_registry": "Ordne einem Arbeitsbereich ein Wissensregister zu.",
+    "off": "Ausgeschaltet. Öffne die Einrichtung, um es einzuschalten."
+  },
+  "identity": {
+    "athena_title": "Assistentin",
+    "athena_tagline": "Deine Assistentin für alles in der App: Sie plant, baut, erinnert sich und antwortet.",
+    "overseer_title": "Hüter der Flotte",
+    "overseer_tagline": "Sorgt dafür, dass jeder Agent fehlerfrei läuft und seinen Preis wert ist.",
+    "curator_title": "Hüter des Registers",
+    "curator_tagline": "Hält dein Wissensregister auf Weltklasseniveau und sorgt dafür, dass es in jedem verbundenen Projekt angewendet wird."
+  },
+  "landing": {
+    "title": "Begleiter",
+    "subtitle": "Drei integrierte Agenten, die sich um die App, deine Agenten und dein Wissen kümmern.",
+    "open_hint": "{{name}} öffnen",
+    "decisions_waiting": "Wartende Entscheidungen: {{count}}",
+    "agents_watched": "Beobachtete Agenten: {{count}}",
+    "registry_subjects": "{{name}}: {{count}} Themen",
+    "shortcut_hint": "Drücke 1, 2 oder 3, um einen Begleiter zu öffnen"
+  },
+  "setup": {
+    "enable_section": "Status",
+    "athena_enable": "Athena ist eingeschaltet",
+    "athena_enable_desc": "Wenn sie ausgeschaltet ist, verschwinden ihre Kugel, das Chat-Panel und das Symbol in der Fußzeile, und ihre Hintergrundarbeit stoppt. Ihre Seiten bleiben hier erhalten, damit du sie wieder einschalten kannst.",
+    "overseer_enable": "Aufseher ist eingeschaltet",
+    "overseer_enable_desc": "Aufseher beobachtet die Agenten, die du markierst: wie sie laufen, was sie kosten und was sie liefern.",
+    "overseer_prerequisite": "Markiere mindestens einen Agenten, um Aufseher einzuschalten.",
+    "overseer_scope_title": "Beobachtete Agenten",
+    "overseer_scope_desc": "Aufseher beobachtet die Agenten, die du markierst. Ein Agent, der hier markiert wird, gilt auch als Favorit.",
+    "overseer_scope_empty": "Noch kein Agent ist markiert.",
+    "overseer_scope_add": "Agenten hinzufügen",
+    "overseer_scope_remove": "Beobachtung beenden",
+    "curator_enable": "Kurator ist eingeschaltet",
+    "curator_enable_desc": "Kurator lässt das zugeordnete Wissensregister wachsen und gleicht deine Projekte damit ab.",
+    "curator_prerequisite": "Ordne einem Arbeitsbereich ein Wissensregister zu, um Kurator einzuschalten.",
+    "curator_registry_title": "Zugeordnete Register",
+    "curator_registry_row": "{{workspace}} nutzt {{registry}}",
+    "curator_registry_path": "Pfad",
+    "curator_registry_empty": "Noch keinem Arbeitsbereich ist ein Register zugeordnet.",
+    "curator_map_action": "Register zuordnen"
+  },
+  "errors": {
+    "overseer_needs_star": "Aufseher braucht mindestens einen markierten Agenten.",
+    "curator_needs_registry": "Kurator braucht einen Arbeitsbereich mit einem zugeordneten Wissensregister.",
+    "toggle_failed": "{{name}} konnte nicht umgeschaltet werden.",
+    "status_failed": "Der Status der Begleiter konnte nicht gelesen werden."
+  }
+}

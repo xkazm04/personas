@@ -17600,7 +17600,8 @@
     "navigation_drawer": "درج التنقل",
     "primary_nav": "التنقل الرئيسي",
     "create_athena": "إنشاء أثينا",
-    "features": "الميزات"
+    "features": "الميزات",
+    "companions": "الرفاق"
   },
   "status_tokens": {
     "automation": {
@@ -23755,5 +23756,77 @@
     "unreadable_retry": "أعد المحاولة",
     "unreadable_title": "تعذّرت قراءة اللوحة",
     "weakness_title": "أبرز نقطة ضعف"
+  },
+  "companions": {
+    "nav": {
+      "landing": "نظرة عامة",
+      "group_athena": "أثينا",
+      "group_overseer": "المشرف",
+      "group_curator": "القيّم",
+      "page_athena": "أثينا",
+      "page_setup": "الإعداد",
+      "page_memory": "الذاكرة",
+      "page_voice": "الصوت",
+      "page_decisions": "القرارات",
+      "page_overseer": "المشرف",
+      "page_council": "المجلس"
+    },
+    "state": {
+      "active": "نشط",
+      "off": "متوقف",
+      "needs_onboarding": "غير مهيّأ",
+      "blocked": "يحتاج إلى إعداد",
+      "loading": "جارٍ التحقق من الحالة"
+    },
+    "blocker": {
+      "not_onboarded": "أكمل التهيئة الأولية للتعرف على أثينا.",
+      "no_starred_personas": "ضع نجمة على عميل ليراقبه المشرف.",
+      "no_registry": "اربط سجل معرفة بمساحة عمل.",
+      "off": "مُطفأ. افتح الإعداد لتشغيله."
+    },
+    "identity": {
+      "athena_title": "المساعدة",
+      "athena_tagline": "مساعدتك لكل ما في التطبيق: تخطط وتبني وتتذكر وتجيب.",
+      "overseer_title": "حارس الأسطول",
+      "overseer_tagline": "يبقي كل عميل يعمل بلا أخطاء ويستحق ما يكلفه.",
+      "curator_title": "حارس السجل",
+      "curator_tagline": "يحافظ على سجل معرفتك بمستوى عالمي ويطبّقه في كل مشروع يشترك فيه."
+    },
+    "landing": {
+      "title": "الرفقاء",
+      "subtitle": "ثلاثة عملاء مدمجون يعتنون بالتطبيق وعملائك ومعرفتك.",
+      "open_hint": "فتح {{name}}",
+      "decisions_waiting": "قرارات بانتظارك: {{count}}",
+      "agents_watched": "عملاء تحت المراقبة: {{count}}",
+      "registry_subjects": "{{name}}: {{count}} مواضيع",
+      "shortcut_hint": "اضغط 1 أو 2 أو 3 لفتح أحد الرفقاء"
+    },
+    "setup": {
+      "enable_section": "الحالة",
+      "athena_enable": "أثينا مُفعّلة",
+      "athena_enable_desc": "عند إيقافها، تختفي كرتها ولوحة المحادثة وأيقونة التذييل ويتوقف عملها في الخلفية. تبقى صفحاتها هنا لتتمكن من تشغيلها مجددًا.",
+      "overseer_enable": "المشرف مُفعّل",
+      "overseer_enable_desc": "يراقب المشرف العملاء الذين تضع عليهم نجمة: كيف يعملون وما تكلفتهم وما ينجزونه.",
+      "overseer_prerequisite": "ضع نجمة على عميل واحد على الأقل لتشغيل المشرف.",
+      "overseer_scope_title": "العملاء المراقَبون",
+      "overseer_scope_desc": "يراقب المشرف العملاء الذين تضع عليهم نجمة. وضع نجمة على عميل هنا يجعله مفضلاً أيضًا.",
+      "overseer_scope_empty": "لا يوجد عميل عليه نجمة بعد.",
+      "overseer_scope_add": "إضافة عملاء",
+      "overseer_scope_remove": "إيقاف المراقبة",
+      "curator_enable": "القيّم مُفعّل",
+      "curator_enable_desc": "يحافظ القيّم على نمو سجل المعرفة المرتبط ويقارن مشاريعك به.",
+      "curator_prerequisite": "اربط سجل معرفة بمساحة عمل لتشغيل القيّم.",
+      "curator_registry_title": "السجلات المرتبطة",
+      "curator_registry_row": "{{workspace}} يستخدم {{registry}}",
+      "curator_registry_path": "المسار",
+      "curator_registry_empty": "لا توجد مساحة عمل مرتبطة بسجل بعد.",
+      "curator_map_action": "ربط سجل"
+    },
+    "errors": {
+      "overseer_needs_star": "يحتاج المشرف إلى عميل واحد على الأقل عليه نجمة.",
+      "curator_needs_registry": "يحتاج القيّم إلى مساحة عمل مرتبطة بسجل معرفة.",
+      "toggle_failed": "تعذّر تشغيل {{name}}.",
+      "status_failed": "تعذّرت قراءة حالة الرفقاء."
+    }
   }
 }
