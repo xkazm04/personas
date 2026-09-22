@@ -36,4 +36,15 @@ hardFailuresJson: string,
 /**
  * JSON array of strings.
  */
-mustAddressJson: string, summary: string, runDir: string, startedAt: string | null, finishedAt: string | null, ingestedAt: string, };
+mustAddressJson: string, summary: string, 
+/**
+ * True when this run's summary is, character for character, the SUBJECT'S
+ * own description rather than anything the council concluded. Computed at
+ * read time (never stored): the ingest door substituted the description
+ * for an empty summary until 2026-09-22, and rows written before that
+ * still carry it. Runs supersede and are never rewritten, so the truth is
+ * exposed rather than repaired - a surface presenting `summary` as the
+ * verdict should say so when this is set. Only a `use_case` subject can
+ * ever set it; an architecture subject stores no description to compare.
+ */
+summaryIsSubjectFallback: boolean, runDir: string, startedAt: string | null, finishedAt: string | null, ingestedAt: string, };

@@ -25,9 +25,23 @@ use rusqlite::{params, Row};
 
 const SUBJECT_COLUMNS: &str = "id, project_id, kind, use_case_id, slug, title, drift, \
      drift_checked_at, created_at, updated_at";
-const RUN_COLUMNS: &str = "id, subject_id, round_no, supersedes_run_id, rubric_version, \
-     trust_state, outcome, overall, coverage, head_sha, span_digest, spanned_paths_json, \
-     hard_failures_json, must_address_json, summary, run_dir, started_at, finished_at, ingested_at";
+/// Every run read goes through this, and it is a SELECT rather than a column
+/// list because one of the fields is computed here: `summary_is_subject_fallback`
+/// is true when the stored summary is character for character the linked
+/// feature's description. The ingest door substituted that description for an
+/// empty summary until 2026-09-22 and those rows are not rewritten, so the
+/// comparison is made on every read instead. An architecture subject has no
+/// description stored anywhere, so the flag is false for it by construction -
+/// `NULL AND ...` is 0 in SQLite, never NULL.
+const RUN_SELECT: &str = "SELECT r.id, r.subject_id, r.round_no, r.supersedes_run_id, \
+     r.rubric_version, r.trust_state, r.outcome, r.overall, r.coverage, r.head_sha, \
+     r.span_digest, r.spanned_paths_json, r.hard_failures_json, r.must_address_json, \
+     r.summary, r.run_dir, r.started_at, r.finished_at, r.ingested_at, \
+     (u.description IS NOT NULL AND TRIM(r.summary) <> '' \
+      AND TRIM(r.summary) = TRIM(u.description)) AS summary_is_subject_fallback \
+     FROM dev_council_runs r \
+     JOIN dev_council_subjects s ON s.id = r.subject_id \
+     LEFT JOIN dev_use_cases u ON u.id = s.use_case_id";
 const VERDICT_COLUMNS: &str = "id, run_id, dimension, kind, state, score, confidence, floor, \
      floor_hit, advisory, payload_json";
 const DECISION_COLUMNS: &str = "id, subject_id, run_id, decision, reason, saw_digest, \
@@ -65,6 +79,7 @@ fn row_to_run(row: &Row) -> rusqlite::Result<CouncilRun> {
         hard_failures_json: row.get("hard_failures_json")?,
         must_address_json: row.get("must_address_json")?,
         summary: row.get("summary")?,
+        summary_is_subject_fallback: row.get::<_, i64>("summary_is_subject_fallback")? != 0,
         run_dir: row.get("run_dir")?,
         started_at: row.get("started_at")?,
         finished_at: row.get("finished_at")?,
@@ -436,7 +451,7 @@ pub fn get_run(pool: &DbPool, id: &str) -> Result<Option<CouncilRun>, AppError> 
         let conn = pool.get()?;
         Ok(conn
             .query_row(
-                &format!("SELECT {RUN_COLUMNS} FROM dev_council_runs WHERE id = ?1"),
+                &format!("{RUN_SELECT} WHERE r.id = ?1"),
                 params![id],
                 row_to_run,
             )
@@ -452,7 +467,7 @@ pub fn get_run_by_dir(pool: &DbPool, run_dir: &str) -> Result<Option<CouncilRun>
         let conn = pool.get()?;
         Ok(conn
             .query_row(
-                &format!("SELECT {RUN_COLUMNS} FROM dev_council_runs WHERE run_dir = ?1"),
+                &format!("{RUN_SELECT} WHERE r.run_dir = ?1"),
                 params![run_dir],
                 row_to_run,
             )
@@ -468,10 +483,7 @@ pub fn latest_run(pool: &DbPool, subject_id: &str) -> Result<Option<CouncilRun>,
         let conn = pool.get()?;
         Ok(conn
             .query_row(
-                &format!(
-                    "SELECT {RUN_COLUMNS} FROM dev_council_runs
-                  WHERE subject_id = ?1 ORDER BY round_no DESC LIMIT 1"
-                ),
+                &format!("{RUN_SELECT} WHERE r.subject_id = ?1 ORDER BY r.round_no DESC LIMIT 1"),
                 params![subject_id],
                 row_to_run,
             )
@@ -1449,6 +1461,90 @@ mod tests {
             Some(run.id.clone())
         );
         assert_eq!(latest_run(&pool, &subject.id).unwrap().unwrap().id, run.id);
+    }
+
+    /// The door refuses an empty summary since 2026-09-22, but the rows it
+    /// wrote before that carry the FEATURE'S description where the verdict
+    /// should be. Those rows are not rewritten - runs supersede - so every
+    /// read says whether the summary it is handing over is that substitution.
+    #[test]
+    fn a_summary_that_is_really_the_features_description_is_labelled_on_every_read() {
+        let (pool, project_id, _uc_id) = seeded();
+        let described = create_use_case(
+            &pool,
+            &project_id,
+            "Candidate sourcing",
+            Some("  Finds candidates across the connected boards.  "),
+            "capability",
+            None,
+            &[],
+            Some("active"),
+            "scan",
+            None,
+        )
+        .unwrap();
+        let (subject, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "use_case",
+            "candidate-sourcing",
+            "Candidate sourcing",
+            Some(&described.id),
+        )
+        .unwrap();
+
+        // Round 1: the substituted row, exactly as the pre-fix door wrote it.
+        let mut substituted = a_run(&subject.id, 1, "ready", "/runs/r1");
+        substituted.summary = "Finds candidates across the connected boards.".into();
+        let run = insert_run(&pool, &substituted, &[]).unwrap();
+        assert!(
+            run.summary_is_subject_fallback,
+            "the summary is the description, whitespace aside"
+        );
+        assert!(
+            get_run(&pool, &run.id)
+                .unwrap()
+                .unwrap()
+                .summary_is_subject_fallback
+        );
+        assert!(
+            get_run_by_dir(&pool, "/runs/r1")
+                .unwrap()
+                .unwrap()
+                .summary_is_subject_fallback
+        );
+        assert!(
+            latest_run(&pool, &subject.id)
+                .unwrap()
+                .unwrap()
+                .summary_is_subject_fallback
+        );
+
+        // Round 2: a real conclusion, and the flag says so.
+        let mut concluded = a_run(&subject.id, 2, "ready", "/runs/r2");
+        concluded.summary = "One clean round; the value case holds.".into();
+        let run2 = insert_run(&pool, &concluded, &[]).unwrap();
+        assert!(!run2.summary_is_subject_fallback);
+        assert!(
+            !latest_run(&pool, &subject.id)
+                .unwrap()
+                .unwrap()
+                .summary_is_subject_fallback
+        );
+
+        // An architecture subject stores no description to compare against, so
+        // the flag can only ever be false there - never NULL, never an error.
+        let (arch, _) = upsert_subject(
+            &pool,
+            &project_id,
+            "architecture",
+            "council-store",
+            "Council store",
+            None,
+        )
+        .unwrap();
+        let arch_run = insert_run(&pool, &a_run(&arch.id, 1, "ready", "/runs/r3"), &[]).unwrap();
+        assert!(!arch_run.summary_is_subject_fallback);
     }
 
     #[test]

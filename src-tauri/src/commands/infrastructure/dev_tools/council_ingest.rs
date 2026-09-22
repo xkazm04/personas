@@ -129,8 +129,12 @@ struct ResultSubject {
     slug: String,
     #[serde(default)]
     title: String,
-    #[serde(default)]
-    summary: String,
+    // The result also carries `subject.summary` - the FEATURE'S description.
+    // It is deliberately not read: this door used to substitute it for an
+    // empty run summary, which is the defect the refusal above closes. The
+    // stored copy of that description is `dev_use_cases.description`, and the
+    // read path compares a run's summary against it so an already-substituted
+    // row can be labelled rather than rewritten.
 }
 
 #[derive(Debug, Deserialize)]
@@ -565,6 +569,26 @@ pub(crate) fn validate_council_result(
         must_address.push(bounded(line, MAX_TEXT, &format!("must_address[{i}]"))?);
     }
 
+    // The run must state, in its own words, what the council concluded. This
+    // door used to substitute `subject.summary` for an empty one, which put
+    // the FEATURE'S BLURB in the column a reader reads as the verdict - the
+    // first real run (2026-09-22) shipped `"summary": ""` and landed 181
+    // characters of description as its conclusion. An empty summary is now a
+    // refusal like any other closed-set violation: nothing is written, and the
+    // corrected result re-ingests unchanged.
+    // The RULE comes from the shared vocabulary - this is the same emptiness
+    // check every other field gets, not a hand-rolled one (census
+    // `hand-rolled-emptiness-refusal`). Only the SENTENCE is this field's own,
+    // because the remedy is specific and a reader of the refusal should not
+    // have to know that `--summary` exists.
+    personas_core::validation::require_non_empty("summary", &result.summary).map_err(|_| {
+        AppError::Validation(
+            "summary is empty: re-run aggregate with --summary or a report.md first paragraph"
+                .into(),
+        )
+    })?;
+    let summary = bounded(&result.summary, MAX_TEXT, "summary")?;
+
     // --- the rubric decides which dimensions this run must carry ------------
     let rubric = rubric_for(&rubric_version).ok_or_else(|| {
         AppError::Validation(format!("No rubric named `{rubric_version}` in this app"))
@@ -850,15 +874,7 @@ pub(crate) fn validate_council_result(
         span_digest,
         hard_failures_json: serde_json::to_string(&hard_failures).unwrap_or_else(|_| "[]".into()),
         must_address_json: serde_json::to_string(&must_address).unwrap_or_else(|_| "[]".into()),
-        summary: bounded(
-            if result.summary.trim().is_empty() {
-                &result.subject.summary
-            } else {
-                &result.summary
-            },
-            MAX_TEXT,
-            "summary",
-        )?,
+        summary,
         started_at: result.started_at.filter(|s| !s.trim().is_empty()),
         finished_at: result.finished_at.filter(|s| !s.trim().is_empty()),
         verdicts,
@@ -1402,6 +1418,33 @@ mod tests {
         let mut v = good_result();
         v.as_object_mut().unwrap().remove("schema_version");
         assert!(validate(&v).is_err());
+    }
+
+    /// The council must state its own conclusion. The door used to fill an
+    /// empty summary with `subject.summary` - the feature's description - and
+    /// a surface reading that column as the verdict then showed the blurb.
+    #[test]
+    fn refuses_a_summary_that_says_nothing() {
+        const REMEDY: &str =
+            "summary is empty: re-run aggregate with --summary or a report.md first paragraph";
+        for blank in ["", "   ", "\n\t "] {
+            let mut v = good_result();
+            v["summary"] = json!(blank);
+            let err = validate(&v).unwrap_err().to_string();
+            assert!(err.contains(REMEDY), "{blank:?}: {err}");
+        }
+
+        // And the subject's description is no longer a stand-in for one.
+        let mut v = good_result();
+        v["summary"] = json!("");
+        v["subject"]["summary"] = json!("The feature's own description.");
+        let err = validate(&v).unwrap_err().to_string();
+        assert!(err.contains(REMEDY), "{err}");
+
+        // A real summary still lands, trimmed and verbatim.
+        let mut v = good_result();
+        v["summary"] = json!("  one clean round  ");
+        assert_eq!(validate(&v).unwrap().summary, "one clean round");
     }
 
     #[test]
