@@ -15364,8 +15364,6 @@ export type Translations = {
     drive_desc: string;
     twin_label: string;
     twin_desc: string;
-    companion_label: string;
-    companion_desc: string;
     drive: {
       title: string;
       subtitle: string;
@@ -23806,6 +23804,13 @@ export type Translations = {
       agents_watched: string;
       registry_subjects: string;
       shortcut_hint: string;
+      decisions_label: string;
+      agents_label: string;
+      registry_fact: string;
+      wake_not_onboarded: string;
+      wake_no_starred_personas: string;
+      wake_no_registry: string;
+      wake_off: string;
     };
     setup: {
       enable_section: string;
