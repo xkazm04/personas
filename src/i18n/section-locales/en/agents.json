@@ -39,7 +39,22 @@
     "proposal_title": "Proposed change",
     "decide_failed": "The proposal could not be applied",
     "orphan_title": "Proposed elsewhere",
-    "orphan_body": "These pending changes name a section this manifest does not have."
+    "orphan_body": "These pending changes name a section this manifest does not have.",
+    "rail_label": "Sections, drawn to scale",
+    "tabs_label": "Sections",
+    "author_you": "your hand",
+    "author_agent": "the agent's",
+    "author_neither": "neither hand",
+    "saves_whole": "saves whole",
+    "write_here": "Write in this paragraph",
+    "read_only_note": "The agent wrote this. You accept or reject a proposed change here; you do not type in it.",
+    "draft_kept": "You have an unsaved draft in this section. Click a paragraph to carry on.",
+    "lines_one": "1 line",
+    "lines_other": "{count} lines",
+    "waiting_one": "1 waiting",
+    "waiting_other": "{count} waiting",
+    "editor_field": "{section}, as markdown",
+    "editor_stop": "Stop writing"
   },
   "parameters_card": {
     "title": "Parameters",

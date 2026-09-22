@@ -2108,7 +2108,22 @@
     "self_note": "智能体自己的表述",
     "subtitle": "这是该智能体的核心，汇成一份文档：法则部分由你撰写，而它记录自己在工作中所学到的东西。",
     "title": "清单",
-    "updated": "更新时间"
+    "updated": "更新时间",
+    "rail_label": "按篇幅比例显示的章节",
+    "tabs_label": "章节",
+    "author_you": "你的笔",
+    "author_agent": "代理的原话",
+    "author_neither": "两者皆非",
+    "saves_whole": "整节保存",
+    "write_here": "在此段落中书写",
+    "read_only_note": "这是代理写的。你在此接受或拒绝建议的更改，但不在其中书写。",
+    "draft_kept": "本节有未保存的草稿。点击段落即可继续书写。",
+    "lines_one": "1 行",
+    "lines_other": "{count} 行",
+    "waiting_one": "1 项待处理",
+    "waiting_other": "{count} 项待处理",
+    "editor_field": "{section}，以 markdown 编辑",
+    "editor_stop": "停止书写"
   },
   "matrix_cred_picker": {
     "best_match": "最佳匹配",

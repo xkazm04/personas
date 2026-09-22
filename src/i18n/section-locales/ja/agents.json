@@ -2108,7 +2108,22 @@
     "self_note": "エージェント自身の言葉",
     "subtitle": "このエージェントの核となる、1つの文書です。法（ルール）はあなたが書き、エージェントは自身の仕事について学んだことを書き記します。",
     "title": "マニフェスト",
-    "updated": "更新日"
+    "updated": "更新日",
+    "rail_label": "分量に比例したセクション一覧",
+    "tabs_label": "セクション",
+    "author_you": "あなたの筆",
+    "author_agent": "エージェント自身の言葉",
+    "author_neither": "どちらでもない",
+    "saves_whole": "セクション全体を保存",
+    "write_here": "この段落に書く",
+    "read_only_note": "これはエージェントが書いたものです。提案された変更を承認または却下できますが、ここに直接書き込むことはできません。",
+    "draft_kept": "このセクションに未保存の下書きがあります。段落をクリックすると続きを書けます。",
+    "lines_one": "1 行",
+    "lines_other": "{count} 行",
+    "waiting_one": "保留中が1件",
+    "waiting_other": "保留中が{count}件",
+    "editor_field": "{section}（markdown 形式）",
+    "editor_stop": "書くのをやめる"
   },
   "matrix_cred_picker": {
     "best_match": "最良一致",

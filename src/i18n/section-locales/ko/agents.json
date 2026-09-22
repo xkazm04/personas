@@ -2108,7 +2108,22 @@
     "self_note": "에이전트 자신의 말",
     "subtitle": "이 에이전트의 핵심을 하나의 문서로 담은 것입니다. 법(원칙)은 당신이 작성하고, 에이전트는 자신의 업무에 대해 배운 것을 기록합니다.",
     "title": "매니페스트",
-    "updated": "업데이트됨"
+    "updated": "업데이트됨",
+    "rail_label": "분량에 비례한 섹션 목록",
+    "tabs_label": "섹션",
+    "author_you": "당신의 손",
+    "author_agent": "에이전트 자신의 말",
+    "author_neither": "어느 쪽도 아님",
+    "saves_whole": "섹션 전체를 저장",
+    "write_here": "이 문단에 쓰기",
+    "read_only_note": "이것은 에이전트가 쓴 글입니다. 제안된 변경을 수락하거나 거절할 수 있을 뿐, 여기에 직접 쓰지는 않습니다.",
+    "draft_kept": "이 섹션에 저장되지 않은 초안이 있습니다. 문단을 클릭하면 이어서 쓸 수 있습니다.",
+    "lines_one": "1줄",
+    "lines_other": "{count}줄",
+    "waiting_one": "대기 중 1건",
+    "waiting_other": "대기 중 {count}건",
+    "editor_field": "{section}, markdown 형식",
+    "editor_stop": "쓰기 중단"
   },
   "matrix_cred_picker": {
     "best_match": "최적 매칭",

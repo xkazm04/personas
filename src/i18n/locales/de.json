@@ -2114,7 +2114,22 @@
       "self_note": "Die eigenen Worte des Agenten",
       "subtitle": "Der Kern dieses Agenten, als ein Dokument. Sie schreiben das Gesetz; er schreibt, was er über seine eigene Arbeit gelernt hat.",
       "title": "Manifest",
-      "updated": "Aktualisiert"
+      "updated": "Aktualisiert",
+      "rail_label": "Abschnitte, maßstabsgetreu",
+      "tabs_label": "Abschnitte",
+      "author_you": "Ihre Hand",
+      "author_agent": "die Worte des Agenten",
+      "author_neither": "keine von beiden",
+      "saves_whole": "wird als Ganzes gespeichert",
+      "write_here": "In diesem Absatz schreiben",
+      "read_only_note": "Das hat der Agent geschrieben. Sie nehmen eine vorgeschlagene Änderung an oder lehnen sie ab; Sie schreiben hier nicht selbst.",
+      "draft_kept": "In diesem Abschnitt liegt ein ungespeicherter Entwurf. Klicken Sie einen Absatz an, um weiterzuschreiben.",
+      "lines_one": "1 Zeile",
+      "lines_other": "{count} Zeilen",
+      "waiting_one": "1 wartet",
+      "waiting_other": "{count} warten",
+      "editor_field": "{section}, als Markdown",
+      "editor_stop": "Schreiben beenden"
     },
     "matrix_cred_picker": {
       "best_match": "Beste Übereinstimmung",

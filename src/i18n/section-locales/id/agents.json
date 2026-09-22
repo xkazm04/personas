@@ -2108,7 +2108,22 @@
     "self_note": "Kata-kata agen itu sendiri",
     "subtitle": "Inti agen ini, sebagai satu dokumen. Anda menulis hukumnya; agen menulis apa yang telah dipelajarinya tentang pekerjaannya sendiri.",
     "title": "Manifes",
-    "updated": "Diperbarui"
+    "updated": "Diperbarui",
+    "rail_label": "Bagian, sesuai skala panjangnya",
+    "tabs_label": "Bagian",
+    "author_you": "tangan Anda",
+    "author_agent": "kata-kata agen sendiri",
+    "author_neither": "bukan keduanya",
+    "saves_whole": "disimpan utuh",
+    "write_here": "Tulis di paragraf ini",
+    "read_only_note": "Ini ditulis oleh agen. Anda menerima atau menolak perubahan yang diusulkan; Anda tidak menulis di sini.",
+    "draft_kept": "Ada draf yang belum disimpan di bagian ini. Klik sebuah paragraf untuk melanjutkan.",
+    "lines_one": "1 baris",
+    "lines_other": "{count} baris",
+    "waiting_one": "1 menunggu",
+    "waiting_other": "{count} menunggu",
+    "editor_field": "{section}, sebagai markdown",
+    "editor_stop": "Berhenti menulis"
   },
   "matrix_cred_picker": {
     "best_match": "Cocok terbaik",

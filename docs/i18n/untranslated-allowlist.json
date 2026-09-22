@@ -1871,6 +1871,7 @@
   "fr:agents.life.core_motivation",
   "fr:agents.life.ledger_kind_attention",
   "fr:agents.life.ledger_kind_consolidation",
+  "fr:agents.manifest.tabs_label",
   "fr:agents.messaging_picker.field_placeholders.to",
   "fr:agents.model_config.source_agent",
   "fr:agents.ops.assertions",

@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**139 reusable components** live under `src/features/shared/components/`.
+**146 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -72,6 +72,18 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TruncateWithTooltip` | Truncates overflowing text and shows the full value in a Tooltip. |
 | `UnifiedTable` | Standard data table (sorting/columns). Use instead of hand-built <table> grids. |
 | `UuidLabel` | _(add a `@catalog` tag)_ |
+
+## document
+
+| Component | What it's for |
+|---|---|
+| `DocumentBlocks` | DocumentBlocks — a section's prose as individually clickable paragraphs, where one click selects and (where writable) opens the ca |
+| `DocumentClosedRow` | DocumentClosedRow — one muted single-line row for a section that is not open, so the whole document stays in view. Part of Documen |
+| `DocumentEditor` | DocumentEditor — DocumentSurface's inline write mode: one textarea holding the whole section, opened with the caret in the block t |
+| `DocumentRail` | DocumentRail — DocumentSurface's optional side panel: one band per section, its height the section's real line count. Part of Docu |
+| `DocumentSurface` | DocumentSurface — a long-form two-author document as a reading and writing instrument: a to-scale side rail (parametrized), a top  |
+| `DocumentTabs` | DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the |
+| `useDocumentSurface` | writing, and the per-section drafts. |
 
 ## editors — Rich text / JSON / markdown / prompt editors & renderers
 
@@ -223,4 +235,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_139 components, 44 without a `@catalog` description._
+_146 components, 44 without a `@catalog` description._

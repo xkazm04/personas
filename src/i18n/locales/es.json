@@ -2114,7 +2114,22 @@
       "self_note": "Las palabras propias del agente",
       "subtitle": "El núcleo de este agente, en un solo documento. Tú escribes la ley; él escribe lo que ha aprendido sobre su propio trabajo.",
       "title": "Manifiesto",
-      "updated": "Actualizado"
+      "updated": "Actualizado",
+      "rail_label": "Secciones, a escala",
+      "tabs_label": "Secciones",
+      "author_you": "su mano",
+      "author_agent": "las palabras del agente",
+      "author_neither": "ninguna de las dos",
+      "saves_whole": "se guarda entera",
+      "write_here": "Escribir en este párrafo",
+      "read_only_note": "Esto lo escribió el agente. Usted acepta o rechaza un cambio propuesto; no escribe aquí.",
+      "draft_kept": "Tiene un borrador sin guardar en esta sección. Haga clic en un párrafo para continuar.",
+      "lines_one": "1 línea",
+      "lines_other": "{count} líneas",
+      "waiting_one": "1 en espera",
+      "waiting_other": "{count} en espera",
+      "editor_field": "{section}, como markdown",
+      "editor_stop": "Dejar de escribir"
     },
     "matrix_cred_picker": {
       "best_match": "Mejor coincidencia",

@@ -8,3 +8,4 @@ export {
   type ManifestSectionKind,
   type ManifestDiffPreview,
 } from './manifestDocument';
+export { headingSlug, sectionId, previewsFor, toDocumentSections } from './manifestSurface';

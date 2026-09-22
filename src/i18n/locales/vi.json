@@ -2114,7 +2114,22 @@
       "self_note": "Lời của chính tác nhân",
       "subtitle": "Cốt lõi của tác nhân này, gói gọn trong một tài liệu. Bạn viết phần luật lệ; nó viết ra những gì nó đã học được về công việc của chính mình.",
       "title": "Tuyên ngôn",
-      "updated": "Đã cập nhật"
+      "updated": "Đã cập nhật",
+      "rail_label": "Các mục, theo tỷ lệ độ dài",
+      "tabs_label": "Các mục",
+      "author_you": "tay bạn viết",
+      "author_agent": "lời của chính tác nhân",
+      "author_neither": "không phải bên nào",
+      "saves_whole": "lưu trọn mục",
+      "write_here": "Viết trong đoạn này",
+      "read_only_note": "Phần này do tác nhân viết. Bạn chấp nhận hoặc từ chối thay đổi được đề xuất; bạn không tự viết ở đây.",
+      "draft_kept": "Mục này còn một bản nháp chưa lưu. Nhấp vào một đoạn để viết tiếp.",
+      "lines_one": "1 dòng",
+      "lines_other": "{count} dòng",
+      "waiting_one": "1 đang chờ",
+      "waiting_other": "{count} đang chờ",
+      "editor_field": "{section}, dưới dạng markdown",
+      "editor_stop": "Ngừng viết"
     },
     "matrix_cred_picker": {
       "best_match": "Phù hợp nhất",

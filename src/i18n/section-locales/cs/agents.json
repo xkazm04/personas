@@ -2108,7 +2108,22 @@
     "self_note": "Vlastní slova agenta",
     "subtitle": "Jádro tohoto agenta v jediném dokumentu. Vy píšete zákon; on píše, co se naučil o vlastní práci.",
     "title": "Manifest",
-    "updated": "Aktualizováno"
+    "updated": "Aktualizováno",
+    "rail_label": "Sekce v měřítku dokumentu",
+    "tabs_label": "Sekce",
+    "author_you": "vaše ruka",
+    "author_agent": "agentova slova",
+    "author_neither": "ani jedna ruka",
+    "saves_whole": "ukládá se celá",
+    "write_here": "Psát v tomto odstavci",
+    "read_only_note": "Toto napsal agent. Navrženou změnu zde přijímáte nebo odmítáte; sami do ní nepíšete.",
+    "draft_kept": "V této sekci máte neuložený koncept. Klepnutím na odstavec budete pokračovat.",
+    "lines_one": "1 řádek",
+    "lines_other": "{count} řádků",
+    "waiting_one": "1 čeká",
+    "waiting_other": "{count} čeká",
+    "editor_field": "{section}, jako markdown",
+    "editor_stop": "Přestat psát"
   },
   "matrix_cred_picker": {
     "best_match": "Nejlepší shoda",

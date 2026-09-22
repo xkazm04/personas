@@ -2114,7 +2114,22 @@
       "self_note": "Les mots propres de l'agent",
       "subtitle": "Le cœur de cet agent, réuni en un seul document. Vous rédigez la loi ; il rédige ce qu'il a appris sur son propre travail.",
       "title": "Manifeste",
-      "updated": "Mis à jour"
+      "updated": "Mis à jour",
+      "rail_label": "Sections, à l’échelle",
+      "tabs_label": "Sections",
+      "author_you": "votre main",
+      "author_agent": "les mots de l’agent",
+      "author_neither": "aucune des deux",
+      "saves_whole": "enregistrée en entier",
+      "write_here": "Écrire dans ce paragraphe",
+      "read_only_note": "C’est l’agent qui a écrit ceci. Vous acceptez ou refusez une modification proposée ; vous n’y écrivez pas vous-même.",
+      "draft_kept": "Un brouillon non enregistré subsiste dans cette section. Cliquez sur un paragraphe pour continuer.",
+      "lines_one": "1 ligne",
+      "lines_other": "{count} lignes",
+      "waiting_one": "1 en attente",
+      "waiting_other": "{count} en attente",
+      "editor_field": "{section}, en markdown",
+      "editor_stop": "Arrêter d’écrire"
     },
     "matrix_cred_picker": {
       "best_match": "Meilleure correspondance",

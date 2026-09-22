@@ -1749,6 +1749,21 @@ export type Translations = {
       decide_failed: string;
       orphan_title: string;
       orphan_body: string;
+      rail_label: string;
+      tabs_label: string;
+      author_you: string;
+      author_agent: string;
+      author_neither: string;
+      saves_whole: string;
+      write_here: string;
+      read_only_note: string;
+      draft_kept: string;
+      lines_one: string;
+      lines_other: string;
+      waiting_one: string;
+      waiting_other: string;
+      editor_field: string;
+      editor_stop: string;
     };
     parameters_card: {
       title: string;
@@ -21447,11 +21462,8 @@ export type Translations = {
     overview: {
       variant_switcher_aria: string;
       variant_labels: {
-        classic: string;
         map: string;
         ledger: string;
-        treemap: string;
-        grid: string;
         river: string;
       };
       ungrouped: string;
