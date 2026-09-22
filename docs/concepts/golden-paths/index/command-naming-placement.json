@@ -60,7 +60,7 @@
     "registry.rs": {"count":1,"sections":[7],"contexts":["zero-command files, 4,297 LOC) and `commands/fleet/` (`registry.rs` 1,902, `stale.rs` 1,810,"],"resolved":false},
     "research_lab.rs": {"count":1,"sections":[7],"contexts":["`research_lab.rs` (27) — are five separate products, each with its own feature doc."],"resolved":false},
     "scripts/check-literal-parity.mjs": {"count":1,"sections":[9],"contexts":["`src-tauri/src/commands/` are `scripts/check-literal-parity.mjs` (a one-off audit of `require_*`"]},
-    "scripts/docs/feature-doc-map.json": {"count":6,"sections":[3,4,7,9],"contexts":["(`docs/features/companion/README.md`, mapped at `feature-doc-map.json` via"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
+    "scripts/docs/feature-doc-map.json": {"count":6,"sections":[3,4,7,9],"contexts":["(`docs/features/companions/athena/README.md`, mapped at `feature-doc-map.json` via"],"resolvedFrom":"basename","verbatim":"feature-doc-map.json"},
     "scripts/security-audit.sh": {"count":1,"sections":[9],"contexts":["literals), `scripts/security-audit.sh` (scoped to `credentials/`), and the registration test at"]},
     "src-tauri/": {"count":1,"sections":[],"contexts":["`.rs` files under `src-tauri/` — the **1,661** `#[tauri::command]` attribute sites, the **299**"],"resolved":false,"isDir":true},
     "src-tauri/db/": {"count":2,"sections":[3,7],"contexts":["- **`src-tauri/db/` (the `personas-db` crate)** — where SQL belongs. **117 of 143 files (82%)"],"resolved":false,"isDir":true},

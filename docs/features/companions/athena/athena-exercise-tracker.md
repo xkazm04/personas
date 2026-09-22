@@ -6,7 +6,7 @@
 > This doc is the durable checklist + session log so progress survives
 > across chat sessions and memory resets.
 >
-> **Derived from** `docs/features/companion/README.md` +
+> **Derived from** `docs/features/companions/athena/README.md` +
 > `athena-usecases.md` (constitution v41). When those docs and observed
 > behavior disagree, the behavior wins — note the delta in the session log.
 

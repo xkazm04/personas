@@ -158,7 +158,7 @@ was accepted.
 
 ## Related
 
-- `docs/features/companion/athena-architecture.md` for the runtime, argv per engine, the
+- `docs/features/companions/athena/athena-architecture.md` for the runtime, argv per engine, the
   tier table and the ledger columns.
-- `docs/features/companion/README.md` for the settings surface and the voice behaviour.
+- `docs/features/companions/athena/README.md` for the settings surface and the voice behaviour.
 - `scripts/test/athena-model-bench.mjs` for the bench cells, including the Grok cells.

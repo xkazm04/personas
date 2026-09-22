@@ -212,7 +212,7 @@ whisper.cpp is batch (no live interim like Web Speech). For the orb, show a "tra
 ## 6. Docs & surfaces to update (same-session sync rule)
 
 Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → update in the same turn(s):
-- `docs/features/companion/README.md` — add an "Orb / minimized presence" + "Local STT" section.
+- `docs/features/companions/athena/README.md` — add an "Orb / minimized presence" + "Local STT" section.
 - This plan file's status as steps land.
 - Onboarding: if a companion tour flow exists in `feature-doc-map.json`'s `onboardingFlows`, add an orb intro step.
 - Marketing (`../personas-web`): the companion guide category gains the floating-orb + local-voice story (or `/guide-sync` batch later).

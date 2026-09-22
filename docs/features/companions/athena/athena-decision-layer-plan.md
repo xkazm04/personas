@@ -146,7 +146,7 @@ When `pendingDecision != null`, branch the STT result in `useHoldToTalk` (before
 - `git show HEAD:<file> | grep` proof each piece is wired (component imported+rendered in AthenaGuideLayer; store field present; leader-key present in AthenaOrbLayer) — NOT narration.
 - i18n: `node scripts/i18n/check-coverage.mjs` no EXTRAS.
 - Atomic commit per slice; per-file `git add`; leave leonardo + `docs/test/` (ignored) untouched.
-- doc-sync: this plan + `docs/features/companion/README.md` (the Stop hook will nag on `src/features/plugins/companion/**` edits).
+- doc-sync: this plan + `docs/features/companions/athena/README.md` (the Stop hook will nag on `src/features/plugins/companion/**` edits).
 
 ## Out of scope (note, don't build)
 - Multi-persona orb decisions (Athena-only for now).

@@ -195,7 +195,7 @@
   },
   "entries": [
     {
-      "doc": "docs/features/director/README.md",
+      "doc": "docs/features/companions/overseer/README.md",
       "sourceGlobs": [
         "src-tauri/src/engine/director.rs",
         "src-tauri/src/engine/director_brain.rs",
@@ -337,7 +337,7 @@
       "marketingModule": "home"
     },
     {
-      "doc": "docs/features/companion/cockpit.md",
+      "doc": "docs/features/companions/athena/cockpit.md",
       "sourceGlobs": [
         "src/features/home/sub_cockpit/**",
         "src/features/companions/athena/inbox/**",
@@ -392,7 +392,7 @@
       ]
     },
     {
-      "doc": "docs/features/companion/README.md",
+      "doc": "docs/features/companions/athena/README.md",
       "sourceGlobs": [
         "src/features/companions/athena/**",
         "src-tauri/src/commands/companion/**",
@@ -628,7 +628,7 @@
       ]
     },
     {
-      "doc": "docs/features/council.md",
+      "doc": "docs/features/companions/curator/council.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/sub_context/council*",
         "src/features/plugins/dev-tools/sub_context/Feature*",
