@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link2, TriangleAlert } from 'lucide-react';
 
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { COUNCIL_UNPAIRED_GLYPH } from '@/features/shared/glyph/glyphs/councilUnpairedGlyph';
 import Button from '@/features/shared/components/buttons/Button';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
@@ -124,6 +125,11 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
     return (
       <div className="flex h-full items-center justify-center" data-testid="council-unpaired">
         <EmptyState
+          /* The unlit field, drawn rather than iconised: three hollow stars
+             and one lit one on the rim, traced and self-drawing through
+             `MotionizedGlyph`. `icon` stays as the fallback slot the
+             component declares; the glyph wins whenever it is passed. */
+          glyph={COUNCIL_UNPAIRED_GLYPH}
           icon={Link2}
           title={g.unpaired_title}
           description={g.unpaired_description}
