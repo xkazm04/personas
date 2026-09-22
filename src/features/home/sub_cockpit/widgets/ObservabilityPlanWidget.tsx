@@ -56,7 +56,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
   if (!errorHandling && !successMetric) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.observability_plan_empty}
+        {t.athena.observability_plan_empty}
       </div>
     );
   }
@@ -69,7 +69,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-foreground">
         <Activity className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.observability_plan_title}
+          {title || t.athena.observability_plan_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -84,7 +84,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
         >
           <h4 className="flex items-center gap-1.5 typo-caption text-rose-300/85 font-medium">
             <AlertTriangle className="w-3.5 h-3.5" />
-            {t.plugins.companion.observability_plan_error_path}
+            {t.athena.observability_plan_error_path}
           </h4>
           {errorHandling.triggers.length > 0 && (
             <ul className="space-y-1 pl-1 typo-caption text-foreground">
@@ -99,7 +99,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
           {errorHandling.escalation && (
             <div className="typo-caption text-foreground pt-1 border-t border-rose-500/15">
               <span className="text-foreground">
-                {t.plugins.companion.observability_plan_escalation}
+                {t.athena.observability_plan_escalation}
                 {': '}
               </span>
               {errorHandling.escalation}
@@ -114,7 +114,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
         >
           <h4 className="flex items-center gap-1.5 typo-caption text-emerald-300/85 font-medium">
             <Target className="w-3.5 h-3.5" />
-            {t.plugins.companion.observability_plan_success_metric}
+            {t.athena.observability_plan_success_metric}
           </h4>
           <div className="flex items-center gap-2 typo-caption">
             <MetricIcon kind={successMetric.kind} />
@@ -130,7 +130,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
           {successMetric.target && (
             <div className="typo-caption text-foreground pt-1 border-t border-emerald-500/15">
               <span className="text-foreground">
-                {t.plugins.companion.observability_plan_target}
+                {t.athena.observability_plan_target}
                 {': '}
               </span>
               {successMetric.target}
@@ -157,10 +157,10 @@ function metricLabel(
   t: ReturnType<typeof useTranslation>['t'],
 ): string {
   if (kind === 'count_by_status')
-    return t.plugins.companion.observability_metric_count_by_status;
+    return t.athena.observability_metric_count_by_status;
   if (kind === 'cost_per_run')
-    return t.plugins.companion.observability_metric_cost_per_run;
+    return t.athena.observability_metric_cost_per_run;
   if (kind === 'latency')
-    return t.plugins.companion.observability_metric_latency;
-  return t.plugins.companion.observability_metric_custom;
+    return t.athena.observability_metric_latency;
+  return t.athena.observability_metric_custom;
 }

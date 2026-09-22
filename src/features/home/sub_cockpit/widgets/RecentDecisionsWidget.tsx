@@ -87,7 +87,7 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-1.5 typo-caption text-fuchsia-300/75">
         <ScrollText className="w-3 h-3" />
         <span className="font-medium">
-          {title || t.plugins.companion.recent_decisions_title}
+          {title || t.athena.recent_decisions_title}
         </span>
         {personaContext && (
           <span className="text-foreground truncate" title={personaContext}>
@@ -99,7 +99,7 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
         <div className="pl-4">
           <InlineErrorBanner
             compact
-            message={t.plugins.companion.recent_decisions_error}
+            message={t.athena.recent_decisions_error}
             onRetry={retry}
           />
         </div>

@@ -18,7 +18,7 @@ const WINDOW_CHOICES = [0, 30, 60, 120] as const;
 
 export function WakeCadence() {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [stats, setStats] = useState<WakeStats | null>(null);
 
   const refresh = useCallback(() => {

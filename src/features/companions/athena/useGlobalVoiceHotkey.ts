@@ -77,7 +77,7 @@ export function useGlobalVoiceHotkey(onFire: () => void) {
         const t = getActiveTranslations();
         useToastStore
           .getState()
-          .addToast(t.plugins.companion.global_hotkey_failed, 'error');
+          .addToast(t.athena.global_hotkey_failed, 'error');
         silentCatch('useGlobalVoiceHotkey.register')(err);
       },
     );

@@ -51,6 +51,21 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // footer toggle is always mounted, so there is no route that does not reach
   // it. Same justification as consent/remote_approval above.
   'notepad',
+  // `athena` — her chat panel, orb, guide layer and decision bubble are
+  // OverlayIslands at the App root (App.tsx), and her footer icon is in the
+  // always-mounted footer, so there is no route that does not reach her.
+  // Measured 2026-09-22 when the section was carved out of `plugins`: of the
+  // 1,196 keys, the app-wide overlay closure reads 716 (39.3 KB) and only her
+  // five page tabs read the other 291 (19.0 KB) — and 190 keys (12.6 KB) are
+  // reachable only through computed lookups (BrainViewer indexes the section
+  // by a variable key, as does the Create Athena rail through
+  // `STEP_LABEL_KEYS`) that no static split can attribute. Splitting the
+  // section would therefore save ~19 KB per
+  // route while risking the exact defect this move fixes: until it was carved
+  // out, these keys lived in `plugins`, which loads on the `teams` and
+  // `plugins` routes only — so Athena's global overlays rendered English on
+  // every other route in all 13 non-English locales.
+  'athena',
   // `debt` is the auto-extracted hardcoded-string staging catalog read through
   // the debtText()/<DebtText/> channel (src/i18n/DebtText.tsx). 539 keys across
   // 113 files spanning agents, overview, plugins, templates, home, triggers,

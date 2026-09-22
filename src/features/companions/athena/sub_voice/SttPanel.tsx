@@ -59,8 +59,8 @@ export default function SttPanel() {
   return (
     <div className="space-y-4">
       <SectionCard
-        title={t.plugins.companion.stt_title}
-        subtitle={t.plugins.companion.stt_desc}
+        title={t.athena.stt_title}
+        subtitle={t.athena.stt_desc}
         titleClassName="text-primary"
       >
         <div className="grid grid-cols-2 gap-2 px-1 py-2">
@@ -69,22 +69,22 @@ export default function SttPanel() {
             disabled={captureActive}
             onClick={() => setEngine('browser')}
             icon={<Cloud className="w-4 h-4" />}
-            label={t.plugins.companion.stt_engine_browser}
-            caption={t.plugins.companion.stt_engine_browser_caption}
+            label={t.athena.stt_engine_browser}
+            caption={t.athena.stt_engine_browser_caption}
           />
           <EngineButton
             active={engine === 'whisper'}
             disabled={captureActive}
             onClick={() => setEngine('whisper')}
             icon={<HardDrive className="w-4 h-4" />}
-            label={t.plugins.companion.stt_engine_whisper}
-            caption={t.plugins.companion.stt_engine_whisper_caption}
+            label={t.athena.stt_engine_whisper}
+            caption={t.athena.stt_engine_whisper_caption}
           />
         </div>
         {engine === 'browser' && (
           <div className="mx-1 mb-2 rounded-card border border-amber-500/30 bg-amber-500/5 px-3 py-2">
             <p className="typo-caption text-amber-300/90">
-              {t.plugins.companion.stt_browser_disclosure}
+              {t.athena.stt_browser_disclosure}
             </p>
           </div>
         )}
@@ -103,10 +103,10 @@ export default function SttPanel() {
             disabled={captureActive}
             data-testid="stt-compare-open"
           >
-            {t.plugins.companion.stt_compare_open}
+            {t.athena.stt_compare_open}
           </Button>
           <span className="typo-caption text-foreground">
-            {t.plugins.companion.stt_compare_open_hint}
+            {t.athena.stt_compare_open_hint}
           </span>
         </div>
       </SectionCard>
@@ -253,8 +253,8 @@ function WhisperConfig() {
         chrome for the section, not a peer of the install button.
       */}
       <SectionCard
-        title={t.plugins.companion.stt_engine_status_title}
-        subtitle={t.plugins.companion.stt_engine_status_desc}
+        title={t.athena.stt_engine_status_title}
+        subtitle={t.athena.stt_engine_status_desc}
         titleClassName="text-primary"
         icon={
           <Cpu
@@ -267,8 +267,8 @@ function WhisperConfig() {
             type="button"
             onClick={() => void refreshStatus()}
             className="p-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring"
-            title={t.plugins.companion.stt_refresh}
-            aria-label={t.plugins.companion.stt_refresh}
+            title={t.athena.stt_refresh}
+            aria-label={t.athena.stt_refresh}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -278,14 +278,14 @@ function WhisperConfig() {
           {statusLoading ? (
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <LoadingSpinner size="sm" />
-              {t.plugins.companion.stt_loading}
+              {t.athena.stt_loading}
             </div>
           ) : (
             <>
               <div className="typo-body">
                 {status?.installed
-                  ? t.plugins.companion.stt_installed
-                  : t.plugins.companion.stt_not_installed}
+                  ? t.athena.stt_installed
+                  : t.athena.stt_not_installed}
               </div>
               {status && (
                 <p className="typo-code text-[11px] text-foreground break-all">
@@ -300,7 +300,7 @@ function WhisperConfig() {
               */}
               {!status?.installed && (
                 <>
-                  <p className="typo-caption">{t.plugins.companion.stt_install_desc}</p>
+                  <p className="typo-caption">{t.athena.stt_install_desc}</p>
                   {/*
                     Embedded: this section already IS "Whisper engine", so
                     the install block contributes only its action and its
@@ -313,9 +313,9 @@ function WhisperConfig() {
                     onDownload={companionSttInstallEngine}
                     onDone={() => void refreshStatus()}
                     icon={<Download className="w-4 h-4" />}
-                    title={t.plugins.companion.stt_install_title}
-                    desc={t.plugins.companion.stt_install_desc}
-                    installButtonLabel={t.plugins.companion.stt_install_button}
+                    title={t.athena.stt_install_title}
+                    desc={t.athena.stt_install_desc}
+                    installButtonLabel={t.athena.stt_install_button}
                     logPrefix="stt.install"
                   />
                 </>
@@ -333,8 +333,8 @@ function WhisperConfig() {
         how many are downloaded, and whether one is selected.
       */}
       <SectionCard
-        title={t.plugins.companion.stt_models_title}
-        subtitle={t.plugins.companion.stt_models_desc}
+        title={t.athena.stt_models_title}
+        subtitle={t.athena.stt_models_desc}
         titleClassName="text-primary"
         collapsible
         storageKey="companion.stt.models"
@@ -342,7 +342,7 @@ function WhisperConfig() {
         icon={<HardDrive className="w-4 h-4 text-foreground" />}
         action={
           <span className="typo-caption text-foreground tabular-nums">
-            {tx(t.plugins.companion.stt_models_summary, {
+            {tx(t.athena.stt_models_summary, {
               downloaded: models?.filter((m) => m.isDownloaded).length ?? 0,
               total: models?.length ?? 0,
             })}
@@ -361,13 +361,13 @@ function WhisperConfig() {
           */}
           {!statusLoading && !status?.installed && (
             <p className="typo-caption text-amber-300">
-              {t.plugins.companion.stt_models_engine_first}
+              {t.athena.stt_models_engine_first}
             </p>
           )}
           {models === null ? (
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <LoadingSpinner size="sm" />
-              {t.plugins.companion.stt_loading}
+              {t.athena.stt_loading}
             </div>
           ) : (
             models.map((m) => {
@@ -396,7 +396,7 @@ function WhisperConfig() {
                         {selected && (
                           <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300">
                             <CheckCircle2 className="w-3 h-3" />
-                            {t.plugins.companion.stt_model_selected}
+                            {t.athena.stt_model_selected}
                           </span>
                         )}
                       </div>
@@ -411,14 +411,14 @@ function WhisperConfig() {
                             disabled={selected}
                             className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
                           >
-                            {t.plugins.companion.stt_model_select}
+                            {t.athena.stt_model_select}
                           </button>
                           <button
                             type="button"
                             onClick={() => void onDelete(m.modelId)}
                             className="p-1.5 rounded-interactive text-foreground hover:text-rose-300 hover:bg-rose-500/10 transition-colors focus-ring"
-                            title={t.plugins.companion.stt_model_delete}
-                            aria-label={t.plugins.companion.stt_model_delete}
+                            title={t.athena.stt_model_delete}
+                            aria-label={t.athena.stt_model_delete}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -426,7 +426,7 @@ function WhisperConfig() {
                       ) : downloading ? (
                         <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          {pct != null ? `${pct}%` : t.plugins.companion.stt_model_downloading}
+                          {pct != null ? `${pct}%` : t.athena.stt_model_downloading}
                         </span>
                       ) : (
                         <button
@@ -436,8 +436,8 @@ function WhisperConfig() {
                         >
                           {failed ? <XCircle className="w-3.5 h-3.5 text-rose-400" /> : <Download className="w-3.5 h-3.5" />}
                           {failed
-                            ? t.plugins.companion.stt_model_failed
-                            : t.plugins.companion.stt_model_download}
+                            ? t.athena.stt_model_failed
+                            : t.athena.stt_model_download}
                         </button>
                       )}
                     </div>

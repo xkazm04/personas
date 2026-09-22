@@ -20,7 +20,7 @@ export function StageCardKeepToggle({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const stepLabel = useStepLabel();
   const pill = (
     <span className="ml-2 inline-flex items-center px-1.5 py-px rounded-pill bg-primary/15 text-primary typo-caption">

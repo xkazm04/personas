@@ -31,7 +31,7 @@ const PREVIEW_CHARS = 420;
 
 export function OrbUnreadBubble() {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const reduceMotion = useReducedMotion();
 
   const unreadReplies = useAthenaStore((s) => s.unreadReplies);

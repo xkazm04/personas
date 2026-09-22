@@ -42,12 +42,12 @@ export default function MemoryPanel() {
     setReflecting(true);
     try {
       const id = await companionRunReflection();
-      addToast(t.plugins.companion.reflections, 'success');
+      addToast(t.athena.reflections, 'success');
       // Jump straight to the new reflection so the result is visible.
       setBrainView({ open: true, kind: 'reflection', id });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      addToast(`${t.plugins.companion.reflection_failed}: ${msg}`, 'error');
+      addToast(`${t.athena.reflection_failed}: ${msg}`, 'error');
       silentCatch('companion_run_reflection')(err);
     } finally {
       setReflecting(false);
@@ -60,8 +60,8 @@ export default function MemoryPanel() {
       const n = await companionDecayUnusedFacts();
       addToast(
         n === 0
-          ? t.plugins.companion.decay_none
-          : `${n} ${t.plugins.companion.decay_done.replace('{{count}}', String(n)).replace(/^\d+\s+/, '')}`,
+          ? t.athena.decay_none
+          : `${n} ${t.athena.decay_done.replace('{{count}}', String(n)).replace(/^\d+\s+/, '')}`,
         'success',
       );
     } catch (err: unknown) {
@@ -83,12 +83,12 @@ export default function MemoryPanel() {
     try {
       const r = await companionReembedMissing();
       if (!r.available) {
-        addToast(t.plugins.companion.memory_rebuild_search_unavailable, 'warning');
+        addToast(t.athena.memory_rebuild_search_unavailable, 'warning');
       } else if (r.embedded === 0) {
-        addToast(t.plugins.companion.memory_rebuild_search_none, 'success');
+        addToast(t.athena.memory_rebuild_search_none, 'success');
       } else {
         addToast(
-          tx(t.plugins.companion.memory_rebuild_search_done, { count: r.embedded }),
+          tx(t.athena.memory_rebuild_search_done, { count: r.embedded }),
           'success',
         );
       }
@@ -106,10 +106,10 @@ export default function MemoryPanel() {
       <div className="px-4 py-2 border-b border-foreground/10 flex items-center justify-between gap-2 shrink-0">
         <div className="min-w-0">
           <div className="typo-caption font-medium text-foreground">
-            {t.plugins.companion.memory_bulk_actions_title}
+            {t.athena.memory_bulk_actions_title}
           </div>
           <div className="typo-caption text-foreground hidden sm:block">
-            {t.plugins.companion.memory_bulk_actions_desc}
+            {t.athena.memory_bulk_actions_desc}
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -121,11 +121,11 @@ export default function MemoryPanel() {
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/85'
             }`}
-            title={t.plugins.companion.memory_run_consolidation}
+            title={t.athena.memory_run_consolidation}
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">
-              {t.plugins.companion.memory_run_consolidation}
+              {t.athena.memory_run_consolidation}
             </span>
           </button>
           <button
@@ -133,7 +133,7 @@ export default function MemoryPanel() {
             onClick={generateReflection}
             disabled={reflecting}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.plugins.companion.memory_generate_reflection}
+            title={t.athena.memory_generate_reflection}
           >
             {reflecting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -142,8 +142,8 @@ export default function MemoryPanel() {
             )}
             <span className="hidden sm:inline">
               {reflecting
-                ? t.plugins.companion.reflection_running
-                : t.plugins.companion.memory_generate_reflection}
+                ? t.athena.reflection_running
+                : t.athena.memory_generate_reflection}
             </span>
           </button>
           <button
@@ -151,7 +151,7 @@ export default function MemoryPanel() {
             onClick={decayFacts}
             disabled={decaying}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.plugins.companion.memory_decay_unused}
+            title={t.athena.memory_decay_unused}
           >
             {decaying ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -159,7 +159,7 @@ export default function MemoryPanel() {
               <TrendingDown className="w-3.5 h-3.5" />
             )}
             <span className="hidden sm:inline">
-              {t.plugins.companion.memory_decay_unused}
+              {t.athena.memory_decay_unused}
             </span>
           </button>
           <button
@@ -167,7 +167,7 @@ export default function MemoryPanel() {
             onClick={rebuildSearchIndex}
             disabled={reembedding}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.plugins.companion.memory_rebuild_search}
+            title={t.athena.memory_rebuild_search}
           >
             {reembedding ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -176,8 +176,8 @@ export default function MemoryPanel() {
             )}
             <span className="hidden sm:inline">
               {reembedding
-                ? t.plugins.companion.memory_rebuild_search_running
-                : t.plugins.companion.memory_rebuild_search}
+                ? t.athena.memory_rebuild_search_running
+                : t.athena.memory_rebuild_search}
             </span>
           </button>
         </div>

@@ -64,12 +64,12 @@ export function LiveOpsStrip() {
         )}
         <Activity className="size-3.5 shrink-0 text-foreground" />
         <span className="truncate">
-          {t.plugins.companion.orchestration.live_view_title}
+          {t.athena.orchestration.live_view_title}
         </span>
         <span className="ml-auto text-foreground typo-caption shrink-0">
           {opCount === 1
-            ? t.plugins.companion.orchestration.live_view_op_count_one
-            : t.plugins.companion.orchestration.live_view_op_count_other.replace(
+            ? t.athena.orchestration.live_view_op_count_one
+            : t.athena.orchestration.live_view_op_count_other.replace(
                 '{count}',
                 String(opCount),
               )}
@@ -135,8 +135,8 @@ function OpCard({
             <span>·</span>
             <span>
               {op.sessions.length === 1
-                ? t.plugins.companion.orchestration.live_view_session_count_one
-                : t.plugins.companion.orchestration.live_view_session_count_other.replace(
+                ? t.athena.orchestration.live_view_session_count_one
+                : t.athena.orchestration.live_view_session_count_other.replace(
                     '{count}',
                     String(op.sessions.length),
                   )}
@@ -179,20 +179,20 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
       </div>
       {sess.intent && (
         <DetailLine
-          label={t.plugins.companion.orchestration.live_view_intent_label}
+          label={t.athena.orchestration.live_view_intent_label}
           text={sess.intent}
           icon={<Flag className="size-3 text-foreground" />}
         />
       )}
       {sess.checkpoint && (
         <DetailLine
-          label={t.plugins.companion.orchestration.live_view_checkpoint_label}
+          label={t.athena.orchestration.live_view_checkpoint_label}
           text={sess.checkpoint}
         />
       )}
       {sess.blockers && (
         <DetailLine
-          label={t.plugins.companion.orchestration.live_view_blockers_label}
+          label={t.athena.orchestration.live_view_blockers_label}
           text={sess.blockers}
           tone="warn"
         />
@@ -201,7 +201,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
         <div className="flex flex-wrap items-baseline gap-1">
           <span className="inline-flex items-baseline gap-1 text-foreground">
             <FileText className="size-3 self-center" />
-            <span>{t.plugins.companion.orchestration.live_view_files_label}:</span>
+            <span>{t.athena.orchestration.live_view_files_label}:</span>
           </span>
           {sess.files.map((f) => (
             <code
@@ -213,7 +213,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
           ))}
           {sess.filesMore !== undefined && sess.filesMore > 0 && (
             <span className="text-foreground italic">
-              {t.plugins.companion.orchestration.live_view_files_more.replace(
+              {t.athena.orchestration.live_view_files_more.replace(
                 '{count}',
                 String(sess.filesMore),
               )}
@@ -223,7 +223,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
       )}
       {sess.failure && (
         <DetailLine
-          label={t.plugins.companion.orchestration.live_view_failure_label}
+          label={t.athena.orchestration.live_view_failure_label}
           text={sess.failure}
           tone="error"
           icon={<AlertTriangle className="size-3 text-rose-400" />}
@@ -231,7 +231,7 @@ function SessionRow({ sess }: { sess: ParsedSession }) {
       )}
       {sess.summary && (
         <DetailLine
-          label={t.plugins.companion.orchestration.live_view_summary_label}
+          label={t.athena.orchestration.live_view_summary_label}
           text={sess.summary}
         />
       )}

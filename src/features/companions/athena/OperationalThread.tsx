@@ -30,7 +30,7 @@ export function OperationalThread({ steps }: { steps: TodoStep[] }) {
   const { t } = useTranslation();
   if (!steps || steps.length === 0) return null;
 
-  const c = t.plugins.companion;
+  const c = t.athena;
   const completed = steps.filter((s) => s.status === 'completed').length;
 
   const statusLabel = (status: TodoStep['status']): string =>

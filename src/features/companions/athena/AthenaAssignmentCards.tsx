@@ -27,7 +27,7 @@ export function AthenaAssignmentCards() {
     <div className="border-b border-primary/10 px-3 py-2 space-y-1.5">
       <div className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
         <ListChecks className="w-3.5 h-3.5 text-orange-400" />
-        {t.plugins.companion.athena_assignments_title}
+        {t.athena.athena_assignments_title}
       </div>
       {cards.map((card) => (
         <AssignmentCardRow

@@ -31,7 +31,7 @@ import { SensorySignalsModal } from './SensorySignalsModal';
  */
 export default function SetupPanel() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const footerEnabled = useSystemStore((s) => s.athenaFooterEnabled);
   const setFooterEnabled = useSystemStore((s) => s.setAthenaFooterEnabled);
   const soundEnabled = useSystemStore((s) => s.athenaSoundEnabled);
@@ -367,7 +367,7 @@ function signalsCountLabel(
   if (count === undefined || count === 0) return null;
   const tmpl =
     count === 1
-      ? t.plugins.companion.setup_desktop_signals_count_one
-      : t.plugins.companion.setup_desktop_signals_count_other;
+      ? t.athena.setup_desktop_signals_count_one
+      : t.athena.setup_desktop_signals_count_other;
   return tmpl.replace('{count}', String(count));
 }

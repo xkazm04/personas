@@ -63,8 +63,8 @@ export function AthenaChatSlowNotice({
           <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
           <span>
             {level === 2
-              ? t.plugins.companion.slow_progress_firm
-              : t.plugins.companion.slow_progress_soft}
+              ? t.athena.slow_progress_firm
+              : t.athena.slow_progress_soft}
           </span>
         </motion.div>
       )}

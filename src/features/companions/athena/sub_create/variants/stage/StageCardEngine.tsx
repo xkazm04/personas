@@ -22,7 +22,7 @@ export function StageCardEnginePick({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const copy: Record<TtsEngineId, { title: string; desc: string }> = {
     kokoro: { title: c.create_engine_kokoro_title, desc: c.create_engine_kokoro_desc },
     pocket_tts: { title: c.create_engine_pocket_title, desc: c.create_engine_pocket_desc },
@@ -84,7 +84,7 @@ export function StageCardEnginePick({
 
 function InstallProgress({ state }: { state: InstallState }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const label =
     state.phase === 'downloading_engine'
       ? c.create_install_phase_engine
@@ -144,7 +144,7 @@ export function StageCardInstall({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const { state } = card;
 
   switch (state.phase) {

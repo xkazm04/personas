@@ -30,7 +30,7 @@ import { CHAT_EASE } from './athenaChatMorph';
 /** Inline stop affordance — lives beside the dots, inside the status line. */
 function StopReply({ compact, onClick }: { compact: boolean; onClick: () => void }) {
   const { t } = useTranslation();
-  const label = t.plugins.companion.stop_turn;
+  const label = t.athena.stop_turn;
   return (
     <button
       type="button"
@@ -92,7 +92,7 @@ export function AthenaChatStreamingTurn({
           */}
           <Bubble role="assistant" streaming index={messageCount} compact={compact}>
             <span className="inline-flex items-center gap-2" role="status" aria-live="polite">
-              <span>{streamingBeat ?? t.plugins.companion.working}</span>
+              <span>{streamingBeat ?? t.athena.working}</span>
               <TypingDots />
               <StopReply compact={compact} onClick={onInterrupt} />
             </span>

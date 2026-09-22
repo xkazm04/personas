@@ -37,27 +37,27 @@ export function RefineChips({
     {
       key: 'shorter',
       icon: Minimize2,
-      label: t.plugins.companion.refine_shorter,
-      suffix: t.plugins.companion.refine_shorter_suffix,
+      label: t.athena.refine_shorter,
+      suffix: t.athena.refine_shorter_suffix,
     },
     {
       key: 'more_detail',
       icon: Maximize2,
-      label: t.plugins.companion.refine_more_detail,
-      suffix: t.plugins.companion.refine_more_detail_suffix,
+      label: t.athena.refine_more_detail,
+      suffix: t.athena.refine_more_detail_suffix,
     },
     {
       key: 'code_only',
       icon: Code2,
-      label: t.plugins.companion.refine_code_only,
-      suffix: t.plugins.companion.refine_code_only_suffix,
+      label: t.athena.refine_code_only,
+      suffix: t.athena.refine_code_only_suffix,
     },
   ];
 
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 pl-2"
-      aria-label={t.plugins.companion.refine_label}
+      aria-label={t.athena.refine_label}
       data-testid="companion-refine-chips"
     >
       {chips.map((c) => {

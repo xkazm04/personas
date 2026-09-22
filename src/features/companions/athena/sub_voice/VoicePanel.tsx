@@ -35,14 +35,14 @@ export default function VoicePanel() {
     <div className="grid gap-x-5 gap-y-4 lg:grid-cols-2 items-start">
       <section className="space-y-4 min-w-0">
         <h2 className="typo-label text-foreground px-1">
-          {t.plugins.companion.voice_section_output}
+          {t.athena.voice_section_output}
         </h2>
         <EngineSelectorCard />
         {engine === 'pocket_tts' ? <PocketVoicePanel /> : <KokoroVoicePanel />}
       </section>
       <section className="space-y-4 min-w-0">
         <h2 className="typo-label text-foreground px-1">
-          {t.plugins.companion.voice_section_input}
+          {t.athena.voice_section_input}
         </h2>
         <SttPanel />
       </section>
@@ -72,8 +72,8 @@ function EngineSelectorCard() {
 
   return (
     <SectionCard
-      title={t.plugins.companion.voice_engine_title}
-      subtitle={t.plugins.companion.voice_engine_desc}
+      title={t.athena.voice_engine_title}
+      subtitle={t.athena.voice_engine_desc}
       titleClassName="text-primary"
     >
       <div className="grid grid-cols-2 gap-2 px-1 py-2">
@@ -81,15 +81,15 @@ function EngineSelectorCard() {
           active={engine === 'kokoro'}
           onClick={() => onSwitch('kokoro')}
           icon={<Sparkles className="w-4 h-4" />}
-          label={t.plugins.companion.voice_engine_kokoro}
-          caption={t.plugins.companion.voice_engine_kokoro_caption}
+          label={t.athena.voice_engine_kokoro}
+          caption={t.athena.voice_engine_kokoro_caption}
         />
         <EngineButton
           active={engine === 'pocket_tts'}
           onClick={() => onSwitch('pocket_tts')}
           icon={<AudioWaveform className="w-4 h-4" />}
-          label={t.plugins.companion.voice_engine_pocket}
-          caption={t.plugins.companion.voice_engine_pocket_caption}
+          label={t.athena.voice_engine_pocket}
+          caption={t.athena.voice_engine_pocket_caption}
         />
       </div>
 
@@ -98,7 +98,7 @@ function EngineSelectorCard() {
       <div className="px-1 pt-1 pb-2 space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="typo-title">
-            {t.plugins.companion.voice_volume_label}
+            {t.athena.voice_volume_label}
           </label>
           <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
         </div>
@@ -108,7 +108,7 @@ function EngineSelectorCard() {
           step={0.05}
           value={volume}
           onChange={(v) => setVolume(v)}
-          ariaLabel={t.plugins.companion.voice_volume_label}
+          ariaLabel={t.athena.voice_volume_label}
           showBubble={false}
         />
       </div>

@@ -47,7 +47,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
   if (triggers.length === 0) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.trigger_set_empty}
+        {t.athena.trigger_set_empty}
       </div>
     );
   }
@@ -60,7 +60,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-cyan-300/85">
         <Zap className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.trigger_set_title}
+          {title || t.athena.trigger_set_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -88,7 +88,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
               <div className="pl-5 space-y-1 typo-caption text-foreground">
                 <div>
                   <span className="text-foreground">
-                    {t.plugins.companion.trigger_set_condition}
+                    {t.athena.trigger_set_condition}
                     {': '}
                   </span>
                   {tr.condition}
@@ -96,7 +96,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
                 {tr.grain && (
                   <div>
                     <span className="text-foreground">
-                      {t.plugins.companion.trigger_set_grain}
+                      {t.athena.trigger_set_grain}
                       {': '}
                     </span>
                     {tr.grain}
@@ -105,7 +105,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
                 {tr.idempotency_note && (
                   <div>
                     <span className="text-foreground">
-                      {t.plugins.companion.trigger_set_idempotency}
+                      {t.athena.trigger_set_idempotency}
                       {': '}
                     </span>
                     {tr.idempotency_note}

@@ -44,7 +44,7 @@ export function AthenaActionsStrip() {
           <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />
           <Zap className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden />
           <span className="flex-1 truncate font-medium">
-            {t.plugins.companion.athena_actions_title}
+            {t.athena.athena_actions_title}
           </span>
           <span className="shrink-0 tabular-nums text-foreground">{actions.length}</span>
         </button>
@@ -54,7 +54,7 @@ export function AthenaActionsStrip() {
           data-testid="athena-actions-clear"
           className="shrink-0 typo-caption text-foreground hover:text-primary focus-ring rounded-interactive px-1.5 py-0.5"
         >
-          {t.plugins.companion.athena_actions_clear}
+          {t.athena.athena_actions_clear}
         </button>
       </div>
       {!collapsed && (
@@ -67,7 +67,7 @@ export function AthenaActionsStrip() {
             >
               <div className="flex items-baseline gap-2">
                 <span className="typo-label font-medium text-primary truncate">
-                  {a.projectLabel || t.plugins.companion.fleet_auto_decided}
+                  {a.projectLabel || t.athena.fleet_auto_decided}
                 </span>
                 <RelativeTime
                   timestamp={a.createdAt}

@@ -130,7 +130,7 @@ export function AthenaOrb({
               ? ''
               : 'hover:scale-105'
         }`}
-        title={t.plugins.companion.orb_talk_hint}
+        title={t.athena.orb_talk_hint}
         aria-label={presence.ariaLabel}
       >
         {presence.speaking && <OrbSpeakingGlow reduceMotion={!!reduceMotion} glowRef={glowRef} />}

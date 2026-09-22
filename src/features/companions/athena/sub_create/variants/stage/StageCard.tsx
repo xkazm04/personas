@@ -42,7 +42,7 @@ function CardBody({ engine }: StageCardProps) {
 
 export function StageCard({ engine }: StageCardProps) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const { card, actions, canBack, canNext } = engine;
   const terminal = card.kind === 'intro' || card.kind === 'handoff';
   const nextLabel = card.kind === 'voice_pick' ? c.create_voice_choose : c.create_next;

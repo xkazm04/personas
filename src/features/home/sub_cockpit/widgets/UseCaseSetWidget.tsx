@@ -42,7 +42,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
   if (useCases.length === 0) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.use_case_set_empty}
+        {t.athena.use_case_set_empty}
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-amber-300/85">
         <Layers className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.use_case_set_title}
+          {title || t.athena.use_case_set_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -116,20 +116,20 @@ function roleVisuals(
   if (role === 'golden') {
     return {
       Icon: Target,
-      roleLabel: t.plugins.companion.use_case_set_role_golden,
+      roleLabel: t.athena.use_case_set_role_golden,
       accent: 'border-emerald-500/30 bg-emerald-500/[0.05]',
     };
   }
   if (role === 'out_of_scope') {
     return {
       Icon: CircleSlash,
-      roleLabel: t.plugins.companion.use_case_set_role_out_of_scope,
+      roleLabel: t.athena.use_case_set_role_out_of_scope,
       accent: 'border-rose-500/30 bg-rose-500/[0.05]',
     };
   }
   return {
     Icon: Sparkles,
-    roleLabel: t.plugins.companion.use_case_set_role_variant,
+    roleLabel: t.athena.use_case_set_role_variant,
     accent: 'border-violet-500/30 bg-violet-500/[0.05]',
   };
 }

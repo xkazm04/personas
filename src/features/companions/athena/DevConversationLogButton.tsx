@@ -93,9 +93,9 @@ export function DevConversationLogButton() {
       const stem = buildLogFileStem(s.activeConversationId, new Date());
       const path = await companionExportConversationLog(stem, markdown);
       // 30s: the path is the point — a default-duration toast loses it.
-      addToast(tx(t.plugins.companion.dev_dump_log_saved, { path }), 'success', 30_000);
+      addToast(tx(t.athena.dev_dump_log_saved, { path }), 'success', 30_000);
     } catch (e) {
-      toastCatch('DevConversationLogButton', t.plugins.companion.dev_dump_log_failed)(e);
+      toastCatch('DevConversationLogButton', t.athena.dev_dump_log_failed)(e);
     } finally {
       setBusy(false);
     }
@@ -108,8 +108,8 @@ export function DevConversationLogButton() {
       disabled={busy}
       data-testid="companion-dev-dump-log"
       className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring disabled:opacity-50"
-      aria-label={t.plugins.companion.dev_dump_log}
-      title={t.plugins.companion.dev_dump_log}
+      aria-label={t.athena.dev_dump_log}
+      title={t.athena.dev_dump_log}
     >
       <FileDown className="w-4 h-4" />
     </button>

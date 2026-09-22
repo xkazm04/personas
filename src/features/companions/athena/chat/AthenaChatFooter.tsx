@@ -59,13 +59,13 @@ export function AthenaChatFooter({
           void companionAnalyzeFleet().catch(silentCatch('companion_analyze_fleet'));
           useToastStore
             .getState()
-            .addToast(t.plugins.companion.analyze_fleet_started, 'success');
+            .addToast(t.athena.analyze_fleet_started, 'success');
         }}
         onDailyBrief={() => {
           void companionDailyBrief().catch(silentCatch('companion_daily_brief'));
           useToastStore
             .getState()
-            .addToast(t.plugins.companion.daily_brief_started, 'success');
+            .addToast(t.athena.daily_brief_started, 'success');
         }}
       />
     </>

@@ -66,7 +66,7 @@ export function SlashPalette({
         className="rounded-card border border-foreground/10 bg-secondary/95 backdrop-blur-sm shadow-elevation-3 px-3 py-2 typo-caption text-foreground"
         data-testid="companion-slash-palette"
       >
-        {t.plugins.companion.slash_palette_empty}
+        {t.athena.slash_palette_empty}
       </div>
     );
   }
@@ -77,7 +77,7 @@ export function SlashPalette({
       data-testid="companion-slash-palette"
     >
       <div className="px-3 py-1.5 typo-caption text-foreground border-b border-foreground/10">
-        {t.plugins.companion.slash_palette_heading}
+        {t.athena.slash_palette_heading}
       </div>
       <ul className="max-h-60 overflow-y-auto">
         {filtered.map((preset, idx) => {

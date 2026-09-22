@@ -34,8 +34,8 @@ export default function AthenaPage() {
       <ContentHeader
         icon={<IconCompanion active className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title={t.plugins.companion.page_title}
-        subtitle={t.plugins.companion.page_subtitle}
+        title={t.athena.page_title}
+        subtitle={t.athena.page_subtitle}
       />
 
       <ContentBody centered={tab !== 'memory'}>

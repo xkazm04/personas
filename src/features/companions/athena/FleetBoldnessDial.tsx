@@ -21,7 +21,7 @@ const LEVELS: readonly FleetBoldnessLevel[] = ['cautious', 'balanced', 'bold'] a
 
 export function FleetBoldnessDial() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const level = useSystemStore((s) => s.athenaFleetBoldness);
   const setLevel = useSystemStore((s) => s.setAthenaFleetBoldness);
 

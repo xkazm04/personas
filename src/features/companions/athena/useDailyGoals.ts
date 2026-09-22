@@ -51,7 +51,7 @@ export function useDailyGoals() {
     } catch (e) {
       toastCatch(
         'useDailyGoals:create',
-        getActiveTranslations().plugins.companion.daily_goals_label,
+        getActiveTranslations().athena.daily_goals_label,
       )(e);
       return false;
     }
@@ -64,7 +64,7 @@ export function useDailyGoals() {
     } catch (e) {
       toastCatch(
         'useDailyGoals:update',
-        getActiveTranslations().plugins.companion.daily_goals_edit,
+        getActiveTranslations().athena.daily_goals_edit,
       )(e);
       return false;
     }

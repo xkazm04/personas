@@ -123,7 +123,7 @@ export function useCreateAthenaVoices({ engine, active, wokeUp, onWoke }: Args):
       const gen = gate.next();
       setPreview('synth');
       setPreviewVoiceId(voiceId);
-      const c = t.plugins.companion;
+      const c = t.athena;
       const raw = wokeUpRef.current ? c.voice_test_sentence : pickWakeUpLine(c, new Date());
       const text = stripMarkdownForSpeech(raw);
       void (async () => {

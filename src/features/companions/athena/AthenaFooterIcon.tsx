@@ -227,17 +227,17 @@ export default function AthenaFooterIcon() {
         className={`relative w-7 h-7 rounded-card flex items-center justify-center transition-colors focus-ring ${buttonStateClass} ${talking ? 'animate-pulse' : ''}`}
         title={
           talking
-            ? t.plugins.companion.footer_listening
+            ? t.athena.footer_listening
             : sttSupported
-              ? t.plugins.companion.footer_hold_to_talk
-              : t.plugins.companion.open_label
+              ? t.athena.footer_hold_to_talk
+              : t.athena.open_label
         }
         aria-label={
           talking
-            ? t.plugins.companion.footer_listening
+            ? t.athena.footer_listening
             : sttSupported
-              ? t.plugins.companion.footer_hold_to_talk
-              : t.plugins.companion.open_label
+              ? t.athena.footer_hold_to_talk
+              : t.athena.open_label
         }
         aria-pressed={isOpen}
       >
@@ -253,7 +253,7 @@ export default function AthenaFooterIcon() {
           <span
             data-testid="companion-thread-attention"
             className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-status-success text-background typo-caption font-semibold inline-flex items-center justify-center ring-1 ring-background tabular-nums"
-            aria-label={`${attentionCount} ${t.plugins.companion.thread_status_awaiting}`}
+            aria-label={`${attentionCount} ${t.athena.thread_status_awaiting}`}
           >
             {attentionCount}
           </span>
@@ -272,13 +272,13 @@ export default function AthenaFooterIcon() {
           }`}
           title={
             hasUnreadPlayback
-              ? t.plugins.companion.play_latest
-              : t.plugins.companion.play_nothing
+              ? t.athena.play_latest
+              : t.athena.play_nothing
           }
           aria-label={
             hasUnreadPlayback
-              ? t.plugins.companion.play_latest
-              : t.plugins.companion.play_nothing
+              ? t.athena.play_latest
+              : t.athena.play_nothing
           }
         >
           <Play className="w-4 h-4" />

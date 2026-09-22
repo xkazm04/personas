@@ -63,7 +63,7 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
 function kindLabel(kind: string, t: ReturnType<typeof useTranslation>['t']): string {
   switch (kind) {
     case 'research':
-      return t.plugins.companion.task_kind_research;
+      return t.athena.task_kind_research;
     case 'connector_use':
       return 'Calling a connector';
     case 'scan_codebase':
@@ -80,13 +80,13 @@ function kindLabel(kind: string, t: ReturnType<typeof useTranslation>['t']): str
 function statusFor(t: ReturnType<typeof useTranslation>['t'], status: string): string {
   switch (status) {
     case 'queued':
-      return t.plugins.companion.task_status_queued;
+      return t.athena.task_status_queued;
     case 'running':
-      return t.plugins.companion.task_status_running;
+      return t.athena.task_status_running;
     case 'completed':
-      return t.plugins.companion.task_status_done;
+      return t.athena.task_status_done;
     case 'failed':
-      return t.plugins.companion.task_status_failed;
+      return t.athena.task_status_failed;
     default:
       return status;
   }

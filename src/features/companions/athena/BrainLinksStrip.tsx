@@ -45,7 +45,7 @@ export function BrainLinksStrip({
     >
       <div className="inline-flex items-baseline gap-1.5 typo-caption text-foreground mb-1.5">
         <Link2 className="w-3 h-3 self-center" />
-        <span>{t.plugins.companion.brain_linked_label}</span>
+        <span>{t.athena.brain_linked_label}</span>
       </div>
       <div className="flex flex-wrap items-baseline gap-1.5">
         {links.map((link) => (

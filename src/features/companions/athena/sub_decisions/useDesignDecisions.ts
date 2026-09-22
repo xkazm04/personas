@@ -77,7 +77,7 @@ export function useDesignDecisions() {
       key,
       label:
         key === '_unscoped'
-          ? t.plugins.companion.decisions_panel_unscoped
+          ? t.athena.decisions_panel_unscoped
           : key,
       items,
     }));
@@ -96,7 +96,7 @@ export function useDesignDecisions() {
 
   const askAthenaToLogDecision = () => {
     useAthenaStore.getState().setPendingPrompt({
-      text: t.plugins.companion.decisions_panel_empty_prompt,
+      text: t.athena.decisions_panel_empty_prompt,
       autoSend: true,
     });
     useAthenaStore.getState().setState('open');

@@ -5,21 +5,19 @@ import { extractStreamPhase, extractToolEvents, phaseLabel } from '../extractStr
 // the key path as the value so assertions can match strings without
 // loading the full i18n bundle.
 const t = {
-  plugins: {
-    companion: {
-      phase_connecting: 'Connecting…',
-      phase_reviewing: 'Reviewing result…',
-      phase_thinking: 'Thinking…',
-      phase_websearch: 'Searching the web…',
-      phase_webfetch: 'Fetching a page…',
-      phase_reading: 'Reading files…',
-      phase_searching_code: 'Searching the code…',
-      phase_editing: 'Editing files…',
-      phase_running_command: 'Running a command…',
-      phase_subagent: 'Asking a subagent…',
-      phase_using_tool: 'Using {tool}…',
-      phase_responding: 'Composing reply…',
-    },
+  athena: {
+    phase_connecting: 'Connecting…',
+    phase_reviewing: 'Reviewing result…',
+    phase_thinking: 'Thinking…',
+    phase_websearch: 'Searching the web…',
+    phase_webfetch: 'Fetching a page…',
+    phase_reading: 'Reading files…',
+    phase_searching_code: 'Searching the code…',
+    phase_editing: 'Editing files…',
+    phase_running_command: 'Running a command…',
+    phase_subagent: 'Asking a subagent…',
+    phase_using_tool: 'Using {tool}…',
+    phase_responding: 'Composing reply…',
   },
 } as unknown as Parameters<typeof phaseLabel>[0];
 

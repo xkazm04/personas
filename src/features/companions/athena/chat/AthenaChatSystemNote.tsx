@@ -50,7 +50,7 @@ export function AthenaChatSystemNote({
   index: number;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [expanded, setExpanded] = useState(false);
 
   const note = classifySystemNote(content, {

@@ -107,7 +107,7 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
         className="rounded-card border border-rose-500/30 bg-rose-500/[0.06] p-3 typo-caption text-rose-300"
         title={card.kind}
       >
-        {t.plugins.companion.chat_card_unknown_kind}
+        {t.athena.chat_card_unknown_kind}
       </div>
     );
   }
@@ -122,7 +122,7 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
         config: (card.config ?? {}) as Record<string, unknown>,
       });
       setPinState('pinned');
-      addToast(t.plugins.companion.pin_to_cockpit_success, 'success');
+      addToast(t.athena.pin_to_cockpit_success, 'success');
     } catch (err: unknown) {
       setPinState('idle');
       toastCatch('companion_pin_widget_to_cockpit')(err);
@@ -134,8 +134,8 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   const pinDisabled = pinState !== 'idle';
   const pinLabel =
     pinState === 'pinned'
-      ? t.plugins.companion.pin_to_cockpit_pinned
-      : t.plugins.companion.pin_to_cockpit;
+      ? t.athena.pin_to_cockpit_pinned
+      : t.athena.pin_to_cockpit;
   const showPin = PINNABLE_KINDS.has(card.kind);
 
   const inner = UNCLAMPED_KINDS.has(card.kind) ? (

@@ -28,7 +28,7 @@ function SttColumn({
   onPick: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const usable = take.supported && installed;
   const heard = take.text || take.interim;
   const body = !take.supported
@@ -79,7 +79,7 @@ function SttColumn({
 
 export function StageCardStt({ card, actions }: { card: SttCard; actions: CreateAthenaActions }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   return (
     <div className="space-y-4">

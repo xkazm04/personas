@@ -6,15 +6,13 @@ import { useAthenaStore } from '../../athenaStore';
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
     t: {
-      plugins: {
-        companion: {
-          orb_quick_input_placeholder: 'Message Athena…',
-          orb_quick_input_close: 'Close quick message',
-          orb_quick_input_last_reply_label: "Athena's last reply",
-          dictate_start: 'Dictate',
-          dictate_stop: 'Stop dictation',
-          send: 'Send',
-        },
+      athena: {
+        orb_quick_input_placeholder: 'Message Athena…',
+        orb_quick_input_close: 'Close quick message',
+        orb_quick_input_last_reply_label: "Athena's last reply",
+        dictate_start: 'Dictate',
+        dictate_stop: 'Stop dictation',
+        send: 'Send',
       },
     },
     tx: (s: string) => s,

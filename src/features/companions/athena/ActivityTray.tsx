@@ -50,7 +50,7 @@ export function ActivityTray() {
         <Activity className="w-3.5 h-3.5 shrink-0 text-blue-300/90 animate-pulse" />
         <span className="flex-1 text-left font-medium">
           {tx(
-            count === 1 ? t.plugins.companion.tasks_running_one : t.plugins.companion.tasks_running_other,
+            count === 1 ? t.athena.tasks_running_one : t.athena.tasks_running_other,
             { count },
           )}
         </span>

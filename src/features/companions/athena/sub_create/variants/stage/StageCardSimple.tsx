@@ -18,7 +18,7 @@ export function StageCardIntro({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Button variant="primary" size="lg" onClick={actions.next} data-testid="create-athena-start">
@@ -41,7 +41,7 @@ export function StageCardOrbPlace({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   return (
     <div className="flex items-center gap-3">
       <Button
@@ -65,7 +65,7 @@ export function StageCardHandoff({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   return (
     <div className="space-y-3">
       <AsyncButton

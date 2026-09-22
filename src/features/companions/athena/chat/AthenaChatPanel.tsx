@@ -86,7 +86,7 @@ export default function AthenaChatPanel() {
             autonomousMode ? 'companion-autonomous' : ''
           }`}
           role="region"
-          aria-label={t.plugins.companion.panel_label}
+          aria-label={t.athena.panel_label}
           data-testid="companion-panel"
           data-companion-compact={compact ? 'true' : 'false'}
           data-companion-streaming={streaming ? 'true' : 'false'}

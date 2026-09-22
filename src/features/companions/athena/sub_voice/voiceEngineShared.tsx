@@ -51,8 +51,8 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
         >
           {installed && <CheckCircle2 className="w-3 h-3" />}
           {installed
-            ? t.plugins.companion.voice_kokoro_installed
-            : t.plugins.companion.voice_kokoro_not_installed}
+            ? t.athena.voice_kokoro_installed
+            : t.athena.voice_kokoro_not_installed}
         </span>
       </div>
       {installed ? (
@@ -70,9 +70,9 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors focus-ring"
             >
               <ExternalLink className="w-3 h-3" />
-              {t.plugins.companion.voice_kokoro_download}
+              {t.athena.voice_kokoro_download}
             </a>
-            <CopyButton text={url} tooltip={t.plugins.companion.voice_kokoro_copy_url} />
+            <CopyButton text={url} tooltip={t.athena.voice_kokoro_copy_url} />
           </div>
           <div>
             <div className="typo-caption text-foreground">{pathLabel}</div>
@@ -80,7 +80,7 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
               <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
                 {path}
               </code>
-              <CopyButton text={path} tooltip={t.plugins.companion.voice_kokoro_copy_path} />
+              <CopyButton text={path} tooltip={t.athena.voice_kokoro_copy_path} />
             </div>
           </div>
         </div>
@@ -202,13 +202,13 @@ export function VoiceEngineInstallBlock({
   const phaseLabel = (p: SidecarInstallProgress['phase']): string => {
     switch (p) {
       case 'downloading_engine':
-        return t.plugins.companion.voice_kokoro_install_engine;
+        return t.athena.voice_kokoro_install_engine;
       case 'downloading_model':
-        return t.plugins.companion.voice_kokoro_install_model;
+        return t.athena.voice_kokoro_install_model;
       case 'extracting':
-        return t.plugins.companion.voice_kokoro_install_extract;
+        return t.athena.voice_kokoro_install_extract;
       case 'failed':
-        return t.plugins.companion.voice_kokoro_install_failed;
+        return t.athena.voice_kokoro_install_failed;
       default:
         return '';
     }
@@ -320,7 +320,7 @@ export function useVoicePreview(voiceId: string, engine: TtsEngineId, logPrefix:
     setPreviewState('synth');
     try {
       const url = await synthesize(
-        t.plugins.companion.voice_test_sentence,
+        t.athena.voice_test_sentence,
         null,
         voiceId,
         settings,
@@ -369,8 +369,8 @@ export function PreviewButton({ previewState, onPreview, disabled, title }: Prev
         <Play className="w-3 h-3" />
       )}
       {previewState === 'playing'
-        ? t.plugins.companion.voice_kokoro_preview_stop
-        : t.plugins.companion.voice_kokoro_preview}
+        ? t.athena.voice_kokoro_preview_stop
+        : t.athena.voice_kokoro_preview}
     </button>
   );
 }

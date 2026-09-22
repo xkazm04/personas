@@ -33,7 +33,7 @@ const STEP_LABEL_KEYS = {
 
 export function useStepLabel(): (id: CreateAthenaStepId) => string {
   const { t } = useTranslation();
-  return (id) => t.plugins.companion[STEP_LABEL_KEYS[id]];
+  return (id) => t.athena[STEP_LABEL_KEYS[id]];
 }
 
 function StepMarker({ index, status }: { index: number; status: CreateAthenaStep['status'] }) {
@@ -116,7 +116,7 @@ function StepRow({
 export function StageRail({ engine }: StageRailProps) {
   const { t, tx } = useTranslation();
   const stepLabel = useStepLabel();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   return (
     <aside

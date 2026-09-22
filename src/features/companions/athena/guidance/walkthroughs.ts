@@ -10,7 +10,7 @@ import type { GuidanceWalkthrough } from './types';
  *
  * To add a walkthrough for another part of the app:
  *   1. Add stable `data-testid`s to the elements you want to point at.
- *   2. Add a `plugins.companion.guide_<topic>_*` narration key per step to
+ *   2. Add a `athena.guide_<topic>_*` narration key per step to
  *      `src/i18n/locales/en.json` and regenerate i18n.
  *   3. Add an entry below and list its topic in `GUIDANCE_TOPICS`.
  *   4. Allow-list the topic in the backend (`dispatcher.rs` GUIDED_TOPICS) so
@@ -20,16 +20,16 @@ import type { GuidanceWalkthrough } from './types';
 export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
   persona_creation: {
     topic: 'persona_creation',
-    title: (t) => t.plugins.companion.guide_pc_title,
+    title: (t) => t.athena.guide_pc_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_pc_intro,
+        narration: (t) => t.athena.guide_pc_intro,
         orbAnchor: 'center',
       },
       {
         id: 'open',
-        narration: (t) => t.plugins.companion.guide_pc_open,
+        narration: (t) => t.athena.guide_pc_open,
         navigateRoute: 'personas',
         preAction: 'open_build_entry',
         highlightTestId: 'persona-build-entry',
@@ -37,42 +37,42 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'compose',
-        narration: (t) => t.plugins.companion.guide_pc_compose,
+        narration: (t) => t.athena.guide_pc_compose,
         // The sigil's click-to-summon center — where the user describes the persona.
         highlightTestId: 'glyph-compose-summon',
         orbAnchor: 'auto',
       },
       {
         id: 'autonomous',
-        narration: (t) => t.plugins.companion.guide_pc_autonomous,
+        narration: (t) => t.athena.guide_pc_autonomous,
         // The "let AI decide everything" one-shot toggle.
         highlightTestId: 'build-oneshot-toggle',
         orbAnchor: 'auto',
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_pc_outro,
+        narration: (t) => t.athena.guide_pc_outro,
         orbAnchor: 'center',
       },
     ],
     cta: {
-      label: (t) => t.plugins.companion.guide_cta_build,
+      label: (t) => t.athena.guide_cta_build,
       action: 'build_persona',
     },
   },
 
   connector_setup: {
     topic: 'connector_setup',
-    title: (t) => t.plugins.companion.guide_conn_title,
+    title: (t) => t.athena.guide_conn_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_conn_intro,
+        narration: (t) => t.athena.guide_conn_intro,
         orbAnchor: 'center',
       },
       {
         id: 'vault',
-        narration: (t) => t.plugins.companion.guide_conn_vault,
+        narration: (t) => t.athena.guide_conn_vault,
         navigateRoute: 'credentials',
         // The Vault route container — always present once `credentials` mounts.
         highlightTestId: 'credential-manager',
@@ -80,7 +80,7 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'add',
-        narration: (t) => t.plugins.companion.guide_conn_add,
+        narration: (t) => t.athena.guide_conn_add,
         // Drives the vault to its "Add new" view (the vault route is already
         // mounted from the prior step, so the storeBus event has a listener).
         preAction: 'open_credential_add',
@@ -92,28 +92,28 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_conn_outro,
+        narration: (t) => t.athena.guide_conn_outro,
         orbAnchor: 'center',
       },
     ],
     cta: {
-      label: (t) => t.plugins.companion.guide_cta_connect,
+      label: (t) => t.athena.guide_cta_connect,
       action: 'open_connector_add',
     },
   },
 
   trigger_creation: {
     topic: 'trigger_creation',
-    title: (t) => t.plugins.companion.guide_trig_title,
+    title: (t) => t.athena.guide_trig_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_trig_intro,
+        narration: (t) => t.athena.guide_trig_intro,
         orbAnchor: 'center',
       },
       {
         id: 'hub',
-        narration: (t) => t.plugins.companion.guide_trig_hub,
+        narration: (t) => t.athena.guide_trig_hub,
         navigateRoute: 'events',
         // The Events route container — present on every event-bus sub-tab.
         highlightTestId: 'triggers-page',
@@ -121,7 +121,7 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'builder',
-        narration: (t) => t.plugins.companion.guide_trig_create,
+        narration: (t) => t.athena.guide_trig_create,
         // Switch to Chain Studio and ring its switchboard (where chains are composed).
         preAction: 'open_trigger_builder',
         highlightTestId: 'studio-switchboard',
@@ -129,28 +129,28 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_trig_outro,
+        narration: (t) => t.athena.guide_trig_outro,
         orbAnchor: 'center',
       },
     ],
     cta: {
-      label: (t) => t.plugins.companion.guide_cta_create_trigger,
+      label: (t) => t.athena.guide_cta_create_trigger,
       action: 'create_trigger',
     },
   },
 
   template_adoption: {
     topic: 'template_adoption',
-    title: (t) => t.plugins.companion.guide_tmpl_title,
+    title: (t) => t.athena.guide_tmpl_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_tmpl_intro,
+        narration: (t) => t.athena.guide_tmpl_intro,
         orbAnchor: 'center',
       },
       {
         id: 'gallery',
-        narration: (t) => t.plugins.companion.guide_tmpl_gallery,
+        narration: (t) => t.athena.guide_tmpl_gallery,
         navigateRoute: 'design-reviews',
         // The templates gallery route container.
         highlightTestId: 'templates-page',
@@ -158,14 +158,14 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'adopt',
-        narration: (t) => t.plugins.companion.guide_tmpl_adopt,
+        narration: (t) => t.athena.guide_tmpl_adopt,
         // The first card's Adopt button — copies the template into the workspace.
         highlightTestId: 'template-adopt-button',
         orbAnchor: 'auto',
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_tmpl_outro,
+        narration: (t) => t.athena.guide_tmpl_outro,
         orbAnchor: 'center',
       },
     ],
@@ -173,16 +173,16 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
 
   incident_triage: {
     topic: 'incident_triage',
-    title: (t) => t.plugins.companion.guide_inc_title,
+    title: (t) => t.athena.guide_inc_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_inc_intro,
+        narration: (t) => t.athena.guide_inc_intro,
         orbAnchor: 'center',
       },
       {
         id: 'inbox',
-        narration: (t) => t.plugins.companion.guide_inc_inbox,
+        narration: (t) => t.athena.guide_inc_inbox,
         // Open Overview → Incidents and ring the inbox.
         preAction: 'open_overview_incidents',
         highlightTestId: 'incidents-inbox',
@@ -190,7 +190,7 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'row',
-        narration: (t) => t.plugins.companion.guide_inc_row,
+        narration: (t) => t.athena.guide_inc_row,
         // The most recent incident row (degrades to narration-only if the
         // inbox is empty — the detail itself opens in a modal, so we don't ring it).
         highlightTestId: 'incident-row',
@@ -198,7 +198,7 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_inc_outro,
+        narration: (t) => t.athena.guide_inc_outro,
         orbAnchor: 'center',
       },
     ],
@@ -206,16 +206,16 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
 
   goal_kpi_setup: {
     topic: 'goal_kpi_setup',
-    title: (t) => t.plugins.companion.guide_goal_title,
+    title: (t) => t.athena.guide_goal_title,
     steps: [
       {
         id: 'intro',
-        narration: (t) => t.plugins.companion.guide_goal_intro,
+        narration: (t) => t.athena.guide_goal_intro,
         orbAnchor: 'center',
       },
       {
         id: 'board',
-        narration: (t) => t.plugins.companion.guide_goal_board,
+        narration: (t) => t.athena.guide_goal_board,
         // Teams → Goals → board view.
         preAction: 'open_goals_board',
         highlightTestId: 'goals-page',
@@ -223,13 +223,13 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'card',
-        narration: (t) => t.plugins.companion.guide_goal_card,
+        narration: (t) => t.athena.guide_goal_card,
         highlightTestId: 'goal-card',
         orbAnchor: 'auto',
       },
       {
         id: 'kpi',
-        narration: (t) => t.plugins.companion.guide_goal_kpi,
+        narration: (t) => t.athena.guide_goal_kpi,
         // Teams → KPIs dashboard — where a goal is bound to a metric.
         preAction: 'open_kpi_dashboard',
         highlightTestId: 'kpi-dashboard',
@@ -237,12 +237,12 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
       {
         id: 'outro',
-        narration: (t) => t.plugins.companion.guide_goal_outro,
+        narration: (t) => t.athena.guide_goal_outro,
         orbAnchor: 'center',
       },
     ],
     cta: {
-      label: (t) => t.plugins.companion.guide_cta_setup_goal,
+      label: (t) => t.athena.guide_cta_setup_goal,
       action: 'setup_goal',
     },
   },

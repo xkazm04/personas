@@ -43,7 +43,7 @@ const SEVERITY_TONE: Record<string, string> = {
  */
 export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [filed, setFiled] = useState<number | null>(null);
   const [filing, setFiling] = useState(false);
 

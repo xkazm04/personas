@@ -15,7 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
 export function AthenaChatCompactHandle() {
   const { t } = useTranslation();
   const setCompact = useSystemStore((s) => s.setAthenaPanelCompact);
-  const label = t.plugins.companion.compact_toggle_expand;
+  const label = t.athena.compact_toggle_expand;
 
   return (
     <div

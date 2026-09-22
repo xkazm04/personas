@@ -25,7 +25,7 @@ export function AthenaFleetPlanResult({
   dispatchedRows: FleetPlanRow[];
 }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const fleetSessions = useSystemStore((s) => s.fleetSessions);
   const dispatchedCwds = new Set(dispatchedRows.map((r) => normCwd(r.cwd)));
   const runningCount = fleetSessions.filter(

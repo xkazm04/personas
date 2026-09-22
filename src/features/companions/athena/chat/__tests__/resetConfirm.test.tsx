@@ -35,7 +35,7 @@ describe('companion header reset', () => {
     mount();
     fireEvent.click(screen.getByTestId('companion-reset'));
     expect(mockReset).not.toHaveBeenCalled();
-    expect(screen.getByText(en.plugins.companion.reset_confirm_title)).toBeTruthy();
+    expect(screen.getByText(en.athena.reset_confirm_title)).toBeTruthy();
   });
 
   it('cancel leaves the transcript alone', () => {
@@ -43,13 +43,13 @@ describe('companion header reset', () => {
     fireEvent.click(screen.getByTestId('companion-reset'));
     fireEvent.click(screen.getByText(en.common.cancel));
     expect(mockReset).not.toHaveBeenCalled();
-    expect(screen.queryByText(en.plugins.companion.reset_confirm_title)).toBeNull();
+    expect(screen.queryByText(en.athena.reset_confirm_title)).toBeNull();
   });
 
   it('confirm clears it', async () => {
     mount();
     fireEvent.click(screen.getByTestId('companion-reset'));
-    fireEvent.click(screen.getByText(en.plugins.companion.reset_confirm_action));
+    fireEvent.click(screen.getByText(en.athena.reset_confirm_action));
     await waitFor(() => expect(mockReset).toHaveBeenCalledTimes(1));
   });
 });

@@ -37,7 +37,7 @@ import { lastAssistantText } from '../chat/athenaChatPreview';
 
 export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [text, setText] = useState('');
   const dictation = useSpeechInput();
   const streaming = useAthenaStore((s) => s.streaming);

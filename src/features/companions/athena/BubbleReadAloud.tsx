@@ -113,7 +113,7 @@ export function BubbleReadAloud({
         data-testid="companion-read-aloud-synthesizing"
       >
         <Loader2 className="w-3 h-3 animate-spin" />
-        <span>{t.plugins.companion.read_aloud_synthesizing}</span>
+        <span>{t.athena.read_aloud_synthesizing}</span>
       </button>
     );
   }
@@ -125,11 +125,11 @@ export function BubbleReadAloud({
         onClick={handleStop}
         className="inline-flex items-center gap-1 rounded-interactive border border-primary/30 bg-primary/[0.08] hover:bg-primary/[0.12] px-2 py-0.5 typo-caption text-primary transition-colors focus-ring"
         data-testid="companion-read-aloud-playing"
-        title={t.plugins.companion.read_aloud_stop}
-        aria-label={t.plugins.companion.read_aloud_stop}
+        title={t.athena.read_aloud_stop}
+        aria-label={t.athena.read_aloud_stop}
       >
         <VolumeX className="w-3 h-3" />
-        <span>{t.plugins.companion.read_aloud_stop}</span>
+        <span>{t.athena.read_aloud_stop}</span>
       </button>
     );
   }
@@ -142,7 +142,7 @@ export function BubbleReadAloud({
         title={state.message}
       >
         <AlertCircle className="w-3 h-3" />
-        <span>{t.plugins.companion.read_aloud_failed}</span>
+        <span>{t.athena.read_aloud_failed}</span>
       </span>
     );
   }
@@ -153,11 +153,11 @@ export function BubbleReadAloud({
       onClick={handlePlay}
       className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-2 py-0.5 typo-caption text-foreground transition-colors focus-ring"
       data-testid="companion-read-aloud"
-      title={t.plugins.companion.read_aloud}
-      aria-label={t.plugins.companion.read_aloud}
+      title={t.athena.read_aloud}
+      aria-label={t.athena.read_aloud}
     >
       <Volume2 className="w-3 h-3" />
-      <span>{t.plugins.companion.read_aloud}</span>
+      <span>{t.athena.read_aloud}</span>
     </button>
   );
 }

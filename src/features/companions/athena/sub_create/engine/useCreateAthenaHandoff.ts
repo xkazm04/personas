@@ -46,7 +46,7 @@ export function useCreateAthenaHandoff(active: boolean, voiceReady: boolean): Cr
     sys.setAthenaOnboardingStep(null);
     if (voiceReady) sys.setAthenaVoiceEnabled(true);
 
-    const c = t.plugins.companion;
+    const c = t.athena;
     const companion = useAthenaStore.getState();
     if (hasClaudeLogin) {
       companion.setPendingChatPrompt({ text: c.create_handoff_prompt, source: HANDOFF_SOURCE });

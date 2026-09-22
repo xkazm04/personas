@@ -48,7 +48,7 @@ export function ChatDecisionCard() {
       className="rounded-card border border-primary/30 bg-primary/[0.05] p-3"
     >
       <p className="typo-label font-medium text-primary">
-        {t.plugins.companion.decision_title}
+        {t.athena.decision_title}
       </p>
       <div data-testid="athena-chat-decision-prompt" className="mt-1">
         <MarkdownRenderer
@@ -64,7 +64,7 @@ export function ChatDecisionCard() {
         >
           <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" aria-hidden />
           <span className="typo-caption text-foreground">
-            {t.plugins.companion.decision_composing}
+            {t.athena.decision_composing}
           </span>
         </div>
       )}
@@ -73,7 +73,7 @@ export function ChatDecisionCard() {
           data-testid="athena-chat-decision-compose-failed"
           className="mt-2.5 typo-caption text-status-warning"
         >
-          {t.plugins.companion.decision_compose_failed}
+          {t.athena.decision_compose_failed}
         </p>
       )}
 
@@ -83,7 +83,7 @@ export function ChatDecisionCard() {
           role="alert"
           className="mt-2.5 rounded-input border border-rose-500/25 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400"
         >
-          {t.plugins.companion.decision_run_failed}
+          {t.athena.decision_run_failed}
         </p>
       )}
 
@@ -93,7 +93,7 @@ export function ChatDecisionCard() {
           className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
         >
           <p className="typo-label font-medium text-primary">
-            {t.plugins.companion.decision_recommend_prefix}
+            {t.athena.decision_recommend_prefix}
           </p>
           <MarkdownRenderer
             content={decision.recommendation}
@@ -137,8 +137,8 @@ export function ChatDecisionCard() {
           data-testid="athena-chat-decision-option-0"
           onClick={() => explainDecision()}
           disabled={composing}
-          aria-label={t.plugins.companion.decision_explain}
-          title={t.plugins.companion.decision_explain_hint}
+          aria-label={t.athena.decision_explain}
+          title={t.athena.decision_explain_hint}
           className="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Lightbulb className="w-4 h-4" aria-hidden />

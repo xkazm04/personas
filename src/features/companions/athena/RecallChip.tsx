@@ -40,7 +40,7 @@ export function RecallChip({
   // Same defensiveness as the floor note: an entry from a payload that predates
   // these fields has neither, and must still render as a plain chip.
   const relevance = entry.relevance ?? null;
-  const laneLabel = LANE_LABELS(t)[entry.lane] ?? t.plugins.companion.recall_lane_keyword;
+  const laneLabel = LANE_LABELS(t)[entry.lane] ?? t.athena.recall_lane_keyword;
   // The hierarchy is built by PROMOTING what matched, not by fading what did
   // not. `no-low-contrast-text-classes` bans both the opacity step and the
   // muted token for exactly this, and its prescribed mechanism (`text-primary`
@@ -51,10 +51,10 @@ export function RecallChip({
 
   const description =
     relevance === null
-      ? t.plugins.companion.recall_chip_lane_aria
+      ? t.athena.recall_chip_lane_aria
           .replace('{title}', entry.title)
           .replace('{lane}', laneLabel)
-      : t.plugins.companion.recall_chip_relevance_aria
+      : t.athena.recall_chip_relevance_aria
           .replace('{title}', entry.title)
           .replace('{lane}', laneLabel)
           .replace('{percent}', String(Math.round(relevance * 100)));
@@ -97,7 +97,7 @@ export function RecallChip({
       type="button"
       onClick={() => onOpen(kind, entry.id)}
       className={`${baseClass} text-left hover:bg-foreground/[0.10] hover:border-primary/30 transition-colors focus-ring cursor-pointer`}
-      title={`${description} — ${t.plugins.companion.recall_open_in_brain.replace('{title}', entry.title)}`}
+      title={`${description} — ${t.athena.recall_open_in_brain.replace('{title}', entry.title)}`}
       aria-label={description}
       data-testid="companion-recall-chip"
       data-kind={kind}
@@ -117,9 +117,9 @@ function LANE_LABELS(
   t: ReturnType<typeof useTranslation>['t'],
 ): Record<CompanionRecallLane, string> {
   return {
-    vector: t.plugins.companion.recall_lane_vector,
-    keyword: t.plugins.companion.recall_lane_keyword,
-    always: t.plugins.companion.recall_lane_always,
-    recency: t.plugins.companion.recall_lane_recency,
+    vector: t.athena.recall_lane_vector,
+    keyword: t.athena.recall_lane_keyword,
+    always: t.athena.recall_lane_always,
+    recency: t.athena.recall_lane_recency,
   };
 }

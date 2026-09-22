@@ -81,7 +81,7 @@ export function useAthenaChatShellEffects(streaming: boolean): void {
       sys.setHomeTab('cockpit');
       sys.setAthenaPanelCompact(true);
       store.flashHighlight('cockpit-panel', {
-        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+        label: getActiveTranslations().athena.guide_flash_composed,
       });
     }, []),
     'companion_explain_cockpit_listen',

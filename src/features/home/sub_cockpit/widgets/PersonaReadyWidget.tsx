@@ -73,7 +73,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
   if (!summary) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.persona_ready_empty}
+        {t.athena.persona_ready_empty}
       </div>
     );
   }
@@ -104,13 +104,13 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-emerald-300/85">
         <CheckCircle2 className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.persona_ready_title}
+          {title || t.athena.persona_ready_title}
         </span>
       </header>
       <div className="space-y-2">
         <div className="rounded-card bg-foreground/[0.04] border border-foreground/10 p-3">
           <div className="typo-caption text-foreground mb-1">
-            {t.plugins.companion.persona_ready_intent_label}
+            {t.athena.persona_ready_intent_label}
           </div>
           <p className="typo-body text-foreground/95 leading-relaxed">
             {summary.intent_line}
@@ -118,27 +118,27 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
         </div>
         <Row
           icon={Sparkles}
-          label={t.plugins.companion.persona_ready_prompt_outline}
+          label={t.athena.persona_ready_prompt_outline}
           value={summary.system_prompt_outline}
         />
         <Row
           icon={Layers}
-          label={t.plugins.companion.persona_ready_use_cases}
+          label={t.athena.persona_ready_use_cases}
           value={summary.use_cases?.join(' · ')}
         />
         <Row
           icon={Zap}
-          label={t.plugins.companion.persona_ready_triggers}
+          label={t.athena.persona_ready_triggers}
           value={summary.triggers?.join(' · ')}
         />
         <Row
           icon={Cpu}
-          label={t.plugins.companion.persona_ready_model_tier}
+          label={t.athena.persona_ready_model_tier}
           value={summary.model_tier}
         />
         <Row
           icon={Activity}
-          label={t.plugins.companion.persona_ready_observability}
+          label={t.athena.persona_ready_observability}
           value={summary.observability}
         />
       </div>
@@ -184,12 +184,12 @@ function recommendedHint(
   t: ReturnType<typeof useTranslation>['t'],
 ): string {
   if (action === 'build_oneshot') {
-    return t.plugins.companion.persona_ready_hint_oneshot;
+    return t.athena.persona_ready_hint_oneshot;
   }
   if (action === 'use_template') {
-    return t.plugins.companion.persona_ready_hint_template;
+    return t.athena.persona_ready_hint_template;
   }
-  return t.plugins.companion.persona_ready_hint_interactive;
+  return t.athena.persona_ready_hint_interactive;
 }
 
 function commitButtonLabel(
@@ -197,10 +197,10 @@ function commitButtonLabel(
   t: ReturnType<typeof useTranslation>['t'],
 ): string {
   if (action === 'build_oneshot') {
-    return t.plugins.companion.persona_ready_commit_oneshot;
+    return t.athena.persona_ready_commit_oneshot;
   }
   if (action === 'use_template') {
-    return t.plugins.companion.persona_ready_commit_template;
+    return t.athena.persona_ready_commit_template;
   }
-  return t.plugins.companion.persona_ready_commit_interactive;
+  return t.athena.persona_ready_commit_interactive;
 }

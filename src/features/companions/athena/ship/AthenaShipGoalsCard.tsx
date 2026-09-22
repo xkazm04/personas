@@ -46,7 +46,7 @@ export function AthenaShipGoalsCard({
   cardId?: string;
 }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const milestoneId = typeof config?.milestone_id === 'string' ? config.milestone_id : '';
   const milestoneName =
     typeof config?.milestone_name === 'string' ? config.milestone_name : '';

@@ -51,7 +51,7 @@ function goToCockpit(compact: boolean): void {
   sys.setHomeTab('cockpit');
   if (compact) sys.setAthenaPanelCompact(true);
   useAthenaStore.getState().flashHighlight('cockpit-panel', {
-    label: getActiveTranslations().plugins.companion.guide_flash_composed,
+    label: getActiveTranslations().athena.guide_flash_composed,
   });
 }
 

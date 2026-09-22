@@ -38,7 +38,7 @@ export function useForwardToAthena(): (message: string, source?: string) => void
   const orbEnabled = useSystemStore((s) => s.athenaOrbEnabled);
   const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
   const voice = useTtsVoiceSelection();
-  const ackSpeech = t.plugins.companion.forward_ack_speech;
+  const ackSpeech = t.athena.forward_ack_speech;
 
   return useCallback(
     (message: string, source?: string) => {

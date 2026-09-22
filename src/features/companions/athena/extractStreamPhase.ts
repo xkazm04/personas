@@ -107,7 +107,7 @@ function toolDetail(name: string, input: unknown): string | undefined {
  * better than no signal, less polished than the named cases.
  */
 export function phaseLabel(t: T, tx: Tx, phase: StreamPhase): string {
-  const c = t.plugins.companion;
+  const c = t.athena;
   if (phase.kind === 'reviewing') return c.phase_reviewing;
   if (phase.kind === 'thinking') return c.phase_thinking;
   if (phase.kind === 'responding') return c.phase_responding;

@@ -70,7 +70,7 @@ function EntryRow({ entry }: { entry: NarrationEntry }) {
 export function NarrationLiveLog({ entries }: { entries: NarrationEntry[] }) {
   const { t, tx } = useTranslation();
   if (entries.length === 0) return null;
-  const c = t.plugins.companion;
+  const c = t.athena;
   const hidden = Math.max(0, entries.length - LIVE_MAX_ROWS);
   const visible = hidden > 0 ? entries.slice(hidden) : entries;
   return (
@@ -103,7 +103,7 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
   // its unique value — and never double-shows the beats.
   const toolEntries = narration.entries.filter((e) => e.kind === 'tool');
   if (toolEntries.length === 0) return null;
-  const c = t.plugins.companion;
+  const c = t.athena;
   const count = toolEntries.length;
   const steps = tx(count === 1 ? c.narration_steps_one : c.narration_steps_other, {
     count,

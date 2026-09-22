@@ -29,7 +29,7 @@ type ComposeState = 'idle' | 'composing' | 'failed';
  */
 export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const topic = typeof config?.topic === 'string' ? config.topic : '';
   const summary = typeof config?.summary === 'string' ? config.summary.trim() : '';
   const staticWalkthrough = WALKTHROUGHS[topic];

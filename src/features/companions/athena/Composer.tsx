@@ -101,51 +101,51 @@ export function Composer({
     () => [
       {
         key: 'intake',
-        label: t.plugins.companion.slash_label_intake,
-        message: t.plugins.companion.slash_message_intake,
+        label: t.athena.slash_label_intake,
+        message: t.athena.slash_message_intake,
       },
       {
         key: 'goals',
-        label: t.plugins.companion.slash_label_goals,
-        message: t.plugins.companion.slash_message_goals,
+        label: t.athena.slash_label_goals,
+        message: t.athena.slash_message_goals,
       },
       {
         key: 'queued',
-        label: t.plugins.companion.slash_label_queued,
-        message: t.plugins.companion.slash_message_queued,
+        label: t.athena.slash_label_queued,
+        message: t.athena.slash_message_queued,
       },
       {
         key: 'decisions',
-        label: t.plugins.companion.slash_label_decisions,
-        message: t.plugins.companion.slash_message_decisions,
+        label: t.athena.slash_label_decisions,
+        message: t.athena.slash_message_decisions,
       },
       {
         key: 'live_ops',
-        label: t.plugins.companion.slash_label_live_ops,
-        message: t.plugins.companion.slash_message_live_ops,
+        label: t.athena.slash_label_live_ops,
+        message: t.athena.slash_message_live_ops,
       },
       {
         key: 'memory_recap',
-        label: t.plugins.companion.slash_label_memory_recap,
-        message: t.plugins.companion.slash_message_memory_recap,
+        label: t.athena.slash_label_memory_recap,
+        message: t.athena.slash_message_memory_recap,
       },
       {
         key: 'capabilities',
-        label: t.plugins.companion.slash_label_capabilities,
-        message: t.plugins.companion.slash_message_capabilities,
+        label: t.athena.slash_label_capabilities,
+        message: t.athena.slash_message_capabilities,
       },
       {
         key: 'daily_brief',
-        label: t.plugins.companion.daily_brief,
+        label: t.athena.daily_brief,
         action: onDailyBrief,
       },
       {
         key: 'analyze_fleet',
-        label: t.plugins.companion.analyze_fleet,
+        label: t.athena.analyze_fleet,
         action: onAnalyzeFleet,
       },
     ].sort((a, b) => a.label.localeCompare(b.label)),
-    [t.plugins.companion, onDailyBrief, onAnalyzeFleet],
+    [t.athena, onDailyBrief, onAnalyzeFleet],
   );
 
   // Palette is open whenever the draft begins with `/`. Subsequent chars
@@ -273,8 +273,8 @@ export function Composer({
   }, [draft]);
 
   const placeholder = useMemo(
-    () => t.plugins.companion.composer_placeholder,
-    [t.plugins.companion.composer_placeholder],
+    () => t.athena.composer_placeholder,
+    [t.athena.composer_placeholder],
   );
 
   // Visual indicator for what's currently being recognized — appended to the
@@ -338,15 +338,15 @@ export function Composer({
             }`}
             aria-label={
               dictation.listening
-                ? t.plugins.companion.dictate_stop
-                : t.plugins.companion.dictate_start
+                ? t.athena.dictate_stop
+                : t.athena.dictate_start
             }
             title={
               dictation.error
-                ? t.plugins.companion.dictate_error
+                ? t.athena.dictate_error
                 : dictation.listening
-                  ? t.plugins.companion.dictate_listening_hint
-                  : t.plugins.companion.dictate_start_hint
+                  ? t.athena.dictate_listening_hint
+                  : t.athena.dictate_start_hint
             }
             aria-pressed={dictation.listening}
           >
@@ -360,7 +360,7 @@ export function Composer({
         {/* a11y — announce when the mic goes hot; the visual cue is color-only. */}
         {dictation.supported && (
           <span className="sr-only" aria-live="assertive">
-            {dictation.listening ? t.plugins.companion.dictate_listening_hint : ''}
+            {dictation.listening ? t.athena.dictate_listening_hint : ''}
           </span>
         )}
         <button
@@ -371,7 +371,7 @@ export function Composer({
           className={`rounded-interactive bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring ${
             compact ? 'p-1.5' : 'p-2'
           }`}
-          aria-label={t.plugins.companion.send}
+          aria-label={t.athena.send}
         >
           <Send className="w-4 h-4" />
         </button>

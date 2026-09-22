@@ -27,7 +27,7 @@ import {
  */
 export function AthenaChatSleepButton() {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const addToast = useToastStore((s) => s.addToast);
   const [busy, setBusy] = useState(false);
   const [pressure, setPressure] = useState<SleepPressure | null>(null);

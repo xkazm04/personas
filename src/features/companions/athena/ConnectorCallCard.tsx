@@ -70,13 +70,13 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
 
   const statusLabel =
     job.status === 'queued'
-      ? t.plugins.companion.connector_call_queued
+      ? t.athena.connector_call_queued
       : job.status === 'running'
-        ? t.plugins.companion.connector_call_running
+        ? t.athena.connector_call_running
         : job.status === 'completed'
-          ? t.plugins.companion.connector_call_completed
+          ? t.athena.connector_call_completed
           : job.status === 'failed'
-            ? t.plugins.companion.connector_call_failed
+            ? t.athena.connector_call_failed
             : job.status;
 
   // Auto-open on terminal status only if there's a body to show — keeps
@@ -146,13 +146,13 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
               data-testid="companion-connector-retry"
             >
               <RefreshCcw className="w-3 h-3" />
-              <span>{t.plugins.companion.connector_call_retry}</span>
+              <span>{t.athena.connector_call_retry}</span>
             </button>
           )}
           {retryingState.phase === 'firing' && (
             <span className="inline-flex items-center gap-1 text-foreground">
               <Loader2 className="w-3 h-3 animate-spin" />
-              {t.plugins.companion.connector_call_retrying}
+              {t.athena.connector_call_retrying}
             </span>
           )}
           {retryingState.phase === 'fired' && (
@@ -161,7 +161,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
               data-testid="companion-connector-retried"
             >
               <CheckCircle2 className="w-3 h-3" />
-              {t.plugins.companion.connector_call_retried.replace(
+              {t.athena.connector_call_retried.replace(
                 '{id}',
                 retryingState.newId.slice(0, 8),
               )}
@@ -170,7 +170,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           {retryingState.phase === 'error' && (
             <span className="inline-flex items-center gap-1 text-rose-300/90">
               <AlertCircle className="w-3 h-3" />
-              {t.plugins.companion.connector_call_retry_failed.replace(
+              {t.athena.connector_call_retry_failed.replace(
                 '{message}',
                 retryingState.message,
               )}
@@ -188,7 +188,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
             ("Calling Sentry…") over the static hint, so the card reports
             what's happening instead of a generic "working" line.
           */}
-          {job.progressText ?? t.plugins.companion.connector_call_in_flight_hint}
+          {job.progressText ?? t.athena.connector_call_in_flight_hint}
         </div>
       )}
     </div>
@@ -265,7 +265,7 @@ function RetriedJobStatus({ job }: { job: BackgroundJob | undefined }) {
         data-testid="companion-retried-status-waiting"
       >
         <Loader2 className="w-3 h-3 animate-spin" />
-        <span>{t.plugins.companion.connector_call_retry_waiting}</span>
+        <span>{t.athena.connector_call_retry_waiting}</span>
       </div>
     );
   }

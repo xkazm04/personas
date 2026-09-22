@@ -82,7 +82,7 @@ import type { DecisionOption, PendingDecision } from './types';
 
 function approvalToDecision(approval: PendingApproval): PendingDecision {
   const t = getActiveTranslations();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const label = actionLabel(t, approval.action);
   const prompt = approval.rationale ? `${label}: ${approval.rationale}` : label;
 
@@ -137,7 +137,7 @@ function approvalToDecision(approval: PendingApproval): PendingDecision {
 
 function incidentToDecision(message: ProactiveMessage): PendingDecision {
   const t = getActiveTranslations();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   const options: DecisionOption[] = [
     {
@@ -201,7 +201,7 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
 
 function reviewToDecision(review: PersonaManualReview): PendingDecision {
   const t = getActiveTranslations();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const prompt = review.description
     ? `${review.title} — ${review.description}`
     : review.title;
@@ -284,7 +284,7 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
  */
 function messageAttentionToDecision(message: ProactiveMessage): PendingDecision {
   const t = getActiveTranslations();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   const engage = async (): Promise<void> => {
     try {
@@ -365,7 +365,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
  */
 function credentialReauthToDecision(message: ProactiveMessage): PendingDecision {
   const t = getActiveTranslations();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   const engage = async (): Promise<void> => {
     try {

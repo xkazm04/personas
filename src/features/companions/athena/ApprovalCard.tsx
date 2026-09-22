@@ -74,7 +74,7 @@ export function ApprovalCard({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
-          {t.plugins.companion.proposed_action}
+          {t.athena.proposed_action}
         </span>
         <span
           className="typo-caption text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
@@ -90,7 +90,7 @@ export function ApprovalCard({
 
       <details className="text-foreground">
         <summary className="cursor-pointer typo-caption hover:text-foreground transition-colors">
-          {t.plugins.companion.action_params}
+          {t.athena.action_params}
         </summary>
         <div className="mt-1.5">
           <MarkdownRenderer
@@ -109,7 +109,7 @@ export function ApprovalCard({
 
       {failedOutcome && (
         <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 typo-caption text-amber-300">
-          {t.plugins.companion.approved_failed.replace(
+          {t.athena.approved_failed.replace(
             '{message}',
             failedOutcome.replace(/^Execution failed:\s*/i, ''),
           )}
@@ -126,7 +126,7 @@ export function ApprovalCard({
           icon={<Check className="w-3.5 h-3.5" />}
           data-testid="companion-approve"
         >
-          {t.plugins.companion.approve}
+          {t.athena.approve}
         </Button>
         <Button
           variant="secondary"
@@ -137,7 +137,7 @@ export function ApprovalCard({
           icon={<X className="w-3.5 h-3.5" />}
           data-testid="companion-reject"
         >
-          {t.plugins.companion.reject}
+          {t.athena.reject}
         </Button>
       </div>
     </div>

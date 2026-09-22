@@ -140,7 +140,7 @@ export function AthenaToolbar(props: {
   return (
     <aside
       className="relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]"
-      aria-label={t.plugins.companion.toolbar_label}
+      aria-label={t.athena.toolbar_label}
       data-testid="companion-toolbar"
     >
       {/* Minimize / expand handle — a vertically-centered arrow tab straddling
@@ -151,8 +151,8 @@ export function AthenaToolbar(props: {
         onClick={onToggleCompact}
         data-testid="companion-toggle-compact"
         aria-pressed={compact}
-        aria-label={compact ? t.plugins.companion.compact_toggle_expand : t.plugins.companion.compact_toggle_collapse}
-        title={compact ? t.plugins.companion.compact_toggle_expand : t.plugins.companion.compact_toggle_collapse}
+        aria-label={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}
+        title={compact ? t.athena.compact_toggle_expand : t.athena.compact_toggle_collapse}
         className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
       >
         {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
@@ -163,8 +163,8 @@ export function AthenaToolbar(props: {
         icon={<Wrench className="w-4 h-4" />}
         label={
           devToolsEnabled
-            ? t.plugins.companion.dev_tools_disable
-            : t.plugins.companion.dev_tools_enable
+            ? t.athena.dev_tools_disable
+            : t.athena.dev_tools_enable
         }
         enabled={devToolsEnabled}
         onClick={toggleDevTools}
@@ -176,7 +176,7 @@ export function AthenaToolbar(props: {
       {/* Assist group (existing) */}
       <ToolbarButton
         icon={<Brain className="w-4 h-4" />}
-        label={t.plugins.companion.brain_open}
+        label={t.athena.brain_open}
         onClick={onOpenBrain}
         active={brainOpen}
       />
@@ -232,7 +232,7 @@ export function AthenaToolbar(props: {
       ))}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
-        label={t.plugins.companion.connectors_add}
+        label={t.athena.connectors_add}
         onClick={() => setPickerOpen(true)}
         testId="companion-connectors-add"
       />
@@ -242,7 +242,7 @@ export function AthenaToolbar(props: {
       {/* Settings — deep-links to Plugins > Companion > Setup. */}
       <ToolbarButton
         icon={<Settings className="w-4 h-4" />}
-        label={t.plugins.companion.settings_open}
+        label={t.athena.settings_open}
         onClick={navigateToAthenaSetup}
         testId="companion-open-settings"
       />
@@ -432,14 +432,14 @@ function ConnectorIconButton({
         style={{ ...enabledStyle, ...ringStyle }}
         aria-label={`${meta.label} (${
           enabled
-            ? t.plugins.companion.connector_state_enabled
-            : t.plugins.companion.connector_state_disabled
+            ? t.athena.connector_state_enabled
+            : t.athena.connector_state_disabled
         })`}
         title={`${meta.label} — ${
           enabled
-            ? t.plugins.companion.connector_action_disable
-            : t.plugins.companion.connector_action_enable
-        } · ${t.plugins.companion.connector_right_click_menu_hint}`}
+            ? t.athena.connector_action_disable
+            : t.athena.connector_action_enable
+        } · ${t.athena.connector_right_click_menu_hint}`}
         aria-pressed={enabled}
       >
         {meta.iconUrl ? (
@@ -462,7 +462,7 @@ function ConnectorIconButton({
             className="w-full text-left px-3 py-1.5 typo-caption text-foreground/85 hover:bg-foreground/5 focus-ring"
             role="menuitem"
           >
-            {t.plugins.companion.connectors_remove_from_sidebar}
+            {t.athena.connectors_remove_from_sidebar}
           </button>
         </div>
       )}

@@ -194,8 +194,8 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
           ) : null}
           <div className="typo-body truncate">
             {brainView.kind
-              ? `${t.plugins.companion.brain_title} — ${kindLabel(t, brainView.kind)}`
-              : t.plugins.companion.brain_title}
+              ? `${t.athena.brain_title} — ${kindLabel(t, brainView.kind)}`
+              : t.athena.brain_title}
           </div>
         </div>
         {onClose && (
@@ -246,13 +246,13 @@ function RootView() {
       <div className="px-5 pt-4">
         <SegmentedTabs<BrainLane>
           tabs={[
-            { id: 'memory', label: t.plugins.companion.brain_tab_memory },
-            { id: 'cycles', label: t.plugins.companion.brain_tab_cycles },
-            { id: 'health', label: t.plugins.companion.brain_tab_health },
+            { id: 'memory', label: t.athena.brain_tab_memory },
+            { id: 'cycles', label: t.athena.brain_tab_cycles },
+            { id: 'health', label: t.athena.brain_tab_health },
           ]}
           activeTab={lane}
           onTabChange={setLane}
-          ariaLabel={t.plugins.companion.brain_title}
+          ariaLabel={t.athena.brain_title}
           idPrefix="brain-lane"
         />
       </div>
@@ -278,31 +278,31 @@ function kindLabel(
 ): string {
   // Phase D scoped variants share their parent's label — the meta line
   // already shows the scope, so the title doesn't need to repeat it.
-  if (kind.startsWith('procedural')) return t.plugins.companion.procedurals;
-  if (kind.startsWith('goal')) return t.plugins.companion.goals;
-  if (kind.startsWith('ritual')) return t.plugins.companion.rituals;
-  if (kind.startsWith('backlog')) return t.plugins.companion.backlog;
+  if (kind.startsWith('procedural')) return t.athena.procedurals;
+  if (kind.startsWith('goal')) return t.athena.goals;
+  if (kind.startsWith('ritual')) return t.athena.rituals;
+  if (kind.startsWith('backlog')) return t.athena.backlog;
   switch (kind) {
     case 'episode':
-      return t.plugins.companion.episodes;
+      return t.athena.episodes;
     case 'doctrine':
-      return t.plugins.companion.doctrine;
+      return t.athena.doctrine;
     case 'identity':
-      return t.plugins.companion.identity;
+      return t.athena.identity;
     case 'constitution':
-      return t.plugins.companion.constitution;
+      return t.athena.constitution;
     case 'fact':
-      return t.plugins.companion.facts;
+      return t.athena.facts;
     case 'fact:user':
-      return t.plugins.companion.facts_user;
+      return t.athena.facts_user;
     case 'fact:project':
-      return t.plugins.companion.facts_project;
+      return t.athena.facts_project;
     case 'fact:world':
-      return t.plugins.companion.facts_world;
+      return t.athena.facts_world;
     case 'reflection':
-      return t.plugins.companion.reflections;
+      return t.athena.reflections;
     case 'design_decision':
-      return t.plugins.companion.design_decisions;
+      return t.athena.design_decisions;
     default:
       // Unknown kind — never show the raw slug. Title-case it so it
       // still reads as English even if the backend added a new kind
@@ -348,18 +348,18 @@ function TypesView() {
             <div className="flex items-center gap-2 mb-1">
               <Icon className={`w-4 h-4 ${accent.icon}`} />
               <span className="typo-body">
-                {t.plugins.companion[labelKey]}
+                {t.athena[labelKey]}
               </span>
             </div>
             <div className="typo-caption text-foreground mb-1.5">
-              {t.plugins.companion[descKey]}
+              {t.athena[descKey]}
             </div>
             <div className="typo-body text-foreground">
               {counts[kind] === undefined
                 ? '…'
                 : counts[kind] === 1
-                  ? t.plugins.companion.brain_one_item
-                  : `${counts[kind]} ${t.plugins.companion.brain_items}`}
+                  ? t.athena.brain_one_item
+                  : `${counts[kind]} ${t.athena.brain_items}`}
             </div>
           </button>
         );
@@ -480,7 +480,7 @@ function ListView({ kind }: { kind: BrainKind }) {
                     </span>
                   </div>
                   <div className="typo-caption text-foreground line-clamp-2">
-                    {item.preview || t.plugins.companion.brain_empty_placeholder}
+                    {item.preview || t.athena.brain_empty_placeholder}
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
@@ -583,13 +583,13 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
     setRunning(true);
     try {
       const id = await companionRunReflection();
-      addToast(t.plugins.companion.reflections, 'success');
+      addToast(t.athena.reflections, 'success');
       // Jump straight to the new reflection so the result is visible — this
       // also unmounts the empty state.
       setBrainView({ open: true, kind: 'reflection', id });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      addToast(`${t.plugins.companion.reflection_failed}: ${msg}`, 'error');
+      addToast(`${t.athena.reflection_failed}: ${msg}`, 'error');
       silentCatch('companion_run_reflection')(err);
       setRunning(false);
     }
@@ -599,7 +599,7 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
     setRunning(true);
     try {
       await companionRunConsolidation();
-      addToast(t.plugins.companion.brain_empty_consolidation_started, 'success');
+      addToast(t.athena.brain_empty_consolidation_started, 'success');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       addToast(msg, 'error');
@@ -611,7 +611,7 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
 
   const askAthena = useCallback(() => {
     useAthenaStore.getState().setPendingPrompt({
-      text: tx(t.plugins.companion.brain_empty_ask_prompt, {
+      text: tx(t.athena.brain_empty_ask_prompt, {
         kind: kindLabel(t, kind),
       }),
       autoSend: true,
@@ -623,15 +623,15 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
     return (
       <EmptyState
         icon={Icon}
-        title={t.plugins.companion.brain_empty}
-        subtitle={t.plugins.companion.brain_empty_hint}
+        title={t.athena.brain_empty}
+        subtitle={t.athena.brain_empty_hint}
       >
         <div className="flex items-center gap-2 typo-caption text-foreground">
           <LoadingSpinner size="sm" />
           <span>
             {isReflection
-              ? t.plugins.companion.reflection_running
-              : t.plugins.companion.consolidation_running}
+              ? t.athena.reflection_running
+              : t.athena.consolidation_running}
           </span>
         </div>
       </EmptyState>
@@ -640,18 +640,18 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
 
   const action = isReflection
     ? {
-        label: t.plugins.companion.memory_generate_reflection,
+        label: t.athena.memory_generate_reflection,
         onClick: generateReflection,
         icon: Sparkles,
       }
     : isFact
       ? {
-          label: t.plugins.companion.memory_run_consolidation,
+          label: t.athena.memory_run_consolidation,
           onClick: runConsolidation,
           icon: RefreshCw,
         }
       : {
-          label: t.plugins.companion.brain_empty_ask_cta,
+          label: t.athena.brain_empty_ask_cta,
           onClick: askAthena,
           icon: Sparkles,
         };
@@ -659,8 +659,8 @@ function ListEmpty({ kind }: { kind: BrainKind }) {
   return (
     <EmptyState
       icon={Icon}
-      title={t.plugins.companion.brain_empty}
-      subtitle={t.plugins.companion.brain_empty_hint}
+      title={t.athena.brain_empty}
+      subtitle={t.athena.brain_empty_hint}
       action={action}
     />
   );
@@ -744,7 +744,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
     return (
       <div className="flex items-center gap-3 p-5 typo-body text-foreground">
         <LoadingSpinner size="sm" />
-        <span>{t.plugins.companion.brain_loading}</span>
+        <span>{t.athena.brain_loading}</span>
       </div>
     );
   }
@@ -765,12 +765,12 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             spellCheck={false}
-            aria-label={t.plugins.companion.identity_edit}
+            aria-label={t.athena.identity_edit}
             className="w-full h-full min-h-[24rem] rounded-card border border-primary/20 bg-secondary/30 p-3 typo-code font-mono text-foreground resize-none focus-ring"
           />
         ) : (
           <>
-            <MarkdownRenderer content={detail.content || t.plugins.companion.brain_empty_placeholder} />
+            <MarkdownRenderer content={detail.content || t.athena.brain_empty_placeholder} />
             <BrainLinksStrip
               content={detail.content || ''}
               onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
@@ -792,7 +792,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption disabled:opacity-50 transition-opacity focus-ring"
               >
                 <Save className="w-3.5 h-3.5" />
-                {saving ? t.plugins.companion.identity_saving : t.plugins.companion.identity_save}
+                {saving ? t.athena.identity_saving : t.athena.identity_save}
               </button>
               <button
                 type="button"
@@ -803,7 +803,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
                 <X className="w-3.5 h-3.5" />
                 {t.common.cancel}
               </button>
-              <span className="typo-caption text-foreground ml-1">{t.plugins.companion.identity_edit_hint}</span>
+              <span className="typo-caption text-foreground ml-1">{t.athena.identity_edit_hint}</span>
             </>
           ) : (
             <button
@@ -812,7 +812,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption transition-colors focus-ring"
             >
               <Pencil className="w-3.5 h-3.5" />
-              {t.plugins.companion.identity_edit}
+              {t.athena.identity_edit}
             </button>
           )}
         </div>
@@ -827,8 +827,8 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           >
             <Trash2 className="w-3.5 h-3.5" />
             {deleting
-              ? t.plugins.companion.brain_deleting
-              : t.plugins.companion.brain_delete}
+              ? t.athena.brain_deleting
+              : t.athena.brain_delete}
           </button>
         </div>
       )}
@@ -839,7 +839,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
 /** "What Athena adapts" — the active engagement budget modulations (F4). */
 function IdentityAdaptations() {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [mods, setMods] = useState<AthenaAdaptation[]>([]);
   useEffect(() => {
     companionGetAdaptations()
@@ -869,7 +869,7 @@ function IdentityAdaptations() {
  *  records a correction + proposes a one-click removal approval. */
 function IdentityClaimCorrections({ content }: { content: string }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [corrected, setCorrected] = useState<Set<string>>(new Set());
   const claims = useMemo(() => parseIdentityClaims(content), [content]);
   if (claims.length === 0) return null;

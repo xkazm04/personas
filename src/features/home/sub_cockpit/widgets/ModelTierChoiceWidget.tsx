@@ -48,7 +48,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
   if (tiers.length === 0) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.model_tier_empty}
+        {t.athena.model_tier_empty}
       </div>
     );
   }
@@ -65,7 +65,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-indigo-300/85">
         <Cpu className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.model_tier_title}
+          {title || t.athena.model_tier_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -94,7 +94,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
                 {isReco && (
                   <span className="inline-flex items-center gap-0.5 typo-caption text-emerald-300/85 ml-auto">
                     <Star className="w-3 h-3" />
-                    {t.plugins.companion.model_tier_recommended_badge}
+                    {t.athena.model_tier_recommended_badge}
                   </span>
                 )}
               </div>
@@ -120,8 +120,8 @@ function tierLabel(
   tier: string,
   t: ReturnType<typeof useTranslation>['t'],
 ): string {
-  if (tier === 'haiku') return t.plugins.companion.model_tier_haiku;
-  if (tier === 'sonnet') return t.plugins.companion.model_tier_sonnet;
-  if (tier === 'opus') return t.plugins.companion.model_tier_opus;
+  if (tier === 'haiku') return t.athena.model_tier_haiku;
+  if (tier === 'sonnet') return t.athena.model_tier_sonnet;
+  if (tier === 'opus') return t.athena.model_tier_opus;
   return tier;
 }

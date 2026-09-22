@@ -155,7 +155,7 @@ export function OrbCaption({
           <button
             type="button"
             onClick={() => onFollow(mention.key)}
-            aria-label={tx(t.plugins.companion.orb_focus_node, { name: parts.label })}
+            aria-label={tx(t.athena.orb_focus_node, { name: parts.label })}
             data-testid="orb-caption-focus"
             className="pointer-events-auto rounded-interactive font-medium text-primary underline decoration-primary/40 underline-offset-2 transition-colors hover:decoration-primary focus-ring"
           >

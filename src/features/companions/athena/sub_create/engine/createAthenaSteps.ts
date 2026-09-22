@@ -13,7 +13,7 @@ import {
   type InstallState,
 } from './createAthenaTypes';
 
-type AthenaStrings = Translations['plugins']['companion'];
+type AthenaStrings = Translations['athena'];
 
 export function stepIndexOf(id: CreateAthenaStepId): number {
   return CREATE_ATHENA_STEP_ORDER.indexOf(id);

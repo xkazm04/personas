@@ -93,19 +93,19 @@ export function SensorySignalsModal({
 
   const filterChips: Array<{ id: SensorySource | 'all'; label: string }> = useMemo(
     () => [
-      { id: 'all', label: t.plugins.companion.sensory_filter_all },
-      { id: 'clipboard', label: t.plugins.companion.setup_desktop_clipboard_label },
+      { id: 'all', label: t.athena.sensory_filter_all },
+      { id: 'clipboard', label: t.athena.setup_desktop_clipboard_label },
       {
         id: 'file_watcher',
-        label: t.plugins.companion.setup_desktop_file_changes_label,
+        label: t.athena.setup_desktop_file_changes_label,
       },
       {
         id: 'app_focus',
-        label: t.plugins.companion.setup_desktop_app_focus_label,
+        label: t.athena.setup_desktop_app_focus_label,
       },
       {
         id: 'cli_session',
-        label: t.plugins.companion.setup_desktop_cli_session_label,
+        label: t.athena.setup_desktop_cli_session_label,
       },
     ],
     [t],
@@ -130,10 +130,10 @@ export function SensorySignalsModal({
               id="sensory-signals-modal-title"
               className="typo-heading font-semibold"
             >
-              {t.plugins.companion.sensory_signals_title}
+              {t.athena.sensory_signals_title}
             </h2>
             <p className="typo-caption text-foreground mt-0.5">
-              {t.plugins.companion.sensory_signals_subtitle}
+              {t.athena.sensory_signals_subtitle}
             </p>
           </div>
           <button
@@ -167,21 +167,21 @@ export function SensorySignalsModal({
         <div className="flex-1 overflow-y-auto px-2 py-2">
           {loadError ? (
             <div className="px-3 py-6 typo-body text-rose-400">
-              {t.plugins.companion.setup_desktop_load_failed}
+              {t.athena.setup_desktop_load_failed}
             </div>
           ) : filter === 'cli_session' ? (
             cliReads === null ? (
               <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground">
                 <LoadingSpinner size="sm" />
-                <span>{t.plugins.companion.loading}</span>
+                <span>{t.athena.loading}</span>
               </div>
             ) : cliReads.length === 0 ? (
               <div className="px-3 py-10 text-center">
                 <div className="typo-body text-foreground">
-                  {t.plugins.companion.sensory_cli_reads_empty}
+                  {t.athena.sensory_cli_reads_empty}
                 </div>
                 <div className="typo-caption text-foreground mt-1">
-                  {t.plugins.companion.sensory_cli_reads_empty_hint}
+                  {t.athena.sensory_cli_reads_empty_hint}
                 </div>
               </div>
             ) : (
@@ -194,15 +194,15 @@ export function SensorySignalsModal({
           ) : signals === null ? (
             <div className="flex items-center gap-3 px-3 py-6 typo-body text-foreground">
               <LoadingSpinner size="sm" />
-              <span>{t.plugins.companion.loading}</span>
+              <span>{t.athena.loading}</span>
             </div>
           ) : signals.length === 0 ? (
             <div className="px-3 py-10 text-center">
               <div className="typo-body text-foreground">
-                {t.plugins.companion.sensory_signals_empty}
+                {t.athena.sensory_signals_empty}
               </div>
               <div className="typo-caption text-foreground mt-1">
-                {t.plugins.companion.sensory_signals_empty_hint}
+                {t.athena.sensory_signals_empty_hint}
               </div>
             </div>
           ) : (
@@ -245,7 +245,7 @@ function SignalRow({
         {signal.redactedContent ? (
           <div className="mt-2 px-2.5 py-1.5 rounded-interactive bg-foreground/[0.04] border border-foreground/5">
             <div className="typo-caption font-medium text-foreground mb-1">
-              {t.plugins.companion.sensory_signals_redacted_label}
+              {t.athena.sensory_signals_redacted_label}
             </div>
             <div className="typo-caption font-mono text-foreground break-all whitespace-pre-wrap">
               {signal.redactedContent}
@@ -257,8 +257,8 @@ function SignalRow({
         type="button"
         onClick={onDelete}
         className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-ring"
-        aria-label={t.plugins.companion.sensory_signals_delete_aria}
-        title={t.plugins.companion.sensory_signals_delete_aria}
+        aria-label={t.athena.sensory_signals_delete_aria}
+        title={t.athena.sensory_signals_delete_aria}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -271,15 +271,15 @@ function formatAge(
   ageSecs: number,
 ): string {
   if (ageSecs < 60) {
-    return t.plugins.companion.sensory_age_seconds.replace('{n}', String(ageSecs));
+    return t.athena.sensory_age_seconds.replace('{n}', String(ageSecs));
   }
   if (ageSecs < 3600) {
-    return t.plugins.companion.sensory_age_minutes.replace(
+    return t.athena.sensory_age_minutes.replace(
       '{n}',
       String(Math.floor(ageSecs / 60)),
     );
   }
-  return t.plugins.companion.sensory_age_hours.replace(
+  return t.athena.sensory_age_hours.replace(
     '{n}',
     String(Math.floor(ageSecs / 3600)),
   );
@@ -297,7 +297,7 @@ function CliReadRow({ audit }: { audit: CliSessionReadAuditView }) {
       />
       <div className="flex-1 min-w-0">
         <div className="typo-body text-foreground break-words">
-          {t.plugins.companion.sensory_cli_reads_row_summary
+          {t.athena.sensory_cli_reads_row_summary
             .replace('{persona}', audit.personaName)
             .replace('{count}', String(audit.turnCount))}
         </div>

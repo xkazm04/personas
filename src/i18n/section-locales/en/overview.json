@@ -563,7 +563,7 @@
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
     "compose_personas_prompt": "Compose a cockpit with an overview of all my personas — show their status, recent activity, and anything that needs my attention.",
-    "subtitle_default": "Your companion-driven workspace",
+    "subtitle_default": "Your Athena-driven workspace",
     "subtitle_composed": "Composed by Athena",
     "talk_to_athena": "Talk to Athena",
     "error_title": "Couldn't load your cockpit",

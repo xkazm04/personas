@@ -61,7 +61,7 @@ const CHIP_META: Record<
 
 export function AttentionBar() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const counts = useAttentionCounts();
   const expanded = useSystemStore((s) => s.athenaAlertsExpanded);
   const toggle = useSystemStore((s) => s.toggleAthenaAlertKind);

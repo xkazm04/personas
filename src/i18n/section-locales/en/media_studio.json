@@ -34,7 +34,7 @@
   "voiceover_generate": "Generate voiceover",
   "voiceover_generating": "Synthesizing…",
   "voiceover_added": "Voiceover added to the timeline",
-  "voiceover_not_installed": "Local voice engine not installed — set it up in the companion Voice settings first.",
+  "voiceover_not_installed": "Local voice engine not installed — set it up in Athena's Voice settings first.",
   "add_video": "Add video",
   "add_audio": "Add audio",
   "empty_lane": "Drop or click + to add",

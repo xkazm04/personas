@@ -82,7 +82,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
       <header className="flex items-baseline gap-2 typo-caption text-sky-300/85">
         <BookOpen className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.template_suggestions_title}
+          {title || t.athena.template_suggestions_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -115,7 +115,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
           about a catalog it never looked at. */}
       {!loading && !error && intent !== '' && matches.length === 0 && (
         <div className="typo-caption text-foreground">
-          {t.plugins.companion.template_suggestions_empty}
+          {t.athena.template_suggestions_empty}
         </div>
       )}
       {!loading && matches.length > 0 && (
@@ -136,7 +136,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                   type="button"
                   onClick={() => openTemplate(m.id)}
                   data-testid={`template-suggestion-${m.id}`}
-                  aria-label={tx(t.plugins.companion.template_suggestions_open_one, { name: m.name })}
+                  aria-label={tx(t.athena.template_suggestions_open_one, { name: m.name })}
                   className="w-full text-left rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1 hover:border-sky-500/40 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 transition-colors"
                 >
                 <div className="flex items-baseline justify-between gap-2">
@@ -176,7 +176,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
           onClick={openTemplates}
           className="inline-flex items-center gap-1 typo-caption text-sky-300/85 hover:text-sky-300 rounded-interactive"
         >
-          <span>{t.plugins.companion.template_suggestions_open_browse}</span>
+          <span>{t.athena.template_suggestions_open_browse}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       )}

@@ -117,7 +117,7 @@ export function ConsolidationReview({
             </button>
           )}
           <span className="typo-body font-medium">
-            {t.plugins.companion.consolidation_runs_title}
+            {t.athena.consolidation_runs_title}
           </span>
         </div>
         <button
@@ -131,7 +131,7 @@ export function ConsolidationReview({
           ) : (
             <Sparkles className="w-3.5 h-3.5" />
           )}
-          {t.plugins.companion.memory_run_consolidation}
+          {t.athena.memory_run_consolidation}
         </button>
       </header>
 
@@ -140,10 +140,10 @@ export function ConsolidationReview({
           <LoadingSpinner size="sm" />
           <div className="flex-1 min-w-0">
             <div className="typo-body font-medium">
-              {t.plugins.companion.consolidation_running}
+              {t.athena.consolidation_running}
             </div>
             <div className="typo-caption text-foreground mt-1">
-              {t.plugins.companion.consolidation_running_long}
+              {t.athena.consolidation_running_long}
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export function ConsolidationReview({
           <ConsolidationRunGhostRows />
         ) : runs.length === 0 ? (
           <p className="p-5 typo-body text-foreground">
-            {t.plugins.companion.brain_empty}
+            {t.athena.brain_empty}
           </p>
         ) : (
           <ul className="divide-y divide-foreground/5">
@@ -266,22 +266,22 @@ function RunStatusBadge({ run }: { run: ConsolidationRun }) {
     switch (run.status) {
       case 'review':
         return {
-          label: t.plugins.companion.consolidation_run_status_review,
+          label: t.athena.consolidation_run_status_review,
           tone: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
         };
       case 'applied':
         return {
-          label: t.plugins.companion.consolidation_run_status_applied,
+          label: t.athena.consolidation_run_status_applied,
           tone: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
         };
       case 'failed':
         return {
-          label: t.plugins.companion.consolidation_run_status_failed,
+          label: t.athena.consolidation_run_status_failed,
           tone: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
         };
       default:
         return {
-          label: t.plugins.companion.consolidation_run_status_running,
+          label: t.athena.consolidation_run_status_running,
           tone: 'bg-primary/15 text-primary border-primary/30',
         };
     }
@@ -334,13 +334,13 @@ function RunDetail({
             type="button"
             onClick={onBack}
             className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
-            aria-label={t.plugins.companion.consolidation_back_to_runs}
-            title={t.plugins.companion.consolidation_back_to_runs}
+            aria-label={t.athena.consolidation_back_to_runs}
+            title={t.athena.consolidation_back_to_runs}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <span className="typo-body font-medium">
-            {t.plugins.companion.consolidation_review_title}
+            {t.athena.consolidation_review_title}
           </span>
         </div>
         <button
@@ -355,7 +355,7 @@ function RunDetail({
       </header>
 
       <p className="px-5 pt-3 typo-caption text-foreground">
-        {t.plugins.companion.consolidation_review_subtitle}
+        {t.athena.consolidation_review_subtitle}
       </p>
 
       {error && (
@@ -369,7 +369,7 @@ function RunDetail({
           <ConsolidationItemGhostCards />
         ) : items.length === 0 ? (
           <p className="p-2 typo-body text-foreground">
-            {t.plugins.companion.consolidation_no_proposals}
+            {t.athena.consolidation_no_proposals}
           </p>
         ) : (
           items.map((item, index) => (
@@ -454,10 +454,10 @@ function ItemCard({
 
   const kindLabel =
     item.kind === 'add'
-      ? t.plugins.companion.consolidation_kind_add
+      ? t.athena.consolidation_kind_add
       : item.kind === 'update'
-        ? t.plugins.companion.consolidation_kind_update
-        : t.plugins.companion.consolidation_kind_contradict;
+        ? t.athena.consolidation_kind_update
+        : t.athena.consolidation_kind_contradict;
   const kindTone =
     item.kind === 'add'
       ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
@@ -489,8 +489,8 @@ function ItemCard({
         {isResolved && (
           <span className="ml-auto typo-caption text-foreground">
             {item.status === 'applied'
-              ? t.plugins.companion.consolidation_applied
-              : t.plugins.companion.consolidation_rejected}
+              ? t.athena.consolidation_applied
+              : t.athena.consolidation_rejected}
           </span>
         )}
       </div>
@@ -538,7 +538,7 @@ function ItemCard({
       {item.rationale && (
         <details className="text-foreground">
           <summary className="cursor-pointer typo-caption hover:text-foreground">
-            {t.plugins.companion.consolidation_rationale}
+            {t.athena.consolidation_rationale}
           </summary>
           <p className="mt-1 typo-caption text-foreground leading-relaxed">
             {item.rationale}
@@ -548,7 +548,7 @@ function ItemCard({
 
       {item.supersedesId && (
         <div className="typo-caption text-foreground">
-          {t.plugins.companion.consolidation_supersedes}:{' '}
+          {t.athena.consolidation_supersedes}:{' '}
           <code className="px-1 py-0.5 rounded bg-foreground/5">
             {item.supersedesId}
           </code>
@@ -557,7 +557,7 @@ function ItemCard({
 
       {item.sources.length > 0 && (
         <div className="typo-caption text-foreground">
-          {t.plugins.companion.facts_sources_label}:{' '}
+          {t.athena.facts_sources_label}:{' '}
           {item.sources.map((s, i) => (
             <code key={s} className="ml-1 px-1 py-0.5 rounded bg-foreground/5">
               {s}
@@ -587,8 +587,8 @@ function ItemCard({
               <Check className="w-3.5 h-3.5" />
             )}
             {editing
-              ? t.plugins.companion.consolidation_apply_edits
-              : t.plugins.companion.consolidation_apply}
+              ? t.athena.consolidation_apply_edits
+              : t.athena.consolidation_apply}
           </button>
           <button
             type="button"
@@ -597,7 +597,7 @@ function ItemCard({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            {t.plugins.companion.consolidation_edit}
+            {t.athena.consolidation_edit}
           </button>
           <button
             type="button"
@@ -610,7 +610,7 @@ function ItemCard({
             ) : (
               <X className="w-3.5 h-3.5" />
             )}
-            {t.plugins.companion.consolidation_reject}
+            {t.athena.consolidation_reject}
           </button>
         </div>
       )}

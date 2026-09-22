@@ -34,12 +34,12 @@ export function QueuedMessages() {
           <span className="flex-1 truncate text-foreground" title={m.text}>
             {m.text}
           </span>
-          <span className="shrink-0 text-foreground">{t.plugins.companion.queued_badge}</span>
+          <span className="shrink-0 text-foreground">{t.athena.queued_badge}</span>
           <button
             type="button"
             onClick={() => remove(activeConversationId, m.id)}
             className="shrink-0 text-foreground hover:text-foreground focus-ring rounded-interactive"
-            aria-label={t.plugins.companion.queued_remove}
+            aria-label={t.athena.queued_remove}
           >
             <X className="w-3 h-3" />
           </button>

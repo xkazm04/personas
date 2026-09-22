@@ -11,7 +11,7 @@ import { Frame, TriangleAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CanvasNote } from './athenaChatCanvasSummary';
 
-type AthenaStrings = ReturnType<typeof useTranslation>['t']['plugins']['companion'];
+type AthenaStrings = ReturnType<typeof useTranslation>['t']['athena'];
 
 /** Map an action kind to its localized "what just happened" sentence. */
 function actionLabel(c: AthenaStrings, kind: string): string {
@@ -75,7 +75,7 @@ function bandLabel(c: AthenaStrings, band: CanvasNote['band']): string | null {
 
 export function AthenaChatCanvasNote({ note }: { note: CanvasNote }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   // Detail suffix: only the parts we actually have. A failure trades the
   // camera facts for the reason it refused — that IS the useful detail.

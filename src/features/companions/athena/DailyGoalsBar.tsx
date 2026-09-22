@@ -14,7 +14,7 @@ import { DailyGoalsModal } from './DailyGoalsModal';
  */
 export function DailyGoalsBar() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const { state, celebrating, createSet, saveEdits, toggle, discard } = useDailyGoals();
   const [modalOpen, setModalOpen] = useState(false);
 

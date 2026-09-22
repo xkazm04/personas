@@ -30,7 +30,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function DevOpLedger() {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const addToast = useToastStore((s) => s.addToast);
   const [data, setData] = useState<DevOpLedgerData | null>(null);
   const [expanded, setExpanded] = useState(false);

@@ -122,8 +122,8 @@ export default function PocketVoicePanel() {
 
       {usable && (
         <SectionCard
-          title={t.plugins.companion.voice_pocket_voices_title}
-          subtitle={t.plugins.companion.voice_pocket_voices_desc}
+          title={t.athena.voice_pocket_voices_title}
+          subtitle={t.athena.voice_pocket_voices_desc}
           titleClassName="text-primary"
         >
           <div className="px-1 py-2 space-y-2">
@@ -132,7 +132,7 @@ export default function PocketVoicePanel() {
             {voices === null ? (
               <div className="flex items-center gap-2 typo-caption text-foreground">
                 <LoadingSpinner size="sm" />
-                {t.plugins.companion.loading}
+                {t.athena.loading}
               </div>
             ) : (
               voices.map((v) => (
@@ -148,10 +148,10 @@ export default function PocketVoicePanel() {
             {status && (
               <div className="pt-1">
                 <div className="typo-caption text-foreground">
-                  {t.plugins.companion.voice_pocket_voices_dir_label}
+                  {t.athena.voice_pocket_voices_dir_label}
                 </div>
                 <p className="typo-caption mt-0.5">
-                  {t.plugins.companion.voice_pocket_voices_dir_hint}
+                  {t.athena.voice_pocket_voices_dir_hint}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
@@ -159,7 +159,7 @@ export default function PocketVoicePanel() {
                   </code>
                   <CopyButton
                     text={status.voicesDir}
-                    tooltip={t.plugins.companion.voice_kokoro_copy_path}
+                    tooltip={t.athena.voice_kokoro_copy_path}
                   />
                 </div>
               </div>
@@ -169,18 +169,18 @@ export default function PocketVoicePanel() {
       )}
 
       <SectionCard
-        title={t.plugins.companion.voice_enable_title}
-        subtitle={t.plugins.companion.voice_enable_desc}
+        title={t.athena.voice_enable_title}
+        subtitle={t.athena.voice_enable_desc}
         titleClassName="text-primary"
       >
         <SettingRow
-          label={t.plugins.companion.voice_enable_label}
+          label={t.athena.voice_enable_label}
           description={
             !canEnable
-              ? t.plugins.companion.voice_pocket_enable_blocked
+              ? t.athena.voice_pocket_enable_blocked
               : voiceEnabled
-                ? t.plugins.companion.voice_enable_on
-                : t.plugins.companion.voice_enable_off
+                ? t.athena.voice_enable_on
+                : t.athena.voice_enable_off
           }
           checked={voiceEnabled}
           disabled={!canEnable}
@@ -190,8 +190,8 @@ export default function PocketVoicePanel() {
 
       {pendingDelete && (
         <ConfirmDialog
-          title={t.plugins.companion.voice_pocket_delete_title}
-          body={t.plugins.companion.voice_pocket_delete_body}
+          title={t.athena.voice_pocket_delete_title}
+          body={t.athena.voice_pocket_delete_body}
           danger
           onConfirm={onConfirmDelete}
           onCancel={() => setPendingDelete(null)}
@@ -251,7 +251,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
       setPendingWav(null);
       setError(
         e instanceof AudioDecodeError
-          ? t.plugins.companion.voice_pocket_upload_decode_failed
+          ? t.athena.voice_pocket_upload_decode_failed
           : e instanceof Error
             ? e.message
             : String(e),
@@ -290,17 +290,17 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
         <div className="flex items-center gap-2">
           <KeyRound className="w-4 h-4 text-amber-400" />
           <span className="typo-title text-amber-300">
-            {t.plugins.companion.voice_pocket_hf_gate_title}
+            {t.athena.voice_pocket_hf_gate_title}
           </span>
         </div>
-        <p className="typo-caption">{t.plugins.companion.voice_pocket_hf_gate_desc}</p>
+        <p className="typo-caption">{t.athena.voice_pocket_hf_gate_desc}</p>
         <button
           type="button"
           onClick={() => setSidebarSection('credentials')}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption font-medium transition-colors focus-ring"
         >
           <ExternalLink className="w-3.5 h-3.5" />
-          {t.plugins.companion.voice_empty_cta}
+          {t.athena.voice_empty_cta}
         </button>
       </div>
     );
@@ -311,10 +311,10 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
       <div className="flex items-center gap-2">
         <Upload className="w-4 h-4 text-primary" />
         <span className="typo-title text-primary">
-          {t.plugins.companion.voice_pocket_upload_title}
+          {t.athena.voice_pocket_upload_title}
         </span>
       </div>
-      <p className="typo-caption">{t.plugins.companion.voice_pocket_upload_hint}</p>
+      <p className="typo-caption">{t.athena.voice_pocket_upload_hint}</p>
       <input
         ref={inputRef}
         type="file"
@@ -334,7 +334,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
           ) : (
             <Upload className="w-3.5 h-3.5" />
           )}
-          {t.plugins.companion.voice_pocket_upload_button}
+          {t.athena.voice_pocket_upload_button}
         </button>
         {pendingWav && (
           <>
@@ -342,8 +342,8 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value.replace(/[^A-Za-z0-9_-]+/g, '_'))}
-              placeholder={t.plugins.companion.voice_pocket_upload_name_label}
-              aria-label={t.plugins.companion.voice_pocket_upload_name_label}
+              placeholder={t.athena.voice_pocket_upload_name_label}
+              aria-label={t.athena.voice_pocket_upload_name_label}
               className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-input bg-secondary/40 border border-foreground/10 typo-caption text-foreground focus-ring"
             />
             <button
@@ -357,7 +357,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              {t.plugins.companion.voice_pocket_upload_save}
+              {t.athena.voice_pocket_upload_save}
             </button>
           </>
         )}
@@ -380,15 +380,15 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
 
   return (
     <SectionCard
-      title={t.plugins.companion.voice_pocket_packaged_title}
-      subtitle={t.plugins.companion.voice_pocket_packaged_desc}
+      title={t.athena.voice_pocket_packaged_title}
+      subtitle={t.athena.voice_pocket_packaged_desc}
       titleClassName="text-primary"
     >
       <div className="px-1 py-2 space-y-3">
         {loading || !status ? (
           <div className="flex items-center gap-2 typo-caption text-foreground">
             <LoadingSpinner size="sm" />
-            {t.plugins.companion.loading}
+            {t.athena.loading}
           </div>
         ) : (
           <>
@@ -398,29 +398,29 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
                 onDownload={companionTtsPocketDownload}
                 onDone={onRecheck}
                 icon={<AudioWaveform className="w-4 h-4 text-primary" />}
-                title={t.plugins.companion.voice_pocket_install_title}
-                desc={t.plugins.companion.voice_pocket_install_desc}
-                installButtonLabel={t.plugins.companion.voice_pocket_install_button}
+                title={t.athena.voice_pocket_install_title}
+                desc={t.athena.voice_pocket_install_desc}
+                installButtonLabel={t.athena.voice_pocket_install_button}
                 logPrefix="pocket.install"
               />
             )}
             <SetupRow
               icon={<Cpu className="w-4 h-4" />}
-              label={t.plugins.companion.voice_kokoro_engine_label}
+              label={t.athena.voice_kokoro_engine_label}
               installed={status.engineInstalled}
               installedText={status.expectedBinaryPath}
-              hint={t.plugins.companion.voice_pocket_engine_hint}
-              pathLabel={t.plugins.companion.voice_kokoro_engine_path_label}
+              hint={t.athena.voice_pocket_engine_hint}
+              pathLabel={t.athena.voice_kokoro_engine_path_label}
               path={status.expectedBinaryPath}
               url={status.engineDownloadUrl}
             />
             <SetupRow
               icon={<Package className="w-4 h-4" />}
-              label={t.plugins.companion.voice_kokoro_model_label}
+              label={t.athena.voice_kokoro_model_label}
               installed={status.modelInstalled}
               installedText={status.modelDir}
-              hint={t.plugins.companion.voice_pocket_model_hint}
-              pathLabel={t.plugins.companion.voice_kokoro_model_path_label}
+              hint={t.athena.voice_pocket_model_hint}
+              pathLabel={t.athena.voice_kokoro_model_path_label}
               path={status.modelDir}
               url={status.modelDownloadUrl}
             />
@@ -434,7 +434,7 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground typo-caption transition-colors focus-ring disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          {t.plugins.companion.voice_kokoro_recheck}
+          {t.athena.voice_kokoro_recheck}
         </button>
       </div>
     </SectionCard>
@@ -451,7 +451,7 @@ function ServiceRow({ status }: { status: PocketStatus }) {
         <span className={running ? 'text-emerald-400' : 'text-foreground'}>
           <FolderOpen className="w-4 h-4" />
         </span>
-        <span className="typo-title">{t.plugins.companion.voice_pocket_service_title}</span>
+        <span className="typo-title">{t.athena.voice_pocket_service_title}</span>
         <span
           className={`ml-auto inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full ${
             running ? 'bg-emerald-500/10 text-emerald-400' : 'bg-foreground/5 text-foreground'
@@ -459,16 +459,16 @@ function ServiceRow({ status }: { status: PocketStatus }) {
         >
           {running && <CheckCircle2 className="w-3 h-3" />}
           {running
-            ? t.plugins.companion.voice_pocket_running
-            : t.plugins.companion.voice_pocket_not_running}
+            ? t.athena.voice_pocket_running
+            : t.athena.voice_pocket_not_running}
         </span>
       </div>
-      <p className="typo-caption mt-1.5">{t.plugins.companion.voice_pocket_service_desc}</p>
+      <p className="typo-caption mt-1.5">{t.athena.voice_pocket_service_desc}</p>
       <div className="flex items-center gap-1.5 mt-1.5">
         <code className="flex-1 typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 break-all">
           {status.baseUrl}
         </code>
-        <CopyButton text={status.baseUrl} tooltip={t.plugins.companion.voice_pocket_url_label} />
+        <CopyButton text={status.baseUrl} tooltip={t.athena.voice_pocket_url_label} />
       </div>
     </div>
   );
@@ -501,13 +501,13 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
             {isCloned && (
               <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-primary/15 text-primary">
                 <AudioWaveform className="w-3 h-3" />
-                {t.plugins.companion.voice_pocket_cloned_badge}
+                {t.athena.voice_pocket_cloned_badge}
               </span>
             )}
             {selected && (
               <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
                 <CheckCircle2 className="w-3 h-3" />
-                {t.plugins.companion.voice_piper_voice_selected}
+                {t.athena.voice_piper_voice_selected}
               </span>
             )}
           </div>
@@ -521,20 +521,20 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected
-              ? t.plugins.companion.voice_piper_voice_selected
-              : t.plugins.companion.voice_piper_voice_select}
+              ? t.athena.voice_piper_voice_selected
+              : t.athena.voice_piper_voice_select}
           </button>
           <PreviewButton
             previewState={previewState}
             onPreview={onPreview}
-            title={t.plugins.companion.voice_kokoro_preview}
+            title={t.athena.voice_kokoro_preview}
           />
           {onDelete && (
             <button
               type="button"
               onClick={onDelete}
-              title={t.plugins.companion.voice_pocket_delete_title}
-              aria-label={t.plugins.companion.voice_pocket_delete_title}
+              title={t.athena.voice_pocket_delete_title}
+              aria-label={t.athena.voice_pocket_delete_title}
               className="inline-flex items-center px-2 py-1 rounded-interactive bg-secondary/40 hover:bg-red-500/15 border border-foreground/10 hover:border-red-500/30 text-foreground hover:text-red-400 typo-caption transition-colors focus-ring"
             >
               <Trash2 className="w-3 h-3" />

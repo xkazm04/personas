@@ -69,13 +69,13 @@ export function AthenaNoteSuggestionsCard({
         <NotepadText className="w-3.5 h-3.5 text-primary shrink-0 translate-y-0.5" />
         <div className="min-w-0 flex-1">
           <p className="typo-body-strong text-foreground break-words">
-            {title || t.plugins.companion.note_suggestions_heading}
+            {title || t.athena.note_suggestions_heading}
           </p>
           <p className="typo-caption text-foreground">
             {tx(
               rows.length === 1
-                ? t.plugins.companion.note_suggestions_count_one
-                : t.plugins.companion.note_suggestions_count_other,
+                ? t.athena.note_suggestions_count_one
+                : t.athena.note_suggestions_count_other,
               { count: rows.length, title: noteTitle },
             )}
           </p>
@@ -83,7 +83,7 @@ export function AthenaNoteSuggestionsCard({
       </header>
 
       {rows.length === 0 ? (
-        <p className="typo-caption text-foreground">{t.plugins.companion.note_suggestions_empty}</p>
+        <p className="typo-caption text-foreground">{t.athena.note_suggestions_empty}</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((row) => {
@@ -101,15 +101,15 @@ export function AthenaNoteSuggestionsCard({
                   {settled && (
                     <span className="ml-auto shrink-0 px-1.5 py-0.5 rounded-interactive bg-secondary/60 typo-caption text-foreground">
                       {row.outcome === 'rejected'
-                        ? t.plugins.companion.note_suggestions_rejected
-                        : t.plugins.companion.note_suggestions_accepted}
+                        ? t.athena.note_suggestions_rejected
+                        : t.athena.note_suggestions_accepted}
                     </span>
                   )}
                 </div>
                 <MarkdownRenderer content={row.bodyMd} className="typo-caption text-foreground" />
                 {row.kind === 'question' ? (
                   <p className="typo-caption text-foreground">
-                    {t.plugins.companion.note_suggestions_question_hint}
+                    {t.athena.note_suggestions_question_hint}
                   </p>
                 ) : null}
                 {!settled && (
@@ -121,7 +121,7 @@ export function AthenaNoteSuggestionsCard({
                       onClick={() => resolve(row, 'accepted')}
                       data-testid={`athena-note-suggestion-accept-${row.rowId}`}
                     >
-                      {t.plugins.companion.note_suggestions_accept}
+                      {t.athena.note_suggestions_accept}
                     </AsyncButton>
                     <Button
                       size="sm"
@@ -130,7 +130,7 @@ export function AthenaNoteSuggestionsCard({
                       onClick={() => void resolve(row, 'rejected')}
                       data-testid={`athena-note-suggestion-reject-${row.rowId}`}
                     >
-                      {t.plugins.companion.note_suggestions_reject}
+                      {t.athena.note_suggestions_reject}
                     </Button>
                   </div>
                 )}
@@ -141,7 +141,7 @@ export function AthenaNoteSuggestionsCard({
       )}
 
       {open.length > 0 && (
-        <p className="typo-caption text-foreground">{t.plugins.companion.note_suggestions_open_pad}</p>
+        <p className="typo-caption text-foreground">{t.athena.note_suggestions_open_pad}</p>
       )}
     </div>
   );

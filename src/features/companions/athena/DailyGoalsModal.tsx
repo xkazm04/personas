@@ -58,7 +58,7 @@ export function DailyGoalsModal({
   onSave,
 }: DailyGoalsModalProps) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const editing = goals.length > 0;
   const [drafts, setDrafts] = useState<GoalDraft[]>(EMPTY_DRAFTS);
   const [submitting, setSubmitting] = useState(false);

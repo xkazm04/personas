@@ -16,7 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
  */
 export function BrowserBridgePanel() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const [status, setStatus] = useState<BrowserBridgeStatus | null>(null);
   const [rotating, setRotating] = useState(false);
 

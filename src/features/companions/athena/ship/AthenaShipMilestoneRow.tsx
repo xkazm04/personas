@@ -28,7 +28,7 @@ export function AthenaShipMilestoneRow({
   onRemove,
 }: Props) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const kindLabel =
     row.itemKind === 'goal' ? c.ship_milestone_kind_goal : c.ship_milestone_kind_use_case;
 

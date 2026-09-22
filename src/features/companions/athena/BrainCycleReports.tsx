@@ -97,8 +97,8 @@ export function BrainCycleReports({ limit = DEFAULT_LIMIT }: { limit?: number })
       <div data-testid="cycles-empty">
         <EmptyState
           icon={Moon}
-          title={t.plugins.companion.cycles_empty}
-          subtitle={t.plugins.companion.cycles_empty_hint}
+          title={t.athena.cycles_empty}
+          subtitle={t.athena.cycles_empty_hint}
         />
       </div>
     );
@@ -127,7 +127,7 @@ function CycleLoadError({ message }: { message: string }) {
     <div data-testid="cycles-error">
       <EmptyState
         icon={AlertTriangle}
-        title={t.plugins.companion.cycles_load_failed}
+        title={t.athena.cycles_load_failed}
         subtitle={message}
       />
     </div>
@@ -143,11 +143,11 @@ const STATUS_ICON = {
 function statusLabel(t: ReturnType<typeof useTranslation>['t'], status: string): string {
   switch (status) {
     case 'completed':
-      return t.plugins.companion.cycles_status_completed;
+      return t.athena.cycles_status_completed;
     case 'failed':
-      return t.plugins.companion.cycles_status_failed;
+      return t.athena.cycles_status_failed;
     case 'running':
-      return t.plugins.companion.cycles_status_running;
+      return t.athena.cycles_status_running;
     default:
       return titleCase(status);
   }
@@ -181,11 +181,11 @@ function CycleCard({ cycle }: { cycle: CycleSummary }) {
       {stats.error ? <p className="typo-caption text-rose-400 mb-2">{stats.error}</p> : null}
 
       <p className="typo-caption text-foreground mb-2">
-        {t.plugins.companion.cycles_episodes_read}{' '}
+        {t.athena.cycles_episodes_read}{' '}
         <Numeric value={stats.episodes_in ?? 0} unit="count" />
         {' / '}
         <Numeric value={stats.episodes_available ?? 0} unit="count" />
-        {stats.truncated ? ` · ${t.plugins.companion.cycles_truncated}` : ''}
+        {stats.truncated ? ` · ${t.athena.cycles_truncated}` : ''}
       </p>
 
       <CycleStatChips stats={stats} />
@@ -204,34 +204,34 @@ function CycleStatChips({ stats }: { stats: CycleStats }) {
   const entries: { key: string; label: string; value: number | undefined; hint?: string }[] = [
     {
       key: 'facts',
-      label: t.plugins.companion.cycles_facts,
+      label: t.athena.cycles_facts,
       value: stats.facts_applied,
-      hint: stats.facts_dropped ? t.plugins.companion.cycles_dropped : undefined,
+      hint: stats.facts_dropped ? t.athena.cycles_dropped : undefined,
     },
     {
       key: 'procedurals',
-      label: t.plugins.companion.cycles_procedurals,
+      label: t.athena.cycles_procedurals,
       value: stats.procedurals_applied,
-      hint: stats.procedurals_dropped ? t.plugins.companion.cycles_dropped : undefined,
+      hint: stats.procedurals_dropped ? t.athena.cycles_dropped : undefined,
     },
     {
       key: 'supersedes',
-      label: t.plugins.companion.cycles_supersedes,
+      label: t.athena.cycles_supersedes,
       value: stats.supersedes_applied,
     },
-    { key: 'tags', label: t.plugins.companion.cycles_proposed_tags, value: stats.tags_proposed },
+    { key: 'tags', label: t.athena.cycles_proposed_tags, value: stats.tags_proposed },
     {
       key: 'contradictions',
-      label: t.plugins.companion.cycles_contradictions,
+      label: t.athena.cycles_contradictions,
       value: stats.contradictions,
     },
     {
       key: 'prune',
-      label: t.plugins.companion.cycles_prune_candidates,
+      label: t.athena.cycles_prune_candidates,
       value: stats.prune_candidates,
     },
-    { key: 'staged', label: t.plugins.companion.cycles_staged, value: stats.staged_consumed },
-    { key: 'chars', label: t.plugins.companion.cycles_chars, value: stats.chars_in },
+    { key: 'staged', label: t.athena.cycles_staged, value: stats.staged_consumed },
+    { key: 'chars', label: t.athena.cycles_chars, value: stats.chars_in },
   ];
   const shown = entries.filter((e) => e.value !== undefined);
   if (shown.length === 0) return null;
@@ -277,7 +277,7 @@ function CyclePhaseRow({ phases }: { phases: CyclePhase[] }) {
           </span>
         </Tooltip>
       ))}
-      <span className="sr-only">{t.plugins.companion.cycles_phases}</span>
+      <span className="sr-only">{t.athena.cycles_phases}</span>
     </div>
   );
 }

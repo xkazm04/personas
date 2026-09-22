@@ -20,7 +20,7 @@ interface Props {
  */
 export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }: Props) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const objectiveRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {

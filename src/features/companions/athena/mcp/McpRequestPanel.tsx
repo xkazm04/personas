@@ -103,7 +103,7 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
         <div className="flex items-center gap-2 rounded-card border border-primary/30 bg-primary/[0.05] px-2.5 py-1.5 typo-caption">
           <CheckCheck className="size-3.5 text-primary shrink-0" />
           <span className="flex-1 text-foreground/90">
-            {t.plugins.companion.orchestration.batch_pending_label
+            {t.athena.orchestration.batch_pending_label
               .replace('{count}', String(group.approvalCount))
               .replace('{session}', sessionLabel(group.fleetSessionId))}
           </span>
@@ -116,8 +116,8 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
           >
             <Check className="size-3" />
             {batchSending
-              ? t.plugins.companion.orchestration.batch_approving
-              : t.plugins.companion.orchestration.batch_approve_all}
+              ? t.athena.orchestration.batch_approving
+              : t.athena.orchestration.batch_approve_all}
           </button>
         </div>
       )}
@@ -151,7 +151,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
         <HelpCircle className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="typo-caption font-semibold text-foreground">
-            {t.plugins.companion.orchestration.guidance_from} {sessionLabel(request.fleetSessionId)}
+            {t.athena.orchestration.guidance_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.question}</div>
           {payload.context && (
@@ -165,7 +165,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={t.plugins.companion.orchestration.guidance_placeholder}
+          placeholder={t.athena.orchestration.guidance_placeholder}
           className="flex-1 rounded-input border border-border bg-background px-2 py-1.5 typo-body resize-none min-h-[2.25rem]"
           rows={2}
           disabled={sending}
@@ -177,7 +177,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
           className="rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-button disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
         >
           <Send className="size-3.5" />
-          {t.plugins.companion.orchestration.guidance_send}
+          {t.athena.orchestration.guidance_send}
         </button>
       </div>
     </div>
@@ -215,7 +215,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
         <ShieldQuestion className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="typo-caption font-semibold text-foreground">
-            {t.plugins.companion.orchestration.approval_from} {sessionLabel(request.fleetSessionId)}
+            {t.athena.orchestration.approval_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.action}</div>
           {payload.rationale && (
@@ -229,7 +229,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
         type="text"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder={t.plugins.companion.orchestration.approval_note_placeholder}
+        placeholder={t.athena.orchestration.approval_note_placeholder}
         className="w-full rounded-input border border-border bg-background px-2 py-1.5 typo-body mb-2"
         disabled={sending !== null}
       />
@@ -241,7 +241,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
           className="flex-1 rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-button disabled:opacity-50 inline-flex items-center justify-center gap-1"
         >
           <Check className="size-3.5" />
-          {t.plugins.companion.orchestration.approval_approve}
+          {t.athena.orchestration.approval_approve}
         </button>
         <button
           type="button"
@@ -250,7 +250,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
           className="flex-1 rounded-interactive border border-border bg-background text-foreground px-3 py-1.5 typo-button disabled:opacity-50 inline-flex items-center justify-center gap-1"
         >
           <X className="size-3.5" />
-          {t.plugins.companion.orchestration.approval_deny}
+          {t.athena.orchestration.approval_deny}
         </button>
       </div>
     </div>

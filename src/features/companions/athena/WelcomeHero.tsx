@@ -28,7 +28,7 @@ export function WelcomeHero({
   disabled: boolean;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   const starters: Starter[] = [
     { key: 'intake', label: c.slash_label_intake, message: c.slash_message_intake },

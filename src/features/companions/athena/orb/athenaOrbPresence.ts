@@ -217,29 +217,29 @@ export function useAthenaOrbPresence(args: {
     talking && interimText
       ? interimText
       : explainComposing
-        ? t.plugins.companion.orb_composing_explanation
+        ? t.athena.orb_composing_explanation
         : working && fleetGridOpen
-          ? t.plugins.companion.orb_managing_fleet
+          ? t.athena.orb_managing_fleet
           : monitorCaption;
 
   const unreadLabel = tx(
     unreadReplies === 1
-      ? t.plugins.companion.orb_unread_one
-      : t.plugins.companion.orb_unread_other,
+      ? t.athena.orb_unread_one
+      : t.athena.orb_unread_other,
     { count: unreadReplies },
   );
   const ariaLabel = talking
-    ? t.plugins.companion.footer_listening
+    ? t.athena.footer_listening
     : working
       ? tx(
           runningTaskCount === 1
-            ? t.plugins.companion.tasks_running_one
-            : t.plugins.companion.tasks_running_other,
+            ? t.athena.tasks_running_one
+            : t.athena.tasks_running_other,
           { count: runningTaskCount },
         )
       : unreadReplies > 0
-        ? `${unreadLabel} — ${t.plugins.companion.orb_talk_hint}`
-        : t.plugins.companion.orb_talk_hint;
+        ? `${unreadLabel} — ${t.athena.orb_talk_hint}`
+        : t.athena.orb_talk_hint;
 
   return {
     captionMention,

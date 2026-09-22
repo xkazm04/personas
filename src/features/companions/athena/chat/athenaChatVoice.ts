@@ -170,7 +170,7 @@ export function useAthenaChatVoice(args: {
       return;
     }
     const id = window.setTimeout(() => {
-      speakTier(t.plugins.companion.voice_progress_ack, 0);
+      speakTier(t.athena.voice_progress_ack, 0);
     }, ACK_DELAY_MS);
     return () => window.clearTimeout(id);
   }, [streaming, speakTier, stopProgress, t]);
@@ -181,7 +181,7 @@ export function useAthenaChatVoice(args: {
     if (!streaming) return;
     const id = window.setInterval(() => {
       if (Date.now() - lastStreamEventAtRef.current > HEARTBEAT_SILENCE_MS) {
-        speakTier(t.plugins.companion.voice_progress_working, 1);
+        speakTier(t.athena.voice_progress_working, 1);
       }
     }, HEARTBEAT_POLL_MS);
     return () => window.clearInterval(id);

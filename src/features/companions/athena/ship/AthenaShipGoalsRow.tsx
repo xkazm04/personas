@@ -32,7 +32,7 @@ interface Props {
  */
 export function AthenaShipGoalsRow({ row, index, disabled, onChange, onRemove }: Props) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const adopts = Boolean(row.existingId);
 
   return (

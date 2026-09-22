@@ -18,7 +18,7 @@ export function AthenaOrbCornerActions({
   onToggleQuickInput: () => void;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const quickLabel = quickInputOpen ? c.orb_quick_input_close : c.orb_quick_input_open;
 
   return (

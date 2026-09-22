@@ -67,7 +67,7 @@ export function useCreateAthenaStt(active: boolean): CreateAthenaStt {
     browser: cmp.browser,
     whisper: cmp.whisper,
     whisperInstalled,
-    micError: micErrorFor(cmp.browser.error, cmp.whisper.error, t.plugins.companion.create_stt_mic_denied),
+    micError: micErrorFor(cmp.browser.error, cmp.whisper.error, t.athena.create_stt_mic_denied),
     start,
     stop,
   };

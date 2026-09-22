@@ -137,7 +137,7 @@ export function FleetStatsSidePanel() {
   return (
     <AthenaSidePanel
       icon={<FleetShipIcon className="w-3.5 h-3.5 text-foreground" />}
-      label={t.plugins.companion.side_panel_fleet_label}
+      label={t.athena.side_panel_fleet_label}
       open={open}
       onToggleOpen={() => setSlot(open ? null : 'fleet')}
       testId="companion-fleet-side-panel"
@@ -177,9 +177,9 @@ export function FleetStatsSidePanel() {
                   status={t.plugins.fleet[meta.labelKey]}
                   statusClass={meta.text}
                   meta={formatAgo(t, Number(s.lastActivityMs), now)}
-                  metaTooltip={t.plugins.companion.side_panel_activity_label}
+                  metaTooltip={t.athena.side_panel_activity_label}
                   onClick={() => openTerminal(s.id)}
-                  actionLabel={t.plugins.companion.side_panel_open_terminal}
+                  actionLabel={t.athena.side_panel_open_terminal}
                 />
               );
             })}
@@ -188,7 +188,7 @@ export function FleetStatsSidePanel() {
       </PanelSection>
 
       <PanelSection
-        title={t.plugins.companion.slash_label_live_ops}
+        title={t.athena.slash_label_live_ops}
         count={liveOps.length}
         testId="companion-side-panel-live-ops"
       >
@@ -227,7 +227,7 @@ export function FleetStatsSidePanel() {
                     ? formatAgo(t, Date.parse(task.updated_at), now)
                     : ''
                 }
-                metaTooltip={t.plugins.companion.side_panel_activity_label}
+                metaTooltip={t.athena.side_panel_activity_label}
                 onClick={openRunDesk}
                 actionLabel={t.sidebar.task_runner}
               />

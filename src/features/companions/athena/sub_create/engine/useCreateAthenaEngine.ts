@@ -39,7 +39,7 @@ const VOICE_FROM = stepIndexOf('voice_engine');
 
 export function useCreateAthenaEngine(): CreateAthenaEngine {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const sys = useSystemStore(
     useShallow((s) => ({
       stored: s.athenaOnboardingStep,

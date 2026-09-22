@@ -103,7 +103,7 @@ export function ProactiveCard({
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-foreground">
           <Bell className="w-3.5 h-3.5" />
-          {t.plugins.companion.proactive_label}
+          {t.athena.proactive_label}
         </span>
         <span className="typo-caption text-foreground">
           · {triggerKindLabel(t, message.triggerKind)}
@@ -132,7 +132,7 @@ export function ProactiveCard({
           ) : (
             <Reply className="w-3.5 h-3.5" />
           )}
-          {t.plugins.companion.proactive_engage}
+          {t.athena.proactive_engage}
         </button>
         <button
           type="button"
@@ -146,7 +146,7 @@ export function ProactiveCard({
           ) : (
             <X className="w-3.5 h-3.5" />
           )}
-          {t.plugins.companion.proactive_dismiss}
+          {t.athena.proactive_dismiss}
         </button>
       </div>
     </div>

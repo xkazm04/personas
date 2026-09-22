@@ -38,7 +38,7 @@ function VoiceTile({
   actions: CreateAthenaActions;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const selected = card.selected === voice.voiceId;
   const mine = card.previewVoiceId === voice.voiceId;
   const synth = mine && card.preview === 'synth';
@@ -82,7 +82,7 @@ function VoiceTile({
 
 export function StageCardVoice({ card, actions }: { card: VoiceCard; actions: CreateAthenaActions }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   return (
     <div className="space-y-3">

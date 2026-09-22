@@ -54,10 +54,10 @@ export default function DecisionsPanel() {
       <header className="space-y-2">
         <h1 className="typo-h3 text-foreground/95 inline-flex items-center gap-2">
           <ScrollText className="w-5 h-5 text-fuchsia-400" />
-          {t.plugins.companion.decisions_panel_title}
+          {t.athena.decisions_panel_title}
         </h1>
         <p className="typo-body text-foreground leading-relaxed">
-          {t.plugins.companion.decisions_panel_subtitle}
+          {t.athena.decisions_panel_subtitle}
         </p>
       </header>
 
@@ -92,16 +92,16 @@ export default function DecisionsPanel() {
           {/* Context rail */}
           <nav
             className="w-56 shrink-0 sticky top-2 space-y-0.5"
-            aria-label={t.plugins.companion.decisions_atlas_contexts}
+            aria-label={t.athena.decisions_atlas_contexts}
           >
             <div className="flex items-center gap-1.5 px-2 pb-2">
               <Layers className="w-3.5 h-3.5 text-fuchsia-400" />
               <span className="typo-caption font-semibold text-foreground">
-                {t.plugins.companion.decisions_atlas_contexts}
+                {t.athena.decisions_atlas_contexts}
               </span>
             </div>
             <RailItem
-              label={t.plugins.companion.decisions_atlas_all_contexts}
+              label={t.athena.decisions_atlas_all_contexts}
               count={totalCount}
               active={activeKey === null}
               onClick={() => setSelectedKey(null)}

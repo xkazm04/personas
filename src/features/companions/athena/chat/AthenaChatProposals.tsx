@@ -65,7 +65,7 @@ export const AthenaChatCards = forwardRef<HTMLDivElement>(
             className="typo-caption text-primary pb-1"
             data-testid="companion-chat-cards-restored"
           >
-            {t.plugins.companion.chat_cards_restored_label}
+            {t.athena.chat_cards_restored_label}
           </p>
         )}
         <AnimatePresence initial={false}>

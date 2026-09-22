@@ -27,7 +27,7 @@ type TestState = 'idle' | 'synthesizing' | 'playing';
 
 export function VoiceControlPopover() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
 
   const voiceEnabled = useSystemStore((s) => s.athenaVoiceEnabled);
   const setVoiceEnabled = useSystemStore((s) => s.setAthenaVoiceEnabled);

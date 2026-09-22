@@ -11,7 +11,7 @@
  * frontend.
  *
  * Adding a new slug:
- *   1. Add a key to `plugins.companion.<group>_label_<slug>` in en.json.
+ *   1. Add a key to `athena.<group>_label_<slug>` in en.json.
  *   2. Add the case here.
  *   3. No-op in the consuming component — it calls the helper.
  */
@@ -22,14 +22,14 @@ type T = ReturnType<typeof useTranslation>['t'];
 /**
  * Humanize an approval action slug.
  *
- * Returns `t.plugins.companion.action_label_<slug>` if known, otherwise
+ * Returns `t.athena.action_label_<slug>` if known, otherwise
  * a title-cased synth ("fleet_send_input" → "Fleet Send Input") so an
  * unknown action still reads as English-ish rather than identifier-like.
  * The slug is also surfaced in a dim secondary line per usage site so
  * developers can still see what the backend sent.
  */
 export function actionLabel(t: T, action: string): string {
-  const c = t.plugins.companion;
+  const c = t.athena;
   switch (action) {
     case 'run_persona':
       return c.action_label_run_persona;
@@ -120,7 +120,7 @@ export function actionLabel(t: T, action: string): string {
  * done" instead of "fleet_op_completed".
  */
 export function triggerKindLabel(t: T, kind: string): string {
-  const c = t.plugins.companion;
+  const c = t.athena;
   switch (kind) {
     case 'goal_target_approaching':
       return c.proactive_kind_goal;
@@ -167,7 +167,7 @@ export function triggerKindLabel(t: T, kind: string): string {
  * in the Rust dispatcher) so each known one gets a dedicated label.
  */
 export function capabilityLabel(t: T, capability: string): string {
-  const c = t.plugins.companion;
+  const c = t.athena;
   switch (capability) {
     case 'list_issues':
       return c.capability_label_list_issues;
@@ -192,7 +192,7 @@ export function capabilityLabel(t: T, capability: string): string {
  * matters — "GitHub" not "Github", "Google Workspace" not "google_workspace".
  */
 export function connectorDisplayName(t: T, serviceType: string): string {
-  const c = t.plugins.companion;
+  const c = t.athena;
   switch (serviceType.toLowerCase()) {
     case 'sentry':
       return c.connector_label_sentry;

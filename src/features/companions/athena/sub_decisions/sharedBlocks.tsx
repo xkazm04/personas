@@ -27,7 +27,7 @@ export function ScopeBanner({
       <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <div className="typo-caption">
-          {t.plugins.companion.decisions_panel_currently_designing}
+          {t.athena.decisions_panel_currently_designing}
         </div>
         <div className="typo-body text-foreground truncate">{intent}</div>
       </div>
@@ -38,7 +38,7 @@ export function ScopeBanner({
         data-testid="companion-decisions-show-all"
       >
         <X className="w-3 h-3" />
-        {t.plugins.companion.decisions_panel_show_all}
+        {t.athena.decisions_panel_show_all}
       </button>
     </div>
   );
@@ -59,7 +59,7 @@ export function DecisionsFilterInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={t.plugins.companion.decisions_panel_filter_placeholder}
+        placeholder={t.athena.decisions_panel_filter_placeholder}
         className="w-full pl-8 pr-3 py-1.5 rounded-input bg-secondary/50 border border-foreground/15 typo-body text-foreground focus-ring"
         data-testid="companion-decisions-filter"
       />
@@ -133,7 +133,7 @@ export function DecisionsEmpty({
     return (
       <NoResults
         onReset={onClearFilter}
-        subtitle={t.plugins.companion.decisions_panel_empty_filtered}
+        subtitle={t.athena.decisions_panel_empty_filtered}
       />
     );
   }
@@ -142,10 +142,10 @@ export function DecisionsEmpty({
       icon={ScrollText}
       iconColor="text-fuchsia-400/80"
       iconContainerClassName="bg-fuchsia-500/10 border-fuchsia-500/20"
-      title={t.plugins.companion.decisions_panel_empty_title}
-      subtitle={t.plugins.companion.decisions_panel_empty}
+      title={t.athena.decisions_panel_empty_title}
+      subtitle={t.athena.decisions_panel_empty}
       action={{
-        label: t.plugins.companion.decisions_panel_empty_cta,
+        label: t.athena.decisions_panel_empty_cta,
         onClick: onAskAthena,
         icon: Sparkles,
       }}

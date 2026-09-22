@@ -65,10 +65,10 @@ export function AthenaSidePanel({
         data-testid={`${rootTestId}-toggle`}
         aria-pressed={open}
         aria-label={
-          open ? t.plugins.companion.side_panel_collapse : t.plugins.companion.side_panel_expand
+          open ? t.athena.side_panel_collapse : t.athena.side_panel_expand
         }
         title={
-          open ? t.plugins.companion.side_panel_collapse : t.plugins.companion.side_panel_expand
+          open ? t.athena.side_panel_collapse : t.athena.side_panel_expand
         }
         className="absolute left-0 top-3 -translate-x-1/2 z-30 inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary border border-foreground/20 text-foreground hover:bg-foreground/10 hover:border-foreground/35 shadow-elevation-3 transition-colors focus-ring"
       >

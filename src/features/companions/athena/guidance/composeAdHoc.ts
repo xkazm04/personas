@@ -41,7 +41,7 @@ export function buildPointAtWalkthrough(
   if (!anchor.route && anchor.dest) {
     const dest = anchor.dest;
     wt.cta = {
-      label: () => getActiveTranslations().plugins.companion.guide_take_me_there,
+      label: () => getActiveTranslations().athena.guide_take_me_there,
       onSelect: () => navigateToSection(dest),
     };
   }

@@ -81,7 +81,7 @@ export function GuideCaption() {
 
       {step.holdForClick && step.highlightTestId && (
         <p data-testid="athena-guide-click-hint" className="mt-1.5 typo-caption text-primary/80">
-          {t.plugins.companion.guide_click_hint}
+          {t.athena.guide_click_hint}
         </p>
       )}
 
@@ -110,14 +110,14 @@ export function GuideCaption() {
       {isMulti && (
         <div className="mt-2.5 flex items-center gap-1" role="group">
           <span className="sr-only">
-            {tx(t.plugins.companion.guide_step_label, { current: stepIndex + 1, total })}
+            {tx(t.athena.guide_step_label, { current: stepIndex + 1, total })}
           </span>
           {walkthrough.steps.map((s, i) => (
             <button
               key={s.id}
               type="button"
               onClick={() => jumpToStep(i)}
-              aria-label={tx(t.plugins.companion.guide_goto_step, { step: i + 1 })}
+              aria-label={tx(t.athena.guide_goto_step, { step: i + 1 })}
               aria-current={i === stepIndex ? 'step' : undefined}
               className={`h-1.5 flex-1 rounded-full focus-ring transition-colors ${
                 i === stepIndex
@@ -139,8 +139,8 @@ export function GuideCaption() {
             onClick={() => previousGuidance()}
             disabled={stepIndex === 0}
             className={ctrl}
-            title={t.plugins.companion.guide_back}
-            aria-label={t.plugins.companion.guide_back}
+            title={t.athena.guide_back}
+            aria-label={t.athena.guide_back}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -154,8 +154,8 @@ export function GuideCaption() {
               type="button"
               onClick={() => (playing ? pauseGuidance() : resumeGuidance())}
               className={ctrl}
-              title={playing ? t.plugins.companion.guide_pause : t.plugins.companion.guide_resume}
-              aria-label={playing ? t.plugins.companion.guide_pause : t.plugins.companion.guide_resume}
+              title={playing ? t.athena.guide_pause : t.athena.guide_resume}
+              aria-label={playing ? t.athena.guide_pause : t.athena.guide_resume}
             >
               {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             </button>
@@ -166,8 +166,8 @@ export function GuideCaption() {
               data-testid="athena-guide-skip"
               onClick={() => advanceGuidance()}
               className={ctrl}
-              title={t.plugins.companion.guide_skip}
-              aria-label={t.plugins.companion.guide_skip}
+              title={t.athena.guide_skip}
+              aria-label={t.athena.guide_skip}
             >
               <SkipForward className="w-3.5 h-3.5" />
             </button>
@@ -177,8 +177,8 @@ export function GuideCaption() {
             data-testid="athena-guide-stop"
             onClick={() => stopGuidance()}
             className={ctrl}
-            title={t.plugins.companion.guide_stop}
-            aria-label={t.plugins.companion.guide_stop}
+            title={t.athena.guide_stop}
+            aria-label={t.athena.guide_stop}
           >
             <X className="w-3.5 h-3.5" />
           </button>

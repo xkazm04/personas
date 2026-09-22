@@ -23,7 +23,7 @@ import { COMPANION_VOICE_HOTKEY } from '@/api/companion';
  */
 export function GlobalHotkeyCard() {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const enabled = useSystemStore((s) => s.athenaGlobalHotkeyEnabled);
   const setEnabled = useSystemStore((s) => s.setAthenaGlobalHotkeyEnabled);
 

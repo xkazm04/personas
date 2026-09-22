@@ -43,21 +43,21 @@ export function RecallStrip({
 
   const summary = useMemo(() => {
     if (totalMemories === 0 && preview.episodeCount === 0) {
-      return t.plugins.companion.recall_empty;
+      return t.athena.recall_empty;
     }
     if (totalMemories === 0) {
-      return t.plugins.companion.recall_episodes_only.replace(
+      return t.athena.recall_episodes_only.replace(
         '{count}',
         String(preview.episodeCount),
       );
     }
     if (preview.episodeCount === 0) {
-      return t.plugins.companion.recall_memories_only.replace(
+      return t.athena.recall_memories_only.replace(
         '{count}',
         String(totalMemories),
       );
     }
-    return t.plugins.companion.recall_combined
+    return t.athena.recall_combined
       .replace('{episodes}', String(preview.episodeCount))
       .replace('{memories}', String(totalMemories));
   }, [preview, totalMemories, t]);
@@ -88,41 +88,41 @@ export function RecallStrip({
         {preview.synthesized && (
           <span
             className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
-            title={t.plugins.companion.recall_synthesized_tooltip}
+            title={t.athena.recall_synthesized_tooltip}
           >
             <Sparkles className="w-3 h-3" />
-            {t.plugins.companion.recall_synthesized_badge}
+            {t.athena.recall_synthesized_badge}
           </span>
         )}
       </button>
       {open && totalMemories > 0 && (
         <div className="mt-2 space-y-1.5">
           <ChipGroup
-            label={t.plugins.companion.recall_group_doctrine}
+            label={t.athena.recall_group_doctrine}
             entries={preview.doctrine}
             kind="doctrine"
             onOpen={onOpenInBrain}
           />
           <ChipGroup
-            label={t.plugins.companion.recall_group_facts}
+            label={t.athena.recall_group_facts}
             entries={preview.facts}
             kind="fact"
             onOpen={onOpenInBrain}
           />
           <ChipGroup
-            label={t.plugins.companion.recall_group_procedurals}
+            label={t.athena.recall_group_procedurals}
             entries={preview.procedurals}
             kind="procedural"
             onOpen={onOpenInBrain}
           />
           <ChipGroup
-            label={t.plugins.companion.recall_group_goals}
+            label={t.athena.recall_group_goals}
             entries={preview.goals}
             kind="goal"
             onOpen={onOpenInBrain}
           />
           <ChipGroup
-            label={t.plugins.companion.recall_group_backlog}
+            label={t.athena.recall_group_backlog}
             entries={preview.backlog}
             kind="backlog"
             onOpen={onOpenInBrain}
@@ -183,7 +183,7 @@ function FloorNote({ preview }: { preview: CompanionRecallPreview }) {
       className="border-t border-foreground/10 pt-1.5 text-foreground"
       data-testid="companion-recall-floor-note"
     >
-      {t.plugins.companion.recall_dropped_far
+      {t.athena.recall_dropped_far
         .replace('{count}', String(preview.droppedFar))
         .replace('{floor}', floor.toFixed(2))}
     </p>

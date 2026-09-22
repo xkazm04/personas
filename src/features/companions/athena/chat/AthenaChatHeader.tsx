@@ -80,7 +80,7 @@ export function AthenaChatHeader({
   onToggleStrip: (strip: ToolStrip) => void;
 }) {
   const { t } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const autonomousMode = useSystemStore((s) => s.athenaAutonomousMode);
   const devMode = useSystemStore((s) => s.athenaDevMode);
   const devModeAvailable = useAthenaStore((s) => s.devModeAvailable);

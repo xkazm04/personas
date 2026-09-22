@@ -47,7 +47,7 @@ export function AthenaShipMilestoneCard({
   cardId?: string;
 }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const projectId = typeof config?.project_id === 'string' ? config.project_id : '';
   const [name, setName] = useState(() =>
     typeof config?.name === 'string' ? config.name : '',

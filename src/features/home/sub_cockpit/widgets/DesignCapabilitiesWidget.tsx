@@ -33,51 +33,51 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
   const rows: { icon: typeof Compass; label: string; behavior: string; example: string }[] = [
     {
       icon: Compass,
-      label: t.plugins.companion.design_cap_walkthrough_label,
-      behavior: t.plugins.companion.design_cap_walkthrough_behavior,
-      example: t.plugins.companion.design_cap_walkthrough_example,
+      label: t.athena.design_cap_walkthrough_label,
+      behavior: t.athena.design_cap_walkthrough_behavior,
+      example: t.athena.design_cap_walkthrough_example,
     },
     {
       icon: BookOpen,
-      label: t.plugins.companion.design_cap_templates_label,
-      behavior: t.plugins.companion.design_cap_templates_behavior,
-      example: t.plugins.companion.design_cap_templates_example,
+      label: t.athena.design_cap_templates_label,
+      behavior: t.athena.design_cap_templates_behavior,
+      example: t.athena.design_cap_templates_example,
     },
     {
       icon: Layers,
-      label: t.plugins.companion.design_cap_use_cases_label,
-      behavior: t.plugins.companion.design_cap_use_cases_behavior,
-      example: t.plugins.companion.design_cap_use_cases_example,
+      label: t.athena.design_cap_use_cases_label,
+      behavior: t.athena.design_cap_use_cases_behavior,
+      example: t.athena.design_cap_use_cases_example,
     },
     {
       icon: Zap,
-      label: t.plugins.companion.design_cap_triggers_label,
-      behavior: t.plugins.companion.design_cap_triggers_behavior,
-      example: t.plugins.companion.design_cap_triggers_example,
+      label: t.athena.design_cap_triggers_label,
+      behavior: t.athena.design_cap_triggers_behavior,
+      example: t.athena.design_cap_triggers_example,
     },
     {
       icon: Cpu,
-      label: t.plugins.companion.design_cap_tier_label,
-      behavior: t.plugins.companion.design_cap_tier_behavior,
-      example: t.plugins.companion.design_cap_tier_example,
+      label: t.athena.design_cap_tier_label,
+      behavior: t.athena.design_cap_tier_behavior,
+      example: t.athena.design_cap_tier_example,
     },
     {
       icon: Activity,
-      label: t.plugins.companion.design_cap_observability_label,
-      behavior: t.plugins.companion.design_cap_observability_behavior,
-      example: t.plugins.companion.design_cap_observability_example,
+      label: t.athena.design_cap_observability_label,
+      behavior: t.athena.design_cap_observability_behavior,
+      example: t.athena.design_cap_observability_example,
     },
     {
       icon: ScrollText,
-      label: t.plugins.companion.design_cap_decision_log_label,
-      behavior: t.plugins.companion.design_cap_decision_log_behavior,
-      example: t.plugins.companion.design_cap_decision_log_example,
+      label: t.athena.design_cap_decision_log_label,
+      behavior: t.athena.design_cap_decision_log_behavior,
+      example: t.athena.design_cap_decision_log_example,
     },
     {
       icon: CheckCircle2,
-      label: t.plugins.companion.design_cap_ready_label,
-      behavior: t.plugins.companion.design_cap_ready_behavior,
-      example: t.plugins.companion.design_cap_ready_example,
+      label: t.athena.design_cap_ready_label,
+      behavior: t.athena.design_cap_ready_behavior,
+      example: t.athena.design_cap_ready_example,
     },
   ];
 
@@ -89,7 +89,7 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
       <header className="flex items-baseline gap-2 typo-caption text-foreground">
         <Sparkles className="w-3.5 h-3.5 text-amber-300/85" />
         <span className="font-medium">
-          {title || t.plugins.companion.design_cap_title}
+          {title || t.athena.design_cap_title}
         </span>
       </header>
       {intro && (
@@ -113,7 +113,7 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
                 {row.behavior}
               </p>
               <p className="typo-caption text-foreground pl-5 italic">
-                {t.plugins.companion.design_cap_example_prefix} {row.example}
+                {t.athena.design_cap_example_prefix} {row.example}
               </p>
             </li>
           );

@@ -72,7 +72,7 @@ export function TurnSummaryChip({
     parts.push({
       icon: ArrowRight,
       key: 'nav',
-      label: countLabel(t.plugins.companion.turn_summary_nav, summary.navigations),
+      label: countLabel(t.athena.turn_summary_nav, summary.navigations),
     });
   }
   if (summary.approvals > 0) {
@@ -80,7 +80,7 @@ export function TurnSummaryChip({
       icon: CheckCircle2,
       key: 'approval',
       label: countLabel(
-        t.plugins.companion.turn_summary_approval,
+        t.athena.turn_summary_approval,
         summary.approvals,
       ),
       target: 'approvals',
@@ -90,7 +90,7 @@ export function TurnSummaryChip({
     parts.push({
       icon: Bot,
       key: 'lab',
-      label: countLabel(t.plugins.companion.turn_summary_lab, summary.labOpens),
+      label: countLabel(t.athena.turn_summary_lab, summary.labOpens),
     });
   }
   if (summary.dashboards > 0) {
@@ -98,7 +98,7 @@ export function TurnSummaryChip({
       icon: LayoutDashboard,
       key: 'dashboard',
       label: countLabel(
-        t.plugins.companion.turn_summary_dashboard,
+        t.athena.turn_summary_dashboard,
         summary.dashboards,
       ),
       target: 'dashboard',
@@ -109,7 +109,7 @@ export function TurnSummaryChip({
       icon: LayoutGrid,
       key: 'cockpit',
       label: countLabel(
-        t.plugins.companion.turn_summary_cockpit,
+        t.athena.turn_summary_cockpit,
         summary.cockpits,
       ),
       target: 'cockpit',
@@ -119,7 +119,7 @@ export function TurnSummaryChip({
     parts.push({
       icon: Sparkles,
       key: 'card',
-      label: countLabel(t.plugins.companion.turn_summary_card, summary.chatCards),
+      label: countLabel(t.athena.turn_summary_card, summary.chatCards),
       target: 'chatCards',
     });
   }
@@ -127,7 +127,7 @@ export function TurnSummaryChip({
     parts.push({
       icon: RefreshCcw,
       key: 'continuation',
-      label: t.plugins.companion.turn_summary_continuation,
+      label: t.athena.turn_summary_continuation,
     });
   }
 
@@ -137,7 +137,7 @@ export function TurnSummaryChip({
     <div
       className="flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground pl-2"
       data-testid="companion-turn-summary-chip"
-      aria-label={t.plugins.companion.turn_summary_label}
+      aria-label={t.athena.turn_summary_label}
     >
       {parts.map((p, i) => {
         const Icon = p.icon;
@@ -154,7 +154,7 @@ export function TurnSummaryChip({
           </span>
         );
         if (clickable) {
-          const tooltip = t.plugins.companion.turn_summary_jump_to.replace(
+          const tooltip = t.athena.turn_summary_jump_to.replace(
             '{label}',
             p.label,
           );

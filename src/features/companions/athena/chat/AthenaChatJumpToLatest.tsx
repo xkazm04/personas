@@ -34,7 +34,7 @@ export function AthenaChatJumpToLatest({
           data-testid="companion-jump-to-latest"
         >
           <ArrowDown className="w-3.5 h-3.5" />
-          {t.plugins.companion.jump_to_latest}
+          {t.athena.jump_to_latest}
         </motion.button>
       )}
     </AnimatePresence>

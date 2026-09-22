@@ -83,15 +83,15 @@ const STAGE_ACCENT: Record<StageStatus, string> = {
 function statusLabel(t: ReturnType<typeof useTranslation>['t'], status: StageStatus): string {
   switch (status) {
     case 'ok':
-      return t.plugins.companion.health_status_ok;
+      return t.athena.health_status_ok;
     case 'skipped':
-      return t.plugins.companion.health_status_skipped;
+      return t.athena.health_status_skipped;
     case 'degraded':
-      return t.plugins.companion.health_status_degraded;
+      return t.athena.health_status_degraded;
     case 'blocked':
-      return t.plugins.companion.health_status_blocked;
+      return t.athena.health_status_blocked;
     case 'unknown':
-      return t.plugins.companion.health_status_unknown;
+      return t.athena.health_status_unknown;
     default:
       return titleCase(status);
   }
@@ -104,21 +104,21 @@ function statusLabel(t: ReturnType<typeof useTranslation>['t'], status: StageSta
 function stageLabel(t: ReturnType<typeof useTranslation>['t'], name: string): string {
   switch (name) {
     case 'ml_feature':
-      return t.plugins.companion.health_stage_ml_feature;
+      return t.athena.health_stage_ml_feature;
     case 'embedder':
-      return t.plugins.companion.health_stage_embedder;
+      return t.athena.health_stage_embedder;
     case 'corpus':
-      return t.plugins.companion.health_stage_corpus;
+      return t.athena.health_stage_corpus;
     case 'keyword_index':
-      return t.plugins.companion.health_stage_keyword_index;
+      return t.athena.health_stage_keyword_index;
     case 'vector_index':
-      return t.plugins.companion.health_stage_vector_index;
+      return t.athena.health_stage_vector_index;
     case 'embedding_coverage':
-      return t.plugins.companion.health_stage_embedding_coverage;
+      return t.athena.health_stage_embedding_coverage;
     case 'model_guard':
-      return t.plugins.companion.health_stage_model_guard;
+      return t.athena.health_stage_model_guard;
     case 'consolidation':
-      return t.plugins.companion.health_stage_consolidation;
+      return t.athena.health_stage_consolidation;
     default:
       return titleCase(name);
   }
@@ -157,7 +157,7 @@ export function BrainHealthPanel() {
         <div data-testid="health-error">
           <EmptyState
             icon={AlertTriangle}
-            title={t.plugins.companion.health_load_failed}
+            title={t.athena.health_load_failed}
             subtitle={error}
           />
         </div>
@@ -172,11 +172,11 @@ export function BrainHealthPanel() {
       {cached.firstBlockingCause ? (
         <section className="rounded-card border border-rose-400/30 bg-rose-400/5 px-4 py-3">
           <h3 className="typo-body text-rose-400 mb-1">
-            {t.plugins.companion.health_blocking_cause}
+            {t.athena.health_blocking_cause}
           </h3>
           <p className="typo-caption text-foreground">{cached.firstBlockingCause.summary}</p>
           <p className="typo-caption text-foreground mt-1.5">
-            <span className="font-semibold">{t.plugins.companion.health_fix}</span>{' '}
+            <span className="font-semibold">{t.athena.health_fix}</span>{' '}
             {cached.firstBlockingCause.fix}
           </p>
         </section>
@@ -198,14 +198,14 @@ function HealthVerdict({ report }: { report: BrainHealth }) {
       />
       <span className="typo-body">
         {report.healthy
-          ? t.plugins.companion.health_healthy
-          : t.plugins.companion.health_unhealthy}
+          ? t.athena.health_healthy
+          : t.athena.health_unhealthy}
       </span>
       <span className="typo-caption text-foreground">
         ·{' '}
         {report.vectorLane
-          ? t.plugins.companion.health_vector_lane_on
-          : t.plugins.companion.health_vector_lane_off}
+          ? t.athena.health_vector_lane_on
+          : t.athena.health_vector_lane_off}
       </span>
     </header>
   );
@@ -216,7 +216,7 @@ function HealthStages({ report }: { report: BrainHealth }) {
   return (
     <section>
       <h3 className="typo-caption text-foreground mb-2">
-        {t.plugins.companion.health_stages}
+        {t.athena.health_stages}
       </h3>
       <ul className="space-y-1.5">
         {report.stages.map((stage) => {
@@ -275,27 +275,27 @@ function counterLabel(
 ): string {
   switch (key) {
     case 'nodes':
-      return t.plugins.companion.health_counter_nodes;
+      return t.athena.health_counter_nodes;
     case 'embedded':
-      return t.plugins.companion.health_counter_embedded;
+      return t.athena.health_counter_embedded;
     case 'unembedded':
-      return t.plugins.companion.health_counter_unembedded;
+      return t.athena.health_counter_unembedded;
     case 'vectors':
-      return t.plugins.companion.health_counter_vectors;
+      return t.athena.health_counter_vectors;
     case 'ftsRows':
-      return t.plugins.companion.health_counter_fts_rows;
+      return t.athena.health_counter_fts_rows;
     case 'episodes':
-      return t.plugins.companion.health_counter_episodes;
+      return t.athena.health_counter_episodes;
     case 'conversationEpisodes':
-      return t.plugins.companion.health_counter_conversation_episodes;
+      return t.athena.health_counter_conversation_episodes;
     case 'facts':
-      return t.plugins.companion.health_counter_facts;
+      return t.athena.health_counter_facts;
     case 'procedurals':
-      return t.plugins.companion.health_counter_procedurals;
+      return t.athena.health_counter_procedurals;
     case 'doctrineChunks':
-      return t.plugins.companion.health_counter_doctrine_chunks;
+      return t.athena.health_counter_doctrine_chunks;
     case 'modelGuardExcluded':
-      return t.plugins.companion.health_counter_model_guard_excluded;
+      return t.athena.health_counter_model_guard_excluded;
     default:
       return titleCase(key);
   }
@@ -306,7 +306,7 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
   return (
     <section>
       <h3 className="typo-caption text-foreground mb-2">
-        {t.plugins.companion.health_counters}
+        {t.athena.health_counters}
       </h3>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         {COUNTER_ROWS.map((key) => (
@@ -314,7 +314,7 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
             <dt className="typo-caption text-foreground">{counterLabel(t, key)}</dt>
             <dd className="typo-caption text-foreground">
               {counters[key] === null ? (
-                t.plugins.companion.health_counter_absent
+                t.athena.health_counter_absent
               ) : (
                 <Numeric value={counters[key]} unit="count" />
               )}
@@ -323,13 +323,13 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
         ))}
         <div className="flex items-baseline justify-between gap-2" data-counter="lastCycleAt">
           <dt className="typo-caption text-foreground">
-            {t.plugins.companion.health_counter_last_cycle}
+            {t.athena.health_counter_last_cycle}
           </dt>
           <dd className="typo-caption text-foreground">
             {counters.lastCycleAt ? (
               <RelativeTime timestamp={counters.lastCycleAt} className="text-foreground" />
             ) : (
-              t.plugins.companion.health_counter_never
+              t.athena.health_counter_never
             )}
           </dd>
         </div>

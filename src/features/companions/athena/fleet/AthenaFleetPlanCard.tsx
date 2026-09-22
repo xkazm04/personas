@@ -54,7 +54,7 @@ export function AthenaFleetPlanCard({
   cardId?: string;
 }) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const intent = typeof config?.operation_intent === 'string' ? config.operation_intent : '';
   const [rows, setRows] = useState<FleetPlanRow[]>(() => parsePlanRows(config?.rows));
   const [busy, setBusy] = useState(false);

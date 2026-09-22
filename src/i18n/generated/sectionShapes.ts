@@ -591,9 +591,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "doc_signing": {},
     "obsidian_brain": {},
-    "companion": {
-      "orchestration": {}
-    },
     "artist_gallery": {},
     "artist_media_studio": {},
     "dev_lifecycle": {},
@@ -606,6 +603,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "obsidian": {},
     "research_lab": {},
     "scraper": {}
+  },
+  "athena": {
+    "orchestration": {}
   },
   "media_studio": {},
   "research_lab": {},

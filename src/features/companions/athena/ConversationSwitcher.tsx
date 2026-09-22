@@ -63,7 +63,7 @@ export function ConversationSwitcher() {
 
   const active = conversations.find((c) => c.id === activeId);
   const activeStatus = active ? statusOf(active, true, streaming) : 'idle';
-  const activeTitle = active?.title ?? t.plugins.companion.name;
+  const activeTitle = active?.title ?? t.athena.name;
 
   function switchTo(c: ConversationRow) {
     setOpen(false);
@@ -127,7 +127,7 @@ export function ConversationSwitcher() {
         data-testid="companion-conversation-switcher"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={t.plugins.companion.switch_conversation}
+        aria-label={t.athena.switch_conversation}
         className="flex items-center gap-1.5 max-w-[210px] px-1.5 py-0.5 -mx-1 rounded-interactive hover:bg-foreground/5 transition-colors focus-ring"
       >
         <StatusDot status={activeStatus} />
@@ -149,7 +149,7 @@ export function ConversationSwitcher() {
           className="absolute left-0 top-[calc(100%+6px)] z-40 min-w-[248px] max-w-[300px] p-1.5 rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3"
         >
           <div className="px-2 pt-1 pb-1.5 typo-caption tracking-wide">
-            {t.plugins.companion.conversations}
+            {t.athena.conversations}
           </div>
           <div className="max-h-[300px] overflow-y-auto flex flex-col gap-0.5">
             {conversations.map((c) => {
@@ -172,7 +172,7 @@ export function ConversationSwitcher() {
                         }
                       }}
                       onBlur={() => commitRename(c)}
-                      aria-label={t.plugins.companion.rename_conversation}
+                      aria-label={t.athena.rename_conversation}
                       className="flex-1 min-w-0 bg-transparent border-b border-primary/50 typo-body focus:outline-none"
                     />
                   </div>
@@ -201,8 +201,8 @@ export function ConversationSwitcher() {
                     <button
                       type="button"
                       onClick={(e) => startRename(e, c)}
-                      aria-label={t.plugins.companion.rename_conversation}
-                      title={t.plugins.companion.rename_conversation}
+                      aria-label={t.athena.rename_conversation}
+                      title={t.athena.rename_conversation}
                       className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -211,8 +211,8 @@ export function ConversationSwitcher() {
                       <button
                         type="button"
                         onClick={(e) => archive(e, c)}
-                        aria-label={t.plugins.companion.archive_conversation}
-                        title={t.plugins.companion.archive_conversation}
+                        aria-label={t.athena.archive_conversation}
+                        title={t.athena.archive_conversation}
                         className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
                       >
                         <Archive className="w-3.5 h-3.5" />
@@ -231,7 +231,7 @@ export function ConversationSwitcher() {
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring typo-body font-medium"
           >
             <Plus className="w-4 h-4" aria-hidden />
-            {t.plugins.companion.new_conversation}
+            {t.athena.new_conversation}
           </button>
         </div>
       )}

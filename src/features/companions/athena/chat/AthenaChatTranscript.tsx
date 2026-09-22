@@ -83,8 +83,8 @@ export const AthenaChatTranscript = memo(function AthenaChatTranscript({
     (iso: string) =>
       daySeparatorLabel(
         iso,
-        t.plugins.companion.day_today,
-        t.plugins.companion.day_yesterday,
+        t.athena.day_today,
+        t.athena.day_yesterday,
       ),
     [t],
   );
@@ -103,8 +103,8 @@ export const AthenaChatTranscript = memo(function AthenaChatTranscript({
             <ChevronUp className="w-3 h-3" aria-hidden />
             {tx(
               hiddenCount === 1
-                ? t.plugins.companion.transcript_earlier_one
-                : t.plugins.companion.transcript_earlier_other,
+                ? t.athena.transcript_earlier_one
+                : t.athena.transcript_earlier_other,
               { count: hiddenCount },
             )}
           </button>

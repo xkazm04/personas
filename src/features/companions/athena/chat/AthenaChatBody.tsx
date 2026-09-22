@@ -121,12 +121,12 @@ export function AthenaChatBody({
               {!engine.initialized && !engine.initError && (
                 <div className="flex items-center gap-3 text-foreground typo-body">
                   <LoadingSpinner size="sm" />
-                  <span>{t.plugins.companion.initializing}</span>
+                  <span>{t.athena.initializing}</span>
                 </div>
               )}
               {engine.initError && (
                 <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
-                  {t.plugins.companion.init_failed}: {engine.initError}
+                  {t.athena.init_failed}: {engine.initError}
                 </div>
               )}
               <AthenaChatAlerts onEngage={engine.send} />

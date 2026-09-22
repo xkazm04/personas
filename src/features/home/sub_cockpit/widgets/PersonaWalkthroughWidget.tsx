@@ -26,7 +26,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
   if (!content) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
-        {t.plugins.companion.walkthrough_empty}
+        {t.athena.walkthrough_empty}
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
       <header className="flex items-baseline gap-2 typo-caption text-violet-300/85">
         <Sparkles className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.walkthrough_title}
+          {title || t.athena.walkthrough_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -53,7 +53,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
       {intent && (
         <footer className="flex items-center justify-between gap-2 pt-1">
           <span className="typo-caption text-foreground">
-            {t.plugins.companion.walkthrough_commit_hint}
+            {t.athena.walkthrough_commit_hint}
           </span>
           <button
             type="button"
@@ -62,7 +62,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
             data-testid="companion-walkthrough-commit"
           >
             <Rocket className="w-3.5 h-3.5" />
-            <span>{t.plugins.companion.walkthrough_commit_button}</span>
+            <span>{t.athena.walkthrough_commit_button}</span>
           </button>
         </footer>
       )}
