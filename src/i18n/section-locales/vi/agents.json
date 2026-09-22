@@ -2133,7 +2133,9 @@
     "lede_agent": "Tác nhân viết phần này về chính công việc của nó. Phần này chỉ thay đổi khi bạn chấp nhận thay đổi mà nó đề xuất.",
     "lede_neither": "Không ai trong hai bên viết ở đây. Phần này được hiển thị để tài liệu không bao giờ thiếu sót mà không ai hay.",
     "draft_mark": "Bản nháp",
-    "editor_hint": "Ctrl+Enter lưu trọn chương này. Esc thoát chế độ viết và giữ bản nháp của bạn."
+    "editor_hint": "Ctrl+Enter lưu trọn chương này. Esc thoát chế độ viết và giữ bản nháp của bạn.",
+    "scroll_on": "Tiếp tục cuộn đến {number} · {chapter}",
+    "scroll_back": "Cuộn lên đến {number} · {chapter}"
   },
   "matrix_cred_picker": {
     "best_match": "Phù hợp nhất",

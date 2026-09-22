@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ContentCard } from '@/features/shared/components/content';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { toastCatch } from '@/lib/silentCatch';
 import type { ManifestDiffPreview } from './manifestDocument';
 
@@ -60,7 +61,14 @@ export function ManifestProposalCard({ proposalId, createdAt, previews, onDecide
         {previews.map((p, i) => (
           <div key={`${p.section}-${i}`} className="space-y-1">
             {p.section && <p className="typo-label text-violet-400">{p.section}</p>}
-            {p.text && <p className="typo-body-lg text-foreground">{proposedText(p.text)}</p>}
+            {/* Same renderer and the same page prose as a content row, so the
+                proposed line reads exactly as it will once accepted — the
+                owner saw `typo-body-lg` here drift from the rows above it. */}
+            {p.text && (
+              <div className="ds-prose" data-role="proposal-text">
+                <MarkdownRenderer content={proposedText(p.text)} />
+              </div>
+            )}
           </div>
         ))}
       </div>

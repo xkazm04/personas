@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**149 reusable components** live under `src/features/shared/components/`.
+**151 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -90,6 +90,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DocumentRowEditor` | DocumentRowEditor — one row of a DocumentSurface chapter, edited in place: the clicked bullet or paragraph becomes a field in the  |
 | `DocumentSurface` | DocumentSurface — a long-form two-author document as a bound book: a to-scale side rail (parametrized), a chapter switcher with wa |
 | `DocumentTabs` | DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the |
+| `DocumentTurnHint` | DocumentTurnHint — the edge-of-chapter cue that fills as the reader keeps scrolling past the end (or top) of a DocumentSurface cha |
+| `useChapterScroll` | The open chapter's leaf. |
 | `useDocumentSurface` | any) is being written in, and the per-chapter drafts. |
 
 ## editors — Rich text / JSON / markdown / prompt editors & renderers
@@ -243,4 +245,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_149 components, 44 without a `@catalog` description._
+_151 components, 44 without a `@catalog` description._

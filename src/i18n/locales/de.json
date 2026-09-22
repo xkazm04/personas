@@ -2139,7 +2139,9 @@
       "lede_agent": "Das hat der Agent über seine eigene Arbeit geschrieben. Es ändert sich nur, wenn Sie eine vorgeschlagene Änderung annehmen.",
       "lede_neither": "Hier schreibt keiner von Ihnen beiden. Es wird angezeigt, damit das Dokument nie stillschweigend unvollständig ist.",
       "draft_mark": "Entwurf",
-      "editor_hint": "Strg+Enter speichert dieses Kapitel als Ganzes. Esc beendet das Schreiben und behält Ihren Entwurf."
+      "editor_hint": "Strg+Enter speichert dieses Kapitel als Ganzes. Esc beendet das Schreiben und behält Ihren Entwurf.",
+      "scroll_on": "Weiterscrollen zu {number} · {chapter}",
+      "scroll_back": "Nach oben scrollen zu {number} · {chapter}"
     },
     "matrix_cred_picker": {
       "best_match": "Beste Übereinstimmung",

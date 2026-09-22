@@ -1767,7 +1767,9 @@
       "lede_agent": "The agent wrote this about its own work. It changes only when you accept a change it proposes.",
       "lede_neither": "Neither of you writes here. It is shown so the document is never quietly partial.",
       "draft_mark": "Draft",
-      "editor_hint": "Ctrl+Enter saves this chapter whole. Esc steps out and keeps your draft."
+      "editor_hint": "Ctrl+Enter saves this chapter whole. Esc steps out and keeps your draft.",
+      "scroll_on": "Keep scrolling for {number} · {chapter}",
+      "scroll_back": "Scroll up for {number} · {chapter}"
     },
     "parameters_card": {
       "title": "Parameters",

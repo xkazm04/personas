@@ -1774,6 +1774,8 @@ export type Translations = {
       lede_neither: string;
       draft_mark: string;
       editor_hint: string;
+      scroll_on: string;
+      scroll_back: string;
     };
     parameters_card: {
       title: string;

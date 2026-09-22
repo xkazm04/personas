@@ -32,6 +32,8 @@ export function useManifestLabels(): DocumentSurfaceLabels {
       empty: m.law_empty,
       lines: (count) => (count === 1 ? m.lines_one : tx(m.lines_other, { count })),
       waiting: (count) => (count === 1 ? m.waiting_one : tx(m.waiting_other, { count })),
+      scrollOn: (number, chapter) => tx(m.scroll_on, { number, chapter }),
+      scrollBack: (number, chapter) => tx(m.scroll_back, { number, chapter }),
       editor: (heading) => ({
         field: tx(m.editor_field, { section: heading }),
         hint: m.editor_hint,

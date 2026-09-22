@@ -131,7 +131,7 @@
 /* ── the prose, row by row ───────────────────────────────────────────────── */
 /* Beats MarkdownRenderer's own per-element typo-* classes on specificity
    (0,1,1 over 0,1,0), both unlayered, so the page sets the reading type. */
-.ds-prose { font-size: 1rem; line-height: 1.75; color: var(--ds-page-ink); }
+.ds-prose { font-size: 1rem; line-height: 1.75; color: var(--ds-page-ink, var(--foreground)); }
 .ds-prose p,
 .ds-prose li { font-size: 1rem; line-height: 1.75; color: var(--ds-page-ink); margin: 0; }
 .ds-prose strong { font-weight: 650; color: var(--ds-page-ink); }
@@ -287,7 +287,10 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-tone) 38%, transparent);
 }
 .ds-band-n { font-size: 0.75rem; font-weight: 700; color: var(--ds-tone); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
-.ds-band-t { font-size: 0.875rem; font-weight: 600; line-height: 1.3; }
+/* Owner's review 2026-09-22: the chapter names are the rail's point, so they
+   read in page ink (not the band's muted tone) and 20% larger than the winner's
+   0.875rem. Recorded as an accepted override in the style contract. */
+.ds-band-t { font-size: 1.05rem; font-weight: 600; line-height: 1.3; color: var(--ds-page-ink); }
 .ds-band-m {
   display: block;
   margin-top: 0.1rem;
@@ -389,3 +392,62 @@
 @container ds-surface (min-width: 50rem) {
   .ds-rail-col { display: flex; }
 }
+
+
+/* ── a wider measure on large surfaces ──────────────────────────────────────
+   Owner's review 2026-09-22: on a large surface the winner's 46rem column left
+   dead space either side. At 80rem of SURFACE width (the rail's container, so a
+   narrow panel in a wide window keeps the reading measure) the column grows
+   20%, to 55.2rem. Below it the winner's measure stands. */
+@container ds-surface (min-width: 80rem) {
+  .ds-stack { --ds-measure: 55.2rem; }
+}
+
+/* ── turning the page by scrolling ───────────────────────────────────────── */
+.ds-turn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted-dark);
+  opacity: 0.7;
+  transition: opacity 160ms ease, color 160ms ease;
+}
+.ds-turn-next { margin-top: 1.75rem; }
+.ds-turn-prev { margin-bottom: 1rem; }
+.ds-turn.is-live { opacity: 1; color: var(--ds-tone); }
+.ds-turn-label { white-space: nowrap; }
+.ds-turn-track {
+  flex: 1;
+  height: 2px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ds-tone) 14%, transparent);
+  overflow: hidden;
+}
+.ds-turn-fill {
+  display: block;
+  height: 100%;
+  background: var(--ds-tone);
+  transform-origin: left center;
+  transition: transform 90ms linear;
+}
+.ds-turn-prev .ds-turn-fill { transform-origin: right center; }
+
+/* the next chapter arrives from the side the reader scrolled toward */
+.ds-page.enter-next { animation: ds-enter-next 320ms cubic-bezier(0.22, 0.8, 0.3, 1); }
+.ds-page.enter-prev { animation: ds-enter-prev 320ms cubic-bezier(0.22, 0.8, 0.3, 1); }
+@keyframes ds-enter-next { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes ds-enter-prev { from { opacity: 0; transform: translateY(-28px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .ds-page.enter-next, .ds-page.enter-prev { animation: none; }
+  .ds-turn-fill { transition: none; }
+}
+
+/* The app's own reduced-motion setting, beside the OS preference above. */
+html[data-motion="reduce"] .ds-page,
+html[data-motion="reduce"] .ds-page.enter-next,
+html[data-motion="reduce"] .ds-page.enter-prev { animation: none; }
+html[data-motion="reduce"] .ds-turn-fill { transition: none; }
+html[data-motion="reduce"] .ds-shut:hover { transform: none; }

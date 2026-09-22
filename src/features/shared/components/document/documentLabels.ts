@@ -37,6 +37,10 @@ export interface DocumentSurfaceLabels {
   lines: (count: number) => string;
   /** "<n> waiting" — the caller formats the number. */
   waiting: (count: number) => string;
+  /** "Keep scrolling for 2 · Boundaries" — at the end of a chapter. */
+  scrollOn: (number: number, heading: string) => string;
+  /** "Scroll up for 1 · Mandate" — at the top of a chapter. */
+  scrollBack: (number: number, heading: string) => string;
   /** The editor's own words, built per section so the field can be named. */
   editor: (heading: string) => { field: string; hint: string; save: string };
 }

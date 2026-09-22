@@ -2139,7 +2139,9 @@
       "lede_agent": "Toto napsal agent o své vlastní práci. Mění se jen tehdy, když přijmete změnu, kterou navrhne.",
       "lede_neither": "Sem nepíše nikdo z vás. Zobrazuje se, aby dokument nikdy nebyl potichu neúplný.",
       "draft_mark": "Koncept",
-      "editor_hint": "Ctrl+Enter uloží celou kapitolu. Esc zavře psaní a koncept ponechá."
+      "editor_hint": "Ctrl+Enter uloží celou kapitolu. Esc zavře psaní a koncept ponechá.",
+      "scroll_on": "Pokračujte v posouvání na {number} · {chapter}",
+      "scroll_back": "Posuňte nahoru na {number} · {chapter}"
     },
     "matrix_cred_picker": {
       "best_match": "Nejlepší shoda",

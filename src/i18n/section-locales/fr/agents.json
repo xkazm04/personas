@@ -2133,7 +2133,9 @@
     "lede_agent": "L’agent a écrit ceci sur son propre travail. Cela ne change que lorsque vous acceptez une modification qu’il propose.",
     "lede_neither": "Aucun de vous deux n’écrit ici. C’est affiché pour que le document ne soit jamais incomplet en silence.",
     "draft_mark": "Brouillon",
-    "editor_hint": "Ctrl+Entrée enregistre ce chapitre en entier. Échap quitte l’écriture et garde votre brouillon."
+    "editor_hint": "Ctrl+Entrée enregistre ce chapitre en entier. Échap quitte l’écriture et garde votre brouillon.",
+    "scroll_on": "Continuez à défiler vers {number} · {chapter}",
+    "scroll_back": "Remontez vers {number} · {chapter}"
   },
   "matrix_cred_picker": {
     "best_match": "Meilleure correspondance",

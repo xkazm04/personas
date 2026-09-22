@@ -2139,7 +2139,9 @@
       "lede_agent": "Agen menulis ini tentang pekerjaannya sendiri. Bagian ini berubah hanya saat Anda menerima perubahan yang ia usulkan.",
       "lede_neither": "Tidak ada di antara Anda berdua yang menulis di sini. Ditampilkan agar dokumen tidak pernah diam-diam tidak lengkap.",
       "draft_mark": "Draf",
-      "editor_hint": "Ctrl+Enter menyimpan bab ini utuh. Esc keluar dari penulisan dan menyimpan draf Anda."
+      "editor_hint": "Ctrl+Enter menyimpan bab ini utuh. Esc keluar dari penulisan dan menyimpan draf Anda.",
+      "scroll_on": "Terus gulir ke {number} · {chapter}",
+      "scroll_back": "Gulir ke atas ke {number} · {chapter}"
     },
     "matrix_cred_picker": {
       "best_match": "Cocok terbaik",

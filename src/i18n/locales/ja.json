@@ -2139,7 +2139,9 @@
       "lede_agent": "これはエージェントが自分の仕事について書いたものです。提案された変更をあなたが承認したときだけ変わります。",
       "lede_neither": "ここにはどちらも書きません。ドキュメントが知らないうちに欠けることのないよう表示しています。",
       "draft_mark": "下書き",
-      "editor_hint": "Ctrl+Enter でこの章を丸ごと保存します。Esc で書き込みを終え、下書きは残ります。"
+      "editor_hint": "Ctrl+Enter でこの章を丸ごと保存します。Esc で書き込みを終え、下書きは残ります。",
+      "scroll_on": "スクロールを続けて {number} · {chapter} へ",
+      "scroll_back": "上にスクロールして {number} · {chapter} へ"
     },
     "matrix_cred_picker": {
       "best_match": "最良一致",

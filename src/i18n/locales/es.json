@@ -2139,7 +2139,9 @@
       "lede_agent": "El agente escribió esto sobre su propio trabajo. Solo cambia cuando usted acepta un cambio que propone.",
       "lede_neither": "Aquí no escribe ninguno de los dos. Se muestra para que el documento nunca quede incompleto en silencio.",
       "draft_mark": "Borrador",
-      "editor_hint": "Ctrl+Intro guarda este capítulo entero. Esc sale de la escritura y conserva su borrador."
+      "editor_hint": "Ctrl+Intro guarda este capítulo entero. Esc sale de la escritura y conserva su borrador.",
+      "scroll_on": "Siga desplazándose hacia {number} · {chapter}",
+      "scroll_back": "Desplácese hacia arriba hasta {number} · {chapter}"
     },
     "matrix_cred_picker": {
       "best_match": "Mejor coincidencia",

@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import './documentSurface.css';
 import type { DocumentSection } from './documentModel';
 import { DocumentTabs, documentPanelId, documentTabId } from './DocumentTabs';
@@ -6,6 +6,8 @@ import { DocumentRail } from './DocumentRail';
 import { DocumentPage } from './DocumentPage';
 import { DocumentClosedRow } from './DocumentClosedRow';
 import { useDocumentSurface } from './useDocumentSurface';
+import { useChapterScroll } from './useChapterScroll';
+import { DocumentTurnHint } from './DocumentTurnHint';
 import type { DocumentSurfaceLabels } from './documentLabels';
 
 export interface DocumentSurfaceProps {
@@ -67,9 +69,47 @@ export function DocumentSurface({
 }: DocumentSurfaceProps) {
   const idPrefix = useId();
   const s = useDocumentSurface({ sections, onSaveSection });
+  const pageRef = useRef<HTMLElement | null>(null);
+  const [entered, setEntered] = useState<'next' | 'prev' | null>(null);
+  const at = s.open ? sections.indexOf(s.open) : -1;
+  const next = sections[at + 1];
+  const prev = at > 0 ? sections[at - 1] : undefined;
+
+  const turnTo = useCallback(
+    (target: DocumentSection | undefined, dir: 'next' | 'prev') => {
+      if (!target) return;
+      setEntered(dir);
+      s.openSection(target.id);
+    },
+    [s],
+  );
+  const turn = useChapterScroll({
+    pageRef,
+    enabled: !s.writing,
+    hasNext: !!next,
+    hasPrev: !!prev,
+    onNext: () => turnTo(next, 'next'),
+    onPrev: () => turnTo(prev, 'prev'),
+  });
+
+  // After a scroll turn, bring the new chapter's arriving edge into view: its
+  // top when reading on, its end when reading back, so the gesture continues.
+  useEffect(() => {
+    if (!entered || !pageRef.current) return;
+    const still =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.getAttribute('data-motion') === 'reduce';
+    pageRef.current.scrollIntoView({ block: entered === 'next' ? 'start' : 'end', behavior: still ? 'auto' : 'smooth' });
+  }, [entered, s.open?.id]);
+
   if (!s.open) return null;
   const open = s.open;
   const canWrite = open.editable && !!onSaveSection;
+  // Any other way of opening a chapter (tab, rail, closed leaf) is not a turn.
+  const openBy = (id: string) => {
+    setEntered(null);
+    s.openSection(id);
+  };
 
   return (
     <div className="ds-surface flex min-h-0" data-testid="document-surface">
@@ -78,7 +118,7 @@ export function DocumentSurface({
           <DocumentRail
             sections={sections}
             openId={open.id}
-            onOpen={s.openSection}
+            onOpen={openBy}
             label={labels.railLabel}
             caption={labels.railCaption}
             header={sidePanelHeader}
@@ -90,7 +130,7 @@ export function DocumentSurface({
 
       <div className="min-w-0 flex-1">
         <div role="tablist" aria-label={labels.tabsLabel} className="ds-tabs px-6" data-testid="document-tabs">
-          <DocumentTabs sections={sections} openId={open.id} onOpen={s.openSection} idPrefix={idPrefix} />
+          <DocumentTabs sections={sections} openId={open.id} onOpen={openBy} idPrefix={idPrefix} />
         </div>
 
         <div className="px-6 pb-10 pt-5">
@@ -99,14 +139,18 @@ export function DocumentSurface({
               section.id === open.id ? (
                 <section
                   key={section.id}
+                  ref={pageRef}
                   role="tabpanel"
                   id={documentPanelId(idPrefix, section.id)}
                   aria-labelledby={documentTabId(idPrefix, section.id)}
                   tabIndex={-1}
-                  className={`ds-page ds-tone-${section.author} ${s.writing && canWrite ? 'is-writing' : ''}`}
+                  className={`ds-page ds-tone-${section.author} ${s.writing && canWrite ? 'is-writing' : ''} ${
+                    entered ? `enter-${entered}` : ''
+                  }`}
                   data-role="doc-page"
                   data-testid={`document-open-${section.id}`}
                 >
+                  <DocumentTurnHint turn={turn} edge="prev" label={prev ? labels.scrollBack(at, prev.heading) : null} />
                   <DocumentPage
                     section={section}
                     labels={labels}
@@ -126,13 +170,14 @@ export function DocumentSurface({
                     onStopWriting={s.stopWriting}
                     footer={renderSectionFooter?.(section)}
                   />
+                  <DocumentTurnHint turn={turn} edge="next" label={next ? labels.scrollOn(at + 2, next.heading) : null} />
                 </section>
               ) : (
                 <DocumentClosedRow
                   key={section.id}
                   section={section}
                   index={i}
-                  onOpen={s.openSection}
+                  onOpen={openBy}
                   mark={labels.mark(section.author)}
                   linesLabel={labels.lines}
                   waitingLabel={labels.waiting}
