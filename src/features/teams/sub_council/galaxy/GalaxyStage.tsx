@@ -25,7 +25,6 @@ import { GalaxyHud } from './GalaxyHud';
 import { GalaxyRail } from './GalaxyRail';
 import { GalaxyGhost } from './GalaxyGhost';
 import { CountsPanel } from './hud/CountsPanel';
-import { ReadingOrder } from './hud/ReadingOrder';
 import { IS_DEV } from './fixture';
 import type { GalaxyEngine } from './engine/GalaxyEngine';
 import { useHudReservations } from './useHudReservations';
@@ -40,9 +39,8 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
   const [engine, setEngineLocal] = useState<GalaxyEngine | null>(null);
   const filterRef = useRef<HTMLInputElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const legendRef = useRef<HTMLDivElement | null>(null);
   const countsRef = useRef<HTMLDivElement | null>(null);
-  const hudCards = useMemo(() => [legendRef, countsRef], []);
+  const hudCards = useMemo(() => [countsRef], []);
 
   const layout = useCouncilStore((s) => s.layout);
   const status = useCouncilStore((s) => s.galaxyStatus);
@@ -75,12 +73,11 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
     [publishEngine],
   );
 
-  /* The two HUD cards stand DOWN while the bench is up. They are opaque and
-     they sit at the top of the stage, so with a drawer over the bottom two
-     thirds they become clipped slivers that carry no information - and their
-     content is already on screen twice over: the reading order is in the
-     rail's heading and footer, the counts are in the bench header. Hiding
-     them also gives the drawer the height they were occupying. */
+  /* The counts card stands DOWN while the bench is up. It is opaque and sits
+     at the top of the stage, so with a drawer over the bottom two thirds it
+     becomes a clipped sliver that carries no information - and its content is
+     already on screen twice over, in the bench header. Hiding it also gives
+     the drawer the height it was occupying. */
   const hudVisible = !benchOpen;
   useHudReservations(stageRef, hudCards, engine, hudVisible);
 
@@ -151,7 +148,6 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
         <div ref={stageRef} className="relative min-w-0 flex-1 bg-background">
           {/* Chrome always renders; the ghost sits UNDER it and never replaces it. */}
           <GalaxyCanvas describedBy={LIST_ID} onEngine={setEngine} />
-          {hudVisible ? <ReadingOrder cardRef={legendRef} /> : null}
           {hudVisible ? <CountsPanel cardRef={countsRef} /> : null}
           {status === 'loading' && !layout ? <GalaxyGhost /> : null}
           {status === 'failed' ? (
