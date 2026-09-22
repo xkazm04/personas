@@ -260,11 +260,11 @@
       "unmeasured": "Belum Terukur",
       "watched": "Dipantau"
     },
-    "baseline": "garis dasar",
+    "baseline": "Garis dasar",
     "changes_from_to": "{from} → {to}",
     "changes_none": "Tidak ada perubahan status pada pembacaan terbaru",
     "changes_title": "Perubahan status",
-    "current": "saat ini",
+    "current": "Saat ini",
     "groups_unknown": "grup tidak diketahui — tidak dapat membaca grup konteks proyek ini",
     "layer_back": "Kembali ke ringkasan",
     "layer_bullet_title": "Posisi kita saat ini",
@@ -277,7 +277,7 @@
     "measured_of": "{measured}/{total} terukur",
     "retry": "Coba Lagi",
     "river_partial": "minggu berjalan, masih terbuka",
-    "target": "sasaran",
+    "target": "Sasaran",
     "trends_failed": "Pembacaan gagal dimuat — baris KPI di atas sudah terkini, grafiknya tidak.",
     "ungrouped": "Tanpa Grup",
     "variant_labels": {
@@ -309,17 +309,12 @@
     "debt_reading": "pembacaan",
     "debt_refresh": "penyegaran",
     "debt_verdict": "putusan",
-    "headline_counts": "{measured} dari {total} KPI memiliki pembacaan",
-    "headline_portfolio": "dari portofolio ini pernah diamati",
-    "headline_project": "dari {project} pernah diamati",
     "headline_project_scope": "{groups} grup, {total} KPI",
     "headline_scope": "{projects} proyek, {groups} grup",
     "map_aging": "Menua",
     "map_all_drawn": "Satu petak adalah satu KPI. Semua {count} tampil di layar.",
     "map_dropped": "Satu petak adalah satu KPI. {count} grup terlalu kecil untuk digambar pada ukuran ini.",
     "map_floored": "{count} proyek kecil digambar pada ukuran minimum, sehingga luasnya tidak mencerminkan seberapa kecil mereka sebenarnya.",
-    "map_focus_hint": "Arahkan kursor ke petak untuk membaca KPI di baliknya.",
-    "map_focus_title": "Di bawah kursor",
     "map_fresh": "Segar",
     "map_key_dark": "tidak pernah dibaca ({count})",
     "map_key_promised": "dijanjikan pembacaan, tidak pernah dibaca ({count})",
@@ -392,7 +387,11 @@
     "river_tributaries": "Anak sungai",
     "river_tributaries_count": "{count} mengalir ke sini",
     "river_week_read": "{read} dari {declared} KPI terdaftar dibaca, {pct}% cakupan minggu itu.",
-    "river_flow_before_window": "Dibaca sebelum jendela ini dibuka: {read} dari {declared}. Tidak ada apa pun dalam 12 minggu terakhir."
+    "river_flow_before_window": "Dibaca sebelum jendela ini dibuka: {read} dari {declared}. Tidak ada apa pun dalam 12 minggu terakhir.",
+    "headline_coverage": "cakupan",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "Laju",
+    "stat_observed": "Teramati"
   },
   "steering_create_goal": "Buat sasaran"
 }

@@ -309,17 +309,12 @@
     "debt_reading": "读数",
     "debt_refresh": "刷新",
     "debt_verdict": "判定",
-    "headline_counts": "{total} 个 KPI 中有 {measured} 个已有读数",
-    "headline_portfolio": "本组合曾被观测的比例",
-    "headline_project": "{project} 曾被观测的比例",
     "headline_project_scope": "{groups} 个分组，{total} 个 KPI",
     "headline_scope": "{projects} 个项目，{groups} 个分组",
     "map_aging": "老化中",
     "map_all_drawn": "每个地块代表一个 KPI，全部 {count} 个均已显示。",
     "map_dropped": "每个地块代表一个 KPI，有 {count} 个分组因过小而无法在此尺寸下绘制。",
     "map_floored": "{count} 个较小的项目按最小尺寸绘制，因此其面积低估了它们的实际规模差距。",
-    "map_focus_hint": "将鼠标悬停在地块上可查看对应的 KPI。",
-    "map_focus_title": "指针所指",
     "map_fresh": "新鲜",
     "map_key_dark": "从未测量（{count}）",
     "map_key_promised": "承诺过测量，但从未测量（{count}）",
@@ -392,7 +387,11 @@
     "river_tributaries": "支流",
     "river_tributaries_count": "有 {count} 条汇入此处",
     "river_week_read": "在已声明的 {declared} 个 KPI 中，当周读取了 {read} 个，覆盖率为 {pct}%。",
-    "river_flow_before_window": "此窗口开启前已读取：{declared} 个中的 {read} 个。过去 12 周内无读数。"
+    "river_flow_before_window": "此窗口开启前已读取：{declared} 个中的 {read} 个。过去 12 周内无读数。",
+    "headline_coverage": "覆盖率",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "进度",
+    "stat_observed": "已观测"
   },
   "steering_create_goal": "创建目标"
 }

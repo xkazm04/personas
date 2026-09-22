@@ -309,17 +309,12 @@
     "debt_reading": "পরিমাপ",
     "debt_refresh": "রিফ্রেশ",
     "debt_verdict": "রায়",
-    "headline_counts": "{total}টির মধ্যে {measured}টি KPI-তে পরিমাপ আছে",
-    "headline_portfolio": "এই পোর্টফোলিওর কখনো পরিমাপ হয়েছে",
-    "headline_project": "{project}-এর কখনো পরিমাপ হয়েছে",
     "headline_project_scope": "{groups}টি গ্রুপ, {total}টি KPI",
     "headline_scope": "{projects}টি প্রজেক্ট, {groups}টি গ্রুপ",
     "map_aging": "পুরনো হচ্ছে",
     "map_all_drawn": "একটি প্লট মানে একটি KPI। সবকটি {count}টি স্ক্রিনে আছে।",
     "map_dropped": "একটি প্লট মানে একটি KPI। {count}টি গ্রুপ এই আকারে আঁকার জন্য খুব ছোট।",
     "map_floored": "{count}টি ছোট প্রজেক্ট সর্বনিম্ন আকারে আঁকা হয়েছে, তাই তাদের আয়তন তারা আসলে কতটা ছোট তা কম দেখায়।",
-    "map_focus_hint": "একটি প্লটের ওপর হোভার করে তার পেছনের KPI দেখুন।",
-    "map_focus_title": "পয়েন্টারের নিচে",
     "map_fresh": "সতেজ",
     "map_key_dark": "কখনো পড়া হয়নি ({count})",
     "map_key_promised": "পরিমাপের প্রতিশ্রুতি ছিল, কখনো পড়া হয়নি ({count})",
@@ -392,7 +387,11 @@
     "river_tributaries": "উপনদী",
     "river_tributaries_count": "{count}টি এতে মিশেছে",
     "river_week_read": "{declared}টি নির্ধারিত KPI-র মধ্যে {read}টি পড়া হয়েছে, সেই সপ্তাহে {pct}% কভারেজ।",
-    "river_flow_before_window": "এই উইন্ডো খোলার আগে পড়া হয়েছে: {declared}-এর মধ্যে {read}টি। গত 12 সপ্তাহে কিছু নেই।"
+    "river_flow_before_window": "এই উইন্ডো খোলার আগে পড়া হয়েছে: {declared}-এর মধ্যে {read}টি। গত 12 সপ্তাহে কিছু নেই।",
+    "headline_coverage": "কভারেজ",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "গতি",
+    "stat_observed": "পরিমাপিত"
   },
   "steering_create_goal": "লক্ষ্য তৈরি করুন"
 }

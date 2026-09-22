@@ -87,7 +87,9 @@ The estate carries what every surface prints:
   screen, lit only if ever read. A dashed edge is stale; an inset mark is a
   KPI that promised a daily or weekly reading and never got one. Two lenses
   (state, freshness), a rail with the ranked shortlist capped at two picks per
-  project, and a card naming the plot under the pointer. Projects below 2 % of
+  project (one row per pick, grouped under its project, the reason in a
+  tooltip), and a tooltip naming the plot under the pointer while every other
+  territory recedes halfway. Projects below 2 % of
   the estate are drawn at a floor and the legend SAYS their area is distorted,
   rather than dropping them.
 - **Ledger** — *the books*. `declared = observed + reading owed`, so the 900
@@ -117,12 +119,14 @@ Clicking a group, chip or rail row from any variant opens the same in-place
 
 **Project › Group layer** (`layer/KpiGroupLayer.tsx`; breadcrumb, Esc/back):
 the per-project controls (autopilot, simulation, sim suggestions, environment
-switcher) move here, above a zero-based **bullet strip** (current vs target
-vs baseline per KPI with the pace sentence) and **small multiples** — at
+switcher) move here, above a **where-we-stand ledger** — a `UnifiedTable`
+with one windowed row per KPI: name, a zero-based bullet bar, current, target
+and baseline in their own right-aligned columns, and the pace sentence (full
+text on hover) — and **small multiples** — at
 most 12 mini line charts on a shared 0–100 %-of-target scale over one window,
 each series bucketed to ≤ 8 points (`kpiSample.ts`), dots only below three
 points, dashed when simulated; the rest sit in a compact table with a
-sparkline column. A failed measurement read keeps the bullet strip and says
+sparkline column. A failed measurement read keeps the ledger and says
 so beside the charts. Clicking a KPI anywhere opens the detail modal.
 
 Chart conventions for the whole folder live in `kpiChartTheme.ts` (axis,

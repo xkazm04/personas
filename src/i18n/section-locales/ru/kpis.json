@@ -260,11 +260,11 @@
       "unmeasured": "Не измерено",
       "watched": "На контроле"
     },
-    "baseline": "базовый уровень",
+    "baseline": "Базовый уровень",
     "changes_from_to": "{from} → {to}",
     "changes_none": "Нет изменений состояния в последних показателях",
     "changes_title": "Изменения состояния",
-    "current": "текущее",
+    "current": "Текущее",
     "groups_unknown": "группы неизвестны — не удалось прочитать группы контекста этого проекта",
     "layer_back": "Назад к обзору",
     "layer_bullet_title": "Где мы находимся",
@@ -277,7 +277,7 @@
     "measured_of": "измерено {measured}/{total}",
     "retry": "Повторить",
     "river_partial": "текущая неделя, ещё открыта",
-    "target": "цель",
+    "target": "Цель",
     "trends_failed": "Не удалось загрузить показатели — строки KPI выше актуальны, графики — нет.",
     "ungrouped": "Без группы",
     "variant_labels": {
@@ -309,17 +309,12 @@
     "debt_reading": "замер",
     "debt_refresh": "обновление",
     "debt_verdict": "вердикт",
-    "headline_counts": "У {measured} из {total} KPI есть замер",
-    "headline_portfolio": "этого портфеля когда-либо измерялось",
-    "headline_project": "проекта {project} когда-либо измерялось",
     "headline_project_scope": "{groups} групп, {total} KPI",
     "headline_scope": "{projects} проектов, {groups} групп",
     "map_aging": "Стареющее",
     "map_all_drawn": "Один участок — один KPI. Все {count} показаны на экране.",
     "map_dropped": "Один участок — один KPI. {count} групп слишком малы, чтобы отрисовать в этом масштабе.",
     "map_floored": "{count} небольших проектов отрисованы минимальным размером, поэтому их площадь преуменьшает разницу.",
-    "map_focus_hint": "Наведите на участок, чтобы увидеть KPI за ним.",
-    "map_focus_title": "Под курсором",
     "map_fresh": "Свежее",
     "map_key_dark": "не измерялось ({count})",
     "map_key_promised": "обещан замер, не измерялось ({count})",
@@ -392,7 +387,11 @@
     "river_tributaries": "Притоки",
     "river_tributaries_count": "Впадает: {count}",
     "river_week_read": "{read} из {declared} заявленных KPI были измерены, покрытие за неделю — {pct}%.",
-    "river_flow_before_window": "Измерено до открытия этого окна: {read} из {declared}. Ничего за последние 12 нед."
+    "river_flow_before_window": "Измерено до открытия этого окна: {read} из {declared}. Ничего за последние 12 нед.",
+    "headline_coverage": "покрытие",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "Темп",
+    "stat_observed": "Измерено"
   },
   "steering_create_goal": "Создать цель"
 }

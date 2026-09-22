@@ -309,17 +309,12 @@
     "debt_reading": "قراءة",
     "debt_refresh": "تحديث",
     "debt_verdict": "حكم",
-    "headline_counts": "لدى {measured} من {total} KPI قراءة",
-    "headline_portfolio": "من هذه المحفظة قِيس ولو مرة",
-    "headline_project": "من {project} قِيس ولو مرة",
     "headline_project_scope": "{groups} مجموعة، {total} KPI",
     "headline_scope": "{projects} مشروع، {groups} مجموعة",
     "map_aging": "متقادم",
     "map_all_drawn": "كل قطعة هي KPI واحد. جميع الـ{count} معروضة على الشاشة.",
     "map_dropped": "كل قطعة هي KPI واحد. {count} مجموعة أصغر من أن تُرسم بهذا الحجم.",
     "map_floored": "تُرسم {count} مشاريع صغيرة بحد أدنى من الحجم، لذا تُقلّل مساحتها من مدى صغرها الفعلي.",
-    "map_focus_hint": "مرّر المؤشر فوق قطعة لقراءة الـKPI خلفها.",
-    "map_focus_title": "تحت المؤشر",
     "map_fresh": "طازج",
     "map_key_dark": "لم يُقرأ قط ({count})",
     "map_key_promised": "وعدت بقراءة ولم تُقرأ ({count})",
@@ -392,7 +387,11 @@
     "river_tributaries": "الروافد",
     "river_tributaries_count": "{count} يصب فيه",
     "river_week_read": "قُرئ {read} من {declared} KPI معلَن، بتغطية {pct}% في ذلك الأسبوع.",
-    "river_flow_before_window": "مقروء قبل فتح هذه النافذة: {read} من {declared}. لا شيء خلال آخر 12 أسبوعًا."
+    "river_flow_before_window": "مقروء قبل فتح هذه النافذة: {read} من {declared}. لا شيء خلال آخر 12 أسبوعًا.",
+    "headline_coverage": "تغطية",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "إيقاع",
+    "stat_observed": "مقيس"
   },
   "steering_create_goal": "إنشاء هدف"
 }

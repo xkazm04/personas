@@ -309,17 +309,12 @@
     "debt_reading": "माप",
     "debt_refresh": "रीफ़्रेश",
     "debt_verdict": "निर्णय",
-    "headline_counts": "{total} में से {measured} KPI मापे जा चुके हैं",
-    "headline_portfolio": "इस पोर्टफोलियो का अब तक मापन हुआ है",
-    "headline_project": "{project} का अब तक मापन हुआ है",
     "headline_project_scope": "{groups} समूह, {total} KPI",
     "headline_scope": "{projects} प्रोजेक्ट, {groups} समूह",
     "map_aging": "पुरानी हो रही",
     "map_all_drawn": "एक प्लॉट एक KPI है। सभी {count} स्क्रीन पर हैं।",
     "map_dropped": "एक प्लॉट एक KPI है। {count} समूह इस आकार में दिखाने के लिए बहुत छोटे हैं।",
     "map_floored": "{count} छोटे प्रोजेक्ट न्यूनतम आकार में दिखाए गए हैं, इसलिए उनका क्षेत्रफल यह नहीं दर्शाता कि वे असल में कितने छोटे हैं।",
-    "map_focus_hint": "किसी प्लॉट पर होवर करें ताकि उसके पीछे का KPI देख सकें।",
-    "map_focus_title": "पॉइंटर के नीचे",
     "map_fresh": "ताज़ा",
     "map_key_dark": "कभी नहीं मापा गया ({count})",
     "map_key_promised": "माप का वादा किया, कभी मापा नहीं ({count})",
@@ -392,7 +387,11 @@
     "river_tributaries": "सहायक नदियाँ",
     "river_tributaries_count": "{count} इसमें मिलती हैं",
     "river_week_read": "{declared} घोषित KPI में से {read} मापे गए, उस सप्ताह {pct}% कवरेज।",
-    "river_flow_before_window": "यह विंडो खुलने से पहले मापे गए: {declared} में से {read}। पिछले 12 सप्ताह में कुछ नहीं।"
+    "river_flow_before_window": "यह विंडो खुलने से पहले मापे गए: {declared} में से {read}। पिछले 12 सप्ताह में कुछ नहीं।",
+    "headline_coverage": "कवरेज",
+    "layer_col_kpi": "KPI",
+    "layer_col_pace": "गति",
+    "stat_observed": "मापा गया"
   },
   "steering_create_goal": "लक्ष्य बनाएँ"
 }

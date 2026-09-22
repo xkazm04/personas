@@ -7,7 +7,8 @@
 // workspaces on the left with live project counts, that workspace's projects
 // on the right, both sorted by name. Picking a workspace never leaves you
 // stranded — `useWorkspaceSwitch` re-points the active project into the new scope.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown, FolderGit2, Layers, Plus, X } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
@@ -18,6 +19,31 @@ import { createWorkspace } from './workspaceStore';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 
 const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+const PANEL_W = 520;
+const GAP = 8;
+const EDGE = 8;
+
+/**
+ * Where the popover goes, in viewport coordinates.
+ *
+ * It used to be `absolute right-0` inside the trigger's own box, so it was
+ * clipped by any `overflow-hidden` ancestor and stacked under the app's left
+ * sidebar whenever the trigger sat near the left edge: the panel extended
+ * 520px LEFT of the trigger's right edge, straight under the chrome. It is now
+ * portalled to the body and placed against the trigger's rect, preferring to
+ * start at the trigger's left edge and clamped so no part of it leaves the
+ * viewport.
+ */
+function panelPosition(trigger: DOMRect, placement: 'up' | 'down', panelH: number) {
+  const width = Math.min(PANEL_W, window.innerWidth - EDGE * 2);
+  const left = Math.max(EDGE, Math.min(trigger.left, window.innerWidth - width - EDGE));
+  const top =
+    placement === 'up'
+      ? Math.max(EDGE, trigger.top - GAP - panelH)
+      : Math.min(trigger.bottom + GAP, window.innerHeight - panelH - EDGE);
+  return { top: Math.max(EDGE, top), left, width };
+}
 
 interface WorkspaceProjectSelectorProps {
   /** Which way the popover opens. The footer opens up; page headers open down. */
@@ -44,6 +70,8 @@ export function WorkspaceProjectSelector({
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const loadedRef = useRef(false);
 
   const sortedWorkspaces = useMemo(() => [...workspaces].sort(byName), [workspaces]);
@@ -58,11 +86,35 @@ export function WorkspaceProjectSelector({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      // The panel is portalled out of the trigger's subtree, so "outside"
+      // has to mean outside BOTH of them.
+      if (ref.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  // Place the panel against the trigger once it has painted (so its real
+  // height is known), and follow the trigger on resize or any scroll.
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return; }
+    const place = () => {
+      const trigger = ref.current?.getBoundingClientRect();
+      if (!trigger) return;
+      setPos(panelPosition(trigger, placement, panelRef.current?.offsetHeight ?? 360));
+    };
+    place();
+    const raf = requestAnimationFrame(place);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, placement]);
 
   const wsLabel = activeWorkspace?.name ?? c.workspace_all_projects;
   const wsColor = activeWorkspace?.color ?? 'var(--muted-foreground)';
@@ -92,8 +144,12 @@ export function WorkspaceProjectSelector({
         </button>
       </Tooltip>
 
-      {open && (
-        <div className={`animate-fade-slide-in absolute right-0 w-[520px] max-w-[90vw] rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-50 overflow-hidden ${placement === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
+      {open && createPortal(
+        <div
+          ref={panelRef}
+          className="animate-fade-slide-in fixed rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-[9000] overflow-hidden"
+          style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, width: PANEL_W, visibility: 'hidden' }}
+        >
           <div className="grid grid-cols-[196px_1fr]">
             {/* LEFT — workspaces */}
             <div className="border-r border-primary/10 bg-secondary/20">
@@ -175,7 +231,8 @@ export function WorkspaceProjectSelector({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

@@ -21494,9 +21494,6 @@ export type Translations = {
       baseline: string;
       target: string;
       current: string;
-      headline_portfolio: string;
-      headline_project: string;
-      headline_counts: string;
       headline_scope: string;
       headline_project_scope: string;
       altitude_portfolio: string;
@@ -21552,8 +21549,6 @@ export type Translations = {
       map_dropped: string;
       map_lit_of: string;
       map_territory_aria: string;
-      map_focus_title: string;
-      map_focus_hint: string;
       map_never_read: string;
       map_last_read: string;
       books_balance: string;
@@ -21601,6 +21596,10 @@ export type Translations = {
       river_flow_quiet: string;
       map_floored: string;
       river_flow_before_window: string;
+      headline_coverage: string;
+      stat_observed: string;
+      layer_col_kpi: string;
+      layer_col_pace: string;
     };
     title: string;
     subtitle: string;

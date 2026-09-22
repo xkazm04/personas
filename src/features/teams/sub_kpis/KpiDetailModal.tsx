@@ -53,13 +53,16 @@ export function KpiDetailModal({
       titleId={TITLE_ID}
       portal
       staggerChildren={false}
-      maxWidthClass="max-w-4xl"
+      // 20% wider than the max-w-4xl it had (56rem -> 67rem), and the reading
+      // column inside grows by the same fifth (42rem -> 50rem) - widening only
+      // the shell would have added margin, not room.
+      maxWidthClass="max-w-[67rem]"
       panelClassName="relative w-full h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
     >
       <ModalHeader kpi={kpi} projectName={projectName} onClose={onClose} />
 
       <div className="flex-1 overflow-y-auto p-5">
-        <div className="max-w-2xl mx-auto space-y-5">
+        <div className="max-w-[50rem] mx-auto space-y-5">
           <HeroBlock kpi={kpi} />
           <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
             {/* P3 convergence: production stays the solid truth line; the sim
