@@ -46,14 +46,13 @@ export function MemberReading({
 
   return (
     <div className="flex flex-col gap-5" data-testid="council-member-reading">
-      <h2 className="m-0 flex flex-wrap items-baseline gap-4 text-[31px] font-bold capitalize leading-tight tracking-tight text-foreground">
+      <h2 className="m-0 flex flex-wrap items-baseline gap-4 capitalize typo-heading-lg text-foreground">
         {seat.name}
         {seat.score == null ? (
-          <em className="not-italic typo-heading uppercase tracking-wide text-muted-dark">
-            {tbl.not_measured_caps}
-          </em>
+          <em className="not-italic typo-label text-muted-dark">{tbl.not_measured_caps}</em>
         ) : (
-          <em className="not-italic text-[42px] font-bold leading-none tabular-nums tracking-tight">
+          /* A headline metric: the app names that `typo-data-lg`. */
+          <em className="not-italic typo-data-lg">
             <Numeric value={seat.score} precision={2} />
           </em>
         )}
@@ -124,7 +123,7 @@ export function MemberReading({
 
       {seat.findings.length > 0 ? (
         <section className="flex flex-col gap-4">
-          <h3 className="m-0 typo-caption uppercase tracking-widest text-muted">
+          <h3 className="m-0 typo-label text-muted">
             {isWeakest ? tbl.weakness_heading : tbl.findings_heading}
           </h3>
           {seat.findings.map((f) => (
@@ -139,13 +138,13 @@ export function MemberReading({
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h3 className="m-0 typo-caption uppercase tracking-widest text-muted">{tbl.evidence_heading}</h3>
+        <h3 className="m-0 typo-label text-muted">{tbl.evidence_heading}</h3>
         <EvidenceWell seat={seat} runId={detail?.run.id ?? null} />
       </section>
 
       {seat.techniques.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h3 className="m-0 typo-caption uppercase tracking-widest text-muted">{tbl.techniques_heading}</h3>
+          <h3 className="m-0 typo-label text-muted">{tbl.techniques_heading}</h3>
           {seat.techniques.map((tq) => {
             const proofWord =
               tq.proof === 'execution'
@@ -192,7 +191,7 @@ function FindingCard({
     <article className={`border-l-4 py-0.5 pl-4 ${SEV_BORDER[finding.severity] ?? SEV_BORDER.low}`}>
       <header className="flex flex-wrap items-baseline gap-3">
         <span
-          className={`typo-heading uppercase tracking-widest ${
+          className={`typo-label ${
             finding.severity === 'high'
               ? 'text-status-error'
               : finding.severity === 'med'
@@ -202,7 +201,7 @@ function FindingCard({
         >
           {severityWord}
         </span>
-        <h4 className="m-0 text-[18px] font-bold leading-snug text-foreground">{finding.title}</h4>
+        <h4 className="m-0 typo-title-lg">{finding.title}</h4>
       </header>
       <p className="my-2 max-w-[68ch] typo-body-lg text-foreground">{finding.detail}</p>
       <footer className="flex flex-wrap items-center gap-4 typo-caption text-muted-dark">

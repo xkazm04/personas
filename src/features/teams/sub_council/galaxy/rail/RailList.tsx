@@ -23,10 +23,12 @@ interface Props {
   onHover: (row: RailRowModel | null) => void;
 }
 
+/* `typo-label text-foreground/90` is the app's own section-heading recipe —
+   the sidebar's level-2 heading (`Sidebar.tsx:258`). The uppercase,
+   0.1em-tracked heading this replaced appears NOWHERE in the app chrome; it
+   was the galaxy writing its own type rules. */
 function Heading({ label }: { label: string }) {
-  return (
-    <div className="px-2 pb-1 pt-2.5 typo-heading uppercase tracking-[0.1em] text-muted-dark">{label}</div>
-  );
+  return <div className="px-2 pb-1 pt-2.5 typo-label text-foreground/90">{label}</div>;
 }
 
 function Item({ item, selectedIndex, onSelect, onHover }: Props & { item: RailItem }) {

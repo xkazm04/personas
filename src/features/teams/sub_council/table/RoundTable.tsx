@@ -122,7 +122,7 @@ export function RoundTable({
           </div>
           {/* A heading INSIDE the page: the page's own top-level heading
               belongs to ContentHeader, and this is the subject's name. */}
-          <h2 className="m-0 mt-0.5 truncate text-[34px] font-bold leading-tight tracking-tight text-foreground">
+          <h2 className="m-0 mt-0.5 truncate typo-heading-lg text-foreground">
             {subject.title}
           </h2>
         </div>
@@ -162,7 +162,7 @@ export function RoundTable({
           noOverallLabel={tbl.rose_no_overall}
           overallLabel={tbl.rose_overall}
         />
-        <p className="m-0 max-w-[38ch] text-center text-[17px] font-semibold leading-snug text-foreground">
+        <p className="m-0 max-w-[38ch] text-center typo-body-lg text-foreground">
           {tx(tbl[why.key], why.values)}
         </p>
         <div className="mt-0.5 flex items-center gap-2.5">

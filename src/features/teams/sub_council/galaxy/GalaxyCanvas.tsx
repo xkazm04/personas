@@ -114,7 +114,7 @@ export function GalaxyCanvas({ describedBy, onEngine }: Props) {
       />
       {card && pointer ? (
         <div
-          className="pointer-events-none absolute z-20 max-w-[340px] rounded-card border border-card-border bg-card-bg px-3 py-2.5 shadow-elevation-3 backdrop-blur-sm"
+          className="pointer-events-none absolute z-20 max-w-[340px] rounded-card border border-primary/15 bg-secondary/95 px-3 py-2.5 shadow-elevation-3 backdrop-blur-sm"
           style={{ left: Math.min(pointer.x + 18, Math.max(0, (canvasRef.current?.clientWidth ?? 0) - 355)), top: Math.max(8, pointer.y - 14) }}
           data-testid="council-galaxy-hovercard"
         >

@@ -156,7 +156,7 @@ export function GalaxyStage({ bench }: { bench?: ReactNode }) {
           {status === 'loading' && !layout ? <GalaxyGhost /> : null}
           {status === 'failed' ? (
             <div
-              className="absolute inset-x-0 top-24 z-20 mx-auto max-w-lg rounded-card border border-status-error/40 bg-card-bg p-4 shadow-elevation-3"
+              className="absolute inset-x-0 top-24 z-20 mx-auto max-w-lg rounded-card border border-status-error/40 bg-secondary/95 p-4 shadow-elevation-3 backdrop-blur-sm"
               data-testid="council-galaxy-error"
             >
               <div className="flex items-start gap-3">

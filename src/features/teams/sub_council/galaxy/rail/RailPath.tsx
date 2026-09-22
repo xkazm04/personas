@@ -65,12 +65,12 @@ export function RailPath({ steps }: Props) {
             onClick={() => setFocus(step.focus)}
             aria-current={current ? 'true' : undefined}
             className={`flex w-full items-center gap-2.5 rounded-interactive px-1.5 py-1 text-left ${
-              current ? 'typo-heading bg-secondary/70 text-foreground' : 'typo-caption text-muted hover:bg-secondary/50 hover:text-foreground'
+              current ? 'typo-heading bg-secondary/70 text-foreground' : 'typo-body text-muted hover:bg-secondary/50 hover:text-foreground'
             }`}
           >
-            <span
-              className={`w-[84px] flex-none uppercase tracking-[0.09em] ${current ? 'text-accent' : 'text-muted-dark'}`}
-            >
+            {/* The tag is a label, not a shout: sentence case on the app's
+                own `typo-label`, which is what the chrome names things with. */}
+            <span className={`w-[84px] flex-none typo-label ${current ? 'text-accent' : 'text-muted-dark'}`}>
               {step.tag}
             </span>
             <span className="flex-1 truncate">{step.name}</span>

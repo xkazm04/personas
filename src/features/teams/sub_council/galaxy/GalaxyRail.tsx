@@ -116,10 +116,17 @@ export function GalaxyRail({ engine, filterRef, describedById }: Props) {
   }, [model.rows, selectedIndex, setHover]);
 
   return (
-    <aside className="flex w-[330px] flex-none flex-col border-r border-card-border bg-card-bg" data-testid="council-rail">
-      <div className="border-b border-card-border px-4 pb-2.5 pt-3.5">
+    /* The rail is the SAME MATERIAL as the app's own level-2 side menu
+       (`shared/chrome/sidebar/Sidebar.tsx:243-262`): a `bg-secondary/30`
+       surface behind a `border-primary/15` hairline, with a `bg-primary/5`
+       band under a `border-primary/10` rule. It used `bg-card-bg` /
+       `border-card-border`, which is the recipe for a CARD sitting ON a
+       surface — so the rail read as a card the app had parked beside the
+       field rather than as the page's own furniture. */
+    <aside className="flex w-[330px] flex-none flex-col border-r border-primary/15 bg-secondary/30" data-testid="council-rail">
+      <div className="border-b border-primary/10 bg-primary/5 px-4 pb-2.5 pt-3.5">
         <RailPath steps={steps} />
-        <div className="mt-2.5 flex items-center gap-2 rounded-input border border-card-border bg-secondary/40 px-2.5">
+        <div className="mt-2.5 flex items-center gap-2 rounded-input border border-primary/15 bg-secondary/40 px-2.5">
           <Search className="h-3.5 w-3.5 flex-none text-muted-dark" aria-hidden="true" />
           <input
             ref={filterRef}
@@ -148,7 +155,7 @@ export function GalaxyRail({ engine, filterRef, describedById }: Props) {
           onHover={(row) => setHover(row?.node ?? null)}
         />
       </div>
-      <div className="flex justify-between border-t border-card-border px-4 py-2 typo-caption text-muted-dark">
+      <div className="flex justify-between border-t border-primary/10 px-4 py-2 typo-caption">
         <span>
           <Numeric value={model.rows.length} /> {g.foot_shown}
         </span>

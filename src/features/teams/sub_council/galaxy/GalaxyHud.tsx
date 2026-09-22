@@ -46,7 +46,9 @@ export function GalaxyHud({ engine }: Props) {
 
   return (
     <div
-      className="flex items-center gap-3 border-b border-card-border bg-card-bg px-4 py-2"
+      /* The same band recipe as every ContentHeader in the app
+         (`ContentLayout.tsx:159-160`) and as the rail's own header. */
+      className="flex items-center gap-3 border-b border-primary/10 bg-primary/5 px-4 py-2"
       data-testid="council-hud"
     >
       <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden" aria-label={g.breadcrumb_label}>
@@ -60,7 +62,7 @@ export function GalaxyHud({ engine }: Props) {
               className={`whitespace-nowrap rounded-interactive px-2.5 py-1 ${
                 i === steps.length - 1
                   ? 'typo-heading bg-secondary/70 text-foreground'
-                  : 'typo-caption text-muted hover:bg-secondary/50 hover:text-foreground'
+                  : 'typo-body text-muted hover:bg-secondary/50 hover:text-foreground'
               }`}
             >
               {step.name}
@@ -71,7 +73,7 @@ export function GalaxyHud({ engine }: Props) {
 
       {fixtureOn ? (
         <span
-          className="rounded-pill border border-status-warning/50 px-2.5 py-1 typo-heading text-status-warning"
+          className="rounded-pill border border-status-warning/50 px-2.5 py-1 typo-label text-status-warning"
           data-testid="council-fixture-badge"
         >
           {g.fixture_badge}

@@ -156,7 +156,7 @@ export default function CouncilPage() {
                   ref={benchRef}
                   data-testid="council-bench"
                   aria-label={tx(b.headline_many, { count: waiting })}
-                  className={`absolute inset-x-0 bottom-0 z-30 flex min-h-0 flex-col border-t border-border bg-background shadow-[0_-18px_44px_rgba(0,0,0,0.34)] ${
+                  className={`absolute inset-x-0 bottom-0 z-30 flex min-h-0 flex-col border-t border-primary/15 bg-background shadow-elevation-4 ${
                     tableOpen ? 'top-0' : ''
                   }`}
                   /* Two shapes, and both are a share of the STAGE rather than

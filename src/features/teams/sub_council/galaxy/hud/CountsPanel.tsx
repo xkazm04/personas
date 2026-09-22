@@ -73,7 +73,12 @@ export function CountsPanel({ cardRef }: { cardRef?: RefObject<HTMLDivElement | 
   return (
     <div
       ref={cardRef}
-      className="pointer-events-none absolute right-4 top-4 z-10 flex max-w-[calc(100%-330px)] flex-wrap justify-end gap-x-3.5 gap-y-1 rounded-card border border-card-border bg-card-bg px-4 py-2.5 shadow-elevation-2"
+      /* An OPAQUE panel floating over the field, so it takes the recipe the
+         app uses for exactly that — the sidebar's mobile drawer
+         (`Sidebar.tsx:248`): `bg-secondary/95` behind a `border-primary/15`
+         hairline. Same material as the rail, one step more solid because
+         there is a canvas behind it. */
+      className="pointer-events-none absolute right-4 top-4 z-10 flex max-w-[calc(100%-330px)] flex-wrap justify-end gap-x-3.5 gap-y-1 rounded-card border border-primary/15 bg-secondary/95 px-4 py-2.5 shadow-elevation-2 backdrop-blur-sm"
       data-testid="council-counts"
     >
       {rows.map((row) => (
@@ -81,7 +86,7 @@ export function CountsPanel({ cardRef }: { cardRef?: RefObject<HTMLDivElement | 
           <b className={`typo-heading ${row.accent ? 'text-accent' : 'text-foreground'}`}>
             <Numeric value={row.value} />
           </b>
-          <span className="typo-caption uppercase tracking-[0.07em] text-muted-dark">{row.label}</span>
+          <span className="typo-label text-muted-dark">{row.label}</span>
         </div>
       ))}
     </div>

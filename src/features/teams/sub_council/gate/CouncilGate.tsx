@@ -89,7 +89,7 @@ export function CouncilGate({ open, why, standing, onDecide, focusNonce, fixture
           <p className="m-0 typo-body-lg text-foreground">{why}</p>
           {standing?.reason ? (
             <blockquote className="mt-3 border-l-4 border-status-error py-1 pl-4">
-              <span className="block typo-caption uppercase tracking-wide text-muted">
+              <span className="block typo-label text-muted">
                 {g.reason_recorded}
               </span>
               <span className="typo-body-lg text-foreground">{standing.reason}</span>

@@ -38,7 +38,11 @@ function RailRowImpl({ row, selected, onSelect, onHover }: Props) {
       onClick={onSelect}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
-      className={`grid w-full grid-cols-[26px_1fr_auto] items-center gap-2 rounded-interactive px-2 py-1.5 text-left typo-body ${
+      /* The app's primary nav row is `typo-heading` (Sidebar.tsx:281); this
+         list IS the galaxy's primary nav, so it reads at that tier rather
+         than at the nested-row `typo-body` it used. `typo-heading` is one of
+         the two colourless typo tokens, so the row's own text-* still wins. */
+      className={`grid w-full grid-cols-[26px_1fr_auto] items-center gap-2 rounded-interactive px-2 py-1.5 text-left typo-heading ${
         selected
           ? 'bg-secondary text-foreground shadow-[inset_2px_0_0_var(--accent)]'
           : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
