@@ -5815,12 +5815,9 @@
       "trends_failed": "No se pudieron cargar las lecturas — las filas de KPI de arriba están actualizadas, los gráficos no.",
       "ungrouped": "Sin agrupar",
       "variant_labels": {
-        "classic": "Clásico",
-        "grid": "Proyectos",
         "ledger": "Libro",
         "map": "Mapa",
-        "river": "Río",
-        "treemap": "Portafolio"
+        "river": "Río"
       },
       "variant_switcher_aria": "Estilo de vista general de KPI"
     },

@@ -5815,12 +5815,9 @@
       "trends_failed": "রিডিং লোড করা যায়নি — উপরের KPI সারিগুলো বর্তমান, চার্টগুলো নয়।",
       "ungrouped": "গ্রুপবিহীন",
       "variant_labels": {
-        "classic": "ক্লাসিক",
-        "grid": "প্রকল্প",
         "ledger": "লেজার",
         "map": "মানচিত্র",
-        "river": "রিভার",
-        "treemap": "পোর্টফোলিও"
+        "river": "রিভার"
       },
       "variant_switcher_aria": "KPI ওভারভিউ স্টাইল"
     },

@@ -2,6 +2,16 @@
 
 ## Active
 
+### contest-kpi-descent — contest: KPI dashboard variants - record verdict, delete classic/grid/treemap
+- **[2026-09-22 08:57]**
+- **Paths:** `src/features/teams/sub_kpis/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
+### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
+- **[2026-09-21 23:26]**
+- **Paths:** `src/features/teams/sub_features/**` · `src/features/overview/sub_certification/**` · `src-tauri/src/commands/infrastructure/dev_tools/**`
+- **Status:** started
+
 - **[2026-09-21 15:05]**
 - **Paths:** `src-tauri/db/src/repos/dev/ideas.rs` · `src-tauri/db/src/repos/dev/ideas_backlog_tests.rs` · `src-tauri/db/src/repos/dev/bench_seed.rs` · `src-tauri/db/src/repos/dev/cross_project.rs`
 - **Status:** started

@@ -5815,12 +5815,9 @@
       "trends_failed": "Pembacaan gagal dimuat — baris KPI di atas sudah terkini, grafiknya tidak.",
       "ungrouped": "Tanpa Grup",
       "variant_labels": {
-        "classic": "Klasik",
-        "grid": "Proyek",
         "ledger": "Buku Besar",
         "map": "Peta",
-        "river": "Sungai",
-        "treemap": "Portofolio"
+        "river": "Sungai"
       },
       "variant_switcher_aria": "Gaya ringkasan KPI"
     },

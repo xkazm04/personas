@@ -5815,12 +5815,9 @@
       "trends_failed": "रीडिंग लोड नहीं हो सकीं — ऊपर की KPI पंक्तियाँ अद्यतन हैं, चार्ट नहीं हैं।",
       "ungrouped": "समूह रहित",
       "variant_labels": {
-        "classic": "क्लासिक",
-        "grid": "प्रोजेक्ट्स",
         "ledger": "लेजर",
         "map": "मानचित्र",
-        "river": "रिवर",
-        "treemap": "पोर्टफोलियो"
+        "river": "रिवर"
       },
       "variant_switcher_aria": "KPI अवलोकन शैली"
     },

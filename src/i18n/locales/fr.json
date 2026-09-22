@@ -5815,12 +5815,9 @@
       "trends_failed": "Impossible de charger les relevés — les lignes de KPI ci-dessus sont à jour, les graphiques ne le sont pas.",
       "ungrouped": "Non groupé",
       "variant_labels": {
-        "classic": "Classique",
-        "grid": "Projets",
         "ledger": "Registre",
         "map": "Carte",
-        "river": "Rivière",
-        "treemap": "Portefeuille"
+        "river": "Rivière"
       },
       "variant_switcher_aria": "Style de vue d'ensemble des KPI"
     },

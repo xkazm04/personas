@@ -5815,12 +5815,9 @@
       "trends_failed": "측정값을 불러오지 못함 — 위 KPI 행은 최신이지만 차트는 아님.",
       "ungrouped": "그룹 없음",
       "variant_labels": {
-        "classic": "클래식",
-        "grid": "프로젝트",
         "ledger": "원장",
         "map": "맵",
-        "river": "리버",
-        "treemap": "포트폴리오"
+        "river": "리버"
       },
       "variant_switcher_aria": "KPI 개요 스타일"
     },

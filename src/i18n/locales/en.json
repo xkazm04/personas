@@ -21441,11 +21441,8 @@
     "overview": {
       "variant_switcher_aria": "KPI overview style",
       "variant_labels": {
-        "classic": "Classic",
         "map": "Map",
         "ledger": "Ledger",
-        "treemap": "Portfolio",
-        "grid": "Projects",
         "river": "River"
       },
       "ungrouped": "Ungrouped",

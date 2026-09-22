@@ -5815,12 +5815,9 @@
       "trends_failed": "Не удалось загрузить показатели — строки KPI выше актуальны, графики — нет.",
       "ungrouped": "Без группы",
       "variant_labels": {
-        "classic": "Классический",
-        "grid": "Проекты",
         "ledger": "Реестр",
         "map": "Карта",
-        "river": "Река",
-        "treemap": "Портфель"
+        "river": "Река"
       },
       "variant_switcher_aria": "Стиль обзора KPI"
     },

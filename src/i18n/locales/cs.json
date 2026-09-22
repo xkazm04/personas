@@ -5815,12 +5815,9 @@
       "trends_failed": "Hodnoty se nepodařilo načíst — řádky KPI výše jsou aktuální, grafy nikoli.",
       "ungrouped": "Bez skupiny",
       "variant_labels": {
-        "classic": "Klasický",
-        "grid": "Projekty",
         "ledger": "Deník",
         "map": "Mapa",
-        "river": "Řeka",
-        "treemap": "Objem"
+        "river": "Řeka"
       },
       "variant_switcher_aria": "Styl přehledu KPI"
     },

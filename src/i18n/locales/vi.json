@@ -5815,12 +5815,9 @@
       "trends_failed": "Không tải được số liệu — các hàng KPI phía trên vẫn mới nhất, biểu đồ thì không.",
       "ungrouped": "Chưa phân nhóm",
       "variant_labels": {
-        "classic": "Cổ điển",
-        "grid": "Dự án",
         "ledger": "Sổ cái",
         "map": "Bản đồ",
-        "river": "Dòng chảy",
-        "treemap": "Danh mục"
+        "river": "Dòng chảy"
       },
       "variant_switcher_aria": "Kiểu tổng quan KPI"
     },

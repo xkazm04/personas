@@ -5815,12 +5815,9 @@
       "trends_failed": "Messwerte konnten nicht geladen werden — die KPI-Zeilen oben sind aktuell, die Diagramme nicht.",
       "ungrouped": "Ungruppiert",
       "variant_labels": {
-        "classic": "Klassisch",
-        "grid": "Projekte",
         "ledger": "Journal",
         "map": "Karte",
-        "river": "Fluss",
-        "treemap": "Bestand"
+        "river": "Fluss"
       },
       "variant_switcher_aria": "KPI-Übersichtsstil"
     },

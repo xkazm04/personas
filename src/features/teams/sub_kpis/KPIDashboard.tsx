@@ -1,8 +1,9 @@
-// KPI dashboard — a DISPATCHER over six overview renderers behind one
-// persisted switch (kpi-strategic-map spark, 2026-09-17): the untouched
-// classic board and five strategic prototypes (map, ledger, treemap, grid,
-// river). Every strategic variant reads the same overview model and opens
-// the same in-place Project › Group layer; the winner is consolidated later.
+// KPI dashboard — a DISPATCHER over three overview renderers behind one
+// persisted switch (kpi-strategic-map spark, 2026-09-17): map, ledger and
+// river. Every variant reads the same overview model and opens the same
+// in-place Project › Group layer. The other three prototypes (classic, grid,
+// treemap) were deleted on 2026-09-21 after the /contest consolidation round
+// (.contest/Contest/contests/kpi-descent.md).
 import { Suspense, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -12,15 +13,12 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 
-import { KpiClassicDashboard } from './classic/KpiClassicDashboard';
 import { KpiVariantSwitcher } from './KpiVariantSwitcher';
 import { useKpiVariant, type KpiVariant } from './kpiVariant';
 import { useKpiOverview } from './useKpiOverview';
 import type { KpiFocus, KpiProjectRollup } from './kpiOverviewModel';
 
-export { buildProjectGroups } from './classic/KpiClassicDashboard';
-
-/** The contract every strategic variant renders against. */
+/** The contract every variant renders against. */
 export interface KpiVariantProps {
   overview: KpiProjectRollup[];
   loading: boolean;
@@ -30,16 +28,12 @@ export interface KpiVariantProps {
 
 const StrategicMap = lazyRetry(() => import('./variants/StrategicMap'));
 const AttentionLedger = lazyRetry(() => import('./variants/AttentionLedger'));
-const PortfolioTreemap = lazyRetry(() => import('./variants/PortfolioTreemap'));
-const ProjectGrid = lazyRetry(() => import('./variants/ProjectGrid'));
 const StateRiver = lazyRetry(() => import('./variants/StateRiver'));
 const KpiGroupLayer = lazyRetry(() => import('./layer/KpiGroupLayer'));
 
-const VARIANT_COMPONENT: Record<Exclude<KpiVariant, 'classic'>, React.ComponentType<KpiVariantProps>> = {
+const VARIANT_COMPONENT: Record<KpiVariant, React.ComponentType<KpiVariantProps>> = {
   map: StrategicMap,
   ledger: AttentionLedger,
-  treemap: PortfolioTreemap,
-  grid: ProjectGrid,
   river: StateRiver,
 };
 
@@ -60,19 +54,15 @@ export function KPIDashboard({
   return (
     <div data-testid="kpi-dashboard">
       <KpiVariantSwitcher variant={variant} onChange={onChange}>
-        {variant === 'classic' ? (
-          <KpiClassicDashboard loading={loading} onOpen={onOpen} onReviewProposals={onReviewProposals} />
-        ) : (
-          <StrategicBody
-            variant={variant}
-            loading={loading}
-            focus={focus}
-            onFocus={setFocus}
-            onOpen={onOpen}
-            onReviewProposals={onReviewProposals}
-            emptyTitle={t.kpis.empty_title}
-          />
-        )}
+        <StrategicBody
+          variant={variant}
+          loading={loading}
+          focus={focus}
+          onFocus={setFocus}
+          onOpen={onOpen}
+          onReviewProposals={onReviewProposals}
+          emptyTitle={t.kpis.empty_title}
+        />
       </KpiVariantSwitcher>
     </div>
   );
@@ -87,7 +77,7 @@ function StrategicBody({
   onReviewProposals,
   emptyTitle,
 }: {
-  variant: Exclude<KpiVariant, 'classic'>;
+  variant: KpiVariant;
   loading: boolean;
   focus: KpiFocus | null;
   onFocus: (f: KpiFocus | null) => void;

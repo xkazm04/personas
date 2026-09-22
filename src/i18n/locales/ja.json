@@ -5815,12 +5815,9 @@
       "trends_failed": "測定値の読み込みに失敗しました — 上のKPI行は最新ですが、グラフは最新ではありません。",
       "ungrouped": "未分類",
       "variant_labels": {
-        "classic": "クラシック",
-        "grid": "プロジェクト",
         "ledger": "台帳",
         "map": "マップ",
-        "river": "リバー",
-        "treemap": "ポートフォリオ"
+        "river": "リバー"
       },
       "variant_switcher_aria": "KPI概要のスタイル"
     },

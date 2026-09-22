@@ -5815,12 +5815,9 @@
       "trends_failed": "无法加载数据 — 上方的 KPI 行是最新的，但图表不是。",
       "ungrouped": "未分组",
       "variant_labels": {
-        "classic": "经典",
-        "grid": "项目",
         "ledger": "台账",
         "map": "地图",
-        "river": "河流图",
-        "treemap": "组合概览"
+        "river": "河流图"
       },
       "variant_switcher_aria": "KPI 概览样式"
     },
