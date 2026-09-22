@@ -46,7 +46,6 @@ const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
 const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const MastermindPage = lazyRetry(() => import('@/features/teams/sub_mastermind/MastermindPage'));
-const CouncilPage = lazyRetry(() => import('@/features/companions/curator/council/CouncilPage'));
 const FeaturesPage = lazyRetry(() => import('@/features/teams/sub_features/FeaturesPage'));
 const WhitelistPage = lazyRetry(() => import('@/features/browser/whitelist/WhitelistPage'));
 const WebviewPage = lazyRetry(() => import('@/features/browser/webview/WebviewPage'));
@@ -57,7 +56,6 @@ const DevToolsPage = lazyRetry(() => import('@/features/plugins/dev-tools/DevToo
 const ObsidianBrainPage = lazyRetry(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
-const AthenaPage = lazyRetry(() => import('@/features/companions/athena/AthenaPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
@@ -323,9 +321,6 @@ export default function PersonasPage() {
       if (teamsTab === 'competition' && import.meta.env.DEV) {
         return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={<RouteChunkSkeleton />}><CompetitionPage /></Suspense></ErrorBoundary>;
       }
-      if (teamsTab === 'council') {
-        return <ErrorBoundary onGoHome={goHome} name="Council"><Suspense fallback={<RouteChunkSkeleton />}><CouncilPage /></Suspense></ErrorBoundary>;
-      }
       if (teamsTab === 'features') {
         return <ErrorBoundary onGoHome={goHome} name="Features"><Suspense fallback={<RouteChunkSkeleton />}><FeaturesPage /></Suspense></ErrorBoundary>;
       }
@@ -359,9 +354,6 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'twin') {
         return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={<RouteChunkSkeleton />}><TwinPage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'companion') {
-        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={<RouteChunkSkeleton />}><AthenaPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'scraper' && import.meta.env.DEV) {
         return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={<RouteChunkSkeleton />}><ScraperPage /></Suspense></ErrorBoundary>;

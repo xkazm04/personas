@@ -26,7 +26,6 @@ const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memori
 // The former Reliability (SLA), Health and Leaderboard tabs were consolidated
 // into Mission Control (2026-08-25) — their best sections render there now.
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
-const DirectorCoachingTab = lazyRetry(() => import('@/features/companions/overseer'));
 
 /**
  * Suspense fallback while a tab's lazy chunk loads (hard refresh / first visit).
@@ -74,7 +73,6 @@ function OverviewContent() {
           overviewTab === 'memories' ? <MemoriesPage /> :
           overviewTab === 'patterns' ? <PatternsPanel /> :
           overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
-          overviewTab === 'director' ? <DirectorCoachingTab /> :
           <DashboardWithSubtabs />}
         </Suspense>
         </ErrorBoundary>

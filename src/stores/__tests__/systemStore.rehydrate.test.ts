@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useSystemStore } from '../systemStore';
 import { _resetDedupCacheForTests } from '../util/dedupedStorage';
+import { COMPANIONS_PAGES } from '@/features/companions/types';
 import { ALL_SIDEBAR_SECTIONS } from '@/lib/navigation/registry';
 
 /**
@@ -224,5 +225,90 @@ describe('systemStore onRehydrateStorage — sidebarSection membership', () => {
     seedPersistedSystemStore({ sidebarSection: 42 });
     await useSystemStore.persist.rehydrate();
     expect(useSystemStore.getState().sidebarSection).toBe('home');
+  });
+});
+
+describe('systemStore onRehydrateStorage — Athena stops being a plugin', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({
+      sidebarSection: 'home',
+      pluginTab: 'browse',
+      companionsPage: 'landing',
+    });
+  });
+
+  it("moves a user parked on Plugins > Companion to the Companions section", async () => {
+    // The REMAP, not a discard: someone whose last screen was Athena's page
+    // must land on Athena's page, at its new address.
+    seedPersistedSystemStore({
+      sidebarSection: 'plugins',
+      pluginTab: 'companion',
+      companionPluginTab: 'memory',
+    });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('companions');
+    expect(s.companionsPage).toBe('athena:memory');
+    // `companion` is no longer a PluginTab — leaving it would strand the
+    // Plugins section on a tab nothing answers to the next time it opens.
+    expect(s.pluginTab).toBe('browse');
+  });
+
+  it('migrates every retired companionPluginTab value onto its page', async () => {
+    const cases: [string, string][] = [
+      ['create-athena', 'athena:create-athena'],
+      ['setup', 'athena:setup'],
+      ['memory', 'athena:memory'],
+      ['voice', 'athena:voice'],
+      ['decisions', 'athena:decisions'],
+    ];
+    for (const [tab, expected] of cases) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      useSystemStore.setState({ companionsPage: 'landing' });
+      seedPersistedSystemStore({ companionPluginTab: tab });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().companionsPage).toBe(expected);
+    }
+  });
+
+  it('drops the retired field so it cannot shadow the new one later', async () => {
+    seedPersistedSystemStore({ companionPluginTab: 'voice' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState()).not.toHaveProperty('companionPluginTab');
+  });
+
+  it('ignores a companionPluginTab value no page answers to', async () => {
+    // A tab from a build that had one this one does not: there is no page to
+    // land on, so the section's default is the honest destination.
+    seedPersistedSystemStore({ companionPluginTab: 'dashboard' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().companionsPage).toBe('landing');
+  });
+
+  it('leaves a plugins section that is NOT on companion alone', async () => {
+    seedPersistedSystemStore({ sidebarSection: 'plugins', pluginTab: 'twin' });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState();
+    expect(s.sidebarSection).toBe('plugins');
+    expect(s.pluginTab).toBe('twin');
+  });
+
+  it('keeps every page the current vocabulary declares', async () => {
+    for (const page of COMPANIONS_PAGES) {
+      localStorage.clear();
+      _resetDedupCacheForTests();
+      seedPersistedSystemStore({ companionsPage: page });
+      await useSystemStore.persist.rehydrate();
+      expect(useSystemStore.getState().companionsPage).toBe(page);
+    }
+  });
+
+  it('lands an unknown companionsPage on the section default', async () => {
+    seedPersistedSystemStore({ companionsPage: 'athena:from-the-future' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().companionsPage).toBe('landing');
   });
 });

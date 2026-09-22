@@ -16,12 +16,11 @@ describe('AthenaToolbar settings gear', () => {
   beforeEach(() => {
     useSystemStore.setState({
       sidebarSection: 'home',
-      pluginTab: 'browse',
-      companionPluginTab: 'memory',
+      companionsPage: 'athena:memory',
     } as never);
   });
 
-  it('deep-links to Plugins > Companion > Setup', () => {
+  it('deep-links to Companions > Athena > Setup', () => {
     render(
       <AthenaToolbar
         onOpenBrain={() => {}}
@@ -35,8 +34,7 @@ describe('AthenaToolbar settings gear', () => {
     fireEvent.click(screen.getByTestId('companion-open-settings'));
 
     const s = useSystemStore.getState();
-    expect(s.sidebarSection).toBe('plugins');
-    expect(s.pluginTab).toBe('companion');
-    expect(s.companionPluginTab).toBe('setup');
+    expect(s.sidebarSection).toBe('companions');
+    expect(s.companionsPage).toBe('athena:setup');
   });
 });

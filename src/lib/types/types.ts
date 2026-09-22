@@ -408,7 +408,9 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "teams" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "companions" | "studio" | "schedules" | "settings";
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
-export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition" | "mastermind" | "council" | "features" | "whitelist" | "webview";
+// `council` left this union on 2026-09-22: the Council page is Curator's, and
+// it lives at `companions` -> `curator:council` now.
+export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "competition" | "mastermind" | "features" | "whitelist" | "webview";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type GoalsTab = "board" | "timeline" | "progress" | "missions";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
@@ -444,7 +446,9 @@ export type LegacyEditorTab = "prompt" | "connectors" | "health" | "life";
 // "sla" | "health" | "leaderboard" were retired 2026-08-25: those tabs were
 // consolidated into Mission Control ("home").
 // "extracted" was retired 2026-08-26 (the execution-extracted knowledge graph page).
-export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "memory-graph" | "director";
+// "director" was retired 2026-09-22: the Director is the Overseer companion,
+// and its reviews page lives at `companions` -> `overseer:reviews`.
+export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "memories" | "patterns" | "memory-graph";
 export type TemplateTab = "n8n" | "generated" | "explore" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "radio" | "engine" | "byom" | "portability" | "network" | "devices" | "admin" | "api-keys" | "history" | "limits";
@@ -453,7 +457,9 @@ export type SettingsTab = "account" | "appearance" | "notifications" | "radio" |
 export type ApprovalsMode = "reviews" | "backlog";
 export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-runner" | "fleet" | "workspaces" | "skills";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "companion" | "scraper";
+// `companion` was never a plugin, it was Athena. She is a built-in companion
+// now and her pages live at `companions` -> `athena:*` (2026-09-22).
+export type PluginTab = "browse" | "dev-tools" | "obsidian-brain" | "drive" | "twin" | "scraper";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
 /**
  * The Twin plugin's three tabs. The v2 restructure folded seven into these,

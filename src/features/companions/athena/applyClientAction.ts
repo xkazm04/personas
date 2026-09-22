@@ -15,6 +15,8 @@
 import { openExternalUrl } from '@/api/system/system';
 import type { ClientAction } from '@/api/companion';
 import { toastCatch } from '@/lib/silentCatch';
+import { navigateToCompanions } from '@/features/companions/navigation';
+import type { CompanionsPage } from '@/features/companions/types';
 import type { SidebarSection } from '@/lib/types/types';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -27,11 +29,20 @@ const VALID_ROUTES: SidebarSection[] = [
   'credentials',
   'design-reviews',
   'plugins',
+  'companions',
   'schedules',
   'settings',
 ];
 
 const VALID_ATHENA_TABS = ['create-athena', 'setup', 'memory', 'voice', 'decisions'] as const;
+
+/**
+ * The backend still spells this action `open_companion_tab` and can still emit
+ * `tab: "dashboard"` — a tab retired before the Companions move, which used to
+ * be dropped on the floor. Setup is the surface that inherited its job, so the
+ * dead value is REMAPPED here rather than silently doing nothing.
+ */
+const RETIRED_ATHENA_TABS: Readonly<Record<string, (typeof VALID_ATHENA_TABS)[number]>> = { dashboard: 'setup' };
 
 export function applyClientAction(action: ClientAction): void {
   if (action.type === 'navigate') {
@@ -55,19 +66,15 @@ export function applyClientAction(action: ClientAction): void {
     return;
   }
   if (action.type === 'open_companion_tab') {
-    // Phase F: deep-link into a specific tab inside the Companion
-    // plugin. Three layers of state to set: top-level sidebar section
-    // (`plugins`), which plugin is active (`companion`), and which
-    // sub-tab inside the companion plugin. Order matters — sidebar
-    // first so the route renders, then the tabs land before the
-    // plugin page reads them on mount.
-    if (!(VALID_ATHENA_TABS as readonly string[]).includes(action.tab)) {
-      return;
-    }
-    const sys = useSystemStore.getState();
-    sys.setSidebarSection('plugins');
-    sys.setPluginTab('companion');
-    sys.setCompanionPluginTab(action.tab as (typeof VALID_ATHENA_TABS)[number]);
+    // Deep-link onto one of Athena's pages. The wire name is unchanged (the
+    // backend still says `open_companion_tab`), but there is only ONE piece of
+    // state to set now: the Companions destination. `navigateToCompanions`
+    // moves the section and the page together.
+    const tab = (VALID_ATHENA_TABS as readonly string[]).includes(action.tab)
+      ? action.tab
+      : RETIRED_ATHENA_TABS[action.tab];
+    if (!tab) return;
+    navigateToCompanions(`athena:${tab}` as CompanionsPage);
     return;
   }
   if (action.type === 'open_external_url') {

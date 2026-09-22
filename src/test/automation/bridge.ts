@@ -141,7 +141,7 @@ interface TestBridge {
   [key: string]: unknown;
 }
 
-const VALID_PLUGIN_TABS = ['browse', 'companion', 'dev-tools', 'obsidian-brain', 'drive', 'twin'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'dev-tools', 'obsidian-brain', 'drive', 'twin'] as const;
 const VALID_TWIN_TABS = ['profiles', 'setup', 'hub'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.

@@ -5,8 +5,8 @@ import { useSystemStore } from '@/stores/systemStore';
 
 /** Compact strip of Athena-dispatched team assignments. Renders above
  *  the chat messages list when at least one card is present; hidden
- *  otherwise. Clicking a card routes to the pipeline page so the user
- *  can see the full panel (composer + checklist). */
+ *  otherwise. Clicking a card routes to Projects, where the team workspace
+ *  holds the assignment. */
 export function AthenaAssignmentCards() {
   const { t } = useTranslation();
   const cards = useAthenaStore((s) => s.athenaAssignments);
@@ -16,11 +16,13 @@ export function AthenaAssignmentCards() {
   if (cards.length === 0) return null;
 
   const handleOpen = (_ref: AthenaAssignmentRef) => {
-    // Route to the pipeline section where the AssignmentsPanel lives.
-    // The panel auto-loads the team's assignments and the user can
-    // expand the one they want. Deep-linking to a specific assignment
-    // inside the canvas is a Phase C4 polish.
-    setSidebarSection('pipeline' as Parameters<typeof setSidebarSection>[0]);
+    // `'pipeline'` is not a SidebarSection and never was: the cast named no
+    // vocabulary, so the compiler could not say so, and the value crashed the
+    // shell on the next launch because `sidebarSection` is persisted (see the
+    // membership guard in systemStore's rehydrate). Projects is the section
+    // whose team workspace actually holds an assignment. Deep-linking to a
+    // specific assignment inside the canvas is still a Phase C4 polish.
+    setSidebarSection('teams');
   };
 
   return (

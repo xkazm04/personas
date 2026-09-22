@@ -22,7 +22,9 @@ import type { CompanionsPage as CompanionsPageId } from './types';
 
 const LandingPage = lazyRetry(() => import('./landing/LandingPage'));
 const AthenaPage = lazyRetry(() => import('./athena/AthenaPage'));
-const DirectorCoachingTab = lazyRetry(() => import('./overseer/DirectorCoachingTab'));
+// Through the barrel, which is what Overview used to import — the page moved
+// section, not module.
+const DirectorCoachingTab = lazyRetry(() => import('./overseer'));
 const OverseerSetupPage = lazyRetry(() => import('./overseer/setup/OverseerSetupPage'));
 const CouncilPage = lazyRetry(() => import('./curator/council/CouncilPage'));
 const CuratorSetupPage = lazyRetry(() => import('./curator/setup/CuratorSetupPage'));

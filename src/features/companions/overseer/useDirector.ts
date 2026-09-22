@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useSystemStore } from '@/stores/systemStore';
-import { useOverviewStore } from '@/stores/overviewStore';
+import { navigateToCompanions } from '@/features/companions/navigation';
 import { obsidianAvailable } from '@/api/obsidianBrain';
 import { setPersonaStarred } from '@/api/agents/personas';
 import {
@@ -88,8 +87,6 @@ export interface UseDirectorOptions {
 export function useDirector(options: UseDirectorOptions = {}): UseDirector {
   const { lazy = false } = options;
   const personas = useAgentStore((s) => s.personas);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const director = useMemo(
     () => personas.find((p) => p.trust_origin === 'system' && p.name === 'Director'),
@@ -206,10 +203,11 @@ export function useDirector(options: UseDirectorOptions = {}): UseDirector {
     });
   }, []);
 
+  // Overseer's reviews page left Overview on 2026-09-22; it is the Companions
+  // section's `overseer:reviews` destination now.
   const openDirector = useCallback(() => {
-    setOverviewTab('director');
-    setSidebarSection('overview');
-  }, [setOverviewTab, setSidebarSection]);
+    navigateToCompanions('overseer:reviews');
+  }, []);
 
   return {
     ready,

@@ -3,8 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 const companionListDesignDecisions = vi.fn();
 const setSidebarSection = vi.fn();
-const setPluginTab = vi.fn();
-const setCompanionPluginTab = vi.fn();
+const setCompanionsPage = vi.fn();
 
 vi.mock('@/api/companion', async () => {
   const actual = await vi.importActual<typeof import('@/api/companion')>(
@@ -23,8 +22,7 @@ vi.mock('@/stores/systemStore', () => {
     selector(state);
   (hook as unknown as { getState: () => unknown }).getState = () => ({
     setSidebarSection,
-    setPluginTab,
-    setCompanionPluginTab,
+    setCompanionsPage,
   });
   return { useSystemStore: hook };
 });
@@ -34,8 +32,7 @@ import { PersonaDecisionsFooter } from '../PersonaDecisionsFooter';
 beforeEach(() => {
   companionListDesignDecisions.mockReset();
   setSidebarSection.mockReset();
-  setPluginTab.mockReset();
-  setCompanionPluginTab.mockReset();
+  setCompanionsPage.mockReset();
 });
 
 describe('PersonaDecisionsFooter', () => {
@@ -137,8 +134,8 @@ describe('PersonaDecisionsFooter', () => {
       expect(screen.getByText(/Open audit/i)).toBeInTheDocument();
     });
     fireEvent.click(screen.getByText(/Open audit/i));
-    expect(setSidebarSection).toHaveBeenCalledWith('plugins');
-    expect(setPluginTab).toHaveBeenCalledWith('companion');
-    expect(setCompanionPluginTab).toHaveBeenCalledWith('decisions');
+    // One door: `navigateToCompanions` lands the page, then the section.
+    expect(setCompanionsPage).toHaveBeenCalledWith('athena:decisions');
+    expect(setSidebarSection).toHaveBeenCalledWith('companions');
   });
 });

@@ -87,11 +87,10 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `ship` — the Factory L2 Ship tab (milestone convergence layer).
   // `mastermind` — the teams/sub_mastermind canvas.
   // `browser` — the Browser group (Whitelist / Webview) under teams.
-  // `council` — the companions/curator/council galaxy, bench and gate.
   // `features` — the teams/sub_features board: the map, the column and the
   //   feature tab with its scenarios. It is a sibling of `council` in the same
   //   Development group, so it loads on the same route.
-  teams: ['plugins', 'pipeline', 'kpis', 'ship', 'mastermind', 'browser', 'council', 'features'],
+  teams: ['plugins', 'pipeline', 'kpis', 'ship', 'mastermind', 'browser', 'features'],
   // foundry: the Compose (Foundry) wizard was retired 2026-07-07; the section
   // is down to the composition x-ray badge on adopted templates, which renders
   // on this route. recipes_catalog: the recipe catalog's category labels,

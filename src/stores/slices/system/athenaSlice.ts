@@ -7,13 +7,6 @@ import {
   type AttentionKind,
 } from '@/features/companions/athena/attention/attentionKinds';
 
-export type CompanionPluginTab =
-  | 'create-athena'
-  | 'setup'
-  | 'memory'
-  | 'voice'
-  | 'decisions';
-
 /**
  * Every persisted field this slice renamed when "Companion" stopped meaning
  * Athena and started meaning the category she belongs to. The map is the
@@ -23,8 +16,8 @@ export type CompanionPluginTab =
  * upgrade.
  *
  * `companionPluginTab` is deliberately absent — the Companions navigation
- * change retires that field into a page field, so it is migrated once, there,
- * rather than twice.
+ * change RETIRED that field into `companionsPage`, so it is migrated once, in
+ * `systemStore`'s rehydrate, rather than twice.
  */
 export const LEGACY_ATHENA_FIELDS: Readonly<Record<string, string>> = Object.freeze({
   companionFooterEnabled: 'athenaFooterEnabled',
@@ -170,7 +163,6 @@ export interface OrbPosition {
 }
 
 export interface AthenaSlice {
-  companionPluginTab: CompanionPluginTab;
   athenaFooterEnabled: boolean;
   athenaSoundEnabled: boolean;
   athenaVoiceEnabled: boolean;
@@ -311,7 +303,6 @@ export interface AthenaSlice {
 
   setAthenaOnboardingStep: (step: CreateAthenaStepId | null) => void;
   setAthenaOnboardingCompletedAt: (at: string | null) => void;
-  setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setAthenaFooterEnabled: (v: boolean) => void;
   setAthenaSoundEnabled: (v: boolean) => void;
   setAthenaVoiceEnabled: (v: boolean) => void;
@@ -345,7 +336,6 @@ export const createAthenaSlice: StateCreator<
   [],
   AthenaSlice
 > = (set) => ({
-  companionPluginTab: 'setup',
   athenaFooterEnabled: true,
   athenaSoundEnabled: true,
   athenaVoiceEnabled: false,
@@ -376,7 +366,6 @@ export const createAthenaSlice: StateCreator<
   setAthenaOnboardingStep: (athenaOnboardingStep) => set({ athenaOnboardingStep }),
   setAthenaOnboardingCompletedAt: (athenaOnboardingCompletedAt) =>
     set({ athenaOnboardingCompletedAt }),
-  setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setAthenaFooterEnabled: (athenaFooterEnabled) =>
     set({ athenaFooterEnabled }),
   setAthenaSoundEnabled: (athenaSoundEnabled) =>

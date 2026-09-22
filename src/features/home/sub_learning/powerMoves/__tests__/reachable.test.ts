@@ -1,10 +1,14 @@
 /**
- * Four of the twelve power moves deep-link into a tab the sidebar hides —
- * `dead-letter` is devOnly, `executions` and `director` are minTier: TEAM —
- * and the Overview content router renders purely by tab id with no tier or dev
- * check. A starter build therefore offered a "Try it" that landed the user on a
- * surface with no sidebar row. The quest board now declines to offer a move it
- * cannot land.
+ * Several power moves deep-link into a surface the sidebar hides — `dead-letter`
+ * is devOnly, `executions` is minTier: TEAM, and two moves land in the
+ * TEAM-gated Companions section — and the content routers render purely by id
+ * with no tier or dev check. A starter build therefore offered a "Try it" that
+ * landed the user on a surface with no sidebar row. The quest board now
+ * declines to offer a move it cannot land.
+ *
+ * The Companions cases are the ones that separate the two halves of the rule:
+ * their destination PAGE carries no gate of its own, so only the SECTION gate
+ * can decline them.
  */
 import { describe, it, expect } from 'vitest';
 import { TIERS } from '@/lib/constants/uiModes';
@@ -18,13 +22,29 @@ const byId = (id: string) => {
 };
 
 describe('isPowerMoveReachable', () => {
-  it('hides a TEAM-gated destination from a starter build', () => {
+  it('hides a TEAM-gated TAB from a starter build', () => {
     // bulk-rerun + annotate-golden target overviewTab 'executions' (minTier TEAM).
     const teamGated = POWER_MOVES.filter(
-      (m) => 'section' in m.nav && (m.nav.overviewTab === 'executions' || m.nav.overviewTab === 'director'),
+      (m) => 'section' in m.nav && m.nav.overviewTab === 'executions',
     );
     expect(teamGated.length).toBeGreaterThan(0);
     for (const move of teamGated) {
+      expect(isPowerMoveReachable(move, TIERS.STARTER)).toBe(false);
+      expect(isPowerMoveReachable(move, TIERS.TEAM)).toBe(true);
+    }
+  });
+
+  it('hides a TEAM-gated SECTION from a starter build, even with an ungated page', () => {
+    // `director-coaching` and `athena-fleet` both land in Companions, whose
+    // `companionsPage` destinations declare no gate at all. Reading tab gates
+    // alone — which is all this module did until 2026-09-22 — would have
+    // offered both to a starter build.
+    const inCompanions = POWER_MOVES.filter(
+      (m) => 'section' in m.nav && m.nav.section === 'companions',
+    );
+    expect(inCompanions.length).toBeGreaterThan(0);
+    for (const move of inCompanions) {
+      expect(move.nav).not.toHaveProperty('overviewTab');
       expect(isPowerMoveReachable(move, TIERS.STARTER)).toBe(false);
       expect(isPowerMoveReachable(move, TIERS.TEAM)).toBe(true);
     }

@@ -82,8 +82,8 @@ const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 
 // fails when a completed observability surface is never mounted, so a comment
 // asserting it is mounted is the only thing standing where the check should be.
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
-const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, 'memory-graph': true, director: true });
-const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true, council: true, features: true, whitelist: true, webview: true });
+const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, memories: true, patterns: true, 'memory-graph': true });
+const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true, features: true, whitelist: true, webview: true });
 const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
 const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
@@ -95,7 +95,7 @@ const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases'
 const DESIGN_SUB_TABS = exact<DesignSubTab>({ manifest: true, responsibilities: true, brain: true, connectors: true });
 const CLOUD_TABS = exact<CloudTab>({ cloud: true, gitlab: true, unified: true });
 const SETTINGS_TABS = exact<SettingsTab>({ account: true, appearance: true, notifications: true, radio: true, engine: true, byom: true, portability: true, network: true, devices: true, admin: true, 'api-keys': true, history: true, limits: true });
-const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, 'obsidian-brain': true, drive: true, twin: true, companion: true, scraper: true });
+const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, 'obsidian-brain': true, drive: true, twin: true, scraper: true });
 // The Companions destination needs no `exact` Record: `CompanionsPage` IS
 // `typeof COMPANIONS_PAGES[number]`, so the union and the value set are the
 // same declaration and cannot drift apart.

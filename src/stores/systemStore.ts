@@ -12,6 +12,7 @@ import { createCoreState, type SystemStore } from "./storeTypes";
 import type { DesignSubTab } from "@/lib/types/types";
 import { createDedupedJSONStorage } from "./util/dedupedStorage";
 import { ALL_SIDEBAR_SECTIONS } from "@/lib/navigation/registry";
+import { COMPANIONS_PAGES, type CompanionsPage } from "@/features/companions/types";
 
 import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
@@ -115,7 +116,6 @@ export const useSystemStore = create<SystemStore>()(
         obsidianBrainTab: state.obsidianBrainTab,
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
-        companionPluginTab: state.companionPluginTab,
         athenaFooterEnabled: state.athenaFooterEnabled,
         athenaPanelCompact: state.athenaPanelCompact,
         athenaSidePanelSlot: state.athenaSidePanelSlot,
@@ -183,6 +183,40 @@ export const useSystemStore = create<SystemStore>()(
         if ((state.sidebarSection as string) === 'goals') {
           state.sidebarSection = 'teams';
           state.teamsTab = 'goals';
+        }
+
+        // Athena stopped being a plugin on 2026-09-22 and became the first of
+        // three built-in companions. Two persisted values carried the old shape
+        // and both are REMAPPED, never discarded: a user parked on her surface
+        // must land on the same surface under its new address.
+        //
+        // INVARIANT for the casts below: these came back through JSON.parse from
+        // a blob an OLDER BUILD wrote, so their real type is `unknown` and the
+        // declared union constrains nothing. Read as strings, decide, then write
+        // a value from the CURRENT vocabulary.
+        const persisted = state as unknown as Record<string, unknown>;
+        const legacyAthenaTab = persisted.companionPluginTab;
+        if (typeof legacyAthenaTab === 'string') {
+          const migrated = `athena:${legacyAthenaTab}` as CompanionsPage;
+          if ((COMPANIONS_PAGES as readonly string[]).includes(migrated)) {
+            state.companionsPage = migrated;
+          }
+          // The field itself is gone from `partialize`, so the next write drops
+          // it; deleting it here keeps it from shadowing anything in between.
+          delete persisted.companionPluginTab;
+        }
+        if ((state.sidebarSection as string) === 'plugins' && (state.pluginTab as string) === 'companion') {
+          state.sidebarSection = 'companions';
+          // `companion` is no longer a PluginTab, so leaving it would strand the
+          // Plugins section on a tab nothing answers to the next time it opens.
+          state.pluginTab = 'browse';
+        }
+
+        // A `companionsPage` this build does not know (a page renamed, or a
+        // value a NEWER build wrote before a rollback) lands on the section's
+        // default rather than on a rail row that highlights nothing.
+        if (!(COMPANIONS_PAGES as readonly string[]).includes(state.companionsPage)) {
+          state.companionsPage = 'landing';
         }
 
         // MEMBERSHIP GUARD — run after every section remap above, so a value

@@ -20,6 +20,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, segmentedTabPanelProps, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { DispatchChooserModal, type DispatchRequest } from '@/features/shared/dispatch/DispatchChooser';
+import { navigateToCompanions } from '@/features/companions/navigation';
 import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { buildCouncilDispatch } from '@/features/plugins/dev-tools/sub_context/councilDispatch';
@@ -52,9 +53,7 @@ export default function FeaturesPage() {
   const tDev = t.plugins.dev_tools;
 
   const activeProject = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
-  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
   const devToolsReachable = useSystemStore((s) => s.enabledPlugins.has('dev-tools'));
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
 
   const [fixture, setFixture] = useState<{ boards: FeatureBoard[]; runningSlugs: Set<string> } | null>(null);
@@ -132,9 +131,8 @@ export default function FeaturesPage() {
 
   const openDecision = useCallback((subjectId: string) => {
     setPendingCouncilSubjectId(subjectId);
-    setSidebarSection('teams');
-    setTeamsTab('council');
-  }, [setPendingCouncilSubjectId, setSidebarSection, setTeamsTab]);
+    navigateToCompanions('curator:council');
+  }, [setPendingCouncilSubjectId]);
 
   const runCouncil = useCallback((row: FeatureRow) => {
     if (!activeProject) return;

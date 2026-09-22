@@ -18,13 +18,11 @@
  * Sub-tab ids are namespaced (`<plugin>:<tab>`) because several plugins reuse
  * the same tab id (`setup`, `graph`, `knowledge`) and they now share one nav.
  */
-import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
+import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
-import { useAthenaStore } from "@/features/companions/athena/athenaStore";
 import type { DevToolsTab, TwinTab, PluginTab, ObsidianBrainTab } from '@/lib/types/types';
-import type { CompanionPluginTab } from '@/stores/slices/system/athenaSlice';
-import { companionItems, devToolsItems, filterByTier, obsidianBrainItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { devToolsItems, filterByTier, obsidianBrainItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import SidebarGroupNav, { type GroupNavItem, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -65,11 +63,8 @@ export function PluginsSidebarNav() {
   const pendingConflicts = useSystemStore((s) => s.obsidianPendingConflicts);
   const twinTab = useSystemStore((s) => s.twinTab);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
-  const companionPluginTab = useSystemStore((s) => s.companionPluginTab);
-  const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const fleetSessions = useSystemStore((s) => s.fleetSessions);
   const fleetWaitingCount = fleetSessions.filter((s) => s.state === 'awaiting_input').length;
-  const companionApprovalsCount = useAthenaStore((s) => s.approvals.length);
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
@@ -84,7 +79,6 @@ export function PluginsSidebarNav() {
     { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain },
     { id: 'drive',           label: 'Drive',                               icon: HardDrive },
     { id: 'twin',            label: 'Twin',                                icon: Sparkles },
-    { id: 'companion',       label: 'Companion',                           icon: Bot },
     { id: 'scraper',         label: 'Scraper',                             icon: Globe,     devOnly: true },
   ], [t]);
 
@@ -107,7 +101,6 @@ export function PluginsSidebarNav() {
       case 'dev-tools':      return gate(devToolsItems);
       case 'obsidian-brain': return gate(obsidianBrainItems);
       case 'twin':           return gate(twinItems);
-      case 'companion':      return gate(companionItems);
       default:               return [];
     }
   };
@@ -117,7 +110,6 @@ export function PluginsSidebarNav() {
       case 'dev-tools':      return devToolsTab;
       case 'obsidian-brain': return obsidianBrainTab;
       case 'twin':           return twinTab;
-      case 'companion':      return companionPluginTab;
       default:               return '';
     }
   };
@@ -127,7 +119,6 @@ export function PluginsSidebarNav() {
       case 'dev-tools':      setDevToolsTab(id as DevToolsTab); break;
       case 'obsidian-brain': setObsidianBrainTab(id as ObsidianBrainTab); break;
       case 'twin':           setTwinTab(id as TwinTab); break;
-      case 'companion':      setCompanionPluginTab(id as CompanionPluginTab); break;
       default: break;
     }
   };
@@ -144,19 +135,6 @@ export function PluginsSidebarNav() {
             : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
         >
           {fleetWaitingCount}
-        </span>
-      );
-    }
-    if (plugin.id === 'companion' && companionApprovalsCount > 0) {
-      return (
-        <span
-          data-testid="companion-l2-approvals-badge"
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 typo-caption font-bold border border-amber-500/40"
-          title={companionApprovalsCount === 1
-            ? tx(t.plugins.fleet.approvals_pending_one, { count: companionApprovalsCount })
-            : tx(t.plugins.fleet.approvals_pending_other, { count: companionApprovalsCount })}
-        >
-          {companionApprovalsCount}
         </span>
       );
     }

@@ -69,7 +69,9 @@ describe('getBrandTokens', () => {
   });
 
   it('covers every plugin id the Browse grid iterates', () => {
-    for (const id of ['dev-tools', 'obsidian-brain', 'drive', 'twin', 'companion']) {
+    // `companion` left the grid on 2026-09-22 — Athena is a built-in
+    // companion now, not a plugin, and has no Browse card to colour.
+    for (const id of ['dev-tools', 'obsidian-brain', 'drive', 'twin']) {
       expect(hasBrandTokens(id), id).toBe(true);
     }
   });

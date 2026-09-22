@@ -1,6 +1,6 @@
-import { useSystemStore } from '@/stores/systemStore';
+import { navigateToCompanions } from '@/features/companions/navigation';
+import type { CompanionsPage } from '@/features/companions/types';
 import type { SidebarSection } from '@/lib/types/types';
-import type { CompanionPluginTab } from '@/stores/slices/system/athenaSlice';
 
 /**
  * Mirrors the backend `ALLOWED_ROUTES` allow-list in
@@ -22,30 +22,27 @@ export const ATHENA_NAV_ROUTES: SidebarSection[] = [
   'credentials',
   'design-reviews',
   'plugins',
+  'companions',
   'schedules',
   'settings',
 ];
 
 /**
- * Deep-link into the Companion plugin's Setup tab (Plugins > Companion >
- * Setup) — the target for the toolbar's gear icon. Sets the sidebar
- * section, the active plugin, and the companion sub-tab in one call so
- * `AthenaPage` renders `SetupPanel` on the very first frame.
- * Mirrors the `open_companion_tab` deep-link ApprovalCard already uses.
+ * Deep-link into Companions > Athena > Setup — the target for the toolbar's
+ * gear icon. One call lands the section and the page together, so `AthenaPage`
+ * renders `SetupPanel` on the very first frame. Mirrors the
+ * `open_companion_tab` deep-link ApprovalCard already uses.
  */
 export function navigateToAthenaSetup(): void {
-  navigateToAthenaTab('setup');
+  navigateToAthenaTab('athena:setup');
 }
 
-/** Deep-link into Plugins > Companion > Create Athena (the onboarding wizard). */
+/** Deep-link into Companions > Athena > Create Athena (the onboarding wizard). */
 export function navigateToCreateAthena(): void {
-  navigateToAthenaTab('create-athena');
+  navigateToAthenaTab('athena:create-athena');
 }
 
-/** The one writer both deep-links share: one arrival door onto the plugin surface. */
-function navigateToAthenaTab(tab: CompanionPluginTab): void {
-  const sys = useSystemStore.getState();
-  sys.setSidebarSection('plugins');
-  sys.setPluginTab('companion');
-  sys.setCompanionPluginTab(tab);
+/** The one writer both deep-links share: the category's single arrival door. */
+function navigateToAthenaTab(page: CompanionsPage): void {
+  navigateToCompanions(page);
 }

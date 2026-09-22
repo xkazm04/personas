@@ -1,5 +1,5 @@
 import {
-  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Mic, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, ScrollText, History, Clapperboard, MoonStar, Landmark, Library, GitFork, Laptop, type LucideIcon,
+  BarChart3, Zap, Key, Activity, ClipboardCheck, MessageSquare, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload, List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu, Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Map, Play, Share2, Gauge, Unplug, Webhook, Store, Archive, Layers, GraduationCap, AlertOctagon, Sparkles, Headphones, Wand2, Gauge as GaugeIcon, Bell, Terminal, RefreshCw, FolderOpen, History, MoonStar, Landmark, Library, GitFork, Laptop, type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -94,7 +94,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   // Mission Control dashboard on 2026-08-25 — their best sections (daily
   // success trend, status monitor, self-healing panel, leaderboard matrix)
   // render there now.
-  { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },
 ];
 
 export const credentialItems: SubNavItem[] = [
@@ -171,14 +170,9 @@ export const cloudItems: SubNavItem[] = [
 // design-decision log). The in-page header tab strip was retired — these
 // all live in the L3 sidebar now. (The Dashboard tab was retired — Cockpit
 // is the dynamic dashboard surface.)
-export const companionItems: SubNavItem[] = [
-  // Rendered label resolves by id -> t.sidebar.create_athena (useSidebarTranslation); this is the fallback.
-  { id: 'create-athena', label: 'Athena', icon: Sparkles },
-  { id: 'setup', label: 'Setup', icon: Settings },
-  { id: 'memory', label: 'Memory', icon: Brain },
-  { id: 'voice', label: 'Voice', icon: Mic },
-  { id: 'decisions', label: 'Decisions', icon: ScrollText },
-];
+// `companionItems` lived here until 2026-09-22. Athena's five pages are not a
+// plugin's sub-tabs any more; they are rows in `CompanionsSidebarNav`, whose
+// ids ARE `CompanionsPage` values.
 
 // Obsidian Brain plugin sub-nav: promoted to sidebar L3 on 2026-05-17.
 // Mirrors the in-page header tab bar that previously lived in
@@ -216,7 +210,7 @@ export interface SidebarItemGroupDef {
 /** Overview → Monitoring / Operations / Memory. */
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'home'] },
-  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'director', 'incidents', 'messages'] },
+  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'incidents', 'messages'] },
   { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'memory-graph'] },
 ];
 

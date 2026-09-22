@@ -473,7 +473,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugins-browse",
     title: "The Plugins Browser",
-    description: "Plugins extend Personas with new surfaces — image generation, repository tooling, Obsidian sync, research workflows, voice cloning, observability, and an AI companion. This is the catalog: toggle a plugin on and it shows up in the Plugins sidebar.",
+    description: "Plugins extend Personas with new surfaces — image generation, repository tooling, Obsidian sync, research workflows, voice cloning and observability. This is the catalog: toggle a plugin on and it shows up in the Plugins sidebar.",
     hint: "Toggle one plugin on, then off — watch the sidebar nav react.",
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugins-browse-explored",
@@ -486,16 +486,16 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   },
   {
     id: "plugin-companion",
-    title: "Companion — your AI sidekick",
-    description: "Companion is an always-available chat panel that knows about your agents, executions, and recent activity. It can answer questions, draft persona descriptions, and propose actions you can run with one click.",
-    hint: "Open the Companion panel (footer icon) and ask it about your fleet.",
-    nav: { sidebarSection: "plugins", subTab: "companion" },
+    title: "Athena — your AI sidekick",
+    description: "Athena is an always-available chat panel that knows about your agents, executions, and recent activity. She can answer questions, draft persona descriptions, and propose actions you can run with one click. She is not a plugin: she is the first of the three built-in Companions, and her pages live in the Companions section.",
+    hint: "Open her panel (footer icon) and ask her about your fleet.",
+    nav: { sidebarSection: "companions", subTab: "athena:setup", subTabSetter: "setCompanionsPage" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "companion-panel",
     subSteps: [
-      { id: "open-companion", label: "Open the panel", hint: "The companion icon lives in the footer. Click to expand the chat surface." },
-      { id: "proactive-cards", label: "Proactive cards", hint: "Companion sometimes surfaces \"Did you know?\" cards inline. Engage or dismiss." },
-      { id: "autonomous", label: "Autonomous mode", hint: "Toggle autonomous to let Companion act on its own when it has high-confidence suggestions. Manual review stays default." },
+      { id: "open-companion", label: "Open the panel", hint: "Her icon lives in the footer. Click to expand the chat surface." },
+      { id: "proactive-cards", label: "Proactive cards", hint: "She sometimes surfaces \"Did you know?\" cards inline. Engage or dismiss." },
+      { id: "autonomous", label: "Autonomous mode", hint: "Toggle autonomous to let her act on her own when she has high-confidence suggestions. Manual review stays default." },
     ],
   },
   {
@@ -928,7 +928,7 @@ export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "plugins-explorer",
     title: "Plugins Explorer",
-    description: "Walk through every plugin in the catalog — Companion, Twin, Dev Tools, and the supporting cast.",
+    description: "Walk through every plugin in the catalog — Twin, Dev Tools, and the supporting cast — plus Athena, who outgrew it.",
     icon: "Puzzle",
     color: "amber",
     steps: PLUGINS_EXPLORER_STEPS,

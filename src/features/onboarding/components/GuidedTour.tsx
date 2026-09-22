@@ -9,6 +9,7 @@ import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getActiveTourSteps, getLocalizedTourById, type TourId } from '@/stores/slices/system/tourSlice';
+import { COMPANIONS_PAGES } from '@/features/companions/types';
 import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors, getNextTourId, getTourSequence, TOUR_RAIL_WIDTH } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
@@ -136,6 +137,16 @@ export default function GuidedTour() {
             const sys = useSystemStore.getState();
             sys.setPluginTab('obsidian-brain');
             sys.setObsidianBrainTab(step.nav.subTab as Parameters<typeof sys.setObsidianBrainTab>[0]);
+          } else if (step.nav.subTabSetter === 'setCompanionsPage') {
+            // One field for the whole Companions section: `landing`, or
+            // `<companion>:<page>`. The section is already set above, so this
+            // only has to land the page. CHECKED, not asserted: tour data is a
+            // string, and `COMPANIONS_PAGES` is the vocabulary it has to be a
+            // member of — a step naming a page this build does not have simply
+            // stays on the section's default instead of writing a value no row
+            // answers to.
+            const page = COMPANIONS_PAGES.find((p) => p === step.nav.subTab);
+            if (page) useSystemStore.getState().setCompanionsPage(page);
           } else if (step.nav.subTabSetter === 'setTeamsTab') {
             // Teams L2 sub-nav (workspace / goals / kpis / factory).
             const sys = useSystemStore.getState();

@@ -2,6 +2,7 @@ import {
   Activity, CalendarClock, Crown, FlaskConical, History, Inbox, Link, RotateCcw,
   Shield, Sparkles, Star, Zap,
 } from 'lucide-react';
+import type { CompanionsPage } from '@/features/companions/types';
 import type { OverviewTab, PluginTab, EventBusTab } from '@/lib/types/types';
 import type { RoutableSection } from '@/features/personas/sectionRouter';
 import type { Translations } from '@/i18n/useTranslation';
@@ -27,6 +28,8 @@ export type PowerMoveNav =
       overviewTab?: OverviewTab;
       eventBusTab?: EventBusTab;
       pluginTab?: PluginTab;
+      /** A destination inside the Companions section (landing, or `<companion>:<page>`). */
+      companionsPage?: CompanionsPage;
     };
 
 export type PowerMoveGroupKey = 'save_time' | 'prevent_failures' | 'level_up' | 'orchestrate';
@@ -129,8 +132,11 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-amber-400',
     group: 'level_up',
     titleKey: 'pm_director_coaching_title',
-    nav: { section: 'overview', overviewTab: 'director' },
-    spotlightTestId: 'overview-page',
+    // Overseer's reviews page left Overview on 2026-09-22. The spotlight now
+    // rings the rail row the move lands on, which is the anchor that is always
+    // mounted once the section is open.
+    nav: { section: 'companions', companionsPage: 'overseer:reviews' },
+    spotlightTestId: 'companions-nav-overseer-reviews',
   },
   // -- Orchestrate ---------------------------------------------------------
   {
@@ -161,7 +167,7 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-indigo-400',
     group: 'orchestrate',
     titleKey: 'pm_athena_fleet_title',
-    nav: { section: 'plugins', pluginTab: 'companion' },
+    nav: { section: 'companions', companionsPage: 'athena:setup' },
     spotlightTestId: 'companion-panel',
   },
 ];

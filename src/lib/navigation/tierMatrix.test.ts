@@ -108,7 +108,6 @@ const EXPECTED_TEAM_ONLY = [
   'nav-section:events',
   'nav-section:plugins',
   'nav-section:teams',
-  'overview-tab:director',
   'overview-tab:events',
   'overview-tab:executions',
   'overview-tab:incidents',
