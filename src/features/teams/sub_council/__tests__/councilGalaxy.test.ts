@@ -17,6 +17,7 @@ import { buildLayout, markOf } from '../galaxy/engine/layout';
 import { applyLens, LENS_M, LENS_R } from '../galaxy/engine/lens';
 import { fixtureRunDetail } from '../galaxy/fixtureRuns';
 import { seatsOf } from '../table/runModel';
+import { dedupeMustAddress } from '../table/RunSynthesis';
 
 const VIEWPORT: Viewport = { x0: 0, x1: 1280, y0: 0, y1: 800 };
 
@@ -460,5 +461,43 @@ describe('fixtureRunDetail - the fixture carries whole ROUNDS, and nothing read 
 
   it('never invents a decision: a fixture decision lives in the store', () => {
     expect(fixtureRunDetail(RUN, 'p:s', 'p', true).decision).toBeNull();
+  });
+});
+
+describe('dedupeMustAddress - old data is the normal case, not the edge one', () => {
+  const seat = (titles: string[]) =>
+    ({
+      name: 'value',
+      findings: titles.map((title, i) => ({ id: `f${i}`, severity: 'med', title, detail: '', recurrence: 0 })),
+    }) as unknown as Parameters<typeof dedupeMustAddress>[1][number];
+
+  it('drops the entry that word-for-word repeats a finding already on screen', () => {
+    const { items, deduped } = dedupeMustAddress(
+      JSON.stringify(['Worker exit is not settled from the transcript', 'Write the replay-queue test']),
+      [seat(['Worker exit is not settled from the transcript'])],
+    );
+    expect(items).toEqual(['Write the replay-queue test']);
+    expect(deduped).toBe(1);
+  });
+
+  it('treats trailing punctuation and case as the same line, because they are', () => {
+    const { items, deduped } = dedupeMustAddress(
+      JSON.stringify(['no test touches the replay queue.']),
+      [seat(['No test touches the replay queue'])],
+    );
+    expect(items).toEqual([]);
+    expect(deduped).toBe(1);
+  });
+
+  it('keeps the 1,269-character entry the kp run stored — clamping is the UI’s job', () => {
+    const long = 'x'.repeat(1269);
+    const { items } = dedupeMustAddress(JSON.stringify([long]), []);
+    expect(items).toEqual([long]);
+  });
+
+  it('is an EMPTY list for a blob that will not parse, never a fabricated one', () => {
+    expect(dedupeMustAddress('{not json', [])).toEqual({ items: [], deduped: 0 });
+    expect(dedupeMustAddress('"a string"', [])).toEqual({ items: [], deduped: 0 });
+    expect(dedupeMustAddress('[1, null, "  ", "real"]', [])).toEqual({ items: ['real'], deduped: 0 });
   });
 });

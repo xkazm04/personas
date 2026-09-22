@@ -1155,6 +1155,9 @@ export type Translations = {
       proof_claim: string;
       technique_sub: string;
       must_address_heading: string;
+      must_address_deduped: string;
+      summary_heading: string;
+      summary_none: string;
       stars_heading: string;
       receipt: string;
       receipt_head: string;

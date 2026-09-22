@@ -21,6 +21,7 @@ import { StateChip, Tag, VerdictCaption, kindWord } from '../bench/chips';
 import { CouncilGateBay } from '../gate/CouncilGateBay';
 import { whyLine } from './councilCopy';
 import { MemberReading } from './MemberReading';
+import { MustAddressList } from './RunSynthesis';
 import { resolveRubric } from './rubrics';
 import { seatsOf, weakestFinding } from './runModel';
 import { Constellation } from './svg/Constellation';
@@ -241,6 +242,18 @@ export function RoundTable({
         >
           {seat ? <MemberReading seat={seat} detail={detail} weakest={weakest} /> : null}
         </div>
+        {/* Run-level, so it sits BELOW the member whose seat is open rather
+            than above the tabs: the list is the whole round's work, not this
+            member's, and pushing the seats down the page to say so would cost
+            the reader the thing they came for. */}
+        {detail ? (
+          <MustAddressList
+            mustAddressJson={detail.run.mustAddressJson}
+            seats={seats}
+            words={tbl}
+            tx={tx}
+          />
+        ) : null}
       </div>
 
       <footer className="col-span-full border-t border-border px-7 py-3">
