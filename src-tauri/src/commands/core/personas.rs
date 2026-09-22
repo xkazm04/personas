@@ -67,9 +67,14 @@ pub fn restore_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Pe
 #[requires(auth)]
 pub fn bulk_delete_personas(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     ids: Vec<String>,
 ) -> Result<Vec<BulkDeleteOutcome>, AppError> {
-    repo::bulk_delete_personas(&state.db, &ids)
+    let outcomes = repo::bulk_delete_personas(&state.db, &ids)?;
+    // Same reason as the single-persona door: any of these may have been
+    // starred, and the starred count is Overseer's prerequisite.
+    crate::commands::companions::emit_status(&app, state.inner());
+    Ok(outcomes)
 }
 
 #[tauri::command]
@@ -744,6 +749,16 @@ pub async fn delete_persona(
 
     // Clean up the deleting marker regardless of outcome
     state.engine.unmark_deleting(&id).await;
+
+    // A deleted persona may have been STARRED, and the starred count is
+    // Overseer's whole prerequisite: deleting the last one takes him from
+    // eligible to blocked. Published here rather than inside the two-phase
+    // inner fn so it runs on every outcome that actually removed a row, and
+    // after the marker is cleared. Best-effort, like every other publish of
+    // this event.
+    if result.is_ok() {
+        crate::commands::companions::emit_status(&app, state.inner());
+    }
 
     result
 }
