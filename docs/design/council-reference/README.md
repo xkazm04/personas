@@ -176,3 +176,11 @@ close), `04-deep-altitude`, `05-queue`, `06-detail-ready` (the open gate),
 `07-detail-closed-gate` (a machine pass), `08-after-reject` (+ `08a` the gate that recorded it),
 `09-galaxy-after-decision` (the repainted star), `10-keyboard-end`,
 `11-council-focus` (the galaxy, sidebar and breadcrumb all about one council).
+
+## Owner overrides after this artifact was approved (2026-09-22)
+
+This page is the approved reference for layout, figures and the descent. Three things about it were overridden by the owner after reviewing the shipped port, and the product follows the override, not this file:
+
+- **Typography.** The ladder recorded above (13/14/15/16/17/21/31/34/42 px) is replaced by the app's own tokens (`typo-label` for section headings, `typo-heading` for a row's primary line, `typo-body` for prose and nested rows, `typo-caption` for secondaries), so the page does not write its own rules. The 13 px floor stands.
+- **Surfaces.** Rail, bands and panels use the app sidebar's material (`bg-secondary/30`, `border-primary/15`, `bg-primary/5` bands), not this artifact's own panel colours.
+- **The reading-order card is gone**, and the lens magnifies at half this artifact's strength (`LENS_M` 2.6, centre 3.6x). A single click always descends one layer.
