@@ -165,6 +165,7 @@
       ],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["`rules.json`; **re-extracted from this document and re-run, with identical counts** — 44 matches /"],"resolved":false},
     "scan.ts": {
       "count": 2,
       "sections": [6],
@@ -175,7 +176,6 @@
       "resolved": false
     },
     "scripts/census/": {"count":1,"sections":[9],"contexts":["(`scripts/census/`) and implements the fail-loud contract, so this path"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["`rules.json`; **re-extracted from this document and re-run, with identical counts** — 44 matches /"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/": {"count":2,"sections":[0],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` and all **4,829** `.ts`/`.tsx` files"],"resolved":false,"isDir":true},
     "src-tauri/core/src/context_fingerprint.rs": {"count":1,"sections":[7],"lines":["93-105"],"contexts":["`src-tauri/core/src/context_fingerprint.rs:93-105` already counts `promise_all_count`,"]},
     "src-tauri/db/src/settings_keys.rs": {

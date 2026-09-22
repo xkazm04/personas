@@ -34,7 +34,31 @@ jobs:
           node-version-file: .nvmrc
           cache: 'npm'
 
-      - uses: dtolnay/rust-toolchain@stable
+      # The pinned toolchain, not "stable": dtolnay/rust-toolchain@stable does not
+      # read rust-toolchain.toml. Full reasoning: THE TOOLCHAIN PIN note on
+      # rust-fmt in ci.yml.
+      - name: Read the pinned Rust channel
+        id: rust-pin
+        shell: bash
+        run: |
+          CHANNEL=$(sed -nE 's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml | head -n 1)
+          if [ -z "$CHANNEL" ]; then
+            echo "::error::rust-toolchain.toml has no readable channel — refusing to fall back to an unpinned toolchain."
+            exit 1
+          fi
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.rust-pin.outputs.channel }}
+      - name: Assert the active toolchain is the pinned one
+        shell: bash
+        run: |
+          ACTIVE=$(rustup show active-toolchain)
+          echo "active: $ACTIVE"; rustc --version
+          case "$ACTIVE" in
+            "${{ steps.rust-pin.outputs.channel }}"-*) ;;
+            *) echo "::error::active toolchain is not the pinned ${{ steps.rust-pin.outputs.channel }}"; exit 1 ;;
+          esac
 
       - uses: Swatinem/rust-cache@v2
         with:

@@ -15,7 +15,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
-import { createWorkspace } from './workspaceStore';
+import type { DevProject } from '@/lib/bindings/DevProject';
+
+import { createWorkspace, setActiveWorkspace } from './workspaceStore';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 
 const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
@@ -35,9 +37,18 @@ const EDGE = 8;
  * start at the trigger's left edge and clamped so no part of it leaves the
  * viewport.
  */
-function panelPosition(trigger: DOMRect, placement: 'up' | 'down', panelH: number) {
+function panelPosition(
+  trigger: DOMRect,
+  placement: 'up' | 'down',
+  panelH: number,
+  align: 'right' | 'center' = 'right',
+) {
   const width = Math.min(PANEL_W, window.innerWidth - EDGE * 2);
-  const left = Math.max(EDGE, Math.min(trigger.left, window.innerWidth - width - EDGE));
+  // `center` (a trigger centred in its bar, e.g. the Monitor Stream header)
+  // centres the panel under the trigger; otherwise it starts at the trigger's
+  // left edge. Either way it is clamped inside the viewport.
+  const wanted = align === 'center' ? trigger.left + trigger.width / 2 - width / 2 : trigger.left;
+  const left = Math.max(EDGE, Math.min(wanted, window.innerWidth - width - EDGE));
   const top =
     placement === 'up'
       ? Math.max(EDGE, trigger.top - GAP - panelH)
@@ -55,17 +66,39 @@ interface WorkspaceProjectSelectorProps {
   testId?: string;
   /** Test id of the "New workspace" action (the onboarding tour anchors on the footer's). */
   newWorkspaceTestId?: string;
+  /**
+   * CONTROLLED MODE — a LOCAL project filter instead of the app-wide active
+   * project. Pass both `value` and `onChange`: the pick is reported, never
+   * written to the global selection, so a view (the Monitor Stream) can open
+   * unfiltered no matter which project is active elsewhere. The workspace pane
+   * still scopes the list, but picking a workspace no longer re-points the
+   * global project.
+   */
+  value?: string | null;
+  onChange?: (projectId: string | null) => void;
+  /** Label of the "none" option and of the trigger while nothing is picked. */
+  noneLabel?: string;
+  /** Narrow the project list (e.g. only projects that have a team channel). */
+  projectFilter?: (project: DevProject) => boolean;
+  /** Popover anchoring. `center` for a trigger centered in its bar. */
+  align?: 'right' | 'center';
 }
 
 export function WorkspaceProjectSelector({
   placement = 'down', variant = 'header', allowNone = true, testId, newWorkspaceTestId,
+  value, onChange, noneLabel, projectFilter, align = 'right',
 }: WorkspaceProjectSelectorProps) {
   const { t } = useTranslation();
   const c = t.chrome;
   const {
-    scoped, workspaces, activeId, activeProjectId, activeProject,
-    activeWorkspace, setActiveProject, switchWorkspace,
+    projects, scoped, workspaces, activeId, activeProjectId: globalProjectId, activeProject: globalProject,
+    activeWorkspace, setActiveProject: setGlobalProject, switchWorkspace: switchGlobalWorkspace,
   } = useWorkspaceSwitch();
+  const controlled = onChange !== undefined;
+  const activeProjectId = controlled ? (value ?? null) : globalProjectId;
+  const activeProject = controlled ? (projects.find((p) => p.id === value) ?? null) : globalProject;
+  const setActiveProject = (id: string | null) => (controlled ? onChange(id) : setGlobalProject(id));
+  const switchWorkspace = controlled ? setActiveWorkspace : switchGlobalWorkspace;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const [open, setOpen] = useState(false);
@@ -75,7 +108,10 @@ export function WorkspaceProjectSelector({
   const loadedRef = useRef(false);
 
   const sortedWorkspaces = useMemo(() => [...workspaces].sort(byName), [workspaces]);
-  const sortedProjects = useMemo(() => [...scoped].sort(byName), [scoped]);
+  const sortedProjects = useMemo(
+    () => (projectFilter ? scoped.filter(projectFilter) : [...scoped]).sort(byName),
+    [scoped, projectFilter],
+  );
 
   useEffect(() => {
     if (loadedRef.current) return;
@@ -103,7 +139,7 @@ export function WorkspaceProjectSelector({
     const place = () => {
       const trigger = ref.current?.getBoundingClientRect();
       if (!trigger) return;
-      setPos(panelPosition(trigger, placement, panelRef.current?.offsetHeight ?? 360));
+      setPos(panelPosition(trigger, placement, panelRef.current?.offsetHeight ?? 360, align));
     };
     place();
     const raf = requestAnimationFrame(place);
@@ -114,7 +150,7 @@ export function WorkspaceProjectSelector({
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', place, true);
     };
-  }, [open, placement]);
+  }, [open, placement, align]);
 
   const wsLabel = activeWorkspace?.name ?? c.workspace_all_projects;
   const wsColor = activeWorkspace?.color ?? 'var(--muted-foreground)';
@@ -138,7 +174,7 @@ export function WorkspaceProjectSelector({
           <span className={`${header ? 'typo-body max-w-[120px]' : 'text-[11px] font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
           <span className="text-foreground/40 flex-shrink-0" aria-hidden>/</span>
           <span className={`${header ? 'typo-body' : 'text-[11px] font-medium'} truncate min-w-0 ${activeProject ? 'text-indigo-300/90' : 'text-foreground/60'}`}>
-            {activeProject?.name ?? c.workspace_pick_project}
+            {activeProject?.name ?? noneLabel ?? c.workspace_pick_project}
           </span>
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${(placement === 'up') !== open ? 'rotate-180' : ''}`} />
         </button>
@@ -188,7 +224,7 @@ export function WorkspaceProjectSelector({
               <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
                 <FolderGit2 className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
                 <span className="typo-label text-foreground/90">{c.workspace_projects}</span>
-                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{scoped.length}</span>
+                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{sortedProjects.length}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {allowNone && (
@@ -198,7 +234,7 @@ export function WorkspaceProjectSelector({
                     className={`${row} typo-caption ${activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
                   >
                     <X className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-                    <span className="flex-1 truncate">{c.workspace_no_active_project}</span>
+                    <span className="flex-1 truncate">{noneLabel ?? c.workspace_no_active_project}</span>
                   </button>
                 )}
                 {sortedProjects.length === 0 ? (

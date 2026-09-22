@@ -262,7 +262,7 @@
     "personas-web/MetricCard.tsx": {"count":2,"sections":[7,12],"lines":["39-42"],"contexts":["copy `KpiTile`'s resolution, or split arrow from colour the way `personas-web/MetricCard.tsx:39-42`"],"resolved":false},
     "personas-web/src/components/dashboard/MetricCard.tsx": {"count":1,"sections":[9],"lines":["25"],"contexts":["- `personas-web/src/components/dashboard/MetricCard.tsx:25` — clause 4's worst case, `value: string`"],"resolved":false},
     "plugins/twin/shared/TwinStat.tsx": {"count":1,"sections":[7],"lines":["30"],"contexts":["(`plugins/twin/shared/TwinStat.tsx:30`) with **zero** of them importing it."],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`; **the full registry was not run** (doctrine §4). Re-extracted from"],"resolved":false},
     "shared/components/display/{StatCard,Numeric}.tsx": {"count":1,"sections":[],"contexts":["rather than one reconciled number. Read in full: `shared/components/display/{StatCard,Numeric}.tsx`,"],"resolved":false},
     "sla.rs": {"count":2,"sections":[7,12],"lines":["508-511"],"contexts":["**default**. `SLADashboard.tsx:138`, backend fallback at `sla.rs:508-511`."],"resolved":false},
     "src-tauri/db/src/repos/communication/sla.rs": {

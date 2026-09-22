@@ -3013,7 +3013,15 @@
     "council_state_stalled": "Dừng lại sau vòng 3",
     "council_state_unknown": "Không nhận dạng được trạng thái",
     "council_tier_major": "Trọng điểm",
-    "council_tier_toggle_label": "Đánh dấu {name} là tính năng trọng điểm"
+    "council_tier_toggle_label": "Đánh dấu {name} là tính năng trọng điểm",
+    "skills_registry_filter_hint": "Nhấp để chỉ hiển thị các kỹ năng ở đây",
+    "skills_registry_filter_active_hint": "Nhấp lần nữa để hiển thị tất cả kỹ năng",
+    "skills_registry_filter_clear": "Xóa bộ lọc {name}",
+    "skills_registry_filter_empty": "Chưa có kỹ năng nào trong {name}",
+    "skills_registry_empty_title": "Không có kỹ năng nào để hiển thị",
+    "skills_registry_name_details": "Nhấp để xem đầy đủ chi tiết",
+    "skills_registry_legend_recent": "đã chạy trong 30 ngày qua",
+    "skills_registry_context_coverage": "{covered} trên {contexts} ngữ cảnh đã chạm tới ({pct})"
   },
   "dev_triage": {
     "action_label": "Hành động:",
@@ -3489,7 +3497,16 @@
     "skill_picker_close": "Đóng bộ chọn kỹ năng",
     "skill_picker_hint": "Nhấp vào một ô để nạp kỹ năng và dự án đó vào bảng điều khiển. Ô trống sẽ cài kỹ năng ở đó trước.",
     "skill_picker_open": "Chọn kỹ năng từ sổ đăng ký",
-    "skill_picker_title": "Sổ đăng ký kỹ năng"
+    "skill_picker_title": "Sổ đăng ký kỹ năng",
+    "skill_picker_empty": "Chưa có dự án nào trong không gian làm việc này cài kỹ năng — hãy áp dụng một kỹ năng trong Công cụ dev → Kỹ năng → Sổ đăng ký.",
+    "estimate_assumed_model": "Tính theo mô hình mặc định của CLI. Chọn một mô hình để dùng biểu giá riêng.",
+    "estimate_cost_label": "Chi phí ước tính cho lần điều phối này",
+    "estimate_disclaimer": "Ước tính dựa trên biểu giá mô hình đã công bố và quy mô phiên thông thường — không phải báo giá.",
+    "estimate_eta_label": "Thời gian ước tính để hoàn tất",
+    "rest_tally_needs_you": "{count} cần bạn",
+    "rest_tally_working": "{count} đang chạy",
+    "status_armed": "SẴN SÀNG",
+    "status_standby": "CHỜ"
   },
   "fleet": {
     "activity_empty": "Không tìm thấy phiên gần đây",

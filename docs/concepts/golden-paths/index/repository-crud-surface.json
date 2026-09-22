@@ -120,6 +120,7 @@
     "repository.utils.ts": {"count":2,"sections":[6],"lines":["14-138","282"],"contexts":["- **✓ `vibeman` also turns table ownership into a compile error.** `repository.utils.ts:14-138` is a"],"resolved":false},
     "resources/triggers.rs": {"count":4,"sections":[5,7],"lines":["1856"],"contexts":["`resources/triggers.rs:1856` `set_enabled` flips a trigger that may not exist and the UI renders"],"resolved":false},
     "rotation.rs": {"count":1,"sections":[9],"lines":["257"],"contexts":["- `rotation.rs:257` `mark_rotated` — calls `get_policy_by_id(pool, …)?` first, so existence is"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["`rules.json` here:"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**"],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
@@ -130,7 +131,7 @@
       "verbatim": "lib/engine.mjs"
     },
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["entry, merged by the orchestrator via `scripts/census/merge-published-rules.mjs` — never edited into"]},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All 37 rules in `scripts/census/rules.json` were read. Four are adjacent and **none covers this"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All 37 rules in `scripts/census/rules.json` were read. Four are adjacent and **none covers this"]},
     "src-tauri/": {"count":1,"sections":[8],"contexts":["8. **No enforcement reaches `src-tauri/` for any of this.** `npm run check` is TypeScript + ESLint"],"resolved":false,"isDir":true},
     "src-tauri/**": {"count":1,"sections":[],"contexts":["names** in the tree joined to every `INSERT`/`UPDATE`/`DELETE` statement in `src-tauri/**` to"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {

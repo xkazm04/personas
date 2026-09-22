@@ -117,6 +117,7 @@
       ],
       "resolved": false
     },
+    "i18n/generated/enSectionStrings.ts": {"count":1,"sections":[9],"contexts":["`i18n/generated/enSectionStrings.ts`, `lib/personas/templates/templateChecksums.ts`). The two rules"],"resolved":false},
     "lab.rs": {
       "count": 1,
       "sections": [6],
@@ -307,13 +308,6 @@
     "src/features/triggers/lib/eventReason.ts": {"count":5,"sections":[0,3,4,6],"lines":["17-27","44-56"],"contexts":["(`EventGateReason`), `src/features/triggers/lib/eventReason.ts`, `db/src/chain.rs`,"]},
     "src/features/triggers/sub_triggers/triggerArmState.ts": {"count":4,"sections":[0,7],"lines":["69-78"],"contexts":["`src/features/triggers/sub_triggers/triggerArmState.ts`,"]},
     "src/features/triggers/sub_triggers/triggerListTypes.ts": {"count":1,"sections":[7],"lines":["1"],"contexts":["`triggerListTypes.ts:1`, `scheduleHelpers.ts:12` (5), `personaHealthSlice.ts:21`,"],"resolvedFrom":"basename","verbatim":"triggerListTypes.ts"},
-    "src/i18n/generated/enSectionStrings.ts": {
-      "count": 1,
-      "sections": [9],
-      "contexts": ["`i18n/generated/enSectionStrings.ts`, `lib/personas/templates/templateChecksums.ts`). The two rules"],
-      "resolvedFrom": "suffix",
-      "verbatim": "i18n/generated/enSectionStrings.ts"
-    },
     "src/i18n/generated/types.ts": {"count":1,"sections":[8],"contexts":["JSON; `src/i18n/generated/types.ts` is derived **from that JSON**, so the generated type describes"]},
     "src/i18n/locales/en.json": {"count":5,"sections":[2,4,7,8],"contexts":["token. **(h) Add the label group in the same change**, in `en.json` and every locale, or the mirror"],"resolvedFrom":"basename","verbatim":"en.json"},
     "src/i18n/tokenMaps.ts": {"count":3,"sections":[0,7,8],"lines":["35-51"],"contexts":["(`src/i18n/tokenMaps.ts:35-51`), which returns the raw token when the lookup misses."]},

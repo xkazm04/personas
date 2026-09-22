@@ -144,6 +144,7 @@
       ],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["**Neither rule duplicates an existing one, checked against all 31 entries in `rules.json` before"],"resolved":false},
     "scraper.rs": {
       "count": 1,
       "sections": [7],
@@ -153,7 +154,6 @@
       ],
       "resolved": false
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Neither rule duplicates an existing one, checked against all 31 entries in `rules.json` before"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "session.rs": {
       "count": 1,
       "sections": [7],

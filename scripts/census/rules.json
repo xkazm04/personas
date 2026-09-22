@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 734,
-        "matches": 1761
+        "files": 732,
+        "matches": 1758
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 294,
-        "matches": 647
+        "files": 293,
+        "matches": 645
       },
       "floor": 4000
     },
@@ -832,7 +832,7 @@
         "description": "a #[cfg(...)] attribute governing a single entry in tauri::generate_handler![] (the attribute line, then optional comment lines, then one commands::path, line). PROXY FOR the stack-free condition: an entry point's EXISTENCE is decided by a build switch, while every caller-side artefact still claims it always exists. In this repo the generated CommandName union (src/lib/commandNames.generated.ts) contains all 128 of these because scripts/generate-command-names.mjs:33 skips the #[cfg] line and keeps the entry, so 97 of them are invoked unconditionally from src/api/** with zero safeInvoke guards and reject with Command \"x\" not found under --features desktop. The comment-tolerant span is load-bearing: lib.rs:2395 is an ORPHANED gate (a #[cfg(all(desktop, ml))] separated from its intended command by a comment, now silently unregistering get_credential_recipe), and the existing generate_handler_has_no_orphaned_cfg_attributes test cannot see it. The legal destination is the pattern at src/commands/infrastructure/scraper.rs:17-40 — register unconditionally, gate the BODY, and return a typed capability error in the #[cfg(not(feature))] branch. PRECONDITION: this proxy keys on Cargo's #[cfg] attribute plus this repo's one-path-per-line registration list. A repo whose variance is a bundler define, an optional import, a DI container binding, or a router mount behind an if scores zero here while the same condition is present at full scale — re-derive the proxy against the local registration mechanism."
       },
       "baseline": {
-        "files": 1,
+        "files": 6,
         "matches": 129
       },
       "floor": 500
@@ -960,8 +960,8 @@
         }
       ],
       "baseline": {
-        "files": 21,
-        "matches": 24
+        "files": 22,
+        "matches": 25
       },
       "floor": 4000
     },
@@ -1422,7 +1422,7 @@
       },
       "baseline": {
         "files": 471,
-        "matches": 876
+        "matches": 875
       },
       "floor": 2000
     },
@@ -1647,8 +1647,8 @@
         }
       ],
       "baseline": {
-        "files": 13,
-        "matches": 13
+        "files": 15,
+        "matches": 15
       },
       "floor": 2000
     },
@@ -3609,8 +3609,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 26,
-        "matches": 35
+        "files": 25,
+        "matches": 34
       },
       "floor": 3000
     },
@@ -3934,8 +3934,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 45
+        "files": 42,
+        "matches": 46
       },
       "floor": 2000
     },
@@ -4106,8 +4106,8 @@
         }
       ],
       "baseline": {
-        "files": 25,
-        "matches": 28
+        "files": 26,
+        "matches": 30
       },
       "floor": 4000
     },
@@ -4819,8 +4819,8 @@
         "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
       },
       "baseline": {
-        "files": 19,
-        "matches": 19
+        "files": 18,
+        "matches": 18
       },
       "floor": 120,
       "exclude": [

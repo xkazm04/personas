@@ -73,8 +73,8 @@
     "personas-web/src/components/mobile/MobileSheet.tsx": {"count":1,"sections":[11],"lines":["72-77"],"contexts":["(`personas-web/src/components/mobile/MobileSheet.tsx:72-77`), an x-axis-only"],"resolved":false},
     "personas.rs": {"count":1,"sections":[9],"contexts":["files** — real, compliant, per-row write loops in `crypto.rs`, `personas.rs`,"],"resolved":false},
     "research_lab.rs": {"count":1,"sections":[9],"contexts":["`dev_workspaces.rs`, `team_assignments.rs`, `research_lab.rs`, `credentials.rs`,"],"resolved":false},
+    "rules.json": {"count":1,"sections":[7],"contexts":["(`rules.json`, which names `dev_tools.rs:861` explicitly) for a *different*"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["**Validated standalone** against `scripts/census/lib/engine.mjs` (`validateRule`"]},
-    "scripts/census/rules.json": {"count":1,"sections":[7],"contexts":["(`rules.json`, which names `dev_tools.rs:861` explicitly) for a *different*"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/check-command-contract.mjs": {"count":1,"sections":[7],"contexts":["`scripts/check-command-contract.mjs` verifies command *names* against `lib.rs`"]},
     "src-tauri/db/src/repos/dev_tools.rs": {
       "count": 2,

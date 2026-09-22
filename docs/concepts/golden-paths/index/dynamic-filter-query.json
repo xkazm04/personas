@@ -91,10 +91,11 @@
     },
     "research_lab.rs": {"count":1,"sections":[7],"lines":["236"],"contexts":["(`research_lab.rs:236` states it: *\"`column` is a hardcoded caller constant, never user input\"*)."],"resolved":false},
     "reviews.rs": {"count":6,"sections":[4,5,7,8],"lines":["568-596","505-566","494-596","134","453"],"contexts":["`reviews.rs:568-596` gets this right by issuing the count before `push_param`;"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**Do NOT hand-merge this into `rules.json`** — publish and let the orchestrator merge via"],"resolved":false},
     "scan.repository.ts": {"count":1,"sections":[4],"lines":["49-62"],"contexts":["`vibeman`'s `scan.repository.ts:49-62` gets it right by the same accident and would break"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":2,"sections":[9],"lines":["290-299"],"contexts":["`scripts/census/lib/engine.mjs` — the same code the real run uses):"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["`scripts/census/merge-published-rules.mjs`."]},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All 62 rules in `scripts/census/rules.json` were read. The four adjacent ones cover different"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All 62 rules in `scripts/census/rules.json` were read. The four adjacent ones cover different"]},
     "scripts/census/run-census.mjs": {"count":2,"sections":[9],"lines":["188"],"contexts":["**`scripts/census/run-census.mjs` cannot print a baseline-free rule.** `report()` at"]},
     "settings.rs": {
       "count": 1,

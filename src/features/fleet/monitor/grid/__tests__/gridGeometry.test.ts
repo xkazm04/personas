@@ -12,7 +12,7 @@ import type { PersonaCardModel } from '../../monitorModel';
 import {
   columnRows, trayPerRow, boardPerRow, boardLayout, chunkRows,
   PERSONA_ROW_H, SESSION_ROW_H, DIVIDER_ROW_H, TRAY_ROW_H,
-  NODE_W, TILE_W, TILE_H, SESSION_TILE_H, QUEUE_TILE_W, QUEUE_TILE_H,
+  NODE_W, TILE_W, TILE_H, SESSION_TILE_H, QUEUE_TILE_W, QUEUE_TILE_H, TITLE_ROW_H, SYMBOL_ROW_H, NODE_DIVIDER_H,
   ROW_GAP, TRAY_GAP, BOARD_GAP, COLUMNS_PER_ROW, COLUMN_BODY_MAX_H,
   COLUMN_MIN_W, COLUMN_MAX_W, COLUMNS_PER_ROW_MAX,
 } from '../gridGeometry';
@@ -41,9 +41,14 @@ describe('node geometry', () => {
     expect(boardPerRow(3078, QUEUE_TILE_W, 64)).toBe(16);
   });
 
-  it('is two rows tall, a session a little shorter than a persona', () => {
-    expect(TILE_H).toBe(48);
-    expect(SESSION_TILE_H).toBe(44);
+  it('is two rows tall — title 20 + symbols 18 + padding — a session a little shorter than a persona', () => {
+    expect(TITLE_ROW_H).toBe(20);
+    expect(SYMBOL_ROW_H).toBe(18);
+    expect(NODE_DIVIDER_H).toBe(4);
+    expect(TILE_H).toBe(50);
+    expect(SESSION_TILE_H).toBe(48);
+    expect(TILE_H).toBe(TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 8);
+    expect(SESSION_TILE_H).toBe(TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 6);
     expect(QUEUE_TILE_H).toBe(SESSION_TILE_H);
     expect(SESSION_TILE_H).toBeLessThan(TILE_H);
   });

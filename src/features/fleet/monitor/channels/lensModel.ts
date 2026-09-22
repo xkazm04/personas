@@ -25,6 +25,15 @@ import type { TaggedItem } from './types';
 
 export const ALL_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'message', 'deliberation', 'slack'];
 
+/**
+ * The Stream's scope — a DECISION log, not the conversation. Messages and
+ * Slack are talk and belong to Conversations; the Stream keeps what was
+ * decided and what happened: step transitions, bus events, memories written,
+ * deliberation turns. Deliberation is IN by default here (it is the purest
+ * decision record there is), unlike the blended read where it stays opt-in.
+ */
+export const STREAM_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'deliberation'];
+
 export const ALL_FAMILIES: EventFamily[] = [
   'handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other',
 ];
@@ -108,7 +117,39 @@ const VOICELESS_NAME: Record<string, string> = {
 export function rowCallsign(item: TaggedItem['item'], name: string | undefined): string {
   if (item.kind === 'slack') return callsign(slackAuthorName(item));
   if (name) return callsign(name);
-  return callsign(VOICELESS_NAME[item.kind]);
+  const voice = VOICELESS_NAME[item.kind];
+  if (voice) return callsign(voice);
+  // An author id that no longer resolves is a DELETED persona, not the system.
+  // Signing it SYSTEM is what made the rail list a dozen identical "SYSTEM"
+  // rows told apart only by a hashed colour.
+  return item.personaId ? REMOVED_CALLSIGN : callsign(undefined);
+}
+
+export const REMOVED_CALLSIGN = 'REMOVED';
+
+/** The two synthetic speakers of the callsign facet (never a persona id). */
+export const SPEAKER_SYSTEM = '__system__';
+export const SPEAKER_REMOVED = '__removed__';
+
+/**
+ * WHO SPOKE, as a FILTER KEY. A resolved persona is its own key. Everything
+ * else collapses into one of two honest buckets instead of one row per id:
+ *   SPEAKER_REMOVED — an author id that no longer resolves (a deleted persona;
+ *                     measured on the dev DB: 43 such ids on memories, 18 on
+ *                     deliberation turns, 15 on events).
+ *   SPEAKER_SYSTEM  — a machine row with no persona behind it at all (a step
+ *                     transition, a deliberation notice) — previously absent
+ *                     from the facet, so it could not be filtered.
+ * Voiced kinds (You / Athena / Director) keep their own key; a Slack row's
+ * `personaId` is a Slack user id, so it has none.
+ */
+export function speakerKey(
+  item: TaggedItem['item'],
+  nameOf: (personaId: string | null) => string | undefined,
+): string | null {
+  if (item.kind === 'slack') return null;
+  if (item.personaId) return nameOf(item.personaId) ? item.personaId : SPEAKER_REMOVED;
+  return VOICELESS_NAME[item.kind] ? `__${item.kind}__` : SPEAKER_SYSTEM;
 }
 
 /**
@@ -181,7 +222,8 @@ export function matchesLens(
   }
 
   if (lens.callsigns.size > 0) {
-    if (!item.personaId || !lens.callsigns.has(item.personaId)) return false;
+    const key = speakerKey(item, nameOf);
+    if (!key || !lens.callsigns.has(key)) return false;
   }
 
   const q = lens.search.trim().toLowerCase();
@@ -253,8 +295,8 @@ export function facetCounts(
 
     const mKind = lens.kinds.size === 0 || lens.kinds.has(k);
     const mFam = lens.families.size === 0 || (fam !== null && lens.families.has(fam));
-    const mSign =
-      lens.callsigns.size === 0 || (!!item.personaId && lens.callsigns.has(item.personaId));
+    const key = speakerKey(item, nameOf);
+    const mSign = lens.callsigns.size === 0 || (!!key && lens.callsigns.has(key));
     let mSearch = true;
     if (q) {
       const hay =
@@ -265,11 +307,10 @@ export function facetCounts(
     // Each dimension counts against the rows surviving the OTHER dimensions.
     if (mFam && mSign && mSearch) kindTally.set(k, (kindTally.get(k) ?? 0) + 1);
     if (fam && mKind && mSign && mSearch) famTally.set(fam, (famTally.get(fam) ?? 0) + 1);
-    // Slack rows carry the SLACK user id in `personaId` (the read-model reuses
-    // the author_id column). It will never resolve in the persona index, so
-    // counting it here would put a nameless "SYSTEM" row in the callsign rail.
-    if (item.kind !== 'slack' && item.personaId && mKind && mFam && mSearch) {
-      signTally.set(item.personaId, (signTally.get(item.personaId) ?? 0) + 1);
+    // Keyed by speakerKey, so every deleted persona lands in ONE bucket and a
+    // Slack row (whose personaId is a Slack user id) in none.
+    if (key && mKind && mFam && mSearch) {
+      signTally.set(key, (signTally.get(key) ?? 0) + 1);
     }
   }
 
@@ -293,8 +334,9 @@ export function memoryModesAvailable(lens: LensState, selectedTeamCount: number)
   return lens.kinds.size === 1 && lens.kinds.has('memory') && selectedTeamCount === 1;
 }
 
-/** The kinds to ASK THE SERVER for. Empty lens = the blended conversation
- *  (deliberation turns stay opt-in, so they're excluded unless asked for). */
-export function fetchKinds(lens: LensState): ChannelKind[] | undefined {
-  return lens.kinds.size > 0 ? [...lens.kinds] : undefined;
+/** The kinds to ASK THE SERVER for. Never the blended read: an empty kind
+ *  lens means every STREAM kind, so talk (messages, Slack) is never fetched
+ *  and never spends the page budget. */
+export function fetchKinds(lens: LensState): ChannelKind[] {
+  return lens.kinds.size > 0 ? [...lens.kinds] : STREAM_KINDS;
 }

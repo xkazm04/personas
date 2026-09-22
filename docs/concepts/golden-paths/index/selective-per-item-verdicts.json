@@ -79,8 +79,8 @@
     "lefthook.yml": {"count":1,"sections":[9],"lines":["74-75"],"contexts":["`lefthook.yml:74-75`. That matters here: `ci.yml` is currently red on 10 pre-existing failures, so"]},
     "memories.rs": {"count":3,"sections":[0,7],"lines":["901","1031-1033","792"],"contexts":["loop (`memories.rs:901`, a deliberate and well-argued CAS against double-application) and the loop"],"resolved":false},
     "reviews.rs": {"count":1,"sections":[0],"lines":["1328"],"contexts":["| `dispatch_review_action` — a *suggested action* pick, a different control (`reviews.rs:1328`) | 9 |"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports **3"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports **3"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/db/src/repos/communication/manual_reviews.rs": {
       "count": 3,
       "sections": [0,7],

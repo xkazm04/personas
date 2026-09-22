@@ -2146,7 +2146,15 @@ mod tests {
 
         // Recover: enough fresh successes to clear the streak and beat the
         // hysteresis bar.
-        for i in 0..12 {
+        //
+        // The count is arithmetic, not a guess. `get_persona_breach_signal`
+        // reads the newest BREACH_LOOKBACK (20) terminal rows, and this
+        // persona already carries 6 failures. Twelve successes therefore give
+        // a 12/18 = 0.667 window — under RECOVERY_SUCCESS_RATE (0.75), so
+        // `is_recovered` said no and `decide` returned NoOp. Sixteen fill the
+        // window to 16 successes + 4 failures = 0.80, clearing the bar with
+        // room for the boundary rather than landing exactly on it.
+        for i in 0..16 {
             insert_execution(&pool, &persona_id, "completed", &recent_ts(0 - i));
         }
         let sig3 = get_persona_breach_signal(&pool, &persona_id).unwrap();

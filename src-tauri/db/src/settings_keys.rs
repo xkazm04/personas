@@ -560,6 +560,14 @@ pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
 pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
+/// Whether the fleet's admission door charges the two DYNAMIC budgets (machine
+/// units gated by measured RAM, plan units scaled by Claude plan pace) on top
+/// of the static count cap above. On by default; off is the kill switch back
+/// to pure count-cap behaviour. Read by `commands::fleet::queue`. Stored
+/// `"true"`/`"false"`.
+pub const FLEET_DYNAMIC_BUDGETS: &str = "fleet.dynamic_budgets";
+/// Default for [`FLEET_DYNAMIC_BUDGETS`] - on.
+pub const FLEET_DYNAMIC_BUDGETS_DEFAULT: bool = true;
 /// Design D — whether the deliberation tick may, unattended, advance an open
 /// team deliberation (a moderated multi-persona conversation that produces work
 /// feeding the deterministic engine). The Haiku moderator picks the key
@@ -1122,6 +1130,7 @@ const ALLOWED_KEYS: &[&str] = &[
     FLEET_AUTOPILOT_MEMORY_STOP_PCT,
     FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB,
     FLEET_MAX_PARALLEL_SESSIONS,
+    FLEET_DYNAMIC_BUDGETS,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
@@ -1398,6 +1407,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ATTENTION_LOOP
         | FLEET_AUTOPILOT_PACING
+        | FLEET_DYNAMIC_BUDGETS
         | COMPANION_DAILY_ROLLUP
         | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
@@ -1718,6 +1728,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FLEET_AUTOPILOT_MEMORY_STOP_PCT
         | FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB
         | FLEET_MAX_PARALLEL_SESSIONS
+        | FLEET_DYNAMIC_BUDGETS
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => "retention",
@@ -2035,6 +2046,9 @@ mod tests {
         assert!(validate_key(FLEET_AUTOPILOT_PACING).is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_PACING, "true").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_PACING, "yes").is_err());
+        assert!(validate_key(FLEET_DYNAMIC_BUDGETS).is_ok());
+        assert!(validate_value(FLEET_DYNAMIC_BUDGETS, "false").is_ok());
+        assert!(validate_value(FLEET_DYNAMIC_BUDGETS, "off").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "1").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "10").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "0").is_err());

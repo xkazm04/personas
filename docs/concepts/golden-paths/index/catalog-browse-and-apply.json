@@ -51,8 +51,8 @@
       "contexts": ["`TrendingCarousel` sorts by `adoption_count DESC` (`reviews.rs:126`, `:515`). The trending shelf is"],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[12],"lines":["190"],"contexts":["`scripts/census/lib/engine.mjs:190` classifies a match by `lineOf(match.index)`. Any violating call"]},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/events/connector-events.ledger.json": {"count":2,"sections":[0,7],"contexts":["`&[]` — the generator's input, `scripts/events/connector-events.ledger.json`, has been"]},
     "scripts/generate-template-checksums.mjs": {
       "count": 4,

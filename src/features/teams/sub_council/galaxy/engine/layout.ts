@@ -1,6 +1,6 @@
 // The field, laid out once per dataset.
 //
-// Ported verbatim in geometry from `docs/design/council-reference/index.html`
+// Ported verbatim in geometry from `.claude/council-reference/index.html`
 // (the layout block at :401-461): ten globular clusters relaxed until none
 // collide, categories as sub-discs with rank 1 nearest the core, subcategory
 // wedges A to Z clockwise from twelve, subjects spiralling outward inside

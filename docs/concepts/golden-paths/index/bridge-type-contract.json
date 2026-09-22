@@ -67,7 +67,8 @@
     "package.json": {"count":1,"sections":[3],"contexts":["- **`npm run census:check`** — inside `npm run check` (`package.json`). Hosts `bigint-binding-field`,"]},
     "personas-cloud/packages/shared/src/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["(exact) → **20** in `personas-cloud/packages/shared/src/types.ts:5` → **18** in"],"resolved":false},
     "personas-web/src/lib/types.ts": {"count":2,"sections":[6],"lines":["5","2"],"contexts":["`personas-web/src/lib/types.ts:5`. The two fields lost at the last hop are `permissionPolicy` and"],"resolved":false},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["(`scripts/census/rules.json`, owned by [persisted-model-struct](./persisted-model-struct.md))"]},
+    "rules.json": {"count":1,"sections":[9],"contexts":["\"do not edit `rules.json` directly\" clause was written to prevent, arriving through a different door."],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[],"contexts":["(`scripts/census/rules.json`, owned by [persisted-model-struct](./persisted-model-struct.md))"]},
     "scripts/check-unused-bindings.sh": {"count":8,"sections":[3,5,7,8,9],"lines":["17"],"contexts":["- **`scripts/check-unused-bindings.sh`** (`ci.yml:179`, `if: always()`, no `continue-on-error`) — asks"]},
     "src-tauri/": {"count":3,"sections":[8,9],"contexts":["under `src-tauri/`, the **4,829** `.ts`/`.tsx` files under `src/`, all **1,033** generated binding files"],"resolved":false,"isDir":true},
     "src-tauri/.cargo/config.toml": {

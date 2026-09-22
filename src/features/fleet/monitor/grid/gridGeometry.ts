@@ -24,20 +24,32 @@ import type { PersonaCardModel } from '../monitorModel';
  * source; `TILE_W` / `QUEUE_TILE_W` are its names in the two places the board
  * grew up calling it something else.
  *
- * 172 wide, and TWO ROWS tall: a title row (`typo-body`, the whole width, one
- * line) over a thin secondary row (`typo-caption`, muted). The single-row tile
- * at 152×38 could not hold a real task title — it truncated the part that
- * distinguished one session from the next — and the extra 20px plus the second
- * row are what buy a readable title and its handpicked metadata without
- * competing for one line.
+ * 172 wide, and TWO ROWS tall: a TITLE row (`typo-body`, the whole width, one
+ * line, `TITLE_ROW_H`) over a SYMBOL row (`SYMBOL_ROW_H`, icon-sized
+ * indicators, no text). The single-row tile at 152×38 could not hold a real
+ * task title — it truncated the part that distinguished one session from the
+ * next — and a first two-row node still shared the title row with a glyph, a
+ * chip and side columns, leaving the title about 100 px. Now the title row is
+ * the title alone and everything else is a symbol on the second row.
  */
 export const NODE_W = 172;
 export const TILE_W = NODE_W;
-/** Persona node: title row + meta row. */
-export const TILE_H = 48;
+/** The title row: one `typo-body` line. */
+export const TITLE_ROW_H = 20;
+/** The symbol row: 16 px symbols with a hair of air. */
+export const SYMBOL_ROW_H = 18;
+/**
+ * The room between the rows: a 1 px hairline divider and the air around it.
+ * The body is `justify-between` — title pinned to the top, symbols to the
+ * bottom — so this is what keeps the title from sitting on the symbol row
+ * (the operator's 2026-09-21 note: "Task title sticks too close together").
+ */
+export const NODE_DIVIDER_H = 4;
+/** Persona node: title row + divider room + symbol row + 4 px of padding above and below. */
+export const TILE_H = TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 8;
 /** Sessions are visibly subordinate to the personas above them — same width,
- *  a little less height. Not the same kind of citizen. */
-export const SESSION_TILE_H = 44;
+ *  a little less height (3 px of padding, not 4). Not the same kind of citizen. */
+export const SESSION_TILE_H = TITLE_ROW_H + NODE_DIVIDER_H + SYMBOL_ROW_H + 6;
 /** The queue boards paint the same session node — one geometry, not a wider
  *  cousin (it was 232×30 before the node). */
 export const QUEUE_TILE_W = NODE_W;

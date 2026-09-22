@@ -5,31 +5,46 @@
 // of which belong in the board's opening commit), and it is the frame the
 // loaded strip renders into, so the swap moves nothing.
 //
-// The frame is two rows:
-//   1. HEADER — the label and the plan count on the left; the auto-rotate
-//      controls, then the refresh control and its "as of" stamp, on the
-//      right. Under a subtle border. (The controls used to be portaled into
-//      the Activity card's header; they belong to the strip they act on.)
-//   2. SLOTS — five equal columns, one per plan. A plan is a small card:
-//      its account on top, its two meters beneath. One stored plan fills one
-//      slot; the operator adds the next four one at a time. Empty slots stay
-//      empty and keep their width, so a plan never stretches to a width it
-//      will not have once its neighbours arrive. The active plan's card is
-//      highlighted; the account name is INSIDE the card, aligned with its own
-//      meters, which is what a column layout is for.
+// The frame is two parts:
+//   1. HEADER — the label and the stored-plan count on the left; the
+//      auto-rotate controls, then the refresh control and its "as of" stamp, on
+//      the right. Under a subtle border. It is permanent: it renders before the
+//      first read, during it and after it.
+//   2. ROWS — ONE 28px ROW PER ACCOUNT, across every provider, flowing in an
+//      auto-fill grid (`ROW_GRID`): as many 400px-minimum columns (the email takes all of it but the icon and the compact right-hand stats group) as the width
+//      allows, so one account and eight both stay compact and the strip never
+//      scrolls sideways. A row is a single line — provider mark, account, the
+//      5-hour cluster, the 7-day cluster — and its bottom edge IS the 7-day
+//      meter (`AccountRows`). There are no cards and no slots: a row that does
+//      not exist takes no room.
 
 import type { ReactNode } from 'react';
 import { Gauge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
-/** The strip is designed for this many plans; more would need a second row. */
+/** The stored-plan count the header chip is read against ("n/5 plans"). A design number, not a backend cap: the rows themselves have no slot limit. */
 export const PLAN_SLOTS = 5;
 
-/** The five-column slot grid. */
-export const SLOT_GRID = 'grid grid-cols-5 gap-2';
+/**
+ * The row grid: FIVE accounts per strip row, a sixth wraps. Each column's floor
+ * is a fifth of the strip (`(100% − 4 gaps) / 5`), so exactly five fit at any
+ * normal width; the 14rem floor under it lets a narrow window drop to fewer
+ * columns instead of scrolling sideways. Rows are exactly 28px.
+ */
+export const ROW_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(max(14rem,calc((100%_-_4rem)/5)),1fr))] auto-rows-[1.75rem] gap-x-4 gap-y-1';
 
-/** One plan card's meter row: time-left label · meter · percent · pace. */
-export const METER_GRID = 'grid grid-cols-[2rem_minmax(0,1fr)_2.25rem_0.875rem] items-center gap-x-1.5';
+/** One row's box — shared by the real row and its ghost so the swap moves nothing. */
+export const ROW_BOX = 'relative flex h-7 min-w-0 items-center gap-1.5 overflow-hidden rounded-input px-1.5';
+
+/** The live account's cell: a subtle success wash, so it is found at a glance. */
+export const ROW_ACTIVE = 'bg-status-success/10';
+
+/**
+ * Every other cell — standby plans, read-only providers, empty providers, the
+ * loading ghosts: a subtle black wash, so the content sits IN something rather
+ * than floating on the strip.
+ */
+export const ROW_REST = 'bg-black/20';
 
 export function StripFrame({
   planCount, titleRight, controls, children,
@@ -70,94 +85,41 @@ export function StripFrame({
           </span>
         </span>
       </div>
-      <div className={`${SLOT_GRID} px-3 py-1.5`}>{children}</div>
+      <div className={`${ROW_GRID} px-3 py-1.5`}>{children}</div>
     </div>
   );
 }
 
 /**
- * One slot's chrome: the card border, an optional header line, the rows.
- *
- * A RECEDED CARD IS THE DEFAULT, not the exception. The strip answers one
- * question at a glance — *how much of the plan I am billing to right now is
- * left* — and five equally-bright cards make the eye do the work of finding
- * which one that is. So every card that is not the live login sits back at half
- * opacity and comes to full on hover or on keyboard focus; the active card
- * never recedes. This used to dim only a quarantined plan, which meant the four
- * cards competing hardest with the answer were the four in perfect health.
- *
- * `focus-within`, not just `hover`: a card's Switch and Forget controls are
- * reachable by tab, and a control that is only legible under a pointer is not
- * a smaller feature — it is an inoperable one for anyone not using one.
+ * A ghost row: the real row's geometry — mark, name, two clusters, the bottom
+ * track — with nothing in it. Static (no pulse, no spinner) and faded in late,
+ * so a warm strip never shows it.
  */
-export function PlanCard({
-  header, active = false, recede = false, children, ...rest
-}: {
-  header: ReactNode;
-  active?: boolean;
-  /** Not the live login — sit back until looked at. */
-  recede?: boolean;
-  children: ReactNode;
-} & Record<`data-${string}`, string | boolean | undefined>) {
-  return (
-    <div
-      className={`flex min-w-0 flex-col gap-1 rounded-input border px-2 py-1 transition-opacity ${
-        active ? 'border-primary/40 bg-primary/10' : 'border-border/60 bg-foreground/[0.015]'
-      } ${recede ? 'opacity-50 hover:opacity-100 focus-within:opacity-100' : ''}`}
-      {...rest}
-    >
-      <div className="flex h-4 min-w-0 items-center gap-1 typo-caption">{header}</div>
-      {children}
-    </div>
-  );
-}
-
-/** A ghost card: header bar + two meter silhouettes. */
-export function GhostCard() {
-  const bar = 'rounded bg-primary/[0.06]';
+export function GhostRow() {
+  const bar = 'h-[0.7em] rounded bg-primary/[0.06]';
   return (
     <div
       aria-hidden
-      className="flex min-w-0 flex-col gap-1 rounded-input border border-border/60 bg-foreground/[0.015] px-2 py-1 animate-fade-in"
+      className={`${ROW_BOX} ${ROW_REST} animate-fade-in typo-body`}
       style={{ animationDelay: '150ms' }}
+      data-testid="fleet-usage-ghost-row"
     >
-      <div className="flex h-4 items-center typo-caption">
-        <span className={`h-[0.7em] w-28 ${bar}`} />
-      </div>
-      {[0, 1].map((i) => (
-        <div key={i} className={`${METER_GRID} h-4`}>
-          <span className={`h-[0.7em] w-5 ${bar} typo-caption`} />
-          <span className="h-2 w-full rounded-full bg-foreground/10" />
-          <span className={`h-[0.7em] w-full ${bar} typo-caption`} />
-          <span />
-        </div>
-      ))}
+      <span className="h-4 w-4 flex-shrink-0 rounded-interactive bg-primary/[0.06]" />
+      <span className={`min-w-0 flex-1 ${bar}`} />
+      <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+        <span className={`w-12 ${bar}`} />
+        <span className={`w-12 ${bar}`} />
+      </span>
+      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-border/40" />
     </div>
   );
 }
 
-/** The slots that hold no plan: present, empty, the same width. */
-export function EmptySlots({ from }: { from: number }) {
-  return (
-    <>
-      {Array.from({ length: Math.max(0, PLAN_SLOTS - from) }, (_, i) => (
-        <div
-          key={from + i}
-          aria-hidden
-          className="rounded-input border border-dashed border-border/40"
-          data-testid="fleet-usage-empty-slot"
-        />
-      ))}
-    </>
-  );
-}
-
-/** The chunk fallback: frame + one ghost card + four empty slots. */
+/** The chunk fallback: the frame and one ghost row. */
 export function UsageStripFallback() {
   return (
     <StripFrame>
-      <GhostCard />
-      <EmptySlots from={1} />
+      <GhostRow />
     </StripFrame>
   );
 }

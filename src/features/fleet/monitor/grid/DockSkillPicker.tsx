@@ -5,11 +5,20 @@
 //
 // Same component, same model hook, same adoption door as the tab: a filled
 // cell PICKS (project + skill land as chips), an empty cell ADOPTS first and
-// then picks, and the skill name picks it in the most sensible project (the
-// chip already chosen, else the first repo that has it). The registry model
-// is only fetched while this popover is mounted — closed, it costs nothing.
-import { useCallback, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+// then picks. Two differences from the tab, both deliberate:
+//
+//   · Only skills installed SOMEWHERE are rows. The tab lists the whole library
+//     because adopting into a fresh project is its job; here a row nobody has
+//     installed is a row with nothing to pick.
+//   · The skill name is a label, not a pick. It explains itself (the shared
+//     tooltip carries the description) and nothing more — it used to load the
+//     skill into "the most sensible project", which put a project in the
+//     composer that the operator never pointed at.
+//
+// The registry model is only fetched while this popover is mounted — closed,
+// it costs nothing.
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { LayoutGrid, X } from 'lucide-react';
 
 import { RegistryHeatmap } from '@/features/plugins/dev-tools/sub_skills/registry/RegistryHeatmap';
 import { useSkillAdoption } from '@/features/plugins/dev-tools/sub_skills/registry/useSkillAdoption';
@@ -19,7 +28,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export interface DockSkillPickerProps {
-  /** The console's current `@project`, if any — biases a name-click pick. */
+  /** The console's current `@project`, if any — resolves which workspace is shown. */
   activeProjectId: string | null;
   onPick: (projectId: string, skill: string) => void;
   onClose: () => void;
@@ -29,7 +38,12 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
   const { t } = useTranslation();
   const quickT = t.plugins.fleet_quick_dispatch;
   const [tick, setTick] = useState(0);
-  const model = useSkillsRegistry(activeProjectId, tick);
+  const registry = useSkillsRegistry(activeProjectId, tick);
+  // Installed-somewhere only (see the header). The count is the model's own,
+  // so a skill adopted from inside the picker keeps its row. Memoized on the
+  // hook's own memoized list: the dock re-renders on every keystroke.
+  const installed = useMemo(() => registry.skills.filter((s) => s.adoptedCount > 0), [registry.skills]);
+  const model = { ...registry, skills: installed };
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, true, onClose);
 
@@ -43,15 +57,7 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
     pick(projectId, skill);
   }, [pick]);
   const { adopting, adopt } = useSkillAdoption(onAdopted);
-
-  // Name click: the chosen project when the skill is installed there, else
-  // the first column that has it. A skill installed nowhere has no pick.
-  const pickByName = useCallback((skill: string) => {
-    const preferred = activeProjectId && model.cell(skill, activeProjectId).adopted ? activeProjectId : null;
-    const fallback = model.columns.find((c) => model.cell(skill, c.id).adopted)?.id ?? null;
-    const target = preferred ?? fallback;
-    if (target) pick(target, skill);
-  }, [activeProjectId, model, pick]);
+  const use = useCallback((skill: string, projectId: string) => pick(projectId, skill), [pick]);
 
   return (
     // An anchored popover, not a modal: no scrim, no focus trap, the console
@@ -64,7 +70,7 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
       role="dialog"
       aria-label={quickT.skill_picker_title}
       data-testid="quick-dispatch-skill-picker"
-      className="animate-fade-slide-in flex flex-col overflow-hidden rounded-card border border-border bg-background shadow-elevation-3"
+      className="animate-fade-slide-in flex max-h-[min(34rem,62vh)] flex-col overflow-hidden rounded-card border border-border bg-background shadow-elevation-3"
       onKeyDown={(e) => {
         // Escape closes the picker, not the dock beneath it.
         if (e.key === 'Escape') {
@@ -74,9 +80,25 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
         }
       }}
     >
-      <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
-        <span className="typo-caption text-foreground">{quickT.skill_picker_title}</span>
-        <span className="min-w-0 flex-1 truncate typo-label text-foreground">{quickT.skill_picker_hint}</span>
+      {/* Title band — the app's panel-header language (DevToolsPageHeader,
+          AthenaPanel): primary glyph + typo-heading title, the workspace the
+          columns come from, the how-to as a caption under it (it used to be
+          squeezed onto the title line and truncated mid-sentence), one
+          primary/10 hairline. */}
+      <div className="flex flex-shrink-0 items-start gap-2.5 border-b border-primary/10 py-2.5 pl-3 pr-1.5">
+        <LayoutGrid className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="typo-heading flex-shrink-0 text-foreground">{quickT.skill_picker_title}</h2>
+            {registry.header && (
+              <span className="typo-label inline-flex min-w-0 items-center gap-1.5 rounded-pill border border-primary/15 bg-secondary/40 px-2 py-0.5 text-foreground">
+                <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: registry.header.color }} aria-hidden />
+                <span className="truncate">{registry.header.name}</span>
+              </span>
+            )}
+          </div>
+          <p className="typo-caption mt-0.5 text-foreground">{quickT.skill_picker_hint}</p>
+        </div>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -87,13 +109,14 @@ export function DockSkillPicker({ activeProjectId, onPick, onClose }: DockSkillP
           <X className="h-3.5 w-3.5" aria-hidden />
         </Button>
       </div>
-      <div className="h-[min(26rem,50vh)] p-1.5">
+      <div className="flex min-h-0 flex-1 flex-col">
         <RegistryHeatmap
+          bare
           model={model}
           adopting={adopting}
           onAdopt={adopt}
-          onUse={(skill, projectId) => pick(projectId, skill)}
-          onOpenInfo={pickByName}
+          onUse={use}
+          emptyHint={quickT.skill_picker_empty}
         />
       </div>
     </div>

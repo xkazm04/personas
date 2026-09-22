@@ -20,8 +20,9 @@ use super::read_ops::{
 };
 use super::research;
 use super::types::{
-    CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched, PointAt,
-    CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS, CANVAS_PANEL_SPEC_VERSION,
+    CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched,
+    NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
+    CANVAS_PANEL_SPEC_VERSION,
 };
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -34,19 +35,22 @@ use crate::error::AppError;
 /// not `published` is left alone — `draft` means he never pressed the pad's
 /// "turn into goals" button (she reached for the note herself, which is
 /// allowed), and `in_progress` means a card is already out there.
-fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) {
+///
+/// Returns whether the note actually moved, so the caller can report the move
+/// in [`Dispatched::notepad_status_changes`] and the pad is told.
+fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) -> bool {
     use crate::db::models::NoteStatus;
     let current = match crate::db::repos::dev_tools::get_note(db, note_id) {
         Ok(n) => n,
         Err(e) => {
             tracing::warn!(note_id, error = %e, "notepad: could not read note for goals dispatch");
-            return;
+            return false;
         }
     };
     if current.status != NoteStatus::Published {
-        return;
+        return false;
     }
-    if let Err(e) = crate::db::repos::dev_tools::set_status(
+    match crate::db::repos::dev_tools::set_status(
         db,
         note_id,
         NoteStatus::InProgress,
@@ -55,7 +59,11 @@ fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) {
         None,
         None,
     ) {
-        tracing::warn!(note_id, error = %e, "notepad: goals dispatch status stamp failed");
+        Ok(_) => true,
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "notepad: goals dispatch status stamp failed");
+            false
+        }
     }
 }
 
@@ -1734,7 +1742,12 @@ pub fn dispatch_with_sys(
                         // stop offering "turn into goals" the moment a card is
                         // on screen, or a second card duplicates the first.
                         if let Some(nid) = note_id.as_deref() {
-                            mark_note_in_flight(db, nid);
+                            if mark_note_in_flight(db, nid) {
+                                out.notepad_status_changes.push(NoteStatusChange {
+                                    note_id: nid.to_string(),
+                                    status: crate::db::models::NoteStatus::InProgress,
+                                });
+                            }
                         }
                     }
                     Err(reason) => {
@@ -1800,6 +1813,57 @@ pub fn dispatch_with_sys(
                             .push(format!("rejected show_note_suggestions: {reason}"));
                         cleaned_lines.push(line);
                         continue;
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // `comment_on_note` (note-overview-cycle): Athena posts a reply
+            // on a note's thread. Auto-fire and deliberately so — the thread
+            // IS a conversation, the operator asked her into it (the pad's
+            // Comment action is a pointer turn telling her to answer with this
+            // op), and a comment changes no note, no status, no body. The
+            // result lands as a System episode like a read op's, so a refused
+            // comment (unknown note, empty body) is an ANSWER she reads next
+            // turn rather than a silent drop.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "comment_on_note" => {
+                let note_id = env
+                    .params
+                    .get("note_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let body_md = env
+                    .params
+                    .get("body_md")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let Some(db) = sys_db else {
+                    note_read_op_result(
+                        pool,
+                        session_id,
+                        "comment_on_note",
+                        note_id,
+                        "The comment was not posted: the notepad is not reachable from this \
+                         turn. Tell the operator rather than retrying.",
+                    );
+                    out.warnings
+                        .push("comment_on_note: the notepad is not reachable".into());
+                    continue;
+                };
+                match crate::companion::note_ops::comment_on_note(db, note_id, body_md) {
+                    crate::companion::note_ops::CommentOnNote::Posted(comment) => {
+                        note_read_op_result(
+                            pool,
+                            session_id,
+                            "comment_on_note",
+                            &comment.note_id,
+                            "Posted on the note's thread. The operator sees it on the pad.",
+                        );
+                        out.note_comments.push(comment);
+                    }
+                    crate::companion::note_ops::CommentOnNote::Refused(why) => {
+                        note_read_op_result(pool, session_id, "comment_on_note", note_id, &why);
+                        out.warnings.push(format!("comment_on_note refused: {why}"));
                     }
                 }
             }

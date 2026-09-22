@@ -67,6 +67,7 @@ pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;
 pub mod twin_style;
+pub mod twin_voice;
 pub mod use_case_scan;
 pub mod webbuild;
 pub mod workflows;

@@ -260,7 +260,7 @@
       ],
       "resolved": false
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolved":false},
     "src-tauri/**": {
       "count": 1,
       "sections": [9],

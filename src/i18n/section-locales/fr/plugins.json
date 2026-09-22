@@ -3013,7 +3013,15 @@
     "council_state_stalled": "Bloquée après le round 3",
     "council_state_unknown": "État non reconnu",
     "council_tier_major": "Principale",
-    "council_tier_toggle_label": "Marquer {name} comme fonctionnalité principale"
+    "council_tier_toggle_label": "Marquer {name} comme fonctionnalité principale",
+    "skills_registry_filter_hint": "Cliquez pour n’afficher que les compétences présentes ici",
+    "skills_registry_filter_active_hint": "Cliquez à nouveau pour afficher toutes les compétences",
+    "skills_registry_filter_clear": "Effacer le filtre {name}",
+    "skills_registry_filter_empty": "Aucune compétence dans {name} pour l’instant",
+    "skills_registry_empty_title": "Aucune compétence à afficher",
+    "skills_registry_name_details": "Cliquez pour voir tous les détails",
+    "skills_registry_legend_recent": "exécutée ces 30 derniers jours",
+    "skills_registry_context_coverage": "{covered} contextes sur {contexts} touchés ({pct})"
   },
   "dev_triage": {
     "action_label": "Action :",
@@ -3489,7 +3497,16 @@
     "skill_picker_close": "Fermer le sélecteur de compétences",
     "skill_picker_hint": "Cliquez sur une cellule pour charger cette compétence et ce projet dans la console. Une cellule vide installe d'abord la compétence.",
     "skill_picker_open": "Choisir une compétence dans le registre",
-    "skill_picker_title": "Registre des compétences"
+    "skill_picker_title": "Registre des compétences",
+    "skill_picker_empty": "Aucun projet de cet espace de travail n’a encore de compétence installée — adoptez-en une dans Outils dev → Compétences → Registre.",
+    "estimate_assumed_model": "Calculé avec le modèle par défaut de la CLI. Choisissez un modèle pour son tarif propre.",
+    "estimate_cost_label": "Dépense estimée pour cet envoi",
+    "estimate_disclaimer": "Une estimation fondée sur les tarifs publiés des modèles et la taille habituelle d'une session — pas un devis.",
+    "estimate_eta_label": "Durée estimée jusqu'à la fin",
+    "rest_tally_needs_you": "{count} vous attendent",
+    "rest_tally_working": "{count} en cours",
+    "status_armed": "PRÊT",
+    "status_standby": "EN ATTENTE"
   },
   "fleet": {
     "activity_empty": "Aucune session récente trouvée",

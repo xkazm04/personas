@@ -108,7 +108,8 @@
       ],
       "resolved": false
     },
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["**Publish-only; do NOT edit `scripts/census/rules.json` — the orchestrator merges this block.**"]},
+    "rules.json": {"count":1,"sections":[9],"contexts":["`rules.json`). `--check` exits **0** at `files 84 / matches 122`; all four excludes match live files"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Publish-only; do NOT edit `scripts/census/rules.json` — the orchestrator merges this block.**"]},
     "src-tauri/clippy.toml": {"count":1,"sections":[7],"contexts":["There is **no gate**: no `[lints]` table in any of the 5 `Cargo.toml`, no `clippy.toml`, no"],"resolvedFrom":"basename","verbatim":"clippy.toml"},
     "src-tauri/engine/src/event_registry.rs": {
       "count": 1,

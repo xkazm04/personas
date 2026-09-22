@@ -6,7 +6,7 @@
  * scan found 16 category values and exactly ONE industry-ish tag (`ecommerce`).
  * So the Atlas top level is 7 balanced DOMAINS that fold every real category in
  * with no orphans (the shipped role grouping orphaned 10/30). Each domain has a
- * Leonardo symbolic illustration (public/illustrations/explore/domain-<id>.png).
+ * Leonardo symbolic illustration (public/illustrations/explore/domain-<id>.webp).
  *
  * Counts below are the observed published-template distribution — the tiles are
  * genuinely "balanced per the data".
@@ -26,43 +26,43 @@ export const DOMAINS: Domain[] = [
     id: 'engineering', label: 'Engineering', color: '#6366f1',
     blurb: 'Ship, review, and operate software — dev, DevOps, and security agents.',
     categories: ['development', 'devops', 'security', 'testing', 'quality', 'maintenance', 'review', 'build'],
-    illustration: '/illustrations/explore/domain-engineering.png',
+    illustration: '/illustrations/explore/domain-engineering.webp',
   },
   {
     id: 'research', label: 'Research & Intelligence', color: '#06b6d4',
     blurb: 'Gather signal, summarize, and keep a source of truth current.',
     categories: ['research', 'data', 'analytics', 'ai', 'analysis', 'reporting', 'discovery', 'ingestion', 'tracking'],
-    illustration: '/illustrations/explore/domain-research.png',
+    illustration: '/illustrations/explore/domain-research.webp',
   },
   {
     id: 'content', label: 'Content Studio', color: '#ec4899',
     blurb: 'Draft, produce, and publish on-brand content and docs.',
     categories: ['content', 'documentation', 'education', 'curation', 'editing', 'writing', 'publishing', 'generation'],
-    illustration: '/illustrations/explore/domain-content.png',
+    illustration: '/illustrations/explore/domain-content.webp',
   },
   {
     id: 'revenue', label: 'Sales & Marketing', color: '#f59e0b',
     blurb: 'Win and grow customers — pipeline, campaigns, and storefronts.',
     categories: ['sales', 'marketing', 'ecommerce', 'growth', 'outreach', 'collections'],
-    illustration: '/illustrations/explore/domain-revenue.png',
+    illustration: '/illustrations/explore/domain-revenue.webp',
   },
   {
     id: 'finance', label: 'Finance', color: '#10b981',
     blurb: 'Invoicing, spend, reconciliation, and financial reporting.',
     categories: ['finance'],
-    illustration: '/illustrations/explore/domain-finance.png',
+    illustration: '/illustrations/explore/domain-finance.webp',
   },
   {
     id: 'operations', label: 'Operations', color: '#8b5cf6',
     blurb: 'Keep work moving — productivity, projects, scheduling, and pipelines.',
     categories: ['productivity', 'personal_productivity', 'project_management', 'operations', 'automation', 'integration', 'pipeline', 'scheduling', 'monitoring', 'workflow', 'configuration', 'strategy', 'planning', 'realtime', 'archive'],
-    illustration: '/illustrations/explore/domain-operations.png',
+    illustration: '/illustrations/explore/domain-operations.webp',
   },
   {
     id: 'people', label: 'Customer & People', color: '#f43f5e',
     blurb: 'Support customers and run the team — success, comms, HR, and legal.',
     categories: ['support', 'email', 'communication', 'hr', 'legal', 'notifications', 'messaging', 'response', 'intake', 'email_processing', 'recruiting_ops'],
-    illustration: '/illustrations/explore/domain-people.png',
+    illustration: '/illustrations/explore/domain-people.webp',
   },
 ];
 
@@ -91,7 +91,7 @@ export const domainById = (id: string) => DOMAINS.find((d) => d.id === id);
 
 /** Theme-aware illustration: dark neon on dark themes, light line-art on light. */
 export function domainArt(d: Domain, isDark: boolean): string {
-  return isDark ? d.illustration : d.illustration.replace(/\.png$/, '-light.png');
+  return isDark ? d.illustration : d.illustration.replace(/\.webp$/, '-light.webp');
 }
 
 /** Resolve a domain's translated label (falls back to the English literal). */

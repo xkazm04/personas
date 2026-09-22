@@ -38,6 +38,15 @@
     "**whether a toast is the right surface, its tone and its duration** →"
   ],
   "citations": {
+    "Composer.tsx": {
+      "count": 3,
+      "sections": [7,9],
+      "lines": ["359","358-361"],
+      "contexts": [
+        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
+      ],
+      "resolved": false
+    },
     "ConnectionStatusIndicator.tsx": {"count":1,"sections":[7],"lines":["33-38"],"contexts":["The same shape converges. `personas-web`'s `ConnectionStatusIndicator.tsx:33-38` reports"],"resolved":false},
     "ExecuteToast.tsx": {
       "count": 1,
@@ -102,7 +111,8 @@
       "resolved": false
     },
     "plugins/research-lab/shared/useIngestSource.ts": {"count":1,"sections":[7],"lines":["24"],"contexts":["| `plugins/research-lab/shared/useIngestSource.ts:24` | `'Indexing source…'` |"],"resolved":false},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
+    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
     "scripts/report-hardcoded-ui-strings.mjs": {
       "count": 2,
       "sections": [7],
@@ -258,16 +268,6 @@
       "verbatim": "GlobalExecutionList.tsx"
     },
     "src/features/overview/sub_observability/components/AlertToastContainer.tsx": {"count":4,"sections":[3,5,7],"contexts":["`src/features/overview/sub_observability/components/AlertToastContainer.tsx`, which has"]},
-    "src/features/plugins/companion/Composer.tsx": {
-      "count": 3,
-      "sections": [7,9],
-      "lines": ["359","358-361"],
-      "contexts": [
-        "| **JSX-conditional (17)** | `CloudConnectionForm.tsx:123` · `ConnectorTableScopeRow.tsx:109` · `WalkthroughOfferWidget.tsx:88` · `GuidedTour.tsx:477` · `ExecutionMetricsDashboard.tsx:73` · `GlobalEx…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
-    },
     "src/features/plugins/companion/NarrationThread.tsx": {
       "count": 5,
       "sections": [5,7,9],

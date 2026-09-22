@@ -116,8 +116,9 @@
     "migrations/138_file_watch_config_unique_project.ts": {"count":1,"sections":[6],"lines":["4-11"],"contexts":["`migrations/138_file_watch_config_unique_project.ts:4-11`, read by hand, names the check-then-act"],"resolved":false},
     "migrations/143_fix_ideas_effort_constraint.ts": {"count":1,"sections":[6],"contexts":["table-rebuild-on-a-cascade-parent (`migrations/143_fix_ideas_effort_constraint.ts`) issues"],"resolved":false},
     "retrieval_events.rs": {"count":1,"sections":[8],"lines":["499"],"contexts":["(`retrieval_events.rs:499`), which has no SQLite analogue. So a caller that must distinguish"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["entry, merged by the orchestrator — **never edited into `rules.json` here**:"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **44** rules in `scripts/census/rules.json` were read. **None keys on a conflict clause, an"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **44** rules in `scripts/census/rules.json` were read. **None keys on a conflict clause, an"]},
     "src-tauri/": {"count":2,"sections":[8],"contexts":["**Sweep size.** All **963 `.rs` files under `src-tauri/`** (exactly `rust.files` in"],"resolved":false,"isDir":true},
     "src-tauri/**.rs": {"count":1,"sections":[6],"contexts":["**Distribution — all 143 conflict-handling `INSERT` statements in `src-tauri/**.rs`.**"],"resolved":false},
     "src-tauri/db/src/lib.rs": {

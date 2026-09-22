@@ -21,9 +21,11 @@ pub mod autopilot;
 /// production callers by design, so it costs nothing in a shipped build.
 #[cfg(test)]
 pub mod bench;
+pub mod budgets;
 pub mod classify;
 pub mod claude_accounts;
 pub mod claude_usage;
+pub mod cli_usage;
 pub mod commands;
 pub mod companion_api;
 pub mod debug_log;

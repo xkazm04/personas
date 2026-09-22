@@ -67,7 +67,7 @@ pub fn create_workspace(
 
     // The live door for the one-group-per-workspace invariant: a workspace
     // owns exactly one cross-project group, and it owns it from the instant it
-    // exists. Pairs with the backfill in `e39_workspace_team_binding` exactly
+    // exists. Pairs with the backfill in `e42_workspace_team_binding` exactly
     // as `project_identity::register_project` pairs `ensure_project_team` with
     // `e14_project_team_invariant` one level down.
     //

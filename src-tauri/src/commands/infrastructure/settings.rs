@@ -144,7 +144,11 @@ pub fn set_app_setting(
     // dispatch queue can fill NOW, and a lowered one is simply honoured by the
     // next admission. Fire-and-forget like the concurrency cap below; placed
     // before that block because it moves `app`.
-    if key == settings_keys::FLEET_MAX_PARALLEL_SESSIONS {
+    // The budgets' kill switch rides the same announcement: flipping it changes
+    // what may start now, in either direction.
+    if key == settings_keys::FLEET_MAX_PARALLEL_SESSIONS
+        || key == settings_keys::FLEET_DYNAMIC_BUDGETS
+    {
         crate::commands::fleet::queue::on_cap_changed(&app);
     }
 

@@ -225,6 +225,11 @@ pub enum Mechanism {
     /// A profile-less capability execution is pinned to the sonnet default
     /// rather than riding the CLI account default.
     CapabilityModelFloor,
+    /// The charter's declared difficulty and the `model_routing` cascade fill
+    /// whatever the override did not name, re-serialising the profile before
+    /// the run is queued. Sits between `CharterModelOverride` (which wins) and
+    /// `CapabilityModelFloor` (which only fires when nothing else wrote one).
+    CharterDifficultyRoutingFill,
     /// The team orchestrator's own copy of the use-case `model_override`.
     TeamUseCaseModelOverride,
     /// The team orchestrator's own copy of the capability model floor.
@@ -357,18 +362,25 @@ pub enum Mechanism {
     /// ever**, or replace the exponential backoff delay. Wired end to end;
     /// `healing_knowledge` measured 0 rows.
     KnowledgeHintOverridesRetry,
+    /// `personas::set_enabled` is the dedicated door for the whole-agent
+    /// on/off switch. The attention loop's roster query joins on
+    /// `personas.enabled = 1`, so flipping it off stops the persona serving
+    /// anything at all — the broadest suppression there is. Distinct from the
+    /// two breakers, which reach the same column through their own paths.
+    PersonaEnabledSwitch,
 }
 
 impl Mechanism {
     /// Every mechanism. [`Self::assert_all_covered`] proves this covers the
     /// enum at compile time.
-    pub const ALL: [Mechanism; 47] = [
+    pub const ALL: [Mechanism; 49] = [
         Mechanism::ByomPolicySubstitution,
         Mechanism::FailoverCandidateModel,
         Mechanism::RemoteHttpEngineBypass,
         Mechanism::ResumeArgvDropsModelAndEffort,
         Mechanism::CharterModelOverride,
         Mechanism::CapabilityModelFloor,
+        Mechanism::CharterDifficultyRoutingFill,
         Mechanism::TeamUseCaseModelOverride,
         Mechanism::TeamCapabilityModelFloor,
         Mechanism::PipelineNodeModelOverride,
@@ -410,6 +422,7 @@ impl Mechanism {
         Mechanism::PersonaFailureBreaker,
         Mechanism::NoDeliveryBreaker,
         Mechanism::KnowledgeHintOverridesRetry,
+        Mechanism::PersonaEnabledSwitch,
     ];
 
     /// Compile-time exhaustiveness guard for [`Self::ALL`], in the shape
@@ -426,6 +439,7 @@ impl Mechanism {
                 Mechanism::ResumeArgvDropsModelAndEffort => {}
                 Mechanism::CharterModelOverride => {}
                 Mechanism::CapabilityModelFloor => {}
+                Mechanism::CharterDifficultyRoutingFill => {}
                 Mechanism::TeamUseCaseModelOverride => {}
                 Mechanism::TeamCapabilityModelFloor => {}
                 Mechanism::PipelineNodeModelOverride => {}
@@ -467,6 +481,7 @@ impl Mechanism {
                 Mechanism::PersonaFailureBreaker => {}
                 Mechanism::NoDeliveryBreaker => {}
                 Mechanism::KnowledgeHintOverridesRetry => {}
+                Mechanism::PersonaEnabledSwitch => {}
             }
             i += 1;
         }
@@ -481,6 +496,9 @@ impl Mechanism {
             Self::ResumeArgvDropsModelAndEffort => "resume argv drops --model and pins --effort",
             Self::CharterModelOverride => "a charter's model_override replaces the profile",
             Self::CapabilityModelFloor => "a profile-less capability run is pinned to the default",
+            Self::CharterDifficultyRoutingFill => {
+                "charter difficulty and the routing cascade fill the unnamed half of the profile"
+            }
             Self::TeamUseCaseModelOverride => "the team orchestrator's use-case model override",
             Self::TeamCapabilityModelFloor => "the team orchestrator's capability model floor",
             Self::PipelineNodeModelOverride => "a pipeline node's model_profile_override",
@@ -526,6 +544,7 @@ impl Mechanism {
             Self::PersonaFailureBreaker => "the failure breaker disables the persona",
             Self::NoDeliveryBreaker => "the no-delivery breaker disables the persona",
             Self::KnowledgeHintOverridesRetry => "a KB hint suppresses or re-times the retry",
+            Self::PersonaEnabledSwitch => "the enabled switch takes the persona off the roster",
         }
     }
 
@@ -538,6 +557,7 @@ impl Mechanism {
             | Self::ResumeArgvDropsModelAndEffort
             | Self::CharterModelOverride
             | Self::CapabilityModelFloor
+            | Self::CharterDifficultyRoutingFill
             | Self::TeamUseCaseModelOverride
             | Self::TeamCapabilityModelFloor
             | Self::PipelineNodeModelOverride
@@ -578,7 +598,8 @@ impl Mechanism {
             | Self::HealingSessionResume => Dimension::Session,
             Self::PersonaFailureBreaker
             | Self::NoDeliveryBreaker
-            | Self::KnowledgeHintOverridesRetry => Dimension::Suppression,
+            | Self::KnowledgeHintOverridesRetry
+            | Self::PersonaEnabledSwitch => Dimension::Suppression,
         }
     }
 
@@ -601,7 +622,8 @@ impl Mechanism {
             | Self::EventTypeRename
             | Self::AutoAssigneeResolution
             | Self::PersonaFailureBreaker
-            | Self::NoDeliveryBreaker => Reach::AllFutureRuns,
+            | Self::NoDeliveryBreaker
+            | Self::PersonaEnabledSwitch => Reach::AllFutureRuns,
             _ => Reach::ThisRun,
         }
     }
@@ -662,6 +684,11 @@ impl Mechanism {
             Self::TeamUseCaseModelOverride => &[Site {
                 file: "src/engine/team_assignment_orchestrator.rs",
                 marker: ".and_then(crate::engine::prompt::resolve_use_case_model_override)",
+                family: Some((Family::ModelProfileSubstitution, 1)),
+            }],
+            Self::CharterDifficultyRoutingFill => &[Site {
+                file: "src/commands/execution/executions.rs",
+                marker: "fill_profile_from_routing(",
                 family: Some((Family::ModelProfileSubstitution, 1)),
             }],
             Self::TeamCapabilityModelFloor => &[Site {
@@ -752,7 +779,12 @@ impl Mechanism {
             Self::AmbientActivityPrepend => &[
                 Site {
                     file: "src/engine/execution.rs",
-                    marker: "format_ambient_for_persona(&ambient_ctx, &persona.id)",
+                    // The mechanism did not move; the binding it reads did.
+                    // `execution.rs` now takes the handle out of app state
+                    // into `ambient_ctx: Option<..>` and passes the borrowed
+                    // `ctx` from `if let Some(ctx) = ambient_ctx.as_ref()`, so
+                    // the old argument spelling stopped existing in the file.
+                    marker: "format_ambient_for_persona(ctx, &persona.id)",
                     family: Some((Family::AmbientPrepend, 1)),
                 },
                 Site {
@@ -878,6 +910,11 @@ impl Mechanism {
                 marker: "kb_escalate",
                 family: None,
             }],
+            Self::PersonaEnabledSwitch => &[Site {
+                file: "db/src/repos/core/personas.rs",
+                marker: "UPDATE personas SET enabled = ?1",
+                family: Some((Family::PersonaDisabled, 1)),
+            }],
         }
     }
 }
@@ -891,7 +928,7 @@ const _: () = Mechanism::assert_all_covered();
 /// ratchet, not an ignore file.
 ///
 /// `(family, file relative to src-tauri/, occurrences, why it is not a member)`
-pub const NON_MEMBERS: [(Family, &str, usize, &str); 7] = [
+pub const NON_MEMBERS: [(Family, &str, usize, &str); 9] = [
     (
         Family::ModelProfileSubstitution,
         "src/engine/runner/mod.rs",
@@ -924,6 +961,18 @@ pub const NON_MEMBERS: [(Family, &str, usize, &str); 7] = [
         "db/src/repos/core/personas.rs",
         1,
         "test setup inside an inline #[cfg(test)] module",
+    ),
+    (
+        Family::ModelProfileSubstitution,
+        "src/engine/subscription/attention.rs",
+        2,
+        "two test fixtures inside the inline #[cfg(test)] module, not a serving path",
+    ),
+    (
+        Family::PersonaDisabled,
+        "src/engine/subscription/attention.rs",
+        1,
+        "test setup inside the inline #[cfg(test)] module, not a serving path",
     ),
     (
         Family::AmbientPrepend,

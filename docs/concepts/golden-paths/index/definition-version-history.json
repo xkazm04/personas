@@ -41,7 +41,7 @@
     "metrics.rs": {"count":5,"sections":[7,9],"lines":["99","167-176","253","104"],"contexts":["`metrics.rs:99` does this and says why — but understand that a *deferred*"],"resolved":false},
     "persona_change_log.rs": {"count":2,"sections":[7],"contexts":["`persona_change_log.rs` at **2026-07-27** (commit `e13a9be3d`, the"],"resolved":false},
     "personas.rs": {"count":5,"sections":[0,7,9,12],"lines":["935","1186"],"contexts":["`if let Some(ref new_sp) = input.structured_prompt` (`personas.rs:935`) — so a"],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["`rules.json` that keys on DDL — `hand-rolled-fixture-ddl`,"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":1,"sections":[9],"contexts":["`rules.json` that keys on DDL — `hand-rolled-fixture-ddl`,"],"resolved":false},
     "src-tauri/": {"count":2,"sections":[7],"contexts":["`src-tauri/`, `target/` and `.claude/worktrees/` excluded), `src/` (4,801"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/lab.rs": {"count":2,"sections":[0,7],"lines":["644"],"contexts":["(`core/src/models/lab.rs:644`), a ts-rs binding exported from"],"resolvedFrom":"suffix","verbatim":"core/src/models/lab.rs"},
     "src-tauri/db/src/lib.rs": {

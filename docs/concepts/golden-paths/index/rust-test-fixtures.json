@@ -45,6 +45,7 @@
     "orchestrator/src/db.ts": {"count":1,"sections":[],"lines":["232"],"contexts":["`better-sqlite3` `SCHEMA` (`orchestrator/src/db.ts:232`, 14 tables) that mirrors"],"resolved":false},
     "package.json": {"count":2,"sections":[9],"lines":["51"],"contexts":["**And it is actually enforced.** `package.json:51` — `\"check\": \"… && npm run census:check"]},
     "packages/shared/src/bus.test.ts": {"count":1,"sections":[],"contexts":["test database, no CI, and exactly one test file (`packages/shared/src/bus.test.ts`, 406"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["so the registry merge skips it. **Do not merge this into `rules.json`:**"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 3,
       "sections": [9],
@@ -53,7 +54,6 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["so the registry merge skips it. **Do not merge this into `rules.json`:**"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {
       "count": 3,
       "sections": [9],

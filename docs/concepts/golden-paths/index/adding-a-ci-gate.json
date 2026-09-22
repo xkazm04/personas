@@ -100,6 +100,7 @@
     },
     "package-lock.json": {"count":2,"sections":[0,7],"contexts":["reading `package-lock.json`); it was last committed **2026-07-30**. The"]},
     "package.json": {"count":5,"sections":[1,8],"contexts":["in `package.json`'s `check` script, or add an entry to"]},
+    "rules.json": {"count":1,"sections":[4],"contexts":["registry (`node -e` over `rules.json` prints every id in one line). A rule"],"resolved":false},
     "scripts/": {"count":3,"sections":[9],"contexts":["(`catch {…process.exit(0)}` in `scripts/` + `.ai/`): **1 file, 1 match.** Too"],"resolved":false,"isDir":true},
     "scripts/build/guard-concurrent-cargo.mjs": {
       "count": 2,
@@ -123,7 +124,7 @@
       "contexts": ["| `scripts/census/lib/engine.mjs` — `validateRule` | rejects a malformed rule *before* scanning, so a broken registry cannot scan \"successfully\" |"]
     },
     "scripts/census/merge-published-rules.mjs": {"count":2,"sections":[7,9],"lines":["17"],"contexts":["(`scripts/census/merge-published-rules.mjs:17`,"]},
-    "scripts/census/rules.json": {"count":5,"sections":[1,2,3,4],"contexts":["`scripts/census/rules.json` — you are in this situation."]},
+    "scripts/census/rules.json": {"count":4,"sections":[1,2,3],"contexts":["`scripts/census/rules.json` — you are in this situation."]},
     "scripts/census/self-test.mjs": {
       "count": 1,
       "sections": [6],

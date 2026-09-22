@@ -151,8 +151,8 @@
       ],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["the shared `rules.json`. The runner reports **14 matches / 10 files** for the rule and **6 / 5** for"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["the shared `rules.json`. The runner reports **14 matches / 10 files** for the rule and **6 / 5** for"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "segments.ts": {
       "count": 1,
       "sections": [6],

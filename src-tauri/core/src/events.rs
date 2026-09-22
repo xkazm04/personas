@@ -179,6 +179,11 @@ event_names! {
     // finer-grained event would only let a listener subscribe to half a
     // verdict.
     DEV_TOOLS_COUNCIL_CHANGED  => "dev-tools://council-changed",
+    // Notepad: one per-note thread entry was written or answered (e40
+    // `dev_note_comments`) — an operator comment, a review, a verdict stamp,
+    // a status milestone. Payload: the full `NoteComment` row, so the thread
+    // store and the card bubbles need no refetch.
+    NOTEPAD_NOTE_COMMENT       => "notepad-note-comment",
     // Browser > Webview: the whole tab list, every time any of it moves (open,
     // close, focus, a page navigating itself, a title changing). One event
     // carrying the WHOLE list rather than a diff -- the list is capped at

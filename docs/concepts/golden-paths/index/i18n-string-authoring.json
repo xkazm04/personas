@@ -38,6 +38,7 @@
     "constants.ts": {"count":1,"sections":[4],"contexts":["a `constants.ts`, a registry: store `labelKey: 'group_monitoring'` and resolve at the render"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json) they agree with it exactly (1,135 warnings / 226 for"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "docs/i18n/untranslated-allowlist.json": {"count":1,"sections":[8],"contexts":["`docs/i18n/untranslated-allowlist.json` — **19% of the catalog** — as legitimately identical to"]},
+    "enSectionStrings.ts": {"count":1,"sections":[],"contexts":["`enSectionStrings.ts` are a bundle-size answer to a 19,112-key catalog in a desktop app — **adopt"],"resolved":false},
     "eslint-rules/no-hardcoded-jsx-text.cjs": {
       "count": 4,
       "sections": [7,9],
@@ -129,13 +130,6 @@
       "contexts": ["`CONTRACT.md`, `DebtText.tsx`, `pseudoLocale.ts`, `en.ts`); `errorRegistry.ts` / `errorPipeline.ts` /"],
       "resolvedFrom": "basename",
       "verbatim": "en.ts"
-    },
-    "src/i18n/generated/enSectionStrings.ts": {
-      "count": 1,
-      "sections": [],
-      "contexts": ["`enSectionStrings.ts` are a bundle-size answer to a 19,112-key catalog in a desktop app — **adopt"],
-      "resolvedFrom": "basename",
-      "verbatim": "enSectionStrings.ts"
     },
     "src/i18n/generated/types.ts": {
       "count": 3,

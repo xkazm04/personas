@@ -1,10 +1,14 @@
-// FleetNode — the handpicked meta row, and NOTHING else.
+// FleetNode — a title row that is the title, a symbol row that is the map.
 //
-// The node's contract is as much what it leaves out as what it shows: every
-// variant × kind has a fixed set of fields, and a field that leaks from one
-// variant into another (an origin chip on a persona, a rank on a live row)
-// is the drift this file exists to catch. So every case asserts presence AND
-// absence, by test id, against the table in `FleetNode.tsx`'s header.
+// The node's contract is as much what it leaves out as what it shows. The
+// first two-row node shared its title row with a glyph and a chip and hung
+// side columns beside the body; the operator rejected it because the title
+// was still truncated and the three styles looked the same. Tinted was then
+// picked and the other two deleted. So this file asserts, per kind × state:
+//   • the title row holds ONE element — the title — and no sibling;
+//   • the symbol row holds EXACTLY the symbols `nodeSymbols` orders, by
+//     `data-symbol`, presence AND absence;
+//   • the one treatment: hue wash, solid symbol circles, a labelled bottom bar.
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -12,7 +16,7 @@ import type { ReactNode } from 'react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PersonaCardModel } from '../../../../monitorModel';
 import { FleetNode, liveMeterFill, queuedMeterFill } from '../FleetNode';
-import { NodeContext, type NodeContextValue, type NodeVariant } from '../nodeVariant';
+import { NodeContext, type NodeContextValue } from '../nodeContext';
 import type { QueueItem } from '../../queue/useQueueModel';
 
 const NOW = Date.now();
@@ -50,155 +54,244 @@ function queued(o: Partial<QueueItem> = {}): QueueItem {
   };
 }
 
-function wrap(variant: NodeVariant, ui: ReactNode, ctx: Partial<NodeContextValue> = {}) {
-  const value: NodeContextValue = { variant, meanDurationMs: 10 * 60_000, queueLength: 30, ...ctx };
+function wrap(ui: ReactNode, ctx: Partial<NodeContextValue> = {}) {
+  const value: NodeContextValue = { meanDurationMs: 10 * 60_000, queueLength: 30, ...ctx };
   return render(<NodeContext.Provider value={value}>{ui}</NodeContext.Provider>);
 }
 
+/** The symbol row's ids, left → right. */
+const symbols = (root: ParentNode = document) =>
+  [...root.querySelectorAll('[data-testid="fleet-node-symbols"] [data-symbol]')].map((e) => (e as HTMLElement).dataset.symbol);
 const has = (id: string) => screen.queryByTestId(id) !== null;
-const meta = () => screen.getByTestId('fleet-node-meta');
 
-describe('FleetNode — title row', () => {
-  it('renders the FULL title in the title row (CSS truncates; the text is intact for the tooltip)', () => {
-    wrap('ledger', <FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
+describe('FleetNode — the title row', () => {
+  it('holds the title and NOTHING else — no glyph, no chip, no control beside it', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
+    const row = screen.getByTestId('fleet-node-title-row');
+    const title = screen.getByTestId('fleet-node-title');
+    expect(row.textContent).toBe(LONG);
+    // The only thing between the row and the title is the Tooltip's box-less
+    // trigger wrapper; the title has no siblings at any level.
+    expect(row.children).toHaveLength(1);
+    expect(title.parentElement!.children).toHaveLength(1);
+    expect(title.children).toHaveLength(0);
+    expect(row.querySelectorAll('svg, button, [data-symbol]')).toHaveLength(0);
+  });
+
+  it('renders the FULL title (CSS truncates; the text is intact for the tooltip)', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel={LONG} tooltip={LONG} />);
     expect(screen.getByTestId('fleet-node-title').textContent).toBe(LONG);
+    expect(screen.getByTestId('fleet-node-title').className).toContain('truncate');
   });
 
-  it('is a button only when it activates something', () => {
-    wrap('ledger', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
+  it('is a button only when it activates something, and the symbol row sits inside the body either way', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
     expect(screen.getByTestId('body').tagName).toBe('SPAN');
-    wrap('ledger', <FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" bodyTestId="body2" onActivate={() => {}} />);
+    expect(screen.getByTestId('body').querySelector('[data-testid="fleet-node-symbols"]')).not.toBeNull();
+    wrap(<FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" bodyTestId="body2" onActivate={() => {}} />);
     expect(screen.getByTestId('body2').tagName).toBe('BUTTON');
+    expect(screen.getByTestId('body2').getAttribute('aria-label')).toBe('y');
   });
 });
 
-describe('FleetNode — session, running', () => {
-  it('ledger: state · elapsed · origin · project, no rank / ETA / meter', () => {
-    wrap('ledger', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-state').textContent).toContain('Working');
-    expect(screen.getByTestId('fleet-queue-origin').textContent).toBe('Athena');
-    expect(screen.getByTestId('fleet-node-project').textContent).toBe('pumper');
-    expect(meta().textContent).toMatch(/5\s?min/);
-    expect(has('fleet-queue-rank')).toBe(false);
-    expect(has('fleet-node-eta')).toBe(false);
-    expect(has('fleet-node-meter')).toBe(false);
+describe('FleetNode — layout: title on top, a divider, symbols at the bottom', () => {
+  it('puts a decorative hairline divider between the title row and the symbol row, in a justify-between column', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" />);
+    const body = screen.getByTestId('body');
+    expect(body.className).toContain('flex-col');
+    expect(body.className).toContain('justify-between');
+    const order = [...body.children].map((c) => c.getAttribute('data-testid'));
+    expect(order).toEqual(['fleet-node-title-row', 'fleet-node-divider', 'fleet-node-symbols']);
+    const divider = screen.getByTestId('fleet-node-divider');
+    expect(divider).toHaveAttribute('aria-hidden', 'true');
+    expect(divider.className).toContain('h-px');
+    expect(divider.className).toContain('bg-foreground/10');
   });
 
-  it('badge: state + project badges, no rank / origin / elapsed', () => {
-    wrap('badge', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    expect(has('fleet-node-state')).toBe(true);
-    expect(has('fleet-node-project')).toBe(true);
-    expect(has('fleet-queue-rank')).toBe(false);
-    expect(has('fleet-queue-origin')).toBe(false);
-    expect(meta().textContent).not.toMatch(/min/);
-  });
-
-  it('meter: elapsed ÷ mean, one elapsed stat, nothing else', () => {
-    wrap('meter', <FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
-    const m = screen.getByTestId('fleet-node-meter');
-    expect(m.getAttribute('data-fill')).toBe('0.50');
-    expect(m.textContent).toMatch(/5\s?min/);
-    expect(has('fleet-node-state')).toBe(false);
-    expect(has('fleet-queue-origin')).toBe(false);
-    expect(has('fleet-node-project')).toBe(false);
+  it('keeps a fixed pixel width by default, and spans its parent with `fill`', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="fixed" />);
+    const fixed = screen.getByTestId('fixed');
+    expect(fixed.style.width).toBe('172px');
+    expect(fixed).toHaveAttribute('data-width', 'fixed');
+    wrap(<FleetNode kind="session" session={session({ id: 's2' })} ariaLabel="y" tooltip="y" testId="filled" fill />);
+    const filled = screen.getByTestId('filled');
+    expect(filled.style.width).toBe('');
+    expect(filled.className).toContain('w-full');
+    expect(filled).toHaveAttribute('data-width', 'fill');
   });
 });
 
-describe('FleetNode — session, queued', () => {
-  it('ledger: rank · ETA · origin, no state / project / meter', () => {
-    const q = queued();
-    wrap('ledger', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-queue-rank').textContent).toBe('#3');
-    expect(screen.getByTestId('fleet-node-eta').textContent).toMatch(/^ETA /);
-    expect(screen.getByTestId('fleet-queue-origin').textContent).toBe('Autopilot');
-    expect(has('fleet-node-state')).toBe(false);
-    expect(has('fleet-node-project')).toBe(false);
-    expect(has('fleet-node-meter')).toBe(false);
-  });
-
-  it('ledger: says "No estimate" when the door has no history', () => {
-    const q = queued({ estimatedStartMs: null });
-    wrap('ledger', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-eta').textContent).toBe('No estimate');
-  });
-
-  it('badge: state · #rank · project, no ETA / origin', () => {
-    const q = queued();
-    wrap('badge', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-state').textContent).toBe('Queued');
-    expect(screen.getByTestId('fleet-queue-rank').textContent).toBe('#3');
-    expect(has('fleet-node-project')).toBe(true);
-    expect(has('fleet-node-eta')).toBe(false);
-    expect(has('fleet-queue-origin')).toBe(false);
-  });
-
-  it('meter: rank ÷ length inverted, one ETA stat, no rank text / origin', () => {
-    const q = queued({ rank: 1 });
-    wrap('meter', <FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />, { queueLength: 9 });
-    expect(screen.getByTestId('fleet-node-meter').getAttribute('data-fill')).toBe('0.90');
-    expect(has('fleet-node-eta')).toBe(true);
+describe('FleetNode — the symbol row, session', () => {
+  it('running: state · origin · project in the row, elapsed on the bottom bar — no rank, no gate, no persona symbol', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'project']);
+    expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Working');
+    expect(screen.getByTestId('fleet-queue-origin').getAttribute('aria-label')).toBe('Dispatched by Athena');
+    expect(screen.getByTestId('fleet-queue-origin').dataset.origin).toBe('athena');
+    expect(screen.getByTestId('fleet-node-elapsed').dataset.fill).toBe('0.50');
+    expect(screen.getByTestId('fleet-node-project').getAttribute('aria-label')).toBe('Project pumper');
+    expect(screen.getByTestId('fleet-node-project').textContent).toBe('P');
     expect(has('fleet-queue-rank')).toBe(false);
-    expect(has('fleet-queue-origin')).toBe(false);
-  });
-
-  it('shows the gate marker only while notBefore is in the future', () => {
-    const gated = queued({ notBeforeMs: NOW + 60_000 });
-    wrap('ledger', <FleetNode kind="session" session={gated.session} queue={gated} ariaLabel="x" tooltip="x" />);
-    expect(has('fleet-node-gate')).toBe(true);
-    const past = queued({ notBeforeMs: NOW - 60_000 });
-    render(<NodeContext.Provider value={{ variant: 'ledger', meanDurationMs: null, queueLength: 1 }}>
-      <FleetNode kind="session" session={past.session} queue={past} ariaLabel="y" tooltip="y" testId="past" />
-    </NodeContext.Provider>);
-    expect(screen.getByTestId('past').querySelector('[data-testid="fleet-node-gate"]')).toBeNull();
-  });
-});
-
-describe('FleetNode — persona', () => {
-  const c = card({ personaName: 'T: Release Scribe of the long-running release train', queued: 2, running: 1, runningSince: NOW - 3 * 60_000, execState: 'running' });
-
-  it('ledger: state · team · unseen chat · queued count, no origin / project / meter', () => {
-    wrap('ledger', <FleetNode kind="persona" card={c} teamName="pumper" unseenChat={4} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-title').textContent).toBe('Release Scribe of the long-running release train');
-    expect(screen.getByTestId('fleet-node-state').textContent).toContain('Running');
-    expect(screen.getByTestId('fleet-node-team').textContent).toBe('pumper');
-    expect(screen.getByTestId('fleet-grid-chat-unseen').textContent).toBe('4');
-    expect(screen.getByTestId('fleet-node-queued').textContent).toBe('2 queued');
-    expect(has('fleet-queue-origin')).toBe(false);
-    expect(has('fleet-node-project')).toBe(false);
-    expect(has('fleet-node-meter')).toBe(false);
-  });
-
-  it('ledger: a tray persona has no team and shows none', () => {
-    wrap('ledger', <FleetNode kind="persona" card={card()} teamName={null} ariaLabel="x" tooltip="x" />);
+    expect(has('fleet-node-gate')).toBe(false);
     expect(has('fleet-node-team')).toBe(false);
-    expect(has('fleet-node-queued')).toBe(false);
     expect(has('fleet-grid-chat-unseen')).toBe(false);
   });
 
-  it('badge: state, chat and queued pills, no team', () => {
-    wrap('badge', <FleetNode kind="persona" card={c} teamName="pumper" unseenChat={1} ariaLabel="x" tooltip="x" />);
-    expect(has('fleet-node-state')).toBe(true);
-    expect(has('fleet-grid-chat-unseen')).toBe(true);
-    expect(has('fleet-node-queued')).toBe(true);
-    expect(has('fleet-node-team')).toBe(false);
+  it('running with no mean duration yet: no elapsed bar', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />, { meanDurationMs: null });
+    expect(symbols()).toEqual(['state', 'origin', 'project']);
   });
 
-  it('meter: elapsed ÷ mean with the elapsed stat; the chat mark keeps its title-row seat', () => {
-    wrap('meter', <FleetNode kind="persona" card={c} teamName="pumper" unseenChat={1} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-meter').getAttribute('data-fill')).toBe('0.30');
-    expect(has('fleet-grid-chat-unseen')).toBe(true);
-    expect(has('fleet-node-team')).toBe(false);
-    expect(has('fleet-node-queued')).toBe(false);
+  it('queued: state · origin · rank · gate · project, the ETA on the bottom bar, the rank as the one numeral', () => {
+    const q = queued({ notBeforeMs: NOW + 60_000 });
+    wrap(<FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'rank', 'gate', 'project']);
+    expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Queued');
+    expect(screen.getByTestId('fleet-queue-rank').textContent).toBe('3');
+    expect(screen.getByTestId('fleet-queue-rank').getAttribute('aria-label')).toBe('Queue position 3');
+    expect(screen.getByTestId('fleet-queue-origin').dataset.origin).toBe('autopilot');
+    expect(screen.getByTestId('fleet-node-gate').getAttribute('aria-label')).toMatch(/^Not before /);
+    expect(screen.getByTestId('fleet-node-elapsed').dataset.fill).toBe('0.90');
+    expect(screen.getByTestId('fleet-node-elapsed').getAttribute('aria-label')).toMatch(/^Estimated start /);
   });
 
-  it('meter: an idle persona has an empty meter and its state as the stat', () => {
-    wrap('meter', <FleetNode kind="persona" card={card()} teamName={null} ariaLabel="x" tooltip="x" />);
-    expect(screen.getByTestId('fleet-node-meter').getAttribute('data-fill')).toBe('0.00');
-    expect(screen.getByTestId('fleet-node-state').textContent).toBe('Idle');
+  it('queued: the gate goes once notBefore has passed; "No estimate" names an empty door', () => {
+    const q = queued({ notBeforeMs: NOW - 60_000, estimatedStartMs: null });
+    wrap(<FleetNode kind="session" session={q.session} queue={q} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'origin', 'rank', 'project']);
+    expect(screen.getByTestId('fleet-node-elapsed').getAttribute('aria-label')).toBe('No estimate');
+  });
+
+  it('paints every lifecycle state as a symbol and never as a word', () => {
+    const states = ['awaiting_input', 'idle', 'stale', 'finished', 'hibernated', 'exited', 'spawning'] as const;
+    for (const state of states) {
+      const { unmount } = wrap(<FleetNode kind="session" session={session({ id: state, state })} ariaLabel="x" tooltip="x" />);
+      expect(symbols()).toEqual(['state', 'origin', 'project']);
+      const row = screen.getByTestId('fleet-node-symbols');
+      expect(row.textContent).toBe('P'); // the project swatch's initial is the only glyph text in the row
+      expect(screen.getByTestId('fleet-node-state').dataset.state).toBe(state);
+      unmount();
+    }
+  });
+
+  it('reads the origin from the queue first and the session second, defaulting to manual', () => {
+    wrap(<FleetNode kind="session" session={session({ origin: null })} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-queue-origin').dataset.origin).toBe('manual');
+    expect(screen.getByTestId('fleet-queue-origin').getAttribute('aria-label')).toBe('Dispatched by Manual');
   });
 });
 
-describe('meter arithmetic', () => {
+describe('FleetNode — the symbol row, persona', () => {
+  const c = card({
+    personaName: 'T: Release Scribe of the long-running release train',
+    queued: 2, running: 1, runningSince: NOW - 3 * 60_000, execState: 'running', inputRequired: 1,
+  });
+
+  it('state · team · operation · unseen · queued — no origin, no project, no rank', () => {
+    wrap(<FleetNode kind="persona" card={c} teamName="pumper" unseenChat={4} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-node-title').textContent).toBe('Release Scribe of the long-running release train');
+    expect(symbols()).toEqual(['state', 'team', 'operation', 'unseen', 'queued']);
+    expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Running');
+    expect(screen.getByTestId('fleet-node-team').getAttribute('aria-label')).toBe('Team pumper');
+    expect(screen.getByTestId('fleet-grid-badge').dataset.action).toBe('input');
+    expect(screen.getByTestId('fleet-grid-badge').getAttribute('aria-label')).toBe('1 awaiting your input');
+    expect(screen.getByTestId('fleet-grid-chat-unseen').textContent).toBe('4');
+    expect(screen.getByTestId('fleet-node-queued').textContent).toBe('2');
+    expect(has('fleet-queue-origin')).toBe(false);
+    expect(has('fleet-node-project')).toBe(false);
+    expect(has('fleet-queue-rank')).toBe(false);
+    expect(has('fleet-node-elapsed')).toBe(false);
+  });
+
+  it('a resting tray persona shows its state alone', () => {
+    wrap(<FleetNode kind="persona" card={card()} teamName={null} ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state']);
+    expect(screen.getByTestId('fleet-node-state').getAttribute('aria-label')).toBe('Idle');
+    expect(has('fleet-node-team')).toBe(false);
+    expect(has('fleet-node-queued')).toBe(false);
+    expect(has('fleet-grid-chat-unseen')).toBe(false);
+    expect(has('fleet-grid-badge')).toBe(false);
+  });
+
+  it('a switched-off persona carries the off symbol after its state', () => {
+    wrap(<FleetNode kind="persona" card={card()} teamName="pumper" off ariaLabel="x" tooltip="x" />);
+    expect(symbols()).toEqual(['state', 'off', 'team']);
+    expect(screen.getByTestId('fleet-grid-disabled')).not.toBeNull();
+  });
+
+  it('shows attention and failed as the warning triangle, in their own hue', () => {
+    wrap(<FleetNode kind="persona" card={card({ execState: 'failed' })} teamName={null} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-node-state').dataset.state).toBe('failed');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('text-background');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-red-400');
+    expect(screen.getByTestId('fleet-node-state').querySelector('svg')).not.toBeNull();
+  });
+});
+
+describe('FleetNode — the treatment', () => {
+  it('washes the body in the state hue with a soft elevation and no border', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
+    const cls = screen.getByTestId('shell').className;
+    expect(cls).toContain('bg-blue-500/[0.08]');
+    expect(cls).toContain('shadow-elevation-1');
+    expect(cls).not.toMatch(/\bborder(-|\b)/);
+    expect(screen.getByTestId('shell').dataset.style).toBeUndefined();
+  });
+
+  it('draws the elapsed fill as a labelled bar across the bottom edge, never a symbol in the row', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" testId="shell" />);
+    expect(symbols()).toEqual(['state', 'origin', 'project']);
+    const strip = screen.getByTestId('fleet-node-elapsed');
+    expect(strip.dataset.fill).toBe('0.50');
+    expect(strip.getAttribute('role')).toBe('img');
+    expect(strip.getAttribute('aria-label')).toMatch(/\S/);
+    const bar = screen.getByTestId('fleet-node-elapsed-bar');
+    expect(bar.style.width).toBe('50%');
+    expect(bar.className).toContain('bg-blue-400');
+    expect(screen.getByTestId('fleet-node-symbols').contains(strip)).toBe(false);
+  });
+
+  it('paints every symbol as a hue circle with the glyph cut out', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-node-state').className).toContain('bg-blue-400 text-background');
+    expect(screen.getByTestId('fleet-queue-origin').className).toContain('rounded-full bg-blue-400 text-background');
+  });
+
+  it('over-admitted wears the warning hue on the body wash and the state symbol', () => {
+    wrap(<FleetNode kind="session" session={session()} overAdmitted ariaLabel="x" tooltip="x" testId="shell" />);
+    expect(screen.getByTestId('shell').className).toContain('status-warning');
+    expect(screen.getByTestId('fleet-node-state').className).toContain('status-warning');
+  });
+});
+
+describe('FleetNode — affordances and motion', () => {
+  it('renders the wrapper\'s affordances as siblings of the body, never inside it', () => {
+    wrap((
+      <FleetNode
+        kind="session" session={session()} ariaLabel="x" tooltip="x" bodyTestId="body" onActivate={() => {}}
+        symbols={<button type="button" aria-label="Session recap" data-testid="recap" />}
+      />
+    ));
+    const recap = screen.getByTestId('recap');
+    expect(screen.getByTestId('body').contains(recap)).toBe(false);
+    expect(screen.getByTestId('fleet-node-affordances').contains(recap)).toBe(true);
+    expect(screen.getByTestId('fleet-node-affordances').className).toContain('group-focus-within:opacity-100');
+  });
+
+  it('renders no affordance cluster when the wrapper hands none', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(has('fleet-node-affordances')).toBe(false);
+  });
+
+  it('pulses the running dot only while motion is allowed', () => {
+    wrap(<FleetNode kind="session" session={session()} ariaLabel="x" tooltip="x" />);
+    expect(screen.getByTestId('fleet-node-state').firstElementChild!.className).toContain('animate-pulse');
+    wrap(<FleetNode kind="session" session={session({ id: 'rm' })} reducedMotion ariaLabel="y" tooltip="y" testId="rm" />);
+    expect(screen.getByTestId('rm').querySelector('[data-testid="fleet-node-state"]')!.firstElementChild!.className).not.toContain('animate-pulse');
+  });
+});
+
+describe('the elapsed arithmetic', () => {
   it('caps a live row at full and empties it without a mean', () => {
     expect(liveMeterFill(5, 10)).toBe(0.5);
     expect(liveMeterFill(50, 10)).toBe(1);

@@ -77,6 +77,7 @@
         "| **`scripts/check-themes.mjs`** — `npm run check:themes` | The WCAG audit. Parses `globals.css`, resolves each theme's effective map, hard-fails (exit 1) if `foreground/bg`, `muted-foreground/bg`, `…"
       ]
     },
+    "rules.json": {"count":2,"sections":[9],"contexts":["theme selector — one file in `rules.json` mentions the word `contrast`, and it is a `goldenPath`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
       "sections": [9],
@@ -85,7 +86,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":4,"sections":[9],"contexts":["Searched all 75 rules in `scripts/census/rules.json`. The nearest neighbours are"]},
+    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["Searched all 75 rules in `scripts/census/rules.json`. The nearest neighbours are"]},
     "scripts/check-themes.mjs": {
       "count": 18,
       "sections": [2,3,4,5,6,7,8,9],

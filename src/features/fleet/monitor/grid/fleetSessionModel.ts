@@ -31,24 +31,6 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FLEET_STATE_META, type FleetStateMeta } from '@/features/plugins/fleet/fleetStateMeta';
 
-/**
- * `border-*` twins of `FLEET_STATE_META[].dot`. Same hue, same shade — the only
- * reason this table exists at all is that Tailwind cannot generate a class that
- * is assembled at runtime. Keep it in lockstep with the canonical table (a test
- * enforces it); do NOT pick different colours here.
- */
-export const SESSION_BORDER: Record<FleetSessionState, string> = {
-  awaiting_input: 'border-violet-400',
-  running: 'border-blue-400',
-  queued: 'border-slate-400',
-  spawning: 'border-cyan-400',
-  idle: 'border-emerald-400',
-  stale: 'border-orange-400',
-  finished: 'border-teal-400',
-  hibernated: 'border-indigo-400',
-  exited: 'border-zinc-500',
-};
-
 const META_BY_STATE = new Map<FleetSessionState, FleetStateMeta>(FLEET_STATE_META.map((m) => [m.id, m]));
 /** Attention-first rank — the canonical table's own order. */
 const STATE_RANK = new Map<FleetSessionState, number>(FLEET_STATE_META.map((m, i) => [m.id, i]));

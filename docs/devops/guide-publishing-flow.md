@@ -434,8 +434,6 @@ The `desktop` feature includes all 186+ desktop-specific code gates. The `deskto
 |---------|---------|-----|---------------|-------|----------|
 | `release` | `cargo tauri build` | thin | 2 | yes | Daily builds (default) |
 | `stable` | `cargo tauri build --profile stable` | full | 1 | yes | Milestone releases (~20% slower build, ~2% smaller binary) |
-| `ci` | `cargo build --profile ci` | thin | 4 | no | CI test + clippy (faster, keeps debug symbols) |
-| `dev-release` | `cargo build --profile dev-release` | thin | inherited | no | Fast local perf testing (~3x faster than release) |
 
 ### Combining Flags
 

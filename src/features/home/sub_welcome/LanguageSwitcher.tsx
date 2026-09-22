@@ -45,7 +45,7 @@ function sortLanguages(active: Language): LanguageEntry[] {
 
 /** Map language code to illustration file (dark variant). */
 function langIllustration(code: string) {
-  return `/illustrations/languages/lang-${code}.png`;
+  return `/illustrations/languages/lang-${code}.webp`;
 }
 
 /** Inline card grid for embedding in Welcome page */

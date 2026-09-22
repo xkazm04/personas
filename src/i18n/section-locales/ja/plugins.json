@@ -3013,7 +3013,15 @@
     "council_state_stalled": "ラウンド 3 で停滞",
     "council_state_unknown": "認識できない状態",
     "council_tier_major": "主要",
-    "council_tier_toggle_label": "{name} を主要な機能としてマーク"
+    "council_tier_toggle_label": "{name} を主要な機能としてマーク",
+    "skills_registry_filter_hint": "クリックすると、ここにあるスキルだけを表示します",
+    "skills_registry_filter_active_hint": "もう一度クリックすると、すべてのスキルを表示します",
+    "skills_registry_filter_clear": "{name} のフィルターを解除",
+    "skills_registry_filter_empty": "{name} にはまだスキルがありません",
+    "skills_registry_empty_title": "表示するスキルがありません",
+    "skills_registry_name_details": "クリックで詳細を表示",
+    "skills_registry_legend_recent": "過去30日に実行",
+    "skills_registry_context_coverage": "{contexts} 件中 {covered} 件のコンテキストに到達 ({pct})"
   },
   "dev_triage": {
     "action_label": "アクション:",
@@ -3489,7 +3497,16 @@
     "skill_picker_close": "スキルピッカーを閉じる",
     "skill_picker_hint": "セルをクリックすると、そのスキルとプロジェクトがコンソールに読み込まれます。空のセルは先にそこへスキルをインストールします。",
     "skill_picker_open": "レジストリからスキルを選択",
-    "skill_picker_title": "スキルレジストリ"
+    "skill_picker_title": "スキルレジストリ",
+    "skill_picker_empty": "このワークスペースのプロジェクトにはまだスキルがインストールされていません — 開発ツール → スキル → レジストリ から採用してください。",
+    "estimate_assumed_model": "CLI の既定モデルで試算しています。モデルを選ぶとその料金で計算します。",
+    "estimate_cost_label": "このディスパッチの推定コスト",
+    "estimate_disclaimer": "公開されているモデル料金と一般的なセッション規模からの推定値です（確定見積もりではありません）。",
+    "estimate_eta_label": "完了までの推定時間",
+    "rest_tally_needs_you": "{count} 件が対応待ち",
+    "rest_tally_working": "{count} 件が実行中",
+    "status_armed": "準備完了",
+    "status_standby": "待機"
   },
   "fleet": {
     "activity_empty": "最近のセッションが見つかりません",

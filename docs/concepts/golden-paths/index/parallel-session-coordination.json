@@ -43,7 +43,14 @@
     "lefthook.yml": {"count":4,"sections":[0,7,12],"contexts":["`active-runs` mention read in context), `lefthook.yml` (91 lines), `.github/workflows/ci.yml`"]},
     "lib.rs": {"count":1,"sections":[4],"contexts":["append-only registry (`rules.json`, `lib.rs`, `CHANGELOG.md`, a locale catalog, a checksum"],"resolved":false},
     "rules-testworkflow-b7f2.json": {"count":1,"sections":[9],"contexts":["(`rules-testworkflow-b7f2.json` — filename unique to this composer), hand-verified at the level"],"resolved":false},
-    "scripts/census/rules.json": {"count":3,"sections":[4,5,7],"contexts":["append-only registry (`rules.json`, `lib.rs`, `CHANGELOG.md`, a locale catalog, a checksum"],"resolvedFrom":"basename","verbatim":"rules.json"},
+    "rules.json": {"count":2,"sections":[4,5],"contexts":["append-only registry (`rules.json`, `lib.rs`, `CHANGELOG.md`, a locale catalog, a checksum"],"resolved":false},
+    "scripts/census/rules.json": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| *\"A non-`/research` skill duplicates work without registering.\"* — described as a *\"concrete signal that a v2 cross-skill adoption gap is overdue\"* | **tripped repeatedly.** Three wave-2 composers…"
+      ]
+    },
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[8],"contexts":["`check-csp-hosts.mjs`. §9 gates the *presence* of the defeated form and specifies a separate"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/worktree-gc.mjs": {
       "count": 2,

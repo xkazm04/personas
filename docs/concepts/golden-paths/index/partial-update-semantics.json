@@ -64,6 +64,7 @@
       ],
       "resolved": false
     },
+    "rules.json": {"count":1,"sections":[9],"contexts":["entry, merged by the orchestrator — never edited into `rules.json` here:"],"resolved":false},
     "scanQueue.core.repository.ts": {
       "count": 3,
       "sections": [2,6],
@@ -92,7 +93,7 @@
       "resolved": false
     },
     "scripts/census/": {"count":1,"sections":[9],"contexts":["mechanism already exists at [`scripts/census/`](../../../scripts/census/). This path publishes **one**"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All rules in `scripts/census/rules.json` were read (**41 at the start of composition, 42 at final"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All rules in `scripts/census/rules.json` were read (**41 at the start of composition, 42 at final"]},
     "server/src/library.rs": {"count":1,"sections":[6],"lines":["968-984"],"contexts":["before it can be asked (`server/src/library.rs:968-984`, bare `Option<String>`)."],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** Every `.rs` file under `src-tauri/` (**963**, `target/` and `.claude/worktrees/`"],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/build_session.rs": {

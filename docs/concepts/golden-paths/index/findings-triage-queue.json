@@ -100,8 +100,8 @@
       "resolved": false
     },
     "observability.rs": {"count":1,"sections":[6],"lines":["175"],"contexts":["`severity` entirely** — the identical defect as `observability.rs:175`, reached independently on the"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["against the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/check-csp-hosts.mjs": {"count":2,"sections":[9],"contexts":["`check-csp-hosts.mjs`, and it is the one thing that would have caught all six."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/check-queue-registry.mjs": {"count":1,"sections":[9],"contexts":["ratchets what is present. The right instrument is a **`scripts/check-queue-registry.mjs`**: walk the"],"resolved":false},
     "src-tauri/": {"count":2,"sections":[12],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` walked **four** times — twice by the"],"resolved":false,"isDir":true},

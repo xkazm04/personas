@@ -123,9 +123,9 @@
       "resolved": false
     },
     "reviewStore.ts": {"count":1,"sections":[6],"lines":["70,324"],"contexts":["`\"You\"` / `\"System\"` (`reviewStore.ts:70,324`)."],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports"],"resolved":false},
     "scraper.rs": {"count":1,"sections":[],"contexts":["`n8n_transform/confirmation.rs`, `scraper.rs`, `auto_cred_browser.rs`). Six neighbouring"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner already exists (`scripts/census/`) and implements the"],"resolved":false,"isDir":true},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["the shared `rules.json`, and **the full registry was not run** (doctrine §4). The runner reports"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **4,829** `.ts`/`.tsx` under `src/` and all **963** `.rs` under `src-tauri/`."],"resolved":false,"isDir":true},
     "src-tauri/core/src/models/build_session.rs": {
       "count": 1,

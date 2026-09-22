@@ -705,7 +705,7 @@ async fn run_claude_ocr(
 
         #[cfg(not(target_os = "windows"))]
         let mut child = tokio::process::Command::new(&binary)
-            .args(&["-p", "-", "--output-format", "text"])
+            .args(["-p", "-", "--output-format", "text"])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())

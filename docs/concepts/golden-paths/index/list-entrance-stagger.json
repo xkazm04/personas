@@ -53,9 +53,10 @@
       "resolved": false
     },
     "rules-lis.json": {"count":1,"sections":[9],"contexts":["composer-unique harness (`stagger-*-lis.mjs`, `rules-lis.json`), then **re-extracted from the"],"resolved":false},
+    "rules.json": {"count":1,"sections":[9],"contexts":["fenced block above and re-run**; both runs identical. `rules.json` was **not** edited — merge"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["Validated standalone against the real engine (`scripts/census/lib/engine.mjs`) through a"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["with `scripts/census/merge-published-rules.mjs`."]},
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["All **81** rules in `scripts/census/rules.json` were read. None matches `animationDelay`,"]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["All **81** rules in `scripts/census/rules.json` were read. None matches `animationDelay`,"]},
     "src/": {"count":1,"sections":[9],"contexts":["means a restructured `src/`, a renamed extension or a mis-pointed walk exits 1 saying the matcher"],"resolved":false,"isDir":true},
     "src/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-15 at `0a5b7fcaf`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the"],"resolved":false,"isDir":true},
     "src/features/agents/sub_deployment/components/DeploymentTable.tsx": {
