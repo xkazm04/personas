@@ -17055,6 +17055,10 @@
       "dropped": "Đã chuyển sang {column}. {count} trong làn này.",
       "picked_up": "Đã nhấc lên. Dùng phím mũi tên để chọn làn, Enter để thả, Escape để hủy.",
       "targeting": "Làn: {column}"
+    },
+    "rich_markdown": {
+      "invalid_block": "Không thể hiển thị khối {name} ({reason}). Khối này được giữ nguyên bên dưới như đã viết.",
+      "unknown_block": "\"{name}\" không phải là thẻ đã biết, vì vậy nó được hiển thị nguyên trạng như đã viết."
     }
   },
   "sharing": {

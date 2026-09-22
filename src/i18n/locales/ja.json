@@ -17055,6 +17055,10 @@
       "dropped": "{column} に移動しました。このレーンに {count} 件。",
       "picked_up": "つかみました。矢印キーでレーンを選び、Enter で置き、Escape で取り消します。",
       "targeting": "レーン: {column}"
+    },
+    "rich_markdown": {
+      "invalid_block": "{name} ブロックを表示できませんでした（{reason}）。元のまま下に保持されています。",
+      "unknown_block": "「{name}」は既知のタグではないため、そのまま表示されます。"
     }
   },
   "sharing": {

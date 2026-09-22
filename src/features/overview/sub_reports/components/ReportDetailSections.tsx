@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { ChannelDeliveryPill } from './ChannelDeliveryPill';
@@ -673,10 +674,10 @@ function PendingDecisionCard({
             )}
           </div>
           {review.description && (
-            <MarkdownRenderer content={review.description} variant="card" className="mb-2" />
+            <RichMarkdown content={review.description} variant="card" className="mb-2" />
           )}
           {contextText && (
-            <MarkdownRenderer content={contextText} variant="card" className="mb-2" />
+            <RichMarkdown content={contextText} variant="card" className="mb-2" />
           )}
           {!hasChildren && review.context_data && (
             <div className="mt-2 px-3 py-2 rounded-card bg-background/30 border border-primary/[0.06]">

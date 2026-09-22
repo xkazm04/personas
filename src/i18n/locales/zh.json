@@ -17055,6 +17055,10 @@
       "dropped": "已移动到 {column}。此泳道有 {count} 项。",
       "picked_up": "已拾起。用方向键选择泳道，Enter 放下，Escape 取消。",
       "targeting": "泳道：{column}"
+    },
+    "rich_markdown": {
+      "invalid_block": "无法显示 {name} 区块（{reason}）。已在下方保留原始内容。",
+      "unknown_block": "“{name}” 不是已知标签，因此按原样显示。"
     }
   },
   "sharing": {

@@ -20623,6 +20623,10 @@ export type Translations = {
       dropped: string;
       cancelled: string;
     };
+    rich_markdown: {
+      invalid_block: string;
+      unknown_block: string;
+    };
   };
   releases: {
     whats_new: {

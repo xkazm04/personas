@@ -1,5 +1,5 @@
 import { CheckCircle2, XCircle, Image as ImageIcon, Video } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { type DecisionItem, type DecisionVerdict, catBorder, isVideoUrl } from './reviewFocusHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
@@ -28,7 +28,7 @@ export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: F
             <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
             <h3 className="typo-body-lg font-semibold text-foreground mb-2">{decision.label}</h3>
             {decision.description && (
-              <MarkdownRenderer content={decision.description} className="typo-body text-foreground leading-relaxed" />
+              <RichMarkdown content={decision.description} className="typo-body text-foreground leading-relaxed" />
             )}
           </div>
         </div>
@@ -38,7 +38,7 @@ export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: F
           <DecisionMeta category={decision.category} />
           <h3 className="typo-body-lg font-semibold text-foreground mb-1">{decision.label}</h3>
           {decision.description && (
-            <MarkdownRenderer content={decision.description} className="typo-body text-foreground leading-relaxed" />
+            <RichMarkdown content={decision.description} className="typo-body text-foreground leading-relaxed" />
           )}
         </div>
       )}

@@ -17055,6 +17055,10 @@
       "dropped": "Dipindahkan ke {column}. {count} di jalur ini.",
       "picked_up": "Diangkat. Gunakan tombol panah untuk memilih jalur, Enter untuk menjatuhkan, Escape untuk membatalkan.",
       "targeting": "Jalur: {column}"
+    },
+    "rich_markdown": {
+      "invalid_block": "Blok {name} tidak dapat ditampilkan ({reason}). Blok ini tetap disimpan di bawah persis seperti aslinya.",
+      "unknown_block": "\"{name}\" bukan tag yang dikenali, jadi ditampilkan persis seperti aslinya."
     }
   },
   "sharing": {

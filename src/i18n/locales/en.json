@@ -20616,6 +20616,10 @@
       "targeting": "Lane: {column}",
       "dropped": "Moved to {column}. {count} in this lane.",
       "cancelled": "Move cancelled."
+    },
+    "rich_markdown": {
+      "invalid_block": "The {name} block could not be shown ({reason}). It is kept below as written.",
+      "unknown_block": "\"{name}\" is not a known tag, so it is shown as written."
     }
   },
   "releases": {

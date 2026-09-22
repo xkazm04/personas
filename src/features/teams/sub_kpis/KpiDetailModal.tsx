@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { paceDescriptor } from './kpiMath';
 import { computeConvergence, splitChannels, type Convergence } from './kpiConvergence';
 import { categoryMeta, kindMeta, cadenceMeta, TRACK_COLOR } from './kpiMeta';
@@ -282,7 +283,10 @@ function HowMeasured({ kpi }: { kpi: DevKpi }) {
   const { t, tx } = useTranslation();
   return (
     <div className="space-y-1.5">
-      {kpi.description && <p className="typo-body text-foreground">{kpi.description}</p>}
+      {/* The description is AUTHORED - the KPI scan writes it, an agent can
+          rewrite it - so it renders as RichMarkdown: a scan may put a gauge,
+          a card or a table of evidence in it, in the app's one block vocabulary. */}
+      {kpi.description && <RichMarkdown content={kpi.description} className="typo-body text-foreground" />}
       <p className="typo-body text-foreground/90">{describeMeasurement(kpi, t, tx)}</p>
       <details className="typo-caption text-foreground/70">
         <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>

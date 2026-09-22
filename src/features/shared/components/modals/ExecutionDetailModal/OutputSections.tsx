@@ -1,5 +1,5 @@
 import { MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ParsedOutput } from './outputParser';
 import { analyzeProvenance } from './provenance';
@@ -60,7 +60,7 @@ export function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMe
       }
       trailing={showHeader ? <ProvenanceBadge content={msg.content} /> : undefined}
     >
-      {msg.content && <MarkdownRenderer content={msg.content} className="typo-body" />}
+      {msg.content && <RichMarkdown content={msg.content} className="typo-body" />}
     </ContentCard>
   );
 }
