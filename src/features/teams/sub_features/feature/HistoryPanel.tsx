@@ -15,7 +15,7 @@ export interface HistoryPanelProps {
 export function HistoryPanel({ feature, t, tx }: HistoryPanelProps) {
   const council = feature.council;
   return (
-    <section className="rounded-card border border-border p-4" data-testid="features-history">
+    <section className="rounded-card border border-border bg-secondary/30 p-4" data-testid="features-history">
       <h3 className="typo-body-lg text-foreground">{t.history_title}</h3>
       {feature.history.length === 0 ? (
         <p className="mt-1 typo-caption">{t.history_none}</p>

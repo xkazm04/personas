@@ -30,7 +30,7 @@ export function SlicePanel({
   }
 
   return (
-    <section className="rounded-card border border-border p-4" data-testid="features-slice">
+    <section className="rounded-card border border-border bg-secondary/30 p-4" data-testid="features-slice">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="typo-body-lg text-foreground">{t.slice_title}</h3>

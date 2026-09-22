@@ -175,7 +175,11 @@ export const SQUARE_FILL: Record<SquareTone, string> = {
   running: 'var(--primary)',
   settled: 'var(--status-success)',
   claimed: 'color-mix(in srgb, var(--foreground) 42%, transparent)',
-  platform: 'var(--status-info)',
+  // Platform is deliberately a WASH of status-info rather than the solid
+  // colour: at 18px a solid info square and a solid primary square read as the
+  // same mark, and "shared machinery" must not look like "a council is
+  // running on it".
+  platform: 'color-mix(in srgb, var(--status-info) 34%, transparent)',
   tests: 'color-mix(in srgb, var(--foreground) 22%, transparent)',
   unclaimed: 'transparent',
   unknown: 'transparent',

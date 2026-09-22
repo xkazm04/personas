@@ -5,8 +5,8 @@
 // so a hundred real DOM rows would be paid for on every one of those renders.
 // Group headings are items in the same flat list and one of them is pinned via
 // the range extractor, which is how a sticky heading survives virtualisation.
-import { useCallback, useMemo, useRef } from 'react';
-import { defaultRangeExtractor, useVirtualizer, type Range } from '@tanstack/react-virtual';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search } from 'lucide-react';
 
 import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -18,6 +18,10 @@ import { FEATURE_MOVES, sortRows, type FeatureMove, type FeatureRow, type Featur
 import { moveLabel, type TFeatures } from '../featuresModel';
 import { FeatureRowItem } from './FeatureRowItem';
 
+// Both item kinds are a FIXED height, which is why `measureElement` is not
+// wired up: dynamic measurement would put a ResizeObserver on every mounted
+// row and re-measure the list on every scroll frame, for an answer the
+// stylesheet already fixes. Change either constant if the row's geometry moves.
 const ROW_HEIGHT = 54;
 const HEADING_HEIGHT = 30;
 
@@ -73,31 +77,47 @@ export function FeatureColumn({
   const scrollRef = useRef<HTMLDivElement>(null);
   const sorted = useMemo(() => sortRows(rows, sort), [rows, sort]);
   const items = useMemo(() => flatten(sorted, sort), [sorted, sort]);
-  const headingIndexes = useMemo(
-    () => items.reduce<number[]>((acc, item, i) => (item.kind === 'heading' ? [...acc, i] : acc), []),
-    [items],
-  );
-  const activeHeading = useRef<number>(0);
-
-  const rangeExtractor = useCallback(
-    (range: Range) => {
-      // The heading at or above the top of the viewport is ALWAYS rendered, so
-      // it can be pinned there. Without this the virtualiser unmounts it the
-      // moment its own row scrolls past and the band loses its name.
-      const pinned = [...headingIndexes].reverse().find((i) => i <= range.startIndex) ?? 0;
-      activeHeading.current = pinned;
-      return Array.from(new Set([pinned, ...defaultRangeExtractor(range)])).sort((a, b) => a - b);
-    },
-    [headingIndexes],
-  );
-
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (i) => (items[i]?.kind === 'heading' ? HEADING_HEIGHT : ROW_HEIGHT),
     overscan: 8,
-    rangeExtractor: sort === 'move' ? rangeExtractor : undefined,
+    // Keyed by IDENTITY, not by position. The two item kinds are different
+    // heights, and the virtualiser caches a size per key: keyed by index, a
+    // filter or a sort that turns index 7 from a row into a heading keeps the
+    // old size and every item after it draws 24px out of place - two rows on
+    // top of each other, which is exactly what happened.
+    getItemKey: (i) => {
+      const item = items[i];
+      if (!item) return i;
+      return item.kind === 'heading' ? `h:${item.move}` : `r:${item.row.feature.id}`;
+    },
   });
+
+  // The key change alone does not re-measure what is already cached under a key
+  // that survived; re-measuring when the item list changes identity does.
+  useEffect(() => { virtualizer.measure(); }, [items, virtualizer]);
+
+  const virtualItems = virtualizer.getVirtualItems();
+  /* The band a reader is standing IN, derived from the scroll offset rather
+     than mutated inside the range extractor. An earlier version pinned the
+     heading by rendering that one virtual item `position: sticky` - which puts
+     it back in normal flow, so the item it was supposed to occupy lost its
+     slot and two rows drew on top of each other. The heading is now an OVERLAY
+     outside the virtual list, and every virtual item stays absolute. */
+  const offset = virtualizer.scrollOffset ?? 0;
+  const standingIn = useMemo(() => {
+    if (sort !== 'move') return null;
+    let seen: Extract<Item, { kind: 'heading' }> | null = null;
+    let y = 0;
+    for (const item of items) {
+      const h = item.kind === 'heading' ? HEADING_HEIGHT : ROW_HEIGHT;
+      if (item.kind === 'heading' && y <= offset + 1) seen = item;
+      y += h;
+      if (y > offset + 1 && seen) break;
+    }
+    return seen;
+  }, [items, offset, sort]);
 
   const move = useCallback(
     (delta: number) => {
@@ -147,7 +167,7 @@ export function FeatureColumn({
               aria-pressed={sort === option.id}
               data-testid={`features-sort-${option.id}`}
               onClick={() => onSort(option.id)}
-              className={`flex-1 rounded-interactive border px-2 py-1 typo-caption focus-ring ${
+              className={`whitespace-nowrap rounded-interactive border px-2 py-1 typo-caption focus-ring ${
                 sort === option.id
                   ? 'border-primary/60 bg-primary/15 text-primary'
                   : 'border-border text-foreground hover:bg-secondary/50'
@@ -177,21 +197,26 @@ export function FeatureColumn({
           }}
           className="relative min-h-0 flex-1 overflow-y-auto focus-ring"
         >
+          {/* The sticky band name. `height: 0` plus an absolutely placed bar
+              means it contributes nothing to the flow the virtual list is
+              measured against, which is what keeps the two independent. */}
+          {standingIn ? (
+            <div className="sticky top-0 z-[2] h-0" aria-hidden="true">
+              <div className="flex h-[30px] items-center justify-between border-b border-border bg-background px-3">
+                <span className="typo-caption text-foreground">{moveLabel(standingIn.move, t)}</span>
+                <span className="typo-data text-foreground">{standingIn.count}</span>
+              </div>
+            </div>
+          ) : null}
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
-            {virtualizer.getVirtualItems().map((v) => {
+            {virtualItems.map((v) => {
               const item = items[v.index];
               if (!item) return null;
-              const pinned = item.kind === 'heading' && v.index === activeHeading.current;
               return (
                 <div
                   key={v.key}
-                  ref={pinned ? undefined : virtualizer.measureElement}
                   data-index={v.index}
-                  style={
-                    pinned
-                      ? { position: 'sticky', top: 0, zIndex: 2, width: '100%' }
-                      : { position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)` }
-                  }
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${v.start}px)` }}
                 >
                   {item.kind === 'heading' ? (
                     <div className="flex items-center justify-between border-b border-border bg-background px-3 py-1.5">

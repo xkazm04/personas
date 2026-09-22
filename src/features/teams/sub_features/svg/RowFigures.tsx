@@ -25,7 +25,7 @@ export function SpanStrip({ crossed, total, label, width = 76, height = 10 }: Sp
   if (total > 24) {
     return (
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label} className="flex-none">
-        <rect x="0" y={height / 2 - 2} width={width} height="4" rx="2" fill="color-mix(in srgb, var(--foreground) 16%, transparent)" />
+        <rect x="0" y={height / 2 - 2} width={width} height="4" rx="2" fill="color-mix(in srgb, var(--foreground) 22%, transparent)" />
         <rect x="0" y={height / 2 - 2} width={((safe / total) * width).toFixed(2)} height="4" rx="2" fill="var(--status-info)" />
       </svg>
     );
@@ -43,7 +43,7 @@ export function SpanStrip({ crossed, total, label, width = 76, height = 10 }: Sp
           height={height - 2}
           rx="1.5"
           fill={i < safe ? 'var(--status-info)' : 'transparent'}
-          stroke={i < safe ? 'none' : 'color-mix(in srgb, var(--foreground) 24%, transparent)'}
+          stroke={i < safe ? 'none' : 'color-mix(in srgb, var(--foreground) 38%, transparent)'}
           strokeWidth={i < safe ? 0 : 1}
         />
       ))}

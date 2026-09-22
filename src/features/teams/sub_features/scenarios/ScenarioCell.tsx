@@ -46,7 +46,7 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
     <article
       data-testid="features-scenario-cell"
       data-scenario-scope={scenario.scope}
-      className="flex flex-col gap-2 rounded-card border border-border p-3"
+      className="flex flex-col gap-2 rounded-card border border-border bg-secondary/30 p-3"
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="min-w-0 typo-body text-foreground">{scenario.title}</h4>
@@ -86,33 +86,43 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
         <span className="typo-caption">
           {latest?.n == null ? t.sample_unknown : tx(t.sample_label, { count: latest.n })}
         </span>
-        <Tooltip content={tx(t.proof_ladder_label, { proof: proofLabel(proof, t) })}>
-          <span className="inline-flex items-center gap-1.5 typo-caption">
-            <ProofLadder proof={proof} label={tx(t.proof_ladder_label, { proof: proofLabel(proof, t) })} />
-            {proofLabel(proof, t)}
-          </span>
-        </Tooltip>
+        {/* No run touched this branch, so there is no rung to draw. Saying
+            "proof not recognised" here would name a defect that is really an
+            absence. */}
+        {proof ? (
+          <Tooltip content={tx(t.proof_ladder_label, { proof: proofLabel(proof, t) })}>
+            <span className="inline-flex items-center gap-1.5 typo-caption">
+              <ProofLadder proof={proof} label={tx(t.proof_ladder_label, { proof: proofLabel(proof, t) })} />
+              {proofLabel(proof, t)}
+            </span>
+          </Tooltip>
+        ) : null}
       </div>
 
       {latest?.summary ? <p className="typo-caption">{latest.summary}</p> : null}
 
-      <div className="flex items-center gap-1.5">
-        <AsyncButton
-          variant="ghost"
-          size="sm"
-          icon={<Pencil className="h-3.5 w-3.5" />}
-          onClick={() => onEdit(scenario)}
-        >
-          {t.scenario_edit}
-        </AsyncButton>
-        <AsyncButton
-          variant="ghost"
-          size="sm"
-          icon={<Trash2 className="h-3.5 w-3.5" />}
-          onClick={() => onDelete(scenario)}
-        >
-          {t.scenario_delete}
-        </AsyncButton>
+      {/* Icon-only: at cell width the full labels wrap to three lines each and
+          the two controls become the loudest thing in a figure-led cell. The
+          name is carried by the shared tooltip and the aria-label. */}
+      <div className="flex items-center gap-1">
+        <Tooltip content={t.scenario_edit}>
+          <AsyncButton
+            variant="ghost"
+            size="sm"
+            aria-label={t.scenario_edit}
+            icon={<Pencil className="h-3.5 w-3.5" />}
+            onClick={() => onEdit(scenario)}
+          />
+        </Tooltip>
+        <Tooltip content={t.scenario_delete}>
+          <AsyncButton
+            variant="ghost"
+            size="sm"
+            aria-label={t.scenario_delete}
+            icon={<Trash2 className="h-3.5 w-3.5" />}
+            onClick={() => onDelete(scenario)}
+          />
+        </Tooltip>
       </div>
     </article>
   );

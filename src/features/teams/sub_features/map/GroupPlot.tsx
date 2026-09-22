@@ -117,7 +117,7 @@ export function GroupPlotCard({
   return (
     <section
       data-testid="features-map-plot"
-      className={`rounded-card border p-2.5 ${
+      className={`rounded-card border bg-secondary/30 p-2.5 ${
         plot.group.untouched ? 'border-dashed border-status-warning/50' : 'border-border'
       }`}
     >

@@ -62,7 +62,7 @@ export function RatingPanel({ feature, t, tx, language }: RatingPanelProps) {
   const thresholdText = formatNumeric(FEATURE_THRESHOLD, 'plain', { language, precision: 2 });
 
   return (
-    <section className="rounded-card border border-border p-4" data-testid="features-rating">
+    <section className="rounded-card border border-border bg-secondary/30 p-4" data-testid="features-rating">
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex items-baseline gap-2">
           <span className="typo-data-lg text-foreground" data-testid="features-overall">
