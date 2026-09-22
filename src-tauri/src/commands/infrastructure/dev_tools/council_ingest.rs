@@ -28,6 +28,7 @@
 //! copied from `notepad_ingest.rs`, including its two rules - it never panics
 //! and it never fails the tick.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -36,16 +37,18 @@ use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::db::repos::dev::council as council_repo;
+use crate::db::repos::dev::scenarios as scenario_repo;
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 use personas_core::events::event_name;
 use personas_core::models::{
-    round4, rubric_for, CouncilIngestSummary, COUNCIL_CONFIDENCES, COUNCIL_COVERAGE_FLOOR,
+    aggregate_scenarios, round4, rubric_for, CouncilIngestSummary, ScenarioAggregate,
+    ScenarioDeclaration, ScenarioReport, COUNCIL_CONFIDENCES, COUNCIL_COVERAGE_FLOOR,
     COUNCIL_HARD_FAILURE_CODES, COUNCIL_MAX_ROUND, COUNCIL_NUMERIC_TOLERANCE, COUNCIL_OUTCOMES,
     COUNCIL_RUBRIC_VERSIONS, COUNCIL_SUBJECT_KINDS, COUNCIL_TRUSTED_OVERALL, COUNCIL_TRUST_STATES,
-    COUNCIL_VERDICT_KINDS, COUNCIL_VERDICT_STATES,
+    COUNCIL_VERDICT_KINDS, COUNCIL_VERDICT_STATES, SCENARIO_PROOFS, SCENARIO_RESULT_STATES,
 };
 use personas_db::DbPool;
 
@@ -66,6 +69,14 @@ const MAX_TEXT: usize = 4000;
 const MAX_SPANNED_PATHS: usize = 500;
 /// `must_address` lines. The value of this list is that a human reads it.
 const MAX_MUST_ADDRESS: usize = 30;
+/// Scenarios one run may report on. The value member may propose at most five
+/// new ones per round; a result claiming fifty branches is a result that
+/// enumerated its inputs rather than judging a feature.
+const MAX_SCENARIOS: usize = 50;
+/// Axes on one scenario, and the length of each key and value. An axis map is
+/// a coordinate ("candidate_family: marketing"), not a document.
+const MAX_SCENARIO_AXES: usize = 20;
+const MAX_AXIS_TEXT: usize = 200;
 
 // ── result.json shape ───────────────────────────────────────────────────────
 
@@ -87,6 +98,13 @@ struct CouncilResult {
     hard_failures: Vec<ResultHardFailure>,
     #[serde(default)]
     dimensions: Vec<ResultDimension>,
+    /// Optional, and optional TOGETHER with `envelope` - a raw `Value` rather
+    /// than a typed `Option<Vec<_>>` because ABSENT and `null` are different
+    /// answers here and serde spells them the same into an `Option`.
+    #[serde(default)]
+    scenarios: Option<serde_json::Value>,
+    #[serde(default)]
+    envelope: Option<serde_json::Value>,
     #[serde(default)]
     overall: Option<f64>,
     #[serde(default)]
@@ -181,6 +199,24 @@ pub(crate) struct ValidatedCouncilRun {
     pub started_at: Option<String>,
     pub finished_at: Option<String>,
     pub verdicts: Vec<council_repo::NewVerdict>,
+    /// The scenario fold, or `None` when the result carried no `scenarios`
+    /// key at all. `None` is what keeps every result written before scenarios
+    /// existed ingesting byte for byte as it did.
+    pub scenarios: Option<ValidatedScenarios>,
+}
+
+/// The scenario half of a validated result: what the member REPORTED, and the
+/// fold of that against what the product DECLARED.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct ValidatedScenarios {
+    /// Slugs the member reported on, in reported order. Only these get a
+    /// result row - a declared branch nobody looked at is unmeasured by
+    /// absence, and writing a row to say so would be writing a measurement.
+    pub reported: Vec<String>,
+    /// Slugs the member reported that the product had not declared. The door
+    /// creates each as `proposed` / source `council` before it writes.
+    pub discovered: Vec<ScenarioReport>,
+    pub fold: ScenarioAggregate,
 }
 
 fn bounded(s: &str, max: usize, what: &str) -> Result<String, AppError> {
@@ -219,16 +255,218 @@ fn state_scores(state: &str) -> bool {
     matches!(state, "measured" | "carried")
 }
 
+/// Validate the result's `scenarios` array, exactly as the skill's
+/// `schema.mjs` does - the same nine fields, the same refusals.
+///
+/// Returns the member's reports. `scope`, `floor`, `floor_hit` and `advisory`
+/// are deliberately NOT read from the file: they are derived from what the
+/// product DECLARED, because a judge that may also decide which branches count
+/// can always pass by narrowing the question.
+fn validate_scenario_reports(
+    raw: &serde_json::Value,
+    subject_kind: &str,
+) -> Result<Vec<ScenarioReport>, AppError> {
+    if subject_kind != "use_case" {
+        return Err(AppError::Validation(
+            "scenarios: only a use_case subject may carry scenarios - a redesign \
+             has no user branches of its own"
+                .into(),
+        ));
+    }
+    let Some(entries) = raw.as_array() else {
+        return Err(AppError::Validation(
+            "scenarios must be an array when present".into(),
+        ));
+    };
+    if entries.len() > MAX_SCENARIOS {
+        return Err(AppError::Validation(format!(
+            "scenarios carries {} entries (cap {MAX_SCENARIOS})",
+            entries.len()
+        )));
+    }
+
+    let mut out: Vec<ScenarioReport> = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let slug = bounded(
+            entry
+                .get("slug")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default(),
+            200,
+            "scenarios: slug",
+        )?;
+        if out.iter().any(|s| s.slug == slug) {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug} appears twice"
+            )));
+        }
+        let title = bounded(
+            entry
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default(),
+            300,
+            &format!("scenarios: {slug}: title"),
+        )?;
+
+        let axes_raw = entry.get("axes");
+        let Some(axes_obj) = axes_raw.and_then(|v| v.as_object()) else {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug}: axes must be a flat object"
+            )));
+        };
+        if axes_obj.len() > MAX_SCENARIO_AXES {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug}: {} axes (cap {MAX_SCENARIO_AXES})",
+                axes_obj.len()
+            )));
+        }
+        let mut axes = BTreeMap::new();
+        for (k, v) in axes_obj {
+            let Some(value) = v.as_str() else {
+                return Err(AppError::Validation(format!(
+                    "scenarios: {slug}: axis {k} must be a string"
+                )));
+            };
+            axes.insert(
+                bounded(k, MAX_AXIS_TEXT, &format!("scenarios: {slug}: axis name"))?,
+                bounded(
+                    value,
+                    MAX_AXIS_TEXT,
+                    &format!("scenarios: {slug}: axis {k}"),
+                )?,
+            );
+        }
+
+        let state = one_of(
+            entry
+                .get("state")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default(),
+            &SCENARIO_RESULT_STATES,
+            &format!("scenarios: {slug}: state"),
+        )?;
+        // The absent-value convention, both directions - the same pair the
+        // dimensions above are held to, for the same reason.
+        let score = entry.get("score").and_then(|v| v.as_f64());
+        if state == "measured" {
+            match score {
+                Some(s) if (0.0..=1.0).contains(&s) && !s.is_nan() => {}
+                _ => {
+                    return Err(AppError::Validation(format!(
+                        "scenarios: {slug}: a measured scenario needs a score in 0..1"
+                    )))
+                }
+            }
+        } else if !matches!(entry.get("score"), Some(serde_json::Value::Null)) {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug}: an unmeasured scenario must carry score null - never a zero"
+            )));
+        }
+
+        let confidence = one_of(
+            entry
+                .get("confidence")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default(),
+            &COUNCIL_CONFIDENCES,
+            &format!("scenarios: {slug}: confidence"),
+        )?;
+        // `n` is how many runs or turns the score rests on. Present and null,
+        // or present and at least one - a zero would be a score resting on
+        // nothing, which is a claim rather than a measurement.
+        let n = match entry.get("n") {
+            Some(serde_json::Value::Null) => None,
+            Some(v) => match v.as_i64() {
+                Some(i) if i >= 1 && i <= i32::MAX as i64 => Some(i as i32),
+                _ => {
+                    return Err(AppError::Validation(format!(
+                        "scenarios: {slug}: n must be an integer >= 1 or null"
+                    )))
+                }
+            },
+            None => {
+                return Err(AppError::Validation(format!(
+                    "scenarios: {slug}: n must be an integer >= 1 or null"
+                )))
+            }
+        };
+        let proof = one_of(
+            entry
+                .get("proof")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default(),
+            &SCENARIO_PROOFS,
+            &format!("scenarios: {slug}: proof"),
+        )?;
+        let Some(summary) = entry.get("summary").and_then(|v| v.as_str()) else {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug}: summary must be a string"
+            )));
+        };
+        if summary.chars().count() > MAX_TEXT {
+            return Err(AppError::Validation(format!(
+                "scenarios: {slug}: summary is longer than {MAX_TEXT} characters"
+            )));
+        }
+
+        out.push(ScenarioReport {
+            slug,
+            title: Some(title),
+            axes: Some(axes),
+            state,
+            score,
+            confidence,
+            n,
+            proof,
+            summary: summary.trim().to_string(),
+        });
+    }
+    Ok(out)
+}
+
+/// One envelope bucket, sorted - so the comparison is about CONTENT and not
+/// about the order two implementations happened to walk their scenarios in.
+fn sorted(slugs: &[String]) -> Vec<String> {
+    let mut v = slugs.to_vec();
+    v.sort();
+    v
+}
+
+/// Read one bucket off the result's stated envelope, refusing anything that is
+/// not an array of strings.
+fn envelope_bucket(envelope: &serde_json::Value, key: &str) -> Result<Vec<String>, AppError> {
+    let Some(array) = envelope.get(key).and_then(|v| v.as_array()) else {
+        return Err(AppError::Validation(format!(
+            "envelope.{key} must be an array of slugs"
+        )));
+    };
+    let mut out = Vec::with_capacity(array.len());
+    for item in array {
+        let Some(s) = item.as_str() else {
+            return Err(AppError::Validation(format!(
+                "envelope.{key} must be an array of slugs"
+            )));
+        };
+        out.push(s.to_string());
+    }
+    out.sort();
+    Ok(out)
+}
+
 /// Parse and fully validate a result, recomputing every number it states.
 ///
 /// `dir_name` is the run directory's own name; the file's `run_id` must match
 /// it, so a result dropped into the wrong directory is caught rather than
 /// filed under the wrong round. `prior_round` is the subject's current highest
-/// round (`0` for a subject with no runs).
+/// round (`0` for a subject with no runs). `declared` is what the PRODUCT says
+/// this feature's scenarios are - the scopes and floors the result is folded
+/// against, which the result itself may not state.
 pub(crate) fn validate_council_result(
     raw: &str,
     dir_name: &str,
     prior_round: i32,
+    declared: &[ScenarioDeclaration],
 ) -> Result<ValidatedCouncilRun, AppError> {
     let result: CouncilResult = serde_json::from_str(raw)
         .map_err(|e| AppError::Validation(format!("result.json is not valid: {e}")))?;
@@ -476,9 +714,96 @@ pub(crate) fn validate_council_result(
         0.0
     };
 
+    // --- scenarios, folded against what the PRODUCT declared ----------------
+    //
+    // Optional and optional TOGETHER: a per-scenario view with no envelope is
+    // half an answer, and an envelope with no view behind it is a claim about
+    // branches nobody listed. Absent on both sides is a result written before
+    // scenarios existed, and it must ingest exactly as it always did.
+    let scenarios = match (&result.scenarios, &result.envelope) {
+        (None, None) => None,
+        (Some(_), None) => {
+            return Err(AppError::Validation(
+                "scenarios without an envelope: the per-scenario view and the envelope \
+                 are written together"
+                    .into(),
+            ))
+        }
+        (None, Some(_)) => {
+            return Err(AppError::Validation(
+                "envelope without scenarios: an envelope with nothing behind it is a \
+                 claim about branches nobody listed"
+                    .into(),
+            ))
+        }
+        (Some(reported_raw), Some(envelope_raw)) => {
+            let reported = validate_scenario_reports(reported_raw, &kind)?;
+            let fold = aggregate_scenarios(declared, &reported, &trust_state);
+
+            // The same posture the numbers above are held to: the envelope is
+            // RECOMPUTED here and a disagreement is refused rather than
+            // corrected, because a disagreement means the skill and the app
+            // are folding differently and storing our answer would hide it.
+            for (key, ours) in [
+                ("holds", &fold.envelope.holds),
+                ("weak", &fold.envelope.weak),
+                ("unmeasured", &fold.envelope.unmeasured),
+                ("out_of_scope", &fold.envelope.out_of_scope),
+                ("proposed", &fold.envelope.proposed),
+            ] {
+                let theirs = envelope_bucket(envelope_raw, key)?;
+                if theirs != sorted(ours) {
+                    return Err(AppError::Validation(format!(
+                        "result.json states envelope.{key} {theirs:?} but its own scenarios \
+                         give {:?} - the council does not get to state its own envelope",
+                        sorted(ours)
+                    )));
+                }
+            }
+            if let Some(object) = envelope_raw.as_object() {
+                for key in object.keys() {
+                    if !["holds", "weak", "unmeasured", "out_of_scope", "proposed"]
+                        .contains(&key.as_str())
+                    {
+                        return Err(AppError::Validation(format!(
+                            "envelope: unknown bucket {key}"
+                        )));
+                    }
+                }
+            }
+
+            // S9: every floor hit owes exactly one line a person can read.
+            // Presence, not position: the skill appends these among other
+            // lines and de-duplicates the whole list, so an order check here
+            // would be a check on the skill's line ordering rather than on
+            // whether the objection reached the report.
+            for line in &fold.must_address {
+                if !must_address.iter().any(|m| m == line) {
+                    return Err(AppError::Validation(format!(
+                        "must_address is missing the line this scenario floor hit owes: `{line}`"
+                    )));
+                }
+            }
+
+            let discovered: Vec<ScenarioReport> = reported
+                .iter()
+                .filter(|r| !declared.iter().any(|d| d.slug == r.slug))
+                .cloned()
+                .collect();
+            Some(ValidatedScenarios {
+                reported: reported.iter().map(|r| r.slug.clone()).collect(),
+                discovered,
+                fold,
+            })
+        }
+    };
+
     let outcome = recompute_outcome(
         hard_failures.len(),
         binding_floor_hit,
+        scenarios
+            .as_ref()
+            .is_some_and(|s| !s.fold.binding_floor_hits.is_empty()),
         result.round_no,
         coverage,
         &trust_state,
@@ -537,6 +862,7 @@ pub(crate) fn validate_council_result(
         started_at: result.started_at.filter(|s| !s.trim().is_empty()),
         finished_at: result.finished_at.filter(|s| !s.trim().is_empty()),
         verdicts,
+        scenarios,
     })
 }
 
@@ -545,6 +871,7 @@ pub(crate) fn validate_council_result(
 pub(crate) fn recompute_outcome(
     hard_failures: usize,
     binding_floor_hit: bool,
+    binding_scenario_floor_hit: bool,
     round_no: i32,
     coverage: f64,
     trust_state: &str,
@@ -559,6 +886,14 @@ pub(crate) fn recompute_outcome(
         return "stalled".to_string();
     }
     if hard_failures > 0 || binding_floor_hit {
+        return "fail".to_string();
+    }
+    // A binding SCENARIO floor sits with the binding dimension floors and
+    // ABOVE coverage: once the judges are trusted, a must-hold branch below
+    // its floor fails the run however good the mean is, which is the whole
+    // reason the per-scenario view exists. Scenarios never touch `overall` or
+    // `coverage` - a branch is not a rubric dimension.
+    if binding_scenario_floor_hit {
         return "fail".to_string();
     }
     if coverage + COUNCIL_NUMERIC_TOLERANCE < COUNCIL_COVERAGE_FLOOR {
@@ -743,8 +1078,65 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
         None => 0,
     };
 
+    // What the PRODUCT declares this feature's branches are. The result is
+    // folded against these, never against scopes it states itself.
+    let declared_rows = match use_case_id.as_deref() {
+        Some(uc) => scenario_repo::list_scenarios(pool, uc)?,
+        None => Vec::new(),
+    };
+    let declared: Vec<ScenarioDeclaration> = declared_rows
+        .iter()
+        .map(scenario_repo::declaration_of)
+        .collect();
+
     // Everything is checked before anything is written.
-    let validated = validate_council_result(&raw, dir_name, prior_round)?;
+    let validated = validate_council_result(&raw, dir_name, prior_round, &declared)?;
+
+    // The one write that happens before the run's own transaction: a
+    // DISCOVERED branch needs a row to point at. Deliberate - a `proposed`
+    // scenario with no result is a branch somebody named, which is worth
+    // keeping even if the run it arrived with is then refused for some other
+    // reason. It gates nothing until a person adopts it.
+    let mut scenario_ids: BTreeMap<String, String> = declared_rows
+        .iter()
+        .map(|s| (s.slug.clone(), s.id.clone()))
+        .collect();
+    let mut scenario_results = Vec::new();
+    if let (Some(sc), Some(uc)) = (validated.scenarios.as_ref(), use_case_id.as_deref()) {
+        for d in &sc.discovered {
+            let created = scenario_repo::create_discovered_scenario(
+                pool,
+                uc,
+                &d.slug,
+                d.title.as_deref().unwrap_or(&d.slug),
+                &d.axes.clone().unwrap_or_default(),
+            )?;
+            scenario_ids.insert(created.slug, created.id);
+        }
+        for fold in &sc.fold.scenarios {
+            // Only what the member actually REPORTED on gets a row: a declared
+            // branch nobody looked at is unmeasured by absence, and writing a
+            // row to say so would be recording a measurement that never
+            // happened.
+            if !sc.reported.iter().any(|s| s == &fold.slug) {
+                continue;
+            }
+            let Some(scenario_id) = scenario_ids.get(&fold.slug) else {
+                continue;
+            };
+            scenario_results.push(scenario_repo::NewScenarioResult {
+                scenario_id: scenario_id.clone(),
+                state: fold.state.clone(),
+                score: fold.score,
+                confidence: fold.confidence.clone(),
+                n: fold.n,
+                proof: fold.proof.clone(),
+                floor_hit: fold.floor_hit,
+                advisory: fold.advisory,
+                summary: fold.summary.clone(),
+            });
+        }
+    }
 
     let (subject, created) = council_repo::upsert_subject(
         pool,
@@ -756,7 +1148,7 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
     )?;
     let supersedes = council_repo::latest_run(pool, &subject.id)?.map(|r| r.id);
 
-    let run = council_repo::insert_run(
+    let run = council_repo::insert_run_full(
         pool,
         &council_repo::NewRun {
             subject_id: subject.id.clone(),
@@ -781,6 +1173,7 @@ fn ingest_one_run(pool: &DbPool, project_id: &str, dir: &Path) -> Result<bool, A
             finished_at: validated.finished_at.clone(),
         },
         &validated.verdicts,
+        &scenario_results,
     )?;
 
     let marker = json!({
@@ -972,7 +1365,7 @@ mod tests {
     }
 
     fn validate(v: &serde_json::Value) -> Result<ValidatedCouncilRun, AppError> {
-        validate_council_result(&v.to_string(), "2026-09-20-1200", 0)
+        validate_council_result(&v.to_string(), "2026-09-20-1200", 0, &[])
     }
 
     #[test]
@@ -1013,7 +1406,7 @@ mod tests {
 
     #[test]
     fn refuses_a_result_sitting_in_the_wrong_directory() {
-        let err = validate_council_result(&good_result().to_string(), "some-other-dir", 0)
+        let err = validate_council_result(&good_result().to_string(), "some-other-dir", 0, &[])
             .unwrap_err()
             .to_string();
         assert!(err.contains("sits in directory"), "{err}");
@@ -1130,14 +1523,14 @@ mod tests {
     fn a_round_must_be_the_next_one() {
         let v = good_result();
         assert!(
-            validate_council_result(&v.to_string(), "2026-09-20-1200", 1)
+            validate_council_result(&v.to_string(), "2026-09-20-1200", 1, &[])
                 .unwrap_err()
                 .to_string()
                 .contains("last round was 1")
         );
         let mut v = good_result();
         v["round_no"] = json!(2);
-        assert!(validate_council_result(&v.to_string(), "2026-09-20-1200", 1).is_ok());
+        assert!(validate_council_result(&v.to_string(), "2026-09-20-1200", 1, &[]).is_ok());
     }
 
     #[test]
@@ -1287,7 +1680,7 @@ mod tests {
         let mut v = good_result();
         v["round_no"] = json!(4);
         v["outcome"] = json!("stalled");
-        let run = validate_council_result(&v.to_string(), "2026-09-20-1200", 3).unwrap();
+        let run = validate_council_result(&v.to_string(), "2026-09-20-1200", 3, &[]).unwrap();
         assert_eq!(run.outcome, "stalled");
     }
 
@@ -1296,7 +1689,8 @@ mod tests {
         assert!(validate_council_result(
             r#"{ "schema_version": 1, "subject": { "#,
             "2026-09-20-1200",
-            0
+            0,
+            &[]
         )
         .is_err());
     }
@@ -1309,40 +1703,318 @@ mod tests {
         // also carries a hard failure. "The method declined to judge this
         // again" is the true statement about it.
         assert_eq!(
-            recompute_outcome(1, false, 5, 1.0, "trusted", Some(1.0)),
+            recompute_outcome(1, false, false, 5, 1.0, "trusted", Some(1.0)),
             "stalled"
         );
         assert_eq!(
-            recompute_outcome(1, false, 1, 1.0, "trusted", Some(1.0)),
+            recompute_outcome(1, false, false, 1, 1.0, "trusted", Some(1.0)),
             "fail"
         );
         assert_eq!(
-            recompute_outcome(0, true, 1, 1.0, "uncalibrated", Some(1.0)),
+            recompute_outcome(0, true, false, 1, 1.0, "uncalibrated", Some(1.0)),
             "fail"
         );
         assert_eq!(
-            recompute_outcome(0, false, 4, 1.0, "uncalibrated", Some(1.0)),
+            recompute_outcome(0, false, false, 4, 1.0, "uncalibrated", Some(1.0)),
             "stalled"
         );
         assert_eq!(
-            recompute_outcome(0, false, 1, 0.59, "uncalibrated", Some(1.0)),
+            recompute_outcome(0, false, false, 1, 0.59, "uncalibrated", Some(1.0)),
             "incomplete"
         );
         // exactly at the coverage floor is enough
         assert_eq!(
-            recompute_outcome(0, false, 1, 0.60, "uncalibrated", Some(0.1)),
+            recompute_outcome(0, false, false, 1, 0.60, "uncalibrated", Some(0.1)),
             "ready"
         );
         // while uncalibrated the overall only orders the queue
         assert_eq!(
-            recompute_outcome(0, false, 1, 1.0, "uncalibrated", None),
+            recompute_outcome(0, false, false, 1, 1.0, "uncalibrated", None),
             "ready"
         );
         // once trusted an unmeasured overall cannot pass
-        assert_eq!(recompute_outcome(0, false, 1, 1.0, "trusted", None), "fail");
         assert_eq!(
-            recompute_outcome(0, false, 1, 1.0, "trusted", Some(0.70)),
+            recompute_outcome(0, false, false, 1, 1.0, "trusted", None),
+            "fail"
+        );
+        assert_eq!(
+            recompute_outcome(0, false, false, 1, 1.0, "trusted", Some(0.70)),
             "ready"
+        );
+        // A binding SCENARIO floor sits with the dimension floors and ABOVE
+        // coverage: a must-hold branch under its floor outranks a thin run.
+        assert_eq!(
+            recompute_outcome(0, false, true, 1, 1.0, "trusted", Some(1.0)),
+            "fail"
+        );
+        assert_eq!(
+            recompute_outcome(0, false, true, 5, 1.0, "trusted", Some(1.0)),
+            "stalled",
+            "the round cap still outranks it"
+        );
+        assert_eq!(
+            recompute_outcome(0, false, true, 1, 0.1, "uncalibrated", Some(1.0)),
+            "fail",
+            "a binding scenario floor is read before coverage"
+        );
+    }
+
+    // ----- scenarios -----
+
+    fn declare(slug: &str, scope: &str, floor: Option<f64>) -> ScenarioDeclaration {
+        ScenarioDeclaration {
+            slug: slug.to_string(),
+            title: format!("{slug} candidates"),
+            axes: [("family".to_string(), slug.to_string())]
+                .into_iter()
+                .collect(),
+            scope: scope.to_string(),
+            floor,
+        }
+    }
+
+    fn scenario(slug: &str, state: &str, score: Option<f64>) -> serde_json::Value {
+        json!({
+            "slug": slug,
+            "title": format!("{slug} candidates"),
+            "axes": { "family": slug },
+            "state": state,
+            "score": score,
+            "confidence": "med",
+            "n": 4,
+            "proof": "simulated",
+            "summary": "a sentence a person can read"
+        })
+    }
+
+    /// A result carrying scenarios, with the envelope the fold gives.
+    fn with_scenarios(
+        entries: Vec<serde_json::Value>,
+        envelope: serde_json::Value,
+    ) -> serde_json::Value {
+        let mut v = good_result();
+        v["scenarios"] = json!(entries);
+        v["envelope"] = envelope;
+        v
+    }
+
+    fn empty_envelope() -> serde_json::Value {
+        json!({ "holds": [], "weak": [], "unmeasured": [],
+                "out_of_scope": [], "proposed": [] })
+    }
+
+    fn validate_with(
+        v: &serde_json::Value,
+        declared: &[ScenarioDeclaration],
+    ) -> Result<ValidatedCouncilRun, AppError> {
+        validate_council_result(&v.to_string(), "2026-09-20-1200", 0, declared)
+    }
+
+    /// A result with no `scenarios` key ingests exactly as it did before the
+    /// layer existed - no fold, no rows, nothing to compare.
+    #[test]
+    fn a_result_written_before_scenarios_existed_still_validates() {
+        let run = validate(&good_result()).unwrap();
+        assert_eq!(run.scenarios, None);
+        // And it does so even when the PRODUCT has declared branches: an old
+        // result is silent about them, not wrong about them.
+        let run = validate_with(&good_result(), &[declare("it", "must_hold", None)]).unwrap();
+        assert_eq!(run.scenarios, None);
+        assert_eq!(run.outcome, "ready");
+    }
+
+    /// The two halves are written together or not at all.
+    #[test]
+    fn scenarios_and_the_envelope_are_optional_together() {
+        let mut v = good_result();
+        v["scenarios"] = json!([scenario("it", "measured", Some(0.9))]);
+        let err = validate(&v).unwrap_err().to_string();
+        assert!(err.contains("scenarios without an envelope"), "{err}");
+
+        let mut v = good_result();
+        v["envelope"] = empty_envelope();
+        let err = validate(&v).unwrap_err().to_string();
+        assert!(err.contains("envelope without scenarios"), "{err}");
+    }
+
+    /// A redesign has no user branches of its own.
+    #[test]
+    fn an_architecture_subject_may_not_carry_scenarios() {
+        let mut v = with_scenarios(
+            vec![scenario("it", "measured", Some(0.9))],
+            json!({ "holds": ["it"], "weak": [], "unmeasured": [],
+                    "out_of_scope": [], "proposed": [] }),
+        );
+        v["subject"]["kind"] = json!("architecture");
+        // The rubric mismatch would also refuse this, so the message is what
+        // matters: the door must name the scenarios, not the dimensions.
+        let err = validate(&v).unwrap_err().to_string();
+        assert!(err.contains("only a use_case subject"), "{err}");
+    }
+
+    /// The absent-value convention, one layer down.
+    #[test]
+    fn a_scenario_may_not_lie_about_whether_it_measured_anything() {
+        let mut bad = scenario("it", "measured", None);
+        bad["score"] = json!(null);
+        let err = validate(&with_scenarios(vec![bad], empty_envelope()))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("needs a score in 0..1"), "{err}");
+
+        let err = validate(&with_scenarios(
+            vec![scenario("it", "unmeasured", Some(0.4))],
+            empty_envelope(),
+        ))
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("must carry score null"), "{err}");
+
+        let mut bad = scenario("it", "measured", Some(0.9));
+        bad["n"] = json!(0);
+        let err = validate(&with_scenarios(vec![bad], empty_envelope()))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("n must be an integer >= 1 or null"), "{err}");
+
+        let mut bad = scenario("it", "measured", Some(0.9));
+        bad["axes"] = json!({ "family": { "nested": "no" } });
+        let err = validate(&with_scenarios(vec![bad], empty_envelope()))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("must be a string"), "{err}");
+
+        let err = validate(&with_scenarios(
+            vec![
+                scenario("it", "measured", Some(0.9)),
+                scenario("it", "measured", Some(0.8)),
+            ],
+            empty_envelope(),
+        ))
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("appears twice"), "{err}");
+    }
+
+    /// The door recomputes the envelope and refuses a disagreement, the same
+    /// posture `overall` / `coverage` / `outcome` are held to.
+    #[test]
+    fn the_council_does_not_get_to_state_its_own_envelope() {
+        let declared = [declare("it", "must_hold", None)];
+        let v = with_scenarios(
+            vec![scenario("it", "measured", Some(0.9))],
+            json!({ "holds": ["it"], "weak": [], "unmeasured": [],
+                    "out_of_scope": [], "proposed": [] }),
+        );
+        assert!(validate_with(&v, &declared).is_ok());
+
+        let lying = with_scenarios(
+            vec![scenario("it", "measured", Some(0.2))],
+            json!({ "holds": ["it"], "weak": [], "unmeasured": [],
+                    "out_of_scope": [], "proposed": [] }),
+        );
+        let err = validate_with(&lying, &declared).unwrap_err().to_string();
+        assert!(err.contains("state its own envelope"), "{err}");
+
+        let mut extra = v.clone();
+        extra["envelope"]["invented"] = json!([]);
+        let err = validate_with(&extra, &declared).unwrap_err().to_string();
+        assert!(err.contains("unknown bucket invented"), "{err}");
+    }
+
+    /// A slug the product never declared is DISCOVERED: scope `proposed`,
+    /// in the `proposed` bucket, gating nothing.
+    #[test]
+    fn an_undeclared_slug_is_discovered_and_gates_nothing() {
+        let v = with_scenarios(
+            vec![scenario("hr", "measured", Some(0.1))],
+            json!({ "holds": [], "weak": [], "unmeasured": [],
+                    "out_of_scope": [], "proposed": ["hr"] }),
+        );
+        let run = validate_with(&v, &[]).unwrap();
+        let sc = run.scenarios.as_ref().unwrap();
+        assert_eq!(sc.discovered.len(), 1);
+        assert_eq!(sc.discovered[0].slug, "hr");
+        assert_eq!(sc.fold.scenarios[0].scope, "proposed");
+        assert!(sc.fold.binding_floor_hits.is_empty());
+        assert_eq!(run.outcome, "ready", "a proposal cannot sink a run");
+    }
+
+    /// The branch this whole layer exists for: a must-hold scenario below its
+    /// floor is loud and inert while the judges are uncalibrated, and sinks
+    /// the run once they are trusted - with the same scores either way.
+    #[test]
+    fn a_must_hold_floor_hit_is_advisory_then_binding() {
+        let declared = [declare("marketing", "must_hold", None)];
+        let line = "Scenario marketing candidates is below its floor (0.3 < 0.5)";
+        let entries = vec![scenario("marketing", "measured", Some(0.3))];
+        let envelope = json!({ "holds": [], "weak": ["marketing"], "unmeasured": [],
+                               "out_of_scope": [], "proposed": [] });
+
+        let mut v = with_scenarios(entries.clone(), envelope.clone());
+        v["must_address"] = json!([line]);
+        let run = validate_with(&v, &declared).unwrap();
+        assert_eq!(run.outcome, "ready", "advisory while uncalibrated");
+        let sc = run.scenarios.as_ref().unwrap();
+        assert_eq!(sc.fold.advisory_floor_hits, vec!["marketing".to_string()]);
+        assert!(sc.fold.binding_floor_hits.is_empty());
+        assert!(sc.fold.scenarios[0].floor_hit && sc.fold.scenarios[0].advisory);
+
+        let mut v = with_scenarios(entries, envelope);
+        v["trust_state"] = json!("trusted");
+        v["must_address"] = json!([line]);
+        v["outcome"] = json!("fail");
+        let run = validate_with(&v, &declared).unwrap();
+        assert_eq!(
+            run.outcome, "fail",
+            "a trusted judge's scenario floor binds"
+        );
+        let sc = run.scenarios.as_ref().unwrap();
+        assert_eq!(sc.fold.binding_floor_hits, vec!["marketing".to_string()]);
+        assert!(!sc.fold.scenarios[0].advisory);
+    }
+
+    /// S9: the objection owes a line a person can read, and a result that
+    /// dropped it is refused rather than stored with the complaint missing.
+    #[test]
+    fn a_floor_hit_that_never_reached_must_address_is_refused() {
+        let declared = [declare("marketing", "must_hold", None)];
+        let v = with_scenarios(
+            vec![scenario("marketing", "measured", Some(0.3))],
+            json!({ "holds": [], "weak": ["marketing"], "unmeasured": [],
+                    "out_of_scope": [], "proposed": [] }),
+        );
+        let err = validate_with(&v, &declared).unwrap_err().to_string();
+        assert!(err.contains("must_address is missing the line"), "{err}");
+    }
+
+    /// S8, the case two implementations disagree about most easily: a
+    /// `tracked` branch buckets at a FLAT 0.5 even when it declares its own
+    /// floor, and never hits one.
+    #[test]
+    fn a_tracked_branch_buckets_at_a_flat_half_and_never_gates() {
+        let declared = [declare("ops", "tracked", Some(0.9))];
+        let v = with_scenarios(
+            vec![scenario("ops", "measured", Some(0.7))],
+            json!({ "holds": ["ops"], "weak": [], "unmeasured": [],
+                    "out_of_scope": [], "proposed": [] }),
+        );
+        let mut trusted = v.clone();
+        trusted["trust_state"] = json!("trusted");
+        trusted["outcome"] = json!("fail"); // .685 < .70 once trusted
+        let run = validate_with(&trusted, &declared).unwrap();
+        assert!(
+            run.scenarios
+                .as_ref()
+                .unwrap()
+                .fold
+                .binding_floor_hits
+                .is_empty(),
+            "tracked never gates, even at 0.7 against a declared 0.9"
+        );
+        assert_eq!(
+            run.outcome, "fail",
+            "for the overall threshold, not the branch"
         );
     }
 }
@@ -1588,6 +2260,92 @@ mod door_tests {
         let tmp = tmp_root("idle");
         let (pool, _project_id) = seeded(&tmp);
         assert!(sweep_council_ingests_core(&pool).is_empty());
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// End to end: a declared branch is scored against its own scope, an
+    /// undeclared one is created `proposed`, and both land with the run.
+    #[test]
+    fn scenarios_land_with_the_run_and_a_discovery_enters_proposed() {
+        use crate::db::repos::dev::scenarios as scenario_repo;
+
+        let tmp = tmp_root("scenarios");
+        let (pool, project_id) = seeded(&tmp);
+        let use_case = repo::list_use_cases(&pool, &project_id, None).unwrap()[0]
+            .id
+            .clone();
+        scenario_repo::upsert_scenario(
+            &pool,
+            &crate::db::models::UpsertScenarioInput {
+                id: None,
+                use_case_id: use_case.clone(),
+                slug: None,
+                title: "Marketing candidates".into(),
+                axes: Default::default(),
+                scope: "must_hold".into(),
+                floor: None,
+            },
+            "marketing",
+        )
+        .unwrap();
+
+        let mut v: serde_json::Value =
+            serde_json::from_str(&result_json("r-1", "checkout", 1)).unwrap();
+        v["scenarios"] = json!([
+            {
+                "slug": "marketing", "title": "Marketing candidates",
+                "axes": { "family": "marketing" }, "state": "measured", "score": 0.3,
+                "confidence": "low", "n": 4, "proof": "simulated",
+                "summary": "the question bank is engineering-shaped"
+            },
+            {
+                "slug": "hr", "title": "HR candidates", "axes": { "family": "hr" },
+                "state": "unmeasured", "score": null, "confidence": "low",
+                "n": null, "proof": "claimed", "summary": ""
+            }
+        ]);
+        v["envelope"] = json!({
+            "holds": [], "weak": ["marketing"], "unmeasured": [],
+            "out_of_scope": [], "proposed": ["hr"]
+        });
+        v["must_address"] = json!(["Scenario Marketing candidates is below its floor (0.3 < 0.5)"]);
+        write_run(&tmp, "r-1", &v.to_string());
+
+        let summary = ingest_council_runs(&pool, &project_id, None).unwrap();
+        assert!(summary.refused.is_empty(), "{:?}", summary.refused);
+        assert_eq!(summary.runs_ingested, 1);
+
+        let scenarios = scenario_repo::list_scenarios(&pool, &use_case).unwrap();
+        assert_eq!(scenarios.len(), 2, "the discovery was created");
+        let hr = scenarios.iter().find(|s| s.slug == "hr").unwrap();
+        assert_eq!(hr.scope, "proposed");
+        assert_eq!(hr.source, "council");
+
+        let run_id = council_repo::list_subject_states(&pool, Some(&project_id)).unwrap()[0]
+            .latest_run_id
+            .clone()
+            .unwrap();
+        let results = scenario_repo::list_results_for_run(&pool, &run_id).unwrap();
+        assert_eq!(results.len(), 2, "both reported branches have a row");
+        let marketing_id = scenarios
+            .iter()
+            .find(|s| s.slug == "marketing")
+            .unwrap()
+            .id
+            .clone();
+        let marketing = results
+            .iter()
+            .find(|r| r.scenario_id == marketing_id)
+            .unwrap();
+        assert_eq!(marketing.score, Some(0.3));
+        assert!(
+            marketing.floor_hit && marketing.advisory,
+            "hit, and held inert while the judges are uncalibrated"
+        );
+        let hr_result = results.iter().find(|r| r.scenario_id == hr.id).unwrap();
+        assert_eq!(hr_result.state, "unmeasured");
+        assert_eq!(hr_result.score, None, "unmeasured is null, never zero");
+
         let _ = std::fs::remove_dir_all(&tmp);
     }
 
