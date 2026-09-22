@@ -60,6 +60,7 @@
       ],
       "resolved": false
     },
+    "core/src/events.rs": {"count":1,"sections":[7],"lines":["220"],"contexts":["The event is declared in `core/src/events.rs:220` and typed in"],"resolved":false},
     "db.ts": {
       "count": 1,
       "sections": [6],
@@ -140,7 +141,6 @@
       "resolved": false
     },
     "sla.rs": {"count":10,"sections":[0,7],"lines":["64","109","344","376","651","764","983"],"contexts":["| per-persona success rate | `sla.rs:64` | `('completed','failed')` |"],"resolved":false},
-    "src-tauri/core/src/events.rs": {"count":1,"sections":[7],"lines":["220"],"contexts":["The event is declared in `core/src/events.rs:220` and typed in"],"resolvedFrom":"suffix","verbatim":"core/src/events.rs"},
     "src-tauri/core/src/lifecycle.rs": {
       "count": 1,
       "sections": [3],

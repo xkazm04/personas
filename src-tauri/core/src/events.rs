@@ -171,6 +171,14 @@ event_names! {
     // status move goes through `notepad_set_status`, whose caller already
     // holds the updated row.
     NOTEPAD_NOTE_CHANGED       => "notepad-note-changed",
+    // Council: a subject's verdict chain moved -- a run was ingested, a human
+    // decided, or the drift sweep re-marked an approval. Payload
+    // `{projectId, subjectId?}`; the ledger refetches the project's subject
+    // states. ONE name for the whole chain on purpose: the frontend's unit of
+    // invalidation is the project's council state, not a table, and a
+    // finer-grained event would only let a listener subscribe to half a
+    // verdict.
+    DEV_TOOLS_COUNCIL_CHANGED  => "dev-tools://council-changed",
     // Notepad: one per-note thread entry was written or answered (e40
     // `dev_note_comments`) — an operator comment, a review, a verdict stamp,
     // a status milestone. Payload: the full `NoteComment` row, so the thread

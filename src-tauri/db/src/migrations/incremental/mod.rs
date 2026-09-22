@@ -64,6 +64,10 @@ mod e38_project_enabled;
 mod e39_fleet_budgets;
 mod e40_lab_eval_method;
 mod e41_note_comments;
+mod e42_workspace_team_binding;
+mod e43_council;
+mod e44_backlog_contract;
+mod e45_one_idea_scale;
 
 mod c01_plugin_tables;
 mod c02_dev_goals_and_kpis;
@@ -124,6 +128,10 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e39_fleet_budgets::run(conn)?;
     e40_lab_eval_method::run(conn)?;
     e41_note_comments::run(conn)?;
+    e42_workspace_team_binding::run(conn)?;
+    e43_council::run(conn)?;
+    e44_backlog_contract::run(conn)?;
+    e45_one_idea_scale::run(conn)?;
 
     Ok(())
 }

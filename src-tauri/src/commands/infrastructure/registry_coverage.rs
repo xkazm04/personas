@@ -560,7 +560,7 @@ fn git_read(dir: &Path, args: &[&str]) -> Option<String> {
     Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
-fn git_head_short(dir: &Path) -> Option<String> {
+pub(super) fn git_head_short(dir: &Path) -> Option<String> {
     git_read(dir, &["rev-parse", "--short", "HEAD"]).filter(|s| !s.is_empty())
 }
 
@@ -701,7 +701,7 @@ fn normalize_slug(s: &str) -> String {
 // The probe
 // ---------------------------------------------------------------------------
 
-fn probe_registry_root(path: &str) -> RegistryProbe {
+pub(super) fn probe_registry_root(path: &str) -> RegistryProbe {
     let invalid = |reason: String| RegistryProbe {
         valid: false,
         name: None,

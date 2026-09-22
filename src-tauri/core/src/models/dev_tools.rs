@@ -280,6 +280,13 @@ pub struct DevGoalItem {
 // Use cases (behavioral slice layer — docs/plans/use-case-slice-layer.md)
 // ============================================================================
 
+/// The tier an import or an older row that predates the column gets. Stated as
+/// a function rather than left to `Default` so the value a deserializer
+/// supplies is the same one the DDL's DEFAULT supplies, in one place.
+fn default_use_case_tier() -> String {
+    "standard".to_string()
+}
+
 /// A **use case** is a behavioral unit that slices *through* contexts rather
 /// than subdividing one: "checkout conversion" spans a UI context, an API
 /// context and a data context. It is the narrowest scope a KPI can own, and the
@@ -308,6 +315,9 @@ pub struct DevUseCase {
     /// Human-curated: a use-case scan must not re-propose or replace it.
     #[serde(default)]
     pub pinned: bool,
+    /// 'major' | 'standard' - only a major feature reaches the council's human gate.
+    #[serde(default = "default_use_case_tier")]
+    pub tier: String,
     pub rationale: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -1007,6 +1017,22 @@ pub struct DevIdea {
     /// The RE-MEASURED reading (same shape as `evidence`) — lets a verdict be
     /// audited before-vs-after rather than taken on trust.
     pub verify_evidence: Option<String>,
+    /// The numbered execution plan, as the JSON of an [`IdeaPlan`].
+    ///
+    /// Carried as the raw string rather than the parsed struct because this row
+    /// is read on every list and page and most readers only need to know
+    /// WHETHER there is a plan; `IdeaPlan::from_json` is one call away for the
+    /// ones that render it.
+    ///
+    /// It was write-only for two commits — `file_idea` serialised it and
+    /// nothing could read it back, because the column reached neither
+    /// `IDEA_COLUMNS` nor this struct. Two separate builders hit that wall from
+    /// opposite directions in the same wave, which is what a field with a
+    /// producer and no consumer always costs.
+    pub plan: Option<String>,
+    /// `full` or `draft` — whether the item carries everything a dispatch
+    /// needs. A `draft` is stored and visible; it simply cannot become a task.
+    pub completeness: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -1036,6 +1062,542 @@ pub const FINDING_ORIGINS: [&str; 11] = [
     // memory-outbox door (memory_ledger.rs).
     "scan_sweep",
 ];
+
+// ----------------------------------------------------------------------------
+// The backlog contract — one door, one source vocabulary, one plan
+// ----------------------------------------------------------------------------
+//
+// Measured 2026-09-21 on the operator's live database, which is what this
+// contract exists to repair. `dev_ideas` held 2,093 rows filed through THREE
+// write doors with three different field sets:
+//
+//   `create_idea` / `create_idea_deduped`  — 15 positional arguments whose
+//       INSERT has no column for `origin`, `use_case_id`, `evidence`,
+//       `goal_id` or `verify_state`. ~96% of every row ever filed.
+//   `create_finding` — the only door that carries those columns, validated
+//       against `FINDING_ORIGINS`. ~4% of rows.
+//
+// The split is documented on `create_finding` itself as deliberate ("so the
+// scanner's 14-arg signature and every existing call site stay untouched"),
+// and the cost is exactly what a split vocabulary always costs: `origin` NULL
+// on 96% of rows, `priority` and `use_case_id` populated on zero, and
+// `provider`/`model` NULL on 2,038 of 2,093 — so the App Master's 1,208
+// Opus-authored items are anonymous in their own table.
+//
+// `origin` is therefore promoted to THE source vocabulary rather than replaced
+// by a new column: it already had the closed allowlist and the validator, it
+// was merely unreachable from the doors that carried the traffic.
+
+/// Every producer that may file a backlog item.
+///
+/// A CLOSED vocabulary, deliberately — `scan_type` was free text and grew 14
+/// values with no authority deciding them, which is the drift
+/// `one-authority-per-vocabulary` names. The first eleven variants are
+/// [`FINDING_ORIGINS`] verbatim, so every row already filed keeps parsing; the
+/// rest are the producers that used to identify themselves only through
+/// `scan_type`.
+///
+/// `scan_type` SURVIVES as the producer's own sub-key — the Idea Scanner's
+/// eight agent lenses (`architecture-analyst`, `security-auditor`, …) live
+/// there and are not sources in their own right.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum BacklogSource {
+    // --- the eleven historical `FINDING_ORIGINS`, unchanged ---
+    StandardsFinding,
+    PassportGap,
+    LlmCost,
+    SentrySpike,
+    KpiOfftrack,
+    SkillDormant,
+    DocRot,
+    KpiSim,
+    MemoryDisputed,
+    /// Retired producer; kept so rows already filed under it keep rendering.
+    WorkspacePractice,
+    ScanSweep,
+    // --- producers that previously identified themselves via `scan_type` ---
+    /// An App Master's write-back over the loopback bridge. The single largest
+    /// producer (1,208 of 2,093 rows measured 2026-09-21).
+    AppMaster,
+    /// The `propose_backlog` protocol verb, available to EVERY persona run —
+    /// the name says "team" for historical reasons only.
+    TeamProposed,
+    /// A `propose_backlog` filing reclassified as being about this app rather
+    /// than the filer's own project.
+    PlatformEscalation,
+    /// The Idea Scanner's agent lenses; the lens key stays in `scan_type`.
+    IdeaScanner,
+    /// The App-Master bench harness's synthetic seed work.
+    HeadlessBenchSeed,
+    /// Deterministic CLI tools (Fallow / Knip / Jscpd / Impeccable). No model.
+    StaticScan,
+    /// Product findings surfaced as a side-channel of a memory-consolidation run.
+    MemoryReflection,
+    /// A human typing an item into the backlog form.
+    Manual,
+}
+
+impl BacklogSource {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::StandardsFinding => "standards_finding",
+            Self::PassportGap => "passport_gap",
+            Self::LlmCost => "llm_cost",
+            Self::SentrySpike => "sentry_spike",
+            Self::KpiOfftrack => "kpi_offtrack",
+            Self::SkillDormant => "skill_dormant",
+            Self::DocRot => "doc_rot",
+            Self::KpiSim => "kpi_sim",
+            Self::MemoryDisputed => "memory_disputed",
+            Self::WorkspacePractice => "workspace_practice",
+            Self::ScanSweep => "scan_sweep",
+            Self::AppMaster => "app_master",
+            Self::TeamProposed => "team_proposed",
+            Self::PlatformEscalation => "platform_escalation",
+            Self::IdeaScanner => "idea_scanner",
+            Self::HeadlessBenchSeed => "headless_bench_seed",
+            Self::StaticScan => "static_scan",
+            Self::MemoryReflection => "memory_reflection",
+            Self::Manual => "manual",
+        }
+    }
+
+    /// Parse a stored token.
+    ///
+    /// Accepts the historical `scan_type` spellings alongside the canonical
+    /// ones, because the backfill reads `scan_type` for the 96% of rows whose
+    /// `origin` is NULL and those rows spell two of the names with a hyphen.
+    pub fn from_token(s: &str) -> Option<Self> {
+        match s {
+            "standards_finding" => Some(Self::StandardsFinding),
+            "passport_gap" => Some(Self::PassportGap),
+            "llm_cost" => Some(Self::LlmCost),
+            "sentry_spike" => Some(Self::SentrySpike),
+            "kpi_offtrack" => Some(Self::KpiOfftrack),
+            "skill_dormant" => Some(Self::SkillDormant),
+            "doc_rot" => Some(Self::DocRot),
+            "kpi_sim" => Some(Self::KpiSim),
+            "memory_disputed" => Some(Self::MemoryDisputed),
+            "workspace_practice" => Some(Self::WorkspacePractice),
+            "scan_sweep" => Some(Self::ScanSweep),
+            // `scan_type` spells this one with a hyphen; both are accepted and
+            // only the underscore form is ever written.
+            "app_master" | "app-master" => Some(Self::AppMaster),
+            "team_proposed" => Some(Self::TeamProposed),
+            "platform_escalation" => Some(Self::PlatformEscalation),
+            "idea_scanner" => Some(Self::IdeaScanner),
+            "headless_bench_seed" => Some(Self::HeadlessBenchSeed),
+            "static_scan" => Some(Self::StaticScan),
+            "memory_reflection" => Some(Self::MemoryReflection),
+            "manual" | "cross-impact" => Some(Self::Manual),
+            // Every Idea-Scanner lens is that one source; the lens itself stays
+            // in `scan_type`. Derived from `scan_agents.toml`, not invented.
+            "architecture-analyst"
+            | "security-auditor"
+            | "accessibility-checker"
+            | "business-strategist"
+            | "onboarding-designer"
+            | "error-handler"
+            | "test-strategist"
+            | "ux-reviewer" => Some(Self::IdeaScanner),
+            _ => None,
+        }
+    }
+
+    /// True for a source whose items a static tool produced, so no model
+    /// attribution is owed and `Draft` completeness is expected.
+    pub fn is_mechanical(&self) -> bool {
+        matches!(self, Self::StaticScan | Self::HeadlessBenchSeed)
+    }
+
+    /// The scale this producer's prompt actually asks for.
+    ///
+    /// **Two scales live in one column and this is where the exchange rate is
+    /// declared.** Measured on the live table 2026-09-21: `team_proposed`
+    /// scored 1-5 across 502 rows (its prompt documents a MEANING per band —
+    /// "3 = touches a route, a contract or a schema", "5 = unblocks a goal or a
+    /// money path"), while `idea_scanner.rs:192` asks the model for
+    /// `"effort": <1-10>, "impact": <1-10>, "risk": <1-10>` and the scan-sweep
+    /// skill emits up to 10. 75 rows exceeded 5.
+    ///
+    /// Left unconverted, a rank that compares producers compares unlike things:
+    /// a scanner's 5 is the middle of its range and a persona's 5 is the top of
+    /// its own. So the door converts INTO the queue's scale
+    /// ([`IDEA_SCALE_MAX`]) rather than passing the producer's number through,
+    /// and this function is the only place the difference is stated.
+    pub fn native_scale_max(&self) -> i32 {
+        match self {
+            // The scan-sweep skill's JSONL still grades out of ten: its contract
+            // lives in a skill file outside this repo's build, so the exchange
+            // rate is the only place that difference can be held.
+            //
+            // The Idea Scanner USED to be here and is deliberately not any more.
+            // Its prompt now asks for 1-5, and the two facts have to move in the
+            // same commit: this function is consulted at WRITE time only, so for
+            // as long as the prompt said 5 and this arm said 10, a model
+            // answering `risk: 5` — "irreversible or external" — would have been
+            // stored as 3 and walked straight through the six live
+            // `accept risk below 4` triage rules. There is no transitional
+            // window in which both are right.
+            Self::ScanSweep => 10,
+            // Everything else is filed against a 1-5 contract: the
+            // `propose_backlog` verb, the App Master write-back (which refuses
+            // a filing outside 1-5 at its own door), and the sensors.
+            _ => IDEA_SCALE_MAX,
+        }
+    }
+}
+
+/// The one scale `effort`, `impact` and `risk` are ranked on.
+///
+/// Chosen over the wider alternative because it is the only one whose bands
+/// carry documented MEANINGS: the `propose_backlog` contract spells out what
+/// each number claims ("1 = documentation or a reversible local change … 4 =
+/// touches ledger, settlement or security semantics … 5 = irreversible or
+/// external"), and a project's mechanical triage rules accept or hold an item
+/// by reading them. A number that means something is worth more to a ranker
+/// than a number with more room in it.
+///
+/// A producer grading out of ten is converted here rather than stored raw —
+/// see [`BacklogSource::native_scale_max`] and [`normalize_scale`].
+pub const IDEA_SCALE_MAX: i32 = 5;
+
+/// Convert a producer's score into [`IDEA_SCALE_MAX`].
+///
+/// Monotone and total: `ceil(v * IDEA_SCALE_MAX / from_max)`, so a 1-10 score
+/// folds 1,2 → 1 · 3,4 → 2 · 5,6 → 3 · 7,8 → 4 · 9,10 → 5. Order is preserved,
+/// the top of one range maps to the top of the other, and nothing collapses to
+/// zero — which matters because `0` is the value the absent-value convention
+/// exists to refuse.
+///
+/// `None` in, `None` out: absent is absent, and a producer that omitted a score
+/// must not acquire one by passing through a conversion.
+pub fn normalize_scale(value: Option<i32>, from_max: i32) -> Option<i32> {
+    let v = value?;
+    if from_max <= IDEA_SCALE_MAX || v <= 0 {
+        // Already on the queue's scale, or a value the door is about to refuse
+        // anyway — converting it would disguise the thing worth refusing.
+        return Some(v);
+    }
+    // Ceiling division written out: `i32::div_ceil` is still unstable on this
+    // toolchain, and both operands are small positive integers here.
+    let scaled = (v * IDEA_SCALE_MAX + from_max - 1) / from_max;
+    Some(scaled.clamp(1, IDEA_SCALE_MAX))
+}
+
+/// The states a backlog item may hold.
+///
+/// Closed as of this contract. The column carries no CHECK constraint and
+/// `decide_idea_cas` took a bare `&str`, so the vocabulary was open in the
+/// database, in Rust and in TypeScript simultaneously — and the two states
+/// this enum adds are the ones whose absence let 518 completed items sit in
+/// `Accepted` forever.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum IdeaStatus {
+    /// Filed, no verdict passed.
+    Pending,
+    /// A human or a triage rule said yes. NOT a terminal state — it means
+    /// "decided to build", and until this contract it was where items died.
+    Accepted,
+    Rejected,
+    /// Aged out of `Pending` without ever being decided. Reversible.
+    Archived,
+    /// The work exists in the repository.
+    ///
+    /// Two paths reach this state and they do NOT carry the same evidence, so
+    /// the difference is recorded rather than smoothed over:
+    ///
+    /// * the App-Master write-back reports a COMMIT, which names the change in
+    ///   the repository's own durable history. That is evidence, and it closes
+    ///   the item outright (`verify_state` resolved).
+    /// * the in-app task runner has only the worktree BRANCH. A terminal task
+    ///   row is the orchestrator's observation that a process exited, which is
+    ///   a proxy for the work landing and not a proof of it. So the item still
+    ///   moves out of the queue — the queue has to be able to drain — but its
+    ///   `verify_state` stays `pending`, and the verification sweep re-measures
+    ///   whether shipping it actually moved the signal.
+    ///
+    /// The second grade is why `isVerifiable` admits `delivered` at all: the
+    /// weakly-evidenced closes are exactly the population worth re-measuring.
+    /// What this state never means is that an executor said so.
+    Delivered,
+    /// Aged out of `Accepted` without ever becoming work. A DISTINCT terminal
+    /// state on purpose: an automated sweep must never write the same token a
+    /// human verdict writes, or every downstream reading of "who decided this"
+    /// becomes unanswerable.
+    Expired,
+}
+
+impl IdeaStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+            Self::Archived => "archived",
+            Self::Delivered => "delivered",
+            Self::Expired => "expired",
+        }
+    }
+
+    pub fn from_token(s: &str) -> Option<Self> {
+        match s {
+            "pending" => Some(Self::Pending),
+            "accepted" => Some(Self::Accepted),
+            "rejected" => Some(Self::Rejected),
+            "archived" => Some(Self::Archived),
+            "delivered" => Some(Self::Delivered),
+            "expired" => Some(Self::Expired),
+            _ => None,
+        }
+    }
+
+    /// True once the item needs nothing further from anyone.
+    pub fn is_terminal(&self) -> bool {
+        matches!(self, Self::Rejected | Self::Delivered | Self::Expired)
+    }
+}
+
+/// Whether an item carries everything a dispatch needs.
+///
+/// `Draft` is deliberately STORED rather than refused: the dominant producer
+/// files over loopback HTTP from a detached worktree and never retries, so a
+/// refusal at the door is lost work. A `Draft` item is visible, countable and
+/// reviewable — it simply cannot become a task until something completes it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum IdeaCompleteness {
+    Full,
+    Draft,
+}
+
+impl IdeaCompleteness {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Full => "full",
+            Self::Draft => "draft",
+        }
+    }
+
+    pub fn from_token(s: &str) -> Option<Self> {
+        match s {
+            "full" => Some(Self::Full),
+            "draft" => Some(Self::Draft),
+            _ => None,
+        }
+    }
+}
+
+/// One numbered step of an item's execution plan.
+///
+/// `files` is what makes a wave computable: two items may run in parallel
+/// exactly when their plans' file sets do not intersect, which is a property
+/// to be CHECKED rather than a grouping to be guessed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PlanStep {
+    /// 1-based position. Steps are ordered and the order is the execution order.
+    pub n: u32,
+    /// One imperative line naming the change, at the altitude a competent
+    /// engineer would write a commit subject at.
+    pub action: String,
+    /// The paths this step touches, repo-relative. Never empty for a step that
+    /// changes code.
+    pub files: Vec<String>,
+    /// The observable condition that makes this step finished — a test that
+    /// passes, a command that exits clean, a value the UI shows.
+    pub done_when: String,
+}
+
+/// The execution plan an analysing model leaves for an executing model.
+///
+/// The asymmetry this exists to fix, measured 2026-09-21: the item's prose was
+/// pasted into the worker's prompt under a heading literally named
+/// `## Background`, and the plan was then demanded FROM the worker by a depth
+/// switch ("Research phase … Planning phase … write a detailed plan"). So the
+/// expensive model analysed and the cheap model planned, which is backwards,
+/// and only ~8% of the largest producer's items contained so much as a
+/// numbered list.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct IdeaPlan {
+    pub steps: Vec<PlanStep>,
+}
+
+impl IdeaPlan {
+    /// Parse a stored `dev_ideas.plan`.
+    ///
+    /// `None` for absent AND for unparseable, deliberately: a plan that cannot
+    /// be read is not a plan, and the item it belongs to is correctly treated
+    /// as unplanned rather than as carrying something nobody can act on.
+    pub fn from_json(raw: Option<&str>) -> Option<Self> {
+        let raw = raw?.trim();
+        if raw.is_empty() {
+            return None;
+        }
+        serde_json::from_str(raw).ok()
+    }
+
+    /// Every path any step touches, de-duplicated. The wave computation's input.
+    pub fn file_scope(&self) -> Vec<String> {
+        let mut seen: Vec<String> = Vec::new();
+        for step in &self.steps {
+            for f in &step.files {
+                if !seen.iter().any(|s| s == f) {
+                    seen.push(f.clone());
+                }
+            }
+        }
+        seen
+    }
+
+    /// A plan is usable when it has at least one step and every step names a
+    /// path. A plan whose steps touch nothing cannot be scheduled against
+    /// anything, so it is not a plan.
+    pub fn is_actionable(&self) -> bool {
+        !self.steps.is_empty() && self.steps.iter().all(|s| !s.files.is_empty())
+    }
+}
+
+/// The ONE input every producer builds to file a backlog item.
+///
+/// Replaces three positional signatures. Absent-value convention, stated once
+/// and applying to every field: a producer OMITS what it has no value for and
+/// the door writes SQL NULL. Never `0`, never `""` — the three scales run 1-5,
+/// so a `0` is a validation error and not a missing value.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct IdeaDraft {
+    /// Nullable, because the column is: `dev_tools_create_idea` files an
+    /// unassigned idea with no project, and `dev_ideas.project_id` has always
+    /// allowed NULL. An empty string is NOT how absence is spelled here — that
+    /// is exactly the shape the absent-value convention below refuses.
+    pub project_id: Option<String>,
+    /// The producer. Written to `dev_ideas.origin`.
+    pub source: BacklogSource,
+    /// The producer's own sub-key (an Idea-Scanner lens, a static tool name).
+    /// Written to `dev_ideas.scan_type`; defaults to `source.as_str()`.
+    pub scan_type: Option<String>,
+    pub context_id: Option<String>,
+    pub category: Option<String>,
+    pub title: String,
+    pub description: Option<String>,
+    pub reasoning: Option<String>,
+    pub evidence: Option<String>,
+    pub effort: Option<i32>,
+    pub impact: Option<i32>,
+    pub risk: Option<i32>,
+    pub goal_id: Option<String>,
+    pub use_case_id: Option<String>,
+    pub plan: Option<IdeaPlan>,
+    /// Attribution. The door STAMPS these from the caller's dispatch context
+    /// rather than trusting a producer's claim about itself; a producer that
+    /// genuinely knows (the Idea Scanner spawns its own CLI) may pass them.
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub dedup_key: Option<String>,
+    /// Only a producer with a standing auto-accept arrangement passes this.
+    /// Omitted means `pending`.
+    pub status: Option<String>,
+}
+
+impl IdeaDraft {
+    /// A draft belonging to no project.
+    ///
+    /// The human form behind dev_tools_create_idea files one, and the column
+    /// has always allowed it. Spelled as its own constructor so no caller has
+    /// to reach for an empty string to mean absence.
+    pub fn unassigned(source: BacklogSource, title: impl Into<String>) -> Self {
+        let mut draft = Self::new(String::new(), source, title);
+        draft.project_id = None;
+        draft
+    }
+
+    /// Minimal draft; every optional field stays absent.
+    pub fn new(
+        project_id: impl Into<String>,
+        source: BacklogSource,
+        title: impl Into<String>,
+    ) -> Self {
+        Self {
+            project_id: Some(project_id.into()),
+            source,
+            scan_type: None,
+            context_id: None,
+            category: None,
+            title: title.into(),
+            description: None,
+            reasoning: None,
+            evidence: None,
+            effort: None,
+            impact: None,
+            risk: None,
+            goal_id: None,
+            use_case_id: None,
+            plan: None,
+            provider: None,
+            model: None,
+            dedup_key: None,
+            status: None,
+        }
+    }
+
+    /// What the door will record.
+    ///
+    /// `Full` requires the three scales AND a description AND an actionable
+    /// plan. The scales because an unrated item can never be ranked or
+    /// auto-accepted; the plan because without one the executing model is
+    /// asked to do the analysis the filing model was supposed to have done.
+    pub fn completeness(&self) -> IdeaCompleteness {
+        let rated = self.effort.is_some() && self.impact.is_some() && self.risk.is_some();
+        let described = self
+            .description
+            .as_deref()
+            .is_some_and(|d| !d.trim().is_empty());
+        let planned = self.plan.as_ref().is_some_and(|p| p.is_actionable());
+        if rated && described && planned {
+            IdeaCompleteness::Full
+        } else {
+            IdeaCompleteness::Draft
+        }
+    }
+}
+
+/// A status word a producer wrote into a TITLE instead of into the status
+/// column.
+///
+/// Not hypothetical: on 2026-09-17 a scan-sweep run filed fifteen items whose
+/// titles began `[ACCEPTED]`, all of them `status = 'pending'`. The acceptance
+/// existed only as characters, so the state machine never saw it and no reaper
+/// could reach them either — `archive_stale_ideas` skips a row whose `origin`
+/// is set. The door refuses the shape rather than storing a lie.
+pub const TITLE_STATUS_TAGS: [&str; 8] = [
+    "[accepted]",
+    "[rejected]",
+    "[approved]",
+    "[declined]",
+    "[done]",
+    "[wip]",
+    "[todo]",
+    "[blocked]",
+];
+
+/// The leading bracketed status tag in `title`, if any, lowercased.
+pub fn title_status_tag(title: &str) -> Option<&'static str> {
+    let lowered = title.trim().to_ascii_lowercase();
+    TITLE_STATUS_TAGS
+        .iter()
+        .find(|tag| lowered.starts_with(*tag))
+        .copied()
+}
 
 // ============================================================================
 // Dev Scans

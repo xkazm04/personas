@@ -32,6 +32,7 @@
     "brainiac-server/src/alerts.rs": {"count":1,"sections":[],"lines":["51"],"contexts":["(`brainiac-server/src/alerts.rs:51`, plus `console.rs:112,536,561` and 6 more files) — **20 of"],"resolved":false},
     "brainiac/crates/brainiac-server/src/console.rs": {"count":1,"sections":[],"contexts":["- **One file eats the transport surface.** `brainiac/crates/brainiac-server/src/console.rs` is"],"resolved":false},
     "census-cmd-placement-b47e91.json": {"count":1,"sections":[9],"contexts":["from a scratchpad file named `census-cmd-placement-b47e91.json`, unique to this composition):"],"resolved":false},
+    "commandNames.generated.ts": {"count":1,"sections":[1],"contexts":["the registered *name* is the bare `fn` ident, and `commandNames.generated.ts` emits only that."],"resolved":false},
     "commands/core/data_portability.rs": {"count":1,"sections":[7],"contexts":["| `commands/core/data_portability.rs` | **12,705** | 9 | 1,412 |"],"resolved":false},
     "commands/infrastructure/live_roadmap.rs": {"count":1,"sections":[9],"contexts":["respectively, including `commands/infrastructure/live_roadmap.rs` — a dead glob that has silently"],"resolved":false},
     "companion/approvals/approval_exec_{core,knowledge,dev}.rs": {"count":1,"sections":[5],"contexts":["`fleet/stale.rs` (1,810), `companion/approvals/approval_exec_{core,knowledge,dev}.rs` (3,451"],"resolved":false},
@@ -254,13 +255,6 @@
       "resolved": false
     },
     "src/features/sharing": {"count":1,"sections":[7],"contexts":["`src/features/pipeline`, `src/features/sharing`, `src/api/pipeline/triggers`,"],"resolved":false,"isDir":true},
-    "src/lib/commandNames.generated.ts": {
-      "count": 1,
-      "sections": [1],
-      "contexts": ["the registered *name* is the bare `fn` ident, and `commandNames.generated.ts` emits only that."],
-      "resolvedFrom": "basename",
-      "verbatim": "commandNames.generated.ts"
-    },
     "src/lib/server/": {"count":1,"sections":[],"contexts":["`src/lib/server/` and still calls Supabase inline in 6 of 11 routes"],"resolved":false,"isDir":true},
     "twin.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false}
   }

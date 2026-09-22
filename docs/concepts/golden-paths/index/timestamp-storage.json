@@ -66,6 +66,14 @@
       ],
       "resolved": false
     },
+    "core/src/events.rs": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "**Mechanism.** A node script — *not* a lint. ESLint cannot see Rust and clippy cannot see inside string literals; the precedent is `scripts/check-event-registry.mjs`, which already regex-parses `core…"
+      ],
+      "resolved": false
+    },
     "daily_goals.rs": {
       "count": 1,
       "sections": [9],
@@ -183,15 +191,6 @@
       ],
       "resolved": false,
       "isDir": true
-    },
-    "src-tauri/core/src/events.rs": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "**Mechanism.** A node script — *not* a lint. ESLint cannot see Rust and clippy cannot see inside string literals; the precedent is `scripts/check-event-registry.mjs`, which already regex-parses `core…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "core/src/events.rs"
     },
     "src-tauri/core/src/utils/mod.rs": {
       "count": 4,

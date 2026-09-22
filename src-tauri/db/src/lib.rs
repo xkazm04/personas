@@ -68,6 +68,7 @@ pub mod project_team;
 pub mod quality_gate;
 #[cfg(feature = "ml")]
 pub mod vector_store;
+pub mod workspace_team;
 // Moved to `personas-core` (crate-split step 3): 14k LOC of pure data structs
 // that `engine::types` / `validation` also need. Re-exported so every
 // `crate::models::…` path resolves unchanged.

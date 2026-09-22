@@ -10,6 +10,14 @@
 // tiles moves nothing. Static — never `animate-pulse` (law 3). Delayed 150ms
 // through the shared `animate-fade-in` treatment so a warm swap that takes two
 // frames never paints it at all.
+//
+// THE COLUMN WIDTH IS THE ONE GEOMETRY THAT IS NO LONGER A CONSTANT — the board
+// spreads its columns to fill the row (`gridGeometry`'s width ladder). So it is
+// a prop here, and a ghost that kept drawing at `TILE_W` inside a 280px column
+// would move the board on the swap, which is the one thing a geometry-matched
+// ghost exists not to do. It defaults to the node width, which is both the
+// ladder's floor and its pre-measurement value, so every other caller is
+// unchanged.
 
 import { PERSONA_ROW_H, SYMBOL_ROW_H, TILE_H, TILE_W, TITLE_ROW_H } from './gridGeometry';
 
@@ -21,12 +29,12 @@ export const GHOST_ROW_CAP = 12;
 const GHOST_SYMBOLS = 3;
 
 /** One node-shaped box: a title bar over a row of symbol-sized dots. */
-function GhostRow() {
+function GhostRow({ width = TILE_W }: { width?: number }) {
   return (
     <div style={{ height: PERSONA_ROW_H }}>
       <div
         className="relative flex flex-col justify-between overflow-hidden rounded-input border border-border bg-foreground/[0.02] px-1 py-0.5"
-        style={{ width: TILE_W, height: TILE_H }}
+        style={{ width, height: TILE_H }}
       >
         <span className="flex items-center" style={{ height: TITLE_ROW_H }}>
           <span className="h-[0.6em] w-24 rounded bg-primary/[0.06] typo-body" />
@@ -48,9 +56,13 @@ function GhostRow() {
  * `maxHeight` mirrors `ColumnBody`'s: since the board wraps into rows the
  * column is content-sized rather than `h-full`, and a ghost that sized itself
  * differently from the body it stands in for would move the board on the swap
- * — which is the one thing a geometry-matched ghost exists not to do.
+ * — which is the one thing a geometry-matched ghost exists not to do. `width`
+ * is that same argument on the other axis: the column it stands in for is as
+ * wide as the row's ladder made it.
  */
-export function ColumnGhost({ rows, maxHeight }: { rows: number; maxHeight?: number }) {
+export function ColumnGhost(
+  { rows, maxHeight, width = TILE_W }: { rows: number; maxHeight?: number; width?: number },
+) {
   const n = Math.max(1, Math.min(GHOST_ROW_CAP, rows));
   return (
     <div
@@ -59,13 +71,23 @@ export function ColumnGhost({ rows, maxHeight }: { rows: number; maxHeight?: num
       style={{ animationDelay: '150ms', maxHeight }}
       data-testid="fleet-grid-column-ghost"
     >
-      {Array.from({ length: n }, (_, i) => <GhostRow key={i} />)}
+      {Array.from({ length: n }, (_, i) => <GhostRow key={i} width={width} />)}
     </div>
   );
 }
 
-/** The whole board, for the cold open: headers ghosted too. */
-export function BoardGhost() {
+/**
+ * The whole board, for the cold open: headers ghosted too.
+ *
+ * There is no scroller to measure here — this renders IN PLACE of the board, so
+ * the element the `ResizeObserver` watches does not exist yet and no width can
+ * be known. `width` is therefore the caller's best guess: the optimistic
+ * pre-measurement width (the node's own, which cannot overflow) on a true cold
+ * open, or the last measured one if a sized board emptied and went back to
+ * loading. Either way it is a guess, not a measurement, which is why the
+ * default is the conservative one.
+ */
+export function BoardGhost({ width = TILE_W }: { width?: number }) {
   return (
     <div
       aria-hidden
@@ -75,14 +97,14 @@ export function BoardGhost() {
     >
       <div className="flex h-full gap-3">
         {Array.from({ length: COLD_COLUMNS }, (_, c) => (
-          <section key={c} className="flex h-full min-h-0 flex-shrink-0 flex-col gap-1.5" style={{ width: TILE_W }}>
+          <section key={c} className="flex h-full min-h-0 flex-shrink-0 flex-col gap-1.5" style={{ width }}>
             <div className="flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
               <div className="flex items-baseline gap-1.5 px-1 py-0.5 typo-label">
                 <span className="h-[0.7em] w-24 rounded bg-primary/[0.06]" />
               </div>
               <span aria-hidden className="h-0.5 w-full rounded-full bg-foreground/10" />
             </div>
-            {Array.from({ length: COLD_ROWS }, (_, i) => <GhostRow key={i} />)}
+            {Array.from({ length: COLD_ROWS }, (_, i) => <GhostRow key={i} width={width} />)}
           </section>
         ))}
       </div>

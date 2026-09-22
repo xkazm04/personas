@@ -40,6 +40,7 @@
       "resolved": false
     },
     "CapabilityTagBar.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["- No arrows, no roving: `CapabilityTagBar.tsx:29` · `CapabilityTagSwitcher.tsx:67` ·"],"resolved":false},
+    "Composer.tsx": {"count":2,"sections":[7],"lines":["233","310"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
     "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false},
@@ -222,14 +223,6 @@
       "verbatim": "IssuesList.tsx"
     },
     "src/features/overview/sub_sla/components/SLACard.tsx": {"count":1,"sections":[7],"lines":["83"],"contexts":["`ByomApiKeyManager.tsx:361,497` · `TableListSidebar.tsx:107,144` · `SLACard.tsx:83` ·"],"resolvedFrom":"basename","verbatim":"SLACard.tsx"},
-    "src/features/plugins/companion/Composer.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["233","310"],
-      "contexts": ["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],
-      "resolvedFrom": "basename",
-      "verbatim": "Composer.tsx"
-    },
     "src/features/plugins/companion/FleetBoldnessDial.tsx": {
       "count": 1,
       "sections": [7],

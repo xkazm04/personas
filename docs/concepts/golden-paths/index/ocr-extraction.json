@@ -24,6 +24,7 @@
   "citationCount": 41,
   "triggers": [],
   "citations": {
+    "commandNames.generated.ts": {"count":2,"sections":[0,7],"contexts":["`lib.rs:2726-2731` registers five of the eight. `commandNames.generated.ts`"],"resolved":false},
     "lib.rs": {"count":2,"sections":[0,7],"lines":["2726-2731"],"contexts":["`lib.rs:2726-2731` registers five of the eight. `commandNames.generated.ts`"],"resolved":false},
     "src-tauri/core/src/models/ocr.rs": {"count":1,"sections":[],"contexts":["`src-tauri/core/src/models/ocr.rs`, `src-tauri/db/src/repos/resources/ocr.rs`,"]},
     "src-tauri/db/src/repos/resources/ocr.rs": {"count":3,"sections":[0,7],"contexts":["`src-tauri/core/src/models/ocr.rs`, `src-tauri/db/src/repos/resources/ocr.rs`,"]},
@@ -52,7 +53,6 @@
       "verbatim": "DriveOcrDrawer.tsx"
     },
     "src/features/plugins/drive/ocr/useOcr.ts": {"count":2,"sections":[2,7],"contexts":["(f) **Mirror nothing by hand.** `isOcrEligible` (`useOcr.ts`) is a second copy"],"resolvedFrom":"basename","verbatim":"useOcr.ts"},
-    "src/features/plugins/drive/ocr/{DriveOcrDrawer.tsx,useOcr.ts}": {"count":1,"sections":[],"contexts":["`src/features/plugins/drive/ocr/{DriveOcrDrawer.tsx,useOcr.ts}`,"],"resolved":false,"isDir":true},
-    "src/lib/commandNames.generated.ts": {"count":2,"sections":[0,7],"contexts":["`lib.rs:2726-2731` registers five of the eight. `commandNames.generated.ts`"],"resolvedFrom":"basename","verbatim":"commandNames.generated.ts"}
+    "src/features/plugins/drive/ocr/{DriveOcrDrawer.tsx,useOcr.ts}": {"count":1,"sections":[],"contexts":["`src/features/plugins/drive/ocr/{DriveOcrDrawer.tsx,useOcr.ts}`,"],"resolved":false,"isDir":true}
   }
 }

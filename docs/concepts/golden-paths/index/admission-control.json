@@ -93,6 +93,14 @@
       "resolved": false
     },
     "companion/session.rs": {"count":3,"sections":[0,7,9],"lines":["771"],"contexts":["One lane is worse: `companion/session.rs:771` refuses a wake with"],"resolved":false},
+    "core/src/events.rs": {
+      "count": 2,
+      "sections": [5,7],
+      "contexts": [
+        "| **Emitting the refusal on an unregistered event name** | `app.emit(\"queue-backpressure\", …)` (`engine/mod.rs:960`) is a raw string, absent from `core/src/events.rs` and from `src/lib/eventRegistry.…"
+      ],
+      "resolved": false
+    },
     "credits.test.ts": {
       "count": 1,
       "sections": [6],
@@ -258,15 +266,6 @@
       "contexts": ["`engine/src/p2p/connection.rs` and `core/src/error.rs` read in full."],
       "resolvedFrom": "suffix",
       "verbatim": "core/src/error.rs"
-    },
-    "src-tauri/core/src/events.rs": {
-      "count": 2,
-      "sections": [5,7],
-      "contexts": [
-        "| **Emitting the refusal on an unregistered event name** | `app.emit(\"queue-backpressure\", …)` (`engine/mod.rs:960`) is a raw string, absent from `core/src/events.rs` and from `src/lib/eventRegistry.…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "core/src/events.rs"
     },
     "src-tauri/core/src/validation/persona.rs": {
       "count": 1,

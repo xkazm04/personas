@@ -57,6 +57,11 @@ static AUTO_RUN_JOBS: BackgroundJobManager<AutoRunExtra> = BackgroundJobManager:
 
 struct TaskContext {
     idea: Option<String>,
+    /// The execution plan the ANALYSING model left on the backlog item — the
+    /// work itself, not context about it. `None` for an item filed before the
+    /// plan contract or by a producer that files none, in which case the prompt
+    /// falls back to asking the worker to plan (see [`build_task_prompt`]).
+    plan: Option<personas_core::models::IdeaPlan>,
     goal: Option<String>,
     codebase: Option<String>,
     /// What this project development loop has already learned: constraints
@@ -76,7 +81,16 @@ fn gather_task_context(
 ) -> TaskContext {
     let mut warnings = Vec::new();
 
-    let idea = match source_idea_id {
+    // ONE read. The prose and the plan are two fields of the same row, and for
+    // two commits they were not: `plan` reached neither `IDEA_COLUMNS` nor
+    // `DevIdea`, so the plan had to be fetched by a second query through a
+    // module that existed only because the column was unreadable. Both are on
+    // the row now, so both come off one `get_idea_by_id`.
+    //
+    // A read failure is a warning and never a refusal: the prompt degrades to
+    // the no-plan shape, which is exactly what every item filed before this
+    // contract will use.
+    let (idea, plan) = match source_idea_id {
         Some(idea_id) => match repo::get_idea_by_id(pool, idea_id) {
             Ok(idea) => {
                 let mut s = String::new();
@@ -88,15 +102,20 @@ fn gather_task_context(
                     s.push_str(reasoning);
                     s.push('\n');
                 }
-                Some(s)
+                // `is_actionable` rather than `is_some`: a plan whose steps name
+                // no file cannot be scheduled against anything, and handing one
+                // to a worker as if it were a plan is worse than handing it none.
+                let plan = crate::db::models::IdeaPlan::from_json(idea.plan.as_deref())
+                    .filter(|p| p.is_actionable());
+                (Some(s), plan)
             }
             Err(e) => {
                 tracing::warn!(idea_id, error = %e, "Failed to load linked idea context");
                 warnings.push(format!("Could not load linked idea {idea_id}: {e}"));
-                None
+                (None, None)
             }
         },
-        None => None,
+        None => (None, None),
     };
 
     let goal = match goal_id {
@@ -151,6 +170,7 @@ fn gather_task_context(
 
     TaskContext {
         idea,
+        plan,
         goal,
         codebase,
         memories,
@@ -220,17 +240,53 @@ pub(crate) fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: b
 // Prompt construction
 // =============================================================================
 
+/// Render the item's own plan as the WORK — numbered steps, each with the files
+/// it touches and the condition that makes it finished.
+///
+/// The heading is `## Plan` and it sits immediately under the task, ahead of
+/// the execution strategy, because position is the instruction here: the same
+/// prose under `## Background` is what the worker ignored while it wrote a plan
+/// of its own.
+fn render_plan(plan: &personas_core::models::IdeaPlan) -> String {
+    let mut s = String::from("## Plan\n");
+    s.push_str(
+        "This work has already been analysed and planned. These steps ARE the task - \
+         execute them in order. Do not re-plan and do not re-scope. If a step turns out \
+         to be wrong against the real code, say so in your summary and stop; do not \
+         silently substitute your own plan.\n\n",
+    );
+    for step in &plan.steps {
+        s.push_str(&format!("{}. {}\n", step.n, step.action.trim()));
+        if !step.files.is_empty() {
+            s.push_str(&format!("   - Files: {}\n", step.files.join(", ")));
+        }
+        let done_when = step.done_when.trim();
+        if !done_when.is_empty() {
+            s.push_str(&format!("   - Done when: {done_when}\n"));
+        }
+    }
+    s.push('\n');
+    s
+}
+
 #[allow(clippy::too_many_arguments)]
 fn build_task_prompt(
     task_title: &str,
     task_description: Option<&str>,
     idea_context: Option<String>,
+    idea_plan: Option<personas_core::models::IdeaPlan>,
     goal_context: Option<String>,
     codebase_context: Option<String>,
     memory_context: Option<String>,
     depth: &str,
 ) -> String {
     let mut prompt = String::new();
+
+    // A plan only counts when it is actionable — `IdeaPlan::is_actionable()` is
+    // the ONE definition of that (every step names a path), and inventing a
+    // second one here is how the wave computation and the prompt would come to
+    // disagree about which items are planned.
+    let plan = idea_plan.filter(|p| p.is_actionable());
 
     prompt.push_str("You are an expert software engineer. Execute the following task:\n\n");
     prompt.push_str(&format!("## Task: {task_title}\n"));
@@ -240,9 +296,18 @@ fn build_task_prompt(
     }
     prompt.push('\n');
 
-    // Depth-specific instructions
-    match depth {
-        "campaign" => {
+    if let Some(plan) = &plan {
+        prompt.push_str(&render_plan(plan));
+    }
+
+    // Depth-specific instructions. When a plan is present the research and
+    // planning phases are SUPPRESSED: asking a worker to "write a detailed
+    // plan" right after handing it one is how the plan gets ignored, and it
+    // spends the expensive part of the run redoing analysis that already
+    // happened. Execution and validation survive — those are the phases the
+    // depth was actually chosen for.
+    match (depth, plan.is_some()) {
+        ("campaign", false) => {
             prompt.push_str("## Execution Strategy: Campaign\n");
             prompt.push_str("This task has multiple deliverables. Break it into subtasks first:\n");
             prompt.push_str("1. Analyze the goal and identify 3-7 concrete subtasks\n");
@@ -250,7 +315,16 @@ fn build_task_prompt(
             prompt.push_str("3. After each subtask, report progress and what was completed\n");
             prompt.push_str("4. When all subtasks are done, provide a consolidated summary\n\n");
         }
-        "deep_build" => {
+        ("campaign", true) => {
+            prompt.push_str("## Execution Strategy: Campaign\n");
+            prompt.push_str(
+                "This task has multiple deliverables and the Plan above is the subtask list:\n",
+            );
+            prompt.push_str("1. Execute each planned step in sequence\n");
+            prompt.push_str("2. After each step, report progress and what was completed\n");
+            prompt.push_str("3. When all steps are done, provide a consolidated summary\n\n");
+        }
+        ("deep_build", false) => {
             prompt.push_str("## Execution Strategy: Deep Build\n");
             prompt.push_str(
                 "This is a complex task requiring thorough planning before implementation:\n",
@@ -264,6 +338,20 @@ fn build_task_prompt(
             prompt
                 .push_str("5. **Summary**: Provide a comprehensive report of all changes made\n\n");
         }
+        ("deep_build", true) => {
+            prompt.push_str("## Execution Strategy: Deep Build\n");
+            prompt.push_str(
+                "This is a complex task and the analysis is already done - the Plan above is it:\n",
+            );
+            prompt.push_str(
+                "1. **Implementation phase**: Execute the plan methodically, one step at a time\n",
+            );
+            prompt.push_str(
+                "2. **Validation phase**: Run tests, verify correctness, check for regressions\n",
+            );
+            prompt
+                .push_str("3. **Summary**: Provide a comprehensive report of all changes made\n\n");
+        }
         _ => {
             prompt.push_str("## Execution Strategy: Quick Task\n");
             prompt.push_str("Execute this task directly with minimal planning overhead.\n\n");
@@ -271,7 +359,14 @@ fn build_task_prompt(
     }
 
     if let Some(idea) = idea_context {
-        prompt.push_str("## Background\n");
+        // With a plan present the prose is demoted to what it actually is:
+        // why the work was filed. Without one it keeps the heading it always
+        // had, because that fallback is the only shape most items still have.
+        if plan.is_some() {
+            prompt.push_str("## Why This Was Filed (context, not instructions)\n");
+        } else {
+            prompt.push_str("## Background\n");
+        }
         prompt.push_str(&idea);
         prompt.push('\n');
     }
@@ -334,23 +429,29 @@ struct FinalizeOpts<'a> {
 ///
 /// Completion write-back to the SOURCE IDEA of a finished task (plan 1D).
 ///
-/// One thing is owed once work ships:
+/// **What a completed task means, in one place.** A task that finished means
+/// the work exists in the repository, and the item that asked for it is done.
+/// This closes it through [`repo::mark_idea_delivered`] — the same door the
+/// headless worker's write-back uses
+/// (`app_master_writeback::record_idea_outcome`) — so an item closed by an
+/// in-app run and one closed by a worker are indistinguishable, because they
+/// were closed by the same code.
 ///
-/// **A re-check is owed.** Any idea carrying a `dedup_key` is a sensor
-///    finding whose signal was measured; shipping a fix does not prove the
-///    number moved. Arming `verify_state = 'pending'` is the "work shipped,
-///    verdict not in yet" marker.
+/// It replaces arming `verify_state = 'pending'`, which this function did on
+/// every success and **nothing in the tree ever cleared**: 519 rows carried it
+/// on 2026-09-21 against 518 items that held a completed task and were still
+/// `accepted`. `pending` ARMS a re-check; it is not a verdict, and leaving it
+/// standing forever was the shape of a loop with no exit.
 ///
-///    *Why `pending` is the right token* (the P6 open question): the sweep's
-///    eligibility rule (`findings/verify.ts::isVerifiable`) is
-///    `origin != null && dedup_key != null && status == 'accepted' && a linked
-///    task completed` — it never reads `verify_state`, so arming cannot
-///    confuse it. And `pending` is not sensor-owned: `verdictFor` itself
-///    returns `pending` for "the sensor did not probe, so no verdict", and
-///    `VerdictChip` renders nothing for it. Arming therefore says exactly what
-///    we mean — judged: not yet — and a real verdict overwrites it on the next
-///    sweep. (Contrast the alternative of leaving it NULL: indistinguishable
-///    from a finding nobody ever shipped.)
+/// **KNOWN CONSEQUENCE, recorded rather than discovered later:** the findings
+/// verification sweep's eligibility rule
+/// (`src/features/plugins/dev-tools/sub_triage/findings/verify.ts:155`) is
+/// `origin != null && dedup_key != null && status == 'accepted' && a linked
+/// task completed`. An item this function moves to `delivered` no longer
+/// satisfies the `status == 'accepted'` clause, so the sweep will stop
+/// re-measuring it. That clause has to widen to `accepted | delivered` for the
+/// B-side learning route to keep running — it is a frontend change outside this
+/// module and is reported with the work that made it necessary.
 ///
 /// Best-effort throughout: a task's terminal state must never depend on the
 /// projections hanging off it.
@@ -374,10 +475,33 @@ pub(crate) fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str,
         }
     };
 
-    if success && idea.dedup_key.is_some() {
-        if let Err(e) = repo::set_finding_verify_state(pool, &idea.id, "pending", None) {
-            tracing::warn!(task_id, idea_id, error = %e, "completion write-back: failed to arm verification");
-        }
+    if !success {
+        return;
+    }
+
+    // A completed task means the work exists in the repository, and that is the
+    // one event the backlog item's terminal status is FOR. Routing the in-app
+    // path through the same door the worker write-back uses
+    // (`app_master_writeback::record_idea_outcome`) is what stops the two
+    // disagreeing about what a completed task means — and it is the only thing
+    // that resolves the `verify_state = 'pending'` this function used to arm and
+    // nothing in the tree ever cleared (519 rows carried it on 2026-09-21).
+    //
+    // An item already in a terminal status is left alone: a task completing
+    // after a human rejected the item must not resurrect it as delivered.
+    let terminal = personas_core::models::IdeaStatus::from_token(&idea.status)
+        .is_some_and(|s| s.is_terminal());
+    if terminal {
+        return;
+    }
+
+    // `worktree_branch` is `autopilot/<slug>` — the branch a reviewer merges, so
+    // it is the evidence this path has. There is no commit: the runner never
+    // reads one back, which is exactly why `mark_idea_delivered` takes Options.
+    if let Err(e) = repo::mark_idea_delivered(pool, &idea.id, task.worktree_branch.as_deref(), None)
+    {
+        tracing::warn!(task_id, idea_id, error = %e,
+            "completion write-back: failed to close the backlog item");
     }
 }
 
@@ -528,6 +652,7 @@ pub async fn dev_tools_execute_task(
         &task.title,
         task.description.as_deref(),
         ctx.idea,
+        ctx.plan,
         ctx.goal,
         ctx.codebase,
         ctx.memories,
@@ -718,6 +843,7 @@ pub async fn dev_tools_start_batch(
                     &task.title,
                     task.description.as_deref(),
                     ctx.idea,
+                    ctx.plan,
                     ctx.goal,
                     ctx.codebase,
                     ctx.memories,
@@ -1775,6 +1901,7 @@ async fn run_one_task_for_auto(
         &task.title,
         task.description.as_deref(),
         ctx.idea,
+        ctx.plan,
         ctx.goal,
         ctx.codebase,
         ctx.memories,
@@ -2168,7 +2295,169 @@ pub async fn dev_tools_cancel_auto_run(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use personas_core::models::{IdeaPlan, PlanStep};
     use std::path::Path;
+
+    // ── The plan is the work ──────────────────────────────────────────────
+
+    fn a_plan() -> IdeaPlan {
+        IdeaPlan {
+            steps: vec![
+                PlanStep {
+                    n: 1,
+                    action: "Clamp the retry backoff at one second".into(),
+                    files: vec!["src/retry.rs".into()],
+                    done_when: "the zero-backoff test passes".into(),
+                },
+                PlanStep {
+                    n: 2,
+                    action: "Surface the clamp in the run desk".into(),
+                    files: vec!["src/ui/RunDesk.tsx".into(), "src/ui/row.css".into()],
+                    done_when: "the row shows the clamped value".into(),
+                },
+            ],
+        }
+    }
+
+    /// The whole point of the plan contract: the analysing model's steps reach
+    /// the worker AS the work, and the worker is not asked to plan on top of
+    /// them. Both halves are asserted, because either one alone is the defect.
+    #[test]
+    fn a_planned_item_hands_the_worker_the_steps_and_stops_asking_it_to_plan() {
+        let prompt = build_task_prompt(
+            "Fix the retry storm",
+            Some("the desk retries instantly"),
+            Some("Background prose about why this was filed\n".to_string()),
+            Some(a_plan()),
+            None,
+            None,
+            None,
+            "deep_build",
+        );
+
+        // The steps, with their files and their done-when, under a heading that
+        // positions them as the instruction.
+        assert!(prompt.contains("## Plan\n"), "{prompt}");
+        assert!(prompt.contains("1. Clamp the retry backoff at one second"));
+        assert!(prompt.contains("   - Files: src/retry.rs\n"));
+        assert!(prompt.contains("   - Done when: the zero-backoff test passes\n"));
+        assert!(prompt.contains("2. Surface the clamp in the run desk"));
+        assert!(prompt.contains("   - Files: src/ui/RunDesk.tsx, src/ui/row.css\n"));
+        // Position is the instruction: the plan precedes the strategy, and the
+        // prose that used to BE the plan is demoted to context that says so.
+        assert!(
+            prompt.find("## Plan").unwrap() < prompt.find("## Execution Strategy").unwrap(),
+            "the plan has to arrive before the strategy that executes it"
+        );
+        assert!(!prompt.contains("## Background\n"), "{prompt}");
+        assert!(prompt.contains("## Why This Was Filed (context, not instructions)"));
+        assert!(prompt.contains("Background prose about why this was filed"));
+
+        // And the depth switch no longer demands a plan it was just handed.
+        assert!(!prompt.contains("Planning phase"), "{prompt}");
+        assert!(!prompt.contains("Research phase"), "{prompt}");
+        assert!(!prompt.contains("Write a detailed plan"));
+        // The phases the depth was actually chosen for survive.
+        assert!(prompt.contains("**Implementation phase**"));
+        assert!(prompt.contains("**Validation phase**"));
+    }
+
+    /// A plan whose steps touch nothing is not a plan — `is_actionable()` is
+    /// the ONE definition and the prompt must key on it, not on `Some`.
+    #[test]
+    fn a_plan_that_names_no_files_falls_back_rather_than_rendering_an_empty_plan() {
+        let unusable = IdeaPlan {
+            steps: vec![PlanStep {
+                n: 1,
+                action: "Make it better".into(),
+                files: vec![],
+                done_when: String::new(),
+            }],
+        };
+        let prompt = build_task_prompt(
+            "Fix the retry storm",
+            None,
+            Some("prose\n".to_string()),
+            Some(unusable),
+            None,
+            None,
+            None,
+            "deep_build",
+        );
+        assert!(!prompt.contains("## Plan"), "{prompt}");
+        assert!(prompt.contains("## Background\n"));
+        assert!(prompt.contains("Planning phase"));
+    }
+
+    /// The fallback is the shape most items still have, so it is asserted in
+    /// full rather than restated: an unplanned item must reach the worker
+    /// byte-for-byte as it did before the plan contract existed.
+    #[test]
+    fn an_unplanned_item_builds_exactly_the_prompt_it_always_did() {
+        let prompt = build_task_prompt(
+            "Fix the retry storm",
+            Some("the desk retries instantly"),
+            Some("why it was filed\n".to_string()),
+            None,
+            Some("Ship faster\n".to_string()),
+            Some("### retry\nFiles: src/retry.rs\n\n".to_string()),
+            Some("- do not add a dependency\n".to_string()),
+            "deep_build",
+        );
+
+        let expected = concat!(
+            "You are an expert software engineer. Execute the following task:\n\n",
+            "## Task: Fix the retry storm\n",
+            "the desk retries instantly\n",
+            "\n",
+            "## Execution Strategy: Deep Build\n",
+            "This is a complex task requiring thorough planning before implementation:\n",
+            "1. **Research phase**: Explore the codebase, identify all affected files and dependencies\n",
+            "2. **Planning phase**: Write a detailed plan with specific file changes, new files, and test strategy\n",
+            "3. **Implementation phase**: Execute the plan methodically, one component at a time\n",
+            "4. **Validation phase**: Run tests, verify correctness, check for regressions\n",
+            "5. **Summary**: Provide a comprehensive report of all changes made\n\n",
+            "## Background\n",
+            "why it was filed\n",
+            "\n",
+            "## Goal Context\n",
+            "Ship faster\n",
+            "\n",
+            "## What This Project Has Already Learned\n",
+            "Settled constraints and decisions from earlier triage and runs. Honour these - do NOT re-litigate or contradict them.\n",
+            "- do not add a dependency\n",
+            "\n",
+            "## Codebase Context\n",
+            "### retry\nFiles: src/retry.rs\n\n",
+            "\n",
+            "\nWork in the project directory. Make all necessary code changes.\n",
+            "When done, output a brief summary of what was accomplished.\n",
+        );
+        assert_eq!(prompt, expected);
+    }
+
+    /// A campaign's step 1 is "identify 3-7 concrete subtasks" — planning by
+    /// another name. A planned campaign gets the plan as its subtask list.
+    #[test]
+    fn a_planned_campaign_executes_the_steps_instead_of_inventing_subtasks() {
+        let prompt = build_task_prompt(
+            "Land the retry work",
+            None,
+            None,
+            Some(a_plan()),
+            None,
+            None,
+            None,
+            "campaign",
+        );
+        assert!(prompt.contains("## Execution Strategy: Campaign"));
+        assert!(prompt.contains("the Plan above is the subtask list"));
+        assert!(
+            !prompt.contains("identify 3-7 concrete subtasks"),
+            "{prompt}"
+        );
+        assert!(prompt.contains("1. Clamp the retry backoff at one second"));
+    }
 
     /// A batch of N tasks is N admissions with origin `dev_runner`, headless,
     /// under ONE `dev-runner:<batch>` run label, each named after its task and

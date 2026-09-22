@@ -1,13 +1,13 @@
 # App Master recipes
 
-Six v3 recipe payloads for the **App Master**, the per-project owner of the Grand Simulation
+Eight v3 recipe payloads for the **App Master**, the per-project owner of the Grand Simulation
 (`docs/architecture/grand-simulation.md` §2): it delivers accepted ideas, stewards the project's
 KPIs, certifies its services against the contract the project declared, answers a recurring defect
 with a check rather than a note, holds the threat models and the evidence on a money path project,
 and certifies acceptance through the project's representative users. An App Master binds to **one
 project**, never to a workspace; the cross-project role is the Architect (`../_architect/`).
 
-All six are `status: "draft"` with no `version`, per `../_RECIPE_V3_SPEC.md`.
+All eight are `status: "draft"` with no `version`, per `../_RECIPE_V3_SPEC.md`.
 
 | Slug | What it holds |
 |---|---|
@@ -18,6 +18,7 @@ All six are `status: "draft"` with no `version`, per `../_RECIPE_V3_SPEC.md`.
 | `threat-and-evidence` | **money path projects only**: a current threat model per money path service, moved in the same change that moves a trust boundary, plus one evidence row per obligation with a named gap where no artefact exists |
 | `acceptance-certification` | the project's journeys certified through its representative users, theoretical after every merged wave and empirical once per act, findings filed as items |
 | `codebase-stewardship` | **the codex maintenance lane (G48, 2026-09-15)**: one bounded, owner-scoped maintenance run (behaviour-preserving refactor, structural rebalance, toolchain move, coverage or build-time repair) carried by the codex CLI on `gpt-5.6` instead of the deciding engine; the worker leaves a branch and a structural report, the App Master merges under its own rung. Design: `docs/architecture/grand-simulation/codex-maintenance-lane.md` |
+| `council-review` | **added 2026-09-20 (Council spark)**: one major feature judged by bounded members over evidence the council gathered itself, and escorted to a person's decision; the work can produce no admitting outcome, an unmeasured member lowers coverage rather than scoring zero, and a fourth round is refused. The skill is `/council`; the app's one gated door is `dev_tools_council_ingest` |
 
 The last four were added 2026-09-08 from `docs/architecture/grand-simulation/open-bank-reference.md`
 §8.3, and each is grounded in a named obligation from that digest: the per-service contract in its

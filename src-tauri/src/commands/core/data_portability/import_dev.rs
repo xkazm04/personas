@@ -454,12 +454,24 @@ pub(crate) fn insert_project_children(
         exec_row(
             tx,
             "INSERT INTO dev_use_cases (id, project_id, name, slug, description, kind, \
-                 primary_context_id, status, created_by, pinned, rationale, created_at, updated_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
+                 primary_context_id, status, created_by, pinned, tier, rationale, created_at, \
+                 updated_at) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
             rusqlite::params![
-                remap_req(map, &uc.id), project_id, uc.name, uc.slug, uc.description, uc.kind,
-                primary, uc.status, uc.created_by, uc.pinned, uc.rationale,
-                uc.created_at, uc.updated_at,
+                remap_req(map, &uc.id),
+                project_id,
+                uc.name,
+                uc.slug,
+                uc.description,
+                uc.kind,
+                primary,
+                uc.status,
+                uc.created_by,
+                uc.pinned,
+                uc.tier,
+                uc.rationale,
+                uc.created_at,
+                uc.updated_at,
             ],
             &format!("Project '{pname}' use case '{}'", uc.name),
             warnings,

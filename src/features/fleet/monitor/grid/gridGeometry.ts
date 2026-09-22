@@ -109,8 +109,61 @@ export const VIRTUALIZE_ABOVE = 30;
 //    two, exactly as `trayPerRow` does one axis over.
 // ---------------------------------------------------------------------------
 
-/** The board wraps after this many columns, however wide the display is. */
+/**
+ * The OPTIMISTIC PRE-MEASUREMENT count: what the board assumes before its
+ * scroller has been measured, and the ceiling `boardPerRow` keeps for every
+ * caller that wants a count only. A first paint that opened at ten columns and
+ * reflowed to five would be a worse opening than the brief overflow this
+ * constant exists to prevent — `COLUMNS_PER_ROW_MAX` is the hard ceiling once
+ * a real measurement exists.
+ */
 export const COLUMNS_PER_ROW = 5;
+
+// ---------------------------------------------------------------------------
+// The width ladder
+//
+// Five columns at the node's own 172px left the right edge of every display
+// wider than a laptop unused — 650px on a 1920 window, 2170px on a 3440 one.
+// The board now PACKS as many columns as fit at its measured width, caps the
+// count, and spreads the remainder across them:
+//
+//   perRow      = clamp(floor((w + GAP) / (MIN + GAP)), 1, MAX_PER_ROW)
+//   columnWidth = clamp((w - (perRow - 1) * GAP) / perRow, MIN, MAX)
+//
+// Three properties this has, and one it deliberately does not:
+//
+//  • A column is NEVER narrower than the node (`COLUMN_MIN_W`), so the ladder
+//    can only improve on the fixed-width board it replaces. Below one node the
+//    lower clamp holds the node's width and the board scrolls sideways, exactly
+//    as it did before.
+//  • The column narrows slightly each time a new column is admitted, then grows
+//    again. That sawtooth is inherent to packing at a minimum width; it is
+//    accepted, not a bug to smooth.
+//  • Width comes from the row's CAPACITY, never from how many teams exist. A
+//    three-team board shows three columns at the ladder width and leaves the
+//    rest of the row empty rather than stretching three columns across an
+//    ultra-wide display.
+// ---------------------------------------------------------------------------
+
+/**
+ * A board column never narrows below the node it holds — this IS `NODE_W`,
+ * named separately because it is the ladder's lower clamp rather than the
+ * node's own geometry. Do not widen `NODE_W` to widen the board: `QUEUE_TILE_W`
+ * aliases it, so that would silently widen the runway and lane queues too.
+ */
+export const COLUMN_MIN_W = NODE_W;
+/**
+ * …and never past this, so an ultra-wide board does not produce enormous tiles
+ * with a title row swimming in empty space. Past it the slack stays at the
+ * right edge, which is the honest place for it.
+ */
+export const COLUMN_MAX_W = 280;
+/**
+ * The hard ceiling on a measured row. Ten columns is where a row still reads as
+ * one band on the widest display the app is used on; beyond it the eye is
+ * scanning a field rather than a row.
+ */
+export const COLUMNS_PER_ROW_MAX = 10;
 
 /**
  * A column's scrolling body is capped here so a row's height stays bounded by
@@ -131,6 +184,30 @@ export function boardPerRow(width: number, tileWidth = TILE_W, maxPerRow = COLUM
   if (width <= 0) return maxPerRow;
   const fit = Math.floor((width + BOARD_GAP) / (tileWidth + BOARD_GAP));
   return Math.max(1, Math.min(maxPerRow, fit));
+}
+
+/** What a measured board row is: how many columns, and how wide each one is. */
+export interface BoardLayout {
+  perRow: number;
+  columnWidth: number;
+}
+
+/**
+ * The classic board's row layout at `width` — the ladder described above.
+ *
+ * Unlike `boardPerRow`, which every caller that wants a count only keeps using
+ * unchanged, this decides a WIDTH as well, and it is the only place that may:
+ * the column width is a runtime value now, not a constant, because it depends
+ * on a measurement the module cannot make.
+ */
+export function boardLayout(width: number): BoardLayout {
+  // Unmeasured: the optimistic count at the node's own width. The ghost paints
+  // from the same pair, so the first real measurement widens the board rather
+  // than reflowing it.
+  if (width <= 0) return { perRow: COLUMNS_PER_ROW, columnWidth: COLUMN_MIN_W };
+  const perRow = boardPerRow(width, COLUMN_MIN_W, COLUMNS_PER_ROW_MAX);
+  const spread = Math.floor((width - (perRow - 1) * BOARD_GAP) / perRow);
+  return { perRow, columnWidth: Math.min(COLUMN_MAX_W, Math.max(COLUMN_MIN_W, spread)) };
 }
 
 /** Split an ordered column list into rows of at most `perRow`. */
@@ -182,8 +259,14 @@ export function columnRows(
  * How many tray tiles fit on one wrapped row at `width`. The tray was a
  * `flex-wrap` box, so the wrap point was the browser's to decide; a virtualized
  * grid has to decide it itself, from the same numbers CSS was using.
+ *
+ * `tileWidth` defaults to the node width and the tray's caller keeps the
+ * default — the parameter exists so this cannot drift from `boardPerRow`, which
+ * has taken one since the queue boards started measuring with their own tile.
+ * An asymmetry where one of two twin functions closes over a constant is the
+ * shape that bites the day that constant stops being one.
  */
-export function trayPerRow(width: number): number {
+export function trayPerRow(width: number, tileWidth = TILE_W): number {
   if (width <= 0) return 1;
-  return Math.max(1, Math.floor((width + TRAY_GAP) / (TILE_W + TRAY_GAP)));
+  return Math.max(1, Math.floor((width + TRAY_GAP) / (tileWidth + TRAY_GAP)));
 }

@@ -16,8 +16,12 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import type { Translations } from '@/i18n/en';
 
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
+
 import type { ContextKpiStatus } from './contextKpiStatus';
 import type { ContextGroup } from './contextMapTypes';
+import type { FeatureChipContext } from './featureChipContext';
+import { FeatureChip } from './FeatureChip';
 import type { UseCasesState } from './useUseCases';
 
 export interface GoalCoverage {
@@ -62,6 +66,11 @@ export interface ContextLedgerProps {
   onCreateGroup: (name: string, color: string) => void;
   /** Kick a full codebase scan — offered from the zero-groups empty state. */
   onScan: () => void;
+  /** contextId → the active features slicing it. Stable arrays from ONE
+   *  memoised Map, so the memoised ledger rows keep their identity. */
+  useCasesByContext: Map<string, DevUseCase[]>;
+  /** Board-wide feature-chip inputs; null when no project is active. */
+  featureChip: FeatureChipContext | null;
 }
 
 // -- per-context coverage chips ------------------------------------------------
@@ -136,6 +145,8 @@ export function ContextCoverage({
   errorCount,
   contextId,
   contextName,
+  contextUseCases,
+  chip,
   t,
 }: {
   fileCount: number;
@@ -153,6 +164,11 @@ export function ContextCoverage({
    *  display-only chip rather than a control that would navigate nowhere. */
   contextId?: string;
   contextName?: string;
+  /** The features slicing THIS context. Present turns the feature chip into
+   *  the council review popover's trigger; absent keeps the old count chip. */
+  contextUseCases?: DevUseCase[];
+  /** Board-wide chip inputs (project, group spans, link-layer state). */
+  chip?: FeatureChipContext | null;
   t: TDevTools;
 }) {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -188,7 +204,16 @@ export function ContextCoverage({
   return (
     <span className="inline-flex items-center gap-2.5">
       <CoverageChip icon={<FileCode2 className="w-3 h-3" />} count={fileCount} label={t.files} stem="rose" />
-      <CoverageChip icon={<Layers className="w-3 h-3" />} count={useCaseCount} label={t.uc_title} stem="sky" />
+      {contextUseCases && chip?.project && (contextUseCases.length > 0 || chip.featuresUnlinked) ? (
+        <FeatureChip
+          contextName={contextName ?? ''}
+          useCases={contextUseCases}
+          chip={chip}
+          t={t}
+        />
+      ) : (
+        <CoverageChip icon={<Layers className="w-3 h-3" />} count={useCaseCount} label={t.uc_title} stem="sky" />
+      )}
       <CoverageChip
         icon={<Target className="w-3 h-3" />}
         count={goalCount}

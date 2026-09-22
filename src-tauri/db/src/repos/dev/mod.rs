@@ -21,6 +21,10 @@ pub mod competitions;
 /// `dev_contexts` and its caches: groups, relationships, file hashes, fingerprints,
 /// and `context_health_snapshots`.
 pub mod contexts;
+/// The council's verdict chain: `dev_council_subjects`, `dev_council_runs`,
+/// `dev_council_verdicts` and `dev_council_decisions`. State is derived on
+/// every read, never stored.
+pub mod council;
 /// `cross_project_relations` plus the portfolio health / tech radar / risk matrix
 /// read models of the Codebases connector.
 pub mod cross_project;
@@ -29,6 +33,8 @@ pub mod cross_project;
 pub mod cycle_goals;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
+/// `dev_ideas.plan` — the execution plan an analysing model left for an
+/// executing model. Its own module because `DevIdea` does not carry the column.
 /// `dev_ideas` — the backlog, its dedup spine and the triage page.
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.

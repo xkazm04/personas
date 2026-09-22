@@ -1027,9 +1027,31 @@ pub const MIGRATION_E31_NOTES_ADOPT_MILESTONES: &str = "migration.e31_notes_adop
 /// rather than about its own project) is filed against.
 pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
 
+/// The dev workspace the operator is currently looking at, mirrored from the
+/// frontend so Rust can read it.
+///
+/// The SELECTION itself is a per-device UI preference and stays in
+/// `localStorage` under `devtools.activeWorkspace.v1`
+/// (`sub_workspaces/workspaceStore.ts`) — that remains the frontend's source of
+/// truth. This row is a one-way MIRROR of it, written fire-and-forget on every
+/// switch, because a backend door has no other way to learn which organisation
+/// the operator is working in: Athena's two context-free hiring doors
+/// (`approval_exec_core::execute_build_oneshot` and `execute_kp_hire_request`)
+/// create personas with no project and no team, and a persona with no home
+/// renders in the Fleet Monitor's ungrouped tray.
+///
+/// **Absent is a first-class value and means "file the persona nowhere".**
+/// There is deliberately no `_DEFAULT`: no workspace selected, a cleared
+/// mirror, or an id naming a workspace that has since been deleted all resolve
+/// to no team, which is the behaviour those doors had before this key existed.
+/// Guessing a workspace would file a persona into the wrong organisation,
+/// which is worse than leaving it in the tray.
+pub const DEVTOOLS_ACTIVE_WORKSPACE: &str = "devtools.active_workspace";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     PLATFORM_PROJECT_ID,
+    DEVTOOLS_ACTIVE_WORKSPACE,
     EXECUTIONS_FTS_STALE,
     MIGRATION_E31_NOTES_ADOPT_MILESTONES,
     OLLAMA_API_KEY,
@@ -1619,6 +1641,11 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     // One-shot migration marker, written once by the boot chain. Nobody set it
     // and nobody can unset it from Settings, so it is not a config change.
     MIGRATION_E31_NOTES_ADOPT_MILESTONES,
+    // Mirror of which workspace the operator is looking at, rewritten on every
+    // switch of the Dev Tools workspace picker. Same reason as MASTERMIND_LAYOUT:
+    // it is UI-view state, not a config change, and auditing it would bury real
+    // settings changes in the History tab under switcher noise.
+    DEVTOOLS_ACTIVE_WORKSPACE,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
@@ -2299,5 +2326,16 @@ mod tests {
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "abc").is_err());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, "").is_err());
         assert!(validate_value(MONTHLY_COST_CEILING_USD, " 5 ").is_err());
+    }
+
+    /// The active-workspace mirror must be WRITABLE — an unregistered key is
+    /// rejected by `settings::set`, which is exactly how two earlier features
+    /// ended up permanently pinned to their compiled-in defaults — and must
+    /// not be audited, because it is rewritten on every switcher click.
+    #[test]
+    fn the_active_workspace_mirror_is_writable_and_unaudited() {
+        assert!(validate_key(DEVTOOLS_ACTIVE_WORKSPACE).is_ok());
+        assert!(validate_value(DEVTOOLS_ACTIVE_WORKSPACE, "a-workspace-uuid").is_ok());
+        assert_eq!(audit_category(DEVTOOLS_ACTIVE_WORKSPACE), None);
     }
 }

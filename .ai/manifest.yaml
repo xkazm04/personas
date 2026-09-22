@@ -65,6 +65,8 @@ knowledge:
 # .claude/skills/ as a real directory.
 skills:
   - conform
+  - council
+  - contest
   - architect
   - consult
   - explorer
@@ -103,6 +105,5 @@ scope:
     - game, media, civic or recruiting domains
   out_of_scope_categories:
     - software-engineering/ui-surfaces/published-surfaces
-    - software-engineering/engineering-assessment
   out_of_scope_subjects:
   directions_ledger: .ai/directions/ledger.jsonl

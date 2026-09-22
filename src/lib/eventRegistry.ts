@@ -169,6 +169,13 @@ export const EventName = {
    * ONE name for four tables: the unit of invalidation is the Ship slice.
    */
   DEV_TOOLS_SHIP_CHANGED: 'dev-tools-ship-changed',
+  /**
+   * The council store changed for a project: the ingest door absorbed a run,
+   * the decide command recorded a verdict, or the tier of a subject moved.
+   * ONE name for the whole council slice, like DEV_TOOLS_SHIP_CHANGED — the
+   * unit of invalidation is "this project's council states", not a table.
+   */
+  DEV_TOOLS_COUNCIL_CHANGED: 'dev-tools://council-changed',
   // Findings-loop SIGNAL events (docs/plans/dev-findings-loop.md) — published on
   // the persona-event bus from the repo layer (create_finding / verify-state
   // writes), so triggers and the dispatch ops can route off them.
@@ -931,6 +938,13 @@ export interface EventPayloadMap {
     table: string;
     rowid: number;
   };
+  /**
+   * A pure invalidation signal. `projectId` scopes the refetch when the emitter
+   * knows it; listeners that do not recognise it refetch their own project,
+   * because a council state is always derived from a read, never from this
+   * payload.
+   */
+  [EventName.DEV_TOOLS_COUNCIL_CHANGED]: { projectId?: string | null };
   [EventName.SIGNAL_RAISED]: {
     idea_id: string;
     origin: string;

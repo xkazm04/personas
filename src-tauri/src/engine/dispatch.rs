@@ -492,6 +492,138 @@ pub const IDEA_BACKLOG_CAP: i64 = 300;
 /// touched for a month stops occupying the cap.
 pub const IDEA_STALE_DAYS: i64 = 30;
 
+/// The same backpressure, on the pile that never had any.
+///
+/// Measured on the live database 2026-09-21: the largest PENDING queue on any
+/// project was 63 against a cap of 300 — the review queue is healthy and
+/// nowhere near saturation — while **741 ACCEPTED items sat undispatched**,
+/// with no cap, no reaper and no terminal state. The whole backpressure system
+/// was built for the review queue and stopped dead at the moment of
+/// acceptance, so a producer went quiet only for the queue that was never
+/// full.
+///
+/// Counted over `accepted` items with no `dev_tasks` row pointing at them: an
+/// accepted item that BECAME work is not backlog, it is work in flight, and
+/// holding a producer quiet for it would make the cap a function of delivery
+/// latency. Deliberately the same 300 as [`IDEA_BACKLOG_CAP`] — there is no
+/// evidence for a different number, and two caps that differ invite the reader
+/// to infer a reason neither has.
+pub const ACCEPTED_BACKLOG_CAP: i64 = 300;
+
+/// Accepted aging window: an `accepted` idea this old that never became work
+/// is moved to `expired` by `expire_stale_accepted_ideas` — reversibly, keeping
+/// its `dedup_key`, and into a state no human verdict ever writes. Mirrors
+/// [`IDEA_STALE_DAYS`]: a decision nobody acted on within a month is a decision
+/// the project has revised by not acting, and saying so is how the accepted
+/// pile stops growing forever.
+pub const ACCEPTED_STALE_DAYS: i64 = 30;
+
+/// Which backpressure limit a project is sitting against, when it is.
+///
+/// A single answer rather than two guards, so the log line can name WHICH
+/// limit went quiet — a producer that skips a round without saying why is
+/// indistinguishable from one that had nothing to file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BacklogLimit {
+    /// [`IDEA_BACKLOG_CAP`] pending items awaiting a verdict.
+    Pending,
+    /// [`ACCEPTED_BACKLOG_CAP`] accepted items that never became a task.
+    Accepted,
+}
+
+impl BacklogLimit {
+    /// The clause both producers put in their skip log, so one reading of
+    /// "backlog saturated" covers both piles.
+    pub fn describe(&self) -> String {
+        match self {
+            Self::Pending => format!("backlog saturated (≥ {IDEA_BACKLOG_CAP} pending)"),
+            Self::Accepted => {
+                format!("backlog saturated (≥ {ACCEPTED_BACKLOG_CAP} accepted and undispatched)")
+            }
+        }
+    }
+}
+
+/// The ONE backpressure question a backlog producer asks before filing.
+///
+/// Both piles in one `COUNT`, so extending the policy can never leave one
+/// producer reading half of it — the shape that let the accepted pile reach
+/// 741 while every guard in the tree watched `pending`.
+///
+/// Unreadable is NOT saturated: a pool that cannot be acquired returns `None`
+/// and the filing proceeds. Losing a finding to a transient DB error is worse
+/// than one item over a cap, and the caps are advisory backpressure, not a
+/// correctness invariant.
+pub fn backlog_saturation(pool: &DbPool, project_id: &str) -> Option<BacklogLimit> {
+    let counted = pool.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN status = 'accepted'
+                         AND NOT EXISTS (SELECT 1 FROM dev_tasks
+                                         WHERE dev_tasks.source_idea_id = dev_ideas.id)
+                         THEN 1 ELSE 0 END), 0)
+               FROM dev_ideas WHERE project_id = ?1",
+            rusqlite::params![project_id],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?)),
+        )
+        .ok()
+    })?;
+    let (pending, accepted_undispatched) = counted;
+    if pending >= IDEA_BACKLOG_CAP {
+        Some(BacklogLimit::Pending)
+    } else if accepted_undispatched >= ACCEPTED_BACKLOG_CAP {
+        Some(BacklogLimit::Accepted)
+    } else {
+        None
+    }
+}
+
+/// Who wrote this run's output: `(provider, model)`, for stamping onto anything
+/// a persona files.
+///
+/// Measured 2026-09-21: `provider`/`model` were NULL on 2,038 of 2,093
+/// `dev_ideas` rows, so the single largest producer's 1,208 items cannot be
+/// attributed to the model that wrote them and no cost, quality or regression
+/// question can be asked per-model. The cause was not a policy — it was that
+/// the doors carrying the traffic had no parameter for it and this dispatcher
+/// passed `None, None`.
+///
+/// Read in this order, best evidence first:
+///
+/// 1. `persona_executions.model_used` — the SERVED model name, corrected to
+///    what the provider actually answered with at stream init
+///    (`set_model_used_actual`). This is observation, not intent;
+/// 2. the persona's own `model_profile.model` — intent, used when the run row
+///    is not readable (a dispatch outside a recorded execution, as in tests);
+/// 3. nothing. A model name is never invented.
+///
+/// The provider is the profile's when it declares one. Absent, it is the
+/// bundled Claude CLI: a run with no profile has no other backend to have
+/// taken, and `"claude"` is the token the one producer that already stamps this
+/// column writes (`idea_scanner.rs`), so this does not open a second
+/// vocabulary in one column.
+fn run_attribution(
+    ctx: &DispatchContext<'_>,
+    persona: Option<&crate::db::models::Persona>,
+) -> (Option<String>, Option<String>) {
+    let profile = persona
+        .and_then(|p| personas_engine::prompt::parse_model_profile(p.model_profile.as_deref()));
+    let served = crate::db::repos::execution::executions::get_by_id(ctx.pool, ctx.execution_id)
+        .ok()
+        .and_then(|e| e.model_used);
+    let model = served
+        .or_else(|| profile.as_ref().and_then(|p| p.model.clone()))
+        .map(|m| m.trim().to_string())
+        .filter(|m| !m.is_empty());
+    let provider = profile
+        .as_ref()
+        .and_then(|p| p.provider.clone())
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .unwrap_or_else(|| "claude".to_string());
+    (Some(provider), model)
+}
+
 /// This is the core dispatch function. It handles all 6 protocol message types:
 /// - `UserMessage` -> messages repo + frontend event + OS notification
 /// - `PersonaAction` -> events repo (persona_action event type)
@@ -1194,6 +1326,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             risk,
             target,
             goal,
+            plan,
         } => {
             // Surface a future-work item into the project's backlog (dev_ideas),
             // scoped to the persona's pinned repo so it lands in that project's
@@ -1212,14 +1345,18 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 // `devProjectId` is absent on a workspace binding, so every
                 // item took the project-less branch and the workspace's own
                 // backlog stayed at zero while the run reported success.
-                let home_project_id =
-                    crate::db::repos::core::personas::get_by_id(ctx.pool, ctx.persona_id)
-                        .ok()
-                        .and_then(|p| {
-                            personas_engine::design_context::working_project_id(
-                                p.design_context.as_deref(),
-                            )
-                        });
+                let persona =
+                    crate::db::repos::core::personas::get_by_id(ctx.pool, ctx.persona_id).ok();
+                let home_project_id = persona.as_ref().and_then(|p| {
+                    personas_engine::design_context::working_project_id(p.design_context.as_deref())
+                });
+                // Who wrote this item. 2,038 of 2,093 rows carry no attribution
+                // because the door had no parameter for it and this call site
+                // passed `None, None` — so the App Master's 1,208 Opus-authored
+                // items are anonymous in their own table. Stamped from the
+                // EXECUTION's own context rather than from anything the model
+                // claims about itself.
+                let (provider, model) = run_attribution(ctx, persona.as_ref());
                 // G22 — whose backlog is this? An App Master's daily improve
                 // lane files ideas about the PERSONAS PLATFORM as often as
                 // about its own repo (11 of 36 accepted ideas on 2026-09-08),
@@ -1247,24 +1384,17 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 // faster than triage + promotion can drain them, and backlog
                 // size becomes a function of producer cadence instead of team
                 // throughput.
-                let saturated = project_id.as_deref().is_some_and(|pid| {
-                    ctx.pool
-                        .get()
-                        .ok()
-                        .and_then(|conn| {
-                            conn.query_row(
-                                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
-                                rusqlite::params![pid],
-                                |r| r.get::<_, i64>(0),
-                            )
-                            .ok()
-                        })
-                        .unwrap_or(0)
-                        >= IDEA_BACKLOG_CAP
-                });
-                if saturated {
+                //
+                // BOTH piles, since this contract: the accepted pile had no cap
+                // at all and reached 741 undispatched while this guard watched
+                // a pending queue whose largest project held 63.
+                let saturated = project_id
+                    .as_deref()
+                    .and_then(|pid| backlog_saturation(ctx.pool, pid));
+                if let Some(limit) = saturated {
                     ctx.logger.log(&format!(
-                        "[BACKLOG] propose_backlog skipped — backlog saturated (≥ {IDEA_BACKLOG_CAP} pending): {title}"
+                        "[BACKLOG] propose_backlog skipped — {}: {title}",
+                        limit.describe()
                     ));
                 } else {
                     // A PLATFORM escalation takes its own door: it dedups on the
@@ -1372,41 +1502,41 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                             _ => None,
                         }
                     });
+                    // ONE draft through the ONE door, rather than the two legacy
+                    // positional signatures this branch used to pick between —
+                    // neither of which had a parameter for the plan or for the
+                    // attribution, which is exactly why neither was ever
+                    // recorded. `file_idea` returns `Ok(None)` only when the
+                    // draft carries a `dedup_key` this project has already
+                    // spent; the project-less draft carries none, so its answer
+                    // is always `Ok(Some(_))` — the same shape the ungated
+                    // legacy door guaranteed.
                     let outcome = match dedup_scope.as_ref() {
                         Some(_) if near_duplicate.is_some() => Ok(None),
-                        Some((pid, key)) => crate::db::repos::dev_tools::create_idea_deduped(
-                            ctx.pool,
-                            pid,
-                            None,
-                            "team_proposed",
-                            category.as_deref(),
-                            title,
-                            description.as_deref(),
-                            None,
-                            *effort,
-                            *impact,
-                            *risk,
-                            None,
-                            None,
-                            key,
-                        ),
-                        None => crate::db::repos::dev_tools::create_idea(
-                            ctx.pool,
-                            None,
-                            None,
-                            "team_proposed",
-                            category.as_deref(),
-                            title,
-                            description.as_deref(),
-                            None,
-                            Some("pending"),
-                            *effort,
-                            *impact,
-                            *risk,
-                            None,
-                            None,
-                        )
-                        .map(Some),
+                        scope => {
+                            let mut draft = match project_id.as_deref() {
+                                Some(pid) => crate::db::models::IdeaDraft::new(
+                                    pid,
+                                    crate::db::models::BacklogSource::TeamProposed,
+                                    title.as_str(),
+                                ),
+                                None => crate::db::models::IdeaDraft::unassigned(
+                                    crate::db::models::BacklogSource::TeamProposed,
+                                    title.as_str(),
+                                ),
+                            };
+                            draft.category = category.clone();
+                            draft.description = description.clone();
+                            draft.effort = *effort;
+                            draft.impact = *impact;
+                            draft.risk = *risk;
+                            draft.plan = plan.clone();
+                            draft.provider = provider.clone();
+                            draft.model = model.clone();
+                            draft.status = Some("pending".to_string());
+                            draft.dedup_key = scope.map(|(_, key)| key.clone());
+                            crate::db::repos::dev_tools::file_idea(ctx.pool, draft)
+                        }
                     };
                     // G30 — the project's mechanical triage rule used to run
                     // only from the scanner and the overnight tick, so an idea
@@ -1435,6 +1565,21 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         Ok(Some(idea)) => {
                             ctx.logger
                                 .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id));
+                            // The plan is the half of the filing an executor
+                            // reads, so its absence is named as plainly as a
+                            // missing scale — an unplanned item is stored, is
+                            // graded `draft` by the door, and cannot become
+                            // work until something plans it.
+                            match plan.as_ref() {
+                                Some(p) => ctx.logger.log(&format!(
+                                    "[BACKLOG] Plan filed with '{title}': {} step(s) over {} file(s)",
+                                    p.steps.len(),
+                                    p.file_scope().len()
+                                )),
+                                None => ctx.logger.log(&format!(
+                                    "[BACKLOG] No plan filed with '{title}' — stored as draft; the filer is the analyst and the executor will not re-derive the analysis"
+                                )),
+                            }
                             if !missing.is_empty() {
                                 ctx.logger.log(&format!(
                                     "[BACKLOG] Incomplete filing '{title}': no {} — the filer scores effort, impact and risk; re-file with all three",
@@ -2528,14 +2673,30 @@ mod tests {
     /// Drive one protocol message through the real dispatcher as `persona_id`.
     fn dispatch_as(pool: &DbPool, persona_id: &str, msg: &ProtocolMessage) {
         let exec_id = format!("exec-{}", uuid::Uuid::new_v4());
+        dispatch_as_run(pool, persona_id, &exec_id, msg);
+    }
+
+    /// The same, under a NAMED execution id, handing back what the dispatcher
+    /// wrote to that run's log.
+    ///
+    /// Two things need it: attribution reads the execution row this id points
+    /// at, and a guard that skips a round is only observable through the line
+    /// it logs — a producer that goes quiet without saying why is
+    /// indistinguishable from one that had nothing to file.
+    fn dispatch_as_run(
+        pool: &DbPool,
+        persona_id: &str,
+        exec_id: &str,
+        msg: &ProtocolMessage,
+    ) -> String {
         let emitter = CapturingEmitter::new();
         let log_dir = std::env::temp_dir().join(format!("personas_dispatch_test_{exec_id}"));
-        let mut logger = ExecutionLogger::new(&log_dir, &exec_id).unwrap();
+        let mut logger = ExecutionLogger::new(&log_dir, exec_id).unwrap();
         {
             let mut ctx = DispatchContext::new(
                 &emitter,
                 pool,
-                &exec_id,
+                exec_id,
                 persona_id,
                 "proj-1",
                 "Test Persona",
@@ -2545,7 +2706,12 @@ mod tests {
             );
             dispatch(&mut ctx, msg);
         }
+        // Drop the writer before reading: the log is buffered.
+        drop(logger);
+        let written = std::fs::read_to_string(ExecutionLogger::log_path(&log_dir, exec_id))
+            .unwrap_or_default();
         let _ = std::fs::remove_dir_all(&log_dir);
+        written
     }
 
     fn mk_project(pool: &DbPool, name: &str) -> crate::db::models::DevProject {
@@ -2574,6 +2740,7 @@ mod tests {
             risk: None,
             target: None,
             goal: None,
+            plan: None,
         }
     }
 
@@ -2589,6 +2756,7 @@ mod tests {
                 risk: None,
                 target: Some(target.to_string()),
                 goal: None,
+                plan: None,
             },
             other => other,
         }
@@ -2607,6 +2775,7 @@ mod tests {
                 risk: Some(risk),
                 target: None,
                 goal: None,
+                plan: None,
             },
             other => other,
         }
@@ -2773,6 +2942,237 @@ mod tests {
         assert_eq!(landed.len(), 1, "the proposal landed on the home project");
         assert_eq!(landed[0].title, "Split the ledger from the gateway");
         assert_eq!(landed[0].status, "pending");
+    }
+
+    // -- Attribution, the plan, and the exit the accepted pile never had ----
+
+    /// **`provider` / `model` were NULL on 2,038 of 2,093 rows** because this
+    /// dispatcher passed `None, None` - so the single largest producer's 1,208
+    /// items are anonymous in their own table and no cost, quality or
+    /// regression question can be asked per-model. The door now stamps from
+    /// the EXECUTION's own context: the SERVED model name the stream recorded,
+    /// never a claim the model makes about itself.
+    #[test]
+    fn a_filing_records_the_model_that_wrote_it() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-attribution");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master attribution",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+        // Through the executions repo, not a hand-written INSERT: the row this
+        // reads is the run's own, and a fixture that builds it by hand can
+        // drift from the shape the runner actually writes.
+        let run = crate::db::repos::execution::executions::create(
+            &pool,
+            &persona_id,
+            None,
+            None,
+            Some(personas_core::model_ids::DEFAULT_STRONG.to_string()),
+            None,
+        )
+        .unwrap();
+
+        dispatch_as_run(
+            &pool,
+            &persona_id,
+            &run.id,
+            &backlog_item("Name the model that filed this"),
+        );
+
+        let landed = ideas_on(&pool, &owned.id);
+        assert_eq!(landed.len(), 1, "the item landed");
+        assert_eq!(
+            landed[0].model.as_deref(),
+            Some(personas_core::model_ids::DEFAULT_STRONG),
+            "the served model name, read from the run's own row"
+        );
+        assert_eq!(
+            landed[0].provider.as_deref(),
+            Some("claude"),
+            "no model profile means the bundled Claude CLI, which is the only \
+             backend such a run can have taken"
+        );
+        assert_eq!(
+            landed[0].origin.as_deref(),
+            Some("team_proposed"),
+            "the producer is written too - the whole point of the one door"
+        );
+    }
+
+    /// The plan the filing model leaves for the executing one survives the
+    /// whole trip: protocol message -> dispatch -> the row. An item that
+    /// carries no usable plan is STORED and graded `draft` rather than
+    /// refused, because the dominant producer never retries a refused filing.
+    #[test]
+    fn the_plan_reaches_the_row_and_its_absence_is_a_draft_not_a_refusal() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-planned");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master planned",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+
+        let planned = ProtocolMessage::ProposeBacklog {
+            title: "Extract the retry helper".into(),
+            description: Some("three copies in the engine".into()),
+            category: Some("refactor".into()),
+            impact: Some(3),
+            effort: Some(2),
+            risk: Some(1),
+            target: None,
+            goal: None,
+            plan: Some(crate::db::models::IdeaPlan {
+                steps: vec![crate::db::models::PlanStep {
+                    n: 1,
+                    action: "Add the shared retry helper".into(),
+                    files: vec!["src/lib/retry.rs".into()],
+                    done_when: "`cargo test retry_helper` passes".into(),
+                }],
+            }),
+        };
+        dispatch_as(&pool, &persona_id, &planned);
+        dispatch_as(
+            &pool,
+            &persona_id,
+            &backlog_item("Something nobody planned"),
+        );
+
+        let titles: Vec<String> = ideas_on(&pool, &owned.id)
+            .into_iter()
+            .map(|i| i.title)
+            .collect();
+        assert!(titles.contains(&"Extract the retry helper".to_string()));
+        assert!(
+            titles.contains(&"Something nobody planned".to_string()),
+            "the unplanned item is KEPT, never dropped"
+        );
+
+        // `plan` and `completeness` are WRITTEN by the door but absent from
+        // `IDEA_COLUMNS`, so `DevIdea` cannot carry them back yet (reported as
+        // a contract gap) - they are asserted against the column itself.
+        assert_eq!(
+            count_rows(
+                &pool,
+                "SELECT COUNT(*) FROM dev_ideas WHERE title = ?1 AND completeness = 'full' \
+                 AND plan LIKE '%src/lib/retry.rs%' AND plan LIKE '%cargo test retry_helper%'",
+                "Extract the retry helper",
+            ),
+            1,
+            "the plan's paths and its observable condition both reached the column, \
+             and a rated + described + actionably planned item is `full`"
+        );
+        assert_eq!(
+            count_rows(
+                &pool,
+                "SELECT COUNT(*) FROM dev_ideas WHERE title = ?1 AND completeness = 'draft' \
+                 AND plan IS NULL",
+                "Something nobody planned",
+            ),
+            1,
+            "an unplanned filing is stored and NAMED incomplete, so something else can plan it"
+        );
+    }
+
+    /// **The entrance was governed and the exit was not.** Measured
+    /// 2026-09-21: the largest PENDING queue on any project was 63 against a
+    /// cap of 300, while 741 ACCEPTED items sat undispatched with no cap at
+    /// all. The guard now asks both piles, and its log line names WHICH limit
+    /// went quiet - a producer that skips a round without saying why is
+    /// indistinguishable from one that had nothing to file.
+    #[test]
+    fn the_guard_skips_at_the_accepted_cap_and_says_which_limit_it_hit() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-saturated");
+        let persona_id = mk_pinned_persona(
+            &pool,
+            "App Master saturated",
+            serde_json::json!({ "devProjectId": owned.id }),
+        );
+
+        // The accepted pile at its cap, and NOTHING pending - so a guard that
+        // still only counted `pending` would wave this filing straight through.
+        seed_accepted(&pool, &owned.id, ACCEPTED_BACKLOG_CAP, false);
+        assert_eq!(
+            backlog_saturation(&pool, &owned.id),
+            Some(BacklogLimit::Accepted),
+            "nothing pending, and the accepted pile is at its cap"
+        );
+
+        let exec_id = format!("exec-{}", uuid::Uuid::new_v4());
+        let log = dispatch_as_run(
+            &pool,
+            &persona_id,
+            &exec_id,
+            &backlog_item("One more thing nobody will ever start"),
+        );
+
+        assert!(
+            !ideas_on(&pool, &owned.id)
+                .iter()
+                .any(|i| i.title == "One more thing nobody will ever start"),
+            "the producer went quiet instead of stacking onto a pile with no exit"
+        );
+        assert!(
+            log.contains("propose_backlog skipped") && log.contains("accepted and undispatched"),
+            "the skip line must name which limit it hit, not just that it skipped: {log}"
+        );
+        assert!(
+            !log.contains("pending)"),
+            "and must not blame the pile that is empty: {log}"
+        );
+    }
+
+    /// An accepted item that BECAME work is not backlog, it is work in flight.
+    /// Counting it against the cap would make backpressure a function of
+    /// delivery latency rather than of the pile nobody started.
+    #[test]
+    fn an_accepted_item_that_became_a_task_does_not_count_against_the_cap() {
+        let pool = crate::db::init_test_db().unwrap();
+        let owned = mk_project(&pool, "bank-inflight");
+        seed_accepted(&pool, &owned.id, ACCEPTED_BACKLOG_CAP, true);
+
+        assert_eq!(
+            backlog_saturation(&pool, &owned.id),
+            None,
+            "every accepted item is already a task, so nothing is waiting"
+        );
+    }
+
+    /// `n` accepted ideas on a project, optionally each already minted into a
+    /// `dev_tasks` row.
+    ///
+    /// Through the same doors the product writes through - a pile assembled by
+    /// hand is not the pile the guard counts, and this guard's whole job is to
+    /// tell those two piles apart.
+    fn seed_accepted(pool: &DbPool, project_id: &str, n: i64, with_task: bool) {
+        for i in 0..n {
+            let title = format!("Accepted #{i}");
+            let mut draft = crate::db::models::IdeaDraft::new(
+                project_id,
+                crate::db::models::BacklogSource::TeamProposed,
+                title.clone(),
+            );
+            draft.status = Some("accepted".to_string());
+            let idea = crate::db::repos::dev_tools::file_idea(pool, draft)
+                .unwrap()
+                .expect("an unguarded filing always produces a row");
+            if with_task {
+                crate::db::repos::dev_tools::create_task(
+                    pool,
+                    Some(project_id),
+                    &title,
+                    None,
+                    Some(&idea.id),
+                    None,
+                    None,
+                    None,
+                )
+                .unwrap();
+            }
+        }
     }
 
     /// The codebase pin still wins: an App Master's proposals are untouched by

@@ -2,14 +2,72 @@
 
 ## Active
 
-- **[2026-09-21 21:39]**
+- **[2026-09-22 15:03]**
 - **Paths:** `src/features/fleet/monitor/grid/**` · `.contest/**`
 - **Status:** started
 
+- **[2026-09-21 15:05]**
+- **Paths:** `src-tauri/db/src/repos/dev/ideas.rs` · `src-tauri/db/src/repos/dev/ideas_backlog_tests.rs` · `src-tauri/db/src/repos/dev/bench_seed.rs` · `src-tauri/db/src/repos/dev/cross_project.rs`
+- **Status:** started
+
+- **[2026-09-21 13:41]**
+- **Paths:** `src/features/fleet/monitor/grid/rail/**` · `src/features/plugins/dev-tools/**backlog**` · `src-tauri/src/**backlog**` · `src-tauri/db/**backlog**`
+- **Status:** started
+
+- **[2026-09-20 14:21]**
+- **Paths:** `src/features/council/**` · `src/features/plugins/dev-tools/sub_context/**` · `.claude/skills/council/**`
+- **Status:** started
+
+### contest-manifest-editor — Adopt /contest skill; run a design contest for the Manifest editor (Opus xhigh vs grok-4.6 high)
+- **[2026-09-20 13:37]**
+- **Paths:** `.claude/skills/contest` · `.claude/contest/**` · `.ai/manifest.yaml` · `.gitignore` · `.contest/**`
+- **Status:** started
+
+- **[2026-09-20 13:21]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src-tauri/db/**` · `src-tauri/src/commands/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-09-18 11:38]**
+- **Paths:** `src-tauri/src/companion/**` · `src-tauri/src/browser_bridge/**` · `scripts/e2e/**` · `docs/tests/**`
+- **Status:** started
+
+- **[2026-09-18 10:49]**
+- **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin.rs` · `src-tauri/core/src/models/twin.rs` · `src/api/twin/**` · `docs/features/plugins/twin.md`
+- **Status:** started
+
+- **[2026-09-17 22:44]**
+- **Paths:** `.claude/worktrees/sweep2-*/**` · `src/**` · `src-tauri/**`
+- **Status:** started
+
+- **[2026-09-17 14:03]**
+- **Paths:** `src/features/teams/sub_kpis/**,src/i18n/**,docs/features/teams/**`
+- **Status:** started
+
+- **[2026-09-17 13:45]**
+- **Paths:** `src/features/plugins/drive/**,src/i18n/**,tests/playwright/drive-*.spec.ts,docs/features/plugins/drive/**`
+- **Status:** started
+
+- **[2026-09-17 13:28]**
+- **Paths:** `src-tauri/src/companion/**` · `src-tauri/src/engine/**` · `src/features/companion/**` · `docs/architecture/**`
+- **Status:** started
+
+- **[2026-09-17 13:24]**
+- **Paths:** `.claude/worktrees/sweep-*/**` · `src/**` · `src-tauri/**`
+- **Status:** started
+
+- **[2026-09-17 10:12]**
+- **Paths:** `src/features/plugins/drive/**`
+- **Status:** started
+
+- **[2026-09-17 10:06]**
+- **Paths:** `.claude/worktrees/incr-load/**`
+### spark-rao-build — spark resource-aware-orchestration BUILD in worktree .claude/worktrees/spark-rao: fleet queue budgets, responsibility resourceProfile, decide-lane resource state, cli_usage reader, usage strip variants
+### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
 - **[2026-09-21 16:00]**
 - **Paths:** `src/features/plugins/twin/**` · `src-tauri/src/commands/infrastructure/twin.rs` · `src/i18n/**`
 - **Status:** started
 
+### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
 - **[2026-09-21 15:23]**
 - **Paths:** `src/features/fleet/monitor/live/**`
 - **Status:** started
@@ -18,6 +76,7 @@
 - **Paths:** `src/features/fleet/monitor/grid/**`
 - **Status:** started
 
+### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
 - **[2026-09-21 14:11]**
 - **Paths:** `src/features/plugins/dev-tools/sub_skills/registry/**` · `src/features/fleet/monitor/grid/DockSkillPicker.tsx` · `src/i18n/**`
 - **Status:** started
@@ -928,12 +987,31 @@
 
 ### contest-dock — /contest: QuickDispatchDock redesign (Opus xhigh vs Grok 4.7)
 
-### contest-twin-onboarding — /contest Twin onboarding+training fullscreen experience: Opus xhigh vs Grok 4.6 high in worktrees
+### spark-backlog-unification — Unify backlog item generation across sources: shared schema, numbered execution steps, analysis gate, and the ACCEPTED->Dispatch->done lifecycle
 
-### prototype-live-comms — C:/Program Files/Git/prototype LiveCommsStack → top-center header pop-up (2 variants + as-is behind switcher)
+### wp1-backlog-one-door — WP1: collapse three dev_ideas write doors into file_idea; IdeaStatus at the CAS; mark_idea_delivered + expire_stale_accepted_ideas
 
-### contest-heatmap — /contest RegistryHeatmap: Opus xhigh vs Grok 4.6 high in worktrees
+### spark-council — /spark Council: grand triage (council skill + Galactic UI + feature granularity) - design phase
 
+### spark-project-groups — spark: workspace-level cross-project group + auto-create + styled grid column + responsive TeamColumn widths
+
+### spark-twin-presets — Twin communication presets (10 profiles) + LLM-randomized twin generate/preview/accept
+
+### spark-browser-react — Athena browser-page reaction test: page context block, research lane, timing harness
+
+### sweep-wave2-2026-09-17 — Develop-sweep wave 2: 10 builder worktrees under .claude/worktrees/sweep2-*, merged into master by the orchestrator
+
+### spark-hybrid-llm-engine — Athena hybrid LLM engine: Grok CLI (chat/voice) + Claude CLI (orchestration) feasibility + test
+
+### sweep-wave1-2026-09-17 — Develop-sweep wave 1: 11 builder worktrees under .claude/worktrees/sweep-*, merged into master by the orchestrator
+
+### spark-kpi-strategic-map — KPI dashboard redesign: three strategic overview variants (pof pipelines map + 2 more) with a graphical 2nd layer
+
+### spark-drive-finder-consolidate — Drive: Finder wins; delete Classic renderer + switcher
+
+### spark-drive-finder — Drive redesign to Apple-OS-quality file/folder environment; from-scratch variant built in parallel to compare
+
+### incr-load-worktree — Implement all incremental-load findings in worktree, merge to master
 ### spark-node-rows — usage row spacing; FleetNode split <=200 LOC, title/divider/symbols layout, full-width nodes in Lanes
 
 ### spark-note-overview-cycle — spark: NoteOverview cycle mgmt, feedback bubbles, context menu, contest v2

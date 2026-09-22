@@ -7,7 +7,10 @@
 // hydrate (idempotent on name), then the key is cleared.
 //
 // The active-workspace SELECTION stays in localStorage — it is a per-device
-// UI preference, not domain data.
+// UI preference, not domain data. It is MIRRORED (one way, fire-and-forget)
+// into the `devtools.active_workspace` app setting, because Rust cannot read
+// localStorage and the backend's context-free hiring doors need to know which
+// organisation a new persona belongs to. See `mirrorActive` below.
 import { useSyncExternalStore } from 'react';
 
 import { listProjects } from '@/api/devTools/devTools';
@@ -17,6 +20,7 @@ import {
   deleteWorkspace as apiDeleteWorkspace,
   importLocalWorkspaces,
   listWorkspaces,
+  mirrorActiveWorkspace,
   updateWorkspace as apiUpdateWorkspace,
 } from '@/api/devTools/workspaces';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -63,6 +67,36 @@ function readActiveId(workspaces: Workspace[]): string | null {
   }
 }
 
+// -- the active-workspace mirror ---------------------------------------------
+//
+// localStorage is the source of truth for the selection; this is a one-way
+// mirror into `app_settings` so Rust can read it (Athena's hiring doors file a
+// context-free persona into the active workspace's group — see
+// `approval_exec_core::active_workspace_group`). Fire-and-forget by
+// construction: it never blocks the switch, never toasts, and a failure only
+// costs a filing.
+//
+// `undefined` rather than `null` as the starting value, deliberately: the first
+// commit after hydrate therefore always writes, which is what CLEARS a mirror
+// left behind by a previous session whose workspace has since been deleted.
+let mirroredActiveId: string | null | undefined;
+// Writes are chained so two fast switches cannot land out of order and leave
+// the mirror on the earlier workspace.
+let mirrorChain: Promise<void> = Promise.resolve();
+
+function mirrorActive(activeId: string | null): void {
+  if (activeId === mirroredActiveId) return;
+  mirroredActiveId = activeId;
+  mirrorChain = mirrorChain
+    .then(() => mirrorActiveWorkspace(activeId))
+    .catch((err) => {
+      // Let the next commit retry rather than leaving the mirror wrong for the
+      // rest of the process.
+      if (mirroredActiveId === activeId) mirroredActiveId = undefined;
+      silentCatch('workspaceStore:mirrorActive')(err);
+    });
+}
+
 function commit(next: Snapshot): void {
   snapshot = next;
   try {
@@ -72,6 +106,7 @@ function commit(next: Snapshot): void {
     // best-effort — a blocked storage must never break the switchers
     silentCatch('workspaceStore:persistActive')(err);
   }
+  mirrorActive(next.activeId);
   for (const l of listeners) l();
 }
 

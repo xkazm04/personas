@@ -93,6 +93,39 @@ a session tile is already shorter, hollow and dashed against a solid persona
 tile, so the word restated the shape below it once per column. It remains as
 `sr-only` text for assistive tech.
 
+**The workspace's cross-project group is a framed column, pinned first
+(2026-09-20).** Every workspace owns exactly one team that belongs to no
+project — its *cross-project group*, the home for personas that work across all
+of that workspace's projects (`persona_teams.workspace_id`, one per workspace by
+a partial unique index). On the board that group is a different kind of object
+and is drawn as one: a faint primary wash behind the whole column, a primary
+border and card radius, and a workspace glyph badge in the header. The
+per-workspace accent stays where it always was, on the header rule — the frame
+says *what kind* of column this is, the rule says *which* workspace. The frame
+is deliberately neither dashed nor a ring: dashed already means a queued session
+and a primary ring already means selection or the Athena flash, and either would
+have made a false claim about the tiles inside. It is drawn as a decoration that
+grows outward into the board's own column gap, so the column's content box stays
+exactly the measured ladder width and a tile inside a frame lines up with a tile
+outside one at every width from 172 to 280.
+
+Two rules change for that column and for nothing else. It **renders while it is
+empty** — the ordinary "an empty team is noise" rule would have hidden a
+freshly-created group until somebody moved in, which is the one moment it needs
+to be visible — and shows a single quiet line naming what lands there. And it is
+**pinned to the front of the board**: column order is the order `list_teams`
+returns, which is `updated_at DESC`, so any write to any team reshuffles the
+board and no `ORDER BY` can pin anything; the hoist is a stable partition in the
+board model, leaving every other column in the order it arrived. The board's
+empty state still wins over a row of empty frames — emptiness is answered from
+the columns' rows, not from their count, so a machine with workspaces and no
+personas still reaches "nothing is waiting on you".
+
+The group's header right-click opens its **own** menu — *Open workspace* (jumps
+to Dev Tools → Workspaces with that workspace selected) and *Rename group* —
+where before it did nothing at all: the header's context menu is the project
+on/off switch, and a group has no project to switch.
+
 > The former per-project columns view (MonitorProjectColumns) was descoped
 > 2026-08-26; its operation badges migrated onto the Activity squares. Its
 > three orphaned files were deleted 2026-09-02.

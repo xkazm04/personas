@@ -19,6 +19,7 @@
   "citationCount": 48,
   "triggers": [],
   "citations": {
+    "Composer.tsx": {"count":2,"sections":[7],"lines":["322-350"],"contexts":["`Composer.tsx`, `orb/OrbQuickInputBar.tsx`, `orb/AthenaOrbLayer.tsx`,"],"resolved":false},
     "companion/stt/*.rs": {"count":1,"sections":[12],"contexts":["this leaf (`companion/tts/*.rs`, `companion/stt/*.rs`) is a request/response synthesiser"],"resolved":false},
     "companion/stt/{mod,whisper,catalog}.rs": {"count":1,"sections":[],"contexts":["`companion/stt/{mod,whisper,catalog}.rs`, `companion/jobs/connector_use.rs`."],"resolved":false},
     "companion/tts/*.rs": {"count":1,"sections":[12],"contexts":["this leaf (`companion/tts/*.rs`, `companion/stt/*.rs`) is a request/response synthesiser"],"resolved":false},
@@ -28,7 +29,6 @@
     "src/features/agents/quick-answer/triage/useUnifiedTriage.ts": {"count":1,"sections":[],"lines":["506"],"contexts":["**8 + 7 = 15 ≠ 13**, and three sites (`useUnifiedTriage.ts:506`,"],"resolvedFrom":"basename","verbatim":"useUnifiedTriage.ts"},
     "src/features/onboarding/components/useTourNarration.ts": {"count":3,"sections":[0,12],"contexts":["`CompanionFooterIcon.tsx`, `onboarding/components/useTourNarration.ts`,"],"resolvedFrom":"suffix","verbatim":"onboarding/components/useTourNarration.ts"},
     "src/features/plugins/companion/CompanionFooterIcon.tsx": {"count":2,"sections":[7],"lines":["123"],"contexts":["`CompanionFooterIcon.tsx`, `onboarding/components/useTourNarration.ts`,"],"resolvedFrom":"basename","verbatim":"CompanionFooterIcon.tsx"},
-    "src/features/plugins/companion/Composer.tsx": {"count":2,"sections":[7],"lines":["322-350"],"contexts":["`Composer.tsx`, `orb/OrbQuickInputBar.tsx`, `orb/AthenaOrbLayer.tsx`,"],"resolvedFrom":"basename","verbatim":"Composer.tsx"},
     "src/features/plugins/companion/chat/athenaChatAudio.ts": {"count":4,"sections":[0,7],"lines":["68"],"contexts":["`voicePlayback.ts`, `chat/athenaChatAudio.ts`, `chat/athenaChatVoice.ts`,"],"resolvedFrom":"suffix","verbatim":"chat/athenaChatAudio.ts"},
     "src/features/plugins/companion/chat/athenaChatVoice.ts": {
       "count": 3,

@@ -23,6 +23,32 @@ function isSidebarSection(value: string): value is SidebarSection {
   return (ALL_SIDEBAR_SECTIONS as readonly string[]).includes(value);
 }
 
+/**
+ * THE ONE DOOR ONTO A DEV TOOLS SURFACE, for callers outside a process's
+ * `navigateTo`.
+ *
+ * Extracted (2026-09-20) rather than copied, when the Activity board's
+ * workspace-group menu needed the same three writes to reach Dev Tools →
+ * Workspaces. Copying would have opened the tree's 22nd ungated plugin arrival
+ * — the condition `ungated-plugin-destination-write` counts, and which
+ * `plugin-surface-shell.md` records as having **no compliant form anywhere in
+ * this tree**: the plugin's own enable switch is read by the chrome that lists
+ * plugins and by nothing that mounts one. This extraction does not fix that (a
+ * fix is a gate read every arrival shares, which is that golden path's work,
+ * not a column menu's), but it does stop the count growing, and it puts the one
+ * place a future gate read belongs behind one name.
+ *
+ * Re-setting `sidebarSection` to the section you are already on is documented
+ * as a no-op for history (`uiSlice.ts` `setSidebarSection`), so the caller
+ * inside `navigateToProcess` pays nothing for going through here.
+ */
+export function openDevToolsTab(tab: DevToolsTab): void {
+  const system = useSystemStore.getState();
+  system.setSidebarSection('plugins');
+  system.setPluginTab('dev-tools' as PluginTab);
+  system.setDevToolsTab(tab);
+}
+
 /** Navigate to the surface a process points at, then run `dismiss` (close the
  *  Monitor drawer, the island popover, …). No-op when the process declares no
  *  destination — callers should gate their affordance on `navigateTo` too. */
@@ -44,8 +70,7 @@ export function navigateToProcess(proc: ActiveProcess, dismiss: () => void) {
     if (section === 'personas') {
       system.setEditorTab(tab as Parameters<typeof system.setEditorTab>[0]);
     } else if (section === 'plugins') {
-      system.setPluginTab('dev-tools' as PluginTab);
-      system.setDevToolsTab(tab as DevToolsTab);
+      openDevToolsTab(tab as DevToolsTab);
     } else if (section === 'teams') {
       system.setTeamsTab(tab as TeamsTab);
     } else {
