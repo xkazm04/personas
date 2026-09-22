@@ -17,6 +17,7 @@ import { getCouncilOverlay, getRegistryGalaxy, listCouncilSubjects } from '@/api
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';
 import type { CouncilOverlaySubject } from '@/lib/bindings/CouncilOverlaySubject';
+import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
 import { silentCatch } from '@/lib/silentCatch';
@@ -80,6 +81,15 @@ export interface CouncilStore {
 
   /** DEV only: the page is showing the checked-in reference fixture. */
   fixtureOn: boolean;
+  /**
+   * DEV only: the rounds the fixture carries, by run id.
+   *
+   * Fixture mode has no backend, so `useCouncilRun` reads this instead of
+   * `dev_tools_council_get_run`. Without it the round table opened every
+   * fixture council with five NOT MEASURED members over a file that had the
+   * scores in it.
+   */
+  fixtureRuns: Record<string, CouncilRunDetail>;
 
   /**
    * The live canvas engine, published by the galaxy stage that owns it.
@@ -244,6 +254,7 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   cameraBeforeBench: null,
   focusBeforeBench: null,
   fixtureOn: false,
+  fixtureRuns: {},
   engine: null,
   benchOpen: false,
   tableSubjectId: null,
@@ -257,7 +268,13 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
     set({ galaxyStatus: 'loading', subjectsStatus: 'loading', galaxyError: null });
     try {
       const bundle = await loadReferenceFixture();
-      set({ registryRoot: FIXTURE_ROOT, fixtureOn: true, focus: { kind: 'none' }, ...adopt(bundle) });
+      set({
+        registryRoot: FIXTURE_ROOT,
+        fixtureOn: true,
+        fixtureRuns: bundle.runs,
+        focus: { kind: 'none' },
+        ...adopt(bundle),
+      });
     } catch (e) {
       silentCatch('councilStore.fixture')(e);
       set({ galaxyStatus: 'failed', galaxyError: e });
@@ -265,7 +282,9 @@ export const useCouncilStore = create<CouncilStore>((set, get) => ({
   },
 
   load: async (registryRoot) => {
-    set({ registryRoot, fixtureOn: false });
+    // Leaving fixture mode drops its rounds with it: a fixture run id must
+    // never resolve against a real registry.
+    set({ registryRoot, fixtureOn: false, fixtureRuns: {} });
     if (!registryRoot) {
       set({ galaxyStatus: 'idle', galaxy: null, layout: null, galaxyError: null });
       return;

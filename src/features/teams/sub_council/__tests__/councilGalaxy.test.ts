@@ -15,6 +15,8 @@ import { allocateLabels, MIN_LABEL_PX, type LabelRequest } from '../galaxy/engin
 import { normaliseFixtureTechnique, normaliseFixtureTitle } from '../galaxy/fixture';
 import { buildLayout, markOf } from '../galaxy/engine/layout';
 import { applyLens, LENS_M, LENS_R } from '../galaxy/engine/lens';
+import { fixtureRunDetail } from '../galaxy/fixtureRuns';
+import { seatsOf } from '../table/runModel';
 
 const VIEWPORT: Viewport = { x0: 0, x1: 1280, y0: 0, y1: 800 };
 
@@ -372,5 +374,91 @@ describe('normaliseFixtureTechnique - the fixture file is snake_case', () => {
 
   it('prefers the product spelling when a file already carries it', () => {
     expect(normaliseFixtureTechnique({ slug: 'a', useWhen: ['p'], use_when: ['s'] }).useWhen).toEqual(['p']);
+  });
+});
+
+describe('fixtureRunDetail - the fixture carries whole ROUNDS, and nothing read them', () => {
+  const RUN = {
+    run_id: 'cr-r2',
+    subject: { kind: 'use_case', slug: 'orchestration', title: 'Orchestration' },
+    rubric_version: 'feature-v1',
+    round_no: 2,
+    supersedes_run_id: 'cr-r1',
+    trust_state: 'uncalibrated',
+    receipt: { head_sha: 'abc1234', spanned_paths: ['src/a/**'], span_digest: 'sha256:deadbeef' },
+    hard_failures: [],
+    dimensions: [
+      {
+        dimension: 'value',
+        kind: 'judged',
+        state: 'measured',
+        score: 0.75,
+        confidence: 'med',
+        floor: 0.4,
+        floor_hit: false,
+        advisory: true,
+        unmeasured_reason: null,
+        findings: [{ id: 'v-1', severity: 'med', title: 'A thing', detail: 'why', recurrence: 1 }],
+        evidence: [{ kind: 'metric', ref: '52 min saved', caption: 'UAT L2' }],
+        techniques: [{ subject: 'retrieval', technique: 'single-flight', proof: 'execution' }],
+        delta: null,
+      },
+      {
+        dimension: 'economics',
+        kind: 'mechanical',
+        state: 'carried',
+        score: 0.7,
+        confidence: 'high',
+        floor: null,
+        floor_hit: false,
+        advisory: false,
+        unmeasured_reason: null,
+        findings: [],
+        evidence: [],
+        techniques: [],
+        delta: 'carried: spend paths unchanged',
+      },
+    ],
+    overall: 0.71,
+    coverage: 1,
+    outcome: 'ready',
+    must_address: ['do the thing'],
+    summary: 'All five members measured.',
+    started_at: '2026-09-14T09:00:00Z',
+    finished_at: '2026-09-14T09:40:00Z',
+  };
+
+  it('keeps the SCORES, which is the whole point — they were being drawn as NOT MEASURED', () => {
+    const detail = fixtureRunDetail(RUN, 'personas:orchestration', 'personas', true);
+    const seats = seatsOf(detail.run, detail.subject.kind, detail.verdicts);
+    const byName = new Map(seats.map((s) => [s.name, s]));
+    expect(byName.get('value')?.score).toBe(0.75);
+    expect(byName.get('value')?.state).toBe('measured');
+    expect(byName.get('economics')?.score).toBe(0.7);
+    expect(byName.get('economics')?.state).toBe('carried');
+    // and a member the fixture round never reached is still a seat, unmeasured
+    expect(byName.get('craft')?.state).toBe('not_run');
+    expect(byName.get('craft')?.score).toBeNull();
+  });
+
+  it('carries the document half through the SAME parser a real blob goes through', () => {
+    const detail = fixtureRunDetail(RUN, 'personas:orchestration', 'personas', true);
+    const value = seatsOf(detail.run, detail.subject.kind, detail.verdicts).find((s) => s.name === 'value');
+    expect(value?.findings.map((f) => f.title)).toEqual(['A thing']);
+    expect(value?.evidence.map((e) => e.kind)).toEqual(['metric']);
+    expect(value?.techniques.map((t) => t.proof)).toEqual(['execution']);
+  });
+
+  it('binds the run to the SUBJECT ID the queue row carries, not to the slug', () => {
+    const detail = fixtureRunDetail(RUN, 'personas:orchestration', 'personas', false);
+    expect(detail.run.subjectId).toBe('personas:orchestration');
+    expect(detail.subject.id).toBe('personas:orchestration');
+    expect(detail.isLatest).toBe(false);
+    // The chain walk follows this and nothing else.
+    expect(detail.run.supersedesRunId).toBe('cr-r1');
+  });
+
+  it('never invents a decision: a fixture decision lives in the store', () => {
+    expect(fixtureRunDetail(RUN, 'p:s', 'p', true).decision).toBeNull();
   });
 });

@@ -11,6 +11,8 @@ import { getCouncilRun } from '@/api/devTools/council';
 import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { useCouncilStore } from '../councilStore';
+
 /** Round 4 is refused by the skill, so a chain is at most a handful long. */
 const MAX_ROUNDS = 8;
 
@@ -26,13 +28,36 @@ export interface CouncilRunView {
   reload: () => void;
 }
 
+/**
+ * One round, from wherever this page's rounds come from.
+ *
+ * FIXTURE MODE HAS NO BACKEND. `dev_tools_council_get_run` is a Tauri
+ * command, so in fixture mode every hop of the walk rejected and the round
+ * table opened with five NOT MEASURED members - over a fixture file that
+ * carries the whole run. The fixture's rounds are loaded with its galaxy and
+ * live in the store; they are read here, by the same walk, so nothing
+ * downstream can tell the two sources apart.
+ */
+async function readRound(runId: string): Promise<CouncilRunDetail> {
+  const { fixtureOn, fixtureRuns } = useCouncilStore.getState();
+  if (fixtureOn) {
+    const detail = fixtureRuns[runId];
+    // A fixture run id that resolves to nothing is an ERROR, not an empty
+    // table: the round table's failure branch says the read failed, which is
+    // the truth, rather than drawing a council that found nothing.
+    if (!detail) throw new Error(`reference fixture: no run ${runId}`);
+    return detail;
+  }
+  return getCouncilRun(runId);
+}
+
 async function walkChain(latestRunId: string): Promise<CouncilRunDetail[]> {
   const chain: CouncilRunDetail[] = [];
   const seen = new Set<string>();
   let id: string | null = latestRunId;
   while (id && !seen.has(id) && chain.length < MAX_ROUNDS) {
     seen.add(id);
-    const detail: CouncilRunDetail = await getCouncilRun(id);
+    const detail: CouncilRunDetail = await readRound(id);
     chain.push(detail);
     id = detail.run.supersedesRunId;
   }

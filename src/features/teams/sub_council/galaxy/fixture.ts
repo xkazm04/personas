@@ -11,8 +11,11 @@
 // Nothing here is ever written to the database, and the page says out loud
 // that it is showing a fixture.
 import type { CouncilOverlay } from '@/lib/bindings/CouncilOverlay';
+import type { CouncilRunDetail } from '@/lib/bindings/CouncilRunDetail';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import type { RegistryGalaxy } from '@/lib/bindings/RegistryGalaxy';
+
+import { fixtureRunDetail, type FixtureRun } from './fixtureRuns';
 
 /** Read ONCE, at module scope — never inline at a JSX site. */
 export const IS_DEV: boolean = import.meta.env.DEV;
@@ -134,12 +137,18 @@ interface FixtureCouncil {
       { approved: number; rejected: number; pending: number; techniques_proven: number; projects: string[]; last: string | null }
     >;
   };
+  runs?: FixtureRun[];
 }
 
 export interface FixtureBundle {
   galaxy: RegistryGalaxy;
   overlay: CouncilOverlay;
   subjects: CouncilSubjectState[];
+  /**
+   * Every round the fixture carries, by run id. Fixture mode has no backend
+   * to ask for one, so the round table reads this instead of the IPC door.
+   */
+  runs: Record<string, CouncilRunDetail>;
 }
 
 /**
@@ -172,7 +181,30 @@ export async function loadReferenceFixture(): Promise<FixtureBundle> {
   const topology = topologyRaw as FixtureTopology;
   const council = councilRaw as FixtureCouncil;
 
+  // The subject rows first: a run's `subjectId` has to be the SAME id the
+  // queue row carries, or the round table would open a council whose detail
+  // says it belongs to something else.
+  const subjectIdBySlug = new Map(council.subjects.map((row) => [row.slug, `${row.project}:${row.slug}`]));
+  const projectBySlug = new Map(council.subjects.map((row) => [row.slug, row.project]));
+  const latestBySlug = new Map(council.subjects.map((row) => [row.slug, row.latest_run_id ?? null]));
+  const runs: Record<string, CouncilRunDetail> = {};
+  for (const run of council.runs ?? []) {
+    const slug = run.subject.slug;
+    const subjectId = subjectIdBySlug.get(slug);
+    // A run whose subject the fixture does not list is DROPPED, not invented
+    // a subject for: the two halves of the fixture disagreeing is a fixture
+    // bug, and the page must not paper over it with a fabricated row.
+    if (!subjectId) continue;
+    runs[run.run_id] = fixtureRunDetail(
+      run,
+      subjectId,
+      projectBySlug.get(slug) ?? '',
+      latestBySlug.get(slug) === run.run_id,
+    );
+  }
+
   return {
+    runs,
     galaxy: {
       registryRoot: FIXTURE_ROOT,
       headSha: null,
