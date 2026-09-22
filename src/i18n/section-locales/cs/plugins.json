@@ -154,8 +154,6 @@
     "watching": "Sleduje:",
     "wireframe": "Drátový model"
   },
-  "companion_desc": "Athena — váš vždy dostupný myšlenkový partner. Prohlédněte její paměť, nastavte její vzhled a přiřaďte hlas.",
-  "companion_label": "Companion",
   "dev_context": {
     "auto_scan": "Automatický sken",
     "automated_context_scan": "Automatický context sken",

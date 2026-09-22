@@ -36,11 +36,18 @@
   "landing": {
     "title": "伙伴",
     "subtitle": "三个内置智能体，照看应用、你的智能体与你的知识。",
-    "open_hint": "打开{{name}}",
-    "decisions_waiting": "待处理决策：{{count}}",
-    "agents_watched": "监视中的智能体：{{count}}",
-    "registry_subjects": "{{name}}：{{count}}个主题",
-    "shortcut_hint": "按 1、2 或 3 打开一个伙伴"
+    "open_hint": "打开{name}",
+    "decisions_waiting": "待处理决策：{count}",
+    "agents_watched": "监视中的智能体：{count}",
+    "registry_subjects": "{name}：{count}个主题",
+    "shortcut_hint": "按 1、2 或 3 打开一个伙伴",
+    "decisions_label": "待处理决策",
+    "agents_label": "受监视智能体",
+    "registry_fact": "注册库：{name}",
+    "wake_not_onboarded": "完成引导以认识 Athena",
+    "wake_no_starred_personas": "给智能体加星标以监视",
+    "wake_no_registry": "为工作区关联注册库",
+    "wake_off": "在设置中开启"
   },
   "setup": {
     "enable_section": "状态",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "策展人让关联的知识注册库不断增长，并用它检查你的项目。",
     "curator_prerequisite": "为工作区关联一个知识注册库，才能开启策展人。",
     "curator_registry_title": "已关联的注册库",
-    "curator_registry_row": "{{workspace}} 使用 {{registry}}",
+    "curator_registry_row": "{workspace} 使用 {registry}",
     "curator_registry_path": "路径",
     "curator_registry_empty": "还没有工作区关联注册库。",
     "curator_map_action": "关联一个注册库"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "监督者需要至少一个加星标的智能体。",
     "curator_needs_registry": "策展人需要一个已关联知识注册库的工作区。",
-    "toggle_failed": "无法切换{{name}}。",
+    "toggle_failed": "无法切换{name}。",
     "status_failed": "无法读取伙伴的状态。"
   }
 }

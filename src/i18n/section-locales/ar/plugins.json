@@ -154,8 +154,6 @@
     "watching": "جارٍ المراقبة:",
     "wireframe": "إطار سلكي"
   },
-  "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",
-  "companion_label": "الرفيق",
   "dev_context": {
     "auto_scan": "فحص تلقائي",
     "automated_context_scan": "فحص سياق تلقائي",

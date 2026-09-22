@@ -10791,8 +10791,6 @@
       "watching": "감시 중:",
       "wireframe": "와이어프레임"
     },
-    "companion_desc": "Athena — 언제나 곁에 있는 생각의 파트너입니다. 기억을 살펴보고, 표시 방식을 설정하고, 음성을 연결하세요.",
-    "companion_label": "Companion",
     "dev_context": {
       "auto_scan": "자동 스캔",
       "automated_context_scan": "자동화된 컨텍스트 스캔",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "동반자",
       "subtitle": "앱과 당신의 에이전트, 그리고 지식을 돌보는 세 개의 내장 에이전트입니다.",
-      "open_hint": "{{name}} 열기",
-      "decisions_waiting": "대기 중인 결정: {{count}}건",
-      "agents_watched": "감시 중인 에이전트: {{count}}개",
-      "registry_subjects": "{{name}}: 주제 {{count}}개",
-      "shortcut_hint": "1, 2, 3 중 하나를 눌러 동반자를 여세요"
+      "open_hint": "{name} 열기",
+      "decisions_waiting": "대기 중인 결정: {count}건",
+      "agents_watched": "감시 중인 에이전트: {count}개",
+      "registry_subjects": "{name}: 주제 {count}개",
+      "shortcut_hint": "1, 2, 3 중 하나를 눌러 동반자를 여세요",
+      "decisions_label": "결정 대기",
+      "agents_label": "감시 중 에이전트",
+      "registry_fact": "레지스트리: {name}",
+      "wake_not_onboarded": "온보딩을 마치고 Athena 만나기",
+      "wake_no_starred_personas": "지켜볼 에이전트에 별표 추가",
+      "wake_no_registry": "워크스페이스에 레지스트리 연결",
+      "wake_off": "설정에서 켜기"
     },
     "setup": {
       "enable_section": "상태",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "큐레이터는 연결된 지식 레지스트리를 계속 성장시키고, 이를 기준으로 프로젝트를 점검합니다.",
       "curator_prerequisite": "큐레이터를 켜려면 워크스페이스에 지식 레지스트리를 연결하세요.",
       "curator_registry_title": "연결된 레지스트리",
-      "curator_registry_row": "{{workspace}}가 {{registry}}를 사용",
+      "curator_registry_row": "{workspace}가 {registry}를 사용",
       "curator_registry_path": "경로",
       "curator_registry_empty": "아직 레지스트리가 연결된 워크스페이스가 없습니다.",
       "curator_map_action": "레지스트리 연결"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "감독관에는 별표가 추가된 에이전트가 하나 이상 필요합니다.",
       "curator_needs_registry": "큐레이터에는 지식 레지스트리가 연결된 워크스페이스가 필요합니다.",
-      "toggle_failed": "{{name}}을(를) 전환하지 못했습니다.",
+      "toggle_failed": "{name}을(를) 전환하지 못했습니다.",
       "status_failed": "동반자 상태를 불러오지 못했습니다."
     }
   }

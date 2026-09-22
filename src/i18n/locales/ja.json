@@ -10791,8 +10791,6 @@
       "watching": "監視中:",
       "wireframe": "ワイヤーフレーム"
     },
-    "companion_desc": "Athena — いつでも頼れる思考パートナーです。記憶を確認したり、外観を設定したり、音声を紐づけたりできます。",
-    "companion_label": "Companion",
     "dev_context": {
       "auto_scan": "自動スキャン",
       "automated_context_scan": "自動コンテキストスキャン",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "コンパニオン",
       "subtitle": "アプリとあなたのエージェント、そしてナレッジを見守る3つの組み込みエージェント。",
-      "open_hint": "{{name}}を開く",
-      "decisions_waiting": "保留中の決定: {{count}}件",
-      "agents_watched": "監視中のエージェント: {{count}}",
-      "registry_subjects": "{{name}}: {{count}}件のトピック",
-      "shortcut_hint": "1、2、3のいずれかを押してコンパニオンを開く"
+      "open_hint": "{name}を開く",
+      "decisions_waiting": "保留中の決定: {count}件",
+      "agents_watched": "監視中のエージェント: {count}",
+      "registry_subjects": "{name}: {count}件のトピック",
+      "shortcut_hint": "1、2、3のいずれかを押してコンパニオンを開く",
+      "decisions_label": "決定待ち",
+      "agents_label": "監視エージェント",
+      "registry_fact": "レジストリ: {name}",
+      "wake_not_onboarded": "オンボーディングを完了してAthenaに会う",
+      "wake_no_starred_personas": "エージェントにスターを付けて見守る",
+      "wake_no_registry": "ワークスペースにレジストリを紐付ける",
+      "wake_off": "設定でオンにする"
     },
     "setup": {
       "enable_section": "ステータス",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "キュレーターは紐付けられたナレッジレジストリを育て、あなたのプロジェクトをそれと照合します。",
       "curator_prerequisite": "キュレーターをオンにするには、ワークスペースにナレッジレジストリを紐付けてください。",
       "curator_registry_title": "紐付けられたレジストリ",
-      "curator_registry_row": "{{workspace}}は{{registry}}を使用",
+      "curator_registry_row": "{workspace}は{registry}を使用",
       "curator_registry_path": "パス",
       "curator_registry_empty": "まだレジストリが紐付けられたワークスペースはありません。",
       "curator_map_action": "レジストリを紐付ける"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "監督者には、スターを付けたエージェントが少なくとも1つ必要です。",
       "curator_needs_registry": "キュレーターには、ナレッジレジストリが紐付けられたワークスペースが必要です。",
-      "toggle_failed": "{{name}}を切り替えられませんでした。",
+      "toggle_failed": "{name}を切り替えられませんでした。",
       "status_failed": "コンパニオンの状態を取得できませんでした。"
     }
   }

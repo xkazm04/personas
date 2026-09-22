@@ -36,11 +36,18 @@
   "landing": {
     "title": "Bạn đồng hành",
     "subtitle": "Ba tác nhân dựng sẵn trông coi ứng dụng, các tác nhân của bạn và kiến thức của bạn.",
-    "open_hint": "Mở {{name}}",
-    "decisions_waiting": "Quyết định đang chờ: {{count}}",
-    "agents_watched": "Tác nhân đang theo dõi: {{count}}",
-    "registry_subjects": "{{name}}: {{count}} chủ đề",
-    "shortcut_hint": "Nhấn 1, 2 hoặc 3 để mở một bạn đồng hành"
+    "open_hint": "Mở {name}",
+    "decisions_waiting": "Quyết định đang chờ: {count}",
+    "agents_watched": "Tác nhân đang theo dõi: {count}",
+    "registry_subjects": "{name}: {count} chủ đề",
+    "shortcut_hint": "Nhấn 1, 2 hoặc 3 để mở một bạn đồng hành",
+    "decisions_label": "quyết định đang chờ",
+    "agents_label": "tác nhân đang theo dõi",
+    "registry_fact": "Sổ đăng ký: {name}",
+    "wake_not_onboarded": "Hoàn tất làm quen để gặp Athena",
+    "wake_no_starred_personas": "Gắn sao cho một tác nhân để theo dõi",
+    "wake_no_registry": "Ánh xạ sổ đăng ký vào không gian làm việc",
+    "wake_off": "Bật trong Thiết lập"
   },
   "setup": {
     "enable_section": "Trạng thái",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "Quản thủ giúp sổ đăng ký kiến thức đã ánh xạ không ngừng phát triển và đối chiếu các dự án của bạn với nó.",
     "curator_prerequisite": "Ánh xạ một sổ đăng ký kiến thức vào không gian làm việc để bật Quản thủ.",
     "curator_registry_title": "Sổ đăng ký đã ánh xạ",
-    "curator_registry_row": "{{workspace}} sử dụng {{registry}}",
+    "curator_registry_row": "{workspace} sử dụng {registry}",
     "curator_registry_path": "Đường dẫn",
     "curator_registry_empty": "Chưa có không gian làm việc nào được ánh xạ sổ đăng ký.",
     "curator_map_action": "Ánh xạ sổ đăng ký"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "Giám sát cần ít nhất một tác nhân được gắn sao.",
     "curator_needs_registry": "Quản thủ cần một không gian làm việc có sổ đăng ký kiến thức đã ánh xạ.",
-    "toggle_failed": "Không thể chuyển đổi {{name}}.",
+    "toggle_failed": "Không thể chuyển đổi {name}.",
     "status_failed": "Không thể đọc trạng thái của các bạn đồng hành."
   }
 }

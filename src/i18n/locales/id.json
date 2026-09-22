@@ -10791,8 +10791,6 @@
       "watching": "Memantau:",
       "wireframe": "Rangka"
     },
-    "companion_desc": "Athena — mitra berpikir Anda yang selalu siap. Periksa memorinya, konfigurasi chrome-nya, dan pasangkan suara.",
-    "companion_label": "Pendamping",
     "dev_context": {
       "auto_scan": "Pindai otomatis",
       "automated_context_scan": "Pemindaian konteks otomatis",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "Pendamping",
       "subtitle": "Tiga agen bawaan yang menjaga aplikasi, agen-agen Anda, dan pengetahuan Anda.",
-      "open_hint": "Buka {{name}}",
-      "decisions_waiting": "Keputusan menunggu: {{count}}",
-      "agents_watched": "Agen diawasi: {{count}}",
-      "registry_subjects": "{{name}}: {{count}} topik",
-      "shortcut_hint": "Tekan 1, 2, atau 3 untuk membuka pendamping"
+      "open_hint": "Buka {name}",
+      "decisions_waiting": "Keputusan menunggu: {count}",
+      "agents_watched": "Agen diawasi: {count}",
+      "registry_subjects": "{name}: {count} topik",
+      "shortcut_hint": "Tekan 1, 2, atau 3 untuk membuka pendamping",
+      "decisions_label": "keputusan menunggu",
+      "agents_label": "agen yang diawasi",
+      "registry_fact": "Registri: {name}",
+      "wake_not_onboarded": "Selesaikan pengenalan untuk bertemu Athena",
+      "wake_no_starred_personas": "Beri bintang pada agen untuk diawasi",
+      "wake_no_registry": "Petakan registri pengetahuan ke ruang kerja",
+      "wake_off": "Aktifkan di Pengaturan"
     },
     "setup": {
       "enable_section": "Status",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "Kurator terus mengembangkan registri pengetahuan yang dipetakan dan memeriksa proyek Anda terhadapnya.",
       "curator_prerequisite": "Petakan registri pengetahuan ke ruang kerja untuk mengaktifkan Kurator.",
       "curator_registry_title": "Registri yang dipetakan",
-      "curator_registry_row": "{{workspace}} menggunakan {{registry}}",
+      "curator_registry_row": "{workspace} menggunakan {registry}",
       "curator_registry_path": "Jalur",
       "curator_registry_empty": "Belum ada ruang kerja yang memiliki registri terpetakan.",
       "curator_map_action": "Petakan registri"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "Pengawas membutuhkan setidaknya satu agen berbintang.",
       "curator_needs_registry": "Kurator membutuhkan ruang kerja dengan registri pengetahuan yang dipetakan.",
-      "toggle_failed": "Tidak dapat mengalihkan {{name}}.",
+      "toggle_failed": "Tidak dapat mengalihkan {name}.",
       "status_failed": "Tidak dapat membaca status para pendamping."
     }
   }

@@ -154,8 +154,6 @@
     "watching": "监视：",
     "wireframe": "线框"
   },
-  "companion_desc": "Athena——您随时待命的思考伙伴。查看她的记忆、配置她的呈现方式，并绑定语音。",
-  "companion_label": "伴侣",
   "dev_context": {
     "auto_scan": "自动扫描",
     "automated_context_scan": "自动化上下文扫描",

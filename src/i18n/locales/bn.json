@@ -10791,8 +10791,6 @@
       "watching": "পর্যবেক্ষণে:",
       "wireframe": "ওয়্যারফ্রেম"
     },
-    "companion_desc": "Athena — আপনার সর্বদা উপলব্ধ চিন্তার সঙ্গী। তার স্মৃতি পরীক্ষা করুন, তার চেহারা কনফিগার করুন এবং একটি ভয়েস যুক্ত করুন।",
-    "companion_label": "কম্প্যানিয়ন",
     "dev_context": {
       "auto_scan": "স্বয়ংক্রিয় স্ক্যান",
       "automated_context_scan": "স্বয়ংক্রিয় প্রসঙ্গ স্ক্যান",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "সঙ্গীরা",
       "subtitle": "তিনটি অন্তর্নির্মিত এজেন্ট যারা অ্যাপ, আপনার এজেন্ট এবং আপনার জ্ঞানের দেখাশোনা করে।",
-      "open_hint": "{{name}} খুলুন",
-      "decisions_waiting": "অপেক্ষমাণ সিদ্ধান্ত: {{count}}",
-      "agents_watched": "পর্যবেক্ষণাধীন এজেন্ট: {{count}}",
-      "registry_subjects": "{{name}}: {{count}}টি বিষয়",
-      "shortcut_hint": "একটি সঙ্গী খুলতে 1, 2 বা 3 চাপুন"
+      "open_hint": "{name} খুলুন",
+      "decisions_waiting": "অপেক্ষমাণ সিদ্ধান্ত: {count}",
+      "agents_watched": "পর্যবেক্ষণাধীন এজেন্ট: {count}",
+      "registry_subjects": "{name}: {count}টি বিষয়",
+      "shortcut_hint": "একটি সঙ্গী খুলতে 1, 2 বা 3 চাপুন",
+      "decisions_label": "অপেক্ষমাণ সিদ্ধান্ত",
+      "agents_label": "পর্যবেক্ষণাধীন এজেন্ট",
+      "registry_fact": "রেজিস্ট্রি: {name}",
+      "wake_not_onboarded": "Athena-র সঙ্গে পরিচিত হতে পরিচিতি সম্পন্ন করুন",
+      "wake_no_starred_personas": "নজর রাখতে একটি এজেন্টে তারকাচিহ্ন দিন",
+      "wake_no_registry": "ওয়ার্কস্পেসে রেজিস্ট্রি ম্যাপ করুন",
+      "wake_off": "সেটআপে চালু করুন"
     },
     "setup": {
       "enable_section": "অবস্থা",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "সংরক্ষক ম্যাপ করা জ্ঞান রেজিস্ট্রিকে ক্রমাগত বাড়িয়ে তোলে এবং এর বিপরীতে আপনার প্রকল্পগুলো যাচাই করে।",
       "curator_prerequisite": "সংরক্ষক চালু করতে একটি ওয়ার্কস্পেসে জ্ঞান রেজিস্ট্রি ম্যাপ করুন।",
       "curator_registry_title": "ম্যাপ করা রেজিস্ট্রি",
-      "curator_registry_row": "{{workspace}} {{registry}} ব্যবহার করে",
+      "curator_registry_row": "{workspace} {registry} ব্যবহার করে",
       "curator_registry_path": "পথ",
       "curator_registry_empty": "এখনো কোনো ওয়ার্কস্পেসে রেজিস্ট্রি ম্যাপ করা হয়নি।",
       "curator_map_action": "রেজিস্ট্রি ম্যাপ করুন"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "তত্ত্বাবধায়কের জন্য অন্তত একটি তারকাচিহ্নিত এজেন্ট প্রয়োজন।",
       "curator_needs_registry": "সংরক্ষকের জন্য একটি ম্যাপ করা জ্ঞান রেজিস্ট্রিসহ ওয়ার্কস্পেস প্রয়োজন।",
-      "toggle_failed": "{{name}} পরিবর্তন করা যায়নি।",
+      "toggle_failed": "{name} পরিবর্তন করা যায়নি।",
       "status_failed": "সঙ্গীদের অবস্থা পড়া যায়নি।"
     }
   }

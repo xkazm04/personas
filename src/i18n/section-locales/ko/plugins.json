@@ -154,8 +154,6 @@
     "watching": "감시 중:",
     "wireframe": "와이어프레임"
   },
-  "companion_desc": "Athena — 언제나 곁에 있는 생각의 파트너입니다. 기억을 살펴보고, 표시 방식을 설정하고, 음성을 연결하세요.",
-  "companion_label": "Companion",
   "dev_context": {
     "auto_scan": "자동 스캔",
     "automated_context_scan": "자동화된 컨텍스트 스캔",

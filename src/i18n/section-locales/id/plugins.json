@@ -154,8 +154,6 @@
     "watching": "Memantau:",
     "wireframe": "Rangka"
   },
-  "companion_desc": "Athena — mitra berpikir Anda yang selalu siap. Periksa memorinya, konfigurasi chrome-nya, dan pasangkan suara.",
-  "companion_label": "Pendamping",
   "dev_context": {
     "auto_scan": "Pindai otomatis",
     "automated_context_scan": "Pemindaian konteks otomatis",

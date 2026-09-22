@@ -154,8 +154,6 @@
     "watching": "Beobachtet:",
     "wireframe": "Gittermodell"
   },
-  "companion_desc": "Athena — Ihr stets verfügbarer Denkpartner. Athenas Gedächtnis einsehen, ihr Erscheinungsbild konfigurieren und ihr eine Stimme zuweisen.",
-  "companion_label": "Begleiter",
   "dev_context": {
     "auto_scan": "Automatik-Scan",
     "automated_context_scan": "Automatisierter Kontext-Scan",

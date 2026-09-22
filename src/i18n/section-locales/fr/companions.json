@@ -36,11 +36,18 @@
   "landing": {
     "title": "Compagnons",
     "subtitle": "Trois agents intégrés qui veillent sur l'application, tes agents et tes connaissances.",
-    "open_hint": "Ouvrir {{name}}",
-    "decisions_waiting": "Décisions en attente : {{count}}",
-    "agents_watched": "Agents surveillés : {{count}}",
-    "registry_subjects": "{{name}} : {{count}} sujets",
-    "shortcut_hint": "Appuie sur 1, 2 ou 3 pour ouvrir un compagnon"
+    "open_hint": "Ouvrir {name}",
+    "decisions_waiting": "Décisions en attente : {count}",
+    "agents_watched": "Agents surveillés : {count}",
+    "registry_subjects": "{name} : {count} sujets",
+    "shortcut_hint": "Appuie sur 1, 2 ou 3 pour ouvrir un compagnon",
+    "decisions_label": "décisions en attente",
+    "agents_label": "agents surveillés",
+    "registry_fact": "Registre : {name}",
+    "wake_not_onboarded": "Terminer l'intégration pour rencontrer Athena",
+    "wake_no_starred_personas": "Marquer un agent d'une étoile à surveiller",
+    "wake_no_registry": "Associer un registre à un espace de travail",
+    "wake_off": "Activer dans la Configuration"
   },
   "setup": {
     "enable_section": "Statut",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "Curateur fait grandir le registre de connaissances associé et vérifie tes projets par rapport à lui.",
     "curator_prerequisite": "Associe un registre de connaissances à un espace de travail pour activer Curateur.",
     "curator_registry_title": "Registres associés",
-    "curator_registry_row": "{{workspace}} utilise {{registry}}",
+    "curator_registry_row": "{workspace} utilise {registry}",
     "curator_registry_path": "Chemin",
     "curator_registry_empty": "Aucun espace de travail n'a encore de registre associé.",
     "curator_map_action": "Associer un registre"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "Superviseur a besoin d'au moins un agent marqué d'une étoile.",
     "curator_needs_registry": "Curateur a besoin d'un espace de travail avec un registre de connaissances associé.",
-    "toggle_failed": "Impossible d'activer ou de désactiver {{name}}.",
+    "toggle_failed": "Impossible d'activer ou de désactiver {name}.",
     "status_failed": "Impossible de lire le statut des compagnons."
   }
 }

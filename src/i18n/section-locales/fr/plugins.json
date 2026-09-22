@@ -154,8 +154,6 @@
     "watching": "Surveillance :",
     "wireframe": "Filaire"
   },
-  "companion_desc": "Athena — votre partenaire de réflexion toujours disponible. Consultez sa mémoire, configurez son interface et attribuez-lui une voix.",
-  "companion_label": "Compagnon",
   "dev_context": {
     "auto_scan": "Scan auto",
     "automated_context_scan": "Scan de contexte automatisé",

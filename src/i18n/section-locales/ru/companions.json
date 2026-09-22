@@ -36,11 +36,18 @@
   "landing": {
     "title": "Спутники",
     "subtitle": "Три встроенных агента, которые заботятся о приложении, твоих агентах и твоих знаниях.",
-    "open_hint": "Открыть {{name}}",
-    "decisions_waiting": "Решений ожидает: {{count}}",
-    "agents_watched": "Агентов под наблюдением: {{count}}",
-    "registry_subjects": "{{name}}: {{count}} тем",
-    "shortcut_hint": "Нажми 1, 2 или 3, чтобы открыть спутника"
+    "open_hint": "Открыть {name}",
+    "decisions_waiting": "Решений ожидает: {count}",
+    "agents_watched": "Агентов под наблюдением: {count}",
+    "registry_subjects": "{name}: {count} тем",
+    "shortcut_hint": "Нажми 1, 2 или 3, чтобы открыть спутника",
+    "decisions_label": "решения ожидают",
+    "agents_label": "агенты под наблюдением",
+    "registry_fact": "Реестр: {name}",
+    "wake_not_onboarded": "Заверши онбординг, чтобы познакомиться с Athena",
+    "wake_no_starred_personas": "Отметь агента звёздочкой, чтобы следить за ним",
+    "wake_no_registry": "Привяжи реестр знаний к рабочему пространству",
+    "wake_off": "Включи в Настройках"
   },
   "setup": {
     "enable_section": "Статус",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "Куратор развивает привязанный реестр знаний и сверяет с ним твои проекты.",
     "curator_prerequisite": "Привяжи реестр знаний к рабочему пространству, чтобы включить Куратора.",
     "curator_registry_title": "Привязанные реестры",
-    "curator_registry_row": "{{workspace}} использует {{registry}}",
+    "curator_registry_row": "{workspace} использует {registry}",
     "curator_registry_path": "Путь",
     "curator_registry_empty": "Пока ни одному рабочему пространству не привязан реестр.",
     "curator_map_action": "Привязать реестр"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "Смотрителю нужен хотя бы один отмеченный агент.",
     "curator_needs_registry": "Куратору нужно рабочее пространство с привязанным реестром знаний.",
-    "toggle_failed": "Не удалось переключить {{name}}.",
+    "toggle_failed": "Не удалось переключить {name}.",
     "status_failed": "Не удалось прочитать статус спутников."
   }
 }

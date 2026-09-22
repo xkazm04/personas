@@ -10791,8 +10791,6 @@
       "watching": "Vigilando:",
       "wireframe": "Malla"
     },
-    "companion_desc": "Athena — su compañera de pensamiento siempre disponible. Inspeccione su memoria, configure su apariencia y vincule una voz.",
-    "companion_label": "Compañera",
     "dev_context": {
       "auto_scan": "Auto-Escaneo",
       "automated_context_scan": "Escaneo de Contexto Automatizado",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "Compañeros",
       "subtitle": "Tres agentes integrados que cuidan de la aplicación, tus agentes y tu conocimiento.",
-      "open_hint": "Abrir {{name}}",
-      "decisions_waiting": "Decisiones pendientes: {{count}}",
-      "agents_watched": "Agentes vigilados: {{count}}",
-      "registry_subjects": "{{name}}: {{count}} temas",
-      "shortcut_hint": "Pulsa 1, 2 o 3 para abrir un compañero"
+      "open_hint": "Abrir {name}",
+      "decisions_waiting": "Decisiones pendientes: {count}",
+      "agents_watched": "Agentes vigilados: {count}",
+      "registry_subjects": "{name}: {count} temas",
+      "shortcut_hint": "Pulsa 1, 2 o 3 para abrir un compañero",
+      "decisions_label": "decisiones pendientes",
+      "agents_label": "agentes vigilados",
+      "registry_fact": "Registro: {name}",
+      "wake_not_onboarded": "Terminar la incorporación para conocer a Athena",
+      "wake_no_starred_personas": "Marcar un agente con estrella para vigilarlo",
+      "wake_no_registry": "Asociar un registro a un espacio de trabajo",
+      "wake_off": "Activar en Configuración"
     },
     "setup": {
       "enable_section": "Estado",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "Curador hace crecer el registro de conocimiento asociado y comprueba tus proyectos con él.",
       "curator_prerequisite": "Asocia un registro de conocimiento a un espacio de trabajo para activar a Curador.",
       "curator_registry_title": "Registros asociados",
-      "curator_registry_row": "{{workspace}} usa {{registry}}",
+      "curator_registry_row": "{workspace} usa {registry}",
       "curator_registry_path": "Ruta",
       "curator_registry_empty": "Ningún espacio de trabajo tiene todavía un registro asociado.",
       "curator_map_action": "Asociar un registro"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "Supervisor necesita al menos un agente marcado con una estrella.",
       "curator_needs_registry": "Curador necesita un espacio de trabajo con un registro de conocimiento asociado.",
-      "toggle_failed": "No se pudo activar o desactivar {{name}}.",
+      "toggle_failed": "No se pudo activar o desactivar {name}.",
       "status_failed": "No se pudo leer el estado de los compañeros."
     }
   }

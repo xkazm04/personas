@@ -10791,8 +10791,6 @@
       "watching": "جارٍ المراقبة:",
       "wireframe": "إطار سلكي"
     },
-    "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",
-    "companion_label": "الرفيق",
     "dev_context": {
       "auto_scan": "فحص تلقائي",
       "automated_context_scan": "فحص سياق تلقائي",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "الرفقاء",
       "subtitle": "ثلاثة عملاء مدمجون يعتنون بالتطبيق وعملائك ومعرفتك.",
-      "open_hint": "فتح {{name}}",
-      "decisions_waiting": "قرارات بانتظارك: {{count}}",
-      "agents_watched": "عملاء تحت المراقبة: {{count}}",
-      "registry_subjects": "{{name}}: {{count}} مواضيع",
-      "shortcut_hint": "اضغط 1 أو 2 أو 3 لفتح أحد الرفقاء"
+      "open_hint": "فتح {name}",
+      "decisions_waiting": "قرارات بانتظارك: {count}",
+      "agents_watched": "عملاء تحت المراقبة: {count}",
+      "registry_subjects": "{name}: {count} مواضيع",
+      "shortcut_hint": "اضغط 1 أو 2 أو 3 لفتح أحد الرفقاء",
+      "decisions_label": "قرارات بالانتظار",
+      "agents_label": "عملاء مراقَبون",
+      "registry_fact": "السجل: {name}",
+      "wake_not_onboarded": "أكمل التهيئة للتعرف على أثينا",
+      "wake_no_starred_personas": "ضع نجمة على عميل لمراقبته",
+      "wake_no_registry": "اربط سجلاً بمساحة عمل",
+      "wake_off": "شغّله من الإعداد"
     },
     "setup": {
       "enable_section": "الحالة",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "يحافظ القيّم على نمو سجل المعرفة المرتبط ويقارن مشاريعك به.",
       "curator_prerequisite": "اربط سجل معرفة بمساحة عمل لتشغيل القيّم.",
       "curator_registry_title": "السجلات المرتبطة",
-      "curator_registry_row": "{{workspace}} يستخدم {{registry}}",
+      "curator_registry_row": "{workspace} يستخدم {registry}",
       "curator_registry_path": "المسار",
       "curator_registry_empty": "لا توجد مساحة عمل مرتبطة بسجل بعد.",
       "curator_map_action": "ربط سجل"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "يحتاج المشرف إلى عميل واحد على الأقل عليه نجمة.",
       "curator_needs_registry": "يحتاج القيّم إلى مساحة عمل مرتبطة بسجل معرفة.",
-      "toggle_failed": "تعذّر تشغيل {{name}}.",
+      "toggle_failed": "تعذّر تشغيل {name}.",
       "status_failed": "تعذّرت قراءة حالة الرفقاء."
     }
   }

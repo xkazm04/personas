@@ -154,8 +154,6 @@
     "watching": "Đang theo dõi:",
     "wireframe": "Khung dây"
   },
-  "companion_desc": "Athena — người bạn đồng hành luôn sẵn sàng cùng bạn suy nghĩ. Xem bộ nhớ của cô ấy, tùy chỉnh giao diện, và gắn giọng nói cho cô ấy.",
-  "companion_label": "Companion",
   "dev_context": {
     "auto_scan": "Tự động quét",
     "automated_context_scan": "Quét ngữ cảnh tự động",

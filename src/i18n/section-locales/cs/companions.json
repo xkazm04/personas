@@ -36,11 +36,18 @@
   "landing": {
     "title": "Společníci",
     "subtitle": "Tři vestavění agenti, kteří se starají o aplikaci, vaše agenty a vaše znalosti.",
-    "open_hint": "Otevřít {{name}}",
-    "decisions_waiting": "Čekající rozhodnutí: {{count}}",
-    "agents_watched": "Sledovaní agenti: {{count}}",
-    "registry_subjects": "{{name}}: {{count}} témat",
-    "shortcut_hint": "Stiskněte 1, 2 nebo 3 pro otevření společníka"
+    "open_hint": "Otevřít {name}",
+    "decisions_waiting": "Čekající rozhodnutí: {count}",
+    "agents_watched": "Sledovaní agenti: {count}",
+    "registry_subjects": "{name}: {count} témat",
+    "shortcut_hint": "Stiskněte 1, 2 nebo 3 pro otevření společníka",
+    "decisions_label": "rozhodnutí čekají",
+    "agents_label": "sledovaní agenti",
+    "registry_fact": "Registr: {name}",
+    "wake_not_onboarded": "Dokončete zaškolení a setkejte se s Athenou",
+    "wake_no_starred_personas": "Označte agenta hvězdičkou, aby ho mohl sledovat",
+    "wake_no_registry": "Namapujte znalostní registr na pracovní prostor",
+    "wake_off": "Zapněte v Nastavení"
   },
   "setup": {
     "enable_section": "Stav",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "Kurátor rozvíjí namapovaný znalostní registr a porovnává s ním vaše projekty.",
     "curator_prerequisite": "Namapujte znalostní registr na pracovní prostor, abyste mohli zapnout Kurátora.",
     "curator_registry_title": "Namapované registry",
-    "curator_registry_row": "{{workspace}} používá {{registry}}",
+    "curator_registry_row": "{workspace} používá {registry}",
     "curator_registry_path": "Cesta",
     "curator_registry_empty": "Zatím žádný pracovní prostor nemá namapovaný registr.",
     "curator_map_action": "Namapovat registr"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "Dozorce potřebuje alespoň jednoho agenta označeného hvězdičkou.",
     "curator_needs_registry": "Kurátor potřebuje pracovní prostor s namapovaným znalostním registrem.",
-    "toggle_failed": "Nepodařilo se přepnout {{name}}.",
+    "toggle_failed": "Nepodařilo se přepnout {name}.",
     "status_failed": "Nepodařilo se načíst stav společníků."
   }
 }

@@ -10791,8 +10791,6 @@
       "watching": "देख रहे हैं:",
       "wireframe": "वायरफ्रेम"
     },
-    "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",
-    "companion_label": "कंपेनियन",
     "dev_context": {
       "auto_scan": "ऑटो-स्कैन",
       "automated_context_scan": "स्वचालित Context Scan",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "साथी",
       "subtitle": "तीन बिल्ट-इन एजेंट जो ऐप, आपके एजेंट और आपके ज्ञान का ध्यान रखते हैं।",
-      "open_hint": "{{name}} खोलें",
-      "decisions_waiting": "लंबित निर्णय: {{count}}",
-      "agents_watched": "निगरानी में एजेंट: {{count}}",
-      "registry_subjects": "{{name}}: {{count}} विषय",
-      "shortcut_hint": "किसी साथी को खोलने के लिए 1, 2 या 3 दबाएं"
+      "open_hint": "{name} खोलें",
+      "decisions_waiting": "लंबित निर्णय: {count}",
+      "agents_watched": "निगरानी में एजेंट: {count}",
+      "registry_subjects": "{name}: {count} विषय",
+      "shortcut_hint": "किसी साथी को खोलने के लिए 1, 2 या 3 दबाएं",
+      "decisions_label": "लंबित निर्णय",
+      "agents_label": "निगरानी में एजेंट",
+      "registry_fact": "रजिस्ट्री: {name}",
+      "wake_not_onboarded": "Athena से मिलने के लिए ऑनबोर्डिंग पूरी करें",
+      "wake_no_starred_personas": "निगरानी के लिए एजेंट को स्टार करें",
+      "wake_no_registry": "वर्कस्पेस को रजिस्ट्री से जोड़ें",
+      "wake_off": "सेटअप में चालू करें"
     },
     "setup": {
       "enable_section": "स्थिति",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "क्यूरेटर जुड़ी हुई ज्ञान रजिस्ट्री को बढ़ाता रहता है और आपके प्रोजेक्ट्स की उससे तुलना करता है।",
       "curator_prerequisite": "क्यूरेटर को चालू करने के लिए किसी वर्कस्पेस से ज्ञान रजिस्ट्री जोड़ें।",
       "curator_registry_title": "जुड़ी हुई रजिस्ट्रियाँ",
-      "curator_registry_row": "{{workspace}}, {{registry}} का उपयोग करता है",
+      "curator_registry_row": "{workspace}, {registry} का उपयोग करता है",
       "curator_registry_path": "पथ",
       "curator_registry_empty": "अभी तक किसी वर्कस्पेस से रजिस्ट्री नहीं जोड़ी गई है।",
       "curator_map_action": "रजिस्ट्री जोड़ें"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "पर्यवेक्षक को कम से कम एक स्टार किए एजेंट की ज़रूरत है।",
       "curator_needs_registry": "क्यूरेटर को ज्ञान रजिस्ट्री से जुड़े वर्कस्पेस की ज़रूरत है।",
-      "toggle_failed": "{{name}} को टॉगल नहीं किया जा सका।",
+      "toggle_failed": "{name} को टॉगल नहीं किया जा सका।",
       "status_failed": "साथियों की स्थिति नहीं पढ़ी जा सकी।"
     }
   }

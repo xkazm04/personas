@@ -36,11 +36,18 @@
   "landing": {
     "title": "Begleiter",
     "subtitle": "Drei integrierte Agenten, die sich um die App, deine Agenten und dein Wissen kümmern.",
-    "open_hint": "{{name}} öffnen",
-    "decisions_waiting": "Wartende Entscheidungen: {{count}}",
-    "agents_watched": "Beobachtete Agenten: {{count}}",
-    "registry_subjects": "{{name}}: {{count}} Themen",
-    "shortcut_hint": "Drücke 1, 2 oder 3, um einen Begleiter zu öffnen"
+    "open_hint": "{name} öffnen",
+    "decisions_waiting": "Wartende Entscheidungen: {count}",
+    "agents_watched": "Beobachtete Agenten: {count}",
+    "registry_subjects": "{name}: {count} Themen",
+    "shortcut_hint": "Drücke 1, 2 oder 3, um einen Begleiter zu öffnen",
+    "decisions_label": "Entscheidungen warten",
+    "agents_label": "beobachtete Agenten",
+    "registry_fact": "Register: {name}",
+    "wake_not_onboarded": "Onboarding abschließen, um Athena kennenzulernen",
+    "wake_no_starred_personas": "Agenten markieren, um ihn zu beobachten",
+    "wake_no_registry": "Wissensregister einem Arbeitsbereich zuordnen",
+    "wake_off": "In der Einrichtung einschalten"
   },
   "setup": {
     "enable_section": "Status",
@@ -58,7 +65,7 @@
     "curator_enable_desc": "Kurator lässt das zugeordnete Wissensregister wachsen und gleicht deine Projekte damit ab.",
     "curator_prerequisite": "Ordne einem Arbeitsbereich ein Wissensregister zu, um Kurator einzuschalten.",
     "curator_registry_title": "Zugeordnete Register",
-    "curator_registry_row": "{{workspace}} nutzt {{registry}}",
+    "curator_registry_row": "{workspace} nutzt {registry}",
     "curator_registry_path": "Pfad",
     "curator_registry_empty": "Noch keinem Arbeitsbereich ist ein Register zugeordnet.",
     "curator_map_action": "Register zuordnen"
@@ -66,7 +73,7 @@
   "errors": {
     "overseer_needs_star": "Aufseher braucht mindestens einen markierten Agenten.",
     "curator_needs_registry": "Kurator braucht einen Arbeitsbereich mit einem zugeordneten Wissensregister.",
-    "toggle_failed": "{{name}} konnte nicht umgeschaltet werden.",
+    "toggle_failed": "{name} konnte nicht umgeschaltet werden.",
     "status_failed": "Der Status der Begleiter konnte nicht gelesen werden."
   }
 }

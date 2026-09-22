@@ -154,8 +154,6 @@
     "watching": "Vigilando:",
     "wireframe": "Malla"
   },
-  "companion_desc": "Athena — su compañera de pensamiento siempre disponible. Inspeccione su memoria, configure su apariencia y vincule una voz.",
-  "companion_label": "Compañera",
   "dev_context": {
     "auto_scan": "Auto-Escaneo",
     "automated_context_scan": "Escaneo de Contexto Automatizado",

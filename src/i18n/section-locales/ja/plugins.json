@@ -154,8 +154,6 @@
     "watching": "監視中:",
     "wireframe": "ワイヤーフレーム"
   },
-  "companion_desc": "Athena — いつでも頼れる思考パートナーです。記憶を確認したり、外観を設定したり、音声を紐づけたりできます。",
-  "companion_label": "Companion",
   "dev_context": {
     "auto_scan": "自動スキャン",
     "automated_context_scan": "自動コンテキストスキャン",

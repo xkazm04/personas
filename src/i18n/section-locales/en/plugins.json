@@ -393,8 +393,6 @@
   "drive_desc": "A managed folder on this device where agents save exports — this is local storage, not a Google Drive cloud account, and files are not synced or backed up remotely. Browse them in a Finder-style UI; they survive app upgrades but live only on this machine.",
   "twin_label": "Twin",
   "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
-  "companion_label": "Companion",
-  "companion_desc": "Athena — your always-available thinking partner. Inspect her memory, configure her chrome, and bind a voice.",
   "drive": {
     "title": "Drive",
     "subtitle": "Managed local filesystem for agent exports — on this device, not Google Drive cloud",

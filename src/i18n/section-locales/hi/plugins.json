@@ -154,8 +154,6 @@
     "watching": "देख रहे हैं:",
     "wireframe": "वायरफ्रेम"
   },
-  "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",
-  "companion_label": "कंपेनियन",
   "dev_context": {
     "auto_scan": "ऑटो-स्कैन",
     "automated_context_scan": "स्वचालित Context Scan",

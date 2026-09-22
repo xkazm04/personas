@@ -15358,8 +15358,6 @@
     "drive_desc": "A managed folder on this device where agents save exports — this is local storage, not a Google Drive cloud account, and files are not synced or backed up remotely. Browse them in a Finder-style UI; they survive app upgrades but live only on this machine.",
     "twin_label": "Twin",
     "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
-    "companion_label": "Companion",
-    "companion_desc": "Athena — your always-available thinking partner. Inspect her memory, configure her chrome, and bind a voice.",
     "drive": {
       "title": "Drive",
       "subtitle": "Managed local filesystem for agent exports — on this device, not Google Drive cloud",
@@ -23795,11 +23793,18 @@
     "landing": {
       "title": "Companions",
       "subtitle": "Three built-in agents who look after the app, your agents and your knowledge.",
-      "open_hint": "Open {{name}}",
-      "decisions_waiting": "Decisions waiting: {{count}}",
-      "agents_watched": "Agents watched: {{count}}",
-      "registry_subjects": "{{name}}: {{count}} subjects",
-      "shortcut_hint": "Press 1, 2 or 3 to open a companion"
+      "open_hint": "Open {name}",
+      "decisions_waiting": "Decisions waiting: {count}",
+      "agents_watched": "Agents watched: {count}",
+      "registry_subjects": "{name}: {count} subjects",
+      "shortcut_hint": "Press 1, 2 or 3 to open a companion",
+      "decisions_label": "decisions wait",
+      "agents_label": "agents watched",
+      "registry_fact": "Registry: {name}",
+      "wake_not_onboarded": "Finish onboarding to meet her",
+      "wake_no_starred_personas": "Star an agent to watch",
+      "wake_no_registry": "Map a registry to a workspace",
+      "wake_off": "Switch on in Setup"
     },
     "setup": {
       "enable_section": "Status",
@@ -23817,7 +23822,7 @@
       "curator_enable_desc": "Curator keeps the mapped knowledge registry growing and checks your projects against it.",
       "curator_prerequisite": "Map a knowledge registry to a workspace to switch Curator on.",
       "curator_registry_title": "Mapped registries",
-      "curator_registry_row": "{{workspace}} uses {{registry}}",
+      "curator_registry_row": "{workspace} uses {registry}",
       "curator_registry_path": "Path",
       "curator_registry_empty": "No workspace has a registry mapped yet.",
       "curator_map_action": "Map a registry"
@@ -23825,7 +23830,7 @@
     "errors": {
       "overseer_needs_star": "Overseer needs at least one starred agent.",
       "curator_needs_registry": "Curator needs a workspace with a mapped knowledge registry.",
-      "toggle_failed": "Could not switch {{name}}.",
+      "toggle_failed": "Could not switch {name}.",
       "status_failed": "Could not read the companions' status."
     }
   }
