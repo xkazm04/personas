@@ -2,6 +2,14 @@
 
 ## Active
 
+- **[2026-09-22 09:52]**
+- **Paths:** `src/features/teams/sub_kpis/**`
+- **Status:** started
+
+- **[2026-09-22 09:09]**
+- **Paths:** `src/features/shared/components/document/**` · `src/features/agents/sub_manifest/**` · `src/i18n/locales/*.json`
+- **Status:** started
+
 - **[2026-09-22 08:57]**
 - **Paths:** `src/features/teams/sub_kpis/**` · `src/i18n/locales/*.json`
 - **Status:** started
@@ -23,7 +31,6 @@
 - **Paths:** `src/features/council/**` · `src/features/plugins/dev-tools/sub_context/**` · `.claude/skills/council/**`
 - **Status:** started
 
-### contest-manifest-editor — Adopt /contest skill; run a design contest for the Manifest editor (Opus xhigh vs grok-4.6 high)
 - **[2026-09-20 13:37]**
 - **Paths:** `.claude/skills/contest` · `.claude/contest/**` · `.ai/manifest.yaml` · `.gitignore` · `.contest/**`
 - **Status:** started
@@ -933,6 +940,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### kpi-surfaces-port — port the contest winners into sub_kpis (map/ledger/river)
+
+### contest-manifest-editor — Adopt /contest skill; run a design contest for the Manifest editor (Opus xhigh vs grok-4.6 high)
+
+### manifest-document-surface — Promote the contest fuse: shared DocumentSurface component (parametrized side panel) + apply it in ManifestTab
 
 ### contest-kpi-descent — contest: KPI dashboard variants - record verdict, delete classic/grid/treemap
 
