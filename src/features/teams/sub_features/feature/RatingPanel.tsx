@@ -4,7 +4,7 @@
 import { useMemo, useRef } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { useElementSize } from '@/features/teams/sub_council/table/useElementSize';
+import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
 import { CoverageRing } from '@/features/teams/sub_council/table/svg/CoverageRing';
 import { RoundHistory, type RoundPoint } from '@/features/teams/sub_council/table/svg/RoundHistory';
 import { Rose } from '@/features/teams/sub_council/table/svg/Rose';

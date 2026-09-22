@@ -8,7 +8,7 @@ import { useRef } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useElementSize } from '@/features/teams/sub_council/table/useElementSize';
+import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
 import type { FeatureBoardTotals } from '@/lib/bindings/FeatureBoardTotals';
 
 import type { FeatureMove } from '../featureRules';
