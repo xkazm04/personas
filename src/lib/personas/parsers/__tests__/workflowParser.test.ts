@@ -354,6 +354,37 @@ describe('parseWorkflowFile', () => {
     expect(() => parseWorkflowFile(tooDeep, 'deep.yml')).toThrow(/maxDepth/);
   });
 
+  // The merge bound is the other half of the DoS guard, and it is the half that
+  // silently disappeared once: 4.2's `maxMergeSeqLength` does not exist in 4.3,
+  // and js-yaml ignores loader options it does not recognise. An upgrade that
+  // kept the old key would have left this parser unbounded against exactly the
+  // quadratic merge-key blowup the 4.3 advisories describe, with a green build.
+  // Assert the CURRENT option actually bites.
+  it('enforces the YAML merge-key bound the loader options ask for', () => {
+    // One anchor with many keys, then aliases that merge it in over and over.
+    // Each `<<` pulls every anchor key in again; the total is what the bound caps.
+    const keys = Array.from({ length: 40 }, (_, i) => `  k${i}: ${i}`).join('\n');
+    const merges = Array.from({ length: 12 }, (_, i) => `m${i}:\n  <<: *b`).join('\n');
+    const bomb = ['base: &b', keys, merges, ''].join('\n');
+
+    expect(() => parseWorkflowFile(bomb, 'merge.yml')).toThrow(/Invalid YAML/);
+    expect(() => parseWorkflowFile(bomb, 'merge.yml')).toThrow(/merge/i);
+  });
+
+  it('still accepts a workflow that uses merge keys within the bound', () => {
+    const ok = [
+      'defaults: &d',
+      '  runs-on: ubuntu-latest',
+      'name: CI',
+      'jobs:',
+      '  build:',
+      '    <<: *d',
+      '',
+    ].join('\n');
+    const parsed = parseWorkflowFile(ok, 'ci.yml');
+    expect(JSON.parse(parsed.rawJson).jobs.build['runs-on']).toBe('ubuntu-latest');
+  });
+
   it('rejects empty, malformed and unparseable input', () => {
     expect(() => parseWorkflowFile('   ', 'empty.json')).toThrow(/File is empty/);
     expect(() => parseWorkflowFile('{ not json', 'bad.json')).toThrow(/Invalid JSON/);

@@ -27,24 +27,38 @@ import { trackInteraction } from '@/lib/sentry';
 const logger = createLogger('workflow-import');
 
 /**
- * js-yaml 4.2 added `maxDepth` (default 100) and `maxMergeSeqLength` (default 20)
- * loader limits that abort parsing with a `YAMLException` rather than degrading
- * into the quadratic-merge / deep-nesting DoS class. Workflow files arrive from
- * external tools (n8n / Zapier / Make / GitHub Actions exports) and are only
- * semi-trusted, so we bound them well below the library defaults — no legitimate
- * exported workflow nests anywhere near this deep. `@types/js-yaml@4.0.9` predates
- * these options, so we widen `LoadOptions` locally until DefinitelyTyped catches up.
+ * js-yaml's loader limits abort parsing with a `YAMLException` rather than
+ * degrading into the quadratic-merge / deep-nesting DoS class. Workflow files
+ * arrive from external tools (n8n / Zapier / Make / GitHub Actions exports) and
+ * are only semi-trusted, so we bound them well below the library defaults — no
+ * legitimate exported workflow nests anywhere near this deep, and none uses YAML
+ * merge keys at all.
+ *
+ * THE MERGE BOUND WAS RENAMED, AND A SILENT UPGRADE WOULD HAVE DROPPED IT.
+ * 4.2's `maxMergeSeqLength` does not exist in 4.3 — the string appears nowhere
+ * in the published package — and the loader ignores options it does not know.
+ * Bumping 4.2 -> 4.3.2 for GHSA-52cp-r559-cp3m / GHSA-5p4m-2wfm-xmqj /
+ * GHSA-2883-xcg3-v3hh (all quadratic-CPU merge-key and `!!omap` abuse) would
+ * therefore have removed the very guard the advisories are about, with no error,
+ * no type change and a green build. `maxTotalMergeKeys` (default 10000) is the
+ * successor; 200 is far above anything an exported workflow produces and far
+ * below what is needed to hurt.
+ *
+ * `@types/js-yaml@4.0.9` predates both options — js-yaml did not ship its own
+ * typings until 5.x — so `LoadOptions` is widened locally. The declaration is
+ * deliberately NOT optional-only: see the runtime assertion below.
  */
 type BoundedLoadOptions = LoadOptions & {
   maxDepth?: number;
-  maxMergeSeqLength?: number;
+  maxTotalMergeKeys?: number;
 };
 
 const WORKFLOW_MAX_DEPTH = 50;
+const WORKFLOW_MAX_TOTAL_MERGE_KEYS = 200;
 
 const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
   maxDepth: WORKFLOW_MAX_DEPTH,
-  maxMergeSeqLength: 20,
+  maxTotalMergeKeys: WORKFLOW_MAX_TOTAL_MERGE_KEYS,
 };
 
 /**
