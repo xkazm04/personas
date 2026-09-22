@@ -1,4 +1,4 @@
-import { AthenaAvatar } from '@/features/plugins/companion/AthenaAvatar';
+import { AthenaAvatar } from '@/features/companions/athena/AthenaAvatar';
 import { AthenaWaveform } from '../../shared/AthenaWaveform';
 
 /**

@@ -18,7 +18,7 @@ vi.mock('@/stores/tourStore', () => {
   return { useTourStore: hook };
 });
 
-vi.mock('@/features/plugins/companion/companionStore', () => {
+vi.mock('@/features/companions/athena/companionStore', () => {
   const hook = () => undefined;
   (hook as unknown as { getState: () => unknown }).getState = () => ({
     startGuidance,

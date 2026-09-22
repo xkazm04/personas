@@ -23,8 +23,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
-import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
+import { useIllustration } from '@/features/companions/athena/inbox/hooks/useIllustration';
+import { firstGrapheme } from '@/features/companions/athena/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
 import { silentCatch } from '@/lib/silentCatch';
 

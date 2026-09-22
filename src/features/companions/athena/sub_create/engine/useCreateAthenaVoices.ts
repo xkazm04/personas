@@ -16,9 +16,9 @@ import {
 } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { stripMarkdownForSpeech } from '@/features/plugins/companion/chat/athenaChatSpeech';
-import { synthesize, play } from '@/features/plugins/companion/voicePlayback';
-import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
+import { stripMarkdownForSpeech } from '@/features/companions/athena/chat/athenaChatSpeech';
+import { synthesize, play } from '@/features/companions/athena/voicePlayback';
+import { useTtsSettings } from '@/features/companions/athena/useTtsSettings';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { pickWakeUpLine } from './createAthenaSteps';
 import type { VoiceOption } from './createAthenaTypes';

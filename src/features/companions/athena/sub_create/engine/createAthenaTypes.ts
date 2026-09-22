@@ -8,7 +8,7 @@
  * Design brief: Obsidian vault `Spark/ideas/athena-onboarding.md`.
  */
 import type { SttEngineId, TtsEngineId } from '@/api/companion';
-import type { EngineTake } from '@/features/plugins/companion/useSttComparison';
+import type { EngineTake } from '@/features/companions/athena/useSttComparison';
 
 /** Ordered wizard steps. The engine owns the order; shells only render. */
 export type CreateAthenaStepId =

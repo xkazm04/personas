@@ -13,7 +13,7 @@ vi.mock('@/stores/systemStore', () => ({
   ),
 }));
 
-vi.mock('@/features/plugins/companion/useTtsSettings', () => ({
+vi.mock('@/features/companions/athena/useTtsSettings', () => ({
   useTtsSettings: vi.fn(() => undefined),
 }));
 
@@ -24,7 +24,7 @@ const mockPlay = vi.fn(() => ({
   done: Promise.resolve(),
 }));
 
-vi.mock('@/features/plugins/companion/voicePlayback', () => ({
+vi.mock('@/features/companions/athena/voicePlayback', () => ({
   synthesize: (...args: unknown[]) => mockSynthesize(...args),
   play: (...args: unknown[]) => mockPlay(...args),
 }));

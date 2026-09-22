@@ -1,7 +1,7 @@
 import { Compass, Rocket, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**

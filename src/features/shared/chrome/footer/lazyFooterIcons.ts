@@ -26,7 +26,7 @@ export const FooterSectionNav = lazyRetry(() =>
 );
 
 // -- Feature-owned icons -----------------------------------------------------
-export const CompanionFooterIcon = lazyRetry(() => import('@/features/plugins/companion/CompanionFooterIcon'));
+export const CompanionFooterIcon = lazyRetry(() => import('@/features/companions/athena/CompanionFooterIcon'));
 export const RadioFooter = lazyRetry(() => import('@/features/plugins/radio/components/RadioFooter'));
 // Notepad SHIPS IN PRODUCTION (unlike the fleet cluster): a scratch note is not dev tooling.
 export const NotepadFooterIcon = lazyRetry(() => import('@/features/notepad/NotepadFooterIcon'));

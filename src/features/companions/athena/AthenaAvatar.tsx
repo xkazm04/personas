@@ -136,7 +136,7 @@ export function AthenaAvatar({
           try {
             el.pause();
           } catch (err) {
-            silentCatch('features/plugins/companion/AthenaAvatar:catch1')(err);
+            silentCatch('features/companions/athena/AthenaAvatar:catch1')(err);
           }
           el.currentTime = 0;
         }
@@ -162,7 +162,7 @@ export function AthenaAvatar({
         try {
           el.pause();
         } catch (err) {
-          silentCatch('features/plugins/companion/AthenaAvatar:visibility')(err);
+          silentCatch('features/companions/athena/AthenaAvatar:visibility')(err);
         }
       } else {
         el.play().catch(silentCatch('AthenaAvatar:visibilityResume'));

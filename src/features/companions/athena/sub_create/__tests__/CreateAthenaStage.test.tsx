@@ -23,7 +23,7 @@ vi.mock('../shared/TypedLine', () => ({
     return <p>{text}</p>;
   },
 }));
-vi.mock('@/features/plugins/companion/AthenaAvatar', () => ({
+vi.mock('@/features/companions/athena/AthenaAvatar', () => ({
   AthenaAvatar: () => <div data-testid="athena-avatar-stub" />,
 }));
 

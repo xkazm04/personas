@@ -11,8 +11,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { interpolate } from '@/i18n/useTranslation';
-import { VerdictCaption } from '@/features/teams/sub_council/bench/chips';
-import { usePercent } from '@/features/teams/sub_council/table/usePercent';
+import { VerdictCaption } from '@/features/companions/curator/council/bench/chips';
+import { usePercent } from '@/features/companions/curator/council/table/usePercent';
 import { toastCatch } from '@/lib/silentCatch';
 
 import type { TDevTools } from './contextLedgerShared';

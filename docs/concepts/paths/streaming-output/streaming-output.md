@@ -13,7 +13,7 @@ evidence:
   - src/lib/execution/executionSink.ts                        # dual-budget ring (10k lines / 10 MB / 4 KB line clamp), head eviction, honest truncation notice, generation-gated visibility-aware throttled flushes, forceFlush-before-reset
   - src/hooks/execution/useStructuredStream.ts                # typed event union (11 variants) dispatched only after execution_id gating; singleton shared subscription
   - src/hooks/design/core/useTauriStream.ts                   # per-start generation counter making stale listeners/timeouts inert; listeners registered before invoke; bounded line buffer; timeout → error, never silent
-  - src/features/plugins/companion/extractStreamPhase.ts      # phase derived from event shapes (tool_use > thinking; text yields to visible output), closed vocabulary, curated details
+  - src/features/companions/athena/extractStreamPhase.ts      # phase derived from event shapes (tool_use > thinking; text yields to visible output), closed vocabulary, curated details
   - src-tauri/engine/src/safe_json.rs                         # bounded parse: 16 MiB size cap + nesting-depth cap before deserialization
   - src-tauri/engine/src/protocol.rs                          # the stream/finalize pipeline stages as a formal trait boundary (StreamOutput → FinalizeStatus)
 counter_evidence:

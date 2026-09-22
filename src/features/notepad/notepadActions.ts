@@ -11,7 +11,7 @@
 import { companionDispatchFleetPlan } from '@/api/companion';
 import { writeDispatchBrief } from '@/api/fleet/fleet';
 import { installSystemSkill } from '@/api/devTools/devTools';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { toastCatch } from '@/lib/silentCatch';

@@ -39,7 +39,7 @@ function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
 }
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
-import { openProjectManager } from '@/features/plugins/companion/guidance/appActions';
+import { openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';

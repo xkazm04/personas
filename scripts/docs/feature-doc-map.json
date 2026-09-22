@@ -200,7 +200,7 @@
         "src-tauri/src/engine/director.rs",
         "src-tauri/src/engine/director_brain.rs",
         "src-tauri/src/commands/infrastructure/director.rs",
-        "src/features/overview/sub_director/**"
+        "src/features/companions/overseer/**"
       ],
       "marketingModule": "agents"
     },
@@ -340,8 +340,8 @@
       "doc": "docs/features/companion/cockpit.md",
       "sourceGlobs": [
         "src/features/home/sub_cockpit/**",
-        "src/features/plugins/companion/inbox/**",
-        "src/features/plugins/companion/InlineChatCard.tsx",
+        "src/features/companions/athena/inbox/**",
+        "src/features/companions/athena/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"
       ],
       "onboardingFlows": [
@@ -394,7 +394,7 @@
     {
       "doc": "docs/features/companion/README.md",
       "sourceGlobs": [
-        "src/features/plugins/companion/**",
+        "src/features/companions/athena/**",
         "src-tauri/src/commands/companion/**",
         "src-tauri/src/companion/session/**",
         "src-tauri/src/companion/dispatcher/**",
@@ -605,7 +605,7 @@
         "src-tauri/src/commands/infrastructure/dev_tools/note_suggestions.rs",
         "src-tauri/src/commands/infrastructure/notepad_ingest.rs",
         "src-tauri/src/companion/note_ops.rs",
-        "src/features/plugins/companion/notepad/**"
+        "src/features/companions/athena/notepad/**"
       ]
     },
     {
@@ -633,7 +633,7 @@
         "src/features/plugins/dev-tools/sub_context/council*",
         "src/features/plugins/dev-tools/sub_context/Feature*",
         "src/api/devTools/council.ts",
-        "src/features/teams/sub_council/**",
+        "src/features/companions/curator/council/**",
         "src/features/home/sub_cockpit/widgets/CouncilMediaWidget.tsx",
         "src-tauri/src/commands/infrastructure/dev_tools/council*.rs",
         "src-tauri/db/src/repos/dev/council.rs",

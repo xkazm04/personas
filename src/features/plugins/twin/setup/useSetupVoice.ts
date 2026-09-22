@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
-import { useSpeechInput } from '@/features/plugins/companion/useSpeechInput';
-import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
-import { useTtsVoiceSelection } from '@/features/plugins/companion/useTtsVoiceSelection';
-import { play, synthesize } from '@/features/plugins/companion/voicePlayback';
-import { stripMarkdownForSpeech } from '@/features/plugins/companion/chat/athenaChatSpeech';
+import { useSpeechInput } from '@/features/companions/athena/useSpeechInput';
+import { useTtsSettings } from '@/features/companions/athena/useTtsSettings';
+import { useTtsVoiceSelection } from '@/features/companions/athena/useTtsVoiceSelection';
+import { play, synthesize } from '@/features/companions/athena/voicePlayback';
+import { stripMarkdownForSpeech } from '@/features/companions/athena/chat/athenaChatSpeech';
 import type { SetupSessionApi, SetupVoiceApi } from './setupContract';
 
 /**

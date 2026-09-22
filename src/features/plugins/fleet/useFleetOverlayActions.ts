@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { spawnSession, killSession, removeSession, wakeSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';

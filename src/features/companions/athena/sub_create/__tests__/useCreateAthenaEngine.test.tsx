@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import type { SttComparison } from '@/features/plugins/companion/useSttComparison';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import type { SttComparison } from '@/features/companions/athena/useSttComparison';
 import { useCreateAthenaEngine } from '../engine/useCreateAthenaEngine';
 import { resetWakeUpRotation } from '../engine/createAthenaSteps';
 
@@ -30,14 +30,14 @@ vi.mock('@/api/companion', () => ({
   companionSttEngineStatus: api.sttStatus,
 }));
 vi.mock('@/api/fleet/claudeAccounts', () => ({ listClaudeAccounts: api.listClaudeAccounts }));
-vi.mock('@/features/plugins/companion/voicePlayback', () => ({
+vi.mock('@/features/companions/athena/voicePlayback', () => ({
   synthesize: api.synthesize,
   play: api.play,
 }));
-vi.mock('@/features/plugins/companion/chime', () => ({ playReplyChime: api.playReplyChime }));
+vi.mock('@/features/companions/athena/chime', () => ({ playReplyChime: api.playReplyChime }));
 // jsdom has neither SpeechRecognition nor getUserMedia — the comparison hook
 // is pinned in its own suite; here it is an inert take.
-vi.mock('@/features/plugins/companion/useSttComparison', () => ({
+vi.mock('@/features/companions/athena/useSttComparison', () => ({
   useSttComparison: (): SttComparison => ({
     recording: false,
     busy: false,

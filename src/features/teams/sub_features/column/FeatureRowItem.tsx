@@ -7,7 +7,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { CouncilGlyph } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
-import { RowGlyph } from '@/features/teams/sub_council/table/svg/RowGlyph';
+import { RowGlyph } from '@/features/companions/curator/council/table/svg/RowGlyph';
 
 import { FEATURE_THRESHOLD, type FeatureRow } from '../featureRules';
 import type { TFeatures } from '../featuresModel';

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { listen } from '@tauri-apps/api/event';
 import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
-import { extractAssistantTextDelta } from '@/features/plugins/companion/extractAssistantText';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { extractAssistantTextDelta } from '@/features/companions/athena/extractAssistantText';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,

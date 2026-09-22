@@ -29,7 +29,7 @@ vi.mock('@/lib/silentCatch', () => ({
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => vi.fn()) }));
 
-vi.mock('@/features/plugins/companion/companionStore', () => ({
+vi.mock('@/features/companions/athena/companionStore', () => ({
   useCompanionStore: {
     getState: () => ({ pulseForwardAck: vi.fn(), pulseMessageReaction: vi.fn() }),
   },

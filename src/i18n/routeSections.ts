@@ -72,7 +72,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   // `ship` — the Factory L2 Ship tab (milestone convergence layer).
   // `mastermind` — the teams/sub_mastermind canvas.
   // `browser` — the Browser group (Whitelist / Webview) under teams.
-  // `council` — the teams/sub_council galaxy, bench and gate.
+  // `council` — the companions/curator/council galaxy, bench and gate.
   // `features` — the teams/sub_features board: the map, the column and the
   //   feature tab with its scenarios. It is a sibling of `council` in the same
   //   Development group, so it loads on the same route.
@@ -95,7 +95,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared', 'explore'],
   // `twin` — plugins/twin (629 keys; also feeds the plugins sidebar nav).
   // `project_overview` — plugins/dev-tools project overview + LLM monitoring.
-  // `cockpit` — plugins/companion inbox helpers.
+  // `cockpit` — companions/athena inbox helpers.
   plugins: ['plugins', 'gitlab', 'pipeline', 'twin', 'project_overview', 'cockpit'],
   // `studio` — the Athena web-build Studio surface. StudioAttention is mounted
   // app-wide (DEV-only) and reads this section too, but it only renders once a

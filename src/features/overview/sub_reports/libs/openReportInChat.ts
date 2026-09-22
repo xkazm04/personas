@@ -1,5 +1,5 @@
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import type { CompanionCockpitSpecBody } from '@/api/companion';
 import type { PersonaReport } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';

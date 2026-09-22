@@ -3,8 +3,8 @@ import { Lightbulb, TriangleAlert } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { runDecisionOption } from '@/features/plugins/companion/decision/resolveDecision';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { runDecisionOption } from '@/features/companions/athena/decision/resolveDecision';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTextClass } from './intentColors';
 

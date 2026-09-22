@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import type { Translations } from '@/i18n/en';
 
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';

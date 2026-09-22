@@ -20,7 +20,7 @@ import {
   type TtsEngineId,
 } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
-import { installErrorText } from '@/features/plugins/companion/sub_voice/voiceEngineShared';
+import { installErrorText } from '@/features/companions/athena/sub_voice/voiceEngineShared';
 import type { EngineOption, InstallState } from './createAthenaTypes';
 
 /** The status fields both engines share and the wizard reads. */

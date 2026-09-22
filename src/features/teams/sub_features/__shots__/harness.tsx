@@ -1,6 +1,6 @@
 // The Features page mounted alone, for the pixel pass.
 //
-// The twin of `sub_council/__shots__/harness.tsx`: the app's stylesheet, the
+// The twin of `companions/curator/council/__shots__/harness.tsx`: the app's stylesheet, the
 // real theme store, the English section chunks the page's strings live in and
 // the keyboard provider - and nothing else. The page loads its own checked-in
 // fixture through its own DEV toggle, so a shot never depends on a scanned

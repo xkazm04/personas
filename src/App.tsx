@@ -135,8 +135,8 @@ const HealingToast = lazyRetry(() => import("@/features/overview/components/feed
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
-const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/chat/AthenaChatPanel"));
-const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const CompanionPanel = lazyRetry(() => import("@/features/companions/athena/chat/AthenaChatPanel"));
+const AthenaOrbLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaOrbLayer"));
 const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 // Fleet grid is an app-wide LAYER, not a page surface: the footer raises it
 // over whatever you're looking at so checking a CLI never costs a navigation.
@@ -151,7 +151,7 @@ const NotepadLayer = lazyRetry(() => import("@/features/notepad/NotepadLayer"));
 // policy push). SEPARATE from FleetGridLayer on purpose and mounted UNGATED —
 // see the two mounts below and FleetBootstrap's own header.
 const FleetBootstrap = lazyRetry(() => import("@/features/plugins/fleet/FleetBootstrap"));
-const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
+const AthenaGuideLayer = lazyRetry(() => import("@/features/companions/athena/orb/AthenaGuideLayer"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
 // consented. Previously orphaned — built but never rendered (UAT L1
@@ -177,9 +177,9 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/chrome/notifications/NotificationCenter"),
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
-  () => import("@/features/plugins/companion/chat/AthenaChatPanel"),
-  () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
-  () => import("@/features/plugins/companion/orb/AthenaGuideLayer"),
+  () => import("@/features/companions/athena/chat/AthenaChatPanel"),
+  () => import("@/features/companions/athena/orb/AthenaOrbLayer"),
+  () => import("@/features/companions/athena/orb/AthenaGuideLayer"),
 ] as const;
 
 function DevMobilePreviewShortcut() {

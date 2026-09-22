@@ -7,7 +7,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownMiniEditor } from '@/features/shared/components/editors/MarkdownMiniEditor';
 import { DeferredMarkdown } from '@/features/shared/components/editors/DeferredMarkdown';
 import { resolveNoteSuggestion } from '@/api/notepad';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 

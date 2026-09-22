@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { synthesize, play } from '@/features/plugins/companion/voicePlayback';
-import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
-import { useTtsVoiceSelection } from '@/features/plugins/companion/useTtsVoiceSelection';
+import { synthesize, play } from '@/features/companions/athena/voicePlayback';
+import { useTtsSettings } from '@/features/companions/athena/useTtsSettings';
+import { useTtsVoiceSelection } from '@/features/companions/athena/useTtsVoiceSelection';
 
 /**
  * Athena-narrated guided tour (prototype).

@@ -19,7 +19,7 @@ import {
   skillFilesRegistryRoot, type SkillEntry,
 } from '@/api/devTools/devTools';
 import { listSessions } from '@/api/fleet/fleet';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { mapWithConcurrency } from '@/lib/concurrency';

@@ -1018,17 +1018,17 @@
     }
    ],
    "evidence": [
-    "src/features/plugins/companion/Bubble.tsx",
-    "src/features/plugins/companion/NarrationThread.tsx",
-    "src/features/plugins/companion/chat/athenaChatSession.ts",
-    "src/features/plugins/companion/useChatScroll.ts",
-    "src/features/plugins/companion/RecallStrip.tsx",
-    "src/features/plugins/companion/TurnSummaryChip.tsx",
+    "src/features/companions/athena/Bubble.tsx",
+    "src/features/companions/athena/NarrationThread.tsx",
+    "src/features/companions/athena/chat/athenaChatSession.ts",
+    "src/features/companions/athena/useChatScroll.ts",
+    "src/features/companions/athena/RecallStrip.tsx",
+    "src/features/companions/athena/TurnSummaryChip.tsx",
     "src/features/shared/components/editors/MarkdownRenderer.tsx",
     "src/features/agents/components/ChatThread.tsx"
    ],
    "counter_evidence": [
-    "src/features/plugins/companion/chat/AthenaChatProposals.tsx"
+    "src/features/companions/athena/chat/AthenaChatProposals.tsx"
    ],
    "deviations": [
     "w7-chat-transcript"
@@ -2018,7 +2018,7 @@
     "src/features/overview/sub_usage/components/LazyChart.tsx",
     "src/features/overview/libs/metricIdentity.ts",
     "src/features/overview/libs/computeTrends.ts",
-    "src/features/overview/sub_director/directorScore.ts",
+    "src/features/companions/overseer/directorScore.ts",
     "src/features/teams/sub_kpis/kpiMath.ts",
     "src-tauri/src/engine/kpi_derivation.rs",
     "src/features/shared/glyph/types.ts"
@@ -6945,7 +6945,7 @@
     "src/lib/execution/executionSink.ts",
     "src/hooks/execution/useStructuredStream.ts",
     "src/hooks/design/core/useTauriStream.ts",
-    "src/features/plugins/companion/extractStreamPhase.ts",
+    "src/features/companions/athena/extractStreamPhase.ts",
     "src-tauri/engine/src/safe_json.rs",
     "src-tauri/engine/src/protocol.rs"
    ],
@@ -7927,7 +7927,7 @@
     "src/features/agents/quick-answer/triage/useUnifiedTriage.ts",
     "src/features/agents/quick-answer/triage/triageQueue.ts",
     "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx",
-    "src/features/plugins/companion/inbox/hooks/useUnifiedInbox.ts",
+    "src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts",
     "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts",
     "src/features/fleet/monitor/grid/fleetGridModel.ts",
     "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts"
@@ -8323,15 +8323,15 @@
    "evidence": [
     "src-tauri/src/companion/tts/mod.rs",
     "src-tauri/src/companion/stt/whisper.rs",
-    "src/features/plugins/companion/useLocalDictation.ts",
-    "src/features/plugins/companion/useSpeechInput.ts",
-    "src/features/plugins/companion/sub_voice/VoicePanel.tsx",
-    "src/features/plugins/companion/decision/parseSpokenDecision.ts",
+    "src/features/companions/athena/useLocalDictation.ts",
+    "src/features/companions/athena/useSpeechInput.ts",
+    "src/features/companions/athena/sub_voice/VoicePanel.tsx",
+    "src/features/companions/athena/decision/parseSpokenDecision.ts",
     "src/features/onboarding/components/useTourNarration.ts",
-    "src/features/plugins/companion/BubbleReadAloud.tsx"
+    "src/features/companions/athena/BubbleReadAloud.tsx"
    ],
    "counter_evidence": [
-    "src/features/plugins/companion/chat/athenaChatAudio.ts"
+    "src/features/companions/athena/chat/athenaChatAudio.ts"
    ],
    "deviations": [
     "w4-voice-io"

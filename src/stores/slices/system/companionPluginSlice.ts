@@ -1,11 +1,11 @@
 import type { StateCreator } from 'zustand';
 import type { SystemStore } from '../../storeTypes';
 import type { FleetBoldnessLevel } from '@/api/companion';
-import type { CreateAthenaStepId } from '@/features/plugins/companion/sub_create/engine/createAthenaTypes';
+import type { CreateAthenaStepId } from '@/features/companions/athena/sub_create/engine/createAthenaTypes';
 import {
   DEFAULT_EXPANDED_KINDS,
   type AttentionKind,
-} from '@/features/plugins/companion/attention/attentionKinds';
+} from '@/features/companions/athena/attention/attentionKinds';
 
 export type CompanionPluginTab =
   | 'create-athena'

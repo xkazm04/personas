@@ -15,7 +15,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { storeBus } from "@/lib/storeBus";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { useCompanionStore } from "@/features/plugins/companion/companionStore";
+import { useCompanionStore } from "@/features/companions/athena/companionStore";
 import { sections as sidebarSections } from "@/features/shared/chrome/sidebar/sidebarData";
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";

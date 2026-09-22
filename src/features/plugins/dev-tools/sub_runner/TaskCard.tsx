@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
-import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { SCAN_AGENTS } from '../constants/scanAgents';

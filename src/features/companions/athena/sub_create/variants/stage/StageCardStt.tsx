@@ -2,7 +2,7 @@ import { AlertTriangle, Mic } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SttEngineId } from '@/api/companion';
-import type { EngineTake } from '@/features/plugins/companion/useSttComparison';
+import type { EngineTake } from '@/features/companions/athena/useSttComparison';
 import type { CreateAthenaActions, CreateAthenaCard } from '../../engine/createAthenaTypes';
 import { MicLevelMeter } from '../../shared/MicLevelMeter';
 

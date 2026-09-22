@@ -3,7 +3,7 @@
 // compared while the real store holds almost no councils and no scenarios.
 //
 // Read through the dev server's `?raw` loader with `@vite-ignore`, exactly as
-// `sub_council/galaxy/fixture.ts` does: a plain fetch of a `.js` path goes
+// `companions/curator/council/galaxy/fixture.ts` does: a plain fetch of a `.js` path goes
 // through Vite's JS transform, which rewrites `0.7` to `.7` - valid JavaScript
 // and invalid JSON - and `?raw` returns the bytes on disk. `@vite-ignore` keeps
 // the 110 KB out of every production chunk.

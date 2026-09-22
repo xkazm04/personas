@@ -16,7 +16,7 @@
 import { AlertCircle } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 
 /** The browser ops that file an approval (WP3: `browser_act`, `browser_login`). */
 const BROWSER_ACTIONS = new Set(['browser_act', 'browser_login']);

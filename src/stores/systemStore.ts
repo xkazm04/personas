@@ -16,7 +16,7 @@ import { createUiSlice } from "./slices/system/uiSlice";
 import { createCloudSlice } from "./slices/system/cloudSlice";
 import { createGitLabSlice } from "./slices/system/gitlabSlice";
 import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
-import { isCreateAthenaStepId } from "@/features/plugins/companion/sub_create/engine/createAthenaTypes";
+import { isCreateAthenaStepId } from "@/features/companions/athena/sub_create/engine/createAthenaTypes";
 import * as Sentry from "@sentry/react";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createFleetSlice } from "./slices/system/fleetSlice";

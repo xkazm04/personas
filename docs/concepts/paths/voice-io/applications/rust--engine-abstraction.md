@@ -15,7 +15,7 @@ engine (`kokoro.rs`, `pocket.rs`) each exposing
 `match engine` in `src-tauri/src/commands/companion/voice.rs:53-73`. The
 transcription direction mirrors it: `src-tauri/src/companion/stt/whisper.rs`
 behind `commands/companion/stt.rs`, with the frontend seam
-(`src/features/plugins/companion/useSpeechInput.ts`) selecting between the
+(`src/features/companions/athena/useSpeechInput.ts`) selecting between the
 browser engine and the local whisper engine behind one `DictationState`
 interface.
 

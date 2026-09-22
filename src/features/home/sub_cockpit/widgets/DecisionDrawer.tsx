@@ -3,10 +3,10 @@ import { X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { useInboxActions } from '@/features/plugins/companion/inbox/hooks/useInboxActions';
-import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
-import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
-import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types';
+import { useInboxActions } from '@/features/companions/athena/inbox/hooks/useInboxActions';
+import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
+import { inboxKindIcon } from '@/features/companions/athena/inbox/_shared/inboxKindIcon';
+import type { UnifiedInboxItem } from '@/features/companions/athena/inbox/types';
 import { DebtText } from '@/i18n/DebtText';
 
 

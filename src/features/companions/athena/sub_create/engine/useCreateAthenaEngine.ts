@@ -12,8 +12,8 @@ import { useShallow } from 'zustand/react/shallow';
 import type { SttEngineId, TtsEngineId } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { playReplyChime } from '@/features/plugins/companion/chime';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { playReplyChime } from '@/features/companions/athena/chime';
 import {
   deriveSteps,
   resolveLine,

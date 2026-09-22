@@ -5,10 +5,10 @@ import { useMemo, useRef } from 'react';
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useElementSize } from '@/hooks/utility/interaction/useElementSize';
-import { CoverageRing } from '@/features/teams/sub_council/table/svg/CoverageRing';
-import { RoundHistory, type RoundPoint } from '@/features/teams/sub_council/table/svg/RoundHistory';
-import { Rose } from '@/features/teams/sub_council/table/svg/Rose';
-import type { Seat, SeatState } from '@/features/teams/sub_council/table/runModel';
+import { CoverageRing } from '@/features/companions/curator/council/table/svg/CoverageRing';
+import { RoundHistory, type RoundPoint } from '@/features/companions/curator/council/table/svg/RoundHistory';
+import { Rose } from '@/features/companions/curator/council/table/svg/Rose';
+import type { Seat, SeatState } from '@/features/companions/curator/council/table/runModel';
 import type { BoardFeature } from '@/lib/bindings/BoardFeature';
 import { formatNumeric } from '@/lib/utils/formatters';
 

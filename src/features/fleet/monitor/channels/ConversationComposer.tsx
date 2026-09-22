@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Sparkles, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { goalText, looksLikeGoal } from './conversationModel';

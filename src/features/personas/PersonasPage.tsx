@@ -12,9 +12,9 @@ import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialN
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import DesktopFooter from '@/features/shared/chrome/footer/DesktopFooter';
-import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
-import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
-import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
+import { useFleetCompanionBridge } from '@/features/companions/athena/useFleetCompanionBridge';
+import { useMcpRequestBridge } from '@/features/companions/athena/mcp/useMcpRequestBridge';
+import { useOperativeMemoryBridge } from '@/features/companions/athena/orchestration/useOperativeMemoryBridge';
 import { useCanvasControlBridge } from '@/features/teams/sub_mastermind/lib/useCanvasControlBridge';
 import { useCanvasPanelBridge } from '@/features/teams/sub_mastermind/lib/useCanvasPanelBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -46,7 +46,7 @@ const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
 const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const MastermindPage = lazyRetry(() => import('@/features/teams/sub_mastermind/MastermindPage'));
-const CouncilPage = lazyRetry(() => import('@/features/teams/sub_council/CouncilPage'));
+const CouncilPage = lazyRetry(() => import('@/features/companions/curator/council/CouncilPage'));
 const FeaturesPage = lazyRetry(() => import('@/features/teams/sub_features/FeaturesPage'));
 const WhitelistPage = lazyRetry(() => import('@/features/browser/whitelist/WhitelistPage'));
 const WebviewPage = lazyRetry(() => import('@/features/browser/webview/WebviewPage'));
@@ -57,7 +57,7 @@ const DevToolsPage = lazyRetry(() => import('@/features/plugins/dev-tools/DevToo
 const ObsidianBrainPage = lazyRetry(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
-const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
+const CompanionPluginPage = lazyRetry(() => import('@/features/companions/athena/CompanionPluginPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)

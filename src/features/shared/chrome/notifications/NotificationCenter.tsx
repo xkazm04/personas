@@ -6,7 +6,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { useConnectorAttention } from '@/features/vault/sub_credentials/components/card/attention/useConnectorAttention';
 import { ConnectorAttentionSection } from './ConnectorAttentionSection';
 

@@ -23,7 +23,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useForwardToAthena } from '@/features/plugins/companion/useForwardToAthena';
+import { useForwardToAthena } from '@/features/companions/athena/useForwardToAthena';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 

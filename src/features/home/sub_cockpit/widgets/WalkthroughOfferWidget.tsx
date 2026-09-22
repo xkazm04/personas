@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Compass, MessageSquareText, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { WALKTHROUGHS } from '@/features/plugins/companion/guidance/walkthroughs';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
+import { WALKTHROUGHS } from '@/features/companions/athena/guidance/walkthroughs';
 import { useTourStore } from '@/stores/tourStore';
 import { composeTour, ingestComposedTour } from '@/stores/slices/system/dynamicTours';
 import { silentCatch } from '@/lib/silentCatch';

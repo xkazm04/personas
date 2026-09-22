@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { companionSttEngineStatus } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { useSttComparison, type EngineTake } from '@/features/plugins/companion/useSttComparison';
+import { useSttComparison, type EngineTake } from '@/features/companions/athena/useSttComparison';
 
 /** Engine error codes / messages that mean "the mic was refused". */
 const MIC_DENIED = /not.?allowed|mic_denied|permission|denied/i;

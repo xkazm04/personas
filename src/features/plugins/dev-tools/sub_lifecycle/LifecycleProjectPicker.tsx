@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FolderKanban, AlertCircle, GitBranch } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { openProjectManager } from '@/features/plugins/companion/guidance/appActions';
+import { openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { WorkspaceProjectSelector } from '../sub_workspaces/WorkspaceProjectSelector';
 import { useWorkspaceSwitch } from '../sub_workspaces/useWorkspaceSwitch';
 

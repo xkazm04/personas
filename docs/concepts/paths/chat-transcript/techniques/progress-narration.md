@@ -8,9 +8,9 @@ laws:
   - derivation-names-recomputation
 shared_with: []
 evidence:
-  - src/features/plugins/companion/NarrationThread.tsx         # live log capped at 5 rows with "+N earlier"; settled trail "What I did — 7 steps · 48s", expandable
-  - src/features/plugins/companion/narrationTimeline.ts        # the durable step record the trail is recomputed from
-  - src/features/plugins/companion/chat/AthenaChatStreamingTurn.tsx  # ONE progress surface on purpose — four competing narrations consolidated
+  - src/features/companions/athena/NarrationThread.tsx         # live log capped at 5 rows with "+N earlier"; settled trail "What I did — 7 steps · 48s", expandable
+  - src/features/companions/athena/narrationTimeline.ts        # the durable step record the trail is recomputed from
+  - src/features/companions/athena/chat/AthenaChatStreamingTurn.tsx  # ONE progress surface on purpose — four competing narrations consolidated
 ---
 
 # Progress narration

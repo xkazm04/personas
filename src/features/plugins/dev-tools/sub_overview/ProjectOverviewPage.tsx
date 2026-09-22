@@ -16,7 +16,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { openGoalsBoard, openProjectManager } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard, openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { splitSentrySlug } from './adapters';
 import {
   ConnectorChain, MonitoringChain, SentryProjectPicker,

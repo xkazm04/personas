@@ -54,7 +54,7 @@ export default function WorkspaceShortcuts() {
         const sys = useSystemStore.getState();
         if (!sys.companionFooterEnabled) return false;
         e.preventDefault();
-        void import('@/features/plugins/companion/companionStore').then(({ useCompanionStore }) => {
+        void import('@/features/companions/athena/companionStore').then(({ useCompanionStore }) => {
           const orbEnabled = useSystemStore.getState().companionOrbEnabled;
           const { state, setState } = useCompanionStore.getState();
           if (orbEnabled) {

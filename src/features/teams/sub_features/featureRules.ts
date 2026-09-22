@@ -13,8 +13,8 @@ import {
   type CouncilCtaKind,
   type CouncilGlyphKind,
 } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
-import { decidable } from '@/features/teams/sub_council/councilRules';
-import { FEATURE_V1 } from '@/features/teams/sub_council/table/rubrics';
+import { decidable } from '@/features/companions/curator/council/councilRules';
+import { FEATURE_V1 } from '@/features/companions/curator/council/table/rubrics';
 import type { BoardFeature } from '@/lib/bindings/BoardFeature';
 import type { BoardScenario } from '@/lib/bindings/BoardScenario';
 

@@ -4,7 +4,7 @@ import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff, La
 import { Button } from '@/features/shared/components/buttons';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from '@/stores/systemStore';
-import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';

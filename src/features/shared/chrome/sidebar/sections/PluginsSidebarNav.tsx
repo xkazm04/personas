@@ -21,7 +21,7 @@
 import { Puzzle, Brain, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
-import { useCompanionStore } from "@/features/plugins/companion/companionStore";
+import { useCompanionStore } from "@/features/companions/athena/companionStore";
 import type { DevToolsTab, TwinTab, PluginTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
 import { companionItems, devToolsItems, filterByTier, obsidianBrainItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';

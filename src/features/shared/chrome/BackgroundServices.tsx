@@ -13,7 +13,7 @@ import { useHealthDigestScheduler } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
 import { useChannelService } from "@/features/teams/sub_collab/useChannelService";
-import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
+import { useAthenaAssignmentReconciliation } from "@/features/companions/athena/useAthenaAssignmentReconciliation";
 import { useObsidianVaultRehydration } from "@/features/plugins/obsidian-brain/useObsidianVaultRehydration";
 import { useGlobalAlertEvaluator } from "@/features/overview/sub_observability/libs/useGlobalAlertEvaluator";
 

@@ -1558,7 +1558,7 @@ Ground rules — these are hard policy, not suggestions:
   short clarifying line before proposing the dispatch.
 - Requests about *your own* behavior (prompt, memory, proactivity,
   orb) are legitimate dev_improve targets — your code lives in
-  `src-tauri/src/companion/**` and `src/features/plugins/companion/**`.
+  `src-tauri/src/companion/**` and `src/features/companions/athena/**`.
 
 ## The merge handshake (backend runs)
 

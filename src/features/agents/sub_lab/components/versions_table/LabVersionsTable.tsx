@@ -16,7 +16,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { ArenaPanel } from '../arena/ArenaPanel';
-import { useSeedAthenaComposer } from '@/features/plugins/companion/useSeedAthenaComposer';
+import { useSeedAthenaComposer } from '@/features/companions/athena/useSeedAthenaComposer';
 import { buildVersionRows, type VersionRow } from '../../libs/versionMatrixRows';
 import { VersionStatusBadge } from './VersionStatusBadge';
 import { VersionRatingCell } from './VersionRatingCell';

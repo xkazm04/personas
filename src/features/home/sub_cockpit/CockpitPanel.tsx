@@ -11,7 +11,7 @@ import {
 } from '@/api/companion';
 import { getMetricsSummary } from '@/api/overview/observability';
 import type { MetricsSummary } from '@/lib/bindings/MetricsSummary';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTauriEvent } from '@/hooks/useTauriEvent';

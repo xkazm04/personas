@@ -7,7 +7,7 @@
  * reduced-motion config never has to snap anything.
  */
 import { useEffect, useRef } from 'react';
-import { subscribeAudioSpectrum } from '@/features/plugins/companion/audioLevel';
+import { subscribeAudioSpectrum } from '@/features/companions/athena/audioLevel';
 
 const MIN_PX = 3;
 /** Speech energy lives in the low-mid bins; the top of the FFT is noise. */

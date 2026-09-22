@@ -13,8 +13,8 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { CouncilGlyph, councilCtaLabel, councilLabel } from '@/features/plugins/dev-tools/sub_context/councilGlyph';
 import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
 import { PromoteConfirm } from '@/features/plugins/dev-tools/sub_context/PromoteConfirm';
-import { VerdictCaption } from '@/features/teams/sub_council/bench/chips';
-import { usePercent } from '@/features/teams/sub_council/table/usePercent';
+import { VerdictCaption } from '@/features/companions/curator/council/bench/chips';
+import { usePercent } from '@/features/companions/curator/council/table/usePercent';
 
 import { featureCta, type FeatureRow } from '../featureRules';
 import { kindLabel, type ContextCell, type TFeatures } from '../featuresModel';

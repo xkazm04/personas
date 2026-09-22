@@ -13,7 +13,7 @@ import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { previewTargetOrigin } from './studioBuildModel';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
 // browser-style tabs; all build runtime lives in studioStore so a project keeps

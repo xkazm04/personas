@@ -2,7 +2,7 @@ import { Bot, Sparkles, MessageCircle } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /**

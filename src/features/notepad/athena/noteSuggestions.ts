@@ -15,7 +15,7 @@
 // the companion store.
 import { useMemo } from 'react';
 
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 
 import type { NoteSuggestion } from '../types';
 

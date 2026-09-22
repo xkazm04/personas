@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { listClaudeAccounts } from '@/api/fleet/claudeAccounts';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useCompanionStore } from '@/features/companions/athena/companionStore';
 import { useSystemStore } from '@/stores/systemStore';
 
 /** Provenance label for the handoff prompt (`[Automated request from …]`). */

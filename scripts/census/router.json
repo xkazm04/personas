@@ -824,7 +824,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/Bubble.tsx",
+   "glob": "src/features/companions/athena/Bubble.tsx",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -837,7 +837,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/NarrationThread.tsx",
+   "glob": "src/features/companions/athena/NarrationThread.tsx",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -850,7 +850,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/chat/athenaChatSession.ts",
+   "glob": "src/features/companions/athena/chat/athenaChatSession.ts",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -863,7 +863,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/useChatScroll.ts",
+   "glob": "src/features/companions/athena/useChatScroll.ts",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -876,7 +876,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/RecallStrip.tsx",
+   "glob": "src/features/companions/athena/RecallStrip.tsx",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -889,7 +889,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/TurnSummaryChip.tsx",
+   "glob": "src/features/companions/athena/TurnSummaryChip.tsx",
    "subject": "chat-transcript",
    "laws": [
     "one-authority-per-vocabulary",
@@ -2041,7 +2041,7 @@
    ]
   },
   {
-   "glob": "src/features/overview/sub_director/directorScore.ts",
+   "glob": "src/features/companions/overseer/directorScore.ts",
    "subject": "data-viz",
    "laws": [
     "creation-names-reaper",
@@ -7159,7 +7159,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/extractStreamPhase.ts",
+   "glob": "src/features/companions/athena/extractStreamPhase.ts",
    "subject": "streaming-output",
    "laws": [
     "count-carries-predicate",
@@ -8241,7 +8241,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/inbox/hooks/useUnifiedInbox.ts",
+   "glob": "src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts",
    "subject": "triage-queues",
    "laws": [
     "count-carries-predicate",
@@ -8656,7 +8656,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/useLocalDictation.ts",
+   "glob": "src/features/companions/athena/useLocalDictation.ts",
    "subject": "voice-io",
    "laws": [
     "one-authority-per-vocabulary",
@@ -8669,7 +8669,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/useSpeechInput.ts",
+   "glob": "src/features/companions/athena/useSpeechInput.ts",
    "subject": "voice-io",
    "laws": [
     "one-authority-per-vocabulary",
@@ -8682,7 +8682,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/sub_voice/VoicePanel.tsx",
+   "glob": "src/features/companions/athena/sub_voice/VoicePanel.tsx",
    "subject": "voice-io",
    "laws": [
     "one-authority-per-vocabulary",
@@ -8695,7 +8695,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/decision/parseSpokenDecision.ts",
+   "glob": "src/features/companions/athena/decision/parseSpokenDecision.ts",
    "subject": "voice-io",
    "laws": [
     "one-authority-per-vocabulary",
@@ -8721,7 +8721,7 @@
    ]
   },
   {
-   "glob": "src/features/plugins/companion/BubbleReadAloud.tsx",
+   "glob": "src/features/companions/athena/BubbleReadAloud.tsx",
    "subject": "voice-io",
    "laws": [
     "one-authority-per-vocabulary",
