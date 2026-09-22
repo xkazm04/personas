@@ -2129,7 +2129,17 @@
       "waiting_one": "واحد قيد الانتظار",
       "waiting_other": "{count} قيد الانتظار",
       "editor_field": "{section}، بصيغة markdown",
-      "editor_stop": "إيقاف الكتابة"
+      "rail_caption_title": "المستند",
+      "rail_caption_aside": "بالمقياس",
+      "mark_you": "القانون",
+      "mark_agent": "الوكيل",
+      "mark_neither": "أخرى",
+      "accept_reject": "أنت تقبل أو ترفض",
+      "lede_you": "أنت كتبت هذا الفصل وهو ملكك. يُحفظ كاملاً، فصلاً واحداً في كل مرة، وفقط عندما تقرر ذلك.",
+      "lede_agent": "كتب الوكيل هذا عن عمله. لا يتغير إلا عندما تقبل تغييراً يقترحه.",
+      "lede_neither": "لا يكتب أي منكما هنا. يُعرض حتى لا يكون المستند ناقصاً دون أن يلاحظ أحد.",
+      "draft_mark": "مسودة",
+      "editor_hint": "Ctrl+Enter يحفظ هذا الفصل كاملاً. Esc يخرج من الكتابة ويحتفظ بمسودتك."
     },
     "matrix_cred_picker": {
       "best_match": "الأنسب",

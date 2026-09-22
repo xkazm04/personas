@@ -2129,7 +2129,17 @@
       "waiting_one": "1 menunggu",
       "waiting_other": "{count} menunggu",
       "editor_field": "{section}, sebagai markdown",
-      "editor_stop": "Berhenti menulis"
+      "rail_caption_title": "Dokumen",
+      "rail_caption_aside": "sesuai skala",
+      "mark_you": "Aturan",
+      "mark_agent": "Diri",
+      "mark_neither": "Lainnya",
+      "accept_reject": "Anda menerima atau menolak",
+      "lede_you": "Anda menulis bab ini dan bab ini milik Anda. Disimpan utuh, satu bab setiap kali, dan hanya saat Anda memutuskan.",
+      "lede_agent": "Agen menulis ini tentang pekerjaannya sendiri. Bagian ini berubah hanya saat Anda menerima perubahan yang ia usulkan.",
+      "lede_neither": "Tidak ada di antara Anda berdua yang menulis di sini. Ditampilkan agar dokumen tidak pernah diam-diam tidak lengkap.",
+      "draft_mark": "Draf",
+      "editor_hint": "Ctrl+Enter menyimpan bab ini utuh. Esc keluar dari penulisan dan menyimpan draf Anda."
     },
     "matrix_cred_picker": {
       "best_match": "Cocok terbaik",

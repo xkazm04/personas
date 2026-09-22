@@ -2123,7 +2123,17 @@
     "waiting_one": "대기 중 1건",
     "waiting_other": "대기 중 {count}건",
     "editor_field": "{section}, markdown 형식",
-    "editor_stop": "쓰기 중단"
+    "rail_caption_title": "문서",
+    "rail_caption_aside": "분량 비례",
+    "mark_you": "규칙",
+    "mark_agent": "자기 서술",
+    "mark_neither": "기타",
+    "accept_reject": "당신이 수락 또는 거절",
+    "lede_you": "이 장은 당신이 썼고 당신의 것입니다. 한 번에 한 장씩, 당신이 정할 때만 통째로 저장됩니다.",
+    "lede_agent": "이것은 에이전트가 자신의 작업에 대해 쓴 글입니다. 에이전트가 제안한 변경을 당신이 수락할 때만 바뀝니다.",
+    "lede_neither": "여기에는 어느 쪽도 쓰지 않습니다. 문서가 모르는 사이에 빠지는 일이 없도록 표시합니다.",
+    "draft_mark": "초안",
+    "editor_hint": "Ctrl+Enter는 이 장을 통째로 저장합니다. Esc는 쓰기를 마치고 초안을 남깁니다."
   },
   "matrix_cred_picker": {
     "best_match": "최적 매칭",

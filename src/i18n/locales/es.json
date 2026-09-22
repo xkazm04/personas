@@ -2129,7 +2129,17 @@
       "waiting_one": "1 en espera",
       "waiting_other": "{count} en espera",
       "editor_field": "{section}, como markdown",
-      "editor_stop": "Dejar de escribir"
+      "rail_caption_title": "El documento",
+      "rail_caption_aside": "a escala",
+      "mark_you": "Ley",
+      "mark_agent": "Propio",
+      "mark_neither": "Otro",
+      "accept_reject": "usted acepta o rechaza",
+      "lede_you": "Usted escribió este capítulo y es suyo. Se guarda entero, un capítulo a la vez, y solo cuando usted lo decide.",
+      "lede_agent": "El agente escribió esto sobre su propio trabajo. Solo cambia cuando usted acepta un cambio que propone.",
+      "lede_neither": "Aquí no escribe ninguno de los dos. Se muestra para que el documento nunca quede incompleto en silencio.",
+      "draft_mark": "Borrador",
+      "editor_hint": "Ctrl+Intro guarda este capítulo entero. Esc sale de la escritura y conserva su borrador."
     },
     "matrix_cred_picker": {
       "best_match": "Mejor coincidencia",

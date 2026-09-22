@@ -1,10 +1,9 @@
 import { useId, type ReactNode } from 'react';
-import { AUTHOR_TONE, DOCUMENT_MEASURE } from './documentTokens';
+import './documentSurface.css';
 import type { DocumentSection } from './documentModel';
 import { DocumentTabs, documentPanelId, documentTabId } from './DocumentTabs';
 import { DocumentRail } from './DocumentRail';
-import { DocumentBlocks } from './DocumentBlocks';
-import { DocumentEditor } from './DocumentEditor';
+import { DocumentPage } from './DocumentPage';
 import { DocumentClosedRow } from './DocumentClosedRow';
 import { useDocumentSurface } from './useDocumentSurface';
 import type { DocumentSurfaceLabels } from './documentLabels';
@@ -27,33 +26,34 @@ export interface DocumentSurfaceProps {
    * draft intact, so a failed write never looks like a successful one.
    */
   onSaveSection?: (sectionId: string, body: string) => Promise<void>;
-  /** Rendered under a section's prose — pending changes, provenance, actions. */
+  /** Rendered inside the open leaf, under its prose — waiting changes, provenance. */
   renderSectionFooter?: (section: DocumentSection) => ReactNode;
-  /** Rendered under the closed rows. */
+  /** Rendered at the end of the stack. */
   children?: ReactNode;
 }
 
 /**
- * @catalog DocumentSurface — a long-form two-author document as a reading and writing instrument: a to-scale side rail (parametrized), a top chapter switcher with waiting counts, one section open at full measure with the rest present but muted, and click-a-paragraph-to-write-in-it inline editing that saves a section whole. Prefer it over a stack of headings with an Edit button per section.
+ * @catalog DocumentSurface — a long-form two-author document as a bound book: a to-scale side rail (parametrized), a chapter switcher with waiting counts, the whole document as a stack in file order with one chapter open as a paper leaf and the rest as quiet closed leaves, and click-a-row-to-write-in-it inline editing that saves a chapter whole. Prefer it over a stack of headings with an Edit button per section.
  *
- * Four things hold this together, and each was chosen against an alternative
- * that looked simpler:
+ * PROMOTED FROM A DESIGN CONTEST, AND HELD TO IT. The look — page surface,
+ * stitched binding, reading type, measure, author colours — lives in
+ * `documentSurface.css` and is verified against the winner's measured style
+ * contract (`.contest/harness/style-contract.py`), because the first port
+ * written from memory of the winner lost every property the owner chose it for
+ * while every code gate stayed green.
  *
- * 1. **One section open, the rest present.** Not pagination (which hides the
- *    document's shape and defeats the browser's own find) and not one long
- *    scroll (which is the known failure once a section grows past a screen).
- * 2. **A rail drawn to scale**, so the shape of the document is legible before
- *    anything is scrolled. Optional, because it only earns its column once a
- *    section can grow without bound.
- * 3. **One click selects a paragraph and opens the caret in it** where the
- *    section is the operator's. Where it is not, the click still selects and
- *    the surface says why typing is not on offer.
- * 4. **A section saves whole.** The editor holds the section's own markdown,
- *    so what is stored is what was on screen — there is no HTML round-trip in
- *    which a heading marker or a list indent can quietly go missing.
+ * Four behaviours hold it together:
+ * 1. **The whole document in one view, in file order**: one chapter open at
+ *    full measure, every other one a closed leaf you can read the edge of.
+ * 2. **A rail drawn to scale**, so the document's shape is legible before
+ *    anything is scrolled. Optional; it earns its column once a section grows.
+ * 3. **One click on a row selects it and, on the operator's own chapter, puts
+ *    the caret there.** A row is a single bullet, not the list around it.
+ * 4. **A chapter saves whole**, from its own markdown — no HTML round-trip.
  *
- * State, including the drafts this component never discards, lives in
- * {@link useDocumentSurface}.
+ * `role="tablist"` and `role="tabpanel"` are declared together in this file so
+ * every tab's `aria-controls` resolves. State and drafts live in
+ * {@link useDocumentSurface}; the leaf's contents in `DocumentPage`.
  */
 export function DocumentSurface({
   sections,
@@ -67,116 +67,82 @@ export function DocumentSurface({
 }: DocumentSurfaceProps) {
   const idPrefix = useId();
   const s = useDocumentSurface({ sections, onSaveSection });
-
   if (!s.open) return null;
   const open = s.open;
-  const tone = AUTHOR_TONE[open.author];
   const canWrite = open.editable && !!onSaveSection;
 
   return (
-    <div className="flex min-h-0 gap-4" data-testid="document-surface">
+    <div className="ds-surface flex min-h-0" data-testid="document-surface">
       {sidePanel && (
-        <div className="hidden w-52 shrink-0 md:flex md:flex-col">
+        <aside className="ds-rail-col w-[14.5rem] shrink-0 flex-col self-start border-r border-primary/10 pr-3">
           <DocumentRail
             sections={sections}
             openId={open.id}
             onOpen={s.openSection}
             label={labels.railLabel}
+            caption={labels.railCaption}
             header={sidePanelHeader}
             footer={sidePanelFooter}
-            linesLabel={labels.lines}
+            meta={(section, lines) => `${labels.mark(section.author)} · ${labels.lines(lines)}`}
           />
-        </div>
+        </aside>
       )}
 
-      <div className="min-w-0 flex-1 space-y-4">
-        {/* The strip and the panel it drives are declared together, in this
-            file and in this order, so every tab's `aria-controls` resolves to
-            an element that is actually rendered. */}
-        <div
-          role="tablist"
-          aria-label={labels.tabsLabel}
-          className="flex items-center gap-1 overflow-x-auto border-b border-primary/10 pb-px"
-          data-testid="document-tabs"
-        >
-          <DocumentTabs
-            sections={sections}
-            openId={open.id}
-            onOpen={s.openSection}
-            idPrefix={idPrefix}
-          />
+      <div className="min-w-0 flex-1">
+        <div role="tablist" aria-label={labels.tabsLabel} className="ds-tabs px-6" data-testid="document-tabs">
+          <DocumentTabs sections={sections} openId={open.id} onOpen={s.openSection} idPrefix={idPrefix} />
         </div>
 
-        <section
-          role="tabpanel"
-          id={documentPanelId(idPrefix, open.id)}
-          aria-labelledby={documentTabId(idPrefix, open.id)}
-          tabIndex={-1}
-          className={`${DOCUMENT_MEASURE} space-y-3`}
-          data-testid={`document-open-${open.id}`}
-        >
-          <header className="space-y-1">
-            <p className={`typo-label ${tone.text}`}>
-              {labels.author(open.author)}
-              {canWrite ? ` · ${labels.savesWhole}` : ''}
-            </p>
-            <h3 className="typo-section-title text-foreground">{open.heading}</h3>
-          </header>
-
-          {s.writing && canWrite ? (
-            <DocumentEditor
-              value={s.body}
-              onChange={s.setDraft}
-              onSave={s.save}
-              onStopWriting={s.stopWriting}
-              caretAt={s.caretAt}
-              labels={labels.editor(open.heading)}
-              testIdSuffix={open.id}
-            />
-          ) : s.blocks.length > 0 ? (
-            <>
-              <DocumentBlocks
-                blocks={s.blocks}
-                selectedId={s.selectedBlockId}
-                onSelect={(block) => s.selectBlock(block, canWrite)}
-                editable={canWrite}
-                blockActionLabel={labels.writeHere}
-              />
-              {!canWrite && s.selectedBlockId && (
-                <p className="typo-caption text-foreground" data-testid="document-readonly-note">
-                  {labels.readOnlyNote}
-                </p>
-              )}
-              {s.hasDraft && (
-                <p className="typo-caption text-foreground" data-testid="document-draft-note">
-                  {labels.draftKept}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="typo-caption text-foreground">{labels.empty}</p>
-          )}
-
-          {renderSectionFooter?.(open)}
-        </section>
-
-        {s.closed.length > 0 && (
-          <div className="space-y-1.5" data-testid="document-closed-rows">
-            {s.closed.map((section) => (
-              <DocumentClosedRow
-                key={section.id}
-                section={section}
-                index={sections.indexOf(section)}
-                onOpen={s.openSection}
-                linesLabel={labels.lines}
-                waitingLabel={labels.waiting}
-                authorLabel={labels.author(section.author)}
-              />
-            ))}
+        <div className="px-6 pb-10 pt-5">
+          <div className="ds-stack" data-role="doc-measure">
+            {sections.map((section, i) =>
+              section.id === open.id ? (
+                <section
+                  key={section.id}
+                  role="tabpanel"
+                  id={documentPanelId(idPrefix, section.id)}
+                  aria-labelledby={documentTabId(idPrefix, section.id)}
+                  tabIndex={-1}
+                  className={`ds-page ds-tone-${section.author} ${s.writing && canWrite ? 'is-writing' : ''}`}
+                  data-role="doc-page"
+                  data-testid={`document-open-${section.id}`}
+                >
+                  <DocumentPage
+                    section={section}
+                    labels={labels}
+                    canWrite={canWrite}
+                    blocks={s.blocks}
+                    selectedBlockId={s.selectedBlockId}
+                    clicked={s.clicked}
+                    hasDraft={s.hasDraft(section.id)}
+                    editingIndex={s.editingIndex}
+                    caret={s.caret}
+                    onSelectBlock={(block) => s.selectBlock(block, canWrite)}
+                    onEditRow={s.editRow}
+                    onSplitRow={s.splitRow}
+                    onRemoveRow={s.deleteRow}
+                    onMoveRow={s.moveRow}
+                    onSave={s.save}
+                    onStopWriting={s.stopWriting}
+                    footer={renderSectionFooter?.(section)}
+                  />
+                </section>
+              ) : (
+                <DocumentClosedRow
+                  key={section.id}
+                  section={section}
+                  index={i}
+                  onOpen={s.openSection}
+                  mark={labels.mark(section.author)}
+                  linesLabel={labels.lines}
+                  waitingLabel={labels.waiting}
+                  draftLabel={s.hasDraft(section.id) ? labels.draftMark : undefined}
+                />
+              ),
+            )}
+            {children}
           </div>
-        )}
-
-        {children}
+        </div>
       </div>
     </div>
   );

@@ -2129,7 +2129,17 @@
       "waiting_one": "1 wartet",
       "waiting_other": "{count} warten",
       "editor_field": "{section}, als Markdown",
-      "editor_stop": "Schreiben beenden"
+      "rail_caption_title": "Das Dokument",
+      "rail_caption_aside": "maßstabsgetreu",
+      "mark_you": "Gesetz",
+      "mark_agent": "Selbstbild",
+      "mark_neither": "Sonstiges",
+      "accept_reject": "Sie nehmen an oder lehnen ab",
+      "lede_you": "Dieses Kapitel haben Sie geschrieben, und es gehört Ihnen. Es wird als Ganzes gespeichert, ein Kapitel nach dem anderen, und nur, wenn Sie es sagen.",
+      "lede_agent": "Das hat der Agent über seine eigene Arbeit geschrieben. Es ändert sich nur, wenn Sie eine vorgeschlagene Änderung annehmen.",
+      "lede_neither": "Hier schreibt keiner von Ihnen beiden. Es wird angezeigt, damit das Dokument nie stillschweigend unvollständig ist.",
+      "draft_mark": "Entwurf",
+      "editor_hint": "Strg+Enter speichert dieses Kapitel als Ganzes. Esc beendet das Schreiben und behält Ihren Entwurf."
     },
     "matrix_cred_picker": {
       "best_match": "Beste Übereinstimmung",

@@ -2129,7 +2129,17 @@
       "waiting_one": "1 项待处理",
       "waiting_other": "{count} 项待处理",
       "editor_field": "{section}，以 markdown 编辑",
-      "editor_stop": "停止书写"
+      "rail_caption_title": "文档",
+      "rail_caption_aside": "按比例",
+      "mark_you": "规则",
+      "mark_agent": "自述",
+      "mark_neither": "其他",
+      "accept_reject": "由你接受或拒绝",
+      "lede_you": "这一章由你撰写，归你所有。它整章保存，一次一章，且只在你决定时保存。",
+      "lede_agent": "这是代理对其自身工作的描述。只有在你接受它提出的更改时才会变化。",
+      "lede_neither": "你们双方都不在此书写。显示它是为了让文档永远不会悄无声息地缺失内容。",
+      "draft_mark": "草稿",
+      "editor_hint": "Ctrl+Enter 整章保存。Esc 退出书写并保留草稿。"
     },
     "matrix_cred_picker": {
       "best_match": "最佳匹配",

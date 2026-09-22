@@ -2123,7 +2123,17 @@
     "waiting_one": "1 čeká",
     "waiting_other": "{count} čeká",
     "editor_field": "{section}, jako markdown",
-    "editor_stop": "Přestat psát"
+    "rail_caption_title": "Dokument",
+    "rail_caption_aside": "v měřítku",
+    "mark_you": "Zákon",
+    "mark_agent": "Agent",
+    "mark_neither": "Ostatní",
+    "accept_reject": "přijímáte nebo odmítáte",
+    "lede_you": "Tuto kapitolu jste napsali vy a patří vám. Ukládá se celá, vždy jedna kapitola, a jen když to řeknete.",
+    "lede_agent": "Toto napsal agent o své vlastní práci. Mění se jen tehdy, když přijmete změnu, kterou navrhne.",
+    "lede_neither": "Sem nepíše nikdo z vás. Zobrazuje se, aby dokument nikdy nebyl potichu neúplný.",
+    "draft_mark": "Koncept",
+    "editor_hint": "Ctrl+Enter uloží celou kapitolu. Esc zavře psaní a koncept ponechá."
   },
   "matrix_cred_picker": {
     "best_match": "Nejlepší shoda",

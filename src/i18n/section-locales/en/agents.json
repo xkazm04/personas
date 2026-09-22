@@ -54,7 +54,17 @@
     "waiting_one": "1 waiting",
     "waiting_other": "{count} waiting",
     "editor_field": "{section}, as markdown",
-    "editor_stop": "Stop writing"
+    "rail_caption_title": "The document",
+    "rail_caption_aside": "to scale",
+    "mark_you": "Law",
+    "mark_agent": "Self",
+    "mark_neither": "Other",
+    "accept_reject": "you accept or reject",
+    "lede_you": "You wrote this chapter and you own it. It saves whole, one chapter at a time, and only when you say so.",
+    "lede_agent": "The agent wrote this about its own work. It changes only when you accept a change it proposes.",
+    "lede_neither": "Neither of you writes here. It is shown so the document is never quietly partial.",
+    "draft_mark": "Draft",
+    "editor_hint": "Ctrl+Enter saves this chapter whole. Esc steps out and keeps your draft."
   },
   "parameters_card": {
     "title": "Parameters",

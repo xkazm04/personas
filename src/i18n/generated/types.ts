@@ -1763,7 +1763,17 @@ export type Translations = {
       waiting_one: string;
       waiting_other: string;
       editor_field: string;
-      editor_stop: string;
+      rail_caption_title: string;
+      rail_caption_aside: string;
+      mark_you: string;
+      mark_agent: string;
+      mark_neither: string;
+      accept_reject: string;
+      lede_you: string;
+      lede_agent: string;
+      lede_neither: string;
+      draft_mark: string;
+      editor_hint: string;
     };
     parameters_card: {
       title: string;

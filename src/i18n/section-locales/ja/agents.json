@@ -2123,7 +2123,17 @@
     "waiting_one": "保留中が1件",
     "waiting_other": "保留中が{count}件",
     "editor_field": "{section}（markdown 形式）",
-    "editor_stop": "書くのをやめる"
+    "rail_caption_title": "ドキュメント",
+    "rail_caption_aside": "分量に比例",
+    "mark_you": "規則",
+    "mark_agent": "自己記述",
+    "mark_neither": "その他",
+    "accept_reject": "あなたが承認または却下",
+    "lede_you": "この章はあなたが書いたもので、あなたのものです。章ごとに丸ごと保存され、あなたが決めたときだけ保存されます。",
+    "lede_agent": "これはエージェントが自分の仕事について書いたものです。提案された変更をあなたが承認したときだけ変わります。",
+    "lede_neither": "ここにはどちらも書きません。ドキュメントが知らないうちに欠けることのないよう表示しています。",
+    "draft_mark": "下書き",
+    "editor_hint": "Ctrl+Enter でこの章を丸ごと保存します。Esc で書き込みを終え、下書きは残ります。"
   },
   "matrix_cred_picker": {
     "best_match": "最良一致",

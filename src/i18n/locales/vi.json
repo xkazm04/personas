@@ -2129,7 +2129,17 @@
       "waiting_one": "1 đang chờ",
       "waiting_other": "{count} đang chờ",
       "editor_field": "{section}, dưới dạng markdown",
-      "editor_stop": "Ngừng viết"
+      "rail_caption_title": "Tài liệu",
+      "rail_caption_aside": "theo tỷ lệ",
+      "mark_you": "Quy tắc",
+      "mark_agent": "Tự thuật",
+      "mark_neither": "Khác",
+      "accept_reject": "bạn chấp nhận hoặc từ chối",
+      "lede_you": "Bạn đã viết chương này và nó thuộc về bạn. Chương được lưu trọn vẹn, mỗi lần một chương, và chỉ khi bạn quyết định.",
+      "lede_agent": "Tác nhân viết phần này về chính công việc của nó. Phần này chỉ thay đổi khi bạn chấp nhận thay đổi mà nó đề xuất.",
+      "lede_neither": "Không ai trong hai bên viết ở đây. Phần này được hiển thị để tài liệu không bao giờ thiếu sót mà không ai hay.",
+      "draft_mark": "Bản nháp",
+      "editor_hint": "Ctrl+Enter lưu trọn chương này. Esc thoát chế độ viết và giữ bản nháp của bạn."
     },
     "matrix_cred_picker": {
       "best_match": "Phù hợp nhất",

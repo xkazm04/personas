@@ -2123,7 +2123,17 @@
     "waiting_one": "1 en attente",
     "waiting_other": "{count} en attente",
     "editor_field": "{section}, en markdown",
-    "editor_stop": "Arrêter d’écrire"
+    "rail_caption_title": "Le document",
+    "rail_caption_aside": "à l’échelle",
+    "mark_you": "Loi",
+    "mark_agent": "Soi",
+    "mark_neither": "Autre",
+    "accept_reject": "vous acceptez ou refusez",
+    "lede_you": "Vous avez écrit ce chapitre et il vous appartient. Il s’enregistre en entier, un chapitre à la fois, et seulement quand vous le décidez.",
+    "lede_agent": "L’agent a écrit ceci sur son propre travail. Cela ne change que lorsque vous acceptez une modification qu’il propose.",
+    "lede_neither": "Aucun de vous deux n’écrit ici. C’est affiché pour que le document ne soit jamais incomplet en silence.",
+    "draft_mark": "Brouillon",
+    "editor_hint": "Ctrl+Entrée enregistre ce chapitre en entier. Échap quitte l’écriture et garde votre brouillon."
   },
   "matrix_cred_picker": {
     "best_match": "Meilleure correspondance",

@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**146 reusable components** live under `src/features/shared/components/`.
+**148 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -20,6 +20,12 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AsyncButton` | Button that shows a spinner + disables itself while an async onClick is in flight. |
 | `Button` | Canonical button — variants (primary/secondary/ghost/danger/accent), sizes, icons. Never style a raw <button>. |
 | `CopyButton` | Copy-to-clipboard button with built-in copied feedback. Use instead of raw navigator.clipboard.writeText. |
+
+## content
+
+| Component | What it's for |
+|---|---|
+| `ContentCard` | ContentCard — the execution-detail content card, extracted: a tone-tinted (reviews, memories, insights) or framed (messages) card  |
 
 ## decisions
 
@@ -77,13 +83,14 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `DocumentBlocks` | DocumentBlocks — a section's prose as individually clickable paragraphs, where one click selects and (where writable) opens the ca |
+| `DocumentBlocks` | DocumentBlocks — a section's prose as individually clickable rows (each heading, paragraph and list item), where one click selects |
 | `DocumentClosedRow` | DocumentClosedRow — one muted single-line row for a section that is not open, so the whole document stays in view. Part of Documen |
-| `DocumentEditor` | DocumentEditor — DocumentSurface's inline write mode: one textarea holding the whole section, opened with the caret in the block t |
+| `DocumentPage` | DocumentPage — what the open leaf holds: the author seal, the title, a one-line lede, the chapter as clickable rows with the click |
 | `DocumentRail` | DocumentRail — DocumentSurface's optional side panel: one band per section, its height the section's real line count. Part of Docu |
-| `DocumentSurface` | DocumentSurface — a long-form two-author document as a reading and writing instrument: a to-scale side rail (parametrized), a top  |
+| `DocumentRowEditor` | DocumentRowEditor — one row of a DocumentSurface chapter, edited in place: the clicked bullet or paragraph becomes a field in the  |
+| `DocumentSurface` | DocumentSurface — a long-form two-author document as a bound book: a to-scale side rail (parametrized), a chapter switcher with wa |
 | `DocumentTabs` | DocumentTabs — the tab buttons inside DocumentSurface's strip. Part of DocumentSurface, not a standalone primitive: it renders the |
-| `useDocumentSurface` | writing, and the per-section drafts. |
+| `useDocumentSurface` | any) is being written in, and the per-chapter drafts. |
 
 ## editors — Rich text / JSON / markdown / prompt editors & renderers
 
@@ -235,4 +242,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_146 components, 44 without a `@catalog` description._
+_148 components, 44 without a `@catalog` description._
