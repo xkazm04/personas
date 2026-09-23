@@ -26,6 +26,7 @@ import { createNotepadSlice } from "./slices/system/notepadSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createDevicesSlice } from "./slices/network/devicesSlice";
 import { createRemoteJobsSlice } from "./slices/network/remoteJobsSlice";
+import { createRemoteSessionsSlice } from "./slices/network/remoteSessionsSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
 import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
@@ -49,6 +50,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createNetworkSlice(...a),
       ...createDevicesSlice(...a),
       ...createRemoteJobsSlice(...a),
+      ...createRemoteSessionsSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
       ...createObsidianBrainSlice(...a),
