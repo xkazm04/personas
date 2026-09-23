@@ -184,7 +184,7 @@ fn starred_count(db: &DbPool) -> u32 {
 ///
 /// Lowest id when several qualify, so two reads a second apart name the same
 /// registry.
-fn curator_registry(db: &DbPool) -> Option<crate::db::models::DevRegistry> {
+pub(crate) fn curator_registry(db: &DbPool) -> Option<crate::db::models::DevRegistry> {
     match crate::db::repos::dev_registries::mapped(db) {
         Ok(rows) => rows.into_iter().find(|r| {
             let path = r.clone_path.trim();
