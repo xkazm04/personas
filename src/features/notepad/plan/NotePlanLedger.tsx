@@ -24,7 +24,9 @@ import {
 
 import { PLAN_BORDER, PLAN_INK } from './planInk';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
-import { AfterCutMark, KindMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import {
+  AfterCutMark, KindMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow, StatusMark, UnassignedMark,
+} from './shipRows';
 import type { ShipData } from './useProjectPlan';
 
 /** One row of the outside-the-cut pool, whichever kind it is. `status` is
@@ -240,26 +242,20 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                 dim={row.bucket === 'never'}
                 marker={row.afterCut ? <Sparkles className={`w-3.5 h-3.5 shrink-0 ${PLAN_INK.athena}`} aria-hidden /> : undefined}
                 meta={(
-                  <span className="flex items-center gap-1.5 shrink-0">
+                  <>
                     {/* Which KIND this is, always — the pool mixes them, and a
                         goal beside a feature with no marking is unreadable. */}
-                    {row.kind === 'goal' && (
-                      <span className={`typo-caption ${PLAN_INK.accent}`}>{t.ship.member_kind_goal}</span>
-                    )}
+                    {row.kind === 'goal' && <KindMark label={t.ship.member_kind_goal} />}
                     {row.kind === 'goal' && row.status && (
-                      // `tint`, not `map.fill`: the goal-status table carries
-                      // BOTH, and the class half is the theme-aware one. The
-                      // hex half exists for the force-graph canvas.
-                      <span className={`typo-caption ${goalStatusMeta(row.status).tint}`}>
-                        {goalStatusLabel(t.plugins.dev_lifecycle, row.status)}
-                      </span>
+                      <StatusMark
+                        status={row.status}
+                        label={goalStatusLabel(t.plugins.dev_lifecycle, row.status)}
+                      />
                     )}
-                    {row.afterCut
-                      ? <span className={`typo-caption ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span>
-                      : row.bucket === null
-                        ? <span className="typo-caption text-foreground/60">{t.ship.unassigned}</span>
-                        : null}
-                  </span>
+                    {/* afterCut already has the leading Sparkles marker on this
+                        list, so only the unassigned case earns a mark here. */}
+                    {!row.afterCut && row.bucket === null && <UnassignedMark label={t.ship.unassigned} />}
+                  </>
                 )}
                 actions={editable && (
                   <>
