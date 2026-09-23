@@ -226,6 +226,62 @@ pub fn list_rehydratable(pool: &DbPool) -> Result<Vec<FleetSessionRow>, AppError
     })
 }
 
+/// Who dispatched a session to this device: the remote job that spawned it and
+/// the paired device that asked (migration e47). Only a session a peer sent
+/// here carries one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteOrigin {
+    pub session_id: String,
+    pub remote_job_id: String,
+    pub origin_peer_id: String,
+}
+
+/// Stamp a session's remote origin. Stamped AFTER the row exists rather than
+/// carried on [`FleetSessionRow`]: the row has literal construction sites across
+/// four crates, and the two columns are set once, by one caller (the fleet's
+/// remote executor), so a separate verb keeps the row shape unchanged. The
+/// [`upsert`] above never names these columns, so a later state write cannot
+/// null them. Returns whether a row was stamped: a session whose row is not
+/// persisted yet (no bound `claude_session_id`) stamps nothing, and the
+/// executor stamps again on the next persisted change.
+pub fn set_remote_origin(
+    pool: &DbPool,
+    id: &str,
+    remote_job_id: &str,
+    origin_peer_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_remote_origin", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE fleet_sessions SET remote_job_id = ?2, origin_peer_id = ?3 WHERE id = ?1",
+            params![id, remote_job_id, origin_peer_id],
+        )?;
+        Ok(n > 0)
+    })
+}
+
+/// Every persisted session that a paired device dispatched here, so a restart
+/// can restore the "from <device>" provenance on the rehydrated tiles.
+pub fn list_remote_origins(pool: &DbPool) -> Result<Vec<RemoteOrigin>, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::list_remote_origins", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, remote_job_id, origin_peer_id
+             FROM fleet_sessions
+             WHERE remote_job_id IS NOT NULL AND origin_peer_id IS NOT NULL",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok(RemoteOrigin {
+                session_id: r.get("id")?,
+                remote_job_id: r.get("remote_job_id")?,
+                origin_peer_id: r.get("origin_peer_id")?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// All rows belonging to one run (harvest surface). `run_id` is the batch tag
 /// stamped at spawn.
 pub fn list_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<FleetSessionRow>, AppError> {
@@ -667,6 +723,30 @@ mod tests {
 
     /// An empty state list must count NOTHING. The dangerous reading is "no
     /// filter, so every row" — that would uncap the persona limit this count
+    /// The remote origin is stamped after the row exists and survives every
+    /// later state write, because `upsert` never names its columns.
+    #[test]
+    fn a_remote_origin_is_stamped_once_and_survives_state_writes() {
+        let pool = init_test_db().unwrap();
+        assert!(
+            !set_remote_origin(&pool, "r1", "job-1", "peer-a").unwrap(),
+            "no row yet, nothing stamped"
+        );
+        upsert(&pool, &row("r1", "remote:job-1", "running", 1)).unwrap();
+        upsert(&pool, &row("local", "manual", "running", 1)).unwrap();
+        assert!(set_remote_origin(&pool, "r1", "job-1", "peer-a").unwrap());
+        upsert(&pool, &row("r1", "remote:job-1", "idle", 2)).unwrap();
+        assert_eq!(
+            list_remote_origins(&pool).unwrap(),
+            vec![RemoteOrigin {
+                session_id: "r1".into(),
+                remote_job_id: "job-1".into(),
+                origin_peer_id: "peer-a".into(),
+            }],
+            "only the dispatched session, and a state write kept its origin"
+        );
+    }
+
     /// exists to enforce, in the one case (a caller bug) where it is least
     /// likely to be noticed.
     #[test]

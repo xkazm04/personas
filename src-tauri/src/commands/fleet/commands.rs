@@ -368,6 +368,9 @@ pub async fn fleet_wake_session(
     if let Some((created_at_ms, name)) = lineage {
         registry().adopt_lineage(&new_id, created_at_ms, name);
     }
+    // A session a paired device dispatched here stays that device's job
+    // across the id change.
+    super::remote_exec::carry_over(&session_id, &new_id);
     // Logged against the NEW id (the one that lives on) with the old one in the
     // detail, so a reader can follow a hibernate → wake chain across the id
     // change instead of seeing a session vanish and an unrelated one appear.

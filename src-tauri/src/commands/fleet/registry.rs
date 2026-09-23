@@ -431,11 +431,24 @@ impl FleetSessionInner {
             persona_id: self.persona_id.clone(),
             goal_id: self.goal_id.clone(),
             cycle_index: self.cycle_index,
-            // Wired by the remote-session executor (WP2): only a session a
-            // paired device dispatched here carries these.
             remote_job_id: None,
             origin_peer_id: None,
         }
+        .with_remote_origin()
+    }
+}
+
+impl FleetSession {
+    /// Only a session a paired device dispatched here carries a remote origin.
+    /// It lives in the remote executor's link table (create-then-stamp; see
+    /// `remote_exec`), not on the registry row. Called under the registry lock,
+    /// which is the documented order: the registry map, then the link table.
+    fn with_remote_origin(mut self) -> Self {
+        if let Some((job_id, peer_id)) = super::remote_exec::origin_of(&self.id) {
+            self.remote_job_id = Some(job_id);
+            self.origin_peer_id = Some(peer_id);
+        }
+        self
     }
 }
 
@@ -997,6 +1010,14 @@ impl FleetRegistry {
     }
 
     /// Returns a DTO snapshot of every tracked session.
+    /// One session's DTO, or `None` when the id is unknown. (Its caller, the
+    /// remote executor's device half, exists only in a `p2p` build.)
+    #[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+    pub fn dto_of(&self, session_id: &str) -> Option<FleetSession> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| s.to_dto())
+    }
+
     pub fn list_dto(&self) -> Vec<FleetSession> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let mut out: Vec<FleetSession> = map.values().map(|s| s.to_dto()).collect();
