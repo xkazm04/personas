@@ -170,7 +170,7 @@ pub struct Projection {
 /// `streaks` is [`repo::idle_streaks`] - HER history, and the only input to
 /// `suppressed_by_saturation`. The registry's `dry_streak` travels into
 /// `registry_dry_streak` and is never consulted, because it cannot fire (see
-/// the `e48` migration header).
+/// the `e49` migration header).
 ///
 /// `now` is passed in rather than read, which is what keeps this pure.
 pub fn project(

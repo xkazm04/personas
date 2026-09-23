@@ -145,7 +145,7 @@ pub struct DevProject {
     /// what every project that predates the column reads as) or `'registry'`
     /// (a knowledge-registry working copy, registered so a session can be
     /// dispatched into it and excluded from the surfaces that scan, passport
-    /// and territory-map a codebase). Added 2026-09-23 (migration e47).
+    /// and territory-map a codebase). Added 2026-09-23 (migration e48).
     pub kind: String,
     /// Project switch. `false` overrules every persona homed in the project's
     /// team: none of them may start a run from any trigger (schedule, event,
@@ -272,7 +272,7 @@ pub struct DevRegistry {
     pub default_branch: String,
     /// Vault credential the repo was picked with. `None` for a local checkout,
     /// which needs none. Every other optional stored credential in this
-    /// database is nullable too (see the `e47` migration header).
+    /// database is nullable too (see the `e48` migration header).
     pub credential_id: Option<String>,
     /// Absolute path of the local clone — CHOSEN by the operator, not derived.
     /// A scan reads the registry working copy and the project repos side by

@@ -19,7 +19,7 @@
 //
 // ## Where it lives now
 //
-// In SQLite, as of migration e47 — `dev_registries` + `dev_workspace_registries`.
+// In SQLite, as of migration e48 — `dev_registries` + `dev_workspace_registries`.
 // It started in `localStorage` for the reason `dev_workspaces` itself did: the
 // shape is the expensive half and a schema for a shape nobody has looked at yet
 // is the wrong bet. The shape held, so it promoted, and the store kept its

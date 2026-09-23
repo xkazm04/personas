@@ -2,7 +2,7 @@
 // commands.
 //
 // A registry is a REPO (an ai-registry checkout) that one or more workspaces
-// hold. The wiring lived in `localStorage` until migration e47 promoted it to
+// hold. The wiring lived in `localStorage` until migration e48 promoted it to
 // SQLite, which is what lets Rust answer Curator's eligibility, run her loop
 // and dispatch into the checkout at all.
 //

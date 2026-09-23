@@ -19,7 +19,7 @@ url: string | null, defaultBranch: string,
 /**
  * Vault credential the repo was picked with. `None` for a local checkout,
  * which needs none. Every other optional stored credential in this
- * database is nullable too (see the `e47` migration header).
+ * database is nullable too (see the `e48` migration header).
  */
 credentialId: string | null, 
 /**

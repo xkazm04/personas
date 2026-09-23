@@ -10,7 +10,7 @@
  *
  * The workspace -> registry link lived in `localStorage`, which Rust cannot
  * read, so the backend reported Curator unblocked and a patch in this hook
- * decided on the client side. Migration e47 promoted the link to a table;
+ * decided on the client side. Migration e48 promoted the link to a table;
  * `commands::companions::status_snapshot` now reads it, fills
  * `detail.registryName` / `registryPath`, and raises `no_registry` itself. The
  * patch is deleted — this hook renders what the backend says, which is also

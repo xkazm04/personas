@@ -432,7 +432,7 @@ pub fn insert_plan(
 ///
 /// This is Curator's OWN saturation measurement, and it is the reason
 /// `registry_dry_streak` is carried but never read: the registry's field cannot
-/// fire (see the `e48` header), while this one is computed from outcomes she
+/// fire (see the `e49` header), while this one is computed from outcomes she
 /// recorded herself.
 ///
 /// The walk, per subject, newest run first:

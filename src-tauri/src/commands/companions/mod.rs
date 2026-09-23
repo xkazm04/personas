@@ -278,7 +278,7 @@ fn athena_onboarded(state: &Arc<AppState>) -> bool {
 ///
 /// All three companions answer from the database here. Curator's did not until
 /// the workspace -> registry link was promoted out of the browser (migration
-/// e47): this function reported `eligible: true, blocker: None` and the
+/// e48): this function reported `eligible: true, blocker: None` and the
 /// frontend hook patched both from `localStorage`, which meant the one surface
 /// that could see her prerequisite was the one surface her loop will never run
 /// in. That seam is closed - the hook now renders what this says.
@@ -476,7 +476,7 @@ mod tests {
         assert!(!overseer_active(&db));
     }
 
-    /// Curator's prerequisite, which until migration e47 no Rust could see at
+    /// Curator's prerequisite, which until migration e48 no Rust could see at
     /// all. Three states, and the middle one is the whole reason this is a
     /// `stat` and not a row read: a registry row can say everything is wired
     /// while the working copy it names is gone.

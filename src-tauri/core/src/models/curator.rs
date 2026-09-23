@@ -20,7 +20,7 @@
 //! 2. **Supersede, never rewrite.** A projection is a new
 //!    [`CuratorPlanRun`]; the run it replaces is marked, not mutated, so a
 //!    decision can always cite the plan a person actually saw.
-//! 3. **Every closed set is an enum here and a CHECK in `e48`.** The set is
+//! 3. **Every closed set is an enum here and a CHECK in `e49`.** The set is
 //!    spelled twice in Rust-and-SQL and never in the client.
 //! 4. **The registry's `dry_streak` is an input she does not trust.** See
 //!    [`CuratorPlanItem::registry_dry_streak`].
@@ -33,7 +33,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ---------------------------------------------------------------------------
-// Closed sets. Each is a CHECK in `e48_curator_plan` as well; the arrays are
+// Closed sets. Each is a CHECK in `e49_curator_plan` as well; the arrays are
 // what a door validates against BEFORE any write, so a refusal names the field
 // rather than surfacing a SQLite constraint error.
 // ---------------------------------------------------------------------------

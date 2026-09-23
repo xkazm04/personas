@@ -4,7 +4,7 @@
 //! itself creates, so a crash between any two resumes rather than records a lie
 //! (census `unresumable-migration-step` is the opposite shape).
 //!
-//! The house properties `e43_council` and `e47_registry_link` established, all
+//! The house properties `e43_council` and `e48_registry_link` established, all
 //! three kept here:
 //!
 //! - **Every closed set is a CHECK.** `consent_state`, `engine`, `state`,
@@ -144,7 +144,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                 // projection it belongs to, and a superseded run keeps its own
                 // items so the plan a person saw can be re-read whole.
                 //
-                // `stacks_json` is NOT NULL DEFAULT '[]' for e47's reason: an
+                // `stacks_json` is NOT NULL DEFAULT '[]' for e48's reason: an
                 // empty inventory is `[]`, never absent.
                 ddl_step(
                     conn,

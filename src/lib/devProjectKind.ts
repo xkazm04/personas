@@ -1,6 +1,6 @@
 // What a dev project IS, and which surfaces care.
 //
-// `dev_projects.kind` (migration e47) is a closed set: `'code'` — a product
+// `dev_projects.kind` (migration e48) is a closed set: `'code'` — a product
 // codebase, the column's DEFAULT and therefore what every project registered
 // before the column reads as — or `'registry'`, a knowledge-registry working
 // copy registered so an agent session can be dispatched into it.

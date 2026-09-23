@@ -119,7 +119,7 @@ pub struct ScanSubject {
     pub demand: Option<ScanDemand>,
     #[serde(default)]
     pub last_swept: Option<String>,
-    /// The registry's own field. Carried, never trusted - see the `e48`
+    /// The registry's own field. Carried, never trusted - see the `e49`
     /// migration header for the measurement that says why.
     #[serde(default)]
     pub dry_streak: u32,

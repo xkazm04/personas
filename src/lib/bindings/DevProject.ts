@@ -80,7 +80,7 @@ workspace_id: string | null,
  * what every project that predates the column reads as) or `'registry'`
  * (a knowledge-registry working copy, registered so a session can be
  * dispatched into it and excluded from the surfaces that scan, passport
- * and territory-map a codebase). Added 2026-09-23 (migration e47).
+ * and territory-map a codebase). Added 2026-09-23 (migration e48).
  */
 kind: string, 
 /**
