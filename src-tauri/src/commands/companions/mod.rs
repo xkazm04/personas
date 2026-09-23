@@ -495,9 +495,9 @@ mod tests {
         let input = DevRegistryInput {
             id: "org/reg".into(),
             full_name: "org/reg".into(),
-            url: String::new(),
+            url: None,
             default_branch: "main".into(),
-            credential_id: String::new(),
+            credential_id: None,
             clone_path: clone_path.clone(),
             state: RegistryPairingState::Paired,
             session_id: None,

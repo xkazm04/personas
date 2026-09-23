@@ -25,9 +25,9 @@ function row(id: string, clonePath: string, over: Record<string, unknown> = {}) 
   return {
     id,
     fullName: id,
-    url: '',
+    url: null,
     defaultBranch: 'main',
-    credentialId: '',
+    credentialId: null,
     clonePath,
     state: 'paired',
     sessionId: null,
@@ -217,6 +217,43 @@ describe('the one-time adoption of the browser blob', () => {
     expect(localStorage.getItem('devtools.registryLinks.v1')).toBe(JSON.stringify(BLOB));
   });
 
+  it("imports the old build's empty remote and credential as ABSENT", async () => {
+    // Every local checkout linked by the previous build wrote `''` into both,
+    // because its type could not say "no remote". Carrying that through would
+    // put the claim back into columns made nullable to stop making it.
+    const store = await freshStore();
+    localStorage.setItem(
+      'devtools.registryLinks.v1',
+      JSON.stringify({
+        registries: {
+          'local/checkout': {
+            ...BLOB.registries['org/reg'],
+            id: 'local/checkout',
+            fullName: 'local/checkout',
+            url: '',
+            credentialId: '',
+          },
+        },
+        workspaceRegistry: {},
+      }),
+    );
+    let sent: { registries: Record<string, unknown>[] } | null = null;
+    backend({
+      dev_tools_registry_snapshot: () => EMPTY_SNAPSHOT,
+      dev_tools_registry_import: (args) => {
+        sent = args as { registries: Record<string, unknown>[] };
+        return EMPTY_SNAPSHOT;
+      },
+    });
+
+    await loaded(store);
+    await vi.waitFor(() => expect(sent).not.toBeNull());
+    expect(sent!.registries[0]!.url).toBeNull();
+    expect(sent!.registries[0]!.credentialId).toBeNull();
+    // A real remote still travels intact.
+    expect(sent!.registries[0]!.clonePath).toBe('C:/clones/reg');
+  });
+
   it('does not import over a table that already holds the wiring', async () => {
     const store = await freshStore();
     localStorage.setItem('devtools.registryLinks.v1', JSON.stringify(BLOB));
@@ -348,7 +385,7 @@ describe('mutations reach the table and re-read it', () => {
         // The whole row travels — a patch door would need its own rules about
         // which absent field means "leave alone".
         expect(sent).not.toHaveProperty('createdAt');
-        expect(sent.url).toBe('');
+        expect(sent.url).toBeNull();
         stored = { ...stored, ...sent };
         return stored;
       },

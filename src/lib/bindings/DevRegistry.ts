@@ -10,12 +10,18 @@ import type { RegistryPairingState } from "./RegistryPairingState";
  * repo in a second workspace resolves to the SAME row rather than cloning it
  * twice.
  */
-export type DevRegistry = { id: string, fullName: string, url: string, defaultBranch: string, 
+export type DevRegistry = { id: string, fullName: string, 
 /**
- * Vault credential the repo was picked with; empty for a local checkout,
- * which needs none.
+ * The remote. `None` for a LOCAL checkout, which has no remote and never
+ * will - absent by kind, not "not yet".
  */
-credentialId: string, 
+url: string | null, defaultBranch: string, 
+/**
+ * Vault credential the repo was picked with. `None` for a local checkout,
+ * which needs none. Every other optional stored credential in this
+ * database is nullable too (see the `e47` migration header).
+ */
+credentialId: string | null, 
 /**
  * Absolute path of the local clone — CHOSEN by the operator, not derived.
  * A scan reads the registry working copy and the project repos side by

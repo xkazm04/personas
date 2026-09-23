@@ -266,11 +266,14 @@ impl RegistryPairingState {
 pub struct DevRegistry {
     pub id: String,
     pub full_name: String,
-    pub url: String,
+    /// The remote. `None` for a LOCAL checkout, which has no remote and never
+    /// will - absent by kind, not "not yet".
+    pub url: Option<String>,
     pub default_branch: String,
-    /// Vault credential the repo was picked with; empty for a local checkout,
-    /// which needs none.
-    pub credential_id: String,
+    /// Vault credential the repo was picked with. `None` for a local checkout,
+    /// which needs none. Every other optional stored credential in this
+    /// database is nullable too (see the `e47` migration header).
+    pub credential_id: Option<String>,
     /// Absolute path of the local clone — CHOSEN by the operator, not derived.
     /// A scan reads the registry working copy and the project repos side by
     /// side, so a URL alone is not a usable wiring.
@@ -301,9 +304,9 @@ pub struct DevRegistry {
 pub struct DevRegistryInput {
     pub id: String,
     pub full_name: String,
-    pub url: String,
+    pub url: Option<String>,
     pub default_branch: String,
-    pub credential_id: String,
+    pub credential_id: Option<String>,
     pub clone_path: String,
     pub state: RegistryPairingState,
     pub session_id: Option<String>,

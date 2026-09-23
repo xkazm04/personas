@@ -5,4 +5,4 @@ import type { RegistryPairingState } from "./RegistryPairingState";
  * What a writer supplies. The two timestamps are the store's to mint, so they
  * are absent here rather than accepted and overwritten.
  */
-export type DevRegistryInput = { id: string, fullName: string, url: string, defaultBranch: string, credentialId: string, clonePath: string, state: RegistryPairingState, sessionId: string | null, lanes: Array<string>, domains: Array<string>, sha: string | null, pairedAt: string | null, error: string | null, };
+export type DevRegistryInput = { id: string, fullName: string, url: string | null, defaultBranch: string, credentialId: string | null, clonePath: string, state: RegistryPairingState, sessionId: string | null, lanes: Array<string>, domains: Array<string>, sha: string | null, pairedAt: string | null, error: string | null, };

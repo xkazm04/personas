@@ -33,9 +33,26 @@
 //! - **No nullable-with-default column.** `lanes_json` / `domains_json` are
 //!   NOT NULL DEFAULT '[]' - an empty inventory is `[]`, never absent.
 //!
-//! Four nullables are deliberate and none carries a DEFAULT: `session_id`,
-//! `sha`, `paired_at` and `error` are each "this has not happened yet", and an
-//! empty string would be a different, false claim.
+//! Six nullables are deliberate and none carries a DEFAULT, for two DIFFERENT
+//! reasons:
+//!
+//! - **Not yet.** `session_id`, `sha`, `paired_at` and `error` each mean "this
+//!   has not happened", and an empty string would be a different, false claim.
+//! - **Absent by KIND, permanently.** `url` and `credential_id` are absent for
+//!   a LOCAL checkout (plan D1: the folder on this machine IS the registry) -
+//!   it has no remote to clone and needs no Vault credential, and it never
+//!   will. That is the stronger reason of the two: the other four resolve when
+//!   pairing runs, these never do, so `''` here would not even be a temporary
+//!   lie. Every other OPTIONAL stored credential in this database is already
+//!   nullable - `dev_projects.monitoring_credential_id`,
+//!   `llm_tracking_credential_id`, `support_credential_id` and
+//!   `pr_credential_id` (all `c01_plugin_tables`), plus
+//!   `recipe_definitions.credential_id` (`e02`). The one NOT NULL spelling,
+//!   `credential_audit_log.credential_id` (`e02:124`), is a row that cannot
+//!   exist without a credential. This column is the first kind, not the second.
+//!   (`credential_id.is_empty()` guards elsewhere in the tree - `api_proxy.rs`,
+//!   `discovery.rs` - validate function PARAMETERS; none of them reads a stored
+//!   column, so they are not a precedent for storing `''`.)
 //!
 //! ## `dev_projects.kind`
 //!
@@ -68,9 +85,9 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                     "CREATE TABLE IF NOT EXISTS dev_registries (
                         id TEXT PRIMARY KEY NOT NULL,
                         full_name TEXT NOT NULL,
-                        url TEXT NOT NULL,
+                        url TEXT,
                         default_branch TEXT NOT NULL,
-                        credential_id TEXT NOT NULL,
+                        credential_id TEXT,
                         clone_path TEXT NOT NULL UNIQUE,
                         state TEXT NOT NULL
                             CHECK (state IN ('unlinked','pairing','paired','error')),
@@ -184,12 +201,14 @@ mod tests {
         add_registry(conn, "org/reg", "/clones/reg").unwrap();
     }
 
+    /// A LOCAL checkout: no remote, no credential. The two NULLs are the point
+    /// - this is the shape the columns were made nullable for.
     fn add_registry(conn: &Connection, id: &str, clone_path: &str) -> rusqlite::Result<()> {
         conn.execute(
             "INSERT INTO dev_registries
                 (id, full_name, url, default_branch, credential_id, clone_path, state,
                  lanes_json, domains_json, created_at, updated_at)
-             VALUES (?1, ?1, '', 'main', '', ?2, 'paired', '[\"knowledge\"]', '[]',
+             VALUES (?1, ?1, NULL, 'main', NULL, ?2, 'paired', '[\"knowledge\"]', '[]',
                      '2026-09-23T00:00:00Z','2026-09-23T00:00:00Z')",
             rusqlite::params![id, clone_path],
         )

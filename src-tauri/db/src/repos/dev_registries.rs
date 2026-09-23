@@ -549,9 +549,9 @@ mod tests {
         DevRegistryInput {
             id: id.to_string(),
             full_name: id.to_string(),
-            url: String::new(),
+            url: None,
             default_branch: "main".to_string(),
-            credential_id: String::new(),
+            credential_id: None,
             clone_path: clone_path.to_string(),
             state: RegistryPairingState::Paired,
             session_id: None,
@@ -801,6 +801,56 @@ mod tests {
         let done = import(&pool, &registries, &[]).unwrap();
         assert_eq!(done.registries.len(), 1);
         assert_eq!(done.registries[0].id, "org/good");
+    }
+
+    /// A LOCAL checkout has no remote and no credential, and the store says so
+    /// with NULL rather than `''`. The distinction is the whole reason those
+    /// two columns are nullable: `''` would claim an empty credential exists.
+    #[test]
+    fn a_local_checkout_stores_no_remote_and_no_credential() {
+        let pool = init_test_db().unwrap();
+        let stored = upsert(&pool, &input("org/local", "/clones/local", &["knowledge"])).unwrap();
+        assert_eq!(stored.url, None);
+        assert_eq!(stored.credential_id, None);
+
+        // And the read back through the mapper agrees - a NULL column must not
+        // surface as `Some("")`.
+        let read = get(&pool, "org/local").unwrap().expect("stored");
+        assert_eq!(read.url, None);
+        assert_eq!(read.credential_id, None);
+
+        // The GitHub path still stores both, so nullable did not make the
+        // populated case unreachable.
+        let mut remote = input("org/remote", "/clones/remote", &[]);
+        remote.url = Some("https://github.com/org/remote".to_string());
+        remote.credential_id = Some("cred-1".to_string());
+        let stored = upsert(&pool, &remote).unwrap();
+        assert_eq!(stored.url.as_deref(), Some("https://github.com/org/remote"));
+        assert_eq!(stored.credential_id.as_deref(), Some("cred-1"));
+    }
+
+    /// The knowledge-root pick reads the lane and the clone path and nothing
+    /// else, so a NULL remote and an empty-string one are the same to it. This
+    /// pins that: the column change cannot have moved which corpus executions
+    /// consult.
+    #[test]
+    fn the_knowledge_root_is_indifferent_to_the_remote_and_the_credential() {
+        let pool = init_test_db().unwrap();
+        upsert(&pool, &input("org/local", "/clones/local", &["knowledge"])).unwrap();
+        assert_eq!(
+            knowledge_root(&pool).unwrap().as_deref(),
+            Some("/clones/local")
+        );
+
+        let pool2 = init_test_db().unwrap();
+        let mut remote = input("org/local", "/clones/local", &["knowledge"]);
+        remote.url = Some(String::new());
+        remote.credential_id = Some(String::new());
+        upsert(&pool2, &remote).unwrap();
+        assert_eq!(
+            knowledge_root(&pool2).unwrap().as_deref(),
+            Some("/clones/local")
+        );
     }
 
     /// `mapped` is Curator's prerequisite: a registry nobody holds is a row,

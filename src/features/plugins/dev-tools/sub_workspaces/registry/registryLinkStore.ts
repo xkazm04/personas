@@ -141,6 +141,11 @@ function readLocalBlob(): string | null {
   }
 }
 
+/** A blank or missing value from the blob is ABSENT, not an empty string. */
+function absent(value: string | null | undefined): string | null {
+  return value?.trim() ? value : null;
+}
+
 async function adoptLocalBlob(): Promise<RegistryLinkSnapshot | null> {
   const raw = readLocalBlob();
   if (!raw) return null;
@@ -157,12 +162,20 @@ async function adoptLocalBlob(): Promise<RegistryLinkSnapshot | null> {
       // the backend type was modelled on this shape — but they came out of
       // JSON, so each one is read by name with a fallback rather than asserted
       // into the type wholesale.
+      //
+      // `url` and `credentialId` are coerced through `absent`, and that is not
+      // defensive spelling: the build that WROTE this blob stored `''` in both
+      // for every local checkout, because its type could not say "no remote".
+      // Importing those straight through would carry that claim into a column
+      // made nullable precisely to stop making it. The fallback also still
+      // earns its keep — the blob is parsed as `Partial<Registry>`, so a
+      // hand-edited or truncated one can omit the key outright.
       .map(([id, r]) => ({
         id,
         fullName: r.fullName ?? id,
-        url: r.url ?? '',
+        url: absent(r.url),
         defaultBranch: r.defaultBranch ?? 'main',
-        credentialId: r.credentialId ?? '',
+        credentialId: absent(r.credentialId),
         clonePath: r.clonePath ?? '',
         state: r.state ?? 'unlinked',
         sessionId: r.sessionId ?? null,
@@ -320,9 +333,12 @@ export async function linkLocalRegistry(
       : {
           id,
           fullName: probe.fullName ?? probe.name ?? path,
-          url: probe.fullName ? `https://github.com/${probe.fullName}` : '',
+          // A local checkout the catalog does not know has no remote at all,
+          // and never needs a credential — both are absent by kind, which is
+          // what the nullable columns exist to record.
+          url: probe.fullName ? `https://github.com/${probe.fullName}` : null,
           defaultBranch: 'main',
-          credentialId: '',
+          credentialId: null,
           clonePath: path,
           state: 'unlinked' as const,
           sessionId: null,
@@ -379,10 +395,16 @@ export async function patchRegistry(id: string, patch: Partial<Registry>): Promi
  */
 export function pairingBrief(registry: Registry): string {
   const clonePath = registry.clonePath;
+  // A registry with no remote is a local checkout, which is linked directly
+  // and never dispatched here — but the step has to say something true if it
+  // ever is, and "Clone null" is the one thing it must not say.
+  const step1 = registry.url
+    ? `1. Clone ${registry.url} (branch ${registry.defaultBranch}) to ${clonePath} if it is not already there; otherwise fetch and report the current commit.`
+    : `1. The working copy at ${clonePath} is the registry; there is no remote to clone. Report the current commit.`;
   return [
     `Pair this machine with the knowledge registry ${registry.fullName}.`,
     '',
-    `1. Clone ${registry.url} (branch ${registry.defaultBranch}) to ${clonePath} if it is not already there; otherwise fetch and report the current commit.`,
+    step1,
     '2. Verify it carries a root `registry.yaml`. That file is the vendor-neutral authority declaring the repo\'s lanes. If it is missing, STOP and report — do not scaffold one without being asked.',
     '3. Read which of the four lanes (knowledge, skills, practices, memory) actually carry content, and list the bundle domains under `knowledge/<domain>/`.',
     '4. Write this app\'s consumer overlay at `.personas/registry.yaml` beside any existing `.ascent/registry.yaml`. Do NOT modify another consumer\'s overlay or the root `registry.yaml` — a second consumer adds its own file, it does not rewrite the first.',
