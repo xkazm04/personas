@@ -12,6 +12,14 @@ export const COPY = {
   contextHint: "Docs, examples or constraints the build should read. Optional.",
   contextPlaceholder: "Paste a sample, a style guide, what to never do...",
   done: "Done",
+  recipes: {
+    orStartFrom: "Or start from",
+    buildingOn: "Building on recipe",
+    match: (pct: number) => `${pct}% match`,
+  },
+  buildLog: "Build log",
+  buildLogHint: "The build's own output, newest at the bottom.",
+  buildLogEmpty: "No output yet.",
   back: "Back to the sheet",
 
   loupe: {

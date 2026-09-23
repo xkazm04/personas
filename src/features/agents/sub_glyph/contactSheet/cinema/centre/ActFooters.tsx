@@ -2,8 +2,9 @@
  *  first pass: wiring, draft, screening and the verdict. The verdict never
  *  puts a force-promote one click away from a failed screening: it sits
  *  behind a confirm, and the primary action on failure is to refine. */
-import { Play, RefreshCw, Rocket, ScrollText, Layers, ThumbsDown } from "lucide-react";
+import { FlaskConical, Play, RefreshCw, Rocket, ScrollText, Layers, ThumbsDown } from "lucide-react";
 import type { ToolTestResult } from "@/lib/types/buildTypes";
+import { useTranslation } from "@/i18n/useTranslation";
 import Button from "@/features/shared/components/buttons/Button";
 import { COPY } from "../copy";
 
@@ -20,13 +21,29 @@ export function WiringFooter({ activity }: { activity: string | null }) {
   );
 }
 
+/** The dry-run (BuildSimulatePanel), reachable from the draft and the verdict. */
+function SimulateButton({ onSimulate }: { onSimulate?: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Button
+      variant="ghost" size="sm" icon={<FlaskConical className="w-3.5 h-3.5" />}
+      onClick={onSimulate} disabled={!onSimulate}
+      data-testid="build-simulate-open"
+    >
+      {t.agents.build_simulate.open_button}
+    </Button>
+  );
+}
+
 interface DraftFooterProps {
   onStartTest: () => void | Promise<void>;
   onRefine?: () => void;
   onReviewCaps: () => void;
+  /** Undefined while there is no build session to dry-run against. */
+  onSimulate?: () => void;
 }
 
-export function DraftFooter({ onStartTest, onRefine, onReviewCaps }: DraftFooterProps) {
+export function DraftFooter({ onStartTest, onRefine, onReviewCaps, onSimulate }: DraftFooterProps) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <Button variant="primary" size="md" icon={<Play className="w-3.5 h-3.5" />} onClick={() => { void onStartTest(); }} autoFocus>
@@ -35,6 +52,7 @@ export function DraftFooter({ onStartTest, onRefine, onReviewCaps }: DraftFooter
       <div className="flex items-center gap-1">
         {onRefine && <Button variant="ghost" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={onRefine}>{COPY.refine}</Button>}
         <Button variant="ghost" size="sm" icon={<Layers className="w-3.5 h-3.5" />} onClick={onReviewCaps}>{COPY.reviewCaps}</Button>
+        <SimulateButton onSimulate={onSimulate} />
       </div>
     </div>
   );
@@ -77,11 +95,17 @@ interface VerdictFooterProps {
   onPromote: () => void;
   onRefine?: () => void;
   onReport: () => void;
+  /** Remove / Split before promote. The container auto-starts the test on
+   *  draft_ready, so the draft act is usually skipped and this is the only
+   *  place the review is reachable; removals reach promote through the store's
+   *  excludedCapabilityIds. */
+  onReviewCaps: () => void;
+  onSimulate?: () => void;
   onAskForce?: () => void;
   onAskReject?: () => void;
 }
 
-export function VerdictFooter({ passed, testError, results, onPromote, onRefine, onReport, onAskForce, onAskReject }: VerdictFooterProps) {
+export function VerdictFooter({ passed, testError, results, onPromote, onRefine, onReport, onReviewCaps, onSimulate, onAskForce, onAskReject }: VerdictFooterProps) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <span className="typo-body-lg font-semibold" style={{ color: passed ? "#34d399" : "#f87171" }}>{passed ? COPY.testsPassed : COPY.testsFailed}</span>
@@ -95,10 +119,12 @@ export function VerdictFooter({ passed, testError, results, onPromote, onRefine,
         ) : onRefine ? (
           <Button variant="primary" size="md" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={onRefine} autoFocus>{COPY.refine}</Button>
         ) : null}
-        <Button variant="secondary" size="sm" icon={<ScrollText className="w-3.5 h-3.5" />} onClick={onReport}>{COPY.viewReport}</Button>
+        <Button variant="secondary" size="sm" icon={<ScrollText className="w-3.5 h-3.5" />} onClick={onReport} data-testid="build-test-report-open">{COPY.viewReport}</Button>
         {passed && onRefine && <Button variant="ghost" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={onRefine}>{COPY.refine}</Button>}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
+        <Button variant="ghost" size="sm" icon={<Layers className="w-3.5 h-3.5" />} onClick={onReviewCaps}>{COPY.reviewCaps}</Button>
+        <SimulateButton onSimulate={onSimulate} />
         {!passed && onAskForce && <Button variant="link" size="sm" onClick={onAskForce}>{COPY.promoteAnyway}</Button>}
         {onAskReject && <Button variant="ghost" size="sm" icon={<ThumbsDown className="w-3.5 h-3.5" />} onClick={onAskReject}>{COPY.reject}</Button>}
       </div>

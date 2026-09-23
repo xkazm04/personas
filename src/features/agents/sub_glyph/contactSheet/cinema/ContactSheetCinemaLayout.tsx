@@ -25,8 +25,6 @@ import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
-import { ConfirmDialog } from "@/features/shared/components/feedback/ConfirmDialog";
-import { TestReportModal } from "@/features/templates/sub_generated/adoption/chronology/TestReportModal";
 import { useAgentStore } from "@/stores/agentStore";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { CELL_KEY_TO_DIM } from "@/features/agents/sub_glyph/glyphLayoutHelpers";
@@ -36,6 +34,7 @@ import { SheetSigil } from "./SheetSigil";
 import { SheetCentre } from "./SheetCentre";
 import { SheetLayers, layerShot, type Layer } from "./SheetLayers";
 import { FilmRail } from "./FilmRail";
+import { SheetModals, type SheetModal } from "./SheetModals";
 import { SHEET_MOVE, SHEET_PUSHED, SHEET_PUSHED_REDUCED, SHEET_REST, useCamera, type Rect } from "./useCamera";
 import { useSheetKeys } from "./useSheetKeys";
 import { FRAME_CELL } from "./sheetModel";
@@ -69,13 +68,12 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
   const frameEls = useRef<Partial<Record<GlyphDimension, HTMLDivElement | null>>>({});
   const stage = useSize(stageRef);
   const [layer, setLayer] = useState<Layer | null>(null);
-  const [confirm, setConfirm] = useState<"force" | "reject" | null>(null);
-  const [showReport, setShowReport] = useState(false);
+  const [modal, setModal] = useState<SheetModal | null>(null);
   const { act, flow } = s;
   const premiere = act === "premiere";
   const tight = stage.h > 0 && stage.h < 700;
 
-  useEffect(() => { setLayer(null); setConfirm(null); setShowReport(false); }, [s.sessionId]);
+  useEffect(() => { setLayer(null); setModal(null); }, [s.sessionId]);
 
   const centreRect = useCallback((): Rect => layoutRect(centreRef.current) ?? { x: stage.w / 2 - 40, y: stage.h / 2 - 30, w: 80, h: 60 }, [stage]);
   const frameRect = useCallback((dim: GlyphDimension | null): Rect => (dim && layoutRect(frameEls.current[dim])) || centreRect(), [centreRect]);
@@ -107,7 +105,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
     return () => window.clearTimeout(h);
   }, [act, flowStage, openQuestion, layer]);
 
-  useSheetKeys({ act, flow, layer, confirm, closeLayer });
+  useSheetKeys({ act, flow, layer, confirm: modal, closeLayer });
 
   // Sigil geometry: centred on the centre cell, petals reaching into the frames.
   const sigilCy = premiere ? (stage.h - STRIP_H - GAP) / 2 : stage.h / 2;
@@ -166,9 +164,11 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
                   openContext: (el) => setLayer({ kind: "context", from: clientRect(el) }),
                   openRefine: () => openRefine(null),
                   openCaps: () => setLayer({ kind: "caps", from: centreRect() }),
-                  openReport: () => setShowReport(true),
-                  askForce: () => setConfirm("force"),
-                  askReject: () => setConfirm("reject"),
+                  openReport: () => setModal("report"),
+                  openSimulate: () => setModal("simulate"),
+                  openLog: (el) => setLayer({ kind: "log", from: clientRect(el) }),
+                  askForce: () => setModal("force"),
+                  askReject: () => setModal("reject"),
                   startOver: () => useAgentStore.getState().resetBuildSession(),
                 }}
               />
@@ -182,24 +182,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
       <FilmRail scene={scene} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} />
 
       {s.isCompose && s.cfg.modals}
-      {confirm && (
-        <ConfirmDialog
-          danger
-          title={confirm === "force" ? COPY.promoteAnywayTitle : COPY.rejectTitle}
-          body={confirm === "force" ? COPY.promoteAnywayBody : COPY.rejectBody}
-          confirmLabel={confirm === "force" ? COPY.promoteAnyway.replace("...", "") : COPY.reject}
-          onCancel={() => setConfirm(null)}
-          onConfirm={() => { setConfirm(null); if (confirm === "force") props.onPromoteForce?.(); else props.onRejectTest?.(); }}
-        />
-      )}
-      {showReport && (
-        <TestReportModal
-          results={props.toolTestResults ?? []}
-          summary={props.testSummary ?? null}
-          onClose={() => setShowReport(false)}
-          onCredentialAdded={() => { void useAgentStore.getState().fetchPersonas(); }}
-        />
-      )}
+      <SheetModals p={props} s={s} modal={modal} close={() => setModal(null)} />
     </div>
   );
 }

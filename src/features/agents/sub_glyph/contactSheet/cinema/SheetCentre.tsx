@@ -12,6 +12,8 @@ import { AnswersReview, QuestionsFooter } from "./centre/QuestionsCentre";
 import { TitleCard } from "./centre/TitleCard";
 import { DraftFooter, ScreeningFooter, VerdictFooter, WiringFooter, Note } from "./centre/ActFooters";
 import { PremiereCentre, StoppedCentre } from "./centre/EndCentres";
+import { RecipeStarters } from "./centre/RecipeStarters";
+import { BuildAside } from "./centre/BuildAside";
 import { EASE } from "./cinemaMotion";
 import { COPY } from "./copy";
 
@@ -20,6 +22,8 @@ export interface CentreActions {
   openRefine: () => void;
   openCaps: () => void;
   openReport: () => void;
+  openSimulate: () => void;
+  openLog: (el: HTMLElement) => void;
   askForce: () => void;
   askReject: () => void;
   startOver: () => void;
@@ -39,6 +43,8 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
   const { act, flow, cast, clock } = s;
   const refine = p.onRefine ? a.openRefine : undefined;
   const reviewing = act === "questions" && (flow.stage === "review" || flow.stage === "sending");
+  const simulate = s.sessionId ? a.openSimulate : undefined;
+  const aside = <BuildAside picked={s.recipes.picked} lines={p.cliOutputLines ?? []} tight={tight} onOpenLog={a.openLog} />;
 
   let body: React.ReactNode;
   let key: string = act;
@@ -48,6 +54,7 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
         intentText={p.intentText} onIntentChange={p.onIntentChange} onLaunch={s.launch}
         launchDisabled={p.launchDisabled} launching={s.launching} core={s.core}
         hasContext={!!p.contextText?.trim()} onOpenContext={a.openContext}
+        below={<RecipeStarters recipes={s.recipes} />}
       />
     );
   } else if (act === "casting" || act === "wiring" || (act === "questions" && !reviewing)) {
@@ -56,6 +63,7 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
       <IdentityCentre cast={cast} agentName={p.agentName} phaseLabel={phaseLabel} elapsed={clock.elapsed} tight={tight}>
         {act === "casting" && <Note>{activity || COPY.firstPassNote}</Note>}
         {act === "wiring" && <WiringFooter activity={activity} />}
+        {(act === "casting" || act === "wiring") && aside}
         {act === "questions" && <QuestionsFooter stage={flow.stage} count={flow.n} onContinue={() => flow.open()} />}
       </IdentityCentre>
     );
@@ -67,12 +75,13 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
     const passed = !!p.testPassed;
     body = (
       <TitleCard winner={cast.winner} agentName={p.agentName} onAgentNameChange={p.onAgentNameChange} rows={p.glyphRows} stamp={act === "verdict" ? (passed ? "passed" : "failed") : null} tight={tight}>
-        {act === "draft" && <DraftFooter onStartTest={p.onStartTest} onRefine={refine} onReviewCaps={a.openCaps} />}
+        {act === "draft" && <DraftFooter onStartTest={p.onStartTest} onRefine={refine} onReviewCaps={a.openCaps} onSimulate={simulate} />}
         {act === "screening" && <ScreeningFooter lines={p.testOutputLines ?? []} />}
         {act === "verdict" && (
           <VerdictFooter
             passed={passed} testError={p.testError} results={p.toolTestResults ?? []}
             onPromote={p.onPromote} onRefine={refine} onReport={a.openReport}
+            onReviewCaps={a.openCaps} onSimulate={simulate}
             onAskForce={p.onPromoteForce ? a.askForce : undefined}
             onAskReject={p.onRejectTest ? a.askReject : undefined}
           />

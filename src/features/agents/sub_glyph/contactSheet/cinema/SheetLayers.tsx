@@ -1,6 +1,6 @@
 /** SheetLayers - the one inner layer the camera is on, if any. The question
  *  round's layer is driven by the question flow; every other layer (a frame's
- *  page, context, refine, capability review) by the sheet. `layerShot` names
+ *  page, context, refine, capability review, build log) by the sheet. `layerShot` names
  *  the camera target for either; the layout runs it through `useCamera`, so a
  *  hand-over between two layers always pulls out to the sheet first and this
  *  component only ever renders the layer the camera has actually arrived at. */
@@ -15,6 +15,7 @@ import type { LoupeHead } from "./LoupeHeader";
 import { QuestionLayer } from "./QuestionLayer";
 import { FrameLayer, frameStatus } from "./FrameLayer";
 import { ContextLayer, RefineLayer, CapsLayer } from "./MiscLayers";
+import { LogLayer } from "./LogLayer";
 import { shotAt, type Rect, type Shot } from "./useCamera";
 import type { SheetState } from "./useSheetState";
 import { frameNumber } from "./sheetModel";
@@ -24,7 +25,8 @@ export type Layer =
   | { kind: "frame"; dim: GlyphDimension; from: Rect }
   | { kind: "context"; from: Rect }
   | { kind: "refine"; prefill: string | null; from: Rect }
-  | { kind: "caps"; from: Rect };
+  | { kind: "caps"; from: Rect }
+  | { kind: "log"; from: Rect };
 
 const CENTRE_CODE = "00";
 
@@ -83,6 +85,12 @@ export function SheetLayers({ p, s, layer, shot, scene, dimText, close, openRefi
     node = (
       <Loupe key={shot.key} shot={shot} color={accent} head={centre(COPY.capabilities)} onClose={close}>
         <CapsLayer onRequestSplit={(_t, prompt) => openRefine(prompt)} />
+      </Loupe>
+    );
+  } else if (layer?.kind === "log") {
+    node = (
+      <Loupe key={shot.key} shot={shot} color={accent} head={centre(COPY.buildLog)} onClose={close}>
+        <LogLayer lines={p.cliOutputLines ?? []} />
       </Loupe>
     );
   } else if (flow.current) {

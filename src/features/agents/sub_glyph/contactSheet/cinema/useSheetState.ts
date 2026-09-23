@@ -16,6 +16,7 @@ import { useSheetClock, type ClockMode } from "./useSheetClock";
 import { useCinemaCast } from "./useCinemaCast";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { useFrameValues } from "./useFrameValues";
+import { useCinemaRecipes } from "./useCinemaRecipes";
 
 const NO_TOGGLES = { memory: false, review: false };
 
@@ -64,6 +65,7 @@ export function useSheetState(props: GlyphFullLayoutProps) {
     setLaunching(true);
     cfgLaunch();
   }, [onLaunchCoreSnapshot, core.state, core.preset, cfgLaunch, quickConfig, liveToggles]);
+  const recipes = useCinemaRecipes(intentText, onIntentChange, isCompose);
 
   // -- acts ------------------------------------------------------------------
   const [landed, setLanded] = useState(false);
@@ -117,7 +119,7 @@ export function useSheetState(props: GlyphFullLayoutProps) {
   const litCount = GLYPH_DIMENSIONS.filter((d) => frameStates[d] === "lit").length;
 
   return {
-    sessionId, isCompose, act, core, cfg, launch, launching, flow, clock, cast,
+    sessionId, isCompose, act, core, cfg, launch, launching, recipes, flow, clock, cast,
     values, frameStates, petalStates, presence: crown ? 0.4 + (litCount / 8) * 0.6 : litCount / 16,
   };
 }
