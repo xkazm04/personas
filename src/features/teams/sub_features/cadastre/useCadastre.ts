@@ -50,14 +50,15 @@ export function useCadastre(model: FeaturesModel, language: string) {
   const claims = useMemo(() => claimsOf(ranked), [ranked]);
   const cats = useMemo(() => catsOf(model), [model]);
 
-  /** The unclaimed ground, filtered by context or district name. */
+  /** The unclaimed ground, filtered by context or district name, in the
+   *  order the list draws it: largest district first, then by name. */
   const unclaimed = useMemo(() => {
     const groupName = new Map(model.plots.map((p) => [p.group.id, p.group.name]));
-    return model.unclaimed.filter((cell) => {
-      if (!query) return true;
-      const g = groupName.get(cell.context.groupId ?? '') ?? '';
-      return matchesQuery(cell.context.name, query, language) || matchesQuery(g, query, language);
-    });
+    const gName = (c: (typeof model.unclaimed)[number]) => groupName.get(c.context.groupId ?? '') ?? c.context.groupId ?? '';
+    const cells = model.unclaimed.filter((c) => !query || matchesQuery(c.context.name, query, language) || matchesQuery(gName(c), query, language));
+    const size = new Map<string, number>();
+    for (const c of cells) size.set(gName(c), (size.get(gName(c)) ?? 0) + 1);
+    return cells.sort((a, b) => (size.get(gName(b)) ?? 0) - (size.get(gName(a)) ?? 0) || gName(a).localeCompare(gName(b)) || a.context.name.localeCompare(b.context.name));
   }, [model, query, language]);
 
   const open = sel != null && byKey.has(sel);
