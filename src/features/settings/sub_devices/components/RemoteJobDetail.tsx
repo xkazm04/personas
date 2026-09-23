@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { RemoteJob } from '@/lib/bindings/RemoteJob';
 import type { RemoteJobNote } from '@/lib/bindings/RemoteJobNote';
 import { isTerminalRemoteJobStatus } from '@/lib/network/remoteJobHistory';
+import { RemoteReceiptLine } from '@/features/shared/dispatch/RemoteReceiptLine';
 
 interface RemoteJobDetailProps {
   job: RemoteJob;
@@ -79,6 +80,13 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
           </ol>
         )}
       </section>
+
+      {job.receipt && (
+        <section aria-label={st.job_receipt_title} data-testid="remote-job-receipt">
+          <h4 className="typo-label text-primary">{st.job_receipt_title}</h4>
+          <RemoteReceiptLine receipt={job.receipt} className="mt-1.5 typo-caption" />
+        </section>
+      )}
 
       <section aria-label={job.refusalReason ? st.job_refusal_title : st.job_summary_title}>
         <h4 className="typo-label font-medium text-primary">

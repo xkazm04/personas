@@ -57,6 +57,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { RunOnSelect } from '@/features/shared/dispatch/RunOnSelect';
 import { laneOfState } from '@/features/plugins/fleet/fleetStateMeta';
 import { DockPresetSelect } from './DockPresetSelect';
 import { DockSkillPicker } from './DockSkillPicker';
@@ -445,6 +446,9 @@ export function QuickDispatchDock() {
             ariaLabel={c.quickT.effort_chip_unset}
             testId="quick-dispatch-effort-chip"
           />
+          {/* Run on another device: hidden unless p2p is in this build and a
+              device is paired. Opens upward, like the preset menus. */}
+          <RunOnSelect value={c.runOn} onChange={c.setRunOn} githubUrl={c.projectRemote} placement="up" />
           <div className="min-w-0 flex-1 px-1">
             <QuickDispatchMetaLine c={c} />
           </div>

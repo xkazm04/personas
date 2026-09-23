@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Radio } from 'lucide-react';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { Badge } from '@/features/shared/components/display/Badge';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { StatusDot } from '@/features/shared/components/display/StatusDot';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -78,8 +79,11 @@ export function RemoteJobsPanel() {
         label: st.col_job_instruction,
         width: 'minmax(200px, 2.4fr)',
         render: (row) => (
-          <span className="typo-caption text-foreground/90 truncate block" title={row.instruction}>
-            {row.instruction}
+          <span className="flex min-w-0 items-center gap-1.5" data-testid={`remote-job-kind-${row.id}`} data-kind={row.kind}>
+            <Badge variant={row.kind === 'fleet_session' ? 'sky' : 'neutral'} size="xs" className="flex-shrink-0">
+              {row.kind === 'fleet_session' ? st.job_kind_fleet_session : st.job_kind_instruction}
+            </Badge>
+            <span className="typo-caption text-foreground/90 truncate" title={row.instruction}>{row.instruction}</span>
           </span>
         ),
       },
