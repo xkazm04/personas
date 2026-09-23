@@ -898,3 +898,113 @@ mod tests {
         assert_eq!(by_engine.get("none").copied().unwrap_or(0), 0);
     }
 }
+
+#[cfg(test)]
+mod live {
+    //! One live pass against a real registry checkout, behind `#[ignore]` and
+    //! an env var.
+    //!
+    //! Every other test in this module reads a COMMITTED fixture, which proves
+    //! the matcher and the projection and proves nothing at all about the four
+    //! child processes, the chokepoint's `env_clear()` allowlist or the JSON
+    //! the scripts actually emit today. This repo's own doctrine is blunt about
+    //! that gap - "a gate that asserts data is not a gate on behavior" - so the
+    //! behavioural check exists, is runnable on demand, and is out of the
+    //! default lane because it costs ~11 s and needs a checkout only some
+    //! machines have.
+    //!
+    //! ```text
+    //! CURATOR_REGISTRY_ROOT=C:/path/to/ai-registry \
+    //!   npm run test:rust -- --ignored live::the_real_registry
+    //! ```
+    use super::*;
+    use std::path::PathBuf;
+
+    use personas_core::models::CuratorEngine;
+
+    #[tokio::test]
+    #[ignore = "spawns node against a real registry checkout; set CURATOR_REGISTRY_ROOT"]
+    async fn the_real_registry_reads_and_projects() {
+        let Ok(root) = std::env::var("CURATOR_REGISTRY_ROOT") else {
+            panic!("set CURATOR_REGISTRY_ROOT to a registry checkout");
+        };
+        let root = PathBuf::from(root);
+        let reading = super::super::instrument::read(&root)
+            .await
+            .expect("the instrument must read a real checkout");
+
+        // The corpus answered at all.
+        assert!(!reading.scan.generated_at.is_empty());
+        assert!(
+            reading.scan.subjects.len() > 100,
+            "a real corpus, not an empty parse: {}",
+            reading.scan.subjects.len()
+        );
+        assert!(!reading.map.projects.is_empty(), "the consumers answered");
+        assert!(
+            reading.applied_subjects.is_some(),
+            "the ledger was readable"
+        );
+        assert!(
+            reading.head_sha.is_some(),
+            "git answered, so this is cacheable"
+        );
+
+        let projected = project(
+            &reading,
+            &CuratorPolicy::default(),
+            &HashMap::new(),
+            "2026-09-23T00:00:00Z",
+        );
+
+        // The two alarms, against TODAY's corpus rather than the committed one.
+        // This is the assertion the fixture cannot make: the registry may have
+        // reworded a clause since the fixture was taken.
+        assert!(
+            projected.unmatched.is_empty(),
+            "the live registry wrote a clause this app does not know: {:?}",
+            &projected.unmatched[..projected.unmatched.len().min(5)]
+        );
+        assert!(
+            projected.arithmetic_disagreements.is_empty(),
+            "live weights did not sum to the live points for: {:?}",
+            &projected.arithmetic_disagreements[..projected.arithmetic_disagreements.len().min(5)]
+        );
+        assert!(!projected.items.is_empty(), "a real corpus has work in it");
+        assert!(projected
+            .items
+            .iter()
+            .all(|i| i.engine != CuratorEngine::None));
+
+        // And the second read is the CACHE, not a second 11-second pass.
+        let again = super::super::instrument::read(&root).await.unwrap();
+        assert_eq!(again.scan.generated_at, reading.scan.generated_at);
+    }
+
+    /// The allowlist's read, live: the registry's own resolver, through the
+    /// chokepoint, with only the env the chokepoint allows.
+    #[tokio::test]
+    #[ignore = "spawns node against a real registry checkout; set CURATOR_REGISTRY_ROOT"]
+    async fn the_real_fleet_resolves() {
+        let Ok(root) = std::env::var("CURATOR_REGISTRY_ROOT") else {
+            panic!("set CURATOR_REGISTRY_ROOT to a registry checkout");
+        };
+        let (fleet, problems) = super::super::instrument::read_fleet_only(&PathBuf::from(root))
+            .await
+            .expect("loadFleet must answer");
+        assert!(!fleet.is_empty(), "a real machine declares checkouts");
+        assert!(
+            fleet.iter().any(|p| p.exists),
+            "at least one checkout is on this disk"
+        );
+        // Ordered by slug, so two machines list the same fleet the same way.
+        let mut sorted = fleet.clone();
+        sorted.sort_by(|a, b| a.slug.cmp(&b.slug));
+        assert_eq!(
+            fleet.iter().map(|p| &p.slug).collect::<Vec<_>>(),
+            sorted.iter().map(|p| &p.slug).collect::<Vec<_>>()
+        );
+        // Problems are carried, never thrown.
+        let _ = problems;
+    }
+}
