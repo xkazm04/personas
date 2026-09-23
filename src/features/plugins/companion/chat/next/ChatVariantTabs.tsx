@@ -21,9 +21,9 @@ export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatV
 const TABS: { id: ChatVariant; label: string }[] = [
   { id: 'current', label: 'Current' },
   { id: 'halo', label: 'Frame · Halo' },
-  { id: 'halo-a', label: 'Halo · A' },
-  { id: 'halo-b', label: 'Halo · B' },
-  { id: 'halo-c', label: 'Halo · C' },
+  { id: 'halo-a', label: 'Halo · Hand' },
+  { id: 'halo-b', label: 'Halo · Rows' },
+  { id: 'halo-c', label: 'Halo · Spread' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

@@ -4969,6 +4969,12 @@
     },
     {
       "id": "hand-painted-modal-backdrop",
+      "exclude": [
+        {
+          "path": "src/features/plugins/companion/chat/next/frame/variants/c/SpreadStage.tsx",
+          "reason": "a decorative, pointer-events-none dim layer behind the Halo · Spread card-game prototype stage, not a modal: no focus trap, no dismiss semantics, the app stays clickable around it. Prototype-only; it is deleted (and this entry goes stale and fails loud) when the Athena chat switcher is consolidated"
+        }
+      ],
       "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
       "roots": [
         "src"
