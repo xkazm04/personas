@@ -84,7 +84,7 @@ export function useQuestionFlow(
 
   const pullBack = useCallback(() => { clearAuto(); setStage((s) => (s === "asking" ? "away" : s)); }, []);
 
-  const allDrafted = n > 0 && qs.every((q) => (drafts[keyOf(q)] ?? "").trim());
+  const allDrafted = qs.length > 0 && qs.every((q) => (drafts[keyOf(q)] ?? "").trim());
   const send = useCallback(() => {
     if (!allDrafted || stage === "sending") return;
     setStage("sending");

@@ -1,7 +1,7 @@
 /** useComposeConfig — shared compose-phase configuration backbone.
  *
- *  Every compose-surface prototype (Dialogue, Constellation, the baseline)
- *  gathers the SAME pre-launch preferences — What/When/Apps/Events/Memory/
+ *  Every compose surface (today: the build sheet, Sheet · Cinema) gathers the
+ *  SAME pre-launch preferences — What/When/Apps/Events/Memory/
  *  Review/Messages — through the SAME picker modals, and augments the launch
  *  intent identically. Only the VISUAL arrangement of those affordances is the
  *  design differentiator. This hook owns all of that plumbing so a variant is

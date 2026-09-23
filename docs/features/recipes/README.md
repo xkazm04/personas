@@ -179,44 +179,36 @@ does **not** garbage-collect its `persona.parameters` entries — they go inert
 (no section references them) and are user-removable via the parameters editor.
 Design notes in `docs/architecture/recipe-parameterization-roadmap.md`.
 
-## Glyph composer — recipe suggestion chip
+## Build sheet — recipe starters
 
-`match_recipes_to_intent` powers the Glyph composer's suggestion chip
-(`sub_glyph/commandPanel/composer/ComposerRecipeSuggestion.tsx`). The frontend
-debounces the typed task by 300ms and queries with `top_k = 1`. The chip shows
-only when the top match's `above_threshold` is `true` — i.e. the score clears
-`engine::recipe_matcher::SUGGESTION_THRESHOLD` (0.90, conservative).
-Below-threshold and zero-overlap matches are dropped silently, so the
-suggestion never gets in the way during normal authoring. The same command also
-backs `sub_glyph/useRecipeStarters.ts` and `RecipeAlternativeModal.tsx`.
+`match_recipes_to_intent` powers the recipe starters on the build sheet's
+compose frame (Sheet · Cinema, `sub_glyph/contactSheet/cinema/useCinemaRecipes.ts`
+over `sub_glyph/useRecipeStarters.ts`). While the user composes, the typed
+intent is matched against the catalog and the top three matches are offered as
+quiet starters under the composer. Opening one shows `RecipeAlternativeModal.tsx`;
+"select as alternative" seeds the intent from the recipe and remembers the pick,
+so it is not re-suggested against its own description and the running build can
+say which recipe it is based on. Matching stops once the build runs.
 
-**Mode 1 (pre-fill) — live.** Clicking "Use this recipe" fetches the full recipe
-via `get_recipe` and pre-fills the in-flight draft. Policy lives in
-`mergeRecipeIntoDraft` (`commandPanelHelpers.ts`): replace `draft.task` with the
-recipe's description (or name if missing); pre-fill `draft.tools` from
-`tool_requirements` only when the user hasn't typed any; leave
-`when`/`output`/`review` untouched. A success toast names the applied recipe.
-
-**Telemetry — live.** Every visible chip logs one `impression` (deduped per
-`recipe_id` per mount); "Use this recipe" logs an `accept`; the dismiss X logs a
-`dismiss`. Events land in `recipe_suggestion_events` and roll up via
+**Telemetry — live.** Only a top match whose `above_threshold` is `true` (the
+score clears `engine::recipe_matcher::SUGGESTION_THRESHOLD`, 0.90) counts as a
+*suggestion*: it logs one `impression` per `recipe_id`, selecting it logs an
+`accept`, dismissing it a `dismiss`. Lower-scored starters are browsing and log
+nothing. Events land in `recipe_suggestion_events` and roll up via
 `get_recipe_suggestion_stats` into
 `RecipeSuggestionStats { impressions, accepts, dismisses, accept_rate, decisive_count, sample_size, mode_2_eligible }`.
 The `mode_2_eligible` gate (`accept_rate ≥ 0.5` and `decisive_count ≥ 20` over
 the last 50 events) lives as constants in
-`db::repos::resources::recipe_suggestions`. Note this measures **chip
+`db::repos::resources::recipe_suggestions`. Note this measures **suggestion
 impressions and clicks — not recipe outcomes.**
 
-**Mode 2 ("Run now") — BROKEN.** `useRecipeSuggestionEligibility` gates the
-button on `mode_2_eligible`, and `CommandPanelComposer.tsx:113`'s
-`handleRunDirect` stashes the recipe id in
-`pipelineStore.pendingPlaygroundRecipeId`, switches the sidebar to
-`design-reviews`, and toasts. **Nothing consumes that value.** The only reader of
-`consumePendingPlayground` is `src/features/recipes/sub_manager/components/RecipeManager.tsx`,
-which is never mounted (see below). The user is dropped on the catalog with no
-playground and a toast that claims otherwise. The button is dormant on fresh
-installs until ~20 decisive events cross the gate, which is why this has gone
-unnoticed. Fixing or removing the handoff is backlogged.
+**Mode 2 ("Run now") — REMOVED 2026-09-23.** The old Glyph composer chip
+(`ComposerRecipeSuggestion.tsx`) offered a "Run now" skip-build gated on
+`mode_2_eligible`; its handler stashed the recipe id in
+`pipelineStore.pendingPlaygroundRecipeId` and nothing ever consumed it. The chip
+was deleted with the legacy build layouts and the skip-build was deliberately
+not carried into the sheet. `mode_2_eligible` is still computed by the backend
+but no UI reads it.
 
 ## Backend command surface
 
@@ -236,9 +228,9 @@ Registered Tauri commands, annotated by whether any live UI can reach them.
 
 | Family | Commands | Reachable from UI? |
 | --- | --- | --- |
-| Read | `list_recipes`, `get_recipe` | **Yes** — catalog, composer chip, `CompositionXray`, `useHydratedDesignResult` |
-| Suggestions | `match_recipes_to_intent` | **Yes** — composer chip, starters, alternative modal |
-| Suggestion telemetry | `log_recipe_suggestion_event`, `get_recipe_suggestion_stats` | **Yes** — composer chip |
+| Read | `list_recipes`, `get_recipe` | **Yes** — catalog, `RecipeAlternativeModal` (build-sheet starters), `CompositionXray`, `useHydratedDesignResult` |
+| Suggestions | `match_recipes_to_intent` | **Yes** — build-sheet recipe starters, alternative modal |
+| Suggestion telemetry | `log_recipe_suggestion_event`, `get_recipe_suggestion_stats` | `log_…` **yes** — build-sheet starters; `get_…_stats` **no UI caller** since the "Run now" gate was removed 2026-09-23 |
 | Promotion | `promote_use_case_to_recipe` | **Yes** — `UseCaseDetailExpanded` "Save as recipe" |
 | Parameter sync | `sync_capability_parameters` (persona params family) | **Yes** — `useAdoption` adopt + remove |
 | Parameter coverage | `get_recipe_parameter_coverage` | **Yes** — `useAdoption` adopt (post-adopt gap notice) |
@@ -293,9 +285,10 @@ wholesale or leave it be.
 ### 3. The mode-2 "Run now" handoff
 
 `pipelineStore.pendingPlaygroundRecipeId` / `setPendingPlayground` /
-`consumePendingPlayground` (`stores/slices/pipeline/recipeSlice.ts`) — written
-by `CommandPanelComposer.tsx:113`, read only by the orphaned `RecipeManager`.
-See the composer section above.
+`consumePendingPlayground` (`stores/slices/pipeline/recipeSlice.ts`) — its only
+writer (`CommandPanelComposer.tsx`, the legacy composer's "Run now") was deleted
+2026-09-23; it is now read only by the orphaned `RecipeManager` and written by
+nothing. See the build-sheet section above.
 
 ## Recipe outcome attribution
 
@@ -331,7 +324,7 @@ stricter bar: a run can complete and still deliver nothing.
 Migration `persona_executions_recipe_provenance` is additive and guarded on both
 `has_table` and `has_column`, so replaying it is a no-op.
 
-Note that `recipe_suggestion_events` measures something different (composer chip
+Note that `recipe_suggestion_events` measures something different (recipe-suggestion
 impressions and clicks), and `dev_llm_spend`'s coarse `source: "recipe"` tag
 comes from the dead playground execution path. Neither is an outcome signal.
 

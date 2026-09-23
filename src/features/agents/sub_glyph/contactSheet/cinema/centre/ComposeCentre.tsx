@@ -39,7 +39,7 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
       transition={{ duration: 0.5, ease: EASE }}
       className="w-full h-full flex flex-col items-center justify-center gap-3 text-center"
     >
-      <h1 className="typo-title-lg text-foreground">{COPY.heroAsk}</h1>
+      <h2 className="typo-title-lg text-foreground">{COPY.heroAsk}</h2>
       <div className="w-full max-w-[520px] rounded-card border border-card-border bg-background/85 backdrop-blur-md px-3 pt-3 pb-2.5 text-left shadow-elevation-3 focus-within:border-[color:var(--cinema-accent)]">
         <label htmlFor="sheet-cinema-intent" className="sr-only">{COPY.heroAsk}</label>
         <textarea

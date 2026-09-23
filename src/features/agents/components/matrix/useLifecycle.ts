@@ -47,10 +47,10 @@ interface UseLifecycleOptions {
   /** Callback to start a new build session (from useBuild.handleGenerate). */
   handleGenerate?: (intent: string, overridePersonaId?: string) => Promise<void>;
   /** Persona Core Codex → typed runtime Core (seam b). Read-and-clear accessor
-   *  for the codex snapshot the dialogue-cinema layout captured at Launch;
-   *  `handlePromote` consumes it once and composes it into
-   *  `personas.core_profile`. Absent (cinema layout, template adoption) means
-   *  the Rust promote stamp's own source stands unchanged. */
+   *  for the codex snapshot the build layout (Sheet · Cinema) captured at
+   *  Launch; `handlePromote` consumes it once and composes it into
+   *  `personas.core_profile`. Absent (template adoption) means the Rust
+   *  promote stamp's own source stands unchanged. */
   consumeCoreSnapshot?: () => PersonaCoreLaunchSnapshot | null;
 }
 
@@ -288,7 +288,7 @@ export function useLifecycle({
         // write-if-null) inside the command body BEFORE returning, so this
         // explicit update always lands after the stamp and wins — and the
         // stamp's guard can never resurrect the seeded value. When no snapshot
-        // exists (cinema layout has no codex; codex untouched; adoption flow),
+        // exists (codex untouched; adoption flow),
         // the stamp source stands unchanged. Best-effort: a failed update
         // leaves the seeded core in place, so the persona is never core-less.
         //

@@ -115,7 +115,7 @@ export function FramePicture({ dim, value, compact }: { dim: GlyphDimension; val
   if (dim === "event" && value.events?.length) {
     return (
       <span className="flex items-center gap-2">
-        <Tile color={color} size={tile}><span className="typo-caption font-semibold">{value.events[0]!.slice(0, 2).toUpperCase()}</span></Tile>
+        <Tile color={color} size={tile}><span className="typo-caption font-semibold">{[...value.events[0]!].slice(0, 2).join("").toUpperCase()}</span></Tile>
         <ArrowRight className="w-5 h-5 text-foreground" />
         <DimAuraMark dim="event" size={tile + 6} lit />
       </span>

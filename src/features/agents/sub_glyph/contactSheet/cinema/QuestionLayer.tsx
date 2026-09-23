@@ -4,6 +4,7 @@
  *  only a draft here, nothing reaches the build until "Send answers". Connector
  *  questions use the real vault picker, filtered by the question's category. */
 import { useEffect, useMemo, useRef } from "react";
+import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from "@/lib/keyboard/AppKeyboardProvider";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { GlyphDimension } from "@/features/shared/glyph";
@@ -41,23 +42,29 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
     return () => window.clearTimeout(h);
   }, [question]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
-      if (/^[1-9]$/.test(e.key)) {
-        const opt = options[Number(e.key) - 1];
-        if (opt !== undefined) { e.preventDefault(); onPick(opt); }
-      } else if (e.key === "Enter" && draft.trim() && !(e.target instanceof HTMLButtonElement)) {
-        e.preventDefault();
-        onNext();
-      } else if (e.key === "Backspace" && index > 0) {
-        e.preventDefault();
-        onPrev();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [options, draft, index, onPick, onNext, onPrev]);
+  // On the app's keyboard ladder at the route rung, so a modal or a summoned
+  // layer above the build takes its keys first.
+  useAppKeyboard((e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return false;
+    if (/^[1-9]$/.test(e.key)) {
+      const opt = options[Number(e.key) - 1];
+      if (opt === undefined) return false;
+      e.preventDefault();
+      onPick(opt);
+      return true;
+    }
+    if (e.key === "Enter" && draft.trim() && !(e.target instanceof HTMLButtonElement)) {
+      e.preventDefault();
+      onNext();
+      return true;
+    }
+    if (e.key === "Backspace" && index > 0) {
+      e.preventDefault();
+      onPrev();
+      return true;
+    }
+    return false;
+  }, { priority: ROUTE_DECISION_PRIORITY });
 
   return (
     <div className="flex-1 flex flex-col justify-center gap-4 2xl:gap-5 max-w-[760px] 2xl:max-w-[880px] w-full mx-auto">

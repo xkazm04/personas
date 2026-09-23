@@ -289,7 +289,7 @@ Every other form primitive is worse: `FormErrorProvider`/`FormErrorSummary`,
 | `agents/sub_lab/use-cases/StructuredField.tsx:16,33` | `StructuredField` | Orphan `<label>` per branch next to `ThemedSelect` / `NumberStepper`; no id, no error. |
 | `templates/sub_generated/adoption/QuickAddCredentialModal.tsx:354` | `CredentialField` | Duplicates the vault's own `FieldCaptureRow` for the identical concept. |
 | `templates/sub_presets/PresetQuestionnaireForm.tsx:245` · `agents/quick-answer/triage/deck/QuestionPanel.tsx:61` | `QuestionField` ×2 | Two unrelated components with the same name. |
-| `agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27` · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModal.tsx:353` | `FieldRow` / `Field` / `Field` | Three more one-off wrappers. |
+| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModal.tsx:353` | `FieldRow` / `Field` / `Field` | Three more one-off wrappers. |
 | `plugins/artist/sub_media_studio/toolbar/fields.tsx:11,39` | `NumField` / `RangeField` | Local labelled-numeric wrappers. |
 
 ### Orphan labels — 120 occurrences across 49 files

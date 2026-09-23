@@ -635,7 +635,7 @@ describe("useLifecycle", () => {
   });
 
   // -- handlePromote: codex core snapshot (seam b) -----------------------
-  // The dialogue-cinema layout captures the Persona Core Codex state at Launch;
+  // The build layout (Sheet · Cinema) captures the Persona Core Codex state at Launch;
   // handlePromote consumes it once AFTER promoteBuildDraft resolves (i.e. after
   // the Rust seed-if-absent stamp ran inside the command) and writes the
   // composed MANIFEST SEED PROSE through updatePersona({ core_profile }), then

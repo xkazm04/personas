@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 70,
-        "matches": 172
+        "files": 69,
+        "matches": 170
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 143,
-        "matches": 196
+        "files": 140,
+        "matches": 192
       },
       "floor": 2500
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 53,
-        "matches": 53
+        "files": 52,
+        "matches": 52
       },
       "floor": 4000
     },
@@ -559,7 +559,7 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 732,
+        "files": 730,
         "matches": 1758
       },
       "floor": 2000
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 293,
-        "matches": 645
+        "files": 289,
+        "matches": 638
       },
       "floor": 4000
     },
@@ -960,8 +960,8 @@
         }
       ],
       "baseline": {
-        "files": 22,
-        "matches": 25
+        "files": 19,
+        "matches": 20
       },
       "floor": 4000
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 471,
-        "matches": 875
+        "files": 465,
+        "matches": 864
       },
       "floor": 2000
     },
@@ -2112,8 +2112,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 49,
-        "matches": 52
+        "files": 48,
+        "matches": 51
       },
       "floor": 2000
     },
@@ -2135,8 +2135,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 161,
-        "matches": 345
+        "files": 153,
+        "matches": 331
       },
       "floor": 4000
     },
@@ -4106,8 +4106,8 @@
         }
       ],
       "baseline": {
-        "files": 26,
-        "matches": 30
+        "files": 25,
+        "matches": 29
       },
       "floor": 4000
     },
@@ -4182,8 +4182,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 33,
-        "matches": 37
+        "files": 32,
+        "matches": 36
       },
       "floor": 3000
     },

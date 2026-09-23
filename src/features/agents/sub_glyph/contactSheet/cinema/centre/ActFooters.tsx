@@ -63,11 +63,14 @@ export function ScreeningFooter({ lines }: { lines: string[] }) {
   return (
     <div className="w-full max-w-[440px] flex flex-col items-center gap-1.5">
       <Button variant="primary" size="sm" loading loadingLabel={COPY.screening} disabled>{COPY.screening}</Button>
-      {tail.length > 0 && (
-        <div className="w-full rounded-card border border-card-border bg-background/70 px-3 py-1.5 text-left font-mono typo-caption text-foreground" aria-live="polite">
-          {tail.map((l, i) => <div key={`${i}-${l}`} className="truncate">{l}</div>)}
-        </div>
-      )}
+      {/* The live region stays mounted so the first lines are announced too. */}
+      <div className="w-full" aria-live="polite">
+        {tail.length > 0 && (
+          <div className="w-full rounded-card border border-card-border bg-background/70 px-3 py-1.5 text-left font-mono typo-caption text-foreground">
+            {tail.map((l, i) => <div key={`${i}-${l}`} className="truncate">{l}</div>)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

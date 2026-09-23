@@ -136,7 +136,7 @@ Five steps over always-visible build-studio anchors (no modal):
 
 1. **intro** — orb floats to center; "Let me walk you through creating a persona."
 2. **open** — navigates to `personas`, runs `open_build_entry` (sets `isCreatingPersona`), rings `persona-build-entry` (the studio container).
-3. **compose** — rings `glyph-compose-summon` (the sigil's "describe your persona" trigger).
+3. **compose** — rings `agent-intent-input` (the intent textarea on the build sheet's compose frame; it targeted the sigil's `glyph-compose-summon` until the legacy layouts were removed 2026-09-23).
 4. **autonomous** — rings `build-oneshot-toggle` (the "let AI decide everything" option).
 5. **outro** — orb returns to center; "Want me to build one for you now?"
 

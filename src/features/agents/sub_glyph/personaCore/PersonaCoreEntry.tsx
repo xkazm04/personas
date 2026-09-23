@@ -2,10 +2,9 @@
  *
  *  The badge is the ONLY door to `PersonaCoreModal`, and until this existed it
  *  was hand-wired per surface (badge here, modal there, an `open` state in
- *  between). The Dialogue compose panel did that wiring; the Cinema compose
- *  surface did not, so flipping the build-layout toggle removed the whole
- *  Codex - no badge, no disabled state, nothing. A surface that wants the
- *  Codex now mounts one component.
+ *  between), and a compose surface that skipped the wiring silently lost the
+ *  whole Codex - no badge, no disabled state, nothing. A surface that wants
+ *  the Codex now mounts one component.
  *
  *  The caller still owns the state, via `usePersonaCore(buildSessionId)`, so
  *  it can read `core.state` / `core.preset` for the launch snapshot and reset
