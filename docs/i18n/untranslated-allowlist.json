@@ -3972,5 +3972,8 @@
   "fr:notepad.desk_layout_journal",
   "cs:kpis.overview.altitude_portfolio",
   "de:kpis.overview.altitude_portfolio",
-  "fr:kpis.overview.debt_verdict"
+  "fr:kpis.overview.debt_verdict",
+  "de:studio.guide.layout_guide",
+  "fr:studio.guide.layout_guide",
+  "id:studio.guide.layout_guide"
 ]

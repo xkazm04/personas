@@ -20,6 +20,7 @@ import {
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 import { useStudioHistory } from './studioHistory';
+import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
 
 // Studio runs multiple projects in parallel like browser tabs. Each project's
 // full build runtime lives HERE (not in a component) so a project keeps building
@@ -69,6 +70,14 @@ export interface ProjectRuntime {
   /** Set when Stop came back "nothing was running" — see `stopTurn`. Rendered as
    *  a one-line notice in the dock; cleared by the next turn. */
   stopNoop: boolean;
+  /** What Athena did during the current (or last) turn, oldest first. */
+  activity: StudioActivity[];
+  /** When the running turn started (ms), or null between turns. */
+  turnStartedAt: number | null;
+  /** Measured length of every finished turn this session, in seconds. */
+  turnDurations: number[];
+  /** Notes the user typed while a turn was running; sent with the next turn. */
+  queuedNotes: string[];
 }
 
 // Exported for the test that pins the chain's stop condition. An autonomous run
@@ -176,6 +185,9 @@ interface StudioStore {
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
   stopTurn: (id: string) => void;
+  /** Keep a note for the next turn instead of refusing input mid-turn. */
+  queueNote: (id: string, text: string) => void;
+  removeQueuedNote: (id: string, index: number) => void;
 }
 
 export const useStudioStore = create<StudioStore>((set, get) => {
@@ -264,6 +276,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         gatePlan: false,
         mcp: [],
         stopNoop: false,
+        activity: [],
+        turnStartedAt: null,
+        turnDurations: [],
+        queuedNotes: [],
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -437,8 +453,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
   const runTurn = async (id: string, raw: string) => {
     const rt = get().runtimes[id];
-    const text = raw.trim();
-    if (!rt || rt.busy || !text) return;
+    const typed = raw.trim();
+    if (!rt || rt.busy || !typed) return;
+    // Notes queued during the previous turn ride along with this one, so a
+    // thought typed mid-turn is delivered instead of refused.
+    const queued = rt.queuedNotes ?? [];
+    const text = queued.length
+      ? [typed, '', 'Notes I left while you were working:', ...queued.map((n) => `- ${n}`)].join('\n')
+      : typed;
+    const startedAt = Date.now();
     const seq = (turnSeq.get(id) ?? 0) + 1;
     turnSeq.set(id, seq);
     pendingStream.delete(id); // fresh turn — drop any unflushed tail
@@ -451,6 +474,9 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       decisionSelector: null,
       stream: '',
       stopNoop: false,
+      activity: [],
+      turnStartedAt: startedAt,
+      queuedNotes: [],
     });
     useCompanionStore.getState().pulseForwardAck();
     try {
@@ -502,7 +528,12 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       // user may have started a new turn since. This one is a ghost: it must not
       // clear the live turn's `busy`, and it must not chain off its plan.
       if (turnSeq.get(id) === seq) {
-        patch(id, { busy: false });
+        const secs = Math.round((Date.now() - startedAt) / 1000);
+        patch(id, {
+          busy: false,
+          turnStartedAt: null,
+          turnDurations: [...(get().runtimes[id]?.turnDurations ?? []), secs].slice(-40),
+        });
         saveHistory(id);
         // Chain the next autonomous turn.
         const cur = get().runtimes[id];
@@ -548,6 +579,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         } else if (ev.kind === 'cli') {
           const delta = extractAssistantTextDelta(ev.payload);
           if (delta) queueStreamDelta(id, delta);
+          const tools = extractToolUses(ev.payload);
+          if (tools.length > 0) {
+            const rt = get().runtimes[id];
+            if (rt) {
+              const now = Date.now();
+              const prev = rt.activity ?? [];
+              const added = tools.map((tool, i) => ({ id: `${now}-${i}-${prev.length}`, ts: now, ...classifyToolUse(tool) }));
+              patch(id, { activity: [...prev, ...added].slice(-200) });
+            }
+          }
         }
       })
         .then((un) => {
@@ -701,9 +742,22 @@ export const useStudioStore = create<StudioStore>((set, get) => {
           // and say so. The stale turn, if any, is fenced off by `turnSeq`.
           if (!get().runtimes[id]?.busy) return;
           turnSeq.set(id, (turnSeq.get(id) ?? 0) + 1);
-          patch(id, { busy: false, stopNoop: true });
+          patch(id, { busy: false, stopNoop: true, turnStartedAt: null });
         })
         .catch(silentCatch('studioStore:stopTurn'));
+    },
+
+    queueNote: (id, text) => {
+      const note = text.trim();
+      const rt = get().runtimes[id];
+      if (!rt || !note) return;
+      patch(id, { queuedNotes: [...(rt.queuedNotes ?? []), note].slice(-10) });
+    },
+
+    removeQueuedNote: (id, index) => {
+      const rt = get().runtimes[id];
+      if (!rt) return;
+      patch(id, { queuedNotes: (rt.queuedNotes ?? []).filter((_, i) => i !== index) });
     },
   };
 });

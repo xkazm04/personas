@@ -56,7 +56,16 @@ interface StudioHistoryStore {
    */
   prune: (liveIds: readonly string[]) => void;
   setOpenTabs: (ids: string[], activeId: string | null) => void;
+  /**
+   * Which Studio layout renders: the current one or Guide.
+   * TODO(prototype, 2026-09-23): the switch exists until Guide reaches parity;
+   * then the current layout is descoped (docs/design/studio-guide.md).
+   */
+  layout: StudioLayout;
+  setLayout: (layout: StudioLayout) => void;
 }
+
+export type StudioLayout = 'current' | 'guide';
 
 export const useStudioHistory = create<StudioHistoryStore>()(
   persist(
@@ -64,6 +73,7 @@ export const useStudioHistory = create<StudioHistoryStore>()(
       byProject: {},
       openTabIds: [],
       activeTabId: null,
+      layout: 'guide',
       save: (id, entry) =>
         set((s) => ({
           byProject: {
@@ -102,6 +112,7 @@ export const useStudioHistory = create<StudioHistoryStore>()(
           };
         }),
       setOpenTabs: (ids, activeId) => set({ openTabIds: ids, activeTabId: activeId }),
+      setLayout: (layout) => set({ layout }),
     }),
     { name: 'studio-history-v1' },
   ),

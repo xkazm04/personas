@@ -29,7 +29,18 @@ import { phaseProgress } from './studioBuildModel';
 // button in the input row, so you can read the plan while you keep steering. The
 // dock re-centres itself into the space the drawer leaves.
 
-export default function StudioChatInput() {
+export default function StudioChatInput({
+  variant = 'default',
+  onPlanClick,
+}: {
+  /** `guide`: the Guide layout draws the latest message, the question and the
+   *  next moves itself, so the dock is only the input row + tools; a note typed
+   *  while Athena works is queued for her next step instead of refused. */
+  variant?: 'default' | 'guide';
+  /** Guide: the plan button points at the goals rail instead of the drawer. */
+  onPlanClick?: () => void;
+} = {}) {
+  const guide = variant === 'guide';
   const { t, tx } = useTranslation();
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
@@ -58,6 +69,7 @@ export default function StudioChatInput() {
   const startAutonomous = useStudioStore((s) => s.startAutonomous);
   const stopAutonomous = useStudioStore((s) => s.stopAutonomous);
   const stopTurn = useStudioStore((s) => s.stopTurn);
+  const queueNote = useStudioStore((s) => s.queueNote);
 
   if (!activeId || !rt) return null;
   const { busy, question, autonomous, name, phases, stopNoop } = rt;
@@ -75,7 +87,13 @@ export default function StudioChatInput() {
 
   const send = () => {
     const text = input.trim();
-    if (!text || working) return;
+    if (!text) return;
+    if (working) {
+      if (!guide) return;
+      setInput('');
+      queueNote(activeId, text);
+      return;
+    }
     setInput('');
     void sendTurn(activeId, text);
   };
@@ -153,7 +171,7 @@ export default function StudioChatInput() {
           </AnimatePresence>
 
           {/* Collapsed — the latest message bubble (+ earlier-message reveal) */}
-          {!chatOpen && <StudioMessages />}
+          {!chatOpen && !guide && <StudioMessages />}
 
           {/* Stop found nothing to interrupt. Saying so is the whole point: the
               dock has just been released early, and without a line here that
@@ -171,7 +189,7 @@ export default function StudioChatInput() {
             {stopNoop && !working ? t.studio.stop_nothing_running : null}
           </p>
 
-          {!working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
+          {!guide && !working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
 
           {/* Input row */}
           <ChatInputBar
@@ -179,14 +197,16 @@ export default function StudioChatInput() {
             onChange={setInput}
             onSubmit={send}
             placeholder={
-              question
+              guide && working
+                ? t.studio.guide.placeholder_queue
+                : question
                 ? tx(t.studio.answer_athena, { name })
                 : autonomous
                   ? tx(t.studio.building_autonomously, { name })
                   : tx(t.studio.tell_athena, { name })
             }
-            disabled={working}
-            busy={busy && !autonomous}
+            disabled={working && !guide}
+            busy={busy && !autonomous && !guide}
             boxShadow={stateShadow}
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
@@ -218,7 +238,7 @@ export default function StudioChatInput() {
                     input-row tools instead of floating above the dock. */}
                 <button
                   type="button"
-                  onClick={() => setPlanOpen((v) => !v)}
+                  onClick={() => (onPlanClick ? onPlanClick() : setPlanOpen((v) => !v))}
                   data-testid="studio-plan-button"
                   aria-label={
                     hasPlan ? tx(t.studio.plan_progress, { done, total }) : t.studio.build_plan
