@@ -1,0 +1,259 @@
+/* The Cadastre - the winner's stylesheet (features-page-r2 A/2, app.css), ported in the form it was
+   written: its custom properties, its classes and its pseudo-elements, scoped under `.cad` (the root
+   that carries data-role="cad-page") so nothing leaks into the rest of the product.
+
+   Colour routing. The winner's palette is A/1's slate over the product's own :root tokens, so:
+   - the product's tokens are used where the winner used them (--background, --foreground, --accent,
+     --btn-primary) and where a winner hue IS a product token (--brand-emerald, --brand-amber,
+     --brand-rose, --brand-purple, --status-info), so the app's brightness compensation reaches them;
+   - the slate surfaces and text greys have no product token: the product's default theme carries the
+     winner's literal values (the contract measures them), every OTHER dark theme derives the same
+     roles from its own --foreground / --background / --accent, and the light themes get the light
+     block the prototype carried for its own light switch.
+   The winner's element ids became classes (a React tree may mount twice); every rule that leaned on
+   an id's specificity was checked against the class it became. */
+
+/* ---- palette (dark, the product's default theme) ---- */
+.cad {
+  color-scheme: dark;
+  --surface: #111a26; --surface-2: #172332; --surface-3: #1d2b3b;
+  --line: #2a3a4d; --line-soft: #1f2d3e;
+  --text-2: #aab7c8; --text-3: #96a4b5;
+  --glow: rgba(34, 211, 238, 0.10);
+  --c-proven: var(--brand-emerald); --c-gate: var(--brand-amber); --c-trouble: var(--brand-rose);
+  --c-session: var(--status-info); --c-staked: #8fa1b6; --c-plat: var(--brand-purple);
+  --ink-on-tone: var(--background);
+  --p-proven: color-mix(in srgb, var(--c-proven) 34%, var(--surface));
+  --p-gate: color-mix(in srgb, var(--c-gate) 40%, var(--surface));
+  --p-trouble: color-mix(in srgb, var(--c-trouble) 36%, var(--surface));
+  --p-session: color-mix(in srgb, var(--c-session) 30%, var(--surface));
+  --p-staked: #2a3b50;
+  --p-platform: #1a2636;
+  --p-tests: #151f2c;
+  --p-open-line: #7d8ea3;
+  --hatch-ink: rgba(170, 183, 200, 0.40);
+  --hatch-bg: rgba(170, 183, 200, 0.04);
+  --map-bg: linear-gradient(135deg, #0f1823, var(--background) 70%);
+}
+/* every other dark theme: the same roles, from that theme's own tokens */
+[data-theme]:not([data-theme^="light"]) .cad {
+  --surface: color-mix(in srgb, var(--foreground) 4%, var(--background));
+  --surface-2: color-mix(in srgb, var(--foreground) 7%, var(--background));
+  --surface-3: color-mix(in srgb, var(--foreground) 10%, var(--background));
+  --line: color-mix(in srgb, var(--foreground) 16%, var(--background));
+  --line-soft: color-mix(in srgb, var(--foreground) 10%, var(--background));
+  --text-2: color-mix(in srgb, var(--foreground) 76%, var(--background));
+  --text-3: color-mix(in srgb, var(--foreground) 66%, var(--background));
+  --glow: color-mix(in srgb, var(--accent) 10%, transparent);
+  --c-staked: color-mix(in srgb, var(--foreground) 60%, var(--background));
+  --p-staked: color-mix(in srgb, var(--foreground) 18%, var(--background));
+  --p-platform: color-mix(in srgb, var(--foreground) 9%, var(--background));
+  --p-tests: color-mix(in srgb, var(--foreground) 5%, var(--background));
+  --p-open-line: color-mix(in srgb, var(--foreground) 55%, var(--background));
+  --map-bg: linear-gradient(135deg, color-mix(in srgb, var(--foreground) 3%, var(--background)), var(--background) 70%);
+}
+[data-theme^="light"] .cad {
+  color-scheme: light;
+  --surface: #ffffff; --surface-2: #f6f9fb; --surface-3: #ebf1f5;
+  --line: #d4dee6; --line-soft: #e3eaf0;
+  --text-2: #3d5064; --text-3: #5b6d7f;
+  --glow: color-mix(in srgb, var(--accent) 10%, transparent);
+  --c-proven: #087b5a; --c-gate: #a36f00; --c-trouble: #b8384f; --c-session: #1d4ed8;
+  --c-staked: #6b7d8d; --c-plat: #7c3aed;
+  --ink-on-tone: #ffffff;
+  --p-proven: color-mix(in srgb, var(--c-proven) 80%, #ffffff);
+  --p-gate: color-mix(in srgb, var(--c-gate) 80%, #ffffff);
+  --p-trouble: color-mix(in srgb, var(--c-trouble) 82%, #ffffff);
+  --p-session: color-mix(in srgb, var(--c-session) 70%, #ffffff);
+  --p-staked: #b9c6d2;
+  --p-platform: #e2e9ef;
+  --p-tests: #eef2f5;
+  --p-open-line: #6b7d8d;
+  --hatch-ink: rgba(20, 35, 51, 0.32);
+  --hatch-bg: rgba(20, 35, 51, 0.02);
+  --map-bg: linear-gradient(135deg, #f6f9fb, #eef2f5 70%);
+}
+
+/* ---- the page (the winner's body and #app) ---- */
+.cad {
+  position: relative; display: grid; grid-template-rows: 58px minmax(0, 1fr); flex: 1; min-height: 0; min-width: 0;
+  background: radial-gradient(ellipse at 78% -4%, var(--glow), transparent 46%), var(--background);
+  color: var(--foreground); font-family: var(--font-sans); font-size: 0.875rem; line-height: 1.55;
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+  container: cad / inline-size;
+}
+.cad *, .cad *::before, .cad *::after { box-sizing: border-box; }
+.cad button, .cad input { font: inherit; color: inherit; }
+.cad button { cursor: pointer; background: none; border: 0; padding: 0; }
+.cad button:disabled { cursor: default; }
+.cad :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cad ::-webkit-scrollbar { width: 10px; height: 10px; }
+.cad ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+.cad ::-webkit-scrollbar-track { background: transparent; }
+.cad h1, .cad h2, .cad h3, .cad p { margin: 0; }
+
+/* ---- type ---- */
+.cad .t-label { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.02em; color: var(--text-3); }
+.cad .eyebrow { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.cad .dim { color: var(--text-3); }
+.cad .mono { font-family: var(--font-mono); font-size: 0.8125rem; }
+.cad .prose { font-size: 0.875rem; line-height: 1.62; color: var(--text-2); max-width: 72ch; }
+.cad .prose b { color: var(--foreground); }
+
+/* ---- primitives ---- */
+.cad .kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px;
+  font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1; font-weight: 500; font-style: normal;
+  border: 1px solid var(--line); border-bottom-width: 2px; background: var(--surface-2); color: var(--text-2);
+}
+.cad .btn .kbd, .cad .ctl .kbd, .cad .ftag .kbd, .cad .seg .kbd { margin-left: 8px; }
+.cad .chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2);
+  font-size: 0.8125rem; line-height: 1; white-space: nowrap; color: var(--foreground);
+}
+.cad button.chip:hover { border-color: var(--accent); }
+.cad .badge {
+  display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px;
+  border-radius: 999px; border: 1px solid currentColor; font-size: 0.8125rem; font-weight: 700; white-space: nowrap;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.cad .badge .glyph { width: 14px; height: 14px; }
+.cad .badge.q { color: var(--text-2); border-color: var(--line); background: transparent; font-weight: 600; }
+.cad .st-proven { color: var(--c-proven); } .cad .st-gate { color: var(--c-gate); } .cad .st-trouble { color: var(--c-trouble); }
+.cad .st-session { color: var(--c-session); } .cad .st-staked { color: var(--text-2); }
+.cad .btn {
+  display: inline-flex; align-items: center; gap: 0; height: 38px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface-2); font-size: 0.875rem; font-weight: 700; white-space: nowrap;
+  transition: border-color var(--duration-fast), background var(--duration-fast), filter var(--duration-fast);
+}
+.cad .btn:hover { border-color: var(--accent); }
+.cad .btn:active { transform: translateY(1px); }
+.cad .btn.primary { background: var(--btn-primary); border-color: color-mix(in srgb, var(--accent) 70%, transparent); color: #fff; }
+.cad .btn.primary:hover { filter: brightness(1.13); }
+.cad .btn.primary .kbd { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); color: #fff; }
+.cad .btn.big { height: 42px; padding: 0 16px; font-size: 0.9375rem; }
+.cad .btn.gate { background: color-mix(in srgb, var(--c-gate) 14%, var(--surface-2)); border-color: var(--c-gate); color: var(--foreground); }
+.cad .btn.ghost { background: transparent; }
+.cad .btn.sm { height: 30px; padding: 0 10px; font-size: 0.8125rem; }
+.cad .btn[disabled] { opacity: .6; cursor: default; }
+.cad .spin { width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: cad-spin 0.8s linear infinite; flex: none; }
+@keyframes cad-spin { to { transform: rotate(360deg); } }
+.cad .seg { display: inline-flex; align-items: center; padding: 3px; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; flex: none; }
+.cad .seg button { height: 28px; padding: 0 9px; font-size: 0.8125rem; color: var(--text-2); border-radius: 6px; display: inline-flex; align-items: center; white-space: nowrap; }
+.cad .seg button.is-on { background: var(--surface-3); color: var(--foreground); font-weight: 700; }
+.cad .seg button:not(.is-on):hover { color: var(--foreground); }
+.cad .seg .seg-k .kbd { margin: 0 4px 0 6px; }
+.cad .ctl { display: inline-flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--foreground); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; flex: none; }
+.cad .ctl:hover { border-color: var(--accent); }
+
+/* ---- the band ---- */
+.cad .band { grid-row: 1; display: flex; align-items: center; gap: 12px; padding: 0 16px; min-width: 0; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.cad .b-claim { display: flex; align-items: center; gap: 9px; flex: none; margin-right: 6px; }
+.cad .b-claim b { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.cad .b-claim span { font-size: 0.8125rem; line-height: 1.25; color: var(--text-2); }
+.cad .b-tags { display: flex; gap: 8px; flex: none; }
+.cad .b-grow { flex: 1; }
+.cad .ftag {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 8px 0 12px; border-radius: 999px;
+  border: 1px solid currentColor; font-size: 0.875rem; white-space: nowrap; background: color-mix(in srgb, currentColor 6%, transparent);
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+.cad .ftag b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.cad .ftag span { color: var(--foreground); }
+.cad .ftag.gate { color: var(--c-gate); } .cad .ftag.trouble { color: var(--c-trouble); } .cad .ftag.open { color: var(--text-2); border-style: dashed; }
+.cad .ftag:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+.cad .ftag[aria-pressed="true"] { background: currentColor; }
+.cad .ftag[aria-pressed="true"] b, .cad .ftag[aria-pressed="true"] span { color: var(--ink-on-tone); }
+.cad .ftag.open[aria-pressed="true"] { background: var(--foreground); color: var(--foreground); border-style: solid; }
+.cad .ftag.open[aria-pressed="true"] b, .cad .ftag.open[aria-pressed="true"] span { color: var(--background); }
+.cad .ftag[aria-pressed="true"] .kbd { background: rgba(0,0,0,.14); border-color: rgba(0,0,0,.25); color: var(--ink-on-tone); }
+.cad .ftag.open[aria-pressed="true"] .kbd { color: var(--background); border-color: color-mix(in srgb, var(--background) 40%, transparent); background: transparent; }
+.cad .ftag:disabled { opacity: .45; }
+@container cad (max-width: 1120px) { .cad .hide-narrow { display: none !important; } .cad .band { gap: 10px; padding: 0 12px; } .cad .ftag { padding: 0 6px 0 10px; } }
+
+.cad .main { display: grid; grid-template-columns: 312px minmax(0, 1fr); min-height: 0; grid-row: 2; grid-column: 1; }
+@container cad (min-width: 1500px) { .cad .main { grid-template-columns: 340px minmax(0, 1fr); } }
+
+/* swatches (key, lists, tooltip) */
+.cad .sw { width: 13px; height: 13px; flex: none; border-radius: 3px; display: inline-block; }
+.cad .f-proven { background: var(--p-proven); box-shadow: inset 0 0 0 1px var(--c-proven); }
+.cad .f-gate { background: var(--p-gate); box-shadow: inset 0 0 0 1px var(--c-gate); }
+.cad .f-trouble { background: var(--p-trouble); box-shadow: inset 0 0 0 1px var(--c-trouble); }
+.cad .f-session { background: var(--p-session); box-shadow: inset 0 0 0 1px var(--c-session); }
+.cad .f-staked { background: var(--p-staked); }
+.cad .f-platform { background: linear-gradient(90deg, var(--c-plat) 0 3px, var(--p-platform) 3px); }
+.cad .f-tests { background: var(--p-tests); box-shadow: inset 0 0 0 1px var(--line); }
+.cad .f-open, .cad .f-unknown { background: transparent; outline: 1.5px dashed var(--p-open-line); outline-offset: -1.5px; }
+
+/* ---- register ---- */
+.cad .register { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
+.cad .reg-head { padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 9px; border-bottom: 1px solid var(--line); }
+.cad .reg-title { display: flex; align-items: baseline; justify-content: space-between; }
+.cad .reg-title h2 { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+.cad .reg-title .dim { font-size: 0.8125rem; }
+.cad .search { position: relative; display: block; }
+.cad .search svg { position: absolute; left: 11px; top: 11px; width: 16px; height: 16px; color: var(--accent); pointer-events: none; }
+.cad .search .kbd { position: absolute; right: 9px; top: 9px; }
+.cad .input { height: 38px; width: 100%; padding: 0 36px 0 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--foreground); font-size: 0.875rem; outline: none; }
+.cad .input:focus { border-color: var(--accent); }
+.cad .input::placeholder { color: var(--text-3); }
+.cad .sortrow { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.cad .sortrow > .kbd { margin-left: 0; }
+.cad .sortrow .seg button { padding: 0 7px; }
+.cad .fpill { font-size: 0.8125rem; font-weight: 700; flex: 1; min-width: 0; }
+.cad .fpill.gate { color: var(--c-gate); } .cad .fpill.trouble { color: var(--c-trouble); } .cad .fpill.open { color: var(--text-2); }
+.cad .fclear { font-size: 0.8125rem; color: var(--accent); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.cad .fclear .kbd { margin-left: 2px; }
+.cad .reg-list { flex: 1; overflow-y: auto; outline: none; scroll-padding-top: 30px; overscroll-behavior: contain; }
+.cad .reg-list:focus-visible .row.is-focus, .cad .reg-list:focus-visible .og-i.is-focus { box-shadow: inset 0 0 0 1px var(--accent); }
+.cad .grp {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px;
+  font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.02em; color: var(--text-2);
+  background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.cad .grp .n { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text-3); font-weight: 600; }
+.cad .grp.g-gate { color: var(--c-gate); } .cad .grp.g-trouble { color: var(--c-trouble); } .cad .grp.g-session { color: var(--c-session); } .cad .grp.g-proven { color: var(--c-proven); }
+.cad .row {
+  display: grid; grid-template-columns: 22px 16px minmax(0, 1fr) 40px; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px 0 6px; cursor: pointer; position: relative; transition: background var(--duration-fast);
+}
+.cad .row.w-span { grid-template-columns: 22px 16px minmax(0, 1fr) auto 40px; }
+.cad .row:hover { background: var(--surface-3); }
+.cad .row.is-focus { background: var(--glow); box-shadow: inset 3px 0 var(--accent); }
+.cad .row.claims-hot { box-shadow: inset -3px 0 0 var(--accent); }
+.cad .row .rk { font-family: var(--font-mono); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--text-3); text-align: right; }
+.cad .row .nm { font-size: 0.875rem; white-space: nowrap; min-width: 0; display: flex; align-items: center; }
+.cad .row .nt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cad .row.st-none .nm { color: var(--text-2); }
+.cad .row .sp { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cad .row .sp svg { width: 11px; height: 11px; }
+.cad .row .sc { font-size: 0.875rem; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.cad .row .sc.none { color: var(--text-3); font-weight: 400; }
+.cad .sc.proven { color: var(--c-proven); } .cad .sc.gate { color: var(--c-gate); } .cad .sc.trouble { color: var(--c-trouble); }
+.cad .nullbar { display: inline-block; width: 34px; height: 10px; border-radius: 3px; border: 1px dashed var(--text-3); background: repeating-linear-gradient(135deg, transparent 0 3px, var(--hatch-ink) 3px 4px); vertical-align: middle; }
+.cad .dup { font-style: normal; font-size: 0.8125rem; color: var(--text-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; flex: none; line-height: 1.35; }
+.cad .reg-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--line); font-size: 0.8125rem; color: var(--text-3); }
+.cad .reg-foot span { display: inline-flex; align-items: center; gap: 3px; }
+.cad .empty { padding: 20px 14px; color: var(--text-2); }
+
+/* unclaimed mode */
+.cad .og-i { display: grid; grid-template-columns: 13px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+.cad .og-i:hover { background: var(--surface-3); }
+.cad .og-i.is-focus { background: var(--glow); box-shadow: inset 3px 0 var(--accent); }
+.cad .og-i .cn { font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- glyphs ---- */
+.cad .glyph { width: 16px; height: 16px; flex: none; display: block; overflow: visible; }
+.cad .pulse { animation: cad-pulse 1.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes cad-pulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+
+/* ---- the layer (a deed at full scale over the page); filled in by the deed's own stylesheet ---- */
+.cad .layer { grid-row: 2; grid-column: 1; z-index: 20; min-height: 0; display: flex; flex-direction: column; background: var(--background);
+  background-image: radial-gradient(ellipse at 22% 40%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 55%); }
+.cad .layer[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cad *, .cad *::before, .cad *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
