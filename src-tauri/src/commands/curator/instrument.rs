@@ -288,7 +288,7 @@ pub struct InstrumentReading {
 ///
 /// `cwd` is the checkout because every one of these scripts resolves its own
 /// paths from `process.cwd()`.
-async fn run_node(
+pub(super) async fn run_node(
     cwd: &Path,
     args: Vec<String>,
     timeout: Duration,
@@ -328,7 +328,7 @@ async fn run_node(
 /// app does not understand, and projecting a plan from a default-filled
 /// structure would put invented numbers in front of a person. The tail of
 /// stderr rides along because it is usually the node stack that explains it.
-fn parse_json<T: serde::de::DeserializeOwned>(
+pub(super) fn parse_json<T: serde::de::DeserializeOwned>(
     out: &CapturedOutput,
     what: &str,
 ) -> Result<T, AppError> {
@@ -603,7 +603,7 @@ async fn read_fleet(registry_root: &Path) -> Result<(Vec<FleetProject>, Vec<Stri
 /// A missing script is an error (not a finding): it means this is not a
 /// registry checkout, or one older than the instrument this app was built
 /// against, and either way there is nothing to project.
-fn script(registry_root: &Path, name: &str) -> Result<String, AppError> {
+pub(super) fn script(registry_root: &Path, name: &str) -> Result<String, AppError> {
     let path: PathBuf = registry_root.join("scripts").join(name);
     if !path.is_file() {
         return Err(AppError::NotFound(format!(
