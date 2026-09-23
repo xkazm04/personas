@@ -1,10 +1,11 @@
 /**
- * Variant A · Roster + Deck.
+ * Fused · the owner's merge of round one.
  *
- * Layer one: the conversation, and on the right a roster of bullets, one row
- * per project with a live task, decision dots at the row's end. Layer two: a
- * deck that shows ONE decision at a time at full size where the conversation
- * was, with the composer still under it, replying about the card in focus.
+ * Layer one: the conversation, with the usage panel on the RIGHT (Signal's
+ * efficiency, restructured as one column per affected project with decisions
+ * kept apart from processes). Layer two: Roster's deck, one decision card at a
+ * time at full size where the conversation was, the composer still under it.
+ * The window holds a fixed 80% of the app's height (see `NextShell`).
  */
 
 import { useMemo } from 'react';
@@ -12,13 +13,16 @@ import type { AthenaChatEngine } from '../../athenaChatEngine';
 import { ConversationColumn } from '../ConversationColumn';
 import { ModesPane, TurnPane } from '../NextPanes';
 import { NextShell } from '../NextShell';
+import { ProcessColumns } from '../ProcessColumns';
+import { NEXT_COPY as C } from '../nextCopy';
 import { useLayer } from '../useLayer';
-import { switchThread, useWorkforce } from '../useWorkforce';
+import { useProcessColumns } from '../useProcessColumns';
+import { useWorkforce } from '../useWorkforce';
 import { DeckLayer } from './DeckLayer';
-import { RosterPanel } from './RosterPanel';
 
-export function VariantRoster({ engine, lifted }: { engine: AthenaChatEngine; lifted: boolean }) {
+export function VariantFused({ engine, lifted }: { engine: AthenaChatEngine; lifted: boolean }) {
   const workforce = useWorkforce();
+  const columns = useProcessColumns(workforce, C.athena);
   const layer = useLayer();
   const { view } = layer;
 
@@ -28,14 +32,13 @@ export function VariantRoster({ engine, lifted }: { engine: AthenaChatEngine; li
   }, [view, workforce.items]);
   const focusId = view.kind === 'work' ? (view.focus ?? scoped[0]?.id ?? null) : null;
   const about = view.kind === 'work' ? (scoped.find((i) => i.id === focusId) ?? null) : null;
-  const lane = view.kind === 'work' && view.project ? (workforce.lanes.find((l) => l.project === view.project) ?? null) : null;
 
   const nested =
     view.kind === 'work' ? (
       <DeckLayer
         items={scoped}
         focusId={focusId}
-        lane={lane}
+        lane={null}
         onFocus={(id) => layer.openWork(id, view.project)}
         onBack={layer.back}
         onSend={engine.send}
@@ -48,20 +51,15 @@ export function VariantRoster({ engine, lifted }: { engine: AthenaChatEngine; li
 
   return (
     <NextShell workforce={workforce} layer={layer} onInterrupt={engine.interrupt} lifted={lifted}>
-      <ConversationColumn
-        engine={engine}
-        layer={layer}
-        nested={nested}
-        about={about}
-        onClearAbout={layer.back}
-      />
-      <RosterPanel
-        workforce={workforce}
-        activeProject={view.kind === 'work' ? view.project : undefined}
-        onOpenProject={(p) => layer.openWork(null, p)}
-        onOpenItem={(id) => layer.openWork(id, null)}
-        onOpenThread={switchThread}
-      />
+      <ConversationColumn engine={engine} layer={layer} nested={nested} about={about} onClearAbout={layer.back} />
+      <aside className="shrink-0 max-w-[40%] border-l border-foreground/10 bg-secondary/25 min-h-0" aria-label={C.usage}>
+        <ProcessColumns
+          columns={columns}
+          waiting={workforce.counts.waiting}
+          onOpenItem={(id) => layer.openWork(id, null)}
+          onOpenWaiting={layer.toggleWork}
+        />
+      </aside>
     </NextShell>
   );
 }

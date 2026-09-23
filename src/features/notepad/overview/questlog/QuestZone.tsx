@@ -1,5 +1,4 @@
-import { memo } from 'react';
-import { Fragment } from 'react';
+import { memo, Fragment, type MouseEvent as ReactMouseEvent } from 'react';
 import { PauseCircle } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,7 +7,9 @@ import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 import { noteStatusMeta } from '../../noteStatusMeta';
 import { DESK_KEY, Keycap } from '../parts/Keycap';
 import { groupRuns, type QuestZone as Zone } from './questlogModel';
-import { QuestItem, QuestRow, type GoalSignals, NO_SIGNALS } from './QuestRow';
+import { GoalItem } from './GoalItem';
+import { GoalRow } from './GoalRow';
+import { NO_SIGNALS, type GoalSignals, type RowDetail } from './goalSignals';
 
 interface QuestZoneProps {
   zone: Zone;
@@ -21,6 +22,10 @@ interface QuestZoneProps {
   selectedGoalId: string | null;
   query: string;
   matches: ReadonlySet<string>;
+  /** Builds the second row for one goal, or returns undefined. Only ever
+   *  non-undefined for the goal the cursor is on and the operator expanded. */
+  detailFor: (noteId: string) => RowDetail | undefined;
+  onContextGoal: (noteId: string, e: ReactMouseEvent) => void;
   onFocusZone: () => void;
   onSelectGoal: (id: string) => void;
   onOpenGoal: (id: string) => void;
@@ -40,22 +45,17 @@ interface QuestZoneProps {
  * relative size of the work directly.
  */
 export const QuestZone = memo(function QuestZone({
-  zone, signals, mode, current, selectedGoalId, query, matches,
+  zone, signals, mode, current, selectedGoalId, query, matches, detailFor, onContextGoal,
   onFocusZone, onSelectGoal, onOpenGoal,
 }: QuestZoneProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
 
   // A shipped goal never reaches the desk: it is the record of a milestone that
   // landed, and it belongs in the archive drawer beside the archived ones. Rust
   // already keeps it out of the cap, so the desk and the cap agree (deskFilter.ts).
   const visible = zone.goals.filter((n) => n.status !== 'shipped');
-  const onRail = visible.filter((n) => (signals[n.id] ?? NO_SIGNALS).onRail).length;
   const waiting = visible.filter((n) => (signals[n.id] ?? NO_SIGNALS).unread > 0).length;
   const working = visible.filter((n) => (signals[n.id] ?? NO_SIGNALS).workingSince).length;
-
-  const count = onRail === visible.length
-    ? String(visible.length)
-    : tx(t.notepad.desk_zone_of, { shown: onRail, total: visible.length });
 
   const runs = groupRuns(visible);
 
@@ -71,7 +71,7 @@ export const QuestZone = memo(function QuestZone({
     >
       <button type="button" className="ql-zone-head focus-ring" onClick={onFocusZone}>
         <h3>{zone.name}</h3>
-        <span className="typo-label text-foreground/85 tabular-nums whitespace-nowrap">{count}</span>
+        <span className="typo-label text-foreground/85 tabular-nums whitespace-nowrap">{visible.length}</span>
         {waiting > 0 && (
           <span className="inline-flex items-center gap-1 px-1.5 rounded-interactive typo-label text-brand-rose bg-brand-rose/15 self-center">
             <PauseCircle className="w-3 h-3" aria-hidden />
@@ -101,7 +101,7 @@ export const QuestZone = memo(function QuestZone({
           <Fragment key={run.goals[0]!.id}>
             {run.breakBefore && <div className="ql-split" aria-hidden />}
             {run.goals.length === 1 ? (
-              <QuestRow
+              <GoalRow
                 note={run.goals[0]!}
                 signals={signals[run.goals[0]!.id] ?? NO_SIGNALS}
                 wired={false}
@@ -109,8 +109,10 @@ export const QuestZone = memo(function QuestZone({
                 selected={selectedGoalId === run.goals[0]!.id}
                 query={query}
                 matched={matches.has(run.goals[0]!.id)}
+                detail={detailFor(run.goals[0]!.id)}
                 onSelect={() => onSelectGoal(run.goals[0]!.id)}
                 onOpen={() => onOpenGoal(run.goals[0]!.id)}
+                onContextMenu={(e) => onContextGoal(run.goals[0]!.id, e)}
               />
             ) : (
               <div className={`ql-row is-rail-${run.rail} ${runToneClass(run.status)}`}>
@@ -120,7 +122,7 @@ export const QuestZone = memo(function QuestZone({
                   {run.goals.map((note, i) => (
                     <Fragment key={note.id}>
                       {i > 0 && <i className="ql-sep" aria-hidden>·</i>}
-                      <QuestItem
+                      <GoalItem
                         note={note}
                         signals={signals[note.id] ?? NO_SIGNALS}
                         selected={selectedGoalId === note.id}
@@ -128,6 +130,7 @@ export const QuestZone = memo(function QuestZone({
                         matched={matches.has(note.id)}
                         onSelect={() => onSelectGoal(note.id)}
                         onOpen={() => onOpenGoal(note.id)}
+                        onContextMenu={(e) => onContextGoal(note.id, e)}
                       />
                     </Fragment>
                   ))}
@@ -141,7 +144,7 @@ export const QuestZone = memo(function QuestZone({
           <Fragment key={run.goals[0]!.id}>
             {run.breakBefore && <div className="ql-split" aria-hidden />}
             {run.goals.map((note, i) => (
-              <QuestRow
+              <GoalRow
                 key={note.id}
                 note={note}
                 signals={signals[note.id] ?? NO_SIGNALS}
@@ -150,8 +153,10 @@ export const QuestZone = memo(function QuestZone({
                 selected={selectedGoalId === note.id}
                 query={query}
                 matched={matches.has(note.id)}
+                detail={detailFor(note.id)}
                 onSelect={() => onSelectGoal(note.id)}
                 onOpen={() => onOpenGoal(note.id)}
+                onContextMenu={(e) => onContextGoal(note.id, e)}
               />
             ))}
           </Fragment>

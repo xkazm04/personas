@@ -1021,7 +1021,8 @@
     "md_quote": "Quote",
     "md_toolbar": "Formatting",
     "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
-    "recent_directories": "Recent folders"
+    "recent_directories": "Recent folders",
+    "md_spellcheck": "Spelling and grammar"
   },
   "council": {
     "galaxy": {
@@ -23256,7 +23257,7 @@
     "vision_blog": "A personal blog — a clean post list, readable article pages with great typography, an about page, and an easy way to publish new posts."
   },
   "notepad": {
-    "title": "Notepad",
+    "title": "Goals overview",
     "footer_open": "Open the notepad",
     "footer_close": "Close the notepad",
     "overlay_label": "Notepad",
@@ -23387,28 +23388,9 @@
     "desk_matching": "{count} matching",
     "desk_no_matches": "No notes match that filter.",
     "desk_no_matches_hint": "Press Escape to clear, then type a broader query.",
-    "desk_keys_title": "Desk keys",
-    "desk_keys_subtitle": "The lamp follows the selected note. Every verb the mouse can reach is a key.",
-    "desk_move": "Move",
-    "desk_filter": "Filter",
     "desk_selected_note": "Selected note",
-    "desk_key_arrows": "Move the lamp across the grid",
-    "desk_key_left_right": "Left / right",
-    "desk_key_prev_next": "Previous / next note",
-    "desk_key_first": "First note",
-    "desk_key_last": "Last note",
-    "desk_key_open": "Open in the editor",
-    "desk_key_escape": "Clear find, then step out",
-    "desk_key_rails": "Drafts / scoped / all",
-    "desk_key_project": "Jump to a project tab",
-    "desk_key_cycle": "Cycle project tabs",
-    "desk_key_reply": "Reply on the bubble, or in the thread",
-    "desk_key_approve": "Approve a pending review",
-    "desk_key_reject": "Reject a pending review",
-    "desk_key_help": "This cheat sheet",
     "desk_hint_find": "Find",
     "desk_hint_rails": "Rails",
-    "desk_hint_keys": "Keys",
     "desk_hint_ask": "Ask",
     "desk_hint_publish": "Publish",
     "desk_hint_goals": "Goals",
@@ -23488,12 +23470,16 @@
     "desk_layout_journal": "Journal",
     "desk_needs_you": "Needs you",
     "desk_days_late": "{count}d late",
-    "desk_zone_of": "{shown} of {total}",
     "desk_zone_none_live": "No live goals",
     "desk_below": "Below",
     "desk_below_continues": "continues {count}",
     "desk_key_column": "Down the column",
-    "desk_key_alphabetical": "Previous / next project"
+    "desk_key_alphabetical": "Previous / next project",
+    "desk_lane_plan": "Plan rail",
+    "desk_lane_brainstorm": "Brainstorm rail",
+    "desk_room_back": "Desk",
+    "desk_key_expand": "Show more",
+    "desk_key_open_project": "Open the project"
   },
   "browser": {
     "whitelist": {

@@ -48,7 +48,7 @@ export function NextShell({
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
-        className="athena-frame absolute left-1/2 -translate-x-1/2 bottom-4 top-24 w-[min(1360px,calc(100vw-48px))] rounded-modal shadow-elevation-4 pointer-events-auto"
+        className="athena-frame absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[46%] h-[80vh] w-[min(1360px,calc(100vw-48px))] rounded-modal shadow-elevation-4 pointer-events-auto"
         style={{ ['--athena-frame' as string]: frameGradient(workforce) }}
         data-working={streaming ? 'true' : 'false'}
         data-flare={flare ? 'true' : 'false'}

@@ -51,7 +51,7 @@ export function NextHeader({
   }
 
   return (
-    <header className="relative flex items-center gap-3 h-14 px-4 border-b border-foreground/10 bg-secondary/40 shrink-0">
+    <header className="relative flex items-center gap-3 h-14 px-4 text-foreground border-b border-foreground/10 bg-secondary/40 shrink-0">
       <img
         src="/athena/athena_baseline.jpg"
         alt=""

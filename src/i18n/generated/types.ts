@@ -1028,6 +1028,7 @@ export type Translations = {
     md_toolbar: string;
     directory_browse_failed: string;
     recent_directories: string;
+    md_spellcheck: string;
   };
   council: {
     galaxy: {
@@ -23393,28 +23394,9 @@ export type Translations = {
     desk_matching: string;
     desk_no_matches: string;
     desk_no_matches_hint: string;
-    desk_keys_title: string;
-    desk_keys_subtitle: string;
-    desk_move: string;
-    desk_filter: string;
     desk_selected_note: string;
-    desk_key_arrows: string;
-    desk_key_left_right: string;
-    desk_key_prev_next: string;
-    desk_key_first: string;
-    desk_key_last: string;
-    desk_key_open: string;
-    desk_key_escape: string;
-    desk_key_rails: string;
-    desk_key_project: string;
-    desk_key_cycle: string;
-    desk_key_reply: string;
-    desk_key_approve: string;
-    desk_key_reject: string;
-    desk_key_help: string;
     desk_hint_find: string;
     desk_hint_rails: string;
-    desk_hint_keys: string;
     desk_hint_ask: string;
     desk_hint_publish: string;
     desk_hint_goals: string;
@@ -23494,12 +23476,16 @@ export type Translations = {
     desk_layout_journal: string;
     desk_needs_you: string;
     desk_days_late: string;
-    desk_zone_of: string;
     desk_zone_none_live: string;
     desk_below: string;
     desk_below_continues: string;
     desk_key_column: string;
     desk_key_alphabetical: string;
+    desk_lane_plan: string;
+    desk_lane_brainstorm: string;
+    desk_room_back: string;
+    desk_key_expand: string;
+    desk_key_open_project: string;
   };
   browser: {
     whitelist: {

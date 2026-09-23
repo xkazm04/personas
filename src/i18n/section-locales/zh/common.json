@@ -197,5 +197,6 @@
   "unsaved_save_failed": "你的更改未保存",
   "directory_browse_failed": "无法打开文件夹选择器。请重试，或直接输入路径。",
   "recent_directories": "最近的文件夹",
-  "model_not_in_catalog": "不在模型目录中。请选择一个替换它。"
+  "model_not_in_catalog": "不在模型目录中。请选择一个替换它。",
+  "md_spellcheck": "拼写和语法"
 }

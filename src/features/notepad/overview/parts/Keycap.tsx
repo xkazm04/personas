@@ -20,6 +20,8 @@ export const DESK_KEY = {
   end: 'End',
   find: '/',
   help: '?',
+  space: 'Space',
+  expand: 'x',
   bracketOpen: '[',
   bracketClose: ']',
   rail1: '1',

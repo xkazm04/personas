@@ -11,18 +11,17 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
-export type ChatVariant = 'current' | 'roster' | 'board' | 'rooms';
+export type ChatVariant = 'current' | 'fused' | 'halo';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
-  variant: 'roster',
+  variant: 'fused',
   set: (variant) => set({ variant }),
 }));
 
 const TABS: { id: ChatVariant; label: string }[] = [
   { id: 'current', label: 'Current' },
-  { id: 'roster', label: 'A · Roster + Deck' },
-  { id: 'board', label: 'B · Signal + Board' },
-  { id: 'rooms', label: 'C · Threads + Rooms' },
+  { id: 'fused', label: 'Fused' },
+  { id: 'halo', label: 'Frame · Halo' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

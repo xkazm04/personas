@@ -1,7 +1,8 @@
 /**
  * NextComposer — the composer composition the owner picked from Marginalia:
  * one centred measure shared with the conversation, quick replies above the
- * box, a quiet row of keyboard hints below it.
+ * box. No hint legend: the one non-obvious key (Alt+W) sits beside the
+ * decision indicators in the usage panel.
  *
  * It is also half of how the two layers talk to each other. When the nested
  * layer has an item in focus, the composer shows an "About: …" chip and every
@@ -25,14 +26,6 @@ export function aboutPrefix(item: WorkItem): string {
   return `[re: ${C.kind[item.kind].toLowerCase()} "${item.title.slice(0, 80)}"] `;
 }
 
-function Kbd({ children }: { children: string }) {
-  return (
-    <kbd className="rounded border border-foreground/15 bg-foreground/[0.05] px-1.5 typo-caption text-foreground/80 font-mono">
-      {children}
-    </kbd>
-  );
-}
-
 export function NextComposer({
   interactive,
   streaming,
@@ -40,7 +33,6 @@ export function NextComposer({
   onSendOrQueue,
   about,
   onClearAbout,
-  hints = true,
   measure = 'reading',
 }: {
   interactive: boolean;
@@ -49,7 +41,6 @@ export function NextComposer({
   onSendOrQueue: (text: string, nonce: string) => void;
   about?: WorkItem | null;
   onClearAbout?: () => void;
-  hints?: boolean;
   measure?: 'reading' | 'wide';
 }) {
   const { t } = useTranslation();
@@ -88,15 +79,6 @@ export function NextComposer({
             useToastStore.getState().addToast(t.plugins.companion.daily_brief_started, 'success');
           }}
         />
-        {hints && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 typo-caption text-muted">
-            <span><Kbd>Enter</Kbd> {C.hints.send}</span>
-            <span><Kbd>Shift+Enter</Kbd> {C.hints.newline}</span>
-            <span><Kbd>1-9</Kbd> {C.hints.reply}</span>
-            <span><Kbd>Alt+W</Kbd> {C.hints.waiting}</span>
-            <span><Kbd>Esc</Kbd> {C.hints.back}</span>
-          </div>
-        )}
       </div>
     </div>
   );

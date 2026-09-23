@@ -24,7 +24,7 @@ import {
 
 import { PLAN_BORDER, PLAN_INK } from './planInk';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
-import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { AfterCutMark, KindMark, LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useProjectPlan';
 
 /** One row of the outside-the-cut pool, whichever kind it is. `status` is
@@ -148,7 +148,7 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                 stateLabel={mm.feature.stateLabel}
                 stateHue={mm.feature.stateHue}
                 blocker={mm.feature.blocker}
-                meta={mm.afterCut ? <span className={`typo-caption shrink-0 ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span> : undefined}
+                meta={mm.afterCut ? <AfterCutMark label={t.ship.added_after_cut} /> : undefined}
                 // … and the OPERATOR's, in its own strip underneath. Two
                 // readings, two places, never merged into one score.
                 footer={(
@@ -187,12 +187,10 @@ export function NotePlanLedger({ vm, ship, editable, t, tx }: {
                   stateHue={meta.map.fill}
                   blocker={null}
                   meta={(
-                    <span className="flex items-center gap-1.5 shrink-0">
-                      <span className={`typo-caption ${PLAN_INK.accent}`}>{t.ship.member_kind_goal}</span>
-                      {gm.afterCut && (
-                        <span className={`typo-caption ${PLAN_INK.athena}`}>{t.ship.added_after_cut}</span>
-                      )}
-                    </span>
+                    <>
+                      <KindMark label={t.ship.member_kind_goal} />
+                      {gm.afterCut && <AfterCutMark label={t.ship.added_after_cut} />}
+                    </>
                   )}
                   footer={(
                     <ShipItemAnnotations
