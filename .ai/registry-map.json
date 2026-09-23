@@ -27,7 +27,7 @@
     "medianTopScore": 916.9,
     "carriedVerdicts": 178,
     "restoredPairs": 26,
-    "staleVerdicts": 171,
+    "staleVerdicts": 149,
     "orphanedVerdicts": 0,
     "renamedContexts": 0,
     "arrivedContexts": 0
@@ -4933,11 +4933,11 @@
           "revision": 4,
           "changedAt": "2026-09-23",
           "confidence": "strong",
-          "state": "deviation",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:15-27 sends clientId/clientSecret across IPC in plaintext while every credential field value crosses session-encrypted (src/api/vault/credentials.ts:112-121), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "state": "unknown",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:58 still sends clientSecret in plaintext over IPC while credential fields go session-encrypted (src/api/vault/credentials.ts:84); no technique rule decides whether an INBOUND secret on an in-app IPC hop must use the transit envelope, so the old deviation has no decision rule behind it (registry proposal filed)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "markdown-vault",
@@ -26513,10 +26513,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:68 — the top level is derived from the navigation registry (:44) but twelve sub-destination vocabularies below it are hand-maintained arrays in the same file, and the comment at :173 records a shipped blank-page bug caused by exactly that gap.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/shared/chrome/sidebar/SidebarSubNav.ts:12 types every sub-destination id as a plain string and sidebarData.ts holds eleven hand-maintained sub-nav vocabularies with no registry; sidebarData.ts:157-158 records the shipped blank-page bug that produced",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:7d62a83fa7e636cf",
+          "evaluatedRevision": 6
         },
         {
           "subject": "long-form-reading-surface",
@@ -28151,10 +28151,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:82 declares healthcheckCredential as Promise<{success, message}> and :291-296 persists only healthcheck_last_success, so the wire's three-state probe verdict is flattened to a boolean at the store and at rest — 'could not verify' becomes 'broken' for every consumer downstream.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:83 writes a new verdict by spreading the old metadata and never clears healthcheck_last_unreachable_*, so once any surface reads the attempt a could-not-check already answered by a later verdict shows beside it",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         }
       ],
       "governance": "governed"
@@ -30114,10 +30114,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:76 maps an 'hourly' trigger onto the picker's 'daily' frequency, so reopening the schedule picker on an hourly capability shows daily and applying it silently rewrites the trigger the template declared.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:83 re-seeds 'daily' on any real edit to an hourly trigger (the no-op guard from 47a9217969 holds), so changing the hour quietly rewrites the frequency the template declared",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -30296,11 +30296,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67 is the single option-normalization door that preserves value-vs-label identity and drops malformed options, and questionnaireGlyphRow.ts:45-54 makes the category vocabulary a compile-checked table; note 5 of the 12 paths this row lists no longer exist in the tree.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx:51 highlights only exact option matches, so an off-list default in a published template shows with nothing selected while the gate counts it answered, and the instance gets a value no screen showed",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "adoption-measurement",
@@ -30388,11 +30388,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 defaults allowCustom to true and QuestionnaireFormGridParts.tsx:447 passes an undefined question.allow_custom, so every closed option list grows an 'Other...' free-text pill and the interview produces answers the parameter surface never declared.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "state": "unknown",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 now defaults allowCustom to false (c42eb7baa6 fixed the old deviation); only 3 of 7 techniques anchored here, below the evidence floor; residual SelectPills.tsx:65 hides an incoming off-list value, reach unshown",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "test-harness",
@@ -30809,10 +30809,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 sorts and labels templates 'Ready to Deploy' from shared/adoptionReadiness.ts:48, a local score the adoption gate never computes, so the browse badge and the gate disagree on exactly the entries that matter.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 labels the readiness sort 'Ready to Deploy' over a category score that is not the gate's evaluator and names no question, so the sort ranks cards ready that the gate blocks",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "chat-transcript",
@@ -31097,10 +31097,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:28-30 renders a 'Verified' integrity claim derived from lib/templates/templateVerification.ts:176, where integrityValid is set from origin alone and the content hash computed at :171-173 is never compared to anything.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:21 knows only verified/sandboxed/untrusted, so no-digest-yet (every cold start, templateVerification.ts:208) shows the shield and generated origin paints verified (:160); the built-in origin claim was fixed by 97f3c45f63",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -31339,10 +31339,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:246-247 runs the picker's delivery Test through mockTestDelivery imported from MessagingPickerShared.tsx:2-3 (a @ts-nocheck prototype whose own header says it is not wired to production), so the surface reports a successful delivery that never happened.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:666 builds the gate's input from every credential's service_type whatever its health (a usability reader exists at src/lib/credentials/healthState.ts:65, unused), so a credential already failed clears the adoption gate",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "adoption-measurement",
@@ -31492,10 +31492,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:118 resumes an in-flight adoption by matching the template's DISPLAY NAME, the exact key-by-name miss the technique measured, while its sibling handleResumeDraft at :126 correctly keys on the review id.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 resumes an adoption by display name from template-adopt-context-v1, a key nothing writes, so Resume acts only on leftovers from an old build and the completion notifier never fires",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "generated-workflow-candidates",
@@ -31864,10 +31864,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:240 stamps only source_recipe_id (its own header at :39-41 declares AdoptionMetadata unpersisted), so recipeStaleness.ts:39-41 — which reads source_recipe_version — can never fire and the whole Update-available apparatus is permanently dark.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/engine/recipe_seed.rs:297 rewrites a built-in recipe's payload in place without moving source_version (all 132 seeds are 1.0.0), so isRecipeStale never fires though the stamp has been written since f3c1d4e90d",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -33071,11 +33071,11 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 and TriggerDetailDrawer.tsx:20 consume only credentialEventsList entries of shape {id, name}; the golden path's precondition — code that retains a foreign secret and uses it unattended — does not hold anywhere in this context.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:62 the only secret here is the app-minted inbound webhook HMAC secret, which the golden path excludes (secrets the application mints and owns); :28 sees credentials only as {id,name}",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 4
         },
         {
           "subject": "hitl-approval",
@@ -33264,10 +33264,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 masks a captured field only when the connector template declares it type 'password', so a captured API key typed 'text' renders in cleartext on the review screen of a capture flow where every field is by definition a secret.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 colours the capture-review probe by success alone, so an unverifiable connector draws the green check and an unreachable probe the red failure",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "sql-console",
@@ -33303,12 +33303,12 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before spending a live discovery run, and the derived declaration is persisted and surfaced on the entry - the 'declarations can be learned' clause realized end to end.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 shows the preview probe's result by .success alone (its prop type at :10 drops state), so a no-recipe row's unverifiable result (success:true) draws a green check",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-memory",
@@ -33432,10 +33432,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:261-313 classifies probe/refresh failures by substring-matching the backend's prose (raw.includes('skipped automatic healthcheck'), 'Run Test Connection') and :254 pulls an HTTP status out of the message by regex, even though the wire already carries a typed state — the taxonomy dies at the boundary and breaks on the first reworded message.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:256 still lifts the HTTP status out of probe prose by regex (and :308 substring-matches backend wording), so the failure kind breaks the first time the backend rewords its message",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "mcp-tools",
@@ -33468,10 +33468,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:102-121 filters the gallery on the scalar category only and applies no lifecycle predicate, so a straddling connector is findable under one axis and a retired one is offered forever.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 filters on the scalar category because the multi-valued list never reaches stored rows (src/lib/types/types.ts:253), so a multi-category connector is found under one category only; no lifecycle stage exists to filter on",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedRevision": 3
         },
         {
           "subject": "design-tokens",
@@ -33611,10 +33611,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:227 mints an operator connector's identity from the user-typed display name, so two differently-labelled connectors collapse onto one key and a rename cannot be expressed.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:187 gates Save on a test handler existing, not on the row having a probe recipe, so a no-recipe row saves only after a meaningless test whose unverifiable result opens the gate through success:true; the old label-derived-mint deviation no longer holds (transactional door check, standard corrected 028a67dc)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -33803,10 +33803,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:6-17 keys REMEDIATION_LABELS on snake_case while Remediation serializes PascalCase, so every lookup misses and `?? REMEDIATION_LABELS.healthy` renders a Disable-level credential as a green 'Healthy' badge.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:125 paints any non-success last_status red, so a skipped rotation (not a failure per src-tauri/core/src/lifecycle.rs:489) reads as a failed one",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "markdown-vault",
@@ -33993,10 +33993,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6,13,24 accepts only {success, message}, so an 'unverifiable' probe (offline, provider outage) renders with the red XCircle failure treatment — the exact collapse that teaches an operator to ignore red.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/list/CredentialListColumns.tsx:136 renders the health badge from state alone, with no probe age and no last attempt, so a weeks-old verified looks identical to this morning's",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "markdown-vault",
@@ -34049,10 +34049,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:88 reads a null healthcheck_config as 'no probe needed' and drops the save gate at :201, so a row that declares credential fields but has no probe recipe admits any typed value unverified.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:161 builds the health-sort input from healthcheck_last_success alone, so a stored unverifiable credential (boolean true) sorts as healthy; the old null-probe-drops-save-gate deviation is superseded (no-probe is a third outcome, 1e2e269a) and fixed for no-catalog-row by 904c1692b",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -34862,10 +34862,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:153-159 writes state:'failed' for any thrown error — an IPC timeout or an offline machine is recorded as a provider rejection, and :181-185 then persists only a boolean so the collapse survives a reload.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 mirrors each sweep outcome into the per-card cache as {success,message}, dropping the typed state, so unverifiable draws verified and unreachable draws failed",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedRevision": 4
         },
         {
           "subject": "markdown-vault",
@@ -34995,11 +34995,11 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:141-148 branches purely on effectiveHealthcheckResult.success (boolean) to render OK/FAIL, ignoring the typed HealthResult.state ('verified'|'unverifiable'|'failed', declared at useCredentialHealth.ts:36-40) — reproduces the exact could-not-verify/broken collapse the sibling deviation on vault-shared-hooks already names for this same hook.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:86aaae043178b8c1",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 has no branch for unreachable and falls to the boolean, so could-not-reach scores 0 like a rejection and the composite dot goes critical for an offline probe",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256:0f2e608df36858a3",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 4
         },
         {
           "subject": "test-harness",
