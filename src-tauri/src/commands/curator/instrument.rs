@@ -2,8 +2,12 @@
 //! parsed. **Read-only, no LLM, and it decides nothing.**
 //!
 //! The registry scores itself. Rather than re-implement that scoring here and
-//! have two answers, this module runs the registry's own four reads in its own
-//! checkout and parses their JSON:
+//! have two answers, this module runs the registry's own reads in its own
+//! checkout and parses their JSON. The first three are one PASS, taken together
+//! and cached together; the fourth is a separate entry point
+//! ([`read_fleet_only`]) because it answers a different question for a
+//! different consumer, and folding it in would make every projection pay for it
+//! and every allowlist listing pay for the corpus:
 //!
 //! | read | what it answers | measured on this machine (2026-09-23) |
 //! |---|---|---|
@@ -63,11 +67,11 @@ const FLEET_TIMEOUT: Duration = Duration::from_secs(30);
 /// How long a cached reading stays good.
 ///
 /// A TTL is not belt-and-braces here, it is required. The cache key can only
-/// carry the REGISTRY's HEAD, and two of the four reads do not depend on it:
-/// the map check walks twelve OTHER repositories whose commits this sha cannot
-/// see, and any read is stale the moment the working copy is edited without a
-/// commit. Five minutes bounds both, and the whole instrument costs ~11 s, so
-/// paying it again is cheap.
+/// carry the REGISTRY's HEAD, and the pass does not depend on that alone: the
+/// map check walks twelve OTHER repositories whose commits this sha cannot see,
+/// and any read is stale the moment the working copy is edited without a
+/// commit. Five minutes bounds both, and the pass costs ~11 s, so paying it
+/// again is cheap.
 const CACHE_TTL: Duration = Duration::from_secs(5 * 60);
 
 // ---------------------------------------------------------------------------
@@ -262,11 +266,6 @@ pub struct InstrumentReading {
     /// The registry checkout's short HEAD. `None` when git could not answer,
     /// which also makes the reading uncacheable.
     pub head_sha: Option<String>,
-    /// Every checkout the resolver declared for this machine, in slug order.
-    pub fleet: Vec<FleetProject>,
-    /// The resolver's own `problems[]` - a missing machine identity or an
-    /// un-cloned project. Carried rather than thrown: both are normal states.
-    pub fleet_problems: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -480,7 +479,34 @@ pub async fn read(registry_root: &Path) -> Result<Arc<InstrumentReading>, AppErr
     Ok(reading)
 }
 
-/// The four reads, in sequence. Never concurrent with each other.
+/// Just the fleet - which checkouts the registry declares for this machine.
+///
+/// Split out from [`read`] because it is the ONLY read the allowlist needs, and
+/// the difference is not small: measured 2026-09-23, the fleet resolver is
+/// 0.3-0.5 s while the whole instrument is ~11 s, almost all of it the map
+/// check walking twelve consumer checkouts. Listing projects had no business
+/// paying for a corpus scan.
+///
+/// It takes the same lock, so it can wait behind a projection in flight. That
+/// is the deliberate trade: "the reads never run concurrently" is a property
+/// worth more than a list that never waits, and the wait is bounded by the map
+/// check's own timeout.
+pub async fn read_fleet_only(
+    registry_root: &Path,
+) -> Result<(Vec<FleetProject>, Vec<String>), AppError> {
+    let _serialised = INSTRUMENT_LOCK
+        .get_or_init(|| tokio::sync::Mutex::new(()))
+        .lock()
+        .await;
+    read_fleet(registry_root).await
+}
+
+/// The three corpus-side reads, in sequence. Never concurrent with each other.
+///
+/// The fleet is NOT among them: it answers a different question (which
+/// checkouts exist) for a different consumer (the allowlist), and folding it in
+/// would have made every projection pay for it and every project listing pay
+/// for the corpus.
 async fn read_uncached(
     registry_root: &Path,
     head_sha: Option<String>,
@@ -519,16 +545,12 @@ async fn read_uncached(
     .await?;
     let currency: Currency = parse_json(&currency_out, "check-currency")?;
 
-    let (fleet, fleet_problems) = read_fleet(registry_root).await?;
-
     Ok(InstrumentReading {
         scan,
         map,
         currency,
         applied_subjects: applied_subjects(registry_root),
         head_sha,
-        fleet,
-        fleet_problems,
     })
 }
 

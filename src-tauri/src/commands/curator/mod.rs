@@ -163,17 +163,20 @@ pub async fn curator_policy_get(
 /// out entirely rather than recorded as absent - the allowlist is about paths
 /// she could reach, and a row for a path that is not there would be a boundary
 /// around nothing.
+///
+/// It reaches for [`instrument::read_fleet_only`], not the whole instrument:
+/// measured 2026-09-23 the resolver is 0.3-0.5 s and the full pass ~11 s, and
+/// listing projects has no business paying for a corpus scan.
 #[tauri::command]
 pub async fn curator_projects_list(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<CuratorProject>, AppError> {
     require_auth(&state).await?;
     let root = registry_root(state.inner())?;
-    let reading = instrument::read(&root).await?;
+    let (fleet, problems) = instrument::read_fleet_only(&root).await?;
     let db = state.db.clone();
     let now = chrono::Utc::now().to_rfc3339();
-    let fleet = reading.fleet.clone();
-    for problem in &reading.fleet_problems {
+    for problem in &problems {
         tracing::info!(problem = %problem, "curator: the registry's fleet resolver reported a problem");
     }
     blocking("curator_projects_list", move || {

@@ -372,8 +372,6 @@ mod tests {
                 "agent-memory".to_string(),
             ])),
             head_sha: Some("abc1234".into()),
-            fleet: vec![],
-            fleet_problems: vec![],
         }
     }
 
