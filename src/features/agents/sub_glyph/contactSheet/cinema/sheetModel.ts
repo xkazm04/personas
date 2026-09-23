@@ -1,8 +1,9 @@
 /** Pure model for the Cinema contact sheet: where each frame sits, which act
  *  the build is in, and the small parsers the frame pictures need. No React. */
-import type { GlyphDimension } from "@/features/shared/glyph";
+import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
-import type { BuildPhase } from "@/lib/types/buildTypes";
+import type { BuildPhase, CellBuildStatus } from "@/lib/types/buildTypes";
+import { DIM_TO_CELL_KEY } from "@/features/agents/sub_glyph/glyphLayoutHelpers";
 import type { PetalState } from "@/features/shared/glyph/persona-sigil";
 
 /** Frames sit where their sigil petal points. PETAL_ANGLES runs clockwise from
@@ -63,6 +64,36 @@ export function frameStateFromPetal(p: PetalState, settled: boolean): FrameState
     case "error": return "error";
     default: return settled ? "unset" : "blank";
   }
+}
+
+/** THE definition of a "populated" dimension, shared by the frame and the
+ *  sigil petal: only a populated dimension gets full colour (tinted paper,
+ *  coloured crop marks, coloured label, a lit petal); an empty one stays in
+ *  its initial semi-transparent state, including after the build finishes.
+ *  Populated means it carries any metadata:
+ *   - a frame value (useFrameValues already folds in the quick config, the
+ *     draft's glyphRows, the live build store and answers given on the sheet);
+ *   - once the draft's rows exist, a row that uses the dimension (presence
+ *     other than "none"): the rows are the truth, so a cell the build merely
+ *     marked resolved while deciding "not used" stays empty;
+ *   - before any row exists, a resolved cell. */
+const RESOLVED_CELL: ReadonlySet<CellBuildStatus> = new Set<CellBuildStatus>(["resolved", "updated", "highlighted"]);
+
+export function isPopulated(dim: GlyphDimension, hasValue: boolean, cellStates: Record<string, CellBuildStatus>, rows: readonly GlyphRow[]): boolean {
+  if (hasValue) return true;
+  if (rows.length) return rows.some((r) => r.presence[dim] !== "none");
+  const cell = cellStates[DIM_TO_CELL_KEY[dim]];
+  return cell !== undefined && RESOLVED_CELL.has(cell);
+}
+
+export function populatedDims(
+  values: Record<GlyphDimension, unknown>,
+  cellStates: Record<string, CellBuildStatus>,
+  rows: readonly GlyphRow[],
+): Record<GlyphDimension, boolean> {
+  const out = {} as Record<GlyphDimension, boolean>;
+  for (const dim of GLYPH_DIMENSIONS) out[dim] = isPopulated(dim, !!values[dim], cellStates, rows);
+  return out;
 }
 
 /** Monday-first week strip + HH:MM, read from a 5-field cron. Returns null

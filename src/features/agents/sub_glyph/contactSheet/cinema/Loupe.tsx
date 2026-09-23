@@ -35,6 +35,7 @@ export function Loupe({ shot, color, head, onClose, children }: LoupeProps) {
       style={{
         inset: LOUPE_INSET,
         transformOrigin: `${shot.x - LOUPE_INSET}px ${shot.y - LOUPE_INSET}px`,
+        willChange: "transform, opacity",
         boxShadow: `0 0 0 1px ${colorWithAlpha(color, 0.45)}, 0 0 48px ${colorWithAlpha(color, 0.12)}, 0 40px 90px -30px rgba(0,0,0,0.85)`,
       }}
       initial={reduce ? { opacity: 0 } : LAYER_HIDDEN}

@@ -41,7 +41,7 @@ function Docking<T extends string>({ items, render, max }: { items: T[]; render:
   return (
     <AnimatePresence initial={false}>
       {shown.map((it, i) => (
-        <motion.span key={it} layout initial={{ opacity: 0, scale: 0.6, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={SPRING} className="inline-flex">
+        <motion.span key={it} layout layoutDependency={shown.length} initial={{ opacity: 0, scale: 0.6, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={SPRING} className="inline-flex">
           {render(it, i)}
         </motion.span>
       ))}
