@@ -12,10 +12,14 @@ import type { ReembedResult } from '@/lib/bindings/ReembedResult';
 import type { SleepCycleTrigger } from '@/lib/bindings/SleepCycleTrigger';
 import type { SleepPressure } from '@/lib/bindings/SleepPressure';
 import type { AthenaEngineSettings } from '@/lib/bindings/AthenaEngineSettings';
+import type { CompanionReport } from '@/lib/bindings/CompanionReport';
+import type { ReplyRegisterRow } from '@/lib/bindings/ReplyRegisterRow';
+import type { ReplyShapeStats } from '@/lib/bindings/ReplyShapeStats';
 import type { EngineAvailability } from '@/lib/bindings/EngineAvailability';
 
 export type { CompanionTurnSidecar, ReembedResult, SleepCycleTrigger, SleepPressure };
 export type { AthenaEngineSettings, EngineAvailability };
+export type { CompanionReport, ReplyRegisterRow, ReplyShapeStats };
 
 /** Athena tier table (Settings > Engine > Athena tiers): engine + model + effort per turn class. */
 export async function companionGetEngineSettings(): Promise<AthenaEngineSettings> {
@@ -1490,6 +1494,28 @@ export async function companionCorrectIdentityClaim(section: string, bullet: str
 /** The active engagement budget modulations (F4) — what Athena adapts. */
 export async function companionGetAdaptations(): Promise<AthenaAdaptation[]> {
   return invoke<AthenaAdaptation[]>('companion_get_adaptations');
+}
+
+// ── Layered voice (docs/features/companion/layered-voice.md) ───────────
+
+/** One layer-two report, the target of a `ref:report/<id>` link. */
+export async function companionGetReport(id: string): Promise<CompanionReport> {
+  return invoke<CompanionReport>('companion_get_report', { id });
+}
+
+/** Mark a report read. Idempotent. */
+export async function companionMarkReportRead(id: string): Promise<void> {
+  return invoke<void>('companion_mark_report_read', { id });
+}
+
+/** Every reply-register row, `default` first. Empty means the base register (3). */
+export async function companionListReplyRegister(): Promise<ReplyRegisterRow[]> {
+  return invoke<ReplyRegisterRow[]>('companion_list_reply_register');
+}
+
+/** Reply-shape stats over the last `days` days. Absent measures are `null`, never 0. */
+export async function companionReplyShapeStats(days: number): Promise<ReplyShapeStats> {
+  return invoke<ReplyShapeStats>('companion_reply_shape_stats', { days });
 }
 
 // ── Phase C: consolidation + reflection ────────────────────────────────

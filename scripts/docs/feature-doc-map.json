@@ -350,6 +350,14 @@
       "marketingModule": "home"
     },
     {
+      "doc": "docs/features/companion/layered-voice.md",
+      "sourceGlobs": [
+        "src-tauri/src/companion/register.rs",
+        "src-tauri/src/companion/reports.rs",
+        "src-tauri/src/commands/companion/layered_voice.rs"
+      ]
+    },
+    {
       "doc": "docs/features/onboarding.md",
       "sourceGlobs": [
         "src/features/onboarding/**",

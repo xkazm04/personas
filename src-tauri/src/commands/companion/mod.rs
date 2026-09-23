@@ -24,6 +24,7 @@ pub mod engine;
 pub mod feedback;
 pub mod fleet_bridge;
 pub mod jobs;
+pub mod layered_voice;
 pub mod mcp_bridge;
 pub mod observability;
 pub mod plugins;
