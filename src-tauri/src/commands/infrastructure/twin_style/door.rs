@@ -621,6 +621,146 @@ mod tests {
         assert!(validate_apply_tones(&[draft]).is_empty());
     }
 
+    /// Paired instrument for the set-level spread (run with `--ignored
+    /// --nocapture`). Anchors come from the real sampler over 1000 seeds (half
+    /// unpinned, half with random coherent pins); three nudge policies stand in
+    /// for the model; every reply goes through the real roll door. Ground truth
+    /// is computed here, not read from the door: a set has LOST its spread when
+    /// some pair ends closer than min(MIN_SPREAD, their anchors' distance).
+    #[test]
+    #[ignore = "instrument: prints the spread outcome table"]
+    fn spread_outcome_table() {
+        use super::super::sampler::{l1, pin_errors, sample_anchors, MIN_SPREAD};
+        use rand::rngs::StdRng;
+        use rand::{Rng, SeedableRng};
+
+        fn random_pins(rng: &mut StdRng) -> TwinStylePins {
+            loop {
+                let mut s = [None; 8];
+                for slot in s.iter_mut() {
+                    if rng.gen_bool(0.3) {
+                        *slot = Some(rng.gen_range(1..=5));
+                    }
+                }
+                let pins = TwinStylePins {
+                    formality: s[0],
+                    warmth: s[1],
+                    humor: s[2],
+                    energy: s[3],
+                    length: s[4],
+                    directness: s[5],
+                    expressiveness: s[6],
+                    detail: s[7],
+                };
+                if pin_errors(&pins).is_empty() {
+                    return pins;
+                }
+            }
+        }
+
+        // One reply under a policy. A nudged candidate that breaks a pair or
+        // extremes rule is reverted to its anchor: an honest model obeys the
+        // stated rules, and coherence is not what this instrument measures.
+        fn reply(
+            policy: &str,
+            rng: &mut StdRng,
+            anchors: &[TwinStyleDims; 3],
+            pins: &[Option<u8>; 8],
+        ) -> [[u8; 8]; 3] {
+            let a = anchors.map(|x| dims_array(&x));
+            let shared: [i64; 8] = std::array::from_fn(|_| rng.gen_range(-1..=1));
+            let mut out = a;
+            for i in 0..3 {
+                let mut c = a[i];
+                for d in 0..8 {
+                    if pins[d].is_some() {
+                        continue;
+                    }
+                    let v = i64::from(a[i][d]);
+                    let step = match policy {
+                        "collapse" => {
+                            let mut col = [a[0][d], a[1][d], a[2][d]];
+                            col.sort_unstable();
+                            (i64::from(col[1]) - v).signum()
+                        }
+                        "person-fit" => shared[d],
+                        _ => rng.gen_range(-1..=1),
+                    };
+                    c[d] = (v + step).clamp(1, 5) as u8;
+                }
+                if style_coherence_errors(&dims_from(c)).is_empty() {
+                    out[i] = c;
+                }
+            }
+            out
+        }
+
+        fn lost(anchors: &[TwinStyleDims; 3], c: &[[u8; 8]; 3]) -> (bool, bool) {
+            let (mut lost, mut identical) = (false, false);
+            for i in 0..3 {
+                for j in (i + 1)..3 {
+                    let bar = MIN_SPREAD.min(l1(&anchors[i], &anchors[j]));
+                    let got = l1(&dims_from(c[i]), &dims_from(c[j]));
+                    lost |= got < bar;
+                    identical |= got == 0 && bar > 0;
+                }
+            }
+            (lost, identical)
+        }
+
+        let to_json = |c: &[[u8; 8]; 3]| {
+            roll_reply(
+                &c.iter()
+                    .zip(["One", "Two", "Three"])
+                    .map(|(v, n)| cand(n, v.map(i64::from)))
+                    .collect::<Vec<_>>(),
+            )
+        };
+
+        for policy in ["collapse", "person-fit", "independent"] {
+            let (mut n_lost, mut n_ident, mut acc, mut acc_lost, mut acc_ident) = (0, 0, 0, 0, 0);
+            let (mut intact_rejected, mut other_rejected, mut roll_failed) = (0, 0, 0);
+            for seed in 0..1000u64 {
+                let mut setup = StdRng::seed_from_u64(seed ^ 0x5eed);
+                let pins = if seed % 2 == 0 {
+                    TwinStylePins::default()
+                } else {
+                    random_pins(&mut setup)
+                };
+                let draw = sample_anchors(&mut StdRng::seed_from_u64(seed), &pins, None, &[]);
+                let slots = pins_array(&pins);
+                let mut rng = StdRng::seed_from_u64(seed.wrapping_mul(31) + 7);
+                let first = reply(policy, &mut rng, &draw.anchors, &slots);
+                let (is_lost, is_ident) = lost(&draw.anchors, &first);
+                n_lost += usize::from(is_lost);
+                n_ident += usize::from(is_ident);
+                match roll_door(&to_json(&first), &draw.anchors, &pins) {
+                    Ok(_) => {
+                        acc += 1;
+                        acc_lost += usize::from(is_lost);
+                        acc_ident += usize::from(is_ident);
+                    }
+                    Err(e) => {
+                        if !is_lost {
+                            intact_rejected += 1;
+                            println!("INTACT-REJECTED seed {seed}: {e}");
+                        } else if !e.contains("apart") {
+                            other_rejected += 1;
+                        }
+                        // The single repair retry: a fresh reply, same policy.
+                        let second = reply(policy, &mut rng, &draw.anchors, &slots);
+                        if roll_door(&to_json(&second), &draw.anchors, &pins).is_err() {
+                            roll_failed += 1;
+                        }
+                    }
+                }
+            }
+            println!(
+                "TABLE\t{policy}\tn=1000\tspread_lost={n_lost}\tidentical_pair={n_ident}\taccepted={acc}\taccepted_lost={acc_lost}\taccepted_identical={acc_ident}\tintact_rejected={intact_rejected}\tother_rejected={other_rejected}\troll_failed_after_retry={roll_failed}"
+            );
+        }
+    }
+
     #[test]
     fn roll_door_rejects_the_wrong_count() {
         let c = valid_roll()[..2].to_vec();

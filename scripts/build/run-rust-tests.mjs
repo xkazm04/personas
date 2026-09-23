@@ -41,6 +41,7 @@
 //   node scripts/build/run-rust-tests.mjs [--crates] [-- <libtest args>]
 //     (default)  app_lib unit tests (--features desktop), with the manifest fixup
 //     --crates   the extracted crates only: personas-core, -db, -engine
+//     --p2p      also compile + run the p2p feature (combines with --crates)
 //
 // A NOTE ON "FAST": --crates is a NARROWER lane, not a quick one. It was
 // scoped on the assumption that the extracted crates avoid the heavy
@@ -72,12 +73,18 @@ const argv = process.argv.slice(2);
 // not recognise as a harness argument, which makes both of these filter:
 //   npm run test:rust -- some::test
 //   node scripts/build/run-rust-tests.mjs -- --nocapture some::test
-const OWN_FLAGS = new Set(['--crates']);
+const OWN_FLAGS = new Set(['--crates', '--p2p']);
 const sepIdx = argv.indexOf('--');
 const own = sepIdx >= 0 ? argv.slice(0, sepIdx) : argv;
 const harnessArgs = sepIdx >= 0 ? argv.slice(sepIdx + 1) : [];
 for (const a of own) if (!OWN_FLAGS.has(a)) harnessArgs.push(a);
 const cratesLane = own.includes('--crates');
+// `--p2p` adds the peer-to-peer surface (engine::p2p, commands::network,
+// companion remote jobs) to whichever lane runs. Without it NEITHER lane
+// compiles that code: `desktop` does not imply `p2p`, so the lane's own unit
+// tests never ran in any local gate. `ml` is deliberately not added - p2p
+// needs no ONNX runtime, and ORT is the slow half of `desktop-full`.
+const p2pLane = own.includes('--p2p');
 
 /** Locate the Windows SDK manifest tool. Highest SDK version wins. */
 function findMtExe() {
@@ -190,9 +197,11 @@ const cargoArgs = cratesLane
   ? [
       'test', '--manifest-path', CARGO_TOML,
       '-p', 'personas-core', '-p', 'personas-db', '-p', 'personas-engine', '--lib',
-      '--features', 'personas-core/desktop,personas-db/desktop,personas-engine/desktop',
+      '--features',
+      'personas-core/desktop,personas-db/desktop,personas-engine/desktop' +
+        (p2pLane ? ',personas-core/p2p,personas-db/p2p,personas-engine/p2p' : ''),
     ]
-  : ['test', '--manifest-path', CARGO_TOML, '--features', 'desktop', '--lib'];
+  : ['test', '--manifest-path', CARGO_TOML, '--features', p2pLane ? 'desktop,p2p' : 'desktop', '--lib'];
 
 // Stamped before the build so every database this run creates sorts after it.
 const RUN_STARTED_AT = Date.now();

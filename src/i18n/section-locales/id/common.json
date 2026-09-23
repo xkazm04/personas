@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
   "directory_browse_failed": "Pemilih folder tidak dapat dibuka. Coba lagi, atau ketik jalurnya.",
   "recent_directories": "Folder terbaru",
-  "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya."
+  "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya.",
+  "dispatch_receipt_could_not_verify": "Tidak dapat diverifikasi di sini",
+  "dispatch_receipt_detail": "Cabang {branch} pada {sha}",
+  "dispatch_receipt_not_pushed": "Belum ada yang di-push",
+  "dispatch_receipt_push_failed": "Push gagal",
+  "dispatch_receipt_unverified": "Tidak ditemukan setelah fetch",
+  "dispatch_receipt_verified": "Terverifikasi",
+  "dispatch_run_on_aria": "Pilih mesin untuk menjalankan",
+  "dispatch_run_on_connected": "Terhubung",
+  "dispatch_run_on_home": "Rumah",
+  "dispatch_run_on_label": "Jalankan di",
+  "dispatch_run_on_local_only": "Hanya berjalan di mesin ini",
+  "dispatch_run_on_local_prep": "Dispatch ini menyiapkan file di mesin ini",
+  "dispatch_run_on_needs_remote": "Perlu remote git agar hasil kerja bisa kembali",
+  "dispatch_run_on_offline": "Luring",
+  "dispatch_run_on_queued_hint": "Dalam antrean sampai perangkat aktif",
+  "dispatch_run_on_stale": "Belum terlihat baru-baru ini",
+  "dispatch_run_on_this_machine": "Mesin ini"
 }

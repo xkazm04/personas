@@ -197,5 +197,22 @@
   "md_quote": "Quote",
   "md_toolbar": "Formatting",
   "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
-  "recent_directories": "Recent folders"
+  "recent_directories": "Recent folders",
+  "dispatch_run_on_label": "Run on",
+  "dispatch_run_on_aria": "Choose the machine to run on",
+  "dispatch_run_on_this_machine": "This machine",
+  "dispatch_run_on_home": "Home",
+  "dispatch_run_on_connected": "Connected",
+  "dispatch_run_on_stale": "Not seen recently",
+  "dispatch_run_on_offline": "Offline",
+  "dispatch_run_on_queued_hint": "Queued until it wakes",
+  "dispatch_run_on_needs_remote": "Needs a git remote to return work",
+  "dispatch_run_on_local_prep": "This dispatch prepares files on this machine",
+  "dispatch_run_on_local_only": "Runs on this machine only",
+  "dispatch_receipt_verified": "Verified",
+  "dispatch_receipt_unverified": "Not found after fetch",
+  "dispatch_receipt_could_not_verify": "Could not verify here",
+  "dispatch_receipt_not_pushed": "Nothing pushed",
+  "dispatch_receipt_push_failed": "Push failed",
+  "dispatch_receipt_detail": "Branch {branch} at {sha}"
 }

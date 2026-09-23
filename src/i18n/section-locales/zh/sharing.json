@@ -287,5 +287,8 @@
   "verifying_bundle": "正在验证包…",
   "verifying_enclave": "正在验证飞地…",
   "view_details": "查看详情",
-  "your_identity": "您的身份"
+  "your_identity": "您的身份",
+  "job_kind_fleet_session": "Fleet 会话",
+  "job_kind_instruction": "指令",
+  "job_receipt_title": "已返回的工作"
 }

@@ -57,6 +57,7 @@ import { FINAL_STAGE, useStagedMount } from './useStagedMount';
 import { useChannelBubbles } from './useChannelBubbles';
 import { useFleetSessions } from './useFleetSessions';
 import { useBoardModel } from './useBoardModel';
+import { useRemoteBoard } from './remote/useRemoteBoard';
 import { useAttentionCursor } from './useAttentionCursor';
 import { NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
 import type { SquareState } from './fleetGridModel';
@@ -105,10 +106,12 @@ interface Props {
    * empty state before the first read would be an empty-flash lie.
    */
   isLoading?: boolean;
+  /** Open a remote session's drawer (the Monitor owns the drawer shell). */
+  onOpenRemote?: (jobId: string) => void;
 }
 
 function FleetGridViewImpl({
-  cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker, isLoading = false,
+  cards, personas, teams, selectedPersonaId, onSelect, feedTeams, onOpenSpeaker, isLoading = false, onOpenRemote,
 }: Props) {
   const stage = useStagedMount();
   const reducedMotion = useReducedMotion() ?? false;
@@ -182,7 +185,9 @@ function FleetGridViewImpl({
     [],
   );
 
-  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter);
+  // Sessions sent to paired devices: real ones only, never over the mock fleet.
+  const remote = useRemoteBoard(board.projects, !simulating);
+  const model = useBoardModel(board.cards, board.personas, board.teams, board.sessions, filter, remote);
   // The board is a queue with a cursor: `n`/`j` walk the actionable tiles in
   // board order, `k` walks back, Enter opens the focused one. Same predicate as
   // the header's filter, so the walk visits exactly what filtering would show.
@@ -234,6 +239,7 @@ function FleetGridViewImpl({
               onRecapSession: setRecap,
               scopedTeamId: scope?.teamId ?? null,
               onToggleScope: toggleScope,
+              onOpenRemote,
             }}
             queue={{
               model: queueModel,

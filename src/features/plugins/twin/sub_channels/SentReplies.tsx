@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
+import { isSentMessage } from '@/api/twin/placement';
 
 /** A request to adapt a past sent reply in the Reply Outbox. `ts` keys
  *  consumption so the same row can be reused twice in a row. */
@@ -22,7 +23,10 @@ export interface ReuseRequest {
  *  with its channel, contact, time, and a copy button to reuse the
  *  wording. Reads the twinCommunications slice the Channels page already
  *  fetches; training Q&A (channel "training") is excluded so this stays
- *  a record of real channel sends. Hidden until at least one exists.
+ *  a record of real channel sends. A draft the Twin toolbar placed into a
+ *  web page box is excluded too: the page's own button sends it, the app
+ *  never sees that, so it is a placement, not a send. Hidden until at
+ *  least one exists.
  * ------------------------------------------------------------------ */
 
 const MAX_ROWS = 6;
@@ -42,7 +46,7 @@ export function SentReplies({ channels, onReuse }: { channels: TwinChannel[]; on
   const sent = useMemo(() => {
     if (!activeTwinId) return [];
     return communications
-      .filter((c) => c.twin_id === activeTwinId && c.direction === 'out' && c.channel !== 'training')
+      .filter((c) => c.twin_id === activeTwinId && isSentMessage(c) && c.channel !== 'training')
       .slice()
       .sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1))
       .slice(0, MAX_ROWS);

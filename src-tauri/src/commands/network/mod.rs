@@ -14,3 +14,6 @@ pub mod owned_devices;
 pub mod pairing;
 #[cfg(feature = "p2p")]
 pub mod remote_jobs;
+// Registered in every build (bodies gate on `p2p`), so a lite build answers
+// "not in this build" instead of "command not found".
+pub mod remote_sessions;

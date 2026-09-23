@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Ihre Änderungen wurden nicht gespeichert",
   "directory_browse_failed": "Die Ordnerauswahl konnte nicht geöffnet werden. Versuchen Sie es erneut oder geben Sie den Pfad ein.",
   "recent_directories": "Zuletzt verwendete Ordner",
-  "model_not_in_catalog": "Nicht im Modellkatalog. Wählen Sie ein Modell, um es zu ersetzen."
+  "model_not_in_catalog": "Nicht im Modellkatalog. Wählen Sie ein Modell, um es zu ersetzen.",
+  "dispatch_receipt_could_not_verify": "Konnte hier nicht überprüft werden",
+  "dispatch_receipt_detail": "Branch {branch} bei {sha}",
+  "dispatch_receipt_not_pushed": "Nichts gepusht",
+  "dispatch_receipt_push_failed": "Push fehlgeschlagen",
+  "dispatch_receipt_unverified": "Nach Fetch nicht gefunden",
+  "dispatch_receipt_verified": "Verifiziert",
+  "dispatch_run_on_aria": "Rechner zum Ausführen auswählen",
+  "dispatch_run_on_connected": "Verbunden",
+  "dispatch_run_on_home": "Zuhause",
+  "dispatch_run_on_label": "Ausführen auf",
+  "dispatch_run_on_local_only": "Läuft nur auf diesem Rechner",
+  "dispatch_run_on_local_prep": "Dieser Versand bereitet Dateien auf diesem Rechner vor",
+  "dispatch_run_on_needs_remote": "Benötigt ein Git-Remote, um Arbeit zurückzugeben",
+  "dispatch_run_on_offline": "Nicht verbunden",
+  "dispatch_run_on_queued_hint": "Wartet, bis er aufwacht",
+  "dispatch_run_on_stale": "Kürzlich nicht gesehen",
+  "dispatch_run_on_this_machine": "Dieser Rechner"
 }

@@ -185,6 +185,7 @@
     "cancelled": "Abgebrochen",
     "completed": "Abgeschlossen",
     "failed": "Fehlgeschlagen",
+    "queued": "In Warteschlange",
     "pending": "Ausstehend",
     "refused": "Abgelehnt",
     "running": "Läuft"

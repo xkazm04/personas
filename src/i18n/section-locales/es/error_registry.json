@@ -164,5 +164,13 @@
   "zapier_message": "No se pudo llegar al webhook de Zapier.",
   "zapier_suggestion": "Verifique la URL del webhook en la configuración de su integración de Zapier.",
   "oauth_account_mismatch_message": "Iniciaste sesión con una cuenta distinta a la que está vinculada esta credencial.",
-  "oauth_account_mismatch_suggestion": "Inicia sesión con la cuenta que muestra la credencial o añade una credencial nueva para la otra cuenta."
+  "oauth_account_mismatch_suggestion": "Inicia sesión con la cuenta que muestra la credencial o añade una credencial nueva para la otra cuenta.",
+  "project_not_found_message": "Ese proyecto no está en el otro dispositivo.",
+  "project_not_found_suggestion": "Clona o registra el proyecto allí con el mismo remoto de git y envíalo de nuevo.",
+  "remote_command_refused_message": "El otro dispositivo rechazó ese comando.",
+  "remote_command_refused_suggestion": "Es posible que la sesión haya terminado allí. Actualiza el Monitor e inténtalo de nuevo.",
+  "remote_dispatch_failed_message": "No se pudo enviar la sesión al otro dispositivo.",
+  "remote_dispatch_failed_suggestion": "Comprueba que el dispositivo sigue emparejado e inténtalo de nuevo, o ejecútala en este equipo.",
+  "remote_peer_offline_message": "El otro dispositivo no está disponible en este momento.",
+  "remote_peer_offline_suggestion": "Abre Personas en ese dispositivo y comprueba que ambos están en la misma red. Un envío espera en la bandeja de salida hasta que el dispositivo se active."
 }

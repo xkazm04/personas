@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées",
   "directory_browse_failed": "Le sélecteur de dossier n'a pas pu s'ouvrir. Réessayez ou saisissez le chemin.",
   "recent_directories": "Dossiers récents",
-  "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer."
+  "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer.",
+  "dispatch_receipt_could_not_verify": "Impossible de vérifier ici",
+  "dispatch_receipt_detail": "Branche {branch} à {sha}",
+  "dispatch_receipt_not_pushed": "Rien n'a été poussé",
+  "dispatch_receipt_push_failed": "Échec du push",
+  "dispatch_receipt_unverified": "Introuvable après le fetch",
+  "dispatch_receipt_verified": "Vérifié",
+  "dispatch_run_on_aria": "Choisir la machine d'exécution",
+  "dispatch_run_on_connected": "Connecté",
+  "dispatch_run_on_home": "Domicile",
+  "dispatch_run_on_label": "Exécuter sur",
+  "dispatch_run_on_local_only": "S'exécute uniquement sur cet ordinateur",
+  "dispatch_run_on_local_prep": "Cet envoi prépare des fichiers sur cet ordinateur",
+  "dispatch_run_on_needs_remote": "Nécessite un remote git pour renvoyer le travail",
+  "dispatch_run_on_offline": "Hors ligne",
+  "dispatch_run_on_queued_hint": "En attente jusqu'à son réveil",
+  "dispatch_run_on_stale": "Non vu récemment",
+  "dispatch_run_on_this_machine": "Cet ordinateur"
 }

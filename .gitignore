@@ -90,6 +90,7 @@ recordings/
 !.claude/leonardo/
 !.claude/ship-loop/
 !.claude/mvp/
+!.claude/spark/
 !.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md

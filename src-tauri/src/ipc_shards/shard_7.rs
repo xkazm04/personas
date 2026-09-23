@@ -124,6 +124,13 @@ pub(super) fn shard(
         commands::network::remote_jobs::list_remote_job_notes,
         #[cfg(feature = "p2p")]
         commands::network::remote_jobs::send_remote_instruction,
+        // Network -- Remote sessions (a fleet session dispatched to a paired
+        // device). Registered in EVERY build; the bodies gate on `p2p`.
+        commands::network::remote_sessions::dispatch_remote_fleet_session,
+        commands::network::remote_sessions::list_remote_sessions,
+        commands::network::remote_sessions::remote_session_command,
+        commands::network::remote_sessions::remote_session_subscribe_output,
+        commands::network::remote_sessions::list_dispatch_devices,
         // Network -- Exposure Manifest (Invisible Apps Phase 1)
         #[cfg(feature = "p2p")]
         commands::network::exposure::list_exposed_resources,

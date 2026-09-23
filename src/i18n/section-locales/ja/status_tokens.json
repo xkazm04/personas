@@ -185,6 +185,7 @@
     "cancelled": "キャンセル済み",
     "completed": "完了",
     "failed": "失敗",
+    "queued": "待機中",
     "pending": "保留中",
     "refused": "拒否済み",
     "running": "実行中"

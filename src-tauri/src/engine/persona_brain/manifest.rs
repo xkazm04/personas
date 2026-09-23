@@ -7,7 +7,8 @@
 //!   `# Operation defaults`. Written ONLY through [`update_law`] (the
 //!   `update_persona_manifest_law` command). The anchored-diff proposal path
 //!   REFUSES any diff whose section path lands under a law heading, at both
-//!   the propose door and the apply door.
+//!   the propose door and the apply door. A heading on neither list is
+//!   refused at both doors too: it belongs to nobody.
 //! * **SELF-MODEL** — agent-authored: `# My work`, `# My self-reads`. Grown
 //!   ONLY by anchored diffs filed as a `persona_memory_review_proposal` of
 //!   kind `self_model_diff` ([`propose_diffs`]) and applied by a human
@@ -109,8 +110,8 @@ pub fn is_law_section(section_path: &str) -> bool {
 
 /// Whether a diff's section path sits under an agent-authored SELF heading.
 /// The strict complement of [`is_law_section`] — an unknown `# ` heading is
-/// NEITHER (the growth doors drop it; the propose door would let it through
-/// to fail at apply, which burns a review round for nothing).
+/// NEITHER, belongs to nobody, and no door writes under it: the growth doors
+/// drop it, and [`propose_diffs`] and [`apply_approved`] refuse it.
 pub fn is_self_section(section_path: &str) -> bool {
     let h1 = section_path
         .split(" / ")
@@ -534,9 +535,33 @@ fn law_diff_errors(diffs: &[IdentityDiff]) -> Vec<ValidationError> {
         .collect()
 }
 
+/// The typed refusal for any diff whose `# ` heading is on NEITHER list. It
+/// is static (the vocabulary is closed, so no live document can make it
+/// valid), so it is refused when the proposal is filed rather than after a
+/// person has spent a review round on it. Only anchor and `##` matching wait
+/// for apply, because only they depend on the document as it stands then.
+fn unknown_section_errors(diffs: &[IdentityDiff]) -> Vec<ValidationError> {
+    diffs
+        .iter()
+        .filter(|d| !is_law_section(&d.section) && !is_self_section(&d.section))
+        .map(|d| {
+            ValidationError::new(
+                "diffs",
+                "self_section",
+                format!(
+                    "diff targets `{}`, a heading on neither list; the agent writes only under {}",
+                    d.section,
+                    SELF_SECTIONS.join(" / ")
+                ),
+            )
+        })
+        .collect()
+}
+
 /// File a batch of anchored diffs as a `self_model_diff` proposal. NEVER
 /// applies — the write happens only in [`apply_approved`], behind the human
-/// gate. Diffs aimed at a law section are refused here. Returns the proposal id.
+/// gate. Diffs aimed at a law section, or at a heading on neither list, are
+/// refused here. Returns the proposal id.
 pub fn propose_diffs(
     pool: &DbPool,
     persona_id: &str,
@@ -568,6 +593,7 @@ pub fn propose_diffs(
     .flatten()
     .collect();
     errors.extend(law_diff_errors(&diffs));
+    errors.extend(unknown_section_errors(&diffs));
     contract::check(errors)?;
 
     let payload = serde_json::json!({
@@ -666,8 +692,11 @@ pub fn apply_approved(pool: &DbPool, proposal_id: &str) -> Result<ManifestApplyO
         .map(IdentityDiff::from_json)
         .collect::<Result<Vec<_>, _>>()?;
     // A proposal minted around the propose door is refused here too — the
-    // law sections have exactly one writer.
-    contract::check(law_diff_errors(&diffs))?;
+    // law sections have exactly one writer, and a heading on neither list
+    // has none.
+    let mut static_errors = law_diff_errors(&diffs);
+    static_errors.extend(unknown_section_errors(&diffs));
+    contract::check(static_errors)?;
 
     let path = ensure(pool, persona_id)?;
     let raw = std::fs::read_to_string(&path)?;
@@ -951,12 +980,61 @@ mod tests {
     }
 
     #[test]
+    fn diffs_under_a_heading_on_neither_list_are_refused_at_both_doors() {
+        let home = crate::companion::brain::test_home::TestHome::new("persona_manifest_unknown");
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+
+        // The propose door refuses what apply would refuse on static grounds,
+        // so nothing reaches the review queue that can never land.
+        for section in ["No Such / Section", "Notes", "My Notes / Things"] {
+            let err = propose_diffs(&pool, "p1", vec![diff(section, "x")], "r").unwrap_err();
+            assert!(matches!(err, AppError::Validation(_)), "{section}: {err}");
+            assert!(err.to_string().contains("neither list"), "{err}");
+        }
+        assert_eq!(view(&pool, "p1").unwrap().pending_proposals, 0);
+
+        // A pre-rebase file can carry such a heading on disk; a proposal
+        // planted around the propose door still cannot write under it.
+        seed_persona(&pool, "p2").unwrap();
+        let root = home.path().join("personas/p2");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("identity.md"),
+            "# My work\n\n## What I own\n- the changelog (ep_1)\n\n# Notes\n\n## Scratch\n- keep (ep_2)\n",
+        )
+        .unwrap();
+        let planted = proposal_repo::create_raw(
+            &pool,
+            proposal_repo::CreateRawProposalInput {
+                persona_id: "p2",
+                kind: KIND_SELF_MODEL_DIFF,
+                proposal_json: r#"{"diffs":[{"section":"Notes / Scratch","op":"append","new_text":"x"}]}"#,
+                summary: None,
+                proposed_changes: 1,
+            },
+        )
+        .unwrap();
+        let err = apply_approved(&pool, &planted).unwrap_err();
+        assert!(err.to_string().contains("neither list"), "{err}");
+        let raw = proposal_repo::get_raw(&pool, &planted).unwrap().unwrap();
+        assert_eq!(raw.status, "pending_review", "nothing burned");
+    }
+
+    #[test]
     fn apply_with_no_valid_diff_leaves_the_proposal_pending() {
         let _home = crate::companion::brain::test_home::TestHome::new("persona_manifest_bad");
         let pool = init_test_db().unwrap();
         seed_persona(&pool, "p1").unwrap();
-        let proposal_id =
-            propose_diffs(&pool, "p1", vec![diff("No Such / Section", "bullet")], "r").unwrap();
+        // A self heading with a `##` the live file lacks: the one refusal that
+        // legitimately waits for apply, because it depends on the document.
+        let proposal_id = propose_diffs(
+            &pool,
+            "p1",
+            vec![diff("My work / No such subsection", "bullet")],
+            "r",
+        )
+        .unwrap();
         assert!(apply_approved(&pool, &proposal_id).is_err());
         let raw = proposal_repo::get_raw(&pool, &proposal_id)
             .unwrap()
@@ -965,6 +1043,68 @@ mod tests {
             raw.status, "pending_review",
             "a fully-invalid batch burns nothing"
         );
+    }
+
+    /// Paired instrument for the propose door (run with `--ignored --nocapture`).
+    /// Every case takes the `propose_persona_manifest_diffs` path (`from_json`
+    /// then `propose_diffs`) and, when filed, goes straight to `apply_approved`,
+    /// so each row reads where the proposal actually ended.
+    #[test]
+    #[ignore = "instrument: prints the propose/apply outcome table"]
+    fn propose_door_outcome_table() {
+        let home = crate::companion::brain::test_home::TestHome::new("persona_manifest_table");
+        let pool = init_test_db().unwrap();
+        seed_persona(&pool, "p1").unwrap();
+        seed_persona(&pool, "p2").unwrap();
+        // p2 carries a pre-rebase identity.md with a heading on NEITHER list.
+        let root = home.path().join("personas/p2");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("identity.md"),
+            "---\ntype: identity\n---\n\n# My work\n\n## What I own\n- the changelog (ep_1)\n\n# Notes\n\n## Scratch\n- keep (ep_2)\n",
+        )
+        .unwrap();
+        let append = |section: &str| serde_json::json!({"section": section, "op": "append", "new_text": "x (ep_9)"});
+        let cases = [
+            ("p1", "self h2 (valid)", append("My work / What I own")),
+            (
+                "p1",
+                "self h2 (valid, 2nd h1)",
+                append("My self-reads / Open questions"),
+            ),
+            ("p1", "unknown h1 + h2", append("Scratch / notes")),
+            ("p1", "unknown h1 only", append("Notes")),
+            ("p1", "unknown h1 near-miss", append("My Notes / Things")),
+            ("p1", "law h1 (control)", append("Mandate")),
+            (
+                "p1",
+                "self h1, unknown h2 (live)",
+                append("My work / No such subsection"),
+            ),
+            (
+                "p1",
+                "self h2, missing anchor (live)",
+                serde_json::json!({"section": "My work / What I own", "op": "replace",
+                    "anchor_text": "never written", "new_text": "y (ep_9)"}),
+            ),
+            ("p1", "self h1 only (probe)", append("My work")),
+            (
+                "p2",
+                "neither-list h1 present on disk",
+                append("Notes / Scratch"),
+            ),
+        ];
+        for (persona, label, raw) in cases {
+            let diff = IdentityDiff::from_json(&raw).unwrap();
+            let outcome = match propose_diffs(&pool, persona, vec![diff], "r") {
+                Err(_) => "refused-at-propose",
+                Ok(id) => match apply_approved(&pool, &id) {
+                    Ok(_) => "landed",
+                    Err(_) => "filed-then-refused-at-apply",
+                },
+            };
+            println!("TABLE\t{label}\t{outcome}");
+        }
     }
 
     #[test]

@@ -626,6 +626,8 @@ mod tests {
             peer_display_name: "Laptop".into(),
             kind: "instruction".into(),
             instruction: "go".into(),
+            payload_json: None,
+            receipt: None,
             status,
             summary: None,
             refusal_reason: None,
