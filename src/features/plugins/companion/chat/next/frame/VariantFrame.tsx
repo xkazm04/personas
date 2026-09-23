@@ -48,18 +48,13 @@ export function VariantFrame({ engine, lifted, lookId }: { engine: AthenaChatEng
 
   return (
     <div className={`fixed inset-0 ${lifted ? 'z-[220]' : 'z-[60]'} pointer-events-none`} data-testid="companion-panel">
-      {look.id === 'bezel' && (
-        // The bezel reads as one instrument: a faint vignette ties the slabs together.
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.35))]" aria-hidden />
-      )}
-
       <FramePiece
         edge="top"
         look={look}
         frame={frame}
         working={streaming}
         label={C.athena}
-        sectionClassName={expanded ? (look.id === 'bezel' ? 'bottom-[92px]' : 'bottom-[104px]') : ''}
+        sectionClassName={expanded ? 'bottom-[104px]' : ''}
       >
         <FrameTop
           look={look}

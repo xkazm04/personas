@@ -21,7 +21,7 @@ import { NEXT_COPY as C } from './nextCopy';
 import { ATHENA_COLUMN, type ProcessKind, type ProcessMark, type ProjectColumn } from './useProcessColumns';
 import type { WorkItem } from './useWorkforce';
 
-export type ColumnsLook = 'panel' | 'glass' | 'bezel' | 'halo';
+export type ColumnsLook = 'panel' | 'halo';
 
 const KIND_ICON: Record<ProcessKind, (p: { className?: string }) => ReactNode> = {
   fleet: ({ className }) => <FleetShipIcon className={className} />,
@@ -32,8 +32,6 @@ const KIND_ICON: Record<ProcessKind, (p: { className?: string }) => ReactNode> =
 
 const TILE: Record<ColumnsLook, string> = {
   panel: 'rounded-interactive bg-secondary/60 border border-foreground/10',
-  glass: 'rounded-full bg-foreground/[0.07] border border-foreground/10 backdrop-blur',
-  bezel: 'rounded-[3px] bg-background border border-foreground/20 shadow-[inset_0_-1px_0_rgba(0,0,0,0.35)]',
   halo: 'rounded-card bg-background/70 border border-primary/20',
 };
 
