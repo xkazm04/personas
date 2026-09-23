@@ -4,6 +4,7 @@ pub mod companion;
 pub mod companions;
 pub mod core;
 pub mod credentials;
+pub mod curator;
 pub mod design;
 pub mod drive;
 pub mod eval_runs;

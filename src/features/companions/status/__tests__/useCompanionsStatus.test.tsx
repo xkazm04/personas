@@ -1,11 +1,12 @@
 /**
- * The status read, and the one fact the backend cannot see.
+ * The status read.
  *
- * Curator's prerequisite — a workspace that maps a knowledge registry — lives
- * in the frontend's localStorage at this stage, so the backend reports her as
- * unblocked and this hook decides. These tests pin that override in both
- * directions, because getting it wrong is invisible: an un-overridden Curator
- * reads as ready-to-switch-on and the toggle simply does nothing useful.
+ * Until migration e47 this hook PATCHED Curator's eligibility from the browser
+ * link store, because Rust could not read it. The backend answers now, so the
+ * first test below is the one that matters: whatever the backend says about
+ * Curator reaches the surface unaltered. A hook that silently improved on it
+ * would put the landing page and Curator's own loop on different facts again,
+ * which is exactly the seam that was closed.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -28,22 +29,11 @@ vi.mock('@/lib/tauriInvoke', () => ({
   invokeWithTimeout: (...args: unknown[]) => invokeMock(...args),
 }));
 
-interface Links {
-  registries: Record<string, { id: string; fullName: string; clonePath: string }>;
-  workspaceRegistry: Record<string, string>;
-}
-let links: Links = { registries: {}, workspaceRegistry: {} };
-
-vi.mock('@/features/plugins/dev-tools/sub_workspaces/registry/registryLinkStore', () => ({
-  registryLinkSnapshot: () => links,
-  subscribeRegistryLinks: () => () => {},
-}));
-
 import { __resetCompanionsStatusForTests } from '../companionsStatusStore';
 import { useCompanionsStatus } from '../useCompanionsStatus';
 
-/** The backend's answer: Curator optimistic, because Rust cannot read the link. */
-const BACKEND_ANSWER = {
+/** The backend's answer with no registry wired — Curator blocked, by Rust. */
+const NO_REGISTRY = {
   companions: [
     { id: 'athena', enabled: true, eligible: true, onboarded: true, detail: {} },
     {
@@ -54,7 +44,29 @@ const BACKEND_ANSWER = {
       onboarded: true,
       detail: { starredCount: 0, agentsTotal: 4 },
     },
-    { id: 'curator', enabled: false, eligible: true, onboarded: true, detail: {} },
+    {
+      id: 'curator',
+      enabled: false,
+      eligible: false,
+      blocker: 'no_registry',
+      onboarded: true,
+      detail: {},
+    },
+  ],
+};
+
+/** The same read once a held registry's checkout is on disk. */
+const WITH_REGISTRY = {
+  companions: [
+    NO_REGISTRY.companions[0],
+    NO_REGISTRY.companions[1],
+    {
+      id: 'curator',
+      enabled: false,
+      eligible: true,
+      onboarded: true,
+      detail: { registryName: 'acme/registry', registryPath: 'C:/checkouts/registry' },
+    },
   ],
 };
 
@@ -62,16 +74,16 @@ beforeEach(() => {
   handlers.clear();
   listenMock.mockClear();
   invokeMock.mockReset();
-  links = { registries: {}, workspaceRegistry: {} };
   __resetCompanionsStatusForTests();
 });
 
 describe('useCompanionsStatus', () => {
-  it('blocks Curator when no workspace maps a registry, whatever the backend said', async () => {
-    invokeMock.mockResolvedValue(BACKEND_ANSWER);
+  it('reports every companion exactly as the backend did', async () => {
+    invokeMock.mockResolvedValue(NO_REGISTRY);
     const { result } = renderHook(() => useCompanionsStatus());
 
     await waitFor(() => expect(result.current.companions).not.toBeNull());
+    expect(result.current.companions).toEqual(NO_REGISTRY.companions);
     const curator = result.current.byId('curator');
     expect(curator?.eligible).toBe(false);
     expect(curator?.blocker).toBe('no_registry');
@@ -80,18 +92,8 @@ describe('useCompanionsStatus', () => {
     expect(curator?.enabled).toBe(false);
   });
 
-  it('marks Curator eligible and fills the registry detail when one is mapped', async () => {
-    links = {
-      registries: {
-        'acme/registry': {
-          id: 'acme/registry',
-          fullName: 'acme/registry',
-          clonePath: 'C:/checkouts/registry',
-        },
-      },
-      workspaceRegistry: { 'ws-1': 'acme/registry' },
-    };
-    invokeMock.mockResolvedValue(BACKEND_ANSWER);
+  it('carries the registry detail the backend filled in', async () => {
+    invokeMock.mockResolvedValue(WITH_REGISTRY);
     const { result } = renderHook(() => useCompanionsStatus());
 
     await waitFor(() => expect(result.current.companions).not.toBeNull());
@@ -102,49 +104,28 @@ describe('useCompanionsStatus', () => {
     expect(curator?.detail.registryPath).toBe('C:/checkouts/registry');
   });
 
-  it('leaves the other two companions exactly as the backend reported them', async () => {
-    invokeMock.mockResolvedValue(BACKEND_ANSWER);
-    const { result } = renderHook(() => useCompanionsStatus());
-
-    await waitFor(() => expect(result.current.companions).not.toBeNull());
-    expect(result.current.byId('athena')).toEqual(BACKEND_ANSWER.companions[0]);
-    expect(result.current.byId('overseer')).toEqual(BACKEND_ANSWER.companions[1]);
-  });
-
   it('adopts a status-changed event without reading back', async () => {
-    invokeMock.mockResolvedValue(BACKEND_ANSWER);
+    invokeMock.mockResolvedValue(NO_REGISTRY);
     const { result } = renderHook(() => useCompanionsStatus());
     await waitFor(() => expect(result.current.companions).not.toBeNull());
     const callsAfterFirstRead = invokeMock.mock.calls.length;
 
+    // This is the path a registry link takes now: the link command emits the
+    // whole category, and Curator flips to eligible without anyone re-reading.
     act(() => {
-      handlers.get('companions://status-changed')?.({
-        payload: {
-          companions: [
-            { id: 'athena', enabled: false, eligible: true, onboarded: true, detail: {} },
-            {
-              id: 'overseer',
-              enabled: true,
-              eligible: true,
-              onboarded: true,
-              detail: { starredCount: 2, agentsTotal: 4 },
-            },
-            { id: 'curator', enabled: false, eligible: true, onboarded: true, detail: {} },
-          ],
-        },
-      });
+      handlers.get('companions://status-changed')?.({ payload: WITH_REGISTRY });
     });
 
     // Delivery is coalesced per animation frame by the shared singleton
     // listener, so this settles on the next frame rather than synchronously.
-    await waitFor(() => expect(result.current.byId('athena')?.enabled).toBe(false));
-    expect(result.current.byId('overseer')?.detail.starredCount).toBe(2);
+    await waitFor(() => expect(result.current.byId('curator')?.eligible).toBe(true));
+    expect(result.current.byId('curator')?.detail.registryName).toBe('acme/registry');
     // The event CARRIES the whole status, so nothing re-invokes on it.
     expect(invokeMock.mock.calls.length).toBe(callsAfterFirstRead);
   });
 
   it('shares one read and one listener across concurrent consumers', async () => {
-    invokeMock.mockResolvedValue(BACKEND_ANSWER);
+    invokeMock.mockResolvedValue(NO_REGISTRY);
     const a = renderHook(() => useCompanionsStatus());
     const b = renderHook(() => useCompanionsStatus());
 

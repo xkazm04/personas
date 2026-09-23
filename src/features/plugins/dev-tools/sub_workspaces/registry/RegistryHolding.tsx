@@ -17,7 +17,6 @@ import { Boxes, GitBranch, Link2Off, Loader2, RefreshCw, TriangleAlert, Users } 
 
 import { syncRegistryClone } from '@/api/devTools/devTools';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
-import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
@@ -166,14 +165,17 @@ export function RegistryHolding({
             {tr.sync}
           </AsyncButton>
         )}
-        <Button
+        {/* Leaving now reaches the database, so it is an AsyncButton: the
+            control the operator pressed owns the busy state, and a second
+            click cannot fire a second unlink. */}
+        <AsyncButton
           size="sm"
           variant="ghost"
           icon={<Link2Off className="w-3.5 h-3.5" />}
           onClick={() => unlinkRegistry(workspaceId)}
         >
           {tr.leave}
-        </Button>
+        </AsyncButton>
         <span className="typo-caption text-foreground/70">
           {others.length > 0
             ? tx(others.length === 1 ? tr.others_keep_one : tr.others_keep_other, { count: others.length })

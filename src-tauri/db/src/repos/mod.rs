@@ -1,9 +1,11 @@
 pub mod browser;
 pub mod communication;
 pub mod core;
+pub mod curator;
 pub mod dev;
 pub mod dev_env_connectors;
 pub mod dev_memories;
+pub mod dev_registries;
 pub mod dev_run_checkpoints;
 pub mod dev_tools;
 pub mod dev_workspaces;
