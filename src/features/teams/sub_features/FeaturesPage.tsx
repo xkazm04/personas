@@ -232,7 +232,9 @@ export default function FeaturesPage() {
         {/* The variant strip promises it selects among mutually exclusive
             regions, so the stage DECLARES that it is one of them. */}
         <div
-          {...segmentedTabPanelProps(FEATURES_VARIANT_TAB_PREFIX, variant)}
+          role="tabpanel"
+          id={`${FEATURES_VARIANT_TAB_PREFIX}-panel-${variant}`}
+          aria-labelledby={`${FEATURES_VARIANT_TAB_PREFIX}-tab-${variant}`}
           className="flex min-h-0 flex-1 flex-col"
           data-testid="features-stage"
         >
