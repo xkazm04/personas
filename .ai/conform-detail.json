@@ -2948,80 +2948,54 @@
       "context": "api-vault",
       "subject": "credential-vault",
       "bundle": "software-engineering",
-      "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "state": "unknown",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "encryption-at-rest",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:99-104 — vaultStatus exposes encrypted/plaintext/legacy_ipc_decrypt_calls/key_source and migratePlaintextCredentials drives the sweep; that is the instrument-then-drain ladder with its counter surfaced on the vault's own status surface."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:61-66 — the one IPC surface that accepted a raw refresh_token was retired and refresh moved entirely server-side, so no cached proof or grant crosses the boundary."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/rotation.ts:19-53 — policy is data with one authority (list/create/update/delete), the history ledger is a first-class read, and RotationStatus/AnomalyScore/Remediation carry the graduated ladder rather than a boolean."
-        },
-        {
           "technique": "brokered-egress",
-          "verdict": "deviation",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:15-27 and :45-56 — client secrets travel as plain IPC arguments; the session-encryption envelope used at src/api/vault/credentials.ts:112-121 exists one file away, so the secret sits in renderer memory and an unencrypted payload any error/telemetry path can capture."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "deviation",
-          "evidence": "src/api/vault/credentials.ts:23 — createCredential's admission contract carries no provenance field (PersonaCredential has none), so origin can only live in the free-form metadata blob; and src/api/vault/foraging.ts:12 ships ForagedCredential.fields with raw values to the renderer, which are echoed on screen at ForagingResultCard.tsx:130-138 instead of being presented by identity and location."
+          "verdict": "realized",
+          "evidence": "src/api/vault/rotation.ts:50 and :53 rotate/refresh by credentialId; src/api/vault/oauthGatewayApi.ts:70 records the retired raw-refresh-token IPC"
         },
         {
           "technique": "health-probing",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:75-97 — HealthcheckResult carries state 'verified' | 'unverifiable' | 'failed' and BulkHealthcheckSummary keeps unverifiable as its own bucket; the sweep runs on cadence in the engine, not on render."
+          "verdict": "realized",
+          "evidence": "src/api/vault/credentials.ts:76 declares the four-state HealthcheckResult at this hop"
+        },
+        {
+          "technique": "acquisition",
+          "verdict": "realized",
+          "evidence": "src/api/vault/foraging.ts:20 adopts a foraged candidate by id, never by value"
+        },
+        {
+          "technique": "token-refresh-lifecycle",
+          "verdict": "realized",
+          "evidence": "src/api/vault/rotation.ts:53 refresh is a by-id action; no token returned to the consumer"
         }
-      ],
-      "registryProposal": "The four acquisition ladder rungs are all present here (grant flow, Playwright tool capture, foraging, guided negotiation) — a rare complete set worth an application-layer citation for acquisition."
+      ]
     },
     "8b5d1d60-a129-4cd1-9567-d795589bde29/credential-vault": {
       "context": "stores-slices-vault",
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:82 drops the typed `state` from the slice's declared return, and :291-296 writes only a boolean into credential metadata — the third state cannot survive a reload."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "deviation",
-          "evidence": "src/stores/slices/vault/rotationSlice.ts:176-179 returns [] when the ledger read fails, spelling 'could not read the rotation history' exactly like 'this credential has never rotated'; src/stores/selectors/rotationOverview.ts:12 likewise drops any credential whose status failed to load."
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:83 verdict writer does not clear the attempt; :363 verdict preserved on unreachable (realized half); :151 typed HealthcheckResult (old boolean fixed)"
         },
         {
           "technique": "encryption-at-rest",
-          "verdict": "conformant",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:154, :186, :255, :313 — every value crossing IPC is passed through encryptWithSessionKey first, with no bypass path in the slice."
-        },
-        {
-          "technique": "brokered-egress",
-          "verdict": "conformant",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:253-256 — updateCredentialField accepts plaintext from the form and seals it before the call; no slice action returns a credential value to any caller."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "deviation",
-          "evidence": "src/stores/slices/vault/credentialSlice.ts:78 and :163 carry healthcheck_passed as a client-supplied claim into create_credential; the admission door is asked to trust the acquiring surface's word that validation happened."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/vault/rotationSlice.ts:162-171 only triggers refresh_credential_oauth_now; the refresh engine (thresholds, single-flight, rotating grants, failure taxonomy) runs server-side, so the technique's preconditions do not hold in this context."
+          "evidence": "src/stores/slices/vault/credentialSlice.ts:227 values leave the store session-encrypted; sealing lives in the backend"
+        },
+        {
+          "technique": "rotation-and-remediation",
+          "verdict": "realized",
+          "evidence": "src/stores/slices/vault/rotationSlice.ts:153 rotation is by reference followed by a status refetch; src/stores/selectors/rotationOverview.ts:22 anomalies rank first"
         }
       ]
     },
@@ -3030,79 +3004,32 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
-      "techniques": [
-        {
-          "technique": "encryption-at-rest",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/triggerListTypes.ts — no sealed value, ciphertext or key custody appears in this context; it is trigger configuration UI."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:230 — the polling trigger names a credential event by id; no grant, proof or expiry is held here."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerStatusSummary.tsx renders trigger enablement, not credential lifecycle state; no policy, ladder or ledger exists in this context."
-        },
-        {
-          "technique": "brokered-egress",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerExecutionHistory.tsx — no credentialed outbound call is made from this context; execution happens in the engine."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerQuickTemplates.tsx — nothing here brings a credential into custody; the credential already exists when a trigger references its event."
-        },
-        {
-          "technique": "health-probing",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerModeBadge.tsx renders trigger mode, not a probe verdict about a credential the app does not control."
-        }
-      ],
-      "registryProposal": "Routing question for the registry: this pairing looks like vocabulary resonance ('credential' appears as credentialEventsList) rather than governance. Route by the golden path's precondition — retention of a foreign secret — and this context belongs to an event-trigger / scheduling subject instead. Also note the map row lists src/features/triggers/sub_triggers/TriggerList.tsx, which does not exist on disk."
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
+      "techniques": []
     },
     "c4a2fa9d-1b41-4141-894b-c90663aa0433/credential-vault": {
       "context": "vault-catalog-autocred-ui",
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "acquisition",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 — masking is conditional on the template's declared field type rather than on the field being a captured credential; consent-per-capture is otherwise correctly realized at AutoCredConsent.tsx:115-146."
-        },
-        {
           "technique": "health-probing",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:115 — ReviewHealthcheck runs a live probe against the captured values before the save action is offered."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 renders the compatibility boolean, not state (the fourth narrowing)"
         },
         {
-          "technique": "brokered-egress",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx — no credentialed outbound call originates here; the browser session is driven by the backend and this context renders its progress."
+          "technique": "golden-path:one-sensitivity-authority",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 masks only template type 'password' while the seal (src-tauri/db/src/repos/resources/credentials.rs:80) is fail-closed; per the new condition the remedy is correcting the classification, not masking every field"
         },
         {
-          "technique": "encryption-at-rest",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/index.ts — sealing happens after admission in the store/backend; no seal/unseal door lives in this wizard."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx — the wizard ends at admission; no proof is kept fresh from a grant in this context."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredCards.tsx — no policy, ladder or degradation evidence is held or rendered in this acquisition wizard."
+          "technique": "acquisition",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:146 capture starts only on explicit consent; ReviewActions.tsx:147 admission gated on a passing probe"
         }
       ]
     },
@@ -3111,38 +3038,18 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:254-313 — the client branches on substrings of an error message rather than on a typed kind field, which is the named tell that the failure taxonomy did not survive the boundary."
-        },
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:156-177 — canSave takes healthcheckSuccess as a bare boolean, so a credential the provider could not be reached about is indistinguishable from one the provider rejected at the gate that decides admission."
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:256 regex on message (verdict-survives-boundary)"
         },
         {
           "technique": "acquisition",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:167-177 — save is gated on OAuth consent plus a passing live healthcheck wherever the provider offers one, which is validation-before-admission at the surface."
-        },
-        {
-          "technique": "brokered-egress",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx — this context selects and filters connectors; no credentialed call is issued from it."
-        },
-        {
-          "technique": "encryption-at-rest",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/PickerGrid.tsx — no sealed value is read or written in this context."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts renders recipe availability, not rotation policy or degradation state."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/foraging/ForagingResultCard.tsx:136 renders each foraged value as a first-4/last-4 partial echo; candidates are presented by identity and location, never by value. Consent (ForagingPanel.tsx:63) and couldn't-look reporting (ForagingResults.tsx:39) realized"
         }
       ]
     },
@@ -3151,38 +3058,18 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "rotation-and-remediation",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/features/AnomalyScorePanel.tsx:6-17 — a hand-copied status vocabulary (healthy/backoff_retry/preemptive_rotation/rotate_then_alert/disable) against a wire enum of Healthy/BackoffRetry/PreemptiveRotation/RotateThenAlert/Disable; the same casing mismatch was already found and fixed in useRemediationEvaluator.ts:80-84 and remediationBus.ts:52-60, and this copy did not learn it, so the top of the ladder renders as its bottom."
-        },
-        {
-          "technique": "brokered-egress",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/features/AuditLogTable.tsx:14 renders the audit trail as operation/caller/target/time from CredentialAuditEntry and never a credential value — the audit-at-the-door record surfaced without quoting the secret."
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:125 two renderings of one vocabulary disagree; AnomalyScorePanel.tsx:11 Record<Remediation> realized (old deviation fixed)"
         },
         {
           "technique": "health-probing",
-          "verdict": "unknown",
-          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx renders aggregate intelligence rather than a probe verdict; I could not establish from these paths which status vocabulary its badges derive from."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "unknown",
-          "evidence": "src/features/vault/sub_credentials/components/features/RotationCountdownRing.tsx renders a countdown from next_rotation_at; whether any proof-freshness claim is rendered here is not determinable from these paths."
-        },
-        {
-          "technique": "encryption-at-rest",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/features/EventTemplateCard.tsx — these are read-only display surfaces over metadata; no seal/unseal door exists in this context."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/features/CredentialScopeSection.tsx — every surface here operates on an already-admitted credential; no acquisition mode is implemented in this context."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/features/GatewayMembersModal.tsx:55 folds unverifiable and unreachable into one 'unknown' (cannot-probe-ever and cannot-probe-now share a state)"
         }
       ]
     },
@@ -3191,38 +3078,18 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:6 and ConnectionTestSection.tsx:10 carry a boolean success only; the typed three-state verdict never reaches the badge, so could-not-verify and verified-bad share one rendering."
+          "evidence": "src/features/vault/sub_credentials/components/list/CredentialListColumns.tsx:136 colour without age; HealthcheckResultDisplay.tsx:33 and ConnectionTestSection.tsx:78 four-state realized (old deviation fixed)"
         },
         {
-          "technique": "brokered-egress",
+          "technique": "golden-path:one-sensitivity-authority",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:49-51 renders the provider's raw message verbatim in the 'technical details' drawer with no credential scrubber in front of it, so a provider that echoes the failed request into its error body puts it on screen."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:58,119 masks secret fields with an explicit reveal, FieldCaptureHelpers.tsx:27-28 validates paste shape, and CredentialEditForm.tsx:54 keeps hand-typed keys in a ref rather than React state so they cannot be serialized into DevTools or an error report."
-        },
-        {
-          "technique": "encryption-at-rest",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_credentials/components/forms/FormActions.tsx:37-52 surfaces which custody the master key is under (key_source === 'keychain' vs the fallback label) at the moment the user hands over a secret."
-        },
-        {
-          "technique": "rotation-and-remediation",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx — these are entry/edit forms; rotation policy and the degradation ladder live in the features and hooks contexts, not here."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/OAuthSection.tsx and OAuthProgressRing.tsx drive first consent only; no cached proof is refreshed from a grant in this context."
+          "evidence": "src/features/vault/sub_credentials/components/forms/EditFormFields.tsx:44 masks only type 'password', and importHelpers.ts:361 lets a key-name regex decide masking - a third classifier"
         }
       ]
     },
@@ -3231,41 +3098,20 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:153-159 — the catch path hard-codes state:'failed' while 'unverifiable' exists in the very type declared at :42; :181-185 persists healthcheck_last_success as a boolean, so the third state cannot reach the fallback rendering path the file's own contract (:21-35) describes."
+          "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 drops state; useCredentialHealth.ts:192 verdict patch does not clear the attempt; :165 and :190 realized (old deviation fixed)"
         },
         {
           "technique": "rotation-and-remediation",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/shared/hooks/health/useRemediationEvaluator.ts:46-51 returns null when the anomaly metadata blob will not parse and :84 then treats a null remediation as Healthy — a corrupted score reads as a healthy credential, the inverse of the RotationStatus.healthcheck_corrupted flag the backend added for exactly this case."
-        },
-        {
-          "technique": "brokered-egress",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/shared/hooks/useGoogleOAuth.ts:10-15 hands back a one-time oauth_session_ref the backend redeems, so token material never crosses IPC; useCredentialOAuth.ts:24-26 keeps pending client secrets in a ref to stay out of DevTools/Sentry serialization and :42 strips client_id/client_secret from the saved record."
-        },
-        {
-          "technique": "encryption-at-rest",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/shared/hooks/health/useCredentialHealth.ts:202 seals preview field values with the session key before they cross IPC, and useVaultStatus.ts:44-56 is the single shared reader of the vault's custody + legacy-path counters."
-        },
-        {
-          "technique": "acquisition",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/shared/hooks/useCredentialOAuth.ts:53 records provenance as one flow's own credential-data key (oauth_client_mode: 'app_managed') rather than a required field of the admission contract, so a record's origin is only discoverable by knowing which flow wrote which key."
-        },
-        {
-          "technique": "token-refresh-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:61-66 (imported by useGoogleOAuth.ts:2) records that the only client-side refresh surface was deliberately retired; these hooks start consent and render a countdown (useRotationTicker.ts:22-30), so no threshold, single-flight or grant-rotation obligation lands here."
+          "verdict": "realized",
+          "evidence": "src/features/vault/shared/hooks/health/useRemediationEvaluator.ts:109 a status that could not be fetched weighs zero; :61 a corrupt blob is distinct from absent"
         }
-      ],
-      "registryProposal": "Upward lesson for health-probing: this repo carries a correct three-state vocabulary on the wire (HealthcheckResult.state, BulkHealthcheckSummary.unverifiable) and still loses it three separate times — in a catch block, in a persisted boolean column, and in a store slice's declared return type. The technique names the display surfaces as the place the vocabulary drifts; the measured loss point here is the *persistence and boundary shape*. Worth stating that the third state must be representable in the stored column and in every intermediate type, or the badge renderer is the only place it ever existed."
+      ]
     },
     "55d6d7cb-b016-4d73-8386-b5c18beafdae/sql-console": {
       "context": "vault-database-shell",
@@ -3600,38 +3446,18 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "template-anatomy",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:76-79 — the 'hourly' Time preset has no member in the composer picker's option set, so the interview cannot represent a value the model can hold and Apply rewrites it to daily."
-        },
-        {
           "technique": "adoption-lifecycle",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:364-378 recomputes the whole impact preview from (template, answer set) on every answer change, and questionDimMap.ts:21-24 routes question->dimension through one authority rather than a second copy."
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:83 the picker is narrower than the value; the round-trip guard at :58 covers only a no-op Apply"
         },
         {
           "technique": "readiness-prerequisites",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:281-294 gates Continue on globalBlocked/globalRemaining before the build session is created, and the blocked question renders a named remedy CTA instead of an unusable input."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: this context is the post-admission interview surface; no payload crosses a trust boundary here and nothing hashes, records or verifies a manifest entry."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: the strip-and-lint pass and the bare-environment leak test run at the admission door over the payload; this context consumes an already-admitted payload and authors no bindings."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no admission, taxonomy, dedupe or retirement decision is made here — this is one template's adoption surface, not the catalog."
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:325 stops counting a credential-blocked question once it has any answer and ChronologyAdoptionView.tsx:905 seeds template defaults as answers, so canContinue passes with no credential; the named refusal at :456 is realized"
         }
       ]
     },
@@ -3639,39 +3465,24 @@
       "context": "template-adoption-questionnaire",
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "template-anatomy",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67-98 normalizes both authored option shapes through one door, keeps the option's stable value distinct from its rendered label, and drops an unusable option rather than shipping an unpickable card."
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx:51 nothing shown for an off-list default and no door rejects one (scripts/templates/productivity/router.json:230; 5 closed selects in 4 templates); questionnaireHelpers.ts:78 value/label identity realized"
         },
         {
           "technique": "adoption-lifecycle",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireGlyphRow.ts:195-218 recomputes the preview sigil from the live answer set on every change, so the preview is a derivation of (template, answers) and not a stock image."
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:136 reads a missing allow_custom as closed"
         },
         {
           "technique": "readiness-prerequisites",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:169-174 resolves a remedy category for BOTH block shapes (vault_category and dynamic_source.service_type), so QuestionnaireHeroQuestion.tsx:150-154 can never leave a blocked question without a named requirement and an add-credential path."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload crosses a trust boundary in this rendering surface; digests and manifests are a seeding-door concern."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: the payload is already admitted; this context declares no environment bindings and runs no strip pass."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no admission bar, taxonomy or retirement decision is made in a single-template question renderer."
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeroQuestion.tsx:83 swaps in the named add-credential remedy"
         }
       ]
     },
@@ -3679,39 +3490,24 @@
       "context": "template-adoption-support",
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
-      "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "state": "unknown",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "template-anatomy",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/QuestionnaireFormGridConfig.ts:24-35 — CATEGORY_META is an open Record<string,...> missing 'boundaries', one of the eight categories in questionnaireCategoryOrder.ts:21-30, so boundaries questions render under the 'Other' fallback; the sibling table at questionnaire/questionnaireGlyphRow.ts:45-54 fixed exactly this drift with `satisfies Record<QuestionnaireCategory, ...>` and this copy was not converted."
+          "technique": "adoption-lifecycle",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 the escape hatch defaults closed"
         },
         {
-          "technique": "adoption-lifecycle",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 with QuestionnaireFormGridParts.tsx:447 lets the interview invent off-list answers, and useHydratedDesignResult.ts:97-101 silently leaves unresolved recipe_ref capabilities in place on a lookup failure, so the interview can present fewer capabilities than the template declares with no signal."
+          "technique": "template-anatomy",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/QuestionnaireFormGridConfig.ts:52 CATEGORY_META satisfies Record<QuestionnaireCategory,...>"
         },
         {
           "technique": "readiness-prerequisites",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/useDynamicQuestionOptions.ts:27 and :216-231 keep a three-state verdict (ready / no_credential / fetch_failed) in which an unreadable environment never falls through to green, and errorKind decides whether the surface offers Add-credential or Retry."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: these adoption support components consume an already-seeded payload; no digest is recorded or checked at this boundary."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: the strip pass and bare-environment leak test belong to the admission door; this context resolves credentials at adoption time, which is the behaviour portability asks for, not a site where leaks are introduced."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no entry is admitted, deduped or retired here."
+          "evidence": "src/features/templates/sub_generated/adoption/QuickAddCredentialModal.tsx:75 remedy filtered to the declared category; useDynamicQuestionOptions.ts:27 keeps no_credential and fetch_failed apart"
         }
       ]
     },
@@ -3720,38 +3516,13 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
-        {
-          "technique": "catalog-curation",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/AdminToolsDropdown.tsx:46-54 offers a bulk Deduplicate that goes straight to deletion with no deprecation state in between, so a removed near-duplicate strands the provenance stamp of every instance adopted from it — the taxonomy (searchConstants.ts:39-130) and the predicate-carrying counts (FilterChips.tsx:35-42, TemplateSearchFilterRow.tsx:54) are otherwise exemplary."
-        },
         {
           "technique": "readiness-prerequisites",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 exposes a readiness sort fed by the gallery's own simplified evaluator rather than the authoritative resolver, which is the technique's named failure mode for browse-time readiness."
-        },
-        {
-          "technique": "template-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: the search surface renders only layer-1 browse metadata; it never parses a parameter surface or a default."
-        },
-        {
-          "technique": "adoption-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: this context ends at browse; no interview, mapping, transaction or provenance stamp happens here."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload crosses a trust boundary in a search/filter surface."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload is authored, stripped or resolved here."
+          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 the browse label promises the gate's verdict while reading a different evaluator (useGalleryActions.ts:68)"
         }
       ]
     },
@@ -3760,38 +3531,18 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "integrity-and-provenance",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:28-30 — the badge asserts verified integrity from a verifier that computes a digest and discards it (lib/templates/templateVerification.ts:171-176), while the repo's real checksum gate lives unconnected at lib/personas/templates/templateCatalog.ts:183-188; the badge is decoration that can never show red for a built-in."
+          "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:21 no pending state; one mark carries origin and integrity (src/lib/templates/templateVerification.ts:160)"
         },
         {
           "technique": "readiness-prerequisites",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/shared/adoptionReadiness.ts:48-71 is a second readiness evaluator sitting beside ConnectorReadiness.tsx:23-28 (which states there is deliberately no local fallback because a second opinion on readiness is the bug), and its catch at :31 plus the return-100 fallbacks at :56/:66/:69 score an unparseable design_result as fully Ready."
-        },
-        {
-          "technique": "adoption-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: these are shared presentation primitives; every stage of the lifecycle (interview, mapping, transaction, divorce) is owned by other contexts."
-        },
-        {
-          "technique": "template-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no parameter surface, option list or default is read in these components."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload is authored or stripped here."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no admission, dedupe or retirement decision is taken in a badge/banner/panel set."
+          "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:58 the gate reads service-type presence only; adoptionReadiness.ts:66 scores an unparseable template 100; badge (architecturalCategories.ts:211) and gate (vaultAdoptionMatcher.ts:64) read two vocabularies"
         }
       ]
     },
@@ -3800,38 +3551,23 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "adoption-lifecycle",
+          "technique": "readiness-prerequisites",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:84, :151 and :246-247 build the event catalog, the default routes and the delivery preview from MOCK_EMIT_EVENTS_BY_UC / SAMPLE_MESSAGE_BY_UC / mockTestDelivery rather than from the template's declared payload — a preview that shows something other than what confirm creates."
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:666 presence only; the mocked Test probe (ucPicker/useUcPickerState.ts:247) is unreachable - ucPicker/index.ts:5 has no importer outside its folder"
         },
         {
           "technique": "template-anatomy",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerHelpers.ts:12-26 is a second, hardcoded rendering of the TriggerSelection vocabulary that persona-layout/adoptionDimHelpers.ts:31-59 renders through i18n, and the two disagree — a capability carrying only customCron reads 'MANUAL' here and 'monthly on day D' there; useUcPickerState.ts:130-132 also seeds an invented weekly default while the template's own UseCaseOption.defaultSelection (useCasePickerShared.ts:72) is never read."
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 seeds q.default verbatim with no membership check"
         },
         {
-          "technique": "readiness-prerequisites",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts:96-107 admits only credentials that are both category-matched and isCredentialVerified, so an unverified credential never satisfies a messaging role."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload crosses a trust boundary in this picker; digests are a seeding-door concern."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: this context binds channels from the adopter's own vault at adoption time and authors no payload to strip."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no catalog entry is admitted, deduped or retired here."
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:1149 marks an adoption active but never writes the template-adopt-context-v1 resume key; rollback at :1161 realized"
         }
       ]
     },
@@ -3840,38 +3576,18 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "adoption-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:118 keys the resume lookup on test_case_name, so a renamed or duplicate-named template silently resumes the wrong entry or none; the review/compare stage is otherwise well realized (CompareTray.tsx:17, useAdoptionCompletionNotifier.ts:80-95 distinguishing completed/failed/awaiting_answers)."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 matches test_case_name on a key with no writer; the sibling at :153 keys on the review id correctly"
         },
         {
           "technique": "readiness-prerequisites",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:61 resolves readiness through the authoritative Rust resolver and :68 computes a second local score in the same hook, and it is the local score that drives the coverage counts (:86-101), the coverage filter (:136-143) and the readiness sort (:166-171)."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:206-216 — handleDeleteReview and handleCleanupDuplicates both hard-delete catalog rows with no deprecation state, so an adopted instance's provenance stamp can be left pointing at a row that no longer exists."
-        },
-        {
-          "technique": "template-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: row and card components render layer-1 browse metadata; the parameter surface is never parsed here."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: the listed row/list components receive an already-computed verification object and perform no verification; the badge finding is recorded on the shared-primitives pair."
-        },
-        {
-          "technique": "template-portability",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: no payload is authored, stripped or resolved in a card renderer."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:98 the card's Ready badge comes from the category score, not the gate"
         }
       ]
     },
@@ -3880,38 +3596,28 @@
       "subject": "templates-scaffolding",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-4",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
-          "technique": "adoption-lifecycle",
+          "technique": "instance-upgrade",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:240 writes a provenance stamp without the version as it stood at adoption, so the offer-not-action machinery at recipeStaleness.ts:46-59 compares against a field nothing writes; the deterministic mapping (substituteBindings.ts:31) and the idempotent, race-safe adoption transaction (useAdoption.ts:61-67) are otherwise exemplary."
+          "evidence": "src-tauri/src/engine/recipe_seed.rs:297 the publisher never bumps; the stamp has no answers (src/features/templates/sub_recipes/libs/useAdoption.ts:39); accepting an update is Remove then Adopt (RecipeDetailPanel.tsx:50), dropping edits unannounced"
         },
         {
           "technique": "template-anatomy",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/types.ts:70-71 states the defaults-within-options invariant as an authoring comment with no machine check anywhere, and recipeAdapter.ts:382 gives every backend-sourced recipe `bindings: []` with `version: def.source_version ?? '1.0.0'` at :390 — an empty parameter surface (so every {{placeholder}} survives substituteBindings.ts:17 verbatim into the adopted use case) over a constant version column."
+          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:560 falls back to '1.0.0', the same constant on every seeded row"
+        },
+        {
+          "technique": "adoption-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/en.json:14391 tells the user the trigger is removed, but remove (useAdoption.ts:140) only filters use cases"
         },
         {
           "technique": "readiness-prerequisites",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:106-115 reports the parameter-coverage gap of a degraded adoption as a transient toast only, so the instance records nothing about what went unbound and no finish-setting-this-up surface can exist after the flow closes; the three-state verdict itself (eligibility.ts:30-49) is textbook."
-        },
-        {
-          "technique": "catalog-curation",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/recipeAdapter.ts:224-240 admits a recipe whose prompt_template will not parse as a valid-looking row with no connectors, trigger or policies rather than refusing it — the door-less catalog the technique's measured incident describes, with the generator trusted as a writer."
-        },
-        {
-          "technique": "template-portability",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_recipes/types.ts:61-75 declares bindings as roles resolved at adoption, eligibility.ts:35 matches required connectors by generic slug rather than a named author credential, and substituteBindings.ts:10-26 resolves every environment binding at adoption time."
-        },
-        {
-          "technique": "integrity-and-provenance",
-          "verdict": "not-applicable",
-          "evidence": "Precondition fails: these files consume recipe rows already in the store; no digest or manifest is recorded or checked at this boundary."
+          "evidence": "src/features/templates/sub_recipes/eligibility.ts:45 a three-state verdict that names the blocked connectors"
         }
       ]
     },
@@ -6201,38 +5907,38 @@
       "subject": "app-shell",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-8",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "navigation-model",
           "verdict": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:44 derives the L1 rail from SIDEBAR_SECTIONS with reachability metadata so the rail cannot drift from router, palette or analytics — exactly the registry rule — but :68 through :341 hand-maintain homeItems, overviewItems, credentialItems, eventBusItems, templateItems, artistItems, devToolsItems, twinItems, researchLabItems, cloudItems, companionItems, obsidianBrainItems and getSettingsItems; the note at :173 records a 'voice' entry that was not in the TwinTab union, hidden by an `id as TwinTab` cast, that shipped and rendered a blank page. Active-state derivation is clean (SidebarLevel1.tsx:214 isActive from one location value, with aria-current at :242)."
+          "evidence": "src/features/shared/chrome/sidebar/SidebarSubNav.ts:12 plus the unchecked cast in PluginsSidebarNav.tsx:129; realized: top level derived from the registry (sidebarData.ts:33), a shell-owned back engine (src/lib/keyboard/NavHistoryShortcuts.tsx:44), switches announced (Sidebar.tsx:183)"
         },
         {
           "technique": "nav-hierarchy",
           "verdict": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/AgentsSidebarNav.tsx:7 — favorites, recent agents, live draft/exec/lab sessions and codebase personas become rows in the section's second level, so the sub-destination set comes from the user's data instead of the product's structure and the nav's vocabulary is neither closed nor learnable by position. Depth and posture are otherwise exemplary: the former Level-3 push panes were removed (PluginsSidebarNav.tsx:13, SidebarLevel2.tsx:462) and collapse state is the user's persisted setting (Sidebar.tsx:23) with icons, badges and a title/aria-label name reveal surviving it (SidebarLevel1.tsx:240)."
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:226 drops Level 2 when collapsed with no flyout; SidebarLevel1.tsx:229 names collapsed icons only via native title; plugin header plus always-visible sub-tabs is a third level (PluginsSidebarNav.tsx:7)"
         },
         {
           "technique": "entitlement-gating",
           "verdict": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:53 — filterByTier removes every entry the tier does not include, so the shell has only hidden and enabled; there is no locked state and no upsell affordance anywhere in the subtree, which is the all-hidden posture the technique names (users cannot want what they cannot see). The destination is guarded by the same tier authority, but Sidebar.tsx:114 handles a forbidden location by silently resetting to 'home' rather than landing on an explanation surface."
+          "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:197 checks gates inline while the footer and router use passesGates, so a gate added to the authority hides the route but not the rail entry"
         },
         {
           "technique": "badge-and-attention",
           "verdict": "conformant",
-          "evidence": "src/features/shared/chrome/sidebar/BadgeSlot.tsx:6 — the grade set is exactly count|pulse|dot with one shell-level treatment each, only the highest-priority badge renders with a +N overflow (:89) so the rail cannot glow everywhere, the tooltip lists every active state as text (:73) and Sidebar.tsx:178 announces counts through an aria-live region; the values are derived from the unified attention registry rather than hand-incremented (useBadgeCounts.ts:6, re-polled on the shared 30s coordinator tick)."
+          "evidence": "src/features/shared/chrome/sidebar/BadgeSlot.tsx:6 closed variant vocabulary, :57 one priority-ranked slot"
         },
         {
           "technique": "shell-hosted-services",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:169 — this context is the navigation surface only; it mounts no session-lifetime service and contains no host region, so the admission test, mount order and teardown story have no subject here."
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/BackgroundServices.tsx:21 one enumerable worker host, mounted at src/App.tsx:402 beside the swap region"
         },
         {
-          "technique": "lazy-section-loading",
-          "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:225 — the sidebar renders no section content and owns no code-split boundary or Suspense fallback, so the placeholder contract, prefetch-on-intent and chunk-failure honesty live outside these paths. It does hold the frame still and restores per-section scroll (:87), which is the shell's half of that contract."
+          "technique": "fixed-chrome-offset-budget",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/chrome/sidebar/Sidebar.tsx:154 publishes sidebar width as one owned CSS variable"
         }
       ]
     },
@@ -6281,39 +5987,24 @@
       "context": "vault-catalog-autocred-ui",
       "subject": "connector-catalog",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-9",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "catalog-as-data",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 consults lookupRecipeAsDesignResult(connector.name) before a live LLM analysis; the derivation is saved keyed by identity (src/hooks/design/credential/useCredentialDesign.ts:117) with provenance (recipe.source) and the catalog card advertises that a known-good recipe exists (src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:180-195)."
-        },
-        {
-          "technique": "schema-driven-forms",
-          "verdict": "conformant",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:93-112 renders only the declared fields through the shared FieldCaptureRow (secret fields masked via inputType), save is gated on a probe that received the values (steps/ReviewActions.tsx:149 with the blocker named at :120-122), and undeclared transport keys are stripped at the save door (helpers/useAutoCredSession.ts:199-205)."
-        },
-        {
-          "technique": "shipped-vs-operator-ownership",
-          "verdict": "not-applicable",
-          "evidence": "No catalog refresh, seed, or row write exists in this context - the flow writes credential recipes and credentials, never the vendor/operator columns of a connector row, so the two-writer contract has no writer here to bind."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before live discovery"
         },
         {
           "technique": "matching-and-ranking",
-          "verdict": "not-applicable",
-          "evidence": "No foreign reference is resolved: match_existing is pinned to the already-chosen row at src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:102 and :114, so the identity is known before the flow starts."
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:102 binds the cached design to the exact picked identity"
         },
         {
-          "technique": "adapter-normalization",
-          "verdict": "not-applicable",
-          "evidence": "The two adapters at steps/AutoCredPanel.tsx:212 are acquisition transports selected by host capability (playwright vs guided), not per-provider API translations registered under catalog identity - the precondition 'providers diverge in shape' does not hold."
-        },
-        {
-          "technique": "catalog-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "No version stamp, retirement, tombstone, alias, or dependent migration occurs in this context; the only row this flow can touch is created elsewhere."
+          "technique": "schema-driven-forms",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 collapses unverifiable into passed; :147 gates Save on the same boolean"
         }
       ]
     },
@@ -6322,79 +6013,43 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-9",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "catalog-as-data",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:105 filters and counts on the scalar c.category while the row type declares categories?: string[] (src/lib/types/types.ts:253-254) that no consumer in the repo reads - the single-to-multi-valued axis was never unioned behind one accessor, so a connector that straddles categories is discoverable under one of them and the multi-tag declaration rots unread."
-        },
-        {
-          "technique": "schema-driven-forms",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:228-231 hardcodes eight provider names in consumer code to decide whether save must wait on a probe, and :135-144 hardcodes which declared fields are hidden per flow kind - both are row attributes (healthcheck_config already exists on the row), so a ninth OAuth provider ships an ungated save and a new auto-filled field must be added to a switch statement."
+          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 reads the scalar; the union accessor src/lib/credentials/builtinConnectors.ts:231 reads bundled JSON, unusable to consumers holding stored rows"
         },
         {
           "technique": "catalog-lifecycle",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:102-121 has no deprecation/retirement predicate and ConnectorDefinition (src/lib/types/types.ts:319-325) carries no status, shipped-revision, or alias column, so an entry removed from the shipped set stays in the discovery gallery of every existing install, indistinguishable from a supported one."
+          "evidence": "src/lib/types/types.ts:241 ConnectorDefinitionBase has no stage field, so every row offers a connect action and no stage can be hidden from offers"
         },
         {
           "technique": "matching-and-ranking",
           "verdict": "not-applicable",
-          "evidence": "No foreign reference is resolved to a catalog identity here; the search path is an interactive filter (src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:57-68 substring over label/name/category) that binds nothing automatically - the case the technique explicitly exempts - and no-match is a first-class outcome at picker/PickerGrid.tsx:35-42."
-        },
-        {
-          "technique": "shipped-vs-operator-ownership",
-          "verdict": "not-applicable",
-          "evidence": "This is a read-only listing surface: it obtains rows as a prop and writes none, so neither the refresh nor the edit door is present to gate."
-        },
-        {
-          "technique": "adapter-normalization",
-          "verdict": "not-applicable",
-          "evidence": "No provider API is called or translated in this context; the picker reads catalog rows only."
+          "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:61 is an interactive substring filter a human picks from; nothing binds automatically"
         }
-      ],
-      "registryProposal": "The audience/licensing bridge here is the technique's blessed transitional form realized exactly - src/lib/credentials/connectorAudiences.ts:12-16 reads the row's own metadata.audiences first, falls back to the static table, unions both, and documents the migration direction in place, consumed at usePickerFilters.ts:118. catalog-as-data describes this shape as 'observed working in the field'; it is worth citing with this file:line in the application layer."
+      ]
     },
     "6229df3d-d54e-47bb-8091-abb479003c18/connector-catalog": {
       "context": "vault-catalog-schemas",
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-9",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
+        {
+          "technique": "schema-driven-forms",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:187 the gate above; the no-probe reason exists only as form copy (schemaConfigs.tsx:197) and CredentialSchemaForm.tsx:129 does not write it onto the minted row"
+        },
         {
           "technique": "catalog-as-data",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:227 derives the row's machine key as `${serviceTypePrefix}_${sanitize(effectiveName)}` from the label the user just typed (row created at :244), violating 'identity is minted, never the display label'; every credential references that derived key via service_type, so sanitize() collisions silently bind a new credential to an existing row. Secondary: forms/TemplateFormBody.tsx:185-190 re-declares a local AuthVariant shape for metadata.auth_variants, typed unknown[] at src/lib/types/types.ts:187, giving the row's variant declaration one authority per consumer."
-        },
-        {
-          "technique": "schema-driven-forms",
-          "verdict": "conformant",
-          "evidence": "schemas/CredentialSchemaForm.tsx:318-328 renders every subtype from its declared field list through the one generic CredentialEditForm; schemas/schemaFormTypes.ts:88-107 builds each probe by substituting declared credential fields ({{api_key}}, bearer token, basic auth, custom headers) so the gate exercises its target; and :277-286 reaps the just-minted row when the credential save fails, recording the rollback's own failure rather than swallowing it."
-        },
-        {
-          "technique": "shipped-vs-operator-ownership",
-          "verdict": "not-applicable",
-          "evidence": "This is the operator's creation door only - rows are written with is_builtin: false (CredentialSchemaForm.tsx:254) and no vendor refresh or re-seed path exists in this context to contend with them."
-        },
-        {
-          "technique": "matching-and-ranking",
-          "verdict": "not-applicable",
-          "evidence": "No foreign-name resolution occurs; the user picks a schema type explicitly (forms/CredentialTypePicker.tsx:107-133)."
-        },
-        {
-          "technique": "adapter-normalization",
-          "verdict": "not-applicable",
-          "evidence": "No heterogeneous provider API is mapped onto an internal view model here; the MCP custom healthcheck (schemaConfigs.tsx:76-81) is a probe call, not a translation layer."
-        },
-        {
-          "technique": "catalog-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "The only delete in this context is the creation rollback (CredentialSchemaForm.tsx:280), which is the schema-driven-forms reaper, not a lifecycle transition; no versioning, retirement, aliasing, or dependent migration happens here."
+          "evidence": "src-tauri/db/src/repos/resources/connectors.rs:117 the mint is checked inside the transaction, but the user 'mcp' namespace (src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:52) contains a shipped name and the seeder (src-tauri/db/src/lib.rs:2091) inserts by id, bypassing the check"
         }
       ]
     },
@@ -6403,38 +6058,23 @@
       "subject": "connector-catalog",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-9",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "schema-driven-forms",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:88 treats a missing probe recipe as 'this connector needs no verification' and :201 therefore leaves save ungated - the intra-row cross-check the technique demands (declares fields => probe references one, otherwise mark the connector unauthenticated) exists nowhere, so an unprobed row is indistinguishable from a deliberately unauthenticated one. Secondary: :34-43 falls back to connector.credential_fields when the catalog row declares none, so the form can collect fields storage and redaction never saw. Note the correct guard exists elsewhere in-house: design/CredentialDesignHelpers.ts:177 requires healthcheckSuccess && testedConfig !== null."
-        },
-        {
-          "technique": "catalog-as-data",
-          "verdict": "conformant",
-          "evidence": "forms/ConnectorCredentialModal.tsx:31 and :90-96 key the health cache and the probe on connector.name, and all presentation (icon, colour, label, category) is read from the row at :109-122 - nothing load-bearing keys on the label."
-        },
-        {
-          "technique": "shipped-vs-operator-ownership",
-          "verdict": "not-applicable",
-          "evidence": "No connector row is written or refreshed in this context; it writes credential instances only."
+          "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:161 as above; ConnectionTestSection.tsx:40 colors on .success; no row declares its missing probe (13 of 115). Realized: ConnectorCredentialModal.tsx:98 gates only when a recipe exists"
         },
         {
           "technique": "matching-and-ranking",
-          "verdict": "not-applicable",
-          "evidence": "The connector identity arrives already resolved as a prop; no foreign reference is ranked or bound."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_credentials/components/list/EmptyStateView.tsx:42 binds quick-start buttons by substring, first match wins ('slack' also matches 'slack_webhook'), right today only by list order"
         },
         {
-          "technique": "adapter-normalization",
+          "technique": "catalog-as-data",
           "verdict": "not-applicable",
-          "evidence": "There is no per-provider adapter registry here. Worth recording anyway: the closed probe-failure taxonomy at design/CredentialDesignHelpers.ts:262-318 (timeout / dns / refused / 401 / 403 / 404 / 429 / 5xx) with an honest fallback that preserves the raw evidence behind a details disclosure (forms/HealthcheckResultDisplay.tsx:296-311) realizes the technique's 'errors are part of the model / unmappable failures stay failures' rule in a non-adapter setting."
-        },
-        {
-          "technique": "catalog-lifecycle",
-          "verdict": "not-applicable",
-          "evidence": "No lifecycle transition of a catalog row occurs in this context."
+          "evidence": "scripts/connectors/builtin/obsidian-memory.json:12 the only gated row has no credential fields, so no credential resolved through the filtered list can lose its type"
         }
       ]
     },
@@ -7389,13 +7029,13 @@
       "subject": "credential-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform",
       "techniques": [
         {
           "technique": "health-probing",
           "verdict": "deviation",
-          "evidence": "OverviewTab.tsx:141-148 — a provider outage or offline probe renders identically to a rejected credential (red FAIL), teaching the operator to distrust red"
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 hand-copied vocabulary missing a member; CredentialPlaygroundModal.tsx:68 builds the stored fallback from the boolean, so a stored unverifiable shows green; OverviewTab.tsx:156 HealthProbeBanner realized (old deviation fixed)"
         }
       ]
     },
