@@ -236,5 +236,10 @@
   "desk_layout_label": "Schreibtisch-Layout",
   "desk_needs_you": "Braucht dich",
   "desk_zone_none_live": "Keine laufenden Ziele",
-  "desk_zone_of": "{shown} von {total}"
+  "desk_key_expand": "Mehr anzeigen",
+  "desk_key_open_project": "Projekt öffnen",
+  "desk_lane_brainstorm": "Brainstorm-Schiene",
+  "desk_lane_plan": "Plan-Schiene",
+  "desk_room_back": "Schreibtisch",
+  "desk_room_position": "Projekt {index} von {total}"
 }

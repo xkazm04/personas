@@ -236,5 +236,10 @@
   "desk_layout_label": "Bố cục bàn làm việc",
   "desk_needs_you": "Cần bạn",
   "desk_zone_none_live": "Không có mục tiêu đang mở",
-  "desk_zone_of": "{shown}/{total}"
+  "desk_key_expand": "Xem thêm",
+  "desk_key_open_project": "Mở dự án",
+  "desk_lane_brainstorm": "Làn ý tưởng",
+  "desk_lane_plan": "Làn kế hoạch",
+  "desk_room_back": "Bàn làm việc",
+  "desk_room_position": "Dự án {index}/{total}"
 }

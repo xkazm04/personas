@@ -236,5 +236,10 @@
   "desk_layout_label": "Tata letak meja",
   "desk_needs_you": "Butuh Anda",
   "desk_zone_none_live": "Tidak ada tujuan aktif",
-  "desk_zone_of": "{shown} dari {total}"
+  "desk_key_expand": "Tampilkan lebih banyak",
+  "desk_key_open_project": "Buka proyek",
+  "desk_lane_brainstorm": "Jalur brainstorming",
+  "desk_lane_plan": "Jalur rencana",
+  "desk_room_back": "Meja",
+  "desk_room_position": "Proyek {index} dari {total}"
 }

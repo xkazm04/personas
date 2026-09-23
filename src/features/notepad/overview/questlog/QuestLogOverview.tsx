@@ -17,10 +17,16 @@ import { DeskCheatSheet } from '../parts/DeskCheatSheet';
 import { DESK_KEY, Keycap } from '../parts/Keycap';
 import { OverviewGhost } from '../parts/NoteCardBits';
 import type { NoteOverviewProps } from '../types';
+import { publishFleet, toGoals } from '../../notepadActions';
+import { deskForecasts } from '../deskForecast';
+import type { RailNext } from '../parts/NoteLifecycleRail';
 import { QuestBelow } from './QuestBelow';
+import { QuestRoom } from './QuestRoom';
 import { QuestZone } from './QuestZone';
-import type { GoalSignals } from './QuestRow';
-import { buildZones, isLate, lateDays, moveZone, stepZone } from './questlogModel';
+import type { GoalSignals, RowDetail } from './QuestRow';
+import {
+  buildZones, cursorColumns, firstGoalOf, isLate, lateDays, moveGoal, stepZone,
+} from './questlogModel';
 import { useQuestCaret, useQuestLayout } from './useQuestLayout';
 import './questlog.css';
 
@@ -52,7 +58,8 @@ const QUESTLOG_KEY_PRIORITY = NOTEPAD_LAYER_PRIORITY + 1;
  * and this file owns only the layout.
  */
 export function QuestLogOverview({
-  loading, notes, projects, atCap, focusNoteId, initialProjectId, onOpen, onCreate,
+  loading, notes, projects, saveStates, atCap, focusNoteId, initialProjectId,
+  onOpen, onPatch, onCreate, onDelete, onCertify,
 }: NoteOverviewProps & { loading: boolean }) {
   const { t, tx } = useTranslation();
   const working = useNotesWorkingMap();
@@ -73,6 +80,10 @@ export function QuestLogOverview({
   const [capture, setCapture] = useState('');
   const [zoneId, setZoneId] = useState<string | null>(initialProjectId ?? null);
   const [goalId, setGoalId] = useState<string | null>(focusNoteId);
+  /** The project whose interlayer is open, or null for the desk. */
+  const [roomId, setRoomId] = useState<string | null>(null);
+  /** The selected goal's second row is open. One at a time, by construction. */
+  const [expanded, setExpanded] = useState(false);
 
   // Every signal a row can carry, assembled once for the whole desk. A row
   // never reaches into a store: ninety rows each holding their own
@@ -107,12 +118,20 @@ export function QuestLogOverview({
   // A zone can outlive its last goal (archived, re-mapped) — fall back to the first.
   const currentZoneId = zoneId && zoneIds.includes(zoneId) ? zoneId : zoneIds[0] ?? null;
   const currentIndex = currentZoneId ? zoneIds.indexOf(currentZoneId) : -1;
+  const isOnRail = useCallback((id: string) => signals[id]?.onRail ?? true, [signals]);
 
   const signature = useMemo(
     () => `${rail}|${query.trim() ? '1' : '0'}|${zones.map((z) => `${z.id}:${z.goals.length}`).join(',')}`,
     [rail, query, zones],
   );
   const layout = useQuestLayout(rootEl, zones.length, signature);
+  // The goals the arrows may land on, per column, in reading order.
+  const cursorCols = useMemo(
+    () => cursorColumns(zones, layout.groups, isOnRail),
+    [zones, layout.groups, isOnRail],
+  );
+  const forecasts = useMemo(() => deskForecasts(notes, summaries), [notes, summaries]);
+  const roomZone = roomId ? zones.find((z) => z.id === roomId) ?? null : null;
   const placeCaret = useQuestCaret(rootEl, caretEl, currentZoneId);
 
   useEffect(() => { placeCaret(); }, [placeCaret, layout, signature]);
@@ -126,6 +145,46 @@ export function QuestLogOverview({
   }, []);
 
   const openGoal = useCallback((id: string) => { setGoalId(id); onOpen(id); }, [onOpen]);
+
+  /** Open a project's interlayer, and put the cursor on its first live goal so
+   *  leaving the room returns to something sensible. */
+  const openRoom = useCallback((id: string) => {
+    setZoneId(id);
+    const first = firstGoalOf(zones.find((z) => z.id === id), isOnRail);
+    if (first) setGoalId(first);
+    setRoomId(id);
+  }, [zones, isOnRail]);
+
+  /** Walk to the neighbouring project, taking the cursor and (when it is up)
+   *  the interlayer with it. Shared by the desk's `[`/`]` and the room's. */
+  const stepProject = useCallback((delta: 1 | -1) => {
+    const next = stepZone(zoneIds, currentZoneId, delta);
+    if (!next) return;
+    setZoneId(next);
+    const first = firstGoalOf(zones.find((z) => z.id === next), isOnRail);
+    if (first) setGoalId(first);
+    setRoomId((open) => (open ? next : open));
+  }, [zoneIds, currentZoneId, zones, isOnRail]);
+
+  /** The lifecycle rail's one move, wired exactly as the card wires it. */
+  const advance = useCallback(async (note: typeof notes[number], next: RailNext) => {
+    const project = projects.find((p) => p.id === note.projectId) ?? null;
+    if (next.action === 'publish') { await publishFleet(note, project); return; }
+    if (next.action === 'goals') { await toGoals(note, project); return; }
+    onCertify(note.id);
+  }, [projects, onCertify]);
+
+  /** The second row, for the selected goal only, and only while expanded. */
+  const detailFor = useCallback((id: string): RowDetail | undefined => {
+    if (!expanded || id !== goalId) return undefined;
+    const note = notes.find((n) => n.id === id);
+    if (!note) return undefined;
+    return {
+      summary: summaries[id],
+      forecast: forecasts[id],
+      onAdvance: (next: RailNext) => advance(note, next),
+    };
+  }, [expanded, goalId, notes, summaries, forecasts, advance]);
 
   const submitCapture = () => {
     const text = capture.trim();
@@ -147,10 +206,15 @@ export function QuestLogOverview({
       return;
     }
     const k = e.key;
+    // Arrows walk GOALS, not projects, and the list they walk already excludes
+    // everything the rail filtered away — so a filtered goal is never stepped
+    // onto even though it is still visible, dimmed, in place.
     const step = (dx: -1 | 0 | 1, dy: -1 | 0 | 1): boolean => {
-      const next = moveZone(layout.groups, currentIndex, dx, dy);
-      if (next === null || !zoneIds[next]) return false;
-      setZoneId(zoneIds[next]!);
+      const next = moveGoal(cursorCols, goalId, dx, dy);
+      if (!next) return false;
+      setGoalId(next);
+      const owner = zones.find((z) => z.goals.some((n) => n.id === next));
+      if (owner) setZoneId(owner.id);
       return true;
     };
     if (k === '?') { setCheatOpen((v) => !v); return true; }
@@ -163,10 +227,12 @@ export function QuestLogOverview({
       return; // nothing of ours is open — let the pad's layer ladder have it
     }
     if (k === '1' || k === '2' || k === '3') { pickRail(DESK_FILTERS[Number(k) - 1]!); return true; }
-    if (k === '[' || k === ']') {
-      const next = stepZone(zoneIds, currentZoneId, k === '[' ? -1 : 1);
-      if (!next) return false;
-      setZoneId(next);
+    if (k === '[' || k === ']') { stepProject(k === '[' ? -1 : 1); return true; }
+    if (k === 'x') { setExpanded((v) => !v); return true; }
+    if (k === ' ') {
+      // The project, not the goal: Space raises the interlayer.
+      if (!currentZoneId) return false;
+      openRoom(currentZoneId);
       return true;
     }
     if (k === 'ArrowUp' || k === 'k') return step(0, -1);
@@ -174,17 +240,19 @@ export function QuestLogOverview({
     if (k === 'ArrowLeft' || k === 'h') return step(-1, 0);
     if (k === 'ArrowRight' || k === 'l') return step(1, 0);
     if (k === 'Enter') {
-      const zone = zones[currentIndex];
-      const target = goalId && zone?.goals.some((n) => n.id === goalId)
-        ? goalId
-        : zone?.goals.find((n) => n.status !== 'shipped')?.id;
+      // The goal, straight into the editor.
+      const target = goalId ?? firstGoalOf(zones[currentIndex], isOnRail);
       if (!target) return false;
       openGoal(target);
       return true;
     }
-  }, [layout.groups, currentIndex, currentZoneId, zoneIds, zones, goalId, query, searchOpen, cheatOpen, pickRail, openGoal]);
+  }, [cursorCols, currentIndex, currentZoneId, zones, goalId, isOnRail,
+      query, searchOpen, cheatOpen, pickRail, openGoal, openRoom, stepProject]);
 
-  useAppKeyboard(onKey, { enabled: !loading, priority: QUESTLOG_KEY_PRIORITY });
+  // The room owns the keyboard while it is up: its cards carry the desk's verbs
+  // already, and two handlers claiming the same arrows is how a surface starts
+  // moving two cursors at once.
+  useAppKeyboard(onKey, { enabled: !loading && !roomId, priority: QUESTLOG_KEY_PRIORITY });
 
   const railTabs = useMemo(
     () => DESK_FILTERS.map((id, i) => ({
@@ -201,6 +269,27 @@ export function QuestLogOverview({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="notepad-questlog">
+      {roomZone ? (
+        <QuestRoom
+          zone={roomZone}
+          index={zoneIds.indexOf(roomZone.id)}
+          total={zones.length}
+          projects={projects}
+          saveStates={saveStates}
+          signals={signals}
+          summaries={summaries}
+          working={working}
+          selectedGoalId={goalId}
+          onSelectGoal={setGoalId}
+          onStepProject={stepProject}
+          onClose={() => setRoomId(null)}
+          onOpen={onOpen}
+          onPatch={onPatch}
+          onDelete={onDelete}
+          onCertify={onCertify}
+        />
+      ) : (
+      <>
       <div className="px-8 pt-5 pb-3 flex flex-col gap-3 shrink-0">
         <div className="flex items-baseline justify-between gap-4">
           <div className="flex items-baseline gap-3 min-w-0">
@@ -304,7 +393,8 @@ export function QuestLogOverview({
                     selectedGoalId={goalId}
                     query={query}
                     matches={matches}
-                    onFocusZone={() => setZoneId(zone.id)}
+                    detailFor={detailFor}
+                    onFocusZone={() => openRoom(zone.id)}
                     onSelectGoal={setGoalId}
                     onOpenGoal={openGoal}
                   />
@@ -320,9 +410,14 @@ export function QuestLogOverview({
         <Hint keycap={DESK_KEY.arrows} label={t.notepad.desk_key_column} />
         <Hint keycap={`${DESK_KEY.bracketOpen} ${DESK_KEY.bracketClose}`} label={t.notepad.desk_key_alphabetical} />
         <Hint keycap={DESK_KEY.enterGlyph} label={t.notepad.overview_open} />
+        <Hint keycap={DESK_KEY.space} label={t.notepad.desk_key_open_project} />
+        <Hint keycap={DESK_KEY.expand} label={t.notepad.desk_key_expand} />
         <Hint keycap={DESK_KEY.find} label={t.notepad.desk_hint_find} />
         <Hint keycap={DESK_KEY.rails} label={t.notepad.desk_hint_rails} />
       </div>
+      </>
+      )}
+
 
       <DeskCheatSheet open={cheatOpen} onClose={() => setCheatOpen(false)} />
     </div>

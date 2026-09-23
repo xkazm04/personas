@@ -236,5 +236,10 @@
   "desk_layout_label": "Вид стола",
   "desk_needs_you": "Ждёт вас",
   "desk_zone_none_live": "Нет активных целей",
-  "desk_zone_of": "{shown} из {total}"
+  "desk_key_expand": "Показать больше",
+  "desk_key_open_project": "Открыть проект",
+  "desk_lane_brainstorm": "Дорожка мозгового штурма",
+  "desk_lane_plan": "Дорожка плана",
+  "desk_room_back": "Стол",
+  "desk_room_position": "Проект {index} из {total}"
 }

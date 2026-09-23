@@ -231,10 +231,15 @@
   "desk_layout_journal": "Journal",
   "desk_needs_you": "Needs you",
   "desk_days_late": "{count}d late",
-  "desk_zone_of": "{shown} of {total}",
   "desk_zone_none_live": "No live goals",
   "desk_below": "Below",
   "desk_below_continues": "continues {count}",
   "desk_key_column": "Down the column",
-  "desk_key_alphabetical": "Previous / next project"
+  "desk_key_alphabetical": "Previous / next project",
+  "desk_lane_plan": "Plan rail",
+  "desk_lane_brainstorm": "Brainstorm rail",
+  "desk_room_back": "Desk",
+  "desk_room_position": "Project {index} of {total}",
+  "desk_key_expand": "Show more",
+  "desk_key_open_project": "Open the project"
 }

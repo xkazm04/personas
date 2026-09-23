@@ -230,6 +230,88 @@ export function lateDays(targetDate: string, today = new Date()): number {
   return Math.max(1, Math.round((today.getTime() - due) / 86_400_000));
 }
 
+/**
+ * The goals the cursor can actually land on, per column, in reading order.
+ *
+ * A column's list runs straight through its zones — moving down past the last
+ * goal of one project lands on the first goal of the next, which is how the eye
+ * reads it and therefore how the arrows should behave.
+ *
+ * OFF-RAIL GOALS ARE EXCLUDED. The rail dims rather than removes, so a dimmed
+ * goal is still on screen; but the cursor must not stop on something the
+ * operator has filtered away, or every arrow press lands on work they said they
+ * did not want to see. Skipping is done HERE, once, rather than in the key
+ * handler, so the same list serves navigation, `[`/`]` and Enter.
+ */
+export function cursorColumns(
+  zones: readonly QuestZone[],
+  groups: readonly [number, number][],
+  isOnRail: (noteId: string) => boolean,
+): string[][] {
+  return groups.map(([start, end]) => {
+    const ids: string[] = [];
+    for (const zone of zones.slice(start, end)) {
+      for (const goal of zone.goals) {
+        if (goal.status !== 'shipped' && isOnRail(goal.id)) ids.push(goal.id);
+      }
+    }
+    return ids;
+  });
+}
+
+/** Where a goal sits: `[column, index]`, or null when it is not navigable. */
+export function locateGoal(columns: readonly string[][], goalId: string | null): [number, number] | null {
+  if (!goalId) return null;
+  for (let c = 0; c < columns.length; c += 1) {
+    const i = columns[c]!.indexOf(goalId);
+    if (i >= 0) return [c, i];
+  }
+  return null;
+}
+
+/**
+ * Move the goal cursor. Vertical walks the column and stops at its ends — a
+ * column is a physical stack and wrapping from foot to head would lose the
+ * operator. Horizontal steps to the neighbouring column at the same relative
+ * depth, since that is the closest a pure function gets to "the goal beside
+ * this one" without reading the DOM.
+ */
+export function moveGoal(
+  columns: readonly string[][],
+  goalId: string | null,
+  dx: -1 | 0 | 1,
+  dy: -1 | 0 | 1,
+): string | null {
+  const at = locateGoal(columns, goalId);
+  if (!at) {
+    // No cursor yet: take the first navigable goal there is.
+    for (const col of columns) if (col.length) return col[0]!;
+    return null;
+  }
+  const [c, i] = at;
+  if (dy !== 0) {
+    const next = i + dy;
+    return next >= 0 && next < columns[c]!.length ? columns[c]![next]! : null;
+  }
+  if (dx === 0) return null;
+  const target = columns[c + dx];
+  if (!target || target.length === 0) return null;
+  const span = Math.max(1, columns[c]!.length - 1);
+  return target[Math.round((i / span) * (target.length - 1))]!;
+}
+
+/** The first navigable goal of a zone, for `[` / `]` and for opening a project. */
+export function firstGoalOf(
+  zone: QuestZone | undefined,
+  isOnRail: (noteId: string) => boolean,
+): string | null {
+  if (!zone) return null;
+  for (const goal of zone.goals) {
+    if (goal.status !== 'shipped' && isOnRail(goal.id)) return goal.id;
+  }
+  return null;
+}
+
 /** Which column holds this zone, given the partition. */
 export function columnOf(groups: readonly [number, number][], index: number): number {
   for (let c = 0; c < groups.length; c += 1) {

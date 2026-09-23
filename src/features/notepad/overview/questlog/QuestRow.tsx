@@ -1,12 +1,19 @@
-import { memo } from 'react';
-import { Clock, MessageSquare } from 'lucide-react';
+import { memo, useState } from 'react';
+import { CalendarClock, Clock, MessageSquare, Send } from 'lucide-react';
 
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevNote } from '@/lib/bindings/DevNote';
+import type { NotePlanSummary } from '@/lib/bindings/NotePlanSummary';
 
-import { noteStatusMeta } from '../../noteStatusMeta';
+import {
+  NOTE_LIFECYCLE_BRAINSTORM, NOTE_LIFECYCLE_PLAN, noteLifecycleFor, noteStatusMeta,
+} from '../../noteStatusMeta';
+import type { DeskForecast } from '../deskForecast';
 import { splitHighlight } from '../deskModel';
+import { PlanStampBadge } from '../parts/NoteCardBits';
+import { railNextStep, type RailNext } from '../parts/NoteLifecycleRail';
 import type { NoteRail } from './questlogModel';
 
 /** Everything a row needs to know about one goal that is not on the goal itself.
@@ -79,6 +86,8 @@ interface QuestRowProps {
   selected: boolean;
   query: string;
   matched: boolean;
+  /** Present only for the goal the cursor is on AND the operator expanded. */
+  detail?: RowDetail;
   onSelect: () => void;
   onOpen: () => void;
 }
@@ -94,7 +103,7 @@ interface QuestRowProps {
  * the column scrolls and says what is below. It never shortens a title.
  */
 export const QuestRow = memo(function QuestRow({
-  note, signals, wired, rail, selected, query, matched, onSelect, onOpen,
+  note, signals, wired, rail, selected, query, matched, detail, onSelect, onOpen,
 }: QuestRowProps) {
   const { t } = useTranslation();
   const meta = noteStatusMeta(note.status);
@@ -113,11 +122,12 @@ export const QuestRow = memo(function QuestRow({
   ].filter(Boolean).join(' ');
 
   return (
+    <div className="ql-rowwrap" data-goal-id={note.id}>
     <button
       type="button"
       className={cls}
-      data-goal-id={note.id}
       aria-current={selected ? 'true' : undefined}
+      aria-expanded={detail ? true : undefined}
       onPointerDown={onSelect}
       onClick={onOpen}
     >
@@ -148,8 +158,108 @@ export const QuestRow = memo(function QuestRow({
         <Marks signals={signals} />
       </span>
     </button>
+    {detail && <QuestRowDetail note={note} {...detail} />}
+    </div>
   );
 });
+
+export interface RowDetail {
+  summary?: NotePlanSummary;
+  forecast?: DeskForecast;
+  onAdvance: (next: RailNext) => Promise<void>;
+}
+
+/**
+ * The second row, opened on the selected goal only.
+ *
+ * It is the journey plus the readings a one-line row has no space for, and it
+ * is drawn HERE rather than borrowed from the card: `NoteLifecycleRail` is
+ * `position: absolute` by design — it overlays a card's footer — so inline it
+ * contributes no height at all (measured: the rail rendered 154px out of flow
+ * while this strip collapsed to 12px), and 154px is most of a journal column
+ * anyway. What is reused is the part that matters, `railNextStep`: the same
+ * pure function the card asks "what is the one move from here", so the two
+ * surfaces can never offer different next steps.
+ */
+function QuestRowDetail({ note, summary, forecast, onAdvance }: { note: DevNote } & RowDetail) {
+  const { t, tx } = useTranslation();
+  const [advancing, setAdvancing] = useState(false);
+  // Pick the rail that actually CONTAINS this status, and only fall back to the
+  // one the milestone implies. A goal whose status and milestone disagree is not
+  // supposed to exist, but when it does the journey should still say where the
+  // goal is rather than silently marking every step as unreached.
+  const byStatus = [NOTE_LIFECYCLE_PLAN, NOTE_LIFECYCLE_BRAINSTORM].find((l) => l.includes(note.status));
+  const steps = byStatus ?? noteLifecycleFor(note.milestoneId);
+  const at = steps.indexOf(note.status);
+  const next = railNextStep(note);
+  const done = summary ? Math.min(summary.goalsDone, summary.goalsTotal) : 0;
+
+  return (
+    <div className="ql-detail">
+      {/* The journey: where this goal has been, where it is, what is left. */}
+      <ol className="ql-journey" aria-label={t.notepad.rail_label}>
+        {steps.map((step, i) => {
+          const meta = noteStatusMeta(step);
+          const state = i < at ? 'is-past' : i === at ? 'is-now' : 'is-ahead';
+          return (
+            <li key={step} className={`ql-step ${state} ${i <= at ? meta.tone.text : ''}`}>
+              <i className={`ql-pip ${i <= at ? meta.tone.fill : ''}`} aria-hidden />
+              <span>{meta.labelKey(t)}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="ql-detail-reads">
+        {summary && summary.goalsTotal > 0 && (
+          <span className="typo-label text-foreground/85 inline-flex items-center gap-1.5">
+            <span className="h-1 w-12 rounded-full bg-secondary/50 overflow-hidden inline-block align-middle">
+              {/* Width is the DATA, so it is the one thing that cannot be a token. */}
+              <span
+                className={`block h-full ${noteStatusMeta(note.status).tone.fill}`}
+                style={{ width: `${Math.round((done / summary.goalsTotal) * 100)}%` }}
+              />
+            </span>
+            {tx(t.notepad.desk_goals_progress, { done, total: summary.goalsTotal })}
+          </span>
+        )}
+        {summary && <PlanStampBadge note={note} summary={summary} />}
+        {forecast && (
+          <span className="typo-label text-foreground/85 inline-flex items-center gap-1">
+            <CalendarClock className="w-3 h-3" aria-hidden />
+            {tx(
+              forecast.basis === 'cut' ? t.notepad.desk_forecast_cut : t.notepad.desk_forecast_today,
+              { date: forecast.date },
+            )}
+          </span>
+        )}
+        {note.dispatchTarget && (
+          <span className="typo-label text-foreground/85 inline-flex items-center gap-1">
+            <Send className="w-3 h-3" aria-hidden />
+            {note.dispatchTarget === 'fleet' ? t.notepad.desk_hint_publish : t.notepad.desk_hint_goals}
+          </span>
+        )}
+      </div>
+
+      {next && (
+        <AsyncButton
+          size="sm"
+          variant="secondary"
+          className="ml-auto shrink-0"
+          isLoading={advancing}
+          disabled={Boolean(next.blockedKey)}
+          title={next.blockedKey ? t.notepad[next.blockedKey] : undefined}
+          onClick={async () => {
+            setAdvancing(true);
+            try { await onAdvance(next); } finally { setAdvancing(false); }
+          }}
+        >
+          {noteStatusMeta(next.status).labelKey(t)}
+        </AsyncButton>
+      )}
+    </div>
+  );
+}
 
 interface QuestItemProps {
   note: DevNote;

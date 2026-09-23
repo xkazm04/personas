@@ -23494,12 +23494,17 @@ export type Translations = {
     desk_layout_journal: string;
     desk_needs_you: string;
     desk_days_late: string;
-    desk_zone_of: string;
     desk_zone_none_live: string;
     desk_below: string;
     desk_below_continues: string;
     desk_key_column: string;
     desk_key_alphabetical: string;
+    desk_lane_plan: string;
+    desk_lane_brainstorm: string;
+    desk_room_back: string;
+    desk_room_position: string;
+    desk_key_expand: string;
+    desk_key_open_project: string;
   };
   browser: {
     whitelist: {

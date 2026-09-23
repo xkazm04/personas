@@ -23254,7 +23254,12 @@
     "desk_layout_label": "تخطيط المكتب",
     "desk_needs_you": "يحتاجك",
     "desk_zone_none_live": "لا توجد أهداف نشطة",
-    "desk_zone_of": "{shown} من {total}"
+    "desk_key_expand": "عرض المزيد",
+    "desk_key_open_project": "افتح المشروع",
+    "desk_lane_brainstorm": "مسار العصف الذهني",
+    "desk_lane_plan": "مسار الخطة",
+    "desk_room_back": "المكتب",
+    "desk_room_position": "المشروع {index} من {total}"
   },
   "browser": {
     "webview": {

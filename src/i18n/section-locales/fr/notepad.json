@@ -236,5 +236,10 @@
   "desk_layout_label": "Disposition du bureau",
   "desk_needs_you": "Besoin de vous",
   "desk_zone_none_live": "Aucun objectif actif",
-  "desk_zone_of": "{shown} sur {total}"
+  "desk_key_expand": "Afficher plus",
+  "desk_key_open_project": "Ouvrir le projet",
+  "desk_lane_brainstorm": "Voie Brainstorm",
+  "desk_lane_plan": "Voie Plan",
+  "desk_room_back": "Bureau",
+  "desk_room_position": "Projet {index} sur {total}"
 }

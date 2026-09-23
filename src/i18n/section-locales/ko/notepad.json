@@ -236,5 +236,10 @@
   "desk_layout_label": "데스크 레이아웃",
   "desk_needs_you": "확인 필요",
   "desk_zone_none_live": "활성 목표 없음",
-  "desk_zone_of": "{total}개 중 {shown}개"
+  "desk_key_expand": "더보기",
+  "desk_key_open_project": "프로젝트 열기",
+  "desk_lane_brainstorm": "구상 레일",
+  "desk_lane_plan": "계획 레일",
+  "desk_room_back": "데스크",
+  "desk_room_position": "프로젝트 {index}/{total}"
 }

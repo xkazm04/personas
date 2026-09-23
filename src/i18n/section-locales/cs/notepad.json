@@ -236,5 +236,10 @@
   "desk_layout_label": "Rozložení stolu",
   "desk_needs_you": "Čeká na vás",
   "desk_zone_none_live": "Žádné živé cíle",
-  "desk_zone_of": "{shown} z {total}"
+  "desk_key_expand": "Zobrazit více",
+  "desk_key_open_project": "Otevřít projekt",
+  "desk_lane_brainstorm": "Kolej Brainstorm",
+  "desk_lane_plan": "Kolej Plán",
+  "desk_room_back": "Stůl",
+  "desk_room_position": "Projekt {index} z {total}"
 }

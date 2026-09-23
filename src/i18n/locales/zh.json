@@ -23254,7 +23254,12 @@
     "desk_layout_label": "工作台布局",
     "desk_needs_you": "需要你",
     "desk_zone_none_live": "没有进行中的目标",
-    "desk_zone_of": "{shown} / {total}"
+    "desk_key_expand": "展开",
+    "desk_key_open_project": "打开项目",
+    "desk_lane_brainstorm": "构思轨道",
+    "desk_lane_plan": "计划轨道",
+    "desk_room_back": "工作台",
+    "desk_room_position": "项目 {index}/{total}"
   },
   "browser": {
     "webview": {

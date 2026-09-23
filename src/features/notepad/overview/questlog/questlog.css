@@ -67,8 +67,10 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 0 6px 1px 4px;
-  margin-bottom: 1px;
+  /* +2px of breathing room all round, and a title two steps up from the row
+     text, so a project name reads as a heading and not as a goal. */
+  padding: 2px 8px 3px 6px;
+  margin-bottom: 3px;
   border-bottom: 1px solid var(--card-border);
   cursor: pointer;
   width: 100%;
@@ -81,7 +83,7 @@
 
 .ql-zone-head h3 {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.5;
   letter-spacing: 0.005em;
@@ -311,3 +313,82 @@
 [data-theme^='light'] .ql-row .ql-title {
   color: var(--foreground);
 }
+
+/* ---------------------------------------------------------------- the second row */
+
+/* A row is a wrapper now, because the detail it opens contains buttons of its
+   own (the lifecycle rail's advance step) and a button may not nest in one. */
+.ql-rowwrap {
+  display: block;
+}
+
+/* Opened on the selected goal only, indented to the title column so it reads as
+   that goal's continuation rather than a new entry. */
+.ql-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 2px 0 6px 40px;
+  padding: 6px 8px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  animation: ql-detail-in var(--duration-fast) ease-out;
+}
+
+.ql-detail-reads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+@keyframes ql-detail-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ql-detail { animation: none; }
+}
+
+/* The journey inside the second row: where this goal has been, where it is,
+   what is left. Compact by necessity — the card's rail is 154px tall and
+   absolutely positioned, which is most of a journal column. */
+.ql-journey {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.ql-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.ql-step .ql-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid currentColor;
+  background: transparent;
+}
+
+/* Reached: filled. The current step also carries a halo, so "where am I" reads
+   before "where have I been". */
+.ql-step.is-past .ql-pip { opacity: 0.75; }
+.ql-step.is-now .ql-pip { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent); }
+.ql-step.is-now { font-weight: 700; }
+.ql-step.is-ahead .ql-pip { border-style: dashed; opacity: 0.5; }
+.ql-step.is-ahead { opacity: 0.6; }

@@ -236,5 +236,10 @@
   "desk_layout_label": "डेस्क लेआउट",
   "desk_needs_you": "आपकी ज़रूरत",
   "desk_zone_none_live": "कोई सक्रिय लक्ष्य नहीं",
-  "desk_zone_of": "{total} में से {shown}"
+  "desk_key_expand": "और दिखाएँ",
+  "desk_key_open_project": "प्रोजेक्ट खोलें",
+  "desk_lane_brainstorm": "मंथन रेल",
+  "desk_lane_plan": "प्लान रेल",
+  "desk_room_back": "डेस्क",
+  "desk_room_position": "{total} में से प्रोजेक्ट {index}"
 }

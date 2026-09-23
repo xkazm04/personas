@@ -23254,7 +23254,12 @@
     "desk_layout_label": "デスクのレイアウト",
     "desk_needs_you": "要対応",
     "desk_zone_none_live": "進行中の目標なし",
-    "desk_zone_of": "{shown} / {total}"
+    "desk_key_expand": "もっと見る",
+    "desk_key_open_project": "プロジェクトを開く",
+    "desk_lane_brainstorm": "アイデアレール",
+    "desk_lane_plan": "プランレール",
+    "desk_room_back": "デスク",
+    "desk_room_position": "プロジェクト {index} / {total}"
   },
   "browser": {
     "webview": {

@@ -23254,7 +23254,12 @@
     "desk_layout_label": "ডেস্ক লেআউট",
     "desk_needs_you": "আপনাকে দরকার",
     "desk_zone_none_live": "কোনো সক্রিয় লক্ষ্য নেই",
-    "desk_zone_of": "{total}টির মধ্যে {shown}টি"
+    "desk_key_expand": "আরও দেখুন",
+    "desk_key_open_project": "প্রজেক্ট খুলুন",
+    "desk_lane_brainstorm": "মন্থন রেল",
+    "desk_lane_plan": "পরিকল্পনা রেল",
+    "desk_room_back": "ডেস্ক",
+    "desk_room_position": "{total}টির মধ্যে প্রজেক্ট {index}"
   },
   "browser": {
     "webview": {

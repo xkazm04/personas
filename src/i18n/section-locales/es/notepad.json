@@ -236,5 +236,10 @@
   "desk_layout_label": "Diseño del escritorio",
   "desk_needs_you": "Te necesita",
   "desk_zone_none_live": "Sin objetivos activos",
-  "desk_zone_of": "{shown} de {total}"
+  "desk_key_expand": "Mostrar más",
+  "desk_key_open_project": "Abrir el proyecto",
+  "desk_lane_brainstorm": "Carril Brainstorm",
+  "desk_lane_plan": "Carril Plan",
+  "desk_room_back": "Escritorio",
+  "desk_room_position": "Proyecto {index} de {total}"
 }
