@@ -164,7 +164,7 @@ export class GalaxyEngine {
    * subject). The bezel frames the field inside its glass with this. Null
    * is 1 everywhere, which is the classic stage.
    */
-  private frameFill: ((level: number) => number) | null = null;
+  private frameFill: ((level: number, v: Viewport) => number) | null = null;
 
   private readonly frameListeners = new Set<() => void>();
 
@@ -178,6 +178,9 @@ export class GalaxyEngine {
   private altitudeTo = 0;
 
   private altitudeNow = 0;
+
+  /** Fused only: the reader asked for reduced motion, so flights land at once. */
+  private reduceMotion = false;
 
   private frame = 0;
 
@@ -380,8 +383,13 @@ export class GalaxyEngine {
     return { ...(this.insetsTo ?? this.insets) };
   }
 
-  setFrameFill(fill: ((level: number) => number) | null): void {
+  setFrameFill(fill: ((level: number, v: Viewport) => number) | null): void {
     this.frameFill = fill;
+  }
+
+  /** Fused only: with reduced motion every flight (and every inset) lands at once. */
+  setReducedMotion(on: boolean): void {
+    this.reduceMotion = on;
   }
 
   /** Fly back to the frame the current focus deserves (Fit, a mode switch). */
@@ -670,7 +678,7 @@ export class GalaxyEngine {
   private frameViewport(): Viewport {
     const v = this.viewport(this.insetsTo ?? this.insets);
     if (!this.frameFill) return v;
-    const f = this.frameFill(Math.min(3, this.level()));
+    const f = this.frameFill(Math.min(3, this.level()), v);
     const { cx, cy } = viewportCentre(v);
     const hw = ((v.x1 - v.x0) / 2) * f;
     const hh = ((v.y1 - v.y0) / 2) * f;
@@ -712,8 +720,9 @@ export class GalaxyEngine {
     });
   }
 
-  private flyTo(target: CameraState, ms = FLIGHT_MS): void {
+  private flyTo(target: CameraState, duration = FLIGHT_MS): void {
     if (this.flight) cancelAnimationFrame(this.flight);
+    const ms = this.reduceMotion ? 1 : duration;
     const from = { ...this.camera };
     const t0 = performance.now();
     // The fused seams ride the same curve: the insets (dock, column,

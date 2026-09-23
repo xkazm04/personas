@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { useReducedMotion } from '@/lib/utils/animation/animationPresets';
 
 import { useCouncilStore } from '../../councilStore';
 import { GalaxyEngine } from '../engine/GalaxyEngine';
@@ -34,6 +35,7 @@ export function FusedCanvas({ describedBy, onEngine }: Props) {
   const setTechnique = useFusedStore((s) => s.setTechnique);
   const setTip = useFusedStore((s) => s.setTip);
   const captions = useMemo(() => buildCaptions(t), [t]);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const engine = new GalaxyEngine(
@@ -81,6 +83,10 @@ export function FusedCanvas({ describedBy, onEngine }: Props) {
   useEffect(() => {
     engineRef.current?.setLens(lensOn);
   }, [lensOn]);
+
+  useEffect(() => {
+    engineRef.current?.setReducedMotion(Boolean(reduced));
+  }, [reduced]);
 
   // Store -> engine, never an echo of what the engine just said, and never a
   // second flight to a focus the engine already stands in (`GalaxyCanvas`).

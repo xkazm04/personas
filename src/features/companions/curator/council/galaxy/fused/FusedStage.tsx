@@ -21,6 +21,8 @@ import { useCouncilStore } from '../../councilStore';
 import type { GalaxyEngine } from '../engine/GalaxyEngine';
 import { useHudReservations } from '../useHudReservations';
 import { useRegistryRoot } from '../useRegistryRoot';
+import { CrossSectionDock } from './CrossSectionDock';
+import { DecisionsPanel } from './DecisionsPanel';
 import { FieldTip } from './FieldTip';
 import { Finder } from './Finder';
 import { FusedCanvas } from './FusedCanvas';
@@ -29,8 +31,11 @@ import { useFusedStore } from './fusedStore';
 import { LIST_ID, listKids } from './NestedList';
 import { NavColumn } from './NavColumn';
 import { SayCaption } from './SayCaption';
+import { rowsWanted, spreadHeight } from './spreadPaint';
+import { levelOf } from './fusedModel';
 import { useFusedData, useFusedPath } from './useFused';
 import { useFusedKeys } from './useFusedKeys';
+import { useInstrumentColors } from './tokenColors';
 import { CARE_H, useStageFrame, useStageSize } from './useStageFrame';
 import './fused.css';
 
@@ -39,14 +44,18 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   const [engine, setEngineLocal] = useState<GalaxyEngine | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
-  const cards = useMemo(() => [navRef], []);
+  const beaconRef = useRef<HTMLElement | null>(null);
+  const cards = useMemo(() => [navRef, beaconRef], []);
 
   const layout = useCouncilStore((s) => s.layout);
   const fixtureOn = useCouncilStore((s) => s.fixtureOn);
   const hover = useCouncilStore((s) => s.hover);
+  const focus = useCouncilStore((s) => s.focus);
   const load = useCouncilStore((s) => s.load);
   const publishEngine = useCouncilStore((s) => s.setEngine);
   const finderOpen = useFusedStore((s) => s.finderOpen);
+  const mode = useFusedStore((s) => s.mode);
+  const spread = useFusedStore((s) => s.spread);
   const setCursor = useFusedStore((s) => s.setCursor);
 
   useEffect(() => {
@@ -71,7 +80,11 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   );
   const path = useFusedPath(engine);
   const size = useStageSize(stageRef);
-  useStageFrame({ engine, stageRef, navRef, size, dockH: CARE_H });
+  const colors = useInstrumentColors(stageRef, Boolean(layout));
+  // The dock's height when it is up: the folded strip, or one row per
+  // altitude of the descent plus the preview row when it is spread.
+  const dockH = spread ? spreadHeight(rowsWanted(path, null).length) : CARE_H;
+  useStageFrame({ engine, stageRef, navRef, size, dockH });
   useHudReservations(stageRef, cards, engine, true);
   useFusedKeys(engine, layout, path, data.decisions);
 
@@ -83,23 +96,39 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
   }, [hover, layout, path, setCursor]);
 
   if (!registryRoot && !fixtureOn) return <FusedUnpaired />;
+  const lit = focus.kind === 'council' ? new Set(focus.registrySubjects) : null;
+  // Over the lens on a narrow stage, below the sky, the panel folds to its count.
+  const fold = mode === 'lens' && !path.technique && levelOf(path) >= 1 && size.w < 1400 && focus.kind !== 'council';
 
   return (
     <div
       ref={stageRef}
-      className={`fz${size.w >= 1600 ? ' fz-wide' : ''}`}
+      className={`fz${size.w >= 1600 ? ' fz-wide' : ''}${path.technique ? ' doc' : ''}`}
       data-role="hud-page"
       data-testid="council-fused-stage"
     >
       <FusedCanvas describedBy={LIST_ID} onEngine={setEngine} />
       <NavColumn engine={engine} path={path} data={data} navRef={navRef} />
+      <DecisionsPanel decisions={data.decisions} fold={fold} beaconRef={beaconRef} />
+      {layout ? (
+        <CrossSectionDock
+          engine={engine}
+          layout={layout}
+          path={path}
+          waitingStars={data.waitingStars}
+          lit={lit}
+          target={dockH}
+          narrow={size.w < 1200}
+          colors={colors}
+        />
+      ) : null}
       <FieldTip layout={layout} waitingStars={data.waitingStars} />
       <SayCaption
         stageRef={stageRef}
         where={path.subject?.title ?? path.category?.title ?? path.domain?.title ?? null}
         names={nameCount}
         techniques={data.techniqueCount}
-        spreadHeight={0}
+        spreadHeight={spreadHeight(rowsWanted(path, null).length)}
       />
       {finderOpen && layout ? <Finder engine={engine} layout={layout} /> : null}
       {bench}
