@@ -1,60 +1,46 @@
-/** useSheetClock — the honest build clock behind the film rail.
+/** useSheetClock — the honest build clock behind the action panel and the
+ *  film rail, read from the per-session ledger in `centre/buildClock.ts`.
  *
- *  Starts the moment the build starts running (not at launch click, not at an
- *  estimate), never advances while nothing is working (draft on the table,
- *  verdict waiting for you), and remembers WHOSE time each stretch was: the
- *  build's, yours (answering questions) or the screening's. The rail paints
- *  those stretches in different stock so a slow build and a slow reader are
- *  told apart. Resets with the build session. */
-import { useEffect, useRef, useState } from "react";
+ *  It counts only while the machine works (building or screening) and stands
+ *  still in every state that waits for the user. The ledger lives outside
+ *  React and follows the store, so a remount, a re-opened draft or a session
+ *  switch picks the count up where it really is. The panel and the rail read
+ *  this one hook, so they always agree. */
+import { useEffect, useState } from "react";
+import { useModuleSubscription } from "@/hooks/utility/data/useModuleSubscription";
+import { CLOCK, ensureClockTracking, entryElapsed, type ClockKind, type ClockMark } from "./centre/buildClock";
 
-export type ClockMode = "build" | "you" | "test" | null;
-export interface ClockMark { at: number; kind: Exclude<ClockMode, null> }
+export type { ClockKind, ClockMark };
 
-export function useSheetClock(sessionId: string | null, mode: ClockMode) {
-  const [elapsed, setElapsed] = useState(0);
-  const [marks, setMarks] = useState<ClockMark[]>([]);
-  const baseRef = useRef(0);
-  const sinceRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    baseRef.current = 0;
-    sinceRef.current = null;
-    setElapsed(0);
-    setMarks([]);
-  }, [sessionId]);
+export function useSheetClock(sessionId: string | null) {
+  useEffect(() => { ensureClockTracking(); }, []);
+  const entry = useModuleSubscription(CLOCK, sessionId ?? "");
+  const open = entry?.open ?? null;
+  const since = entry?.since ?? null;
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const bank = () => {
-      if (sinceRef.current !== null) {
-        baseRef.current += (performance.now() - sinceRef.current) / 1000;
-        sinceRef.current = null;
-      }
-    };
-    bank();
-    if (!mode) {
-      setElapsed(baseRef.current);
-      return;
-    }
-    sinceRef.current = performance.now();
-    const at = baseRef.current;
-    setMarks((m) => (m.length && m[m.length - 1]!.kind === mode ? m : [...m, { at, kind: mode }]));
-    const id = window.setInterval(() => {
-      if (sinceRef.current === null) return;
-      setElapsed(baseRef.current + (performance.now() - sinceRef.current) / 1000);
-    }, 500);
-    return () => {
-      window.clearInterval(id);
-      bank();
-    };
-  }, [mode, sessionId]);
+    setNow(Date.now());
+    if (!open) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [open, since]);
 
-  return { elapsed, marks, running: mode !== null };
+  return {
+    elapsed: sessionId ? entryElapsed(entry, now) : 0,
+    marks: entry?.marks ?? [],
+    /** What the machine is doing now; null while it waits on you. */
+    running: open,
+    /** Seen first while waiting: time before that is unknown. */
+    partial: entry?.partial ?? false,
+  };
 }
 
+export type SheetClock = ReturnType<typeof useSheetClock>;
+
 /** Whose time was second `t`? */
-export function kindAt(marks: ClockMark[], t: number): ClockMark["kind"] | null {
-  let k: ClockMark["kind"] | null = null;
+export function kindAt(marks: ClockMark[], t: number): ClockKind | null {
+  let k: ClockKind | null = null;
   for (const m of marks) {
     if (m.at <= t) k = m.kind;
     else break;

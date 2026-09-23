@@ -1,11 +1,14 @@
 /** FilmRail — the sheet's bottom progress bar: a sprocket strip, one hole per
- *  five real seconds, six minutes wide (the top of the real 3-6 min range).
- *  Holes expose only as honest time passes, tinted by whose time it was, and
- *  a thin marker shows where the first pass usually lands while casting. */
+ *  five seconds of machine time, six minutes wide (the top of the real 3-6
+ *  min range). It reads the same clock as the centre's action panel, so the
+ *  two always agree: holes expose only while the build or the screening
+ *  works, tinted by which one it was, and the strip stands still (and says
+ *  so) while the build waits for you. A thin marker shows where the first
+ *  pass usually lands while casting. */
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { COPY } from "./copy";
-import { kindAt, type ClockMark } from "./useSheetClock";
+import { kindAt, type ClockKind, type ClockMark } from "./useSheetClock";
 import { timecode } from "./sheetModel";
 
 const HOLES = 72;
@@ -14,10 +17,9 @@ const TOTAL = HOLES * PER;
 const WINDOW_FROM = 50;
 const WINDOW_TO = 155;
 
-const HOLE_TINT: Record<ClockMark["kind"], string> = {
+const HOLE_TINT: Record<ClockKind, string> = {
   build: "var(--cinema-accent)",
-  you: "#60a5fa",
-  test: "#34d399",
+  test: "var(--status-success)",
 };
 
 interface FilmRailProps {
@@ -25,9 +27,13 @@ interface FilmRailProps {
   elapsed: number;
   marks: ClockMark[];
   showWindow: boolean;
+  /** What the machine is doing now; null while it waits (the strip pauses). */
+  running?: ClockKind | null;
+  /** Time before this draft was first seen is unknown. */
+  partial?: boolean;
 }
 
-export const FilmRail = memo(function FilmRail({ scene, elapsed, marks, showWindow }: FilmRailProps) {
+export const FilmRail = memo(function FilmRail({ scene, elapsed, marks, showWindow, running, partial = false }: FilmRailProps) {
   const exposed = Math.min(HOLES, Math.floor(elapsed / PER));
   return (
     <div className="flex-shrink-0 h-10 flex items-center gap-4 px-1" aria-label={COPY.buildTime}>
@@ -67,8 +73,9 @@ export const FilmRail = memo(function FilmRail({ scene, elapsed, marks, showWind
           }}
         />
       </div>
-      <span className="typo-caption font-mono tabular-nums whitespace-nowrap min-w-[150px] text-right text-foreground">
-        {COPY.buildTime} {timecode(elapsed)}
+      <span className="typo-caption tabular-nums whitespace-nowrap min-w-[150px] text-right text-foreground">
+        {running === null && elapsed > 0 && <span className="mr-2">{COPY.clock.paused}</span>}
+        {COPY.buildTime} <span className="font-mono">{partial && elapsed < 1 ? COPY.clock.unknown : timecode(elapsed)}</span>
       </span>
     </div>
   );

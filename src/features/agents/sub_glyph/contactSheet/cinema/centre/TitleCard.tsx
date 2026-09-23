@@ -1,6 +1,7 @@
 /** TitleCard — the crowned persona as the draft's title card: its silhouette,
  *  its name (Enter to rename), its role and mission, and a film strip of the
- *  capabilities it was cast with. The verdict stamps across it. */
+ *  capabilities it was cast with. `children` is the action panel, which
+ *  carries the state (the verdict included), the clock and the actions. */
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GlyphRow } from "@/features/shared/glyph";
@@ -16,7 +17,6 @@ interface TitleCardProps {
   agentName: string;
   onAgentNameChange: (v: string) => void;
   rows: GlyphRow[];
-  stamp: "passed" | "failed" | null;
   /** Short centre cell: drop the portrait and the mission (the What frame holds it). */
   tight?: boolean;
   children?: React.ReactNode;
@@ -48,14 +48,14 @@ function NameField({ name, onChange }: { name: string; onChange: (v: string) => 
   );
 }
 
-export function TitleCard({ winner, agentName, onAgentNameChange, rows, stamp, tight = false, children }: TitleCardProps) {
+export function TitleCard({ winner, agentName, onAgentNameChange, rows, tight = false, children }: TitleCardProps) {
   const core = useAgentStore((s) => s.buildBehaviorCore);
   const titles = rows.map((r) => r.title);
   const shown = useTimedReveal(titles, 180);
   const accent = winner.color;
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center gap-2 text-center">
+    <div className="w-full h-full min-h-0 flex flex-col items-center justify-center gap-2 text-center">
       {!tight && <span className="grid place-items-center rounded-full w-10 h-10" style={{ background: `radial-gradient(circle at 50% 30%, ${colorWithAlpha(accent, 0.3)}, transparent 72%)`, border: `1px solid ${colorWithAlpha(accent, 0.45)}` }}>
         <CinemaSilhouette form={winner.form} color={accent} size={28} />
       </span>}
@@ -64,7 +64,7 @@ export function TitleCard({ winner, agentName, onAgentNameChange, rows, stamp, t
       {core?.mission && !tight && <p className="typo-body text-foreground max-w-[440px] line-clamp-2">{core.mission}</p>}
 
       {titles.length > 0 && (
-        <div className="flex gap-2 justify-center px-2.5 py-1.5 rounded-[6px] max-w-full overflow-hidden" style={{ background: "color-mix(in srgb, #000 28%, transparent)", borderTop: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)", borderBottom: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)" }}>
+        <div className="flex gap-2 justify-center px-2.5 py-1.5 rounded-input max-w-full overflow-hidden bg-secondary/70" style={{ borderTop: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)", borderBottom: "3px dotted color-mix(in srgb, var(--foreground) 16%, transparent)" }}>
           <AnimatePresence initial={false}>
             {shown.slice(0, 4).map((t, i) => (
               <motion.span
@@ -86,22 +86,6 @@ export function TitleCard({ winner, agentName, onAgentNameChange, rows, stamp, t
       )}
 
       {children}
-
-      <AnimatePresence>
-        {stamp && (
-          <motion.span
-            key={stamp}
-            aria-hidden
-            className="absolute top-3 right-2 font-mono typo-label font-bold tracking-[0.14em] px-2 py-0.5 rounded-[3px] border-2 pointer-events-none"
-            style={{ color: stamp === "passed" ? "#34d399" : "#f87171", borderColor: "currentColor" }}
-            initial={{ opacity: 0, scale: 2, rotate: -8 }}
-            animate={{ opacity: 1, scale: 1, rotate: -8 }}
-            transition={{ type: "spring", stiffness: 420, damping: 16 }}
-          >
-            {stamp === "passed" ? COPY.passed : COPY.failed}
-          </motion.span>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

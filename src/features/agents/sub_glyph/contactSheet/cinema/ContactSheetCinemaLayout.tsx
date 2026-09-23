@@ -148,7 +148,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
         <SheetLayers p={props} s={s} layer={layer} shot={shot} scene={scene} dimText={dimText} close={closeLayer} openRefine={openRefine} />
       </div>
 
-      <FilmRail scene={scene} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} />
+      <FilmRail scene={scene} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} running={s.clock.running} partial={s.clock.partial} />
 
       {s.isCompose && s.cfg.modals}
       <SheetModals p={props} s={s} modal={modal} close={() => setModal(null)} />

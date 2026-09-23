@@ -115,7 +115,23 @@ export const COPY = {
   startOverNote: "Your description stays.",
 
   buildTime: "Build time",
-  yourTime: "you",
+  clock: {
+    paused: "Paused",
+    unknown: "--:--",
+    building: "Build time",
+    screening: "Screening time",
+    waiting: "Paused, waiting for you",
+    total: "Total build time",
+    partial: "Counted since this draft was reopened",
+  },
+  panel: "Build status and actions",
+  state: {
+    answerNow: "Answer questions",
+    reviewNote: "Pick an answer to change it.",
+    sendingAnswers: "Sending your answers",
+    draftNote: "Screen it before it goes live.",
+    stopped: "Build stopped",
+  },
   frame: {
     needsYou: "Needs you",
     developing: "Developing",
