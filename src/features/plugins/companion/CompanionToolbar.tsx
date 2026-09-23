@@ -62,7 +62,16 @@ export function CompanionToolbar(props: {
   compact?: boolean;
   /** Toggle the panel between full and compact width. */
   onToggleCompact?: () => void;
+  /**
+   * `left` docks the rail on the LEFT edge of a floating chat (the two-layer
+   * prototypes): no width handle, its own surface classes, and connector menus
+   * that open to the right instead of off-screen.
+   */
+  dock?: 'panel' | 'left';
+  /** Root surface classes when `dock="left"`. */
+  className?: string;
 } = {}) {
+  const dock = props.dock ?? 'panel';
   const { t } = useTranslation();
   const voiceConfigured = useTtsVoiceSelection().configured;
 
@@ -139,14 +148,18 @@ export function CompanionToolbar(props: {
 
   return (
     <aside
-      className="relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]"
+      className={
+        dock === 'left'
+          ? `relative shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 ${props.className ?? ''}`
+          : 'relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]'
+      }
       aria-label={t.plugins.companion.toolbar_label}
       data-testid="companion-toolbar"
     >
       {/* Minimize / expand handle — a vertically-centered arrow tab straddling
           the toolbar's inner edge. Replaces the old header compact button.
           ◀ collapses the panel to compact width; ▶ expands it back. */}
-      <button
+      {dock === 'panel' && <button
         type="button"
         onClick={onToggleCompact}
         data-testid="companion-toggle-compact"
@@ -156,7 +169,7 @@ export function CompanionToolbar(props: {
         className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
       >
         {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-      </button>
+      </button>}
 
       {/* Plugins group — single Dev Tools toggle */}
       <PluginToggleButton
@@ -191,6 +204,7 @@ export function CompanionToolbar(props: {
       {connectors.map((c) => (
         <ConnectorIconButton
           key={c.connectorName}
+          menuSide={dock === 'left' ? 'right' : 'left'}
           name={c.connectorName}
           enabled={c.enabled}
           onToggle={async () => {
@@ -373,7 +387,10 @@ function ConnectorIconButton({
   enabled,
   onToggle,
   onRemove,
+  menuSide = 'left',
 }: {
+  /** Which side of the button its right-click menu opens on. */
+  menuSide?: 'left' | 'right';
   name: string;
   enabled: boolean;
   onToggle: () => void;
@@ -450,7 +467,7 @@ function ConnectorIconButton({
       </button>
       {menuOpen && (
         <div
-          className="absolute right-9 top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1"
+          className={`absolute ${menuSide === 'right' ? 'left-9' : 'right-9'} top-0 z-50 min-w-[160px] rounded-card border border-foreground/15 bg-secondary/95 backdrop-blur-md shadow-elevation-3 py-1`}
           role="menu"
         >
           <button

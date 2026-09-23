@@ -77,4 +77,17 @@ export const NEXT_COPY = {
   waitingHere: 'Waiting here',
   roomEmpty: 'Nothing is waiting in this thread.',
   allProjects: 'All work',
+  processKind: {
+    fleet: 'Fleet session',
+    liveop: 'Live op',
+    rundesk: 'Run Desk task',
+    schedule: 'Scheduled check-in',
+  },
+  expandConversation: 'Show the whole conversation',
+  collapseConversation: 'Back to the latest message',
+  noMessageYet: 'Say something to Athena.',
+  devRow: 'Dev mode',
+  tools: 'Connectors and tools',
+  usage: 'What she is running',
+  voice: { start: 'Talk to Athena', listening: 'Listening… click to stop' },
 } as const;

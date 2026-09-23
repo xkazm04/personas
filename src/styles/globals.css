@@ -5636,7 +5636,7 @@ html[data-motion="reduce"] .companion-autonomous {
    once when something new starts waiting. TODO(prototype, 2026-09-22):
    consolidate with the chat switcher. */
 .athena-frame {
-  position: relative;
+  /* No `position` here: every framed surface is placed `absolute` by its owner. */
   isolation: isolate;
   padding: 1.5px;
   background: var(--athena-frame, color-mix(in srgb, var(--foreground) 14%, transparent));
