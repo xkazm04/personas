@@ -1365,6 +1365,10 @@ export const createMatrixBuildSlice: StateCreator<
         parserResultJson: state.buildParserResultJson,
         workflowName: state.buildWorkflowName,
         workflowPlatform: state.buildWorkflowPlatform,
+        // Keep the session's real creation time. emptySessionState stamps Date.now(),
+        // which made every re-hydrate look like a brand-new draft to anything that
+        // measures from createdAt (the build sheet's clock, newest-session policy).
+        createdAt: existing?.createdAt ?? (Date.parse(session.createdAt) || Date.now()),
         ...(existing ? {
           pendingAnswers: existing.pendingAnswers,
           testId: existing.testId,
