@@ -788,6 +788,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   },
   "companions": {
     "nav": {},
+    "process": {},
     "state": {},
     "blocker": {},
     "identity": {},

@@ -24102,7 +24102,8 @@
       "page_voice": "Stimme",
       "page_decisions": "Entscheidungen",
       "page_overseer": "Aufseher",
-      "page_council": "Rat"
+      "page_council": "Rat",
+      "page_process": "Prozess"
     },
     "state": {
       "active": "Aktiv",
@@ -24167,6 +24168,47 @@
       "curator_needs_registry": "Kurator braucht einen Arbeitsbereich mit einem zugeordneten Wissensregister.",
       "toggle_failed": "{name} konnte nicht umgeschaltet werden.",
       "status_failed": "Der Status der Begleiter konnte nicht gelesen werden."
+    },
+    "process": {
+      "cohort_share": "Alle Repositories {pct}",
+      "coverage": "Abdeckung",
+      "empty": "Keine Sitzungen in dieser Ansicht",
+      "error_title": "Sitzungen konnten nicht gelesen werden",
+      "failures": "Fehlschläge",
+      "left_here": "{count} endeten hier mit Fehlern oder wurden unterbrochen",
+      "mode_aria": "Sitzungsmodus",
+      "mode_headless": "Automatisiert",
+      "mode_interactive": "Interaktiv",
+      "mode_note": "Interaktive und automatisierte Sitzungen sind unterschiedliche Prozesse und werden daher nie zusammengefasst.",
+      "no_failures": "Keine Fehlschläge hier",
+      "outcome_errored": "Kein Commit, Fehler aufgetreten",
+      "outcome_interrupted": "Unterbrochen",
+      "outcome_landed": "Committet",
+      "outcome_quiet": "Kein Commit, sauber",
+      "outcomes_title": "Wie die Sitzungen endeten",
+      "path_note": "Der Pfad zeigt, was Sitzungen am häufigsten taten. Niemand hat ihn festgelegt.",
+      "phase_brief": "Vorgabe",
+      "phase_edit": "Bearbeiten",
+      "phase_explore": "Erkunden",
+      "phase_ship": "Veröffentlichen",
+      "phase_verify": "Prüfen",
+      "rank": "Nr. {rank} bei Fehlschlägen",
+      "reached": "{reached} von {total}",
+      "repo_all": "Alle Repositories",
+      "repo_aria": "Nach Repository filtern",
+      "repo_search": "Repository suchen",
+      "skipped": "{count} haben es übersprungen",
+      "source": "{scanned} Transkripte gelesen, {cached} Sitzungen gespeichert",
+      "stat_landed": "hat einen Commit erstellt",
+      "stat_whole": "hat den gesamten Pfad durchlaufen",
+      "stat_worst": "meiste Fehlschläge",
+      "stat_worst_none": "keine Fehlschläge",
+      "stumbled": "{count} stießen hier auf einen Tool-Fehler oder eine Unterbrechung",
+      "subtitle_all": "{count} Sitzungen in {repos} Repositories",
+      "subtitle_repo": "{count} Sitzungen in {repo}",
+      "time_note": "Zeit ist aktive Zeit: Jede Lücke länger als 10 Minuten zählt als 10 Minuten.",
+      "wait": "Median Wartezeit {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }

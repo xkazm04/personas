@@ -24102,7 +24102,8 @@
       "page_voice": "음성",
       "page_decisions": "결정",
       "page_overseer": "감독관",
-      "page_council": "평의회"
+      "page_council": "평의회",
+      "page_process": "프로세스"
     },
     "state": {
       "active": "활성",
@@ -24167,6 +24168,47 @@
       "curator_needs_registry": "큐레이터에는 지식 레지스트리가 연결된 워크스페이스가 필요합니다.",
       "toggle_failed": "{name}을(를) 전환하지 못했습니다.",
       "status_failed": "동반자 상태를 불러오지 못했습니다."
+    },
+    "process": {
+      "cohort_share": "전체 저장소 {pct}",
+      "coverage": "커버리지",
+      "empty": "이 보기에 세션이 없습니다",
+      "error_title": "세션을 읽을 수 없습니다",
+      "failures": "실패",
+      "left_here": "{count}개가 여기서 오류 또는 중단으로 종료됨",
+      "mode_aria": "세션 모드",
+      "mode_headless": "자동 실행",
+      "mode_interactive": "대화형",
+      "mode_note": "대화형 세션과 자동 실행 세션은 서로 다른 프로세스이므로 절대 함께 집계되지 않습니다.",
+      "no_failures": "여기에는 실패가 없습니다",
+      "outcome_errored": "커밋 없음, 오류 발생",
+      "outcome_interrupted": "중단됨",
+      "outcome_landed": "커밋됨",
+      "outcome_quiet": "커밋 없음, 정상",
+      "outcomes_title": "세션 종료 방식",
+      "path_note": "경로는 세션이 가장 자주 수행한 작업입니다. 누구도 선언하지 않았습니다.",
+      "phase_brief": "브리프",
+      "phase_edit": "편집",
+      "phase_explore": "탐색",
+      "phase_ship": "배포",
+      "phase_verify": "검증",
+      "rank": "실패 순위 {rank}위",
+      "reached": "{total} 중 {reached}",
+      "repo_all": "전체 저장소",
+      "repo_aria": "저장소로 필터링",
+      "repo_search": "저장소 찾기",
+      "skipped": "{count}개가 건너뜀",
+      "source": "{scanned}개의 트랜스크립트 읽음, {cached}개의 세션 기억됨",
+      "stat_landed": "커밋함",
+      "stat_whole": "전체 경로를 거침",
+      "stat_worst": "실패가 가장 많음",
+      "stat_worst_none": "실패 없음",
+      "stumbled": "{count}개가 여기서 도구 오류 또는 중단을 겪음",
+      "subtitle_all": "{repos}개 저장소에서 {count}개 세션",
+      "subtitle_repo": "{repo}의 {count}개 세션",
+      "time_note": "시간은 활성 시간입니다. 10분을 초과하는 간격은 모두 10분으로 계산됩니다.",
+      "wait": "중앙값 대기 시간 {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }

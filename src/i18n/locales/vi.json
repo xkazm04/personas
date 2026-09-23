@@ -24102,7 +24102,8 @@
       "page_voice": "Giọng nói",
       "page_decisions": "Quyết định",
       "page_overseer": "Giám sát",
-      "page_council": "Hội đồng"
+      "page_council": "Hội đồng",
+      "page_process": "Quy trình"
     },
     "state": {
       "active": "Đang hoạt động",
@@ -24167,6 +24168,47 @@
       "curator_needs_registry": "Quản thủ cần một không gian làm việc có sổ đăng ký kiến thức đã ánh xạ.",
       "toggle_failed": "Không thể chuyển đổi {name}.",
       "status_failed": "Không thể đọc trạng thái của các bạn đồng hành."
+    },
+    "process": {
+      "cohort_share": "Tất cả kho lưu trữ {pct}",
+      "coverage": "Độ bao phủ",
+      "empty": "Không có phiên nào trong chế độ xem này",
+      "error_title": "Không thể đọc các phiên",
+      "failures": "Thất bại",
+      "left_here": "{count} kết thúc tại đây do lỗi hoặc bị gián đoạn",
+      "mode_aria": "Chế độ phiên",
+      "mode_headless": "Tự động",
+      "mode_interactive": "Tương tác",
+      "mode_note": "Phiên tương tác và phiên tự động là các quy trình khác nhau, nên chúng không bao giờ được gộp chung.",
+      "no_failures": "Không có thất bại nào ở đây",
+      "outcome_errored": "Không commit, có lỗi",
+      "outcome_interrupted": "Bị gián đoạn",
+      "outcome_landed": "Đã commit",
+      "outcome_quiet": "Không commit, sạch",
+      "outcomes_title": "Cách các phiên kết thúc",
+      "path_note": "Đường dẫn là những gì các phiên đã làm nhiều nhất. Không ai khai báo nó.",
+      "phase_brief": "Tóm tắt",
+      "phase_edit": "Chỉnh sửa",
+      "phase_explore": "Khám phá",
+      "phase_ship": "Phát hành",
+      "phase_verify": "Xác minh",
+      "rank": "Hạng {rank} về số lần thất bại",
+      "reached": "{reached} trong số {total}",
+      "repo_all": "Tất cả kho lưu trữ",
+      "repo_aria": "Lọc theo kho lưu trữ",
+      "repo_search": "Tìm kho lưu trữ",
+      "skipped": "{count} đã bỏ qua",
+      "source": "Đã đọc {scanned} bản ghi, đã nhớ {cached} phiên",
+      "stat_landed": "đã commit",
+      "stat_whole": "đã đi hết toàn bộ đường dẫn",
+      "stat_worst": "nhiều thất bại nhất",
+      "stat_worst_none": "không có thất bại",
+      "stumbled": "{count} gặp lỗi công cụ hoặc gián đoạn tại đây",
+      "subtitle_all": "{count} phiên trên {repos} kho lưu trữ",
+      "subtitle_repo": "{count} phiên trong {repo}",
+      "time_note": "Thời gian là thời gian hoạt động: bất kỳ khoảng trống nào dài hơn 10 phút được tính là 10 phút.",
+      "wait": "Thời gian chờ trung vị {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }
