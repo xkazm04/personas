@@ -27,7 +27,7 @@ The Settings → Network tab (dev-only — see [settings/README.md](../settings/
 
 ## Backend command surface — `commands/network/`
 
-Five Rust modules handle the IPC. The API wrappers live under `src/api/network/`.
+The Rust modules below handle the IPC. The API wrappers live under `src/api/network/`.
 
 ### `bundle.rs` — bundle and share-link IPC
 
@@ -96,6 +96,24 @@ Every transcript additionally mixes in a **channel binding** — `transport::cha
 
 Athena's side of this (the `remote_instruct` op, the inbound turn, and the mode-conditional consent rule) is documented in [companion](../companion/README.md).
 
+### `remote_sessions.rs` — running a fleet session on a paired device
+
+The second job kind on the same lane. `instruction` (above) hands a paired device a sentence and lets its Athena decide what to do; `fleet_session` hands it a **fleet session to run exactly as sent**, so both machines can track the real session.
+
+| Command | Behavior |
+| --- | --- |
+| `dispatch_remote_fleet_session(peerId, payload)` | Send one fleet session. Returns the persisted outbound job: `pending`/`running` when the peer answered, `queued` when it is offline (the job waits in this device's outbox and goes out on the next link-up), or `refused` with the peer's reason (e.g. `project_not_found`). The branch is minted here, never by the caller: the frontend sends `branch: ""` on purpose. |
+| `list_remote_sessions` | The sessions this device sent: every outbound `fleet_session` job that is live, or finished within the last hour, as `RemoteSessionView`s. A DB read, so it answers with the network stopped. |
+| `remote_session_command(jobId, command, text)` | Steer: `send_input` (with `text`), `kill`, `wake`. A closed grammar; there is no keystroke stream. |
+| `remote_session_subscribe_output(jobId, subscribe)` | Start or stop the lossy terminal tail. Unsubscribing never cancels the session. |
+| `list_dispatch_devices` | The paired devices as dispatch targets (never this one), each with `reachability`: `connected` / `stale` / `offline`. |
+
+Events: `network:remote-session-updated` (one whole `RemoteSessionView`) and `network:remote-session-output` (`{ jobId, seq, chunkB64 }`, lossy). The existing `network:remote-job-updated` is unchanged.
+
+**The payload** (`FleetSessionJobPayload`) carries the project as three keys (`projectId`, `githubUrl`, `projectName`) because the two machines share no project id yet; the receiver resolves the git remote first. A project needs a git remote for this kind at all: the work comes back as a pushed branch, and the **receipt** (`FleetSessionJobReceipt`) names the branch and the SHA read from `git ls-remote` on the running device. The asking device fetches the branch and fills `verified`: `true` (the commit is here), `false` (it is not), or `null` (this device has no checkout to look in, which is "could not verify", not "broken").
+
+<!-- remote-sessions: engine + executor sections -->
+
 ### `exposure.rs` — locally exposed resources
 
 | Command | Behavior |
@@ -121,6 +139,23 @@ Athena's side of this (the `remote_instruct` op, the inbound turn, and the mode-
 | --- | --- |
 | `seal_enclave` | Wrap a bundle in an enclave-attested envelope |
 | `verify_enclave` | Verify an envelope's attestation; surfaces in `EnclaveVerificationView` before apply |
+
+## Devices: run a session on another device
+
+Pairing (above) makes two of the operator's own machines trust each other. Once they do, any dispatch door can send the work to the other one instead of running it here.
+
+**Where you pick it.** A **Run on** picker (`src/features/shared/dispatch/RunOnSelect.tsx`) sits in the universal dispatch chooser (`DispatchChooser`, reached from Ship, Features, the passport, Council, Athena's panel and the notepad) and in the Monitor's dispatch dock. It lists **This machine** plus every paired device with a reachability dot, and it is **hidden entirely** when the build has no p2p or no device is paired.
+
+- An **offline** device stays selectable: the dispatch is queued and goes out when that device wakes, and the option says so.
+- Every remote device is **disabled, with the reason**, when the project has no git remote (the work could not come back), or when the dispatch first prepares files on this machine (a skill install, a brief file) that the other machine would not have.
+- On another device only two transports cross: **Fleet** becomes an interactive session and **Claude CLI** a headless one. The dev runner and the console are disabled with "Runs on this machine only".
+- A refusal from the other device (for example "that project is not on the other device") is shown in a toast through the error registry (`remote_peer_offline`, `project_not_found`, `remote_command_refused`, `remote_dispatch_failed`).
+
+**Where you watch it.** A sent session appears in the Monitor's Activity board as a remote tile (see [Monitor](../monitor.md#remote-sessions)). On the machine that runs it, the ordinary local tile says **From <device>**.
+
+**Where it is recorded.** Settings → Devices keeps the history of both kinds. Each row carries a kind label (**Instruction** or **Fleet session**); a finished fleet session shows its **Returned work** line (branch, short SHA, and verified / not found after fetch / could not verify here) under the row, and a job still waiting in the outbox reads **Queued**.
+
+Code: `src/stores/slices/network/remoteSessionsSlice.ts` (state, the p2p gate, the reconcile), `src/lib/network/remoteSessionModel.ts` (the client liveness rule, merge and receipt verdict, pure and tested), `src/features/shared/dispatch/` (the picker, the remote dispatch, the receipt line), `src/features/settings/sub_devices/` (the history).
 
 ## Storage and engine
 
