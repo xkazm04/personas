@@ -14851,6 +14851,7 @@ export type Translations = {
       promoted: string;
     };
     remote_job: {
+      queued: string;
       pending: string;
       running: string;
       completed: string;

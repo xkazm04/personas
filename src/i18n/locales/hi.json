@@ -17788,6 +17788,7 @@
       "cancelled": "रद्द किया गया",
       "completed": "पूर्ण",
       "failed": "विफल",
+      "queued": "कतार में",
       "pending": "लंबित",
       "refused": "अस्वीकृत",
       "running": "चल रहा है"

@@ -17,6 +17,8 @@ function job(over: Partial<RemoteJob> & Pick<RemoteJob, 'id'>): RemoteJob {
     peerDisplayName: 'Laptop',
     kind: 'instruction',
     instruction: 'do a thing',
+    payloadJson: null,
+    receipt: null,
     status: 'running',
     summary: null,
     refusalReason: null,

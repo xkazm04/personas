@@ -292,6 +292,13 @@ event_names! {
     // "I asked" and "I was asked" halves of the UI. Fired only on a genuine
     // state change — a note redelivered after a reconnect is applied silently.
     REMOTE_JOB_UPDATED         => "network:remote-job-updated",
+    // One remote session's view changed on the ORIGINATING device (a mirror
+    // frame arrived, the job changed status, or liveness turned it `unknown`).
+    // Payload: `RemoteSessionView`.
+    REMOTE_SESSION_UPDATED     => "network:remote-session-updated",
+    // One chunk of a subscribed remote session's terminal output (lossy tail).
+    // Payload: `RemoteSessionOutputChunk`.
+    REMOTE_SESSION_OUTPUT      => "network:remote-session-output",
     // Payload: `RemoteJobTurnEvent` — the answering turn for a job another
     // paired device asked THIS one to run, started or finished. That turn runs
     // with `suppress_chat`, so this is the ONLY signal the frontend gets; the

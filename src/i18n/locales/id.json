@@ -17788,6 +17788,7 @@
       "cancelled": "Dibatalkan",
       "completed": "Selesai",
       "failed": "Gagal",
+      "queued": "Dalam antrean",
       "pending": "Menunggu",
       "refused": "Ditolak",
       "running": "Berjalan"

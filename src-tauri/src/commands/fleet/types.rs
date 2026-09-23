@@ -249,6 +249,13 @@ pub struct FleetSession {
     /// Which autopilot / night-shift cycle produced this dispatch.
     #[ts(type = "number | null")]
     pub cycle_index: Option<i64>,
+    /// Set only on the RUNNING device for a session a paired device dispatched
+    /// here (`origin == "remote"`): the `remote_jobs` id that spawned it.
+    /// `None` for every locally started session.
+    pub remote_job_id: Option<String>,
+    /// Set only on the RUNNING device: the peer_id of the device that asked.
+    /// The tile's "from <device>" chip reads it. `None` for local sessions.
+    pub origin_peer_id: Option<String>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

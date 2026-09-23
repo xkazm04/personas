@@ -17788,6 +17788,7 @@
       "cancelled": "已取消",
       "completed": "已完成",
       "failed": "失败",
+      "queued": "排队中",
       "pending": "待处理",
       "refused": "已拒绝",
       "running": "运行中"

@@ -14845,6 +14845,7 @@
       "promoted": "Promoted"
     },
     "remote_job": {
+      "queued": "Queued",
       "pending": "Pending",
       "running": "Running",
       "completed": "Completed",

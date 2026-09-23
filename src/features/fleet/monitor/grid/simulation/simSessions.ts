@@ -111,6 +111,8 @@ function session(id: string, cwd: string, projectLabel: string, now: number, ran
     personaId: null,
     goalId: null,
     cycleIndex: null,
+    remoteJobId: null,
+    originPeerId: null,
   };
 }
 

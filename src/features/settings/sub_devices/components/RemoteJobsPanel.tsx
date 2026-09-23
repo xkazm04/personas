@@ -27,6 +27,8 @@ import { RemoteInstructionComposer } from './RemoteInstructionComposer';
  * than errors: the peer answered, it just answered no.
  */
 const STATUS_STATE: Record<RemoteJobStatus, 'live' | 'paused' | 'offline'> = {
+  // Waiting in this device's outbox for the peer to come online.
+  queued: 'paused',
   pending: 'paused',
   running: 'live',
   completed: 'live',

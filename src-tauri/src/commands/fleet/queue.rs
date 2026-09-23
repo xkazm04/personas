@@ -86,6 +86,10 @@ pub enum DispatchOrigin {
     NightShift,
     FeedImpact,
     OrphanResume,
+    /// A paired device dispatched this session to this one as a
+    /// `fleet_session` remote job. The row also carries `remote_job_id` and
+    /// `origin_peer_id`.
+    Remote,
 }
 
 impl DispatchOrigin {
@@ -100,6 +104,7 @@ impl DispatchOrigin {
             DispatchOrigin::NightShift => "night_shift",
             DispatchOrigin::FeedImpact => "feed_impact",
             DispatchOrigin::OrphanResume => "orphan_resume",
+            DispatchOrigin::Remote => "remote",
         }
     }
 
@@ -114,6 +119,7 @@ impl DispatchOrigin {
             Some("night_shift") => DispatchOrigin::NightShift,
             Some("feed_impact") => DispatchOrigin::FeedImpact,
             Some("orphan_resume") => DispatchOrigin::OrphanResume,
+            Some("remote") => DispatchOrigin::Remote,
             _ => DispatchOrigin::Manual,
         }
     }

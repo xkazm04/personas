@@ -431,6 +431,10 @@ impl FleetSessionInner {
             persona_id: self.persona_id.clone(),
             goal_id: self.goal_id.clone(),
             cycle_index: self.cycle_index,
+            // Wired by the remote-session executor (WP2): only a session a
+            // paired device dispatched here carries these.
+            remote_job_id: None,
+            origin_peer_id: None,
         }
     }
 }

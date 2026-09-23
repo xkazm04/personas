@@ -17788,6 +17788,7 @@
       "cancelled": "Đã hủy",
       "completed": "Đã hoàn tất",
       "failed": "Thất bại",
+      "queued": "Đang chờ",
       "pending": "Đang chờ",
       "refused": "Đã từ chối",
       "running": "Đang chạy"

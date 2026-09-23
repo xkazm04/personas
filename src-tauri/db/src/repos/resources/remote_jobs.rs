@@ -31,7 +31,7 @@ use personas_core::error::AppError;
 
 const COLUMNS: &str = "id, direction, peer_id, peer_display_name, kind, instruction, \
                        status, summary, refusal_reason, last_seq, created_at, updated_at, \
-                       completed_at";
+                       completed_at, payload_json, receipt_json";
 
 /// Insert a job row this device is originating (status `Pending`).
 ///
@@ -403,6 +403,12 @@ fn map_job(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteJob> {
         created_at: row.get(10)?,
         updated_at: row.get(11)?,
         completed_at: row.get(12)?,
+        payload_json: row.get("payload_json")?,
+        // An unparseable receipt reads as absent rather than failing the whole
+        // listing, for the same reason an unknown status token does above.
+        receipt: row
+            .get::<_, Option<String>>("receipt_json")?
+            .and_then(|raw| serde_json::from_str(&raw).ok()),
     })
 }
 

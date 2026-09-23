@@ -17788,6 +17788,7 @@
       "cancelled": "취소됨",
       "completed": "완료",
       "failed": "실패",
+      "queued": "대기 중",
       "pending": "대기 중",
       "refused": "거절됨",
       "running": "실행 중"

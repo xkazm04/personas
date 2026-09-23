@@ -25,8 +25,8 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Lightbulb, MessageSquare, Moon, Play,
-  RotateCcw, Rss, Sparkles, Square,
+  AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Lightbulb, MessageSquare, Moon,
+  Play, RotateCcw, Rss, Sparkles, Square,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
@@ -137,6 +137,8 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   night_shift: Moon,
   feed_impact: Rss,
   orphan_resume: RotateCcw,
+  // A paired device dispatched this session here.
+  remote: Laptop,
 };
 
 // The colour half — hues, swatch, the one treatment — lives in `nodeHues`;

@@ -17788,6 +17788,7 @@
       "cancelled": "Zrušeno",
       "completed": "Dokončeno",
       "failed": "Selhalo",
+      "queued": "Ve frontě",
       "pending": "Čeká",
       "refused": "Odmítnuto",
       "running": "Probíhá"

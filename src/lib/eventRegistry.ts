@@ -260,6 +260,13 @@ export const EventName = {
   /** One remote-job row changed state. Payload is the whole updated row. */
   REMOTE_JOB_UPDATED: 'network:remote-job-updated',
   /**
+   * One remote session's view changed on the ORIGINATING device: a mirror frame
+   * arrived, its job changed status, or liveness turned it `unknown`.
+   */
+  REMOTE_SESSION_UPDATED: 'network:remote-session-updated',
+  /** One chunk of a subscribed remote session's terminal output (lossy tail). */
+  REMOTE_SESSION_OUTPUT: 'network:remote-session-output',
+  /**
    * A paired device asked THIS device to run something and the answering turn
    * started / finished. The turn is `suppress_chat`, so this is the ONLY signal
    * the frontend gets — it drives the ambient orb notice, nothing else.
@@ -1099,6 +1106,8 @@ export interface EventPayloadMap {
    */
   [EventName.DEVICE_PAIRING_REQUESTED]: import('@/api/network/devices').DevicePairingRequest[];
   [EventName.REMOTE_JOB_UPDATED]: import('@/lib/bindings/RemoteJob').RemoteJob;
+  [EventName.REMOTE_SESSION_UPDATED]: import('@/lib/bindings/RemoteSessionView').RemoteSessionView;
+  [EventName.REMOTE_SESSION_OUTPUT]: import('@/lib/bindings/RemoteSessionOutputChunk').RemoteSessionOutputChunk;
   [EventName.REMOTE_JOB_TURN]: import('@/lib/network/remoteJobNotice').RemoteJobTurnEvent;
 
   // Notification delivery

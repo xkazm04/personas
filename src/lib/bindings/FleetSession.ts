@@ -161,4 +161,15 @@ goalId: string | null,
 /**
  * Which autopilot / night-shift cycle produced this dispatch.
  */
-cycleIndex: number | null, };
+cycleIndex: number | null, 
+/**
+ * Set only on the RUNNING device for a session a paired device dispatched
+ * here (`origin == "remote"`): the `remote_jobs` id that spawned it.
+ * `None` for every locally started session.
+ */
+remoteJobId: string | null, 
+/**
+ * Set only on the RUNNING device: the peer_id of the device that asked.
+ * The tile's "from <device>" chip reads it. `None` for local sessions.
+ */
+originPeerId: string | null, };
