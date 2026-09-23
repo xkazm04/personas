@@ -27,7 +27,7 @@
     "medianTopScore": 916.9,
     "carriedVerdicts": 178,
     "restoredPairs": 26,
-    "staleVerdicts": 149,
+    "staleVerdicts": 121,
     "orphanedVerdicts": 0,
     "renamedContexts": 0,
     "arrivedContexts": 0
@@ -3114,10 +3114,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_design/DesignTab.tsx:5 drives ONE design conversation for one persona at a time; the subject's precondition - many concurrent sessions whose existence, state, capacity and collective product must be tracked - never holds, so this is single-session lifecycle, the sibling subject the golden path explicitly draws the line against.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 the context is four authoring sub-tabs plus a direct single tool call (src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106); no agent session is spawned, tracked, dispatched or harvested",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-runtime-assembly",
@@ -3745,11 +3745,11 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/quick-answer/triage/** is a human-review triage deck over already-produced build questions and practice suggestions; every 'session'/'dispatch'/'registry' occurrence in this context's files (TriageDeckVariant.tsx:14, DeckTopBar.tsx:189-192, useDeckControls.tsx:483-491) refers to the browsing/keyboard session or the app's UI keyboard registry, not a fleet of spawned agent processes — no session-registry, dispatch, or harvest site exists here, the same precondition failure already recorded for this exact subject's sibling agents-design (8650ca36), and consistent with the sibling conversation-orchestration verdict already recorded on this same context.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out' - the human decision surface the golden path assigns to hitl-approval; nothing creates, tracks or harvests agent sessions",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 23
         },
         {
           "subject": "grounded-answer-scoring",
@@ -4936,7 +4936,7 @@
           "state": "unknown",
           "evidence": "src/api/vault/oauthGatewayApi.ts:58 still sends clientSecret in plaintext over IPC while credential fields go session-encrypted (src/api/vault/credentials.ts:84); no technique rule decides whether an INBOUND secret on an in-app IPC hop must use the transit envelope, so the old deviation has no decision rule behind it (registry proposal filed)",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -6577,10 +6577,10 @@
           "changedAt": "2026-09-17",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:28 spawns a session with a cwd and no declared write set, so N sessions share one repo with no disjointness check; and src-tauri/src/commands/fleet/stale.rs:640 writes session.state inline instead of through one transition door.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:126 DispatchRequest carries a cwd and no declared write set, so concurrent sessions in one repo are admitted with no disjointness check; the one state door and the durable queue now exist, but restart reconciliation, hibernation identity, harvest accounting and completion verification still fall short",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "terminal-multiplexing",
@@ -10089,11 +10089,11 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fanout.rs:100 instructs each dispatched sub-agent to 'pick sensible defaults' instead of asking, which is the silent-inference outcome the brief technique exists to convert into a question; note the whole fan-out module is still #![allow(dead_code)] and unwired (fanout.rs:13-15), so its conformances are designed but not yet running.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:1977 a build loop cut by MAX_TURNS (runner.rs:519) with any resolved cell still ends DraftReady, so a truncated build cannot be told from a finished one; the fan-out brief still says 'pick sensible defaults' (fanout.rs:118)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-instruction-files",
@@ -11026,10 +11026,10 @@
           "changedAt": "2026-09-17",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 drives a multi-round debate as the default path for team decisions with every seat on one model family, which the panel technique names as a sampling run in costume; and channels/types.ts:21 adds a third informal persona-state vocabulary beside the store's closed one.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:80 hand-copies the engine's DEFAULT_COST_BUDGET_USD (src-tauri/src/engine/deliberation.rs:46) as a literal 5, so retuning the enforced ceiling leaves the run-to-budget control showing the old one",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "chat-transcript",
@@ -11191,11 +11191,11 @@
           "revision": 23,
           "changedAt": "2026-09-17",
           "confidence": "strong",
-          "state": "deviation",
-          "evidence": "src/features/fleet/monitor/monitorModel.ts:130 widens the store's closed ActiveProcessStatus union to string and defaults an unknown status to `running`, so a status added upstream renders as a live pulsing process instead of failing the build.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "state": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:149 an unknown process status resolves to inert meta, never running, and :120 keys meta by the closed ActiveProcessStatus union (fixed in 926796dfce); every other technique's precondition is unmet in a read-only dashboard, each anchored",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "eval-harness",
@@ -11298,10 +11298,10 @@
           "changedAt": "2026-09-17",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:69 - GROUP_ORDER enumerates 7 of the 8 lifecycle states and omits `finished`, and the session list is built only from GROUP_ORDER, so a session that declared FLEET:DONE vanishes from the Sessions list while its Finished pill still counts it.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:216 detects a live-slot eviction by substring-matching reason prose (written at src-tauri/src/commands/fleet/stale.rs:2021), so rewording it silently brings back the vanish it guards; spawns share one root (:342)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "mcp-tools",
@@ -11498,11 +11498,11 @@
           "revision": 23,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-216 realizes parallel-dispatch (bounded mapWithConcurrency, not Promise.all, so one wedged PTY cannot stall the batch) and result-harvest (all-sent/partial/none accounting with an exact 'N of M' outcome and a retry that narrows to precisely the sessions that failed) almost to the letter of the golden path's own 'seven of nine produced results; two failed, named' example; :86-97 also honors hibernation-and-resume by excluding hibernated sessions from write targets because hibernation frees the process.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 a hand-written target filter excludes only exited and hibernated, so queued (no process) and dozing (writer freed) sessions are offered as broadcast targets whose writes fail",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "prompt-assembly",
@@ -12260,10 +12260,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:25 and its siblings are inline chat cards Athena emits into a cockpit; none of them creates, tracks, dispatches or harvests a session, so no technique in this subject has an implementation site.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:23 'informational - it doesn't write any selection'; the widgets render config or an inbox snapshot (DecisionsPanelWidget.tsx:17) and none spawns, tracks or harvests a session",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "test-harness",
@@ -12459,10 +12459,10 @@
           "changedAt": "2026-09-17",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:1 and src/features/home/sub_learning/HomeLearning.tsx:1 are a what's-new roadmap view and a guided-tour catalogue; there is no session, roster, dispatch or harvest anywhere in the context.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:159 'athena-fleet' is only a deep link; src/features/home/sub_releases/useLiveRoadmap.ts:2 fetches a roadmap once; no session, dispatch or harvest in the context",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-memory",
@@ -16206,10 +16206,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1466 emits frontmatter by replacing quotes rather than escaping and writes with a truncating std::fs::write at :1471, so a note the AI writes can be torn or silently mis-keyed in the human's own vault.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/mcp_server/vault.rs:21 is still a hand-rolled second walker with hard-coded policies that reads every note body on every search, its header excuse now false; and tools.rs:1496 keys a note on its title slug, so two titles that slug alike overwrite each other and a human-edited note is replaced unchecked",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "test-harness",
@@ -17485,10 +17485,10 @@
           "changedAt": "2026-09-07",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 counts orphans with no exemption while lint.rs:118 exempts entry points, so two surfaces report different orphan counts for one vault; and graph.rs:778 leaks an unreapable debounce thread past stop_watcher at :816.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/commands/obsidian_brain/drive.rs:767 the Drive pull writes vault notes with a truncating std::fs::write and overwrites a local note with no manifest entry without a divergence check, so a human's note can be torn or silently replaced; the orphan-predicate split (graph.rs:484 vs lint.rs:121) and the unreaped debounce thread (graph.rs:778) persist",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         }
       ],
       "governance": "governed"
@@ -23097,10 +23097,10 @@
           "changedAt": "2026-09-17",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 calls spawnSession(project.root_path, [prompt]) directly with no dispatch-key check against the registry for an already-running session on this idea/project, and no disjointness check against other sessions sharing the same root_path — the same missing-admission-door pattern the recorded deviation on commands-fleet names ('N sessions share one repo with no disjointness check').",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:84 spawns a Fleet session with no dispatch key derived from the finding and discards the returned session id, so re-dispatching a finding opens a second session in the same root and the task row is bound to neither",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "test-harness",
@@ -23433,10 +23433,10 @@
           "changedAt": "2026-09-17",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:15-23,67-74 asserts deriveAxes/full-lifecycle coverage over only 7 of the 8 closed FleetSessionState values, omitting 'finished' — the exact state whose omission from production code was already a recorded fleet-orchestration deviation on fleet-session-grid (67c91bb4); the switch it is testing (FleetStatusDots.tsx:32-41) already handles 'finished' correctly, so this suite would not catch a regression that dropped it again.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 hard-codes 7 of the 9 FleetSessionState values (the binding now also has queued and finished), so a regression dropping either passes; the harvest and orphan-resume code here deviates too",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "test-harness",
@@ -23801,10 +23801,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:210 renders a bare 'Orphans' stat beside a differently-exempted orphan list, so the number the user reads carries no predicate.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:375 (also :328, :396) passes the absolute filesystem path from graph results into the vault-relative file= parameter, so open-in-Obsidian from search, orphans and MOCs likely opens nothing (untested against Obsidian); the Browse panel passes a relative path and is fine",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "sidecar-provisioning",
@@ -25326,11 +25326,11 @@
           "revision": 23,
           "changedAt": "2026-09-17",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "src-tauri/core/src/models/build_session.rs:263-292 models exactly ONE persona's build progress through a BuildPhase lifecycle (Initializing...Promoted) with a single cli_pid — never a registry of many concurrent sessions, a dispatcher, or a harvest phase; the recipe/genome/persona models in this context are single-persona authoring data, not fleet state. Same single-session precondition failure already recorded against this subject for agents-design (8650ca36), the sibling subject the golden path explicitly excludes.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:321 AssignmentOutcome accounts only done/failed/skipped against steps_total, so an abort (src-tauri/src/engine/team_assignment_orchestrator.rs:355, no step cascade) leaves pending and running steps unclassed and the ledger does not sum to its roster; the old not-applicable is overturned - the context absorbed the team-assignment models",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "eval-harness",
@@ -26515,7 +26515,7 @@
           "state": "deviation",
           "evidence": "src/features/shared/chrome/sidebar/SidebarSubNav.ts:12 types every sub-destination id as a plain string and sidebarData.ts holds eleven hand-maintained sub-nav vocabularies with no registry; sidebarData.ts:157-158 records the shipped blank-page bug that produced",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:7d62a83fa7e636cf",
+          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
           "evaluatedRevision": 6
         },
         {
@@ -28032,11 +28032,11 @@
           "revision": 23,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:101-107 documents itself as a thin client cache ('The Rust side owns the source-of-truth registry; this slice is a thin client cache') and :247-291 drives all state transitions purely from Rust-typed FleetSessionState events (FLEET_SESSION_STATE / FLEET_SESSION_EXITED / FLEET_REGISTRY_CHANGED) rather than inventing a parallel vocabulary or polling processes — the conformant exception in a domain where every other judged fleet-orchestration context (commands-fleet, engine-build-session, fleet-monitor-channels, fleet-monitor-shell, fleet-session-grid) is already recorded as a deviation, two of them for exactly the second-vocabulary failure this slice avoids.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:306 stamps lastActivityMs=Date.now() on every state event, inventing activity the backend deliberately withholds for parked verdicts (src-tauri/src/commands/fleet/registry.rs:1999), and :304 casts an unvalidated wire string into FleetSessionState",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:ef76f38fd97a3f0e",
+          "evaluatedRevision": 23
         },
         {
           "subject": "data-access",
@@ -28153,7 +28153,7 @@
           "state": "deviation",
           "evidence": "src/stores/slices/vault/credentialSlice.ts:83 writes a new verdict by spreading the old metadata and never clears healthcheck_last_unreachable_*, so once any surface reads the attempt a could-not-check already answered by a later verdict shows beside it",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         }
       ],
@@ -30116,7 +30116,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:83 re-seeds 'daily' on any real edit to an hourly trigger (the no-op guard from 47a9217969 holds), so changing the hour quietly rewrites the frequency the template declared",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -30299,7 +30299,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx:51 highlights only exact option matches, so an off-list default in a published template shows with nothing selected while the gate counts it answered, and the instance gets a value no screen showed",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -30391,7 +30391,7 @@
           "state": "unknown",
           "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 now defaults allowCustom to false (c42eb7baa6 fixed the old deviation); only 3 of 7 techniques anchored here, below the evidence floor; residual SelectPills.tsx:65 hides an incoming off-list value, reach unshown",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -30811,7 +30811,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 labels the readiness sort 'Ready to Deploy' over a category score that is not the gate's evaluator and names no question, so the sort ranks cards ready that the gate blocks",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -31099,7 +31099,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/shared/TrustBadge.tsx:21 knows only verified/sandboxed/untrusted, so no-digest-yet (every cold start, templateVerification.ts:208) shows the shield and generated origin paints verified (:160); the built-in origin claim was fixed by 97f3c45f63",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -31341,7 +31341,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:666 builds the gate's input from every credential's service_type whatever its health (a usability reader exists at src/lib/credentials/healthState.ts:65, unused), so a credential already failed clears the adoption gate",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -31494,7 +31494,7 @@
           "state": "deviation",
           "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 resumes an adoption by display name from template-adopt-context-v1, a key nothing writes, so Resume acts only on leftovers from an old build and the completion notifier never fires",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -31866,7 +31866,7 @@
           "state": "deviation",
           "evidence": "src-tauri/src/engine/recipe_seed.rs:297 rewrites a built-in recipe's payload in place without moving source_version (all 132 seeds are 1.0.0), so isRecipeStale never fires though the stamp has been written since f3c1d4e90d",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:24c04594fbde263e",
+          "evaluatedAgainst": "sha256-b2:3dd9549b75f4f998",
           "evaluatedRevision": 3
         },
         {
@@ -33073,7 +33073,7 @@
           "state": "not-applicable",
           "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:62 the only secret here is the app-minted inbound webhook HMAC secret, which the golden path excludes (secrets the application mints and owns); :28 sees credentials only as {id,name}",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "source": "retained",
           "evaluatedRevision": 4
         },
@@ -33244,10 +33244,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:18 — this 'vault' is the credential vault (connector auth capture), not a markdown note store; every technique's precondition (a directory of markdown records) fails.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 browser-driven credential capture; precondition (a directory of markdown records a human edits) unmet - lexical match on 'vault'",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "credential-vault",
@@ -33266,7 +33266,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 colours the capture-review probe by success alone, so an unverifiable connector draws the green check and an unreachable probe the red failure",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -33306,7 +33306,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 shows the preview probe's result by .success alone (its prop type at :10 drops state), so a no-recipe row's unverifiable result (success:true) draws a green check",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedAgainst": "sha256-b2:030b7f4cd9ab8b4b",
           "source": "retained",
           "evaluatedRevision": 3
         },
@@ -33412,10 +33412,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 — a connector/credential picker grid; no markdown record store exists in this context, so no technique's precondition holds.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 records are connector/credential rows over IPC, not markdown files",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "credential-vault",
@@ -33434,7 +33434,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:256 still lifts the HTTP status out of probe prose by regex (and :308 substring-matches backend wording), so the failure kind breaks the first time the backend rewords its message",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -33470,7 +33470,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 filters on the scalar category because the multi-valued list never reaches stored rows (src/lib/types/types.ts:253), so a multi-category connector is found under one category only; no lifecycle stage exists to filter on",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedAgainst": "sha256-b2:030b7f4cd9ab8b4b",
           "evaluatedRevision": 3
         },
         {
@@ -33613,7 +33613,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:187 gates Save on a test handler existing, not on the row having a probe recipe, so a no-recipe row saves only after a meaningless test whose unverifiable result opens the gate through success:true; the old label-derived-mint deviation no longer holds (transactional door check, standard corrected 028a67dc)",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedAgainst": "sha256-b2:030b7f4cd9ab8b4b",
           "evaluatedRevision": 3
         },
         {
@@ -33647,10 +33647,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx defines connector credential-type form schemas (MCP fields, env var mapping) rendered through React form components — configuration UI over the credential vault, not markdown files with frontmatter. No file-as-record contract exists here.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:44 in-memory credential form configs; no file-backed record store",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "test-harness",
@@ -33805,7 +33805,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:125 paints any non-success last_status red, so a skipped rotation (not a failure per src-tauri/core/src/lifecycle.rs:489) reads as a failed one",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -33823,10 +33823,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:6-13 reads audit logs, usage stats, and dependents via @/api/vault/credentials — credential vault intelligence UI, not a markdown record store. No frontmatter, links, or file walk anywhere in the context.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:10 data from the credentials API; no markdown corpus",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "multi-provider-gateway-plane",
@@ -33995,7 +33995,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_credentials/components/list/CredentialListColumns.tsx:136 renders the health badge from state alone, with no probe age and no last attempt, so a weeks-old verified looks identical to this morning's",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -34013,10 +34013,10 @@
           "changedAt": "2026-09-07",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 imports @/api/vault/credentials — credential entry forms and OAuth flows, not a markdown store; every precondition fails.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 encrypted credential rows; no markdown store",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-memory",
@@ -34051,7 +34051,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:161 builds the health-sort input from healthcheck_last_success alone, so a stored unverifiable credential (boolean true) sorts as healthy; the old null-probe-drops-save-gate deviation is superseded (no-probe is a third outcome, 1e2e269a) and fixed for no-catalog-row by 904c1692b",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0e2ac601846a72b7",
+          "evaluatedAgainst": "sha256-b2:030b7f4cd9ab8b4b",
           "evaluatedRevision": 3
         },
         {
@@ -34275,10 +34275,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:1-13 and introspectionQueries.ts:8-9 are a SQL database browser/editor for connected external databases (postgres/mysql/redis/notion/airtable), not a directory of markdown notes; every markdown-vault technique's precondition (a filesystem of markdown records with frontmatter) fails, exactly as already recorded for sibling contexts vault-databases-tabs and vault-database-tests over the same sub_databases directory.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:9 an external database browser (postgres/mysql/redis/...), not a directory of notes",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "untrusted-extension-host",
@@ -34428,10 +34428,10 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:1 — tests for SQL database introspection UI under the credential vault; no markdown record store is under test.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:14 tests SQL generation; no markdown store under test",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "data-access",
@@ -34520,10 +34520,10 @@
           "changedAt": "2026-09-07",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 — a SQL table browser and chat tab over connected databases; the markdown record store this subject governs does not exist here.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 a table browser over connected databases; no markdown store",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "data-access",
@@ -34756,10 +34756,10 @@
           "changedAt": "2026-09-07",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:16-24 builds a credential/persona/event dependency graph keyed agent:<id>/evt:<id> — a data-model relationship graph, not a link graph extracted from markdown note bodies. No frontmatter record contract anywhere in the context; precondition fails as it does for every other 'vault'-lexical context that isn't a markdown store.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
-          "stale": true
+          "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:17 edges are typed domain relations, not links extracted from note bodies",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "credential-vault",
@@ -34864,7 +34864,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 mirrors each sweep outcome into the per-card cache as {success,message}, dropping the typed state, so unverifiable draws verified and unreachable draws failed",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "evaluatedRevision": 4
         },
         {
@@ -34974,11 +34974,11 @@
           "changedAt": "2026-09-07",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:6-12 imports CredentialMetadata/ConnectorDefinition and drives a credential edit/healthcheck panel; every tab in this context (ApiExplorer, McpTools, Executions) operates on the credential vault's API surface, not a markdown note store — same conclusion as the recorded not-applicable verdicts on sibling vault-catalog contexts.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
+          "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:7 operates on credential and connector rows; no markdown store",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
           "source": "retained",
-          "stale": true
+          "evaluatedRevision": 2
         },
         {
           "subject": "credential-vault",
@@ -34997,7 +34997,7 @@
           "state": "deviation",
           "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:48 has no branch for unreachable and falls to the boolean, so could-not-reach scores 0 like a rejection and the composite dot goes critical for an offline probe",
           "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256:0f2e608df36858a3",
+          "evaluatedAgainst": "sha256-b2:1c57e44b947c96ef",
           "source": "retained",
           "evaluatedRevision": 4
         },
@@ -35118,10 +35118,10 @@
           "changedAt": "2026-09-07",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx ingests arbitrary documents (.txt/.md/.html/.csv/.json — IngestDirectoryPicker.tsx:29) into a vector KB for RAG search; CorpusOverview.tsx:77 only renders an LLM-generated report as markdown text. No frontmatter schema, minted identity, or link graph exists — the vault-as-database precondition (a directory of markdown notes as records) never holds, same as the recorded not-applicable verdict on vault-catalog-autocred-ui.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:764c0c15a865ddd5",
-          "stale": true
+          "evidence": "src/features/vault/shared/vector/ingest/IngestDirectoryPicker.tsx:30 a one-shot directory ingest of mixed file types into a vector KB, not a markdown record store with frontmatter or links",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:7a10f98b2d9488ac",
+          "evaluatedRevision": 2
         },
         {
           "subject": "llm-extracted-entity-graph",
