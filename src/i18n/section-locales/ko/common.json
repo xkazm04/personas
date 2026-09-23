@@ -197,5 +197,22 @@
   "unsaved_save_failed": "변경 사항이 저장되지 않았습니다",
   "directory_browse_failed": "폴더 선택기를 열 수 없습니다. 다시 시도하거나 경로를 입력하세요.",
   "recent_directories": "최근 폴더",
-  "model_not_in_catalog": "모델 카탈로그에 없습니다. 교체할 모델을 선택하세요."
+  "model_not_in_catalog": "모델 카탈로그에 없습니다. 교체할 모델을 선택하세요.",
+  "dispatch_receipt_could_not_verify": "여기서는 확인할 수 없음",
+  "dispatch_receipt_detail": "브랜치 {branch}, {sha}",
+  "dispatch_receipt_not_pushed": "푸시된 내용 없음",
+  "dispatch_receipt_push_failed": "푸시 실패",
+  "dispatch_receipt_unverified": "가져오기 후에도 찾을 수 없음",
+  "dispatch_receipt_verified": "확인됨",
+  "dispatch_run_on_aria": "실행할 기기 선택",
+  "dispatch_run_on_connected": "연결됨",
+  "dispatch_run_on_home": "홈",
+  "dispatch_run_on_label": "실행 위치",
+  "dispatch_run_on_local_only": "이 기기에서만 실행됨",
+  "dispatch_run_on_local_prep": "이 디스패치는 이 기기에서 파일을 준비합니다",
+  "dispatch_run_on_needs_remote": "작업 결과를 반환하려면 git 원격 저장소가 필요합니다",
+  "dispatch_run_on_offline": "오프라인",
+  "dispatch_run_on_queued_hint": "깨어날 때까지 대기열에서 대기합니다",
+  "dispatch_run_on_stale": "최근에 확인되지 않음",
+  "dispatch_run_on_this_machine": "이 기기"
 }

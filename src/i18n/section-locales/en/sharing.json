@@ -287,5 +287,8 @@
   "remote_notice_completed": "Finished the errand for {device}",
   "remote_notice_failed": "The errand for {device} did not finish",
   "remote_notice_dismiss": "Dismiss this notice",
-  "remote_notice_label": "Remote instruction activity"
+  "remote_notice_label": "Remote instruction activity",
+  "job_kind_instruction": "Instruction",
+  "job_kind_fleet_session": "Fleet session",
+  "job_receipt_title": "Returned work"
 }

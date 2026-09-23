@@ -197,5 +197,22 @@
   "unsaved_save_failed": "لم يتم حفظ تغييراتك",
   "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
   "recent_directories": "المجلدات الأخيرة",
-  "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله."
+  "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله.",
+  "dispatch_receipt_could_not_verify": "تعذر التحقق هنا",
+  "dispatch_receipt_detail": "الفرع {branch} عند {sha}",
+  "dispatch_receipt_not_pushed": "لم يتم الدفع",
+  "dispatch_receipt_push_failed": "فشل الدفع",
+  "dispatch_receipt_unverified": "غير موجود بعد الجلب",
+  "dispatch_receipt_verified": "تم التحقق",
+  "dispatch_run_on_aria": "اختر الجهاز الذي سيتم التشغيل عليه",
+  "dispatch_run_on_connected": "متصل",
+  "dispatch_run_on_home": "المنزل",
+  "dispatch_run_on_label": "التشغيل على",
+  "dispatch_run_on_local_only": "يعمل على هذا الجهاز فقط",
+  "dispatch_run_on_local_prep": "يقوم هذا الإرسال بتجهيز الملفات على هذا الجهاز",
+  "dispatch_run_on_needs_remote": "يحتاج إلى مستودع git بعيد لإعادة العمل",
+  "dispatch_run_on_offline": "غير متصل",
+  "dispatch_run_on_queued_hint": "قيد الانتظار حتى يستيقظ",
+  "dispatch_run_on_stale": "لم يُشاهَد مؤخرًا",
+  "dispatch_run_on_this_machine": "هذا الجهاز"
 }

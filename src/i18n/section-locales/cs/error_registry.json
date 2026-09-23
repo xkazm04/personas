@@ -164,5 +164,13 @@
   "zapier_message": "K Zapier webhooku se nepodařilo dostat.",
   "zapier_suggestion": "Ověř URL webhooku v nastavení Zapier integrace.",
   "oauth_account_mismatch_message": "Přihlásili jste se jiným účtem, než ke kterému je tento přístup vázán.",
-  "oauth_account_mismatch_suggestion": "Přihlaste se účtem uvedeným u přístupu, nebo pro druhý účet přidejte nový přístup."
+  "oauth_account_mismatch_suggestion": "Přihlaste se účtem uvedeným u přístupu, nebo pro druhý účet přidejte nový přístup.",
+  "project_not_found_message": "Tento projekt není na druhém zařízení.",
+  "project_not_found_suggestion": "Naklonujte nebo tam projekt zaregistrujte se stejným git remote a odešlete jej znovu.",
+  "remote_command_refused_message": "Druhé zařízení tento příkaz odmítlo.",
+  "remote_command_refused_suggestion": "Relace tam možná skončila. Obnovte Monitor a zkuste to znovu.",
+  "remote_dispatch_failed_message": "Relaci se nepodařilo odeslat na druhé zařízení.",
+  "remote_dispatch_failed_suggestion": "Zkontrolujte, že je zařízení stále spárováno, a zkuste to znovu, nebo ji spusťte na tomto počítači.",
+  "remote_peer_offline_message": "Druhé zařízení není momentálně dostupné.",
+  "remote_peer_offline_suggestion": "Otevřete Personas na tomto zařízení a zkontrolujte, že jsou obě ve stejné síti. Odeslání čeká ve frontě odchozích, dokud se zařízení neprobudí."
 }

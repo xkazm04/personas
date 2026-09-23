@@ -164,5 +164,13 @@
   "zapier_message": "Impossible d’atteindre le webhook Zapier.",
   "zapier_suggestion": "Vérifiez l’URL du webhook dans vos paramètres d’intégration Zapier.",
   "oauth_account_mismatch_message": "Vous vous êtes connecté avec un compte différent de celui auquel cet identifiant est lié.",
-  "oauth_account_mismatch_suggestion": "Connectez-vous avec le compte affiché sur l'identifiant, ou ajoutez un nouvel identifiant pour l'autre compte."
+  "oauth_account_mismatch_suggestion": "Connectez-vous avec le compte affiché sur l'identifiant, ou ajoutez un nouvel identifiant pour l'autre compte.",
+  "project_not_found_message": "Ce projet n'est pas sur l'autre appareil.",
+  "project_not_found_suggestion": "Clonez ou enregistrez le projet là-bas avec le même remote git, puis renvoyez-le.",
+  "remote_command_refused_message": "L'autre appareil a refusé cette commande.",
+  "remote_command_refused_suggestion": "La session s'est peut-être terminée là-bas. Actualisez le Monitor et réessayez.",
+  "remote_dispatch_failed_message": "La session n'a pas pu être envoyée à l'autre appareil.",
+  "remote_dispatch_failed_suggestion": "Vérifiez que l'appareil est toujours associé et réessayez, ou exécutez-la sur cet ordinateur.",
+  "remote_peer_offline_message": "L'autre appareil n'est pas joignable pour le moment.",
+  "remote_peer_offline_suggestion": "Ouvrez Personas sur cet appareil et vérifiez que les deux sont sur le même réseau. Un envoi attend dans la boîte d'envoi jusqu'à ce que l'appareil se réveille."
 }

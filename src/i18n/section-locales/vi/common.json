@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu",
   "directory_browse_failed": "Không thể mở trình chọn thư mục. Hãy thử lại hoặc nhập đường dẫn.",
   "recent_directories": "Thư mục gần đây",
-  "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế."
+  "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế.",
+  "dispatch_receipt_could_not_verify": "Không thể xác minh ở đây",
+  "dispatch_receipt_detail": "Nhánh {branch} tại {sha}",
+  "dispatch_receipt_not_pushed": "Chưa đẩy gì lên",
+  "dispatch_receipt_push_failed": "Đẩy lên thất bại",
+  "dispatch_receipt_unverified": "Không tìm thấy sau khi fetch",
+  "dispatch_receipt_verified": "Đã xác minh",
+  "dispatch_run_on_aria": "Chọn máy để chạy",
+  "dispatch_run_on_connected": "Đã kết nối",
+  "dispatch_run_on_home": "Máy chính",
+  "dispatch_run_on_label": "Chạy trên",
+  "dispatch_run_on_local_only": "Chỉ chạy trên máy này",
+  "dispatch_run_on_local_prep": "Lệnh gửi này chuẩn bị tệp trên máy này",
+  "dispatch_run_on_needs_remote": "Cần một remote git để trả kết quả về",
+  "dispatch_run_on_offline": "Ngoại tuyến",
+  "dispatch_run_on_queued_hint": "Xếp hàng chờ đến khi máy thức dậy",
+  "dispatch_run_on_stale": "Gần đây chưa thấy hoạt động",
+  "dispatch_run_on_this_machine": "Máy này"
 }

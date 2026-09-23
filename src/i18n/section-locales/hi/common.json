@@ -197,5 +197,22 @@
   "unsaved_save_failed": "आपके बदलाव सहेजे नहीं गए",
   "directory_browse_failed": "फ़ोल्डर चयनकर्ता नहीं खुल सका। फिर से कोशिश करें, या पथ टाइप करें।",
   "recent_directories": "हाल के फ़ोल्डर",
-  "model_not_in_catalog": "मॉडल कैटलॉग में नहीं है। बदलने के लिए कोई एक चुनें।"
+  "model_not_in_catalog": "मॉडल कैटलॉग में नहीं है। बदलने के लिए कोई एक चुनें।",
+  "dispatch_receipt_could_not_verify": "यहां सत्यापित नहीं हो सका",
+  "dispatch_receipt_detail": "शाखा {branch}, कमिट {sha}",
+  "dispatch_receipt_not_pushed": "कुछ भी पुश नहीं हुआ",
+  "dispatch_receipt_push_failed": "पुश विफल",
+  "dispatch_receipt_unverified": "फ़ेच के बाद नहीं मिला",
+  "dispatch_receipt_verified": "सत्यापित",
+  "dispatch_run_on_aria": "चलाने के लिए मशीन चुनें",
+  "dispatch_run_on_connected": "कनेक्टेड",
+  "dispatch_run_on_home": "होम",
+  "dispatch_run_on_label": "इस पर चलाएं",
+  "dispatch_run_on_local_only": "केवल इस मशीन पर चलता है",
+  "dispatch_run_on_local_prep": "यह डिस्पैच इस मशीन पर फ़ाइलें तैयार करता है",
+  "dispatch_run_on_needs_remote": "काम वापस लाने के लिए git रिमोट ज़रूरी है",
+  "dispatch_run_on_offline": "ऑफ़लाइन",
+  "dispatch_run_on_queued_hint": "जागने तक कतार में",
+  "dispatch_run_on_stale": "हाल में नहीं देखा गया",
+  "dispatch_run_on_this_machine": "यह मशीन"
 }

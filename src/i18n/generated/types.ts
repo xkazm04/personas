@@ -827,6 +827,32 @@ export type Translations = {
     usage_provider_claude: string;
     usage_provider_codex: string;
     usage_provider_grok: string;
+    queue_origin_remote: string;
+    remote_on_device: string;
+    remote_state_unknown: string;
+    remote_last_seen: string;
+    remote_never_seen: string;
+    remote_queued_until: string;
+    remote_tile_aria: string;
+    remote_from_device: string;
+    remote_drawer_aria: string;
+    remote_terminal_title: string;
+    remote_terminal_waiting: string;
+    remote_output_skipped: string;
+    remote_notes_title: string;
+    remote_notes_empty: string;
+    remote_steer_title: string;
+    remote_input_placeholder: string;
+    remote_input_aria: string;
+    remote_send_input: string;
+    remote_wake: string;
+    remote_kill: string;
+    remote_kill_confirm_title: string;
+    remote_kill_confirm_body: string;
+    remote_steer_ended: string;
+    remote_steer_queued: string;
+    remote_receipt_title: string;
+    remote_session_gone: string;
   };
   common: {
     unknown_error: string;
@@ -1028,6 +1054,23 @@ export type Translations = {
     md_toolbar: string;
     directory_browse_failed: string;
     recent_directories: string;
+    dispatch_run_on_label: string;
+    dispatch_run_on_aria: string;
+    dispatch_run_on_this_machine: string;
+    dispatch_run_on_home: string;
+    dispatch_run_on_connected: string;
+    dispatch_run_on_stale: string;
+    dispatch_run_on_offline: string;
+    dispatch_run_on_queued_hint: string;
+    dispatch_run_on_needs_remote: string;
+    dispatch_run_on_local_prep: string;
+    dispatch_run_on_local_only: string;
+    dispatch_receipt_verified: string;
+    dispatch_receipt_unverified: string;
+    dispatch_receipt_could_not_verify: string;
+    dispatch_receipt_not_pushed: string;
+    dispatch_receipt_push_failed: string;
+    dispatch_receipt_detail: string;
   };
   council: {
     galaxy: {
@@ -7734,6 +7777,9 @@ export type Translations = {
     remote_notice_failed: string;
     remote_notice_dismiss: string;
     remote_notice_label: string;
+    job_kind_instruction: string;
+    job_kind_fleet_session: string;
+    job_receipt_title: string;
   };
   overview: {
     filters: {
@@ -14080,6 +14126,14 @@ export type Translations = {
     workflow_shape_rejected_suggestion: string;
     oauth_account_mismatch_message: string;
     oauth_account_mismatch_suggestion: string;
+    remote_peer_offline_message: string;
+    remote_peer_offline_suggestion: string;
+    project_not_found_message: string;
+    project_not_found_suggestion: string;
+    remote_command_refused_message: string;
+    remote_command_refused_suggestion: string;
+    remote_dispatch_failed_message: string;
+    remote_dispatch_failed_suggestion: string;
   };
   empty_states: {
     credentials_title: string;

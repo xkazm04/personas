@@ -77,6 +77,43 @@ export const ERROR_RULES: ErrorRule[] = [
       category: 'recoverable',
     },
   },
+  // ── Remote devices (Run on another device) ──────────────────────────
+  // Before the generic offline rule: the engine raises an unreachable PAIRED
+  // DEVICE as `NetworkOffline` too, and "you appear to be offline" would send
+  // the operator to check a connection that is fine. The reason tokens are the
+  // refusal reasons a `fleet_session` job carries (`RemoteJob.refusalReason`).
+  {
+    match: /\bremote_peer_offline\b|is not reachable right now|stopped responding before it answered/,
+    error: {
+      message: 'The other device is not reachable right now.',
+      suggestion: 'Open Personas on that device and check that both are on the same network. A dispatch waits in the outbox until the device wakes.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: /\bproject_not_found\b/,
+    error: {
+      message: 'That project is not on the other device.',
+      suggestion: 'Clone or register the project there with the same git remote, then send it again.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /\bremote_command_refused\b/,
+    error: {
+      message: 'The other device refused that command.',
+      suggestion: 'The session may have ended there. Refresh the Monitor and try again.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: /\bremote_dispatch_failed\b|Device-to-device dispatch is not enabled/,
+    error: {
+      message: 'The session could not be sent to the other device.',
+      suggestion: 'Check that the device is still paired and try again, or run it on this machine.',
+      category: 'system',
+    },
+  },
   // ── Network & connectivity ──────────────────────────────────────────
   {
     match: /NetworkOffline|Network offline:/,

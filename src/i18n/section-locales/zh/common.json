@@ -197,5 +197,22 @@
   "unsaved_save_failed": "你的更改未保存",
   "directory_browse_failed": "无法打开文件夹选择器。请重试，或直接输入路径。",
   "recent_directories": "最近的文件夹",
-  "model_not_in_catalog": "不在模型目录中。请选择一个替换它。"
+  "model_not_in_catalog": "不在模型目录中。请选择一个替换它。",
+  "dispatch_receipt_could_not_verify": "无法在此验证",
+  "dispatch_receipt_detail": "分支 {branch}，位于 {sha}",
+  "dispatch_receipt_not_pushed": "未推送任何内容",
+  "dispatch_receipt_push_failed": "推送失败",
+  "dispatch_receipt_unverified": "拉取后未找到",
+  "dispatch_receipt_verified": "已验证",
+  "dispatch_run_on_aria": "选择要运行的设备",
+  "dispatch_run_on_connected": "已连接",
+  "dispatch_run_on_home": "主设备",
+  "dispatch_run_on_label": "运行位置",
+  "dispatch_run_on_local_only": "仅在此设备上运行",
+  "dispatch_run_on_local_prep": "此调度会先在此设备上准备文件",
+  "dispatch_run_on_needs_remote": "需要 git 远程仓库才能返回工作成果",
+  "dispatch_run_on_offline": "离线",
+  "dispatch_run_on_queued_hint": "排队中，等待其唤醒",
+  "dispatch_run_on_stale": "最近未见",
+  "dispatch_run_on_this_machine": "此设备"
 }

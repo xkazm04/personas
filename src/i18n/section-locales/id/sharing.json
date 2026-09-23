@@ -287,5 +287,8 @@
   "verifying_bundle": "Memverifikasi bundle…",
   "verifying_enclave": "Memverifikasi enklave…",
   "view_details": "Lihat detail",
-  "your_identity": "Identitas Anda"
+  "your_identity": "Identitas Anda",
+  "job_kind_fleet_session": "Sesi fleet",
+  "job_kind_instruction": "Instruksi",
+  "job_receipt_title": "Hasil kerja yang kembali"
 }

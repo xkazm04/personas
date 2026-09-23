@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Tus cambios no se guardaron",
   "directory_browse_failed": "No se pudo abrir el selector de carpetas. Inténtalo de nuevo o escribe la ruta.",
   "recent_directories": "Carpetas recientes",
-  "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo."
+  "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo.",
+  "dispatch_receipt_could_not_verify": "No se pudo verificar aquí",
+  "dispatch_receipt_detail": "Rama {branch} en {sha}",
+  "dispatch_receipt_not_pushed": "Sin push",
+  "dispatch_receipt_push_failed": "Push fallido",
+  "dispatch_receipt_unverified": "No se encontró tras el fetch",
+  "dispatch_receipt_verified": "Verificado",
+  "dispatch_run_on_aria": "Elige la máquina en la que ejecutar",
+  "dispatch_run_on_connected": "Conectado",
+  "dispatch_run_on_home": "Casa",
+  "dispatch_run_on_label": "Ejecutar en",
+  "dispatch_run_on_local_only": "Se ejecuta solo en este equipo",
+  "dispatch_run_on_local_prep": "Este envío prepara archivos en este equipo",
+  "dispatch_run_on_needs_remote": "Necesita un remoto de git para devolver el trabajo",
+  "dispatch_run_on_offline": "Sin conexión",
+  "dispatch_run_on_queued_hint": "En cola hasta que se active",
+  "dispatch_run_on_stale": "No visto recientemente",
+  "dispatch_run_on_this_machine": "Este equipo"
 }

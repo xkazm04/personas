@@ -164,5 +164,13 @@
   "zapier_message": "无法访问 Zapier webhook。",
   "zapier_suggestion": "在您的 Zapier 集成设置中验证 webhook URL。",
   "oauth_account_mismatch_message": "您登录的账号与此凭据绑定的账号不同。",
-  "oauth_account_mismatch_suggestion": "请使用凭据上显示的账号登录，或为另一个账号添加新凭据。"
+  "oauth_account_mismatch_suggestion": "请使用凭据上显示的账号登录，或为另一个账号添加新凭据。",
+  "project_not_found_message": "该项目不在另一台设备上。",
+  "project_not_found_suggestion": "请在那台设备上使用相同的 git 远程仓库克隆或注册该项目，然后重新发送。",
+  "remote_command_refused_message": "另一台设备拒绝了该命令。",
+  "remote_command_refused_suggestion": "该会话可能已在那边结束。请刷新 Monitor 后重试。",
+  "remote_dispatch_failed_message": "无法将会话发送到另一台设备。",
+  "remote_dispatch_failed_suggestion": "请检查该设备是否仍处于配对状态，然后重试，或改为在此设备上运行。",
+  "remote_peer_offline_message": "另一台设备当前无法访问。",
+  "remote_peer_offline_suggestion": "请在那台设备上打开 Personas，并检查两台设备是否在同一网络。调度会在发件箱中等待，直到该设备唤醒。"
 }

@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Vaše změny nebyly uloženy",
   "directory_browse_failed": "Výběr složky se nepodařilo otevřít. Zkuste to znovu nebo cestu zadejte ručně.",
   "recent_directories": "Nedávné složky",
-  "model_not_in_catalog": "Není v katalogu modelů. Vyberte jiný a nahraďte jej."
+  "model_not_in_catalog": "Není v katalogu modelů. Vyberte jiný a nahraďte jej.",
+  "dispatch_receipt_could_not_verify": "Zde se nepodařilo ověřit",
+  "dispatch_receipt_detail": "Větev {branch} na {sha}",
+  "dispatch_receipt_not_pushed": "Žádný push",
+  "dispatch_receipt_push_failed": "Push selhal",
+  "dispatch_receipt_unverified": "Po fetch nenalezeno",
+  "dispatch_receipt_verified": "Ověřeno",
+  "dispatch_run_on_aria": "Vyberte počítač, na kterém se má spustit",
+  "dispatch_run_on_connected": "Připojeno",
+  "dispatch_run_on_home": "Domov",
+  "dispatch_run_on_label": "Spustit na",
+  "dispatch_run_on_local_only": "Běží pouze na tomto počítači",
+  "dispatch_run_on_local_prep": "Toto odeslání připraví soubory na tomto počítači",
+  "dispatch_run_on_needs_remote": "Pro vrácení práce je potřeba git remote",
+  "dispatch_run_on_offline": "Nepřipojeno",
+  "dispatch_run_on_queued_hint": "Čeká ve frontě, dokud se neprobudí",
+  "dispatch_run_on_stale": "Nedávno neviděno",
+  "dispatch_run_on_this_machine": "Tento počítač"
 }

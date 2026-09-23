@@ -197,5 +197,22 @@
   "unsaved_save_failed": "Ваши изменения не сохранены",
   "directory_browse_failed": "Не удалось открыть выбор папки. Попробуйте ещё раз или введите путь.",
   "recent_directories": "Недавние папки",
-  "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены."
+  "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены.",
+  "dispatch_receipt_could_not_verify": "Не удалось проверить здесь",
+  "dispatch_receipt_detail": "Ветка {branch} на {sha}",
+  "dispatch_receipt_not_pushed": "Ничего не отправлено",
+  "dispatch_receipt_push_failed": "Отправка не удалась",
+  "dispatch_receipt_unverified": "Не найдено после fetch",
+  "dispatch_receipt_verified": "Проверено",
+  "dispatch_run_on_aria": "Выберите компьютер, на котором нужно запустить",
+  "dispatch_run_on_connected": "Подключено",
+  "dispatch_run_on_home": "Дом",
+  "dispatch_run_on_label": "Запустить на",
+  "dispatch_run_on_local_only": "Выполняется только на этом компьютере",
+  "dispatch_run_on_local_prep": "Эта отправка подготавливает файлы на этом компьютере",
+  "dispatch_run_on_needs_remote": "Для возврата результата нужен git remote",
+  "dispatch_run_on_offline": "Не в сети",
+  "dispatch_run_on_queued_hint": "В очереди до пробуждения",
+  "dispatch_run_on_stale": "Недавно не виден",
+  "dispatch_run_on_this_machine": "Этот компьютер"
 }

@@ -820,7 +820,33 @@
     "usage_accounts_switch_aria": "Switch the Claude login to {email}",
     "usage_provider_claude": "Claude",
     "usage_provider_codex": "OpenAI Codex",
-    "usage_provider_grok": "xAI Grok"
+    "usage_provider_grok": "xAI Grok",
+    "queue_origin_remote": "A paired device",
+    "remote_on_device": "On {device}",
+    "remote_state_unknown": "Unknown",
+    "remote_last_seen": "Last seen",
+    "remote_never_seen": "Not heard from yet",
+    "remote_queued_until": "Queued until {device} wakes",
+    "remote_tile_aria": "{title} on {device}, {state}. Open the remote session",
+    "remote_from_device": "From {device}",
+    "remote_drawer_aria": "Remote session on {device}",
+    "remote_terminal_title": "Terminal, read-only",
+    "remote_terminal_waiting": "Waiting for output from {device}",
+    "remote_output_skipped": "output skipped",
+    "remote_notes_title": "Progress notes",
+    "remote_notes_empty": "No progress notes yet",
+    "remote_steer_title": "Steer",
+    "remote_input_placeholder": "Type a line for the session",
+    "remote_input_aria": "Input for the remote session",
+    "remote_send_input": "Send input",
+    "remote_wake": "Wake",
+    "remote_kill": "Kill",
+    "remote_kill_confirm_title": "Kill this session on {device}?",
+    "remote_kill_confirm_body": "The session stops on {device}. Commits already on its branch stay there.",
+    "remote_steer_ended": "This session has ended, so there is nothing to steer.",
+    "remote_steer_queued": "Steering opens once {device} picks the session up.",
+    "remote_receipt_title": "Returned work",
+    "remote_session_gone": "This remote session is no longer tracked on this device."
   },
   "common": {
     "unknown_error": "Unknown error",
@@ -1021,7 +1047,24 @@
     "md_quote": "Quote",
     "md_toolbar": "Formatting",
     "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
-    "recent_directories": "Recent folders"
+    "recent_directories": "Recent folders",
+    "dispatch_run_on_label": "Run on",
+    "dispatch_run_on_aria": "Choose the machine to run on",
+    "dispatch_run_on_this_machine": "This machine",
+    "dispatch_run_on_home": "Home",
+    "dispatch_run_on_connected": "Connected",
+    "dispatch_run_on_stale": "Not seen recently",
+    "dispatch_run_on_offline": "Offline",
+    "dispatch_run_on_queued_hint": "Queued until it wakes",
+    "dispatch_run_on_needs_remote": "Needs a git remote to return work",
+    "dispatch_run_on_local_prep": "This dispatch prepares files on this machine",
+    "dispatch_run_on_local_only": "Runs on this machine only",
+    "dispatch_receipt_verified": "Verified",
+    "dispatch_receipt_unverified": "Not found after fetch",
+    "dispatch_receipt_could_not_verify": "Could not verify here",
+    "dispatch_receipt_not_pushed": "Nothing pushed",
+    "dispatch_receipt_push_failed": "Push failed",
+    "dispatch_receipt_detail": "Branch {branch} at {sha}"
   },
   "council": {
     "galaxy": {
@@ -7727,7 +7770,10 @@
     "remote_notice_completed": "Finished the errand for {device}",
     "remote_notice_failed": "The errand for {device} did not finish",
     "remote_notice_dismiss": "Dismiss this notice",
-    "remote_notice_label": "Remote instruction activity"
+    "remote_notice_label": "Remote instruction activity",
+    "job_kind_instruction": "Instruction",
+    "job_kind_fleet_session": "Fleet session",
+    "job_receipt_title": "Returned work"
   },
   "overview": {
     "filters": {
@@ -14073,7 +14119,15 @@
     "workflow_shape_rejected_message": "That export is missing the parts a workflow needs.",
     "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes.",
     "oauth_account_mismatch_message": "You signed in with a different account than this credential is bound to.",
-    "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account."
+    "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account.",
+    "remote_peer_offline_message": "The other device is not reachable right now.",
+    "remote_peer_offline_suggestion": "Open Personas on that device and check that both are on the same network. A dispatch waits in the outbox until the device wakes.",
+    "project_not_found_message": "That project is not on the other device.",
+    "project_not_found_suggestion": "Clone or register the project there with the same git remote, then send it again.",
+    "remote_command_refused_message": "The other device refused that command.",
+    "remote_command_refused_suggestion": "The session may have ended there. Refresh the Monitor and try again.",
+    "remote_dispatch_failed_message": "The session could not be sent to the other device.",
+    "remote_dispatch_failed_suggestion": "Check that the device is still paired and try again, or run it on this machine."
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",

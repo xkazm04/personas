@@ -164,5 +164,13 @@
   "workflow_shape_rejected_message": "That export is missing the parts a workflow needs.",
   "workflow_shape_rejected_suggestion": "Re-export the complete workflow from the source app — this file has no usable steps or nodes.",
   "oauth_account_mismatch_message": "You signed in with a different account than this credential is bound to.",
-  "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account."
+  "oauth_account_mismatch_suggestion": "Sign in with the account shown on the credential, or add a new credential for the other account.",
+  "remote_peer_offline_message": "The other device is not reachable right now.",
+  "remote_peer_offline_suggestion": "Open Personas on that device and check that both are on the same network. A dispatch waits in the outbox until the device wakes.",
+  "project_not_found_message": "That project is not on the other device.",
+  "project_not_found_suggestion": "Clone or register the project there with the same git remote, then send it again.",
+  "remote_command_refused_message": "The other device refused that command.",
+  "remote_command_refused_suggestion": "The session may have ended there. Refresh the Monitor and try again.",
+  "remote_dispatch_failed_message": "The session could not be sent to the other device.",
+  "remote_dispatch_failed_suggestion": "Check that the device is still paired and try again, or run it on this machine."
 }
