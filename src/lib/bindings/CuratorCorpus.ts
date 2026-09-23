@@ -42,4 +42,15 @@ driftUnknown: number,
  * From `check-currency`: applications verified against a version the
  * fleet has since moved past.
  */
-drift: number, };
+drift: number, 
+/**
+ * Applications carrying no clock at all, so they cannot expire. Without it a
+ * reader cannot tell `expiredApplications: 0` (nothing has expired) from
+ * "most were never given a window". Measured 2026-09-23: 301 of 1825.
+ */
+noClockApplications: number, 
+/**
+ * The bundles whose demand was actually read - five of ten today. A zero on a
+ * demand-fed channel means something different in the other five.
+ */
+demandKnownDomains: Array<string>, };

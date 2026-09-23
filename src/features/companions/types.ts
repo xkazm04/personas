@@ -31,6 +31,7 @@ export const COMPANIONS_PAGES = [
   "overseer:reviews",
   "overseer:setup",
   "curator:council",
+  "curator:blueprint",
   "curator:process",
   "curator:setup",
 ] as const;

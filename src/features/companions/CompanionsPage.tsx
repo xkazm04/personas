@@ -27,6 +27,7 @@ const AthenaPage = lazyRetry(() => import('./athena/AthenaPage'));
 const DirectorCoachingTab = lazyRetry(() => import('./overseer'));
 const OverseerSetupPage = lazyRetry(() => import('./overseer/setup/OverseerSetupPage'));
 const CouncilPage = lazyRetry(() => import('./curator/council/CouncilPage'));
+const BlueprintPage = lazyRetry(() => import('./curator/blueprint/BlueprintPage'));
 const ProcessPage = lazyRetry(() => import('./curator/process/ProcessPage'));
 const CuratorSetupPage = lazyRetry(() => import('./curator/setup/CuratorSetupPage'));
 
@@ -51,6 +52,8 @@ function renderPage(page: CompanionsPageId) {
       return <Route name="Overseer Setup"><OverseerSetupPage /></Route>;
     case 'curator:council':
       return <Route name="Council"><CouncilPage /></Route>;
+    case 'curator:blueprint':
+      return <Route name="Blueprint"><BlueprintPage /></Route>;
     case 'curator:process':
       return <Route name="Process"><ProcessPage /></Route>;
     case 'curator:setup':

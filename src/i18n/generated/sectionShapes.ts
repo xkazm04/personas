@@ -788,12 +788,20 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
   },
   "companions": {
     "nav": {},
-    "process": {},
     "state": {},
     "blocker": {},
     "identity": {},
     "landing": {},
     "setup": {},
-    "errors": {}
+    "errors": {},
+    "blueprint": {
+      "channel": {},
+      "state": {},
+      "engine": {},
+      "kind": {},
+      "keys": {},
+      "reach": {}
+    },
+    "process": {}
   }
 } as Record<string, Record<string, unknown>>);

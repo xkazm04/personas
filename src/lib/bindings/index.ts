@@ -326,6 +326,7 @@ export type { CuratorProcess } from "./CuratorProcess";
 export type { CuratorProcessSession } from "./CuratorProcessSession";
 export type { CuratorProcessSource } from "./CuratorProcessSource";
 export type { CuratorProject } from "./CuratorProject";
+export type { CuratorQuietBundle } from "./CuratorQuietBundle";
 export type { CuratorReason } from "./CuratorReason";
 export type { CuratorReasonCode } from "./CuratorReasonCode";
 export type { CyclePhase } from "./CyclePhase";
