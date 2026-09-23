@@ -3,10 +3,16 @@
 // A registry is wired at WORKSPACE level (`registryLinkStore`), and the
 // Council page is not scoped to a project the way Dev Tools is — it spans
 // every council in the store. So: the active project's workspace registry
-// when there is one, and otherwise the knowledge-lane holder with the lowest
-// id, which is exactly the registry the Rust side already consults (see
-// `registryLinkStore.syncKnowledgeRootSetting`). Returning `null` is a
-// first-class answer meaning "nothing is paired", never "the corpus is empty".
+// when there is one, and otherwise the knowledge root the BACKEND picked.
+//
+// That second half used to be a second local copy of the "knowledge lane,
+// lowest id, non-blank path" pick that the Rust side also implemented. Two
+// copies of a pick mean two surfaces can name two different
+// corpora for one wiring, so there is one copy now
+// (`repos::dev_registries::knowledge_root`) and it arrives on the snapshot.
+//
+// Returning `null` is a first-class answer meaning "nothing is paired", never
+// "the corpus is empty".
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -16,15 +22,12 @@ import {
 import { corpusRootFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { useSystemStore } from '@/stores/systemStore';
 
-function fallbackRoot(): string | null {
-  const holder = Object.values(registryLinkSnapshot().registries)
-    .filter((r) => r.lanes.includes('knowledge') && r.clonePath.trim())
-    .sort((a, b) => a.id.localeCompare(b.id))[0];
-  return holder?.clonePath ?? null;
-}
-
 export function useRegistryRoot(): string | null {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  useSyncExternalStore(subscribeRegistryLinks, registryLinkSnapshot, registryLinkSnapshot);
-  return corpusRootFor(activeProjectId) ?? fallbackRoot();
+  const links = useSyncExternalStore(
+    subscribeRegistryLinks,
+    registryLinkSnapshot,
+    registryLinkSnapshot,
+  );
+  return corpusRootFor(activeProjectId) ?? links.knowledgeRoot;
 }

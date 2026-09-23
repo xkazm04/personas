@@ -30,6 +30,12 @@ pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         standards_config: row.get("standards_config").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
         workspace_id: row.get("workspace_id").unwrap_or(None),
+        // Absent on a pre-e47 row shape (e.g. a narrow SELECT): treat as a
+        // code project, which is also the column's DEFAULT.
+        kind: row
+            .get::<_, Option<String>>("kind")
+            .unwrap_or(None)
+            .unwrap_or_else(|| "code".to_string()),
         // Absent on a pre-e32 row shape (e.g. a narrow SELECT): treat as on.
         enabled: row
             .get::<_, Option<i64>>("enabled")

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, scanMemoryHealth, getMemoryHealthOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow, type MemoryHealthRow } from '@/api/devTools/devTools';
 import { listCredentials } from '@/api/vault/credentials';
 import { mapWithConcurrency } from '@/lib/concurrency';
+import { codeProjectsOnly } from '@/lib/devProjectKind';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -132,7 +133,13 @@ export function usePassportData(): PassportData {
     // partner. Guarded to the first-ever load of an app session: a cached
     // snapshot or an explicit rescan already has real data on screen, and
     // painting placeholders over it would be a regression dressed as progress.
-    const projectsP = listProjects();
+    // A knowledge-registry checkout is a project so a session can be
+    // dispatched into it, not so it can be graded: it has no CI, no deploy,
+    // no monitoring and no support channel, so every passport dimension would
+    // read as a gap it can never close. The wall is also what places the
+    // Mastermind islands the idea scan runs from, so this one filter covers
+    // all three.
+    const projectsP = listProjects().then(codeProjectsOnly);
     const cachedP = regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata();
     if (!cachedSnapshot && !regen) {
       const early = await projectsP.catch(() => [] as DevProject[]);

@@ -4,24 +4,19 @@
  *
  * The state itself lives in `companionsStatusStore` (one warm slot, one
  * ref-counted `companions://status-changed` subscription, one in-flight read).
- * What this file adds is the one fact the backend cannot see.
+ * This hook is the view over it.
  *
- * ## Why Curator's eligibility is patched on this side
+ * ## It used to patch Curator's eligibility here, and no longer does
  *
- * The workspace -> registry link lives in the frontend's `localStorage`
- * (`sub_workspaces/registry/registryLinkStore.ts`), which Rust cannot read, so
- * the backend reports Curator as unblocked and this hook decides. The seam
- * closes when that link is promoted to a table - the same move `dev_workspaces`
- * itself made - at which point the backend answers and `withRegistryOverride`
- * is deleted.
+ * The workspace -> registry link lived in `localStorage`, which Rust cannot
+ * read, so the backend reported Curator unblocked and a patch in this hook
+ * decided on the client side. Migration e47 promoted the link to a table;
+ * `commands::companions::status_snapshot` now reads it, fills
+ * `detail.registryName` / `registryPath`, and raises `no_registry` itself. The
+ * patch is deleted — this hook renders what the backend says, which is also
+ * what Curator's own loop will act on.
  */
-import { useMemo, useSyncExternalStore } from "react";
-
-import {
-  registryLinkSnapshot,
-  subscribeRegistryLinks,
-  type Registry,
-} from "@/features/plugins/dev-tools/sub_workspaces/registry/registryLinkStore";
+import { useMemo } from "react";
 
 import type { CompanionId, CompanionStatusDto } from "../types";
 import { COMPANION_IDS } from "../types";
@@ -40,51 +35,9 @@ export interface CompanionsStatusView {
   refresh: () => void;
 }
 
-type RegistryLinks = ReturnType<typeof registryLinkSnapshot>;
-
-/** The registry a workspace maps, picked deterministically by registry id. */
-function firstMappedRegistry(links: RegistryLinks): Registry | null {
-  const mapped = Object.values(links.workspaceRegistry)
-    .map((id) => links.registries[id])
-    .filter((r): r is Registry => Boolean(r))
-    .sort((a, b) => a.id.localeCompare(b.id));
-  return mapped[0] ?? null;
-}
-
-/** Replace Curator's backend-declared eligibility with what the link store knows. */
-function withRegistryOverride(
-  companions: CompanionStatusDto[] | null,
-  links: RegistryLinks,
-): CompanionStatusDto[] | null {
-  if (!companions) return null;
-  const registry = firstMappedRegistry(links);
-  return companions.map((c) => {
-    if (c.id !== "curator") return c;
-    if (!registry) {
-      return { ...c, eligible: false, blocker: "no_registry" as const };
-    }
-    // `blocker` is absent, not null, when nothing stands in the way.
-    const { blocker: _resolved, ...rest } = c;
-    return {
-      ...rest,
-      eligible: true,
-      detail: { ...c.detail, registryName: registry.fullName, registryPath: registry.clonePath },
-    };
-  });
-}
-
 export function useCompanionsStatus(): CompanionsStatusView {
   const snap = useCompanionsStatusSlot();
-  const links = useSyncExternalStore(
-    subscribeRegistryLinks,
-    registryLinkSnapshot,
-    registryLinkSnapshot,
-  );
-
-  const companions = useMemo(
-    () => withRegistryOverride(snap.companions, links),
-    [snap.companions, links],
-  );
+  const companions = snap.companions;
 
   return useMemo<CompanionsStatusView>(
     () => ({

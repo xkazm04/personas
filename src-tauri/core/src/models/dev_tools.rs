@@ -141,6 +141,12 @@ pub struct DevProject {
     /// nullable = unassigned). Promotes the sub_workspaces localStorage
     /// prototype; see docs/plans/workspace-knowledge-center.md. Added 2026-07-24.
     pub workspace_id: Option<String>,
+    /// What this project IS: `'code'` (a product codebase — the default, and
+    /// what every project that predates the column reads as) or `'registry'`
+    /// (a knowledge-registry working copy, registered so a session can be
+    /// dispatched into it and excluded from the surfaces that scan, passport
+    /// and territory-map a codebase). Added 2026-09-23 (migration e47).
+    pub kind: String,
     /// Project switch. `false` overrules every persona homed in the project's
     /// team: none of them may start a run from any trigger (schedule, event,
     /// attention loop, chain, manual). Persona-level `enabled` is untouched,
@@ -188,6 +194,149 @@ pub struct WorkspaceImportItem {
     pub name: String,
     pub color: Option<String>,
     pub project_ids: Vec<String>,
+}
+
+// ============================================================================
+// Knowledge registries — the workspace's link to an ai-registry checkout
+// ============================================================================
+//
+// These five types are camelCase on the wire, unlike `DevProject` /
+// `DevWorkspace` above. That is not drift: they REPLACE a TypeScript-side
+// `Registry` interface that six `useSyncExternalStore` consumers already read
+// field by field, and renaming `fullName` to `full_name` across them would be
+// a rewrite of six surfaces to satisfy a convention the older types only carry
+// because they predate it.
+//
+// Bindings for anything under `core/src/models` come from the CORE crate's own
+// export test — `npm run test:rust:crates -- export_bindings`. The app crate's
+// `npm run test:rust -- export_bindings` does not re-export them (see the note
+// in `browser.rs`).
+
+/// Where a registry's pairing stands. Mirrors the `dev_registries.state` CHECK
+/// so the closed set is spelled once in Rust and once in the schema, never in
+/// the client.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum RegistryPairingState {
+    /// No registry chosen for this workspace yet.
+    Unlinked,
+    /// A Fleet session is establishing the link.
+    Pairing,
+    /// Linked, lanes known.
+    Paired,
+    /// The last pairing attempt failed; `error` says what happened.
+    Error,
+}
+
+impl RegistryPairingState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Unlinked => "unlinked",
+            Self::Pairing => "pairing",
+            Self::Paired => "paired",
+            Self::Error => "error",
+        }
+    }
+
+    /// Parse a stored value. `None` for anything outside the set — the table
+    /// CHECK makes that unreachable through this app, but a hand-edited row is
+    /// not this type's problem to guess about.
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw {
+            "unlinked" => Some(Self::Unlinked),
+            "pairing" => Some(Self::Pairing),
+            "paired" => Some(Self::Paired),
+            "error" => Some(Self::Error),
+            _ => None,
+        }
+    }
+}
+
+/// A knowledge registry: the repo, the working copy on this machine, and what
+/// pairing found inside it.
+///
+/// `id` is `owner/repo` (or, for a local checkout with no catalog entry, the
+/// `registry.yaml` name or the folder path) — the identity, so picking the same
+/// repo in a second workspace resolves to the SAME row rather than cloning it
+/// twice.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevRegistry {
+    pub id: String,
+    pub full_name: String,
+    pub url: String,
+    pub default_branch: String,
+    /// Vault credential the repo was picked with; empty for a local checkout,
+    /// which needs none.
+    pub credential_id: String,
+    /// Absolute path of the local clone — CHOSEN by the operator, not derived.
+    /// A scan reads the registry working copy and the project repos side by
+    /// side, so a URL alone is not a usable wiring.
+    pub clone_path: String,
+    pub state: RegistryPairingState,
+    /// Fleet session that ran (or is running) the pairing brief.
+    pub session_id: Option<String>,
+    /// Lanes the registry actually publishes, discovered by pairing. Plain
+    /// strings rather than an enum: the lane vocabulary belongs to the registry
+    /// spec, which grows without this app's permission, and a lane this build
+    /// has not heard of must travel rather than fail a deserialize.
+    pub lanes: Vec<String>,
+    /// Bundle domains under `knowledge/`, discovered by pairing.
+    pub domains: Vec<String>,
+    /// Commit the local clone is pinned at.
+    pub sha: Option<String>,
+    pub paired_at: Option<String>,
+    pub error: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// What a writer supplies. The two timestamps are the store's to mint, so they
+/// are absent here rather than accepted and overwritten.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevRegistryInput {
+    pub id: String,
+    pub full_name: String,
+    pub url: String,
+    pub default_branch: String,
+    pub credential_id: String,
+    pub clone_path: String,
+    pub state: RegistryPairingState,
+    pub session_id: Option<String>,
+    pub lanes: Vec<String>,
+    pub domains: Vec<String>,
+    pub sha: Option<String>,
+    pub paired_at: Option<String>,
+    pub error: Option<String>,
+}
+
+/// One workspace's hold on one registry. The workspace side is the primary key
+/// in the table, so this is at most one row per workspace.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceRegistryLink {
+    pub workspace_id: String,
+    pub registry_id: String,
+    pub linked_at: String,
+}
+
+/// The whole wiring in one read: every registry, every hold, and the one
+/// derived scalar the execution runner consults.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RegistryLinkSnapshot {
+    pub registries: Vec<DevRegistry>,
+    pub links: Vec<WorkspaceRegistryLink>,
+    /// The knowledge-lane holder's clone path — the rule that used to live in
+    /// `registryLinkStore.syncKnowledgeRootSetting` and is now computed here,
+    /// beside the rows it reads. `None` means the consult lane is off.
+    pub knowledge_root: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

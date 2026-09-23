@@ -76,6 +76,14 @@ team_id: string | null,
  */
 workspace_id: string | null, 
 /**
+ * What this project IS: `'code'` (a product codebase — the default, and
+ * what every project that predates the column reads as) or `'registry'`
+ * (a knowledge-registry working copy, registered so a session can be
+ * dispatched into it and excluded from the surfaces that scan, passport
+ * and territory-map a codebase). Added 2026-09-23 (migration e47).
+ */
+kind: string, 
+/**
  * Project switch. `false` overrules every persona homed in the project's
  * team: none of them may start a run from any trigger (schedule, event,
  * attention loop, chain, manual). Persona-level `enabled` is untouched,

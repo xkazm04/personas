@@ -1,4 +1,5 @@
-// Workspace ↔ knowledge-registry wiring — the shape and the local store.
+// Workspace ↔ knowledge-registry wiring — the shape, and the view over the
+// table that now holds it.
 //
 // ## The model, and why it is not one-per-workspace
 //
@@ -16,14 +17,24 @@
 // repo in a second workspace resolves to the SAME entity — one clone, one
 // pairing, one SHA — which is the property the constraint is really asking for.
 //
-// ## Why local storage, and for how long
+// ## Where it lives now
 //
-// `dev_workspaces` itself started here: the migration that created it says it
-// "promotes the sub_workspaces localStorage prototype to SQLite". This is the
-// same move at the same stage, deliberately — the shape is what needs settling
-// first, and a schema migration for a shape nobody has looked at yet is the
-// expensive half. When the shape holds, it promotes to a table and the store
-// keeps its signature.
+// In SQLite, as of migration e47 — `dev_registries` + `dev_workspace_registries`.
+// It started in `localStorage` for the reason `dev_workspaces` itself did: the
+// shape is the expensive half and a schema for a shape nobody has looked at yet
+// is the wrong bet. The shape held, so it promoted, and the store kept its
+// signature. What that bought is not tidiness: every gate a registry feeds —
+// Curator's eligibility, her loop, her dispatch — is in Rust, and Rust could not
+// read a word of the blob. One derived scalar used to cross the boundary
+// (`app_settings.knowledge_registry_root`, computed HERE in TypeScript); the
+// rule that computes it now lives in `repos::dev_registries::knowledge_root`
+// beside the rows it reads, and arrives on the snapshot as `knowledgeRoot`.
+//
+// This module is therefore a VIEW: an in-memory copy of the table, loaded once,
+// re-read after every mutation. `subscribeRegistryLinks` / `registryLinkSnapshot`
+// keep their exact signatures, because six `useSyncExternalStore` consumers are
+// built on them. The mutators are now async — that is the whole breakage
+// surface, and it is what a write that has to reach a database looks like.
 //
 // ## What pairing does NOT do
 //
@@ -34,7 +45,17 @@
 // variants on, and wiring it in here by implication would settle it by accident.
 
 import { spawnSession } from '@/api/fleet/fleet';
-import { setKnowledgeRegistryRoot } from '@/api/devTools/devTools';
+import {
+  importRegistryLinks,
+  linkRegistryToWorkspace,
+  registrySnapshot,
+  unlinkRegistryFromWorkspace,
+  upsertRegistry,
+} from '@/api/devTools/registries';
+import type { DevRegistry } from '@/lib/bindings/DevRegistry';
+import type { DevRegistryInput } from '@/lib/bindings/DevRegistryInput';
+import type { RegistryLinkSnapshot } from '@/lib/bindings/RegistryLinkSnapshot';
+import type { WorkspaceRegistryLink } from '@/lib/bindings/WorkspaceRegistryLink';
 import { silentCatch } from '@/lib/silentCatch';
 
 /** The lanes a registry can publish. Presence is what pairing reports.
@@ -44,126 +65,153 @@ import { silentCatch } from '@/lib/silentCatch';
 export const LANES = ['knowledge', 'skills', 'practices', 'memory', 'usage'] as const;
 export type Lane = (typeof LANES)[number];
 
-export type PairingState =
-  /** No registry chosen for this workspace yet. */
-  | 'unlinked'
-  /** A Fleet session is establishing the link. */
-  | 'pairing'
-  /** Linked, lanes known. */
-  | 'paired'
-  /** The last pairing attempt failed; `error` says what happened. */
-  | 'error';
+/**
+ * Where a registry's pairing stands. The set is the backend's
+ * (`RegistryPairingState`, which mirrors the table CHECK) rather than a second
+ * spelling of it here: a closed set written twice is a closed set that drifts.
+ */
+export type PairingState = DevRegistry['state'];
 
-export interface Registry {
-  /** `owner/repo` — also the identity. Picking the same repo twice is one registry. */
-  id: string;
-  fullName: string;
-  url: string;
-  defaultBranch: string;
-  /** Vault credential the repo was picked with; pairing and later pulls reuse it. */
-  credentialId: string;
-  /**
-    * Absolute path of the local clone — CHOSEN by the operator, not derived.
-    *
-    * A registry is two things at once: a GitHub repo (the remote everyone shares)
-    * and a working copy on this machine. Only the pair is usable: a scan skill has
-    * to read the clone and the project repos side by side, and it cannot do that
-    * against a URL. So the path is captured at wiring time rather than invented,
-    * which also lets an existing clone be adopted instead of duplicated.
-    *
-    * One per registry, never per workspace.
-    */
-  clonePath: string;
-  state: PairingState;
-  /** Fleet session that ran (or is running) the pairing brief. */
-  sessionId: string | null;
-  /** Lanes the registry actually publishes, discovered by pairing. */
-  lanes: Lane[];
-  /** Bundle domains under `knowledge/`, discovered by pairing. */
-  domains: string[];
-  /** Commit the local clone is pinned at. */
-  sha: string | null;
-  pairedAt: string | null;
-  error: string | null;
-}
+/**
+ * A registry, as the backend stores it. Re-exported under the name six
+ * surfaces already import, so promoting the store to a table did not rename a
+ * type across them.
+ */
+export type Registry = DevRegistry;
 
 interface Snapshot {
   registries: Record<string, Registry>;
   workspaceRegistry: Record<string, string>;
+  /**
+   * The knowledge-lane clone path the RUNNER consults, decided by Rust. Carried
+   * on the snapshot rather than re-derived here — `useRegistryRoot` had its own
+   * copy of the rule, and two copies of a pick mean two surfaces can name two
+   * different corpora for one wiring.
+   */
+  knowledgeRoot: string | null;
 }
-
-const KEY = 'devtools.registryLinks.v1';
-
-const EMPTY: Snapshot = { registries: {}, workspaceRegistry: {} };
-
-function read(): Snapshot {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as Partial<Snapshot>;
-    return {
-      registries: parsed.registries ?? {},
-      workspaceRegistry: parsed.workspaceRegistry ?? {},
-    };
-  } catch (e) {
-    // A corrupt blob must not take the workspace panel down with it. Losing a
-    // prototype's link table is recoverable in two clicks; a crashing Atlas is not.
-    // Still reported: a parse failure here means someone's wiring silently vanished,
-    // and the breadcrumb is the only trace that would explain it.
-    silentCatch('registryLinkStore:read')(e);
-    return EMPTY;
-  }
-}
-
-let snapshot: Snapshot = EMPTY;
-let loaded = false;
-const listeners = new Set<() => void>();
 
 /**
- * Mirror the knowledge-lane clone path into `app_settings` for the RUNNER.
- *
- * This store is localStorage, which the Rust side cannot read — and the consult
- * lane (`engine::knowledge_consult`) runs inside executions that have no
- * frontend at all: a schedule firing at 3am has no window to ask. So one scalar
- * crosses the boundary, and only one: the path.
- *
- * Done in `commit` rather than in each mutator so it cannot drift — every
- * mutation goes through here, so there is no path that changes the wiring
- * without updating what the backend reads. And it goes through a COMMAND rather
- * than a settings write, so the key's name is spelled once, in Rust: a name
- * mirrored in two languages with only a comment holding it together is a name
- * that drifts, and this one drifting means executions consult a registry the
- * operator thinks they unwired.
- *
- * **One root, deliberately, for now.** A registry can be held by several
- * workspaces while an execution belongs to a project, so there is no per-run
- * mapping to consult yet; the knowledge-lane holder with the lowest id wins,
- * which is at least stable rather than order-of-insertion. Per-project
- * knowledge roots are the next slice, and this is the seam they replace.
+ * The retired browser blob. Still READ once, by `adoptLocalBlob` below, and
+ * never written.
  */
-function syncKnowledgeRootSetting(next: Snapshot): void {
-  const holder = Object.values(next.registries)
-    .filter((r) => r.lanes.includes('knowledge') && r.clonePath.trim())
-    .sort((a, b) => a.id.localeCompare(b.id))[0];
-  const write = setKnowledgeRegistryRoot(holder ? holder.clonePath : null);
-  // Best-effort: a failed mirror means the consult lane stays off, which is the
-  // same state as no registry — degraded, never broken. Reported because a
-  // silent failure here looks exactly like "the registry has nothing to say".
-  void write.catch(silentCatch('registryLinkStore:knowledgeRoot'));
+const KEY = 'devtools.registryLinks.v1';
+
+const EMPTY: Snapshot = { registries: {}, workspaceRegistry: {}, knowledgeRoot: null };
+
+let snapshot: Snapshot = EMPTY;
+let loadStarted = false;
+const listeners = new Set<() => void>();
+
+function publish(next: RegistryLinkSnapshot): void {
+  const registries: Record<string, Registry> = {};
+  for (const r of next.registries) registries[r.id] = r;
+  const workspaceRegistry: Record<string, string> = {};
+  for (const l of next.links) workspaceRegistry[l.workspaceId] = l.registryId;
+  snapshot = { registries, workspaceRegistry, knowledgeRoot: next.knowledgeRoot };
+  listeners.forEach((l) => l());
 }
 
-function commit(next: Snapshot): void {
-  snapshot = next;
+/** Strip the two timestamps the store mints. Everything else travels. */
+function toInput(registry: Registry): DevRegistryInput {
+  const { createdAt: _c, updatedAt: _u, ...input } = registry;
+  return input;
+}
+
+/**
+ * One-time adoption of the localStorage wiring, run only when the table is
+ * empty.
+ *
+ * **The blob is left in place, deliberately, until 2026-12-31.** Deleting it in
+ * the same release that stops reading it means an operator who rolls back to
+ * the previous build finds their wiring gone, with no way to get it back but
+ * to redo it by hand. It is read once, never written, and the only cost of
+ * keeping it is a few kilobytes of dead storage. Delete the key and this
+ * function together after that date.
+ */
+function readLocalBlob(): string | null {
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    return localStorage.getItem(KEY);
   } catch (e) {
-    // Quota or private-mode failure: the in-memory value still updates, so the
-    // session keeps working and only persistence is lost — but "your wiring will
-    // be gone next launch" is exactly the kind of failure that must not be silent.
-    silentCatch('registryLinkStore:persist')(e);
+    // Private mode or blocked site data. Nothing to adopt, and the table is
+    // the authority either way — but a silent skip here looks exactly like
+    // "there was nothing to import", which is the one thing it must not.
+    silentCatch('registryLinkStore:blobRead')(e);
+    return null;
   }
-  syncKnowledgeRootSetting(next);
-  listeners.forEach((l) => l());
+}
+
+async function adoptLocalBlob(): Promise<RegistryLinkSnapshot | null> {
+  const raw = readLocalBlob();
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      registries?: Record<string, Partial<Registry>>;
+      workspaceRegistry?: Record<string, string>;
+    };
+    const now = new Date().toISOString();
+    const registries: DevRegistryInput[] = Object.entries(parsed.registries ?? {})
+      .filter(([, r]) => Boolean(r?.clonePath?.trim()))
+      // The blob's entries carry exactly the fields `DevRegistryInput` names —
+      // the backend type was modelled on this shape — but they came out of
+      // JSON, so each one is read by name with a fallback rather than asserted
+      // into the type wholesale.
+      .map(([id, r]) => ({
+        id,
+        fullName: r.fullName ?? id,
+        url: r.url ?? '',
+        defaultBranch: r.defaultBranch ?? 'main',
+        credentialId: r.credentialId ?? '',
+        clonePath: r.clonePath ?? '',
+        state: r.state ?? 'unlinked',
+        sessionId: r.sessionId ?? null,
+        lanes: Array.isArray(r.lanes) ? r.lanes : [],
+        domains: Array.isArray(r.domains) ? r.domains : [],
+        sha: r.sha ?? null,
+        pairedAt: r.pairedAt ?? null,
+        error: r.error ?? null,
+      }));
+    const byId = new Set(registries.map((r) => r.id));
+    const links: WorkspaceRegistryLink[] = Object.entries(parsed.workspaceRegistry ?? {})
+      // A hold on a registry the blob no longer carries is not importable, and
+      // sending it would only produce a refusal the backend logs.
+      .filter(([, registryId]) => byId.has(registryId))
+      .map(([workspaceId, registryId]) => ({ workspaceId, registryId, linkedAt: now }));
+    if (registries.length === 0) return null;
+
+    return await importRegistryLinks(registries, links);
+  } catch (e) {
+    // A corrupt blob must not take the workspace panel down with it, and must
+    // not leave the store stuck pre-load either: the caller falls back to what
+    // the table says, which for a fresh install is nothing.
+    silentCatch('registryLinkStore:adopt')(e);
+    return null;
+  }
+}
+
+async function load(): Promise<void> {
+  const fromDb = await registrySnapshot();
+  if (fromDb.registries.length === 0 && fromDb.links.length === 0) {
+    const adopted = await adoptLocalBlob();
+    if (adopted) {
+      publish(adopted);
+      return;
+    }
+  }
+  publish(fromDb);
+}
+
+/** Re-read the whole wiring. Every mutator ends here, so the view and the
+ *  table cannot disagree about what the last write did. */
+async function refresh(): Promise<void> {
+  publish(await registrySnapshot());
+}
+
+function ensureLoaded(): void {
+  if (loadStarted) return;
+  loadStarted = true;
+  void load().catch(silentCatch('registryLinkStore:load'));
 }
 
 export function subscribeRegistryLinks(listener: () => void): () => void {
@@ -172,10 +220,7 @@ export function subscribeRegistryLinks(listener: () => void): () => void {
 }
 
 export function registryLinkSnapshot(): Snapshot {
-  if (!loaded) {
-    snapshot = read();
-    loaded = true;
-  }
+  ensureLoaded();
   return snapshot;
 }
 
@@ -203,36 +248,37 @@ export function workspacesOn(registryId: string): string[] {
  * Wire a repo to a workspace. Returns the registry — EXISTING one if this repo
  * is already wired elsewhere, so a second workspace joins rather than forks.
  */
-export function linkRegistry(
+export async function linkRegistry(
   workspaceId: string,
   repo: { fullName: string; defaultBranch: string },
   credentialId: string,
   clonePath: string,
-): Registry {
+): Promise<Registry> {
   const s = registryLinkSnapshot();
   const id = repo.fullName;
   const existing = s.registries[id];
 
-  const registry: Registry = existing ?? {
-    id,
-    fullName: repo.fullName,
-    url: `https://github.com/${repo.fullName}`,
-    defaultBranch: repo.defaultBranch,
-    credentialId,
-    clonePath,
-    state: 'unlinked',
-    sessionId: null,
-    lanes: [],
-    domains: [],
-    sha: null,
-    pairedAt: null,
-    error: null,
-  };
+  const input: DevRegistryInput = existing
+    ? toInput(existing)
+    : {
+        id,
+        fullName: repo.fullName,
+        url: `https://github.com/${repo.fullName}`,
+        defaultBranch: repo.defaultBranch,
+        credentialId,
+        clonePath,
+        state: 'unlinked',
+        sessionId: null,
+        lanes: [],
+        domains: [],
+        sha: null,
+        pairedAt: null,
+        error: null,
+      };
 
-  commit({
-    registries: { ...s.registries, [id]: registry },
-    workspaceRegistry: { ...s.workspaceRegistry, [workspaceId]: id },
-  });
+  await upsertRegistry(input);
+  const registry = await linkRegistryToWorkspace(workspaceId, id);
+  await refresh();
   return registry;
 }
 
@@ -252,7 +298,7 @@ export function linkRegistry(
  * the local checkout of a repo another workspace paired via GitHub resolves
  * to the SAME registry), else the registry.yaml `name`, else the folder path.
  */
-export function linkLocalRegistry(
+export async function linkLocalRegistry(
   workspaceId: string,
   folderPath: string,
   probe: {
@@ -262,28 +308,30 @@ export function linkLocalRegistry(
     domains: string[];
     headSha: string | null;
   },
-): Registry {
+): Promise<Registry> {
   const s = registryLinkSnapshot();
   const path = folderPath.trim();
   const id = probe.fullName ?? probe.name ?? path;
   const existing = s.registries[id];
 
-  const registry: Registry = {
-    ...(existing ?? {
-      id,
-      fullName: probe.fullName ?? probe.name ?? path,
-      url: probe.fullName ? `https://github.com/${probe.fullName}` : '',
-      defaultBranch: 'main',
-      credentialId: '',
-      clonePath: path,
-      state: 'unlinked',
-      sessionId: null,
-      lanes: [],
-      domains: [],
-      sha: null,
-      pairedAt: null,
-      error: null,
-    }),
+  const input: DevRegistryInput = {
+    ...(existing
+      ? toInput(existing)
+      : {
+          id,
+          fullName: probe.fullName ?? probe.name ?? path,
+          url: probe.fullName ? `https://github.com/${probe.fullName}` : '',
+          defaultBranch: 'main',
+          credentialId: '',
+          clonePath: path,
+          state: 'unlinked' as const,
+          sessionId: null,
+          lanes: [],
+          domains: [],
+          sha: null,
+          pairedAt: null,
+          error: null,
+        }),
     clonePath: path,
     state: 'paired',
     // The probe reports whatever lanes the registry declares; the store's
@@ -296,34 +344,30 @@ export function linkLocalRegistry(
     error: null,
   };
 
-  commit({
-    registries: { ...s.registries, [id]: registry },
-    workspaceRegistry: { ...s.workspaceRegistry, [workspaceId]: id },
-  });
+  await upsertRegistry(input);
+  const registry = await linkRegistryToWorkspace(workspaceId, id);
+  await refresh();
   return registry;
 }
 
 /** Detach a workspace. The registry survives while any other workspace holds it. */
-export function unlinkRegistry(workspaceId: string): void {
-  const s = registryLinkSnapshot();
-  const id = s.workspaceRegistry[workspaceId];
-  if (!id) return;
-
-  const workspaceRegistry = { ...s.workspaceRegistry };
-  delete workspaceRegistry[workspaceId];
-
-  const stillHeld = Object.values(workspaceRegistry).includes(id);
-  const registries = { ...s.registries };
-  if (!stillHeld) delete registries[id];
-
-  commit({ registries, workspaceRegistry });
+export async function unlinkRegistry(workspaceId: string): Promise<void> {
+  await unlinkRegistryFromWorkspace(workspaceId);
+  await refresh();
 }
 
-export function patchRegistry(id: string, patch: Partial<Registry>): void {
-  const s = registryLinkSnapshot();
-  const current = s.registries[id];
+/**
+ * Merge a partial change into a registry and write the whole row back.
+ *
+ * The merge happens here rather than in a field-wise backend door because the
+ * view already holds the row: one way to write a registry means one place where
+ * "absent" has to mean something.
+ */
+export async function patchRegistry(id: string, patch: Partial<Registry>): Promise<void> {
+  const current = registryLinkSnapshot().registries[id];
   if (!current) return;
-  commit({ ...s, registries: { ...s.registries, [id]: { ...current, ...patch } } });
+  await upsertRegistry(toInput({ ...current, ...patch }));
+  await refresh();
 }
 
 /**
@@ -356,13 +400,13 @@ export function pairingBrief(registry: Registry): string {
  * cwd of the session that creates it.
  */
 export async function dispatchPairing(registry: Registry, cwd: string): Promise<void> {
-  patchRegistry(registry.id, { state: 'pairing', error: null });
+  await patchRegistry(registry.id, { state: 'pairing', error: null });
   try {
     const session = await spawnSession(cwd, ['-p', pairingBrief(registry)]);
     const sessionId = typeof session === 'string' ? session : ((session as { id?: string })?.id ?? null);
-    patchRegistry(registry.id, { sessionId });
+    await patchRegistry(registry.id, { sessionId });
   } catch (e) {
-    patchRegistry(registry.id, {
+    await patchRegistry(registry.id, {
       state: 'error',
       error: e instanceof Error ? e.message : String(e),
     });
