@@ -17,6 +17,7 @@ export function originLabel(s: Monitor, origin: DispatchOrigin): string {
     case 'night_shift': return s.queue_origin_night_shift;
     case 'feed_impact': return s.queue_origin_feed_impact;
     case 'orphan_resume': return s.queue_origin_orphan_resume;
+    case 'remote': return s.queue_origin_remote;
     default: return s.queue_origin_manual;
   }
 }

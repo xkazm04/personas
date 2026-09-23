@@ -15,7 +15,8 @@ import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
 import type { SessionGrouping } from './fleetSessionModel';
-import { columnRows, type ColumnRow } from './gridGeometry';
+import { columnRows, remoteRows, type ColumnRow } from './gridGeometry';
+import { deviceColumnId, NO_REMOTE, withOrphansOnDevices, type RemoteGrouping } from './remote/remoteBoardModel';
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
 const EMPTY_SESSIONS: FleetSession[] = [];
@@ -27,6 +28,12 @@ const EMPTY_SESSIONS: FleetSession[] = [];
  */
 export interface BoardColumn extends TeamGroup {
   rows: ColumnRow[];
+  /**
+   * Set on an "On <device>" column: remote sessions no local project claims
+   * (see `remote/remoteBoardModel`). It has no roster, no project switch and
+   * no rail scope, so the board paints it with its own header.
+   */
+  remoteDevice?: { peerId: string; displayName: string };
 }
 
 export interface BoardModel {
@@ -64,6 +71,8 @@ export function useBoardModel(
   teams: PersonaTeam[],
   sessionGroups: SessionGrouping,
   filter: BoardFilter = NO_BOARD_FILTER,
+  /** Sessions this device sent to paired devices. A filtered board carries none. */
+  remote: RemoteGrouping = NO_REMOTE,
 ): BoardModel {
   const visible = useMemo(() => filterCards(cards, filter), [cards, filter]);
   const grouped = useMemo(() => groupFleet(visible, personas, teams), [visible, personas, teams]);
@@ -110,13 +119,32 @@ export function useBoardModel(
     return [...groups, ...grouped.teams.filter((g) => g.workspaceId === null)];
   }, [grouped.teams]);
 
-  const columns = useMemo(
-    () => ordered.map((g) => ({
+  // REMOTE SESSIONS follow the local ones: into their project's column when a
+  // local project shares the git remote, else into one trailing "On <device>"
+  // column per device. No remote sessions = no extra column, ever.
+  const columns = useMemo(() => {
+    const own = ordered.map((g) => ({
       ...g,
-      rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS), g.teamName),
-    })),
-    [ordered, sessionGroups.byTeam, filtered],
-  );
+      rows: columnRows(
+        g.cards,
+        filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS),
+        g.teamName,
+        filtered ? [] : (remote.byTeam.get(g.teamId) ?? []),
+      ),
+    }));
+    if (filtered || (remote.byTeam.size === 0 && remote.byDevice.length === 0)) return own;
+    const devices = withOrphansOnDevices(remote, new Set(ordered.map((g) => g.teamId)));
+    const deviceColumns: BoardColumn[] = devices.map((d) => ({
+      teamId: deviceColumnId(d.peerId),
+      teamName: d.displayName,
+      teamColor: '',
+      workspaceId: null,
+      cards: [],
+      rows: remoteRows(d.views),
+      remoteDevice: { peerId: d.peerId, displayName: d.displayName },
+    }));
+    return [...own, ...deviceColumns];
+  }, [ordered, sessionGroups.byTeam, filtered, remote]);
 
   // `every` over an empty list is true, which is the pre-groups behaviour
   // verbatim: no columns + no tray = empty.

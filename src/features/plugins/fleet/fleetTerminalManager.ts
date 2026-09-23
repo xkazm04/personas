@@ -39,7 +39,7 @@
  * choosing the rung: `docs/concepts/golden-paths/hmr-safe-singletons.md`.
  */
 import { Terminal } from '@xterm/xterm';
-import type { IDisposable, ITheme } from '@xterm/xterm';
+import type { IDisposable, ITerminalOptions, ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -138,6 +138,24 @@ const LIGHT_THEME: ITheme = {
 
 function themeFor(theme: FleetResolvedTheme): ITheme {
   return theme === 'light' ? LIGHT_THEME : DARK_THEME;
+}
+
+/**
+ * The xterm options every fleet terminal is built with: font, size, theme,
+ * scrollback. Exported so a terminal this manager does NOT own - the Monitor's
+ * read-only mirror of a session running on a paired device - looks exactly
+ * like a local pane instead of growing a second terminal look.
+ */
+export function fleetTerminalOptions(): ITerminalOptions {
+  return {
+    fontFamily: FONT_FAMILY,
+    fontSize: effectiveFontSize(),
+    lineHeight: 1.2,
+    cursorBlink: true,
+    scrollback: 5000,
+    theme: themeFor(currentConfig.theme),
+    allowProposedApi: true,
+  };
 }
 
 /** One managed terminal — the durable resource keyed by session id. */
@@ -721,15 +739,7 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   const existing = registry.get(sessionId);
   if (existing) return existing;
 
-  const term = new Terminal({
-    fontFamily: FONT_FAMILY,
-    fontSize: effectiveFontSize(),
-    lineHeight: 1.2,
-    cursorBlink: true,
-    scrollback: 5000,
-    theme: themeFor(currentConfig.theme),
-    allowProposedApi: true,
-  });
+  const term = new Terminal(fleetTerminalOptions());
 
   const fit = new FitAddon();
   term.loadAddon(fit);

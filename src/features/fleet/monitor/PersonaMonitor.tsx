@@ -12,7 +12,7 @@
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
 import { memo, Suspense, useState, useMemo, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Activity, MessagesSquare, Bell, LayoutGrid, Radio, Orbit } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
@@ -26,6 +26,7 @@ import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { useMonitorData } from './useMonitorData';
 import { useChannelWorkspace } from './channels';
 import { MonitorFeedStatus } from './MonitorFeedStatus';
+import { MonitorDrawerShell } from './MonitorDrawerShell';
 import { FleetGridView } from './grid/FleetGridView';
 import {
   buildMonitorModel,
@@ -45,6 +46,7 @@ import {
 // channel card's header ghost, nothing for a drawer that has not been
 // opened. The Activity board itself keeps only what it paints in frame one.
 const MonitorDrawer = lazyRetry(() => import('./MonitorDrawer').then((m) => ({ default: m.MonitorDrawer })));
+const RemoteSessionDrawer = lazyRetry(() => import('./remote/RemoteSessionDrawer'));
 const Stream = lazyRetry(() => import('./channels/Stream'));
 const ConversationBriefing = lazyRetry(() =>
   import('./channels/ConversationBriefing').then((m) => ({ default: m.ConversationBriefing })),
@@ -258,12 +260,23 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   }, [anyRunning, view, visible]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
+  // A remote session's drawer (a `remote:<jobId>` tile). One drawer at a time:
+  // opening either closes the other.
+  const [remoteJobId, setRemoteJobId] = useState<string | null>(null);
   // Stable open handler (takes personaId) so the memoized grid squares don't
   // re-render just because an inline onSelect closure changed identity.
   const handleCardSelect = useCallback(
-    (personaId: string, section: DrawerSection) => setSelection({ personaId, section }),
+    (personaId: string, section: DrawerSection) => {
+      setRemoteJobId(null);
+      setSelection({ personaId, section });
+    },
     [],
   );
+  const openRemote = useCallback((jobId: string) => {
+    setSelection(null);
+    setRemoteJobId(jobId);
+  }, []);
+  const closeRemote = useCallback(() => setRemoteJobId(null), []);
   const selectedCard = useMemo(
     () => cards.find((c) => c.personaId === selection?.personaId) ?? null,
     [cards, selection],
@@ -289,11 +302,12 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       // arrives. `[role="dialog"]` is what BaseModal already stamps.
       if (document.querySelector('[role="dialog"]')) return;
       if (selection) setSelection(null);
+      else if (remoteJobId) setRemoteJobId(null);
       else onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selection, onClose]);
+  }, [selection, remoteJobId, onClose]);
 
   const selectedPersona = useMemo(
     () => personas.find((p) => p.id === selection?.personaId) ?? null,
@@ -500,49 +514,38 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 feedTeams={workspaceTeams}
                 onOpenSpeaker={handleDrillIn}
                 isLoading={loading && cards.length === 0}
+                onOpenRemote={openRemote}
               />
             </div>
           </div>
 
-          <AnimatePresence>
+          <MonitorDrawerShell open={!!(selectedCard && selection)} onClose={closeDrawer}>
             {selectedCard && selection && (
-              <>
-                <motion.div
-                  key="backdrop"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.16 }}
-                  onClick={() => setSelection(null)}
-                  className="absolute inset-0 z-10 bg-background/55 backdrop-blur-sm"
+              <Suspense fallback={<SurfaceFallback />}>
+                <MonitorDrawer
+                  card={selectedCard}
+                  initialSection={selection.section}
+                  designContext={selectedPersona?.design_context ?? null}
+                  isProcessing={isProcessing}
+                  isReviewInFlight={isReviewInFlight}
+                  now={now}
+                  onReviewAction={handleDrawerReviewAction}
+                  onDispatchAction={handleDrawerDispatchAction}
+                  onMarkRead={handleDrawerMarkRead}
+                  onAttentionChanged={refreshAttention}
+                  onClose={closeDrawer}
                 />
-                <motion.div
-                  key="drawer"
-                  initial={{ y: '-100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '-100%' }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-                  className="absolute inset-x-0 top-0 z-20 max-h-full flex flex-col rounded-b-modal border-b border-x border-primary/15 bg-background shadow-elevation-4"
-                >
-                  <Suspense fallback={<SurfaceFallback />}>
-                    <MonitorDrawer
-                      card={selectedCard}
-                      initialSection={selection.section}
-                      designContext={selectedPersona?.design_context ?? null}
-                      isProcessing={isProcessing}
-                      isReviewInFlight={isReviewInFlight}
-                      now={now}
-                      onReviewAction={handleDrawerReviewAction}
-                      onDispatchAction={handleDrawerDispatchAction}
-                      onMarkRead={handleDrawerMarkRead}
-                      onAttentionChanged={refreshAttention}
-                      onClose={closeDrawer}
-                    />
-                  </Suspense>
-                </motion.div>
-              </>
+              </Suspense>
             )}
-          </AnimatePresence>
+          </MonitorDrawerShell>
+          {/* A session sent to a paired device: same shell, its own content. */}
+          <MonitorDrawerShell open={remoteJobId !== null} onClose={closeRemote}>
+            {remoteJobId !== null && (
+              <Suspense fallback={<SurfaceFallback />}>
+                <RemoteSessionDrawer jobId={remoteJobId} onClose={closeRemote} />
+              </Suspense>
+            )}
+          </MonitorDrawerShell>
         </div>
       ) : (
         <div className="relative z-10 flex-1 min-h-0">
