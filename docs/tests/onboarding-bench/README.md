@@ -59,7 +59,7 @@ Confirm, in order:
       (or `degraded` if you have no email credential).
 
 If `startBuildFromIntent` fails, the compose surface may not be mounted — the bridge
-clicks `glyph-compose-summon` first, but confirm `create-persona-entry` is reachable.
+polls for `agent-intent-input` on the build sheet; confirm `create-persona-entry` is reachable.
 
 ---
 

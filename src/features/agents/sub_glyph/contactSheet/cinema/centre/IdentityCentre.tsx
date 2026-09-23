@@ -1,9 +1,9 @@
 /** IdentityCentre — Cinema's casting and coronation, played inside the centre
- *  cell of the contact sheet. A slate carries the honest clock; below it the
- *  crowd of silhouettes is cast down to finalists while the build is silent,
- *  and the moment the real identity (role, mission) streams in, one finalist
- *  is crowned: it flies up, the name develops letter by letter, and the role
- *  and mission arrive under it. `children` is the act's own footer. */
+ *  cell of the contact sheet. The crowd of silhouettes is cast down to
+ *  finalists while the build is silent, and the moment the real identity
+ *  (role, mission) streams in, one finalist is crowned: it flies up, the name
+ *  develops letter by letter, and the role and mission arrive under it.
+ *  `children` is the action panel, which carries the state and the clock. */
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { CinemaSilhouette } from "@/features/agents/sub_glyph/cinemaShared";
@@ -12,14 +12,11 @@ import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import type { CinemaCast } from "../useCinemaCast";
 import { EASE } from "../cinemaMotion";
-import { Slate } from "./Slate";
 import { COPY } from "../copy";
 
 interface IdentityCentreProps {
   cast: CinemaCast;
   agentName: string;
-  phaseLabel: string;
-  elapsed: number;
   /** Short centre cell (1280 x 800): the mission waits for the title card. */
   tight?: boolean;
   children?: React.ReactNode;
@@ -47,17 +44,15 @@ export function CrownedName({ name, size = "lg" }: { name: string; size?: "lg" |
   );
 }
 
-export function IdentityCentre({ cast, agentName, phaseLabel, elapsed, tight = false, children }: IdentityCentreProps) {
+export function IdentityCentre({ cast, agentName, tight = false, children }: IdentityCentreProps) {
   const core = useAgentStore((s) => s.buildBehaviorCore);
   const role = core?.identity?.role ?? null;
   const mission = core?.mission ?? null;
   const crowned = cast.phase === "crowned";
   const accent = cast.winner.color;
-  const headline = crowned ? COPY.crowned : cast.phase === "deliberation" ? COPY.deliberating : COPY.casting;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-2.5 text-center">
-      <Slate agent={agentName.trim() || COPY.yourAgent} phase={phaseLabel} elapsed={elapsed} headline={headline} />
+    <div className="w-full h-full min-h-0 flex flex-col items-center justify-center gap-3 text-center">
       <LayoutGroup id="sheet-cinema-cast">
         <AnimatePresence initial={false} mode="popLayout">
           {!crowned ? (

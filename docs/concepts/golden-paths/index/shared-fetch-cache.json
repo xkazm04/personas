@@ -171,8 +171,8 @@
       ],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; the runner reports **71 matches / 48 files** for the rule and"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner exists (`scripts/census/`) and implements the fail-loud"],"resolved":false,"isDir":true},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; the runner reports **71 matches / 48 files** for the rule and"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/check-command-contract.mjs": {"count":1,"sections":[9],"contexts":["`scripts/check-command-contract.mjs`, which already runs in `npm run check`."]},
     "scripts/check-csp-hosts.mjs": {"count":4,"sections":[8,9,12],"contexts":["allowlist-covers-a-set condition, the class `check-csp-hosts.mjs` exists for)."],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
     "scripts/docs/gen-shared-catalog.mjs": {"count":2,"sections":[8,9],"lines":["30"],"contexts":["carries a `@catalog` tag, but `scripts/docs/gen-shared-catalog.mjs:30` roots its walk at"]},

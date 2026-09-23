@@ -12,7 +12,22 @@ export const COPY = {
   contextHint: "Docs, examples or constraints the build should read. Optional.",
   contextPlaceholder: "Paste a sample, a style guide, what to never do...",
   done: "Done",
+  recipes: {
+    orStartFrom: "Or start from",
+    buildingOn: "Building on recipe",
+    match: (pct: number) => `${pct}% match`,
+  },
+  buildLog: "Build log",
+  buildLogHint: "The build's own output, newest at the bottom.",
+  buildLogEmpty: "No output yet.",
   back: "Back to the sheet",
+
+  loupe: {
+    esc: "Esc",
+    questionOf: (i: number, n: number) => `Question ${i} of ${n}`,
+    needsYou: "Needs you",
+    empty: "Nothing on this frame yet.",
+  },
 
   scene: {
     compose: "Scene 1 · Describe",
@@ -74,6 +89,7 @@ export const COPY = {
   refine: "Refine",
   refineHint: "Say what should change. The draft is rebuilt and its tests reset.",
   reviewCaps: "Review capabilities",
+  capsHint: "What the draft will do, one capability at a time. Remove one, or split it into a refine.",
   screening: "Screening",
   passed: "PASSED",
   failed: "FAILED",
@@ -99,7 +115,23 @@ export const COPY = {
   startOverNote: "Your description stays.",
 
   buildTime: "Build time",
-  yourTime: "you",
+  clock: {
+    paused: "Paused",
+    unknown: "--:--",
+    building: "Build time",
+    screening: "Screening time",
+    waiting: "Paused, waiting for you",
+    total: "Total build time",
+    partial: "Counted since this draft was reopened",
+  },
+  panel: "Build status and actions",
+  state: {
+    answerNow: "Answer questions",
+    reviewNote: "Pick an answer to change it.",
+    sendingAnswers: "Sending your answers",
+    draftNote: "Screen it before it goes live.",
+    stopped: "Build stopped",
+  },
   frame: {
     needsYou: "Needs you",
     developing: "Developing",

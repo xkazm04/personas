@@ -1,7 +1,10 @@
 /** SheetFrame — one of the eight frames on the contact sheet. Unexposed it is
  *  crop marks, a number, a label and the faint negative of its sigil aura; as
  *  the build learns, it develops (inverted and blurred to clear) into a small
- *  picture of its value, tinted in its petal's colour. */
+ *  picture of its value, tinted in its petal's colour. Full colour (tinted
+ *  paper, coloured crop marks, coloured label and dot) is kept for a
+ *  POPULATED dimension only (sheetModel.isPopulated); an empty one keeps the
+ *  unexposed, semi-transparent look whatever state the build left it in. */
 import { memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { GlyphDimension } from "@/features/shared/glyph";
@@ -19,7 +22,8 @@ interface SheetFrameProps {
   label: string;
   state: FrameState;
   value: FrameValue | null;
-  dimmed: boolean;
+  /** Carries metadata (sheetModel.isPopulated): the only way to full colour. */
+  populated: boolean;
   compact: boolean;
   onOpen: (dim: GlyphDimension, el: HTMLElement) => void;
 }
@@ -44,13 +48,21 @@ function captionFor(state: FrameState, value: FrameValue | null): string {
   return state === "unset" ? COPY.frame.notSet : "";
 }
 
-export const SheetFrame = memo(function SheetFrame({ dim, label, state, value, dimmed, compact, onOpen }: SheetFrameProps) {
+const FAINT = "color-mix(in srgb, var(--foreground) 16%, transparent)";
+const PAPER = "color-mix(in srgb, var(--background) 62%, transparent)";
+
+export const SheetFrame = memo(function SheetFrame({ dim, label, state, value, populated, compact, onOpen }: SheetFrameProps) {
   const reduce = useReducedMotion();
   const color = DIM_META[dim].color;
+  // Error stays red whatever it carries; everything else earns colour only by
+  // being populated. A pending question on an empty frame is said by its
+  // caption, glow and dot ring, not by colouring the frame in.
+  const vivid = populated && state !== "error";
   const mark = state === "error" ? ERR
-    : state === "pending" ? color
-    : state === "lit" ? colorWithAlpha(color, 0.6)
-    : "color-mix(in srgb, var(--foreground) 16%, transparent)";
+    : vivid ? (state === "pending" ? color : colorWithAlpha(color, 0.6))
+    : state === "pending" ? colorWithAlpha(color, 0.3)
+    : FAINT;
+  const paper = vivid ? `linear-gradient(${colorWithAlpha(color, 0.07)}, ${colorWithAlpha(color, 0.07)}), ${PAPER}` : PAPER;
   const showPicture = !!value && (state === "lit" || state === "pending" || state === "filling" || state === "error");
   const caption = captionFor(state, value);
 
@@ -59,22 +71,21 @@ export const SheetFrame = memo(function SheetFrame({ dim, label, state, value, d
       type="button"
       onClick={(e) => onOpen(dim, e.currentTarget)}
       aria-label={`${frameNumber(dim)} ${label}: ${caption || COPY.frame.unexposed}`}
-      className="relative w-full h-full min-w-0 min-h-0 flex flex-col text-left px-3.5 py-2.5 rounded-[4px] transition-[opacity,background-color] duration-500 hover:bg-foreground/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
+      className="relative w-full h-full min-w-0 min-h-0 flex flex-col text-left px-3.5 py-2.5 rounded-[4px] transition-[background-color] duration-500 hover:bg-foreground/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
       style={{
-        background: `${cropMarks(mark)}, color-mix(in srgb, var(--background) 62%, transparent)`,
-        opacity: dimmed ? 0.22 : 1,
+        background: `${cropMarks(mark)}, ${paper}`,
         boxShadow: state === "pending" ? `0 0 28px ${colorWithAlpha(color, 0.22)}` : undefined,
       }}
     >
       <span className="flex items-center gap-2 typo-caption">
         <span className="font-mono text-foreground">{frameNumber(dim)}</span>
-        <span className="font-semibold uppercase tracking-[0.12em]" style={{ color: state === "lit" || state === "pending" ? color : "var(--muted-foreground)" }}>
+        <span className="font-semibold uppercase tracking-[0.12em]" style={{ color: vivid ? color : "var(--muted-foreground)" }}>
           {label}
         </span>
         <span
           className="ml-auto w-[7px] h-[7px] rounded-full"
           style={{
-            background: state === "lit" ? color : state === "pending" ? color : state === "error" ? ERR : "color-mix(in srgb, var(--foreground) 16%, transparent)",
+            background: state === "error" ? ERR : vivid ? color : state === "pending" ? colorWithAlpha(color, 0.45) : FAINT,
             boxShadow: state === "pending" ? `0 0 0 4px ${colorWithAlpha(color, 0.25)}` : undefined,
           }}
         />

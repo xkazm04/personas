@@ -1,104 +1,84 @@
-/** FrameLayer — a frame's inner page. Before launch it holds that dimension's
- *  setting (the real composer pickers, opened as modals, or a toggle); once
- *  the draft exists it shows the frame's value and how each capability uses
- *  it (own value, inherits agent-wide, or not used). */
+/** FrameLayer - a frame's inner page, laid out as an enlargement beside its
+ *  notes. Left: the frame's picture printed large, with its caption on a
+ *  strip in the dimension's colour. Right, before launch: the dimension's
+ *  inline quick setup first (vault app tiles, run rhythms, channels, other
+ *  agents' events, or a toggle; the full picker modal is its "more" path),
+ *  then what the frame is for. Once the draft exists: what the frame is for,
+ *  what was decided, and how each capability uses it (own value, inherits
+ *  agent-wide, or not used). The name, number and status live in the header. */
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import { DIM_META } from "@/features/shared/glyph";
-import Button from "@/features/shared/components/buttons/Button";
-import { AccessibleToggle } from "@/features/shared/components/forms/AccessibleToggle";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { ComposeConfigItem } from "@/features/agents/sub_glyph/useComposeConfig";
 import type { FrameValue } from "./useFrameValues";
 import type { FrameState } from "./sheetModel";
-import { frameNumber } from "./sheetModel";
 import { DimAuraMark, FramePicture } from "./FramePictures";
+import { FrameCapabilities } from "./FrameCapabilities";
+import { QuickSetup, DecidedSetup, hasQuickSetup } from "./quickSetup/QuickSetup";
 import { COPY } from "./copy";
 
 interface FrameLayerProps {
   dim: GlyphDimension;
   label: string;
   desc: string;
-  state: FrameState;
   value: FrameValue | null;
   isCompose: boolean;
   item: ComposeConfigItem | undefined;
   rows: GlyphRow[];
 }
 
-function rowDetail(dim: GlyphDimension, r: GlyphRow): string {
-  switch (dim) {
-    case "trigger": return r.triggers.map((t) => t.description || t.trigger_type).join(", ");
-    case "task": return r.summary || r.description || "";
-    case "connector": return r.connectors.map((c) => c.label || c.name).join(", ");
-    case "message": return r.messageSummary ?? "";
-    case "review": return r.reviewSummary ?? "";
-    case "memory": return r.memorySummary ?? "";
-    case "event": return r.events.map((e) => e.description || e.event_type).join(", ");
-    case "error": return r.errorSummary ?? "";
-  }
+/** The header's status chip for a frame. */
+export function frameStatus(state: FrameState, value: FrameValue | null): { label: string; strong: boolean } {
+  if (state === "pending") return { label: COPY.frame.needsYou, strong: true };
+  if (state === "error") return { label: COPY.frame.error, strong: false };
+  if (state === "filling") return { label: COPY.frame.developing, strong: false };
+  if (value?.by === "you") return { label: COPY.frame.byYou, strong: false };
+  if (value?.by === "ai") return { label: COPY.frame.byAi, strong: false };
+  return { label: COPY.frame.notSet, strong: false };
 }
 
-const PRESENCE: Record<string, string> = { linked: COPY.frame.ownValue, shared: COPY.frame.inherits, none: COPY.frame.none };
-
-export function FrameLayer({ dim, label, desc, state, value, isCompose, item, rows }: FrameLayerProps) {
+function FramePrint({ dim, value, isCompose }: { dim: GlyphDimension; value: FrameValue | null; isCompose: boolean }) {
   const color = DIM_META[dim].color;
-  const source = state === "pending" ? COPY.frame.needsYou
-    : value?.by === "you" ? COPY.frame.byYou : value?.by === "ai" ? COPY.frame.byAi : COPY.frame.notSet;
-
   return (
-    <div className="flex flex-col gap-5 max-w-[580px] w-full mx-auto">
-      <div className="flex flex-col gap-1 pr-10">
-        <span className="flex items-center gap-2.5 typo-caption">
-          <span className="font-mono" style={{ color }}>{frameNumber(dim)}</span>
-          <span className="font-semibold uppercase tracking-[0.12em]" style={{ color }}>{label}</span>
+    <figure className="m-0 flex flex-col gap-2 min-w-0">
+      <div
+        className="relative flex items-center justify-center rounded-card overflow-hidden"
+        style={{
+          aspectRatio: "4 / 3",
+          background: `radial-gradient(ellipse at 50% 42%, ${colorWithAlpha(color, 0.12)}, transparent 72%), color-mix(in srgb, var(--foreground) 3%, transparent)`,
+          boxShadow: `0 0 0 1px ${colorWithAlpha(color, 0.3)}, 0 20px 40px -24px rgba(0,0,0,0.6)`,
+        }}
+      >
+        <span className="scale-125 2xl:scale-150 origin-center">
+          {value ? <FramePicture dim={dim} value={value} compact={false} /> : <DimAuraMark dim={dim} size={56} lit={false} />}
         </span>
-        {desc && <p className="typo-body text-foreground">{desc}</p>}
       </div>
+      <figcaption className="typo-body text-foreground truncate pl-2" style={{ borderLeft: `3px solid ${color}` }}>
+        {value?.caption ?? (isCompose ? COPY.frame.preLaunchNote : COPY.loupe.empty)}
+      </figcaption>
+    </figure>
+  );
+}
 
-      <div className="flex items-center gap-4 p-4 rounded-card border" style={{ borderColor: colorWithAlpha(color, 0.35), background: colorWithAlpha(color, 0.06) }}>
-        {value ? <FramePicture dim={dim} value={value} compact={false} /> : <DimAuraMark dim={dim} size={52} lit={false} />}
-        <span className="flex-1 min-w-0 typo-body-lg text-foreground">{value?.caption ?? (isCompose ? COPY.frame.preLaunchNote : COPY.frame.notSet)}</span>
-        <span className="typo-caption text-foreground whitespace-nowrap">{source}</span>
+export function FrameLayer({ dim, label, desc, value, isCompose, item, rows }: FrameLayerProps) {
+  return (
+    <div className="grid gap-6 2xl:gap-10 w-full max-w-[980px] 2xl:max-w-[1180px] mx-auto my-auto grid-cols-1 sm:grid-cols-[minmax(220px,300px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(260px,380px)_minmax(0,1fr)]">
+      <FramePrint dim={dim} value={value} isCompose={isCompose} />
+      <div className="flex flex-col gap-4 min-w-0">
+        {isCompose && item && hasQuickSetup(item) ? (
+          <>
+            <QuickSetup item={item} label={label} />
+            {desc && <p className="typo-body text-foreground">{desc}</p>}
+          </>
+        ) : (
+          <>
+            {desc && <p className="typo-body-lg text-foreground">{desc}</p>}
+            {isCompose && <p className="typo-body text-foreground">{dim === "task" ? COPY.frame.preLaunchNote : COPY.frame.decidedLater}</p>}
+          </>
+        )}
+        {!isCompose && value && <DecidedSetup dim={dim} apps={value.apps} lines={value.lines} />}
+        {rows.length > 0 && <FrameCapabilities dim={dim} rows={rows} />}
       </div>
-
-      {isCompose && (
-        <div className="flex items-center gap-3">
-          {item?.kind === "picker" && (
-            <Button variant="secondary" size="md" onClick={item.onClick}>{`${COPY.frame.choose} ${label.toLowerCase()}`}</Button>
-          )}
-          {item?.kind === "toggle" && (
-            <label className="flex items-center gap-3 typo-body text-foreground">
-              <AccessibleToggle checked={item.active} onChange={item.onClick} label={label} />
-              {item.summary[0] ?? label}
-            </label>
-          )}
-          {(!item || item.kind === "input") && <p className="typo-body text-foreground">{dim === "task" ? COPY.frame.preLaunchNote : COPY.frame.decidedLater}</p>}
-        </div>
-      )}
-
-      {!isCompose && value && value.lines.length > 1 && (
-        <ul className="flex flex-col gap-1.5">
-          {value.lines.map((l) => <li key={l} className="typo-body text-foreground">{l}</li>)}
-        </ul>
-      )}
-
-      {rows.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <span className="typo-caption font-semibold uppercase tracking-[0.1em] text-foreground">{COPY.frame.perCapability}</span>
-          {rows.map((r) => {
-            const presence = r.presence[dim];
-            return (
-              <div key={r.id} className="flex items-start gap-3 py-2 border-b border-card-border last:border-b-0">
-                <span className="typo-body text-foreground flex-1 min-w-0">{r.title}</span>
-                <span className="typo-caption px-2 py-0.5 rounded-full border whitespace-nowrap" style={presence === "linked" ? { color, borderColor: colorWithAlpha(color, 0.4) } : undefined}>
-                  {PRESENCE[presence] ?? presence}
-                </span>
-                <span className="typo-body text-foreground flex-1 min-w-0">{presence === "none" ? "" : rowDetail(dim, r)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

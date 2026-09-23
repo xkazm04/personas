@@ -72,12 +72,11 @@
     "personas-web/eslint-rules/no-multi-zustand-selector.js": {"count":2,"sections":[],"contexts":["(`personas-web/eslint-rules/no-multi-zustand-selector.js`), which is about"],"resolved":false},
     "require-animation-gating.js": {"count":1,"sections":[],"lines":["38-42"],"contexts":["flag (`require-animation-gating.js:38-42`), consumed at `:83`."],"resolved":false},
     "routes.test.ts": {"count":1,"sections":[],"contexts":["build (`focus-contract.test.ts`, `routes.test.ts`, `kb-data.test.ts`) — with an"],"resolved":false},
-    "rules.json": {"count":1,"sections":[9],"contexts":["**Validation, run standalone against the real engine (no edit to `rules.json`):**"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":9,"sections":[3,5,8,9],"lines":["264-273","196-211","352-356","362-372","348-355"],"contexts":["variant battery**, a **9×4 className depth matrix**, `scripts/census/lib/engine.mjs`,"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["`merge-published-rules.mjs` skips it by construction."],"resolvedFrom":"basename","verbatim":"merge-published-rules.mjs"},
     "scripts/census/rules.json": {
-      "count": 1,
-      "sections": [3],
+      "count": 2,
+      "sections": [3,9],
       "contexts": [
         "| `scripts/census/rules.json` + `npm run census:check` | The ratcheting-baseline gate for a condition with a live backlog. Fails on rise, on silent drop, on a stale exclude, on a broken walk. |"
       ]

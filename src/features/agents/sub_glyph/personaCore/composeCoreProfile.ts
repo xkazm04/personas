@@ -40,7 +40,7 @@
 import { traitById } from "./catalog";
 import type { Archetype, PersonaCoreState } from "./types";
 
-/** What the dialogue-cinema layout hands up at Launch: the codex state plus the
+/** What the build layout (Sheet · Cinema) hands up at Launch: the codex state plus the
  *  resolved archetype card, snapshotted before the surface resets. The matrix
  *  entry holds it until promote, then composes it into `core_profile`. */
 export interface PersonaCoreLaunchSnapshot {

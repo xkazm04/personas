@@ -18,9 +18,11 @@ interface ComposeCentreProps {
   core: PersonaCore;
   hasContext: boolean;
   onOpenContext: (el: HTMLElement) => void;
+  /** Quiet decision support under the composer (the recipe starters). */
+  below?: React.ReactNode;
 }
 
-export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext }: ComposeCentreProps) {
+export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisabled, launching, core, hasContext, onOpenContext, below }: ComposeCentreProps) {
   const ta = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => {
     const el = ta.current;
@@ -37,11 +39,12 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
       transition={{ duration: 0.5, ease: EASE }}
       className="w-full h-full flex flex-col items-center justify-center gap-3 text-center"
     >
-      <h1 className="typo-title-lg text-foreground">{COPY.heroAsk}</h1>
+      <h2 className="typo-title-lg text-foreground">{COPY.heroAsk}</h2>
       <div className="w-full max-w-[520px] rounded-card border border-card-border bg-background/85 backdrop-blur-md px-3 pt-3 pb-2.5 text-left shadow-elevation-3 focus-within:border-[color:var(--cinema-accent)]">
         <label htmlFor="sheet-cinema-intent" className="sr-only">{COPY.heroAsk}</label>
         <textarea
           id="sheet-cinema-intent"
+          data-testid="agent-intent-input"
           ref={ta}
           rows={3}
           value={intentText}
@@ -74,12 +77,14 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
             disabled={disabled}
             loading={launching}
             loadingLabel={COPY.launching}
+            data-testid="agent-launch-btn"
           >
             {COPY.launch}
             <kbd className="ml-1 font-mono typo-caption opacity-70">↵</kbd>
           </Button>
         </div>
       </div>
+      {below}
     </motion.div>
   );
 }

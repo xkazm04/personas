@@ -1,9 +1,6 @@
-/** Cinema choreography hooks, carried over from GlyphCinemaLayout.
- *
- *  `useCasting` and `useTimedReveal` are file-private in GlyphCinemaLayout.tsx
- *  (outside this prototype's write scope), so they are restated here with the
- *  same contract. At consolidation both belong in `cinemaShared.tsx` next to
- *  the silhouette they drive, and this file goes away. */
+/** Cinema choreography hooks (`useCasting`, `useTimedReveal`), carried over
+ *  from the retired GlyphCinemaLayout with the same contract. They could move
+ *  into `cinemaShared.tsx` next to the silhouette they drive. */
 import { useEffect, useState } from "react";
 import { CINEMA_FORMS, CINEMA_PALETTE } from "@/features/agents/sub_glyph/cinemaShared";
 

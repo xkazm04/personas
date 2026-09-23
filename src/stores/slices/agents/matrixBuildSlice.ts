@@ -226,11 +226,6 @@ export interface MatrixBuildSlice {
     event: Extract<BuildEvent, { type: "clarifying_question_v3" }>,
   ) => void;
 
-  // v3 editing actions — invoked by BehaviorCoreEditor / CapabilityRowEditor
-  patchBehaviorCore: (partial: Partial<PersonaBehaviorCore>) => void;
-  patchCapability: (id: string, partial: Partial<CapabilityState>) => void;
-  addCapabilityDraft: (draft: CapabilityDraft) => void;
-  removeCapability: (id: string) => void;
   clearClarifyingQuestionV3: () => void;
 
   // Actions -- question management
@@ -927,82 +922,6 @@ export const createMatrixBuildSlice: StateCreator<
     })));
   },
 
-  // -- v3 editing actions ---------------------------------------------------
-
-  patchBehaviorCore: (partial) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      const prev = sess.behaviorCore ?? {
-        mission: '',
-        identity: { role: '', description: '' },
-        voice: { style: '', output_format: '' },
-        principles: [],
-        constraints: [],
-      };
-      return {
-        ...sess,
-        behaviorCore: {
-          ...prev,
-          ...partial,
-          identity: { ...prev.identity, ...(partial.identity ?? {}) },
-          voice: { ...prev.voice, ...(partial.voice ?? {}) },
-        },
-        editDirty: true,
-      };
-    }));
-  },
-
-  patchCapability: (id, partial) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      const cap = sess.capabilities[id];
-      if (!cap) return sess;
-      return {
-        ...sess,
-        capabilities: { ...sess.capabilities, [id]: { ...cap, ...partial } },
-        editDirty: true,
-      };
-    }));
-  },
-
-  addCapabilityDraft: (draft) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      // Disambiguate colliding ids by appending _2, _3, ... rather than
-      // silently dropping the new draft (which would clobber user work).
-      let id = draft.id;
-      if (sess.capabilities[id]) {
-        let suffix = 2;
-        while (sess.capabilities[`${draft.id}_${suffix}`]) suffix += 1;
-        id = `${draft.id}_${suffix}`;
-      }
-      const cap: CapabilityState = {
-        id,
-        title: draft.title,
-        capability_summary: draft.capability_summary,
-        user_facing_goal: draft.user_facing_goal,
-        enabled_by_default: true,
-        resolvedFields: {},
-      };
-      return {
-        ...sess,
-        capabilities: { ...sess.capabilities, [id]: cap },
-        capabilityOrder: [...sess.capabilityOrder, id],
-        editDirty: true,
-      };
-    }));
-  },
-
-  removeCapability: (id) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
-      if (!sess.capabilities[id]) return sess;
-      const { [id]: _removed, ...rest } = sess.capabilities;
-      return {
-        ...sess,
-        capabilities: rest,
-        capabilityOrder: sess.capabilityOrder.filter((x) => x !== id),
-        editDirty: true,
-      };
-    }));
-  },
-
   clearClarifyingQuestionV3: () => {
     set((state) => updateSessionInState(state, null, (sess) => ({
       ...sess,
@@ -1446,6 +1365,10 @@ export const createMatrixBuildSlice: StateCreator<
         parserResultJson: state.buildParserResultJson,
         workflowName: state.buildWorkflowName,
         workflowPlatform: state.buildWorkflowPlatform,
+        // Keep the session's real creation time. emptySessionState stamps Date.now(),
+        // which made every re-hydrate look like a brand-new draft to anything that
+        // measures from createdAt (the build sheet's clock, newest-session policy).
+        createdAt: existing?.createdAt ?? (Date.parse(session.createdAt) || Date.now()),
         ...(existing ? {
           pendingAnswers: existing.pendingAnswers,
           testId: existing.testId,

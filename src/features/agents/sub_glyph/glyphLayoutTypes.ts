@@ -48,15 +48,10 @@ export interface GlyphFullLayoutProps {
    *  snapshot (typed state + resolved archetype); the matrix entry holds it
    *  until promote, where `composeCoreProfile` turns it into
    *  `personas.core_profile` (an explicit `update_persona` AFTER the Rust
-   *  seed-if-absent stamp has run inside `promote_build_draft`). BOTH compose
-   *  surfaces call it: the dialogue panel and, since sweep #41, GlyphFullLayout
-   *  (the `cinema` layout's compose step), which had no codex at all - so the
-   *  build-layout toggle could silently strip mentality/traits/model from the
-   *  promote stamp. */
+   *  seed-if-absent stamp has run inside `promote_build_draft`). */
   onLaunchCoreSnapshot?: (snapshot: PersonaCoreLaunchSnapshot) => void;
-  /** Optional reference context ("Add reference context"). The container renders its own
-   *  BuildContextField for the cinema layouts; the Contact Sheet prototypes own it one
-   *  layer down instead, so they receive the value and setter. */
+  /** Optional reference context ("Add reference context"). The sheet owns the
+   *  context editor, so it receives the value and setter. */
   contextText?: string;
   onContextChange?: (v: string) => void;
 }

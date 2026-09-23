@@ -1,29 +1,21 @@
-/** SheetCentre — what the centre cell shows in each act. The prompt, then
- *  Cinema's casting and coronation under a slate, then the crowned persona as
- *  the title card for the draft, the screening and the verdict, and finally
- *  the premiere poster. */
+/** SheetCentre — what the centre cell shows in each act. The prompt first;
+ *  once the build starts, the centre is Cinema's picture (the casting and
+ *  coronation, then the crowned persona as the title card, finally the
+ *  premiere poster) over ONE action panel that carries everything about the
+ *  build: its state, the honest clock, what it needs from you and the act's
+ *  actions. Nothing about the build floats over the sheet outside it. */
 import { AnimatePresence, motion } from "framer-motion";
-import { useAgentStore } from "@/stores/agentStore";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { SheetState } from "./useSheetState";
 import { ComposeCentre } from "./centre/ComposeCentre";
 import { IdentityCentre } from "./centre/IdentityCentre";
-import { AnswersReview, QuestionsFooter } from "./centre/QuestionsCentre";
 import { TitleCard } from "./centre/TitleCard";
-import { DraftFooter, ScreeningFooter, VerdictFooter, WiringFooter, Note } from "./centre/ActFooters";
-import { PremiereCentre, StoppedCentre } from "./centre/EndCentres";
+import { PremiereCentre } from "./centre/EndCentres";
+import { RecipeStarters } from "./centre/RecipeStarters";
+import { ActPanel, type CentreActions } from "./centre/ActPanel";
 import { EASE } from "./cinemaMotion";
-import { COPY } from "./copy";
 
-export interface CentreActions {
-  openContext: (el: HTMLElement) => void;
-  openRefine: () => void;
-  openCaps: () => void;
-  openReport: () => void;
-  askForce: () => void;
-  askReject: () => void;
-  startOver: () => void;
-}
+export type { CentreActions };
 
 interface SheetCentreProps {
   p: GlyphFullLayoutProps;
@@ -34,11 +26,9 @@ interface SheetCentreProps {
 }
 
 export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
-  const activity = useAgentStore((st) => st.buildActivity);
-  const phaseLabel = COPY.phaseLabel[p.buildPhase ?? "initializing"] ?? "";
-  const { act, flow, cast, clock } = s;
-  const refine = p.onRefine ? a.openRefine : undefined;
+  const { act, flow, cast } = s;
   const reviewing = act === "questions" && (flow.stage === "review" || flow.stage === "sending");
+  const panel = <ActPanel p={p} s={s} a={a} tight={tight} />;
 
   let body: React.ReactNode;
   let key: string = act;
@@ -48,41 +38,31 @@ export function SheetCentre({ p, s, a, tight, billing }: SheetCentreProps) {
         intentText={p.intentText} onIntentChange={p.onIntentChange} onLaunch={s.launch}
         launchDisabled={p.launchDisabled} launching={s.launching} core={s.core}
         hasContext={!!p.contextText?.trim()} onOpenContext={a.openContext}
+        below={<RecipeStarters recipes={s.recipes} />}
       />
     );
   } else if (act === "casting" || act === "wiring" || (act === "questions" && !reviewing)) {
+    // One key across casting, questions and wiring: the coronation and the
+    // panel stay mounted while only the panel's content changes.
     key = "identity";
-    body = (
-      <IdentityCentre cast={cast} agentName={p.agentName} phaseLabel={phaseLabel} elapsed={clock.elapsed} tight={tight}>
-        {act === "casting" && <Note>{activity || COPY.firstPassNote}</Note>}
-        {act === "wiring" && <WiringFooter activity={activity} />}
-        {act === "questions" && <QuestionsFooter stage={flow.stage} count={flow.n} onContinue={() => flow.open()} />}
-      </IdentityCentre>
-    );
-  } else if (reviewing) {
-    key = "review";
-    body = <AnswersReview stage={flow.stage} qs={flow.qs} draftOf={flow.draftOf} onOpen={flow.open} onSend={flow.send} />;
+    body = <IdentityCentre cast={cast} agentName={p.agentName} tight={tight}>{panel}</IdentityCentre>;
   } else if (act === "draft" || act === "screening" || act === "verdict") {
     key = "title";
-    const passed = !!p.testPassed;
     body = (
-      <TitleCard winner={cast.winner} agentName={p.agentName} onAgentNameChange={p.onAgentNameChange} rows={p.glyphRows} stamp={act === "verdict" ? (passed ? "passed" : "failed") : null} tight={tight}>
-        {act === "draft" && <DraftFooter onStartTest={p.onStartTest} onRefine={refine} onReviewCaps={a.openCaps} />}
-        {act === "screening" && <ScreeningFooter lines={p.testOutputLines ?? []} />}
-        {act === "verdict" && (
-          <VerdictFooter
-            passed={passed} testError={p.testError} results={p.toolTestResults ?? []}
-            onPromote={p.onPromote} onRefine={refine} onReport={a.openReport}
-            onAskForce={p.onPromoteForce ? a.askForce : undefined}
-            onAskReject={p.onRejectTest ? a.askReject : undefined}
-          />
-        )}
+      <TitleCard winner={cast.winner} agentName={p.agentName} onAgentNameChange={p.onAgentNameChange} rows={p.glyphRows} tight={tight}>
+        {panel}
       </TitleCard>
     );
   } else if (act === "premiere") {
-    body = <PremiereCentre winner={cast.winner} agentName={p.agentName} starring={p.glyphRows.map((r) => r.title)} billing={billing} onViewAgent={p.onViewAgent} />;
+    body = (
+      <PremiereCentre winner={cast.winner} agentName={p.agentName} starring={p.glyphRows.map((r) => r.title)} billing={billing}>
+        {panel}
+      </PremiereCentre>
+    );
   } else {
-    body = <StoppedCentre cancelled={p.buildPhase === "cancelled"} elapsed={clock.elapsed} error={p.buildError} onStartOver={a.startOver} />;
+    // The answers review and the stop: the panel alone.
+    key = reviewing ? "review" : act;
+    body = <div className="w-full h-full min-h-0 flex items-center justify-center">{panel}</div>;
   }
 
   return (

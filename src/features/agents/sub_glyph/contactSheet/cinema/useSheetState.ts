@@ -11,11 +11,12 @@ import { CELL_KEY_TO_DIM, derivePetalState } from "@/features/agents/sub_glyph/g
 import { usePersonaCore } from "@/features/agents/sub_glyph/personaCore";
 import { useComposeConfig } from "@/features/agents/sub_glyph/useComposeConfig";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
-import { deriveAct, frameStateFromPetal, type FrameState } from "./sheetModel";
-import { useSheetClock, type ClockMode } from "./useSheetClock";
+import { deriveAct, frameStateFromPetal, populatedDims, type FrameState } from "./sheetModel";
+import { useSheetClock } from "./useSheetClock";
 import { useCinemaCast } from "./useCinemaCast";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { useFrameValues } from "./useFrameValues";
+import { useCinemaRecipes } from "./useCinemaRecipes";
 
 const NO_TOGGLES = { memory: false, review: false };
 
@@ -64,6 +65,7 @@ export function useSheetState(props: GlyphFullLayoutProps) {
     setLaunching(true);
     cfgLaunch();
   }, [onLaunchCoreSnapshot, core.state, core.preset, cfgLaunch, quickConfig, liveToggles]);
+  const recipes = useCinemaRecipes(intentText, onIntentChange, isCompose);
 
   // -- acts ------------------------------------------------------------------
   const [landed, setLanded] = useState(false);
@@ -72,11 +74,9 @@ export function useSheetState(props: GlyphFullLayoutProps) {
   const act = deriveAct({ isCompose, isBuilding, buildPhase, pendingCount, hasDesignResult, buildError, firstPassLanded: landed });
 
   const flow = useQuestionFlow(pendingQuestions, onAnswer);
-  const clockMode: ClockMode =
-    (act === "casting" && isBuilding) || act === "wiring" ? "build"
-    : act === "questions" ? (flow.stage === "sending" ? "build" : "you")
-    : act === "screening" ? "test" : null;
-  const clock = useSheetClock(sessionId, clockMode);
+  // The clock follows the store's phase, not the act: it runs only while the
+  // machine works and survives remounts (see centre/buildClock.ts).
+  const clock = useSheetClock(sessionId);
 
   const crown = !isCompose && (!!(coreRole || coreMission) || landed || hasDesignResult);
   const cast = useCinemaCast(sessionId, crown, act === "casting");
@@ -114,10 +114,12 @@ export function useSheetState(props: GlyphFullLayoutProps) {
     for (const dim of GLYPH_DIMENSIONS) out[dim] = PETAL_OF[frameStates[dim]];
     return out;
   }, [frameStates]);
-  const litCount = GLYPH_DIMENSIONS.filter((d) => frameStates[d] === "lit").length;
+  // Only populated dimensions feed the core glow (same rule as the frames and petals).
+  const populated = populatedDims(values, cellStates, glyphRows);
+  const litCount = GLYPH_DIMENSIONS.filter((d) => populated[d]).length;
 
   return {
-    sessionId, isCompose, act, core, cfg, launch, launching, flow, clock, cast,
+    sessionId, isCompose, act, core, cfg, launch, launching, recipes, flow, clock, cast,
     values, frameStates, petalStates, presence: crown ? 0.4 + (litCount / 8) * 0.6 : litCount / 16,
   };
 }

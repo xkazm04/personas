@@ -56,7 +56,7 @@ export const GoalRow = memo(function GoalRow({
           </span>
           <span className="rw-marks">
             {waiting && (
-              <span className="rw-mk rw-wait" title={t.notepad.desk_needs_you} aria-label={t.notepad.desk_needs_you}>
+              <span className="rw-mk rw-wait" aria-label={t.notepad.desk_needs_you}>
                 {unread.overflow ? unread.overflow : Array.from({ length: unread.dots }, (_, i) => <i key={i} />)}
               </span>
             )}
@@ -67,7 +67,6 @@ export const GoalRow = memo(function GoalRow({
               <span
                 className="rw-mk rw-late"
                 aria-label={tx(t.notepad.desk_days_late, { count: signals.lateDays })}
-                title={tx(t.notepad.desk_days_late, { count: signals.lateDays })}
               >
                 <i />
               </span>
@@ -98,7 +97,6 @@ function GoalRowDetail({ note, detail }: { note: GoalRowProps['note']; detail: N
               key={step}
               className={`rw-tick ${i < at ? 'is-past' : i === at ? 'is-now' : 'is-ahead'} ${i <= at ? m.tone.text : ''}`}
               aria-current={i === at ? 'step' : undefined}
-              title={m.labelKey(t)}
             >
               <i />
               <span className="sr-only">{m.labelKey(t)}</span>

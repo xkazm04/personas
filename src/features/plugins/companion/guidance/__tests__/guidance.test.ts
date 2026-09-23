@@ -27,7 +27,7 @@ describe('walkthroughs registry', () => {
       .map((s) => s.highlightTestId)
       .filter(Boolean);
     expect(ids).toContain('persona-build-entry');
-    expect(ids).toContain('glyph-compose-summon');
+    expect(ids).toContain('agent-intent-input');
     expect(ids).toContain('build-oneshot-toggle');
   });
 

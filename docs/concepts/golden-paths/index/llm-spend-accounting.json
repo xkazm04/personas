@@ -75,7 +75,6 @@
       "contexts": ["documented fallback chain for a CLI-version change (`parser.rs:346-370`), and its ledger holds **217.9 M"],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["**DO NOT MERGE this block into `rules.json`** — it carries no `baseline` and is a *discriminator proof*,"],"resolved":false},
     "run_budget.rs": {"count":2,"sections":[7],"lines":["233-235"],"contexts":["(`run_budget.rs:233-235`). The entire spend-ceiling apparatus is untested in production because nothing has"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["document does not edit `scripts/census/`."],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {
@@ -86,6 +85,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**DO NOT MERGE this block into `rules.json`** — it carries no `baseline` and is a *discriminator proof*,"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {
       "count": 1,
       "sections": [9],

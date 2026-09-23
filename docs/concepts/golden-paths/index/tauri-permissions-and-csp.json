@@ -82,19 +82,19 @@
       "resolved": false
     },
     "rules-tpc-tauri-permissions-csp-probe.json": {"count":1,"sections":[],"contexts":["scratch registry (`rules-tpc-tauri-permissions-csp-probe.json`), **fault-injected ten ways"],"resolved":false},
-    "rules.json": {
-      "count": 1,
-      "sections": [3],
-      "contexts": ["| **`scripts/census/lib/engine.mjs` + `rules.json`** | The ratchet, and the only one of the three gates that runs automatically on this machine (`lefthook.yml:74`, pre-push). §9. |"],
-      "resolved": false
-    },
     "scripts/census/lib/engine.mjs": {
       "count": 3,
       "sections": [3,8,9],
       "lines": ["276-288"],
       "contexts": ["| **`scripts/census/lib/engine.mjs` + `rules.json`** | The ratchet, and the only one of the three gates that runs automatically on this machine (`lefthook.yml:74`, pre-push). §9. |"]
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Existing rules checked for overlap.** All **157** rules in `scripts/census/rules.json` were read."]},
+    "scripts/census/rules.json": {
+      "count": 2,
+      "sections": [3,9],
+      "contexts": ["| **`scripts/census/lib/engine.mjs` + `rules.json`** | The ratchet, and the only one of the three gates that runs automatically on this machine (`lefthook.yml:74`, pre-push). §9. |"],
+      "resolvedFrom": "basename",
+      "verbatim": "rules.json"
+    },
     "scripts/check-csp-hosts.mjs": {"count":12,"sections":[0,3,6,7,8,9,12],"lines":["151-161","139-141","139"],"contexts":["commands), `scripts/check-tauri-configs.mjs`, `scripts/check-csp-hosts.mjs`,"]},
     "scripts/check-tauri-configs.mjs": {"count":11,"sections":[0,3,5,6,7,9],"lines":["104-116","141","103-195","139"],"contexts":["commands), `scripts/check-tauri-configs.mjs`, `scripts/check-csp-hosts.mjs`,"]},
     "scripts/run-codegen.mjs": {"count":1,"sections":[],"contexts":["`scripts/run-codegen.mjs`, `src-tauri/src/ipc_auth.rs` (1,215 lines, read in full),"]},

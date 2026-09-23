@@ -101,7 +101,6 @@
       ],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["against `rules.json`):"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
       "sections": [9],
@@ -110,7 +109,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "lib/engine.mjs"
     },
-    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["existing rule covers this: all **37** rules in `scripts/census/rules.json` were read; none keys on a"]},
+    "scripts/census/rules.json": {"count":3,"sections":[9],"contexts":["existing rule covers this: all **37** rules in `scripts/census/rules.json` were read; none keys on a"]},
     "scripts/secret-scan.mjs": {"count":1,"sections":[7],"contexts":["**Why no existing gate saw this:** the repo's `scripts/secret-scan.mjs` scans the *repository*; these"]},
     "server/mcp.rs": {
       "count": 1,

@@ -73,20 +73,15 @@ export function strongMatches(
 }
 
 /**
- * Whether the mid-build template suggestion may surface, given the build
- * layout and questionnaire state.
+ * Whether the mid-build template suggestion may surface, given the
+ * questionnaire state.
  *
- * The card used to be suppressed on `dialogue-cinema` on the theory that that
- * layout's recipe starters replaced it. They do not: once the build is running
- * the compose panel is `locked`, and its single starter row renders with no
- * `onOpen` handler — it reports which recipe the build is based on, it is not
- * an adoption affordance. Since `dialogue-cinema` is also the default layout
- * (`readLayoutPreference` falls back to it), suppressing there removed the
- * template off-ramp for almost every new build. Both layouts now show it; the
- * confidence gate above, not the layout, decides whether it is worth showing.
+ * It surfaces once the first clarifying questions land and until the user
+ * dismisses it; the confidence gate above, not this predicate, decides
+ * whether a given match is worth showing. (It once took the build layout as
+ * well; with a single build layout left, that parameter was dropped.)
  */
 export function shouldSurfaceTemplateSuggestion(
-  _layout: string,
   pendingQuestionCount: number,
   dismissed: boolean,
 ): boolean {

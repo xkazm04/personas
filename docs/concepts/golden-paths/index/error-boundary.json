@@ -136,7 +136,6 @@
       ],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; the runner reports **25 matches / 16 files** for the rule and"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["**The mechanism: a census rule.** The runner exists (`scripts/census/`) and implements the fail-loud"],"resolved":false,"isDir":true},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
@@ -146,6 +145,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; the runner reports **25 matches / 16 files** for the rule and"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "sentryProvider.ts": {
       "count": 1,
       "sections": [6],

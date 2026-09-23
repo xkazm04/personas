@@ -71,7 +71,6 @@
     "oauth.ts": {"count":2,"sections":[5],"lines":["272-274"],"contexts":["(`httpApi.ts:1589`), which is `this.tokens !== null` (`oauth.ts:272-274`), so the orchestrator"],"resolved":false},
     "personas-cloud/packages/orchestrator/src/httpApi.ts": {"count":1,"sections":[],"lines":["437"],"contexts":["`personas-cloud/packages/orchestrator/src/httpApi.ts:437`, `admin?: boolean` — **optional,"],"resolved":false},
     "resilience.rs": {"count":1,"sections":[],"lines":["216-222"],"contexts":["(`resilience.rs:216-222`) and applied to none of their own credential paths."],"resolved":false},
-    "rules.json": {"count":1,"sections":[9],"contexts":["skips it. Do not merge this into `rules.json`.** It gates nothing. It matches the one thing this"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
       "sections": [8,9],
@@ -80,7 +79,7 @@
       "resolvedFrom": "basename",
       "verbatim": "engine.mjs"
     },
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Checked against the existing registry first.** `scripts/census/rules.json` holds **56** rules."]},
+    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["**Checked against the existing registry first.** `scripts/census/rules.json` holds **56** rules."]},
     "src-tauri/": {"count":1,"sections":[],"contexts":["`.rs` files under `src-tauri/` (**1,661** `#[tauri::command]` definitions parsed, not grepped —"],"resolved":false,"isDir":true},
     "src-tauri/core/src/error.rs": {
       "count": 4,

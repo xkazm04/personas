@@ -46,6 +46,7 @@ import {
   SpellCheck,
 } from 'lucide-react';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 
@@ -334,6 +335,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
     const showPreview = preview === 'split' || (preview === 'toggle' && previewOpen);
 
     const spellToggle = spellCheckToggle ? (
+      <Tooltip content={t.common.md_spellcheck}>
       <button
         type="button"
         onMouseDown={(e) => e.preventDefault()}
@@ -344,7 +346,6 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
         }}
         aria-pressed={spellCheck}
         aria-label={t.common.md_spellcheck}
-        title={t.common.md_spellcheck}
         data-testid="md-toolbar-spellcheck"
         className={`ml-1 w-7 h-7 rounded-input flex items-center justify-center transition-colors focus-ring ${
           spellCheck ? 'text-foreground bg-secondary/50' : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
@@ -352,6 +353,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
       >
         <SpellCheck className="w-3.5 h-3.5" aria-hidden />
       </button>
+      </Tooltip>
     ) : null;
 
     return (

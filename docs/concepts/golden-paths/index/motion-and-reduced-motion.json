@@ -73,9 +73,9 @@
       ],
       "resolved": false
     },
-    "rules.json": {"count":1,"sections":[9],"contexts":["both runs identical. `rules.json` was not edited — merge with"],"resolved":false},
     "scripts/census/lib/engine.mjs": {"count":1,"sections":[9],"contexts":["Validated standalone against the real engine (`scripts/census/lib/engine.mjs`) with a"]},
     "scripts/census/merge-published-rules.mjs": {"count":1,"sections":[9],"contexts":["`scripts/census/merge-published-rules.mjs`."]},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["both runs identical. `rules.json` was not edited — merge with"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src/": {"count":1,"sections":[9],"contexts":["that matters. If `src/` is restructured, an extension is renamed, or the walk is pointed"],"resolved":false,"isDir":true},
     "src/**": {"count":1,"sections":[],"contexts":["Composed 2026-08-14 at `c90a7e731`. Sweep: all **4,829** `src/**` `.ts`/`.tsx` files walked by the"],"resolved":false,"isDir":true},
     "src/App.tsx": {"count":6,"sections":[2,3,7,12],"lines":["321"],"contexts":["census engine, plus full reads of `useMotion.ts`, `App.tsx`, `globals.css` (all 8"],"resolvedFrom":"basename","verbatim":"App.tsx"},

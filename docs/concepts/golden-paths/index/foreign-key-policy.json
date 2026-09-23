@@ -54,7 +54,7 @@
       "resolved": false
     },
     "render_plan/invariants.rs": {"count":1,"sections":[9],"contexts":["strings (`engine/src/design.rs`, `companion/prompt.rs`, `render_plan/invariants.rs`"],"resolved":false},
-    "rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["this into `rules.json`:**"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/test/clean-env.cjs": {"count":5,"sections":[5,7,9],"lines":["57"],"contexts":["data. `scripts/test/clean-env.cjs:57` sets `foreign_keys = OFF`, deletes 17"]},
     "sqlite.driver.ts": {
       "count": 2,
