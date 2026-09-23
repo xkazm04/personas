@@ -1,0 +1,524 @@
+/* ============================================================================
+   THE DOCKET - the grafted three-state drawer (shut / a lane / the full
+   surface) and the THREE VISIBLY DIFFERENT FORMS a decision can be in:
+   a raised card with armed keys (waiting for a person), a receipt with a
+   punched edge and a stamp (answered at the gate by a standing grant), and
+   flat ledger lines with no card at all (settled).
+
+   Ported as a stylesheet because the receipt's punched edge is a MASK, the
+   grant's frame is a double border, and the card's spine is a pseudo-element:
+   none of the three survives being approximated by the nearest token.
+   ========================================================================== */
+
+.cb-root .cb-docket {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 62vw);
+  z-index: 60;
+  background: var(--cb-panel-2);
+  border-left: 1px solid var(--cb-rule-2);
+  box-shadow: var(--shadow-elevation-4);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(102%);
+  visibility: hidden;
+  transition:
+    transform var(--duration-normal) cubic-bezier(0.22, 0.72, 0.16, 1),
+    width var(--duration-normal) cubic-bezier(0.22, 0.72, 0.16, 1);
+}
+.cb-root .cb-docket.cb-open {
+  transform: none;
+  visibility: visible;
+}
+.cb-root .cb-docket.cb-full {
+  width: 100%;
+}
+.cb-root .cb-dk-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 9px var(--space-lg);
+  border-bottom: 1px solid var(--cb-rule-2);
+  flex: none;
+  flex-wrap: wrap;
+}
+.cb-root .cb-dk-head .cb-cnt {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+.cb-root .cb-dk-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.cb-root .cb-docket.cb-full .cb-dk-body {
+  grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+}
+.cb-root .cb-dk-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: var(--space-sm) var(--space-lg) var(--space-2xl);
+}
+.cb-root .cb-dk-detail {
+  display: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-dk-detail > * {
+  max-width: 960px;
+}
+.cb-root .cb-docket.cb-full .cb-dk-detail {
+  display: block;
+}
+.cb-root .cb-docket.cb-full .cb-card .cb-exp,
+.cb-root .cb-docket.cb-full .cb-receipt .cb-exp {
+  display: none;
+}
+
+/* The lane is wider where there is room. Declared in THIS stylesheet, which is
+   imported last, because a same-specificity rule in the earlier file would
+   lose on order rather than on the cascade. */
+@media (min-width: 1400px) {
+  .cb-root .cb-docket {
+    width: 760px;
+  }
+}
+
+/* form 1 - waiting for a person: a raised card with armed keys */
+.cb-root .cb-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: var(--cb-panel);
+  border: 1px solid var(--cb-rule-2);
+  box-shadow: var(--shadow-elevation-2);
+  padding: 9px 11px 10px 15px;
+  margin-bottom: var(--space-sm);
+  cursor: pointer;
+}
+.cb-root .cb-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 4px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-amber);
+}
+.cb-root .cb-card.cb-sel {
+  border-color: color-mix(in srgb, var(--brand-amber) 68%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--brand-amber) 40%, transparent),
+    var(--shadow-elevation-3);
+}
+.cb-root .cb-k1 {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.cb-root .cb-lvl {
+  border: 1px solid var(--cb-rule-2);
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+  color: var(--muted-foreground);
+}
+.cb-root .cb-opts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+.cb-root .cb-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  padding: 0 9px 0 4px;
+  border-radius: var(--radius-interactive);
+  border: 1px solid var(--cb-rule-2);
+  background: var(--card-bg);
+}
+.cb-root .cb-opt:hover {
+  border-color: var(--brand-amber);
+}
+.cb-root .cb-card:not(.cb-sel) .cb-opt,
+.cb-root .cb-receipt:not(.cb-sel) .cb-opt {
+  opacity: 0.72;
+}
+.cb-root .cb-card.cb-sel .cb-opt kbd {
+  border-color: var(--brand-amber);
+  color: var(--brand-amber);
+}
+.cb-root .cb-exp {
+  margin-top: 9px;
+  border-top: 1px dashed var(--cb-rule-2);
+  padding-top: 9px;
+}
+.cb-root .cb-cardtitle {
+  margin: 3px 0 2px;
+}
+.cb-root .cb-reason {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+.cb-root .cb-reason input {
+  flex: 1;
+  min-width: 140px;
+  height: 30px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--brand-amber);
+  background: var(--background);
+  padding: 0 9px;
+}
+
+/* form 2 - answered at the gate by a standing grant: a receipt */
+.cb-root .cb-receipt {
+  position: relative;
+  background: color-mix(in srgb, var(--brand-emerald) 6%, var(--cb-panel));
+  border: 1px solid var(--cb-rule-2);
+  border-radius: 3px;
+  padding: 12px 12px 10px;
+  margin: 4px 0 var(--space-sm);
+  cursor: pointer;
+  /* a mask, not a fill: the two stops are "cut" and "keep", not colours */
+  -webkit-mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) top/14px 100% repeat-x;
+  mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) top/14px 100% repeat-x;
+}
+.cb-root .cb-receipt.cb-sel {
+  outline: 2px solid color-mix(in srgb, var(--status-success) 62%, transparent);
+  outline-offset: -1px;
+}
+.cb-root .cb-receipt .cb-stamp {
+  position: absolute;
+  right: 10px;
+  top: 9px;
+  transform: rotate(-7deg);
+  border: 2px solid var(--status-success);
+  color: var(--status-success);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--status-success) 10%, transparent);
+}
+.cb-root .cb-receipt .cb-rtitle {
+  margin: 0 150px 5px 0;
+}
+.cb-root .cb-receipt .cb-rl {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+.cb-root .cb-receipt .cb-rl b {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* form 3 - settled: flat ledger lines, no card at all */
+.cb-root .cb-ledgerlines {
+  border-top: 1px solid var(--cb-rule);
+}
+.cb-root .cb-lr {
+  display: grid;
+  grid-template-columns: 82px 20px minmax(0, 1fr);
+  gap: var(--space-sm);
+  align-items: baseline;
+  padding: 6px 3px;
+  border-bottom: 1px solid var(--cb-rule);
+  cursor: pointer;
+}
+.cb-root .cb-lr.cb-sel {
+  background: var(--card-bg);
+}
+.cb-root .cb-lr.cb-mine {
+  background: color-mix(in srgb, var(--brand-amber) 8%, transparent);
+}
+.cb-root .cb-lr .cb-who {
+  text-align: center;
+}
+.cb-root .cb-lr .cb-rs {
+  display: block;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-warnline {
+  display: block;
+  color: var(--status-warning);
+  margin-top: 2px;
+}
+
+/* card figures - every decision draws the measure it is about */
+.cb-root .cb-fig {
+  margin: 9px 0 2px;
+}
+.cb-root .cb-fig h4 {
+  color: var(--muted);
+  margin: 10px 0 6px;
+}
+.cb-root .cb-fig h4:first-child {
+  margin-top: 0;
+}
+.cb-root .cb-minirow {
+  display: grid;
+  grid-template-columns: 62px repeat(9, minmax(0, 1fr)) 46px;
+  gap: 0;
+  border: 1px solid var(--cb-rule);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.cb-root .cb-minirow .cb-mh {
+  padding: 2px;
+  text-align: center;
+  color: var(--cb-cc);
+  background: var(--card-bg);
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-minirow .cb-mhead {
+  border-left: 0;
+  text-align: left;
+  padding-left: 5px;
+}
+.cb-root .cb-minirow .cb-ml {
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  border-top: 1px solid var(--cb-rule);
+}
+.cb-root .cb-minirow .cb-cell {
+  height: 26px;
+  border-top: 1px solid var(--cb-rule);
+}
+.cb-root .cb-minirow .cb-mt {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 5px;
+  border-top: 1px solid var(--cb-rule);
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-pairs {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 84px;
+  gap: 4px var(--space-md);
+  align-items: center;
+}
+.cb-root .cb-pairs .cb-pb {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cb-root .cb-pairs .cb-pb i {
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+}
+.cb-root .cb-pairs .cb-pb i.cb-b {
+  background: var(--muted-dark);
+  opacity: 0.5;
+}
+.cb-root .cb-pairs .cb-pb i.cb-a {
+  background: var(--accent);
+}
+.cb-root .cb-pairs .cb-pd {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 650;
+}
+.cb-root .cb-pairs .cb-pd.cb-dn {
+  color: var(--status-success);
+}
+.cb-root .cb-pairs .cb-pd.cb-upv {
+  color: var(--accent);
+}
+.cb-root .cb-pairs .cb-pd.cb-eq {
+  color: var(--muted-dark);
+}
+.cb-root .cb-scope {
+  display: flex;
+  margin: var(--space-sm) 0;
+}
+.cb-root .cb-sc {
+  flex: 1;
+  border: 1px solid var(--cb-rule-2);
+  padding: 7px 9px;
+  background: var(--card-bg);
+}
+.cb-root .cb-sc + .cb-sc {
+  border-left: 0;
+}
+.cb-root .cb-sc .cb-m {
+  display: block;
+}
+.cb-root .cb-sc.cb-yes .cb-m {
+  color: var(--status-success);
+}
+.cb-root .cb-sc.cb-no {
+  opacity: 0.72;
+}
+.cb-root .cb-sc.cb-no .cb-m {
+  color: var(--status-error);
+}
+.cb-root .cb-sc.cb-no .cb-lbl {
+  text-decoration: line-through;
+}
+.cb-root .cb-grant {
+  border: 2px double color-mix(in srgb, var(--brand-purple) 68%, transparent);
+  border-radius: var(--radius-card);
+  padding: 9px 11px;
+  background: color-mix(in srgb, var(--brand-purple) 7%, transparent);
+}
+.cb-root .cb-axis {
+  position: relative;
+  height: 46px;
+  margin: 6px 3px;
+}
+.cb-root .cb-axis .cb-ln {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 21px;
+  height: 1px;
+  background: var(--cb-rule-2);
+}
+.cb-root .cb-axis .cb-rg {
+  position: absolute;
+  top: 14px;
+  height: 15px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  border: 1px solid var(--accent);
+}
+.cb-root .cb-axis .cb-tk {
+  position: absolute;
+  top: 32px;
+  color: var(--muted);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.cb-root .cb-axis .cb-tv {
+  position: absolute;
+  top: 0;
+  color: var(--foreground);
+  font-weight: 700;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.cb-root .cb-axis .cb-cap {
+  position: absolute;
+  top: 11px;
+  height: 21px;
+  width: 1px;
+  background: var(--muted-dark);
+  opacity: 0.6;
+}
+.cb-root .cb-lad {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 116px;
+  gap: var(--space-md);
+  align-items: center;
+  padding: 2px 0;
+}
+.cb-root .cb-rungs {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 20px;
+}
+.cb-root .cb-rungs i {
+  width: 10px;
+  background: var(--brand-amber);
+  border-radius: 2px;
+  display: block;
+}
+.cb-root .cb-phantom {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.cb-root .cb-phantom .cb-blk {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px dashed var(--cb-ch5);
+  border-radius: 3px;
+}
+.cb-root .cb-phantom .cb-blk i {
+  width: 6px;
+  height: 15px;
+  display: block;
+  background: repeating-linear-gradient(135deg, var(--cb-ch5) 0 2px, transparent 2px 4px);
+}
+.cb-root .cb-gapd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-sm) 0;
+}
+.cb-root .cb-gapd .cb-bx {
+  border: 2px dashed var(--cb-rule-2);
+  border-radius: var(--radius-card);
+  padding: 9px;
+  min-height: 60px;
+}
+.cb-root .cb-gapd .cb-bx.cb-solid {
+  border-style: solid;
+  border-color: var(--accent);
+}
+.cb-root .cb-gapd .cb-ar {
+  text-align: center;
+  color: var(--muted);
+}
+.cb-root .cb-binary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--cb-rule-2);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  margin: var(--space-sm) 0;
+}
+.cb-root .cb-binary div {
+  padding: 9px 11px;
+}
+.cb-root .cb-binary div + div {
+  border-left: 1px solid var(--cb-rule-2);
+}
+.cb-root .cb-binary .cb-acc b {
+  color: var(--status-success);
+}
+.cb-root .cb-binary .cb-dec b {
+  color: var(--status-error);
+}
+.cb-root .cb-chain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.cb-root .cb-chain i {
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  display: inline-block;
+}
+.cb-root .cb-empty-docket {
+  padding: var(--space-lg) 0;
+  color: var(--muted-foreground);
+  max-width: 62ch;
+}

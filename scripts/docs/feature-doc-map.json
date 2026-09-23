@@ -645,6 +645,13 @@
         "src-tauri/db/src/repos/dev/council.rs",
         "src-tauri/core/src/models/council.rs"
       ]
+    },
+    {
+      "doc": "docs/features/companions/curator/blueprint.md",
+      "sourceGlobs": [
+        "src/features/companions/curator/blueprint/**",
+        "src/api/curator.ts"
+      ]
     }
   ]
 }

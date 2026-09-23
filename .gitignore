@@ -253,3 +253,8 @@ src/test/e2e/cli-e2e-report.json
 
 # /contest arena and vault - prototype entries, never committed
 /.contest/
+
+# Contract harnesses (style-contract / driven-interaction instruments).
+# Instruments, not product surface: they mount a real component against the
+# real stylesheet outside the app shell and are rebuilt from the contest data.
+.harness/

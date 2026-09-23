@@ -16,7 +16,7 @@
  * active-row highlight is the persisted destination itself with nothing to
  * derive and nothing to keep in sync.
  */
-import { BookOpen, Brain, Eye, LayoutGrid, Mic, ScrollText, Scale, Settings, Sparkles, type LucideIcon } from 'lucide-react';
+import { BookOpen, Brain, Eye, Grid3x3, LayoutGrid, Mic, ScrollText, Scale, Settings, Sparkles, type LucideIcon } from 'lucide-react';
 
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { navigateToCompanions } from '@/features/companions/navigation';
@@ -115,6 +115,7 @@ export function CompanionsSidebarNav({ directorAttentionCount = 0 }: CompanionsS
       indicator: stateDot('curator'),
       items: [
         row('curator:council', nav.page_council, Scale, { testId: 'companions-nav-curator-council' }),
+        row('curator:blueprint', nav.page_blueprint, Grid3x3, { testId: 'companions-nav-curator-blueprint' }),
         row('curator:setup', nav.page_setup, BookOpen, { testId: 'companions-nav-curator-setup' }),
       ],
     },

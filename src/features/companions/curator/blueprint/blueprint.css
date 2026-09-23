@@ -1,0 +1,1253 @@
+/* ============================================================================
+   THE LEDGER OPENS - Curator's Blueprint, ported from the contest winner
+   (.contest/arena/curator-blueprint/fused/direction-2).
+
+   Ported AS A STYLESHEET, not as utilities, because the winner's look IS
+   layered gradients, pseudo-elements, masks and color-mix(): approximating
+   those with the nearest design token is how the previous promotion in this
+   project lost 69 measured properties across 10 roles while every code gate
+   stayed green. Every colour here is a reference to one of the app's own
+   tokens, so all eleven themes repaint it; the only geometry written down is
+   the ledger's own grid, which is the drawing.
+
+   Type comes from the app's `.typo-*` roles, used as they are. Four
+   hand-rolled font-size declarations survive and each one says why.
+   ========================================================================== */
+
+.cb-root {
+  /* The nine channels, in the scan's own weight order, drawn as ONE ramp
+     across the app's five brand tokens. No hue is invented: --cb-h1..h9 are
+     the five tokens and the four mixes that fall between them. */
+  --cb-h1: var(--brand-rose);
+  --cb-h2: color-mix(in srgb, var(--brand-rose) 52%, var(--brand-amber));
+  --cb-h3: var(--brand-amber);
+  --cb-h4: color-mix(in srgb, var(--brand-amber) 46%, var(--brand-emerald));
+  --cb-h5: var(--brand-emerald);
+  --cb-h6: color-mix(in srgb, var(--brand-emerald) 42%, var(--brand-cyan));
+  --cb-h7: var(--brand-cyan);
+  --cb-h8: color-mix(in srgb, var(--brand-cyan) 46%, var(--brand-purple));
+  --cb-h9: var(--brand-purple);
+  --cb-ch1: var(--cb-h1);
+  --cb-ch2: var(--cb-h2);
+  --cb-ch3: var(--cb-h3);
+  --cb-ch4: var(--cb-h4);
+  --cb-ch5: var(--cb-h5);
+  --cb-ch6: var(--cb-h6);
+  --cb-ch7: var(--cb-h7);
+  --cb-ch8: var(--cb-h8);
+  --cb-ch9: var(--cb-h9);
+
+  --cb-panel: color-mix(in srgb, var(--secondary) 55%, var(--background));
+  --cb-panel-2: color-mix(in srgb, var(--secondary) 88%, var(--background));
+  --cb-rule: var(--card-border);
+  --cb-rule-2: color-mix(in srgb, var(--foreground) 22%, transparent);
+  --cb-hatch: color-mix(in srgb, var(--foreground) 34%, transparent);
+
+  /* ledger geometry - one grid, one set of gutters, one row rhythm */
+  --cb-thin: 36px;
+  --cb-devw: 92px;
+  --cb-stkw: 122px;
+  --cb-clkw: 32px;
+  --cb-totw: 64px;
+  --cb-rkw: 26px;
+  --cb-stw: 16px;
+  --cb-bdw: 32px;
+  --cb-subw: 268px;
+  --cb-gutter: 9px;
+  --cb-rowh: 30px;
+  --cb-cols: var(--cb-rkw) var(--cb-stw) minmax(var(--cb-subw), 1fr) var(--cb-bdw)
+    repeat(6, var(--cb-thin)) 8px var(--cb-devw) var(--cb-stkw) var(--cb-clkw) var(--cb-totw);
+
+  /* [font-size 1 of 4] the app's base is .typo-body's 0.875rem; declaring it on
+     the root means text carrying no role token still lands on the scale
+     instead of the browser's 16px. It is a rem, so the Appearance text scale
+     still moves it. */
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  font-variant-numeric: tabular-nums lining-nums;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
+}
+
+/* The channel ramp carries TEXT in the light themes (a strip's name is its
+   channel's colour), and the light brand tokens are tuned for fills on a white
+   card, not for 14px type on the app's grey canvas. Seating each hue a third of
+   the way into the foreground puts all nine over 4.5:1 without moving the
+   ramp's order or its identity. */
+[data-theme^='light'] .cb-root {
+  --cb-rule-2: color-mix(in srgb, var(--foreground) 24%, transparent);
+  --cb-hatch: color-mix(in srgb, var(--foreground) 44%, transparent);
+  --cb-ch1: color-mix(in srgb, var(--cb-h1) 67%, var(--foreground));
+  --cb-ch2: color-mix(in srgb, var(--cb-h2) 67%, var(--foreground));
+  --cb-ch3: color-mix(in srgb, var(--cb-h3) 67%, var(--foreground));
+  --cb-ch4: color-mix(in srgb, var(--cb-h4) 67%, var(--foreground));
+  --cb-ch5: color-mix(in srgb, var(--cb-h5) 67%, var(--foreground));
+  --cb-ch6: color-mix(in srgb, var(--cb-h6) 67%, var(--foreground));
+  --cb-ch7: color-mix(in srgb, var(--cb-h7) 67%, var(--foreground));
+  --cb-ch8: color-mix(in srgb, var(--cb-h8) 67%, var(--foreground));
+  --cb-ch9: color-mix(in srgb, var(--cb-h9) 67%, var(--foreground));
+}
+
+.cb-root *,
+.cb-root *::before,
+.cb-root *::after {
+  box-sizing: border-box;
+}
+.cb-root button,
+.cb-root input {
+  font: inherit;
+  color: inherit;
+}
+.cb-root button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.cb-root h2,
+.cb-root h3,
+.cb-root h4,
+.cb-root p,
+.cb-root dl,
+.cb-root dd {
+  margin: 0;
+}
+.cb-root :focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+.cb-root .cb-dim {
+  color: var(--muted);
+}
+.cb-root .cb-dimmer {
+  color: var(--muted-dark);
+}
+/* Declared with the root's extra class so it beats `.typo-label`'s own
+   0.01em tracking, which is unlayered too and would otherwise win on order. */
+.cb-root .cb-up {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cb-root .cb-sp {
+  flex: 1;
+}
+/* [font-size 4 of 4] a keycap is code, and .typo-code's 0.75rem is its size;
+   the rule is written out because kbd is styled by element here. */
+.cb-root kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--cb-rule-2);
+  border-bottom-width: 2px;
+  background: var(--cb-panel-2);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+/* glyphs are marks, not text: they carry no type role. --------------------- */
+/* [font-size 2 of 4] the nine channel glyphs at ledger scale. */
+.cb-root .cb-gl {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-block;
+}
+/* [font-size 3 of 4] the same glyphs at nested-layer scale. */
+.cb-root .cb-gl-lg {
+  font-size: 1.375rem;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* ---- verdict ------------------------------------------------------------- */
+.cb-root .cb-verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 0 var(--density-gap);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+}
+.cb-root .cb-vb {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+.cb-root .cb-vb + .cb-vb {
+  border-left: 1px solid var(--cb-rule);
+  padding-left: var(--density-gap);
+}
+.cb-root .cb-vtop {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+.cb-root .cb-vtop .cb-lab {
+  min-width: 0;
+}
+.cb-root .cb-vfoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-md);
+  color: var(--muted);
+  min-width: 0;
+}
+.cb-root .cb-vfoot b {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* ---- ink: four marks, and a zero is never an unknown --------------------- */
+.cb-root .cb-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--cb-rule);
+  background: transparent;
+}
+.cb-root .cb-bar.cb-tall {
+  height: 14px;
+}
+.cb-root .cb-bar i {
+  display: block;
+  height: 100%;
+  min-width: 0;
+}
+.cb-root .cb-ink-solid {
+  background: var(--cb-c, currentColor);
+}
+.cb-root .cb-ink-stale {
+  background:
+    repeating-linear-gradient(135deg, var(--background) 0 1.5px, transparent 1.5px 4px),
+    color-mix(in srgb, var(--cb-c, currentColor) 66%, transparent);
+}
+.cb-root .cb-ink-unknown {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 6px 100%;
+}
+.cb-root .cb-ink-unmeasurable {
+  background: repeating-linear-gradient(135deg, var(--cb-hatch) 0 1px, transparent 1px 5px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cb-hatch) 50%, transparent);
+}
+.cb-root .cb-swatch {
+  width: 15px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+  display: inline-block;
+  border: 1px solid var(--cb-rule);
+}
+.cb-root .cb-candles {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 18px;
+}
+.cb-root .cb-candles .cb-cd {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.cb-root .cb-candles .cb-cd i {
+  display: block;
+  width: 100%;
+  border-radius: 1px;
+}
+.cb-root .cb-candles .cb-fill {
+  background: var(--accent);
+}
+.cb-root .cb-candles .cb-hollow {
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+}
+
+/* ---- stage: two layers, one place --------------------------------------- */
+.cb-root .cb-stage {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.cb-root .cb-ledger,
+.cb-root .cb-deep {
+  grid-area: 1/1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ---- LAYER ONE: the spread ledger --------------------------------------- */
+.cb-root .cb-ledger {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    opacity var(--duration-normal) ease,
+    transform var(--duration-normal) ease;
+}
+.cb-root[data-layer='deep'] .cb-ledger {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.994);
+  pointer-events: none;
+}
+.cb-root .cb-lscroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  padding: 0 var(--cb-gutter);
+}
+.cb-root .cb-lrow {
+  display: grid;
+  grid-template-columns: var(--cb-cols);
+  align-items: stretch;
+}
+
+/* the sticky head: group labels, then the icon column heads */
+.cb-root .cb-lhead {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--background);
+  border-bottom: 1px solid var(--cb-rule-2);
+}
+.cb-root .cb-grp {
+  padding: 5px 2px 3px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.cb-root .cb-grp b {
+  color: var(--foreground);
+}
+.cb-root .cb-grp .cb-ln {
+  flex: 1;
+  height: 1px;
+  background: var(--cb-rule);
+}
+.cb-root .cb-grp.cb-g1 {
+  grid-column: 1 / 5;
+}
+.cb-root .cb-grp.cb-g2 {
+  grid-column: 5 / 11;
+  border-top: 2px solid var(--cb-rule-2);
+}
+.cb-root .cb-grp.cb-g3 {
+  grid-column: 12 / 15;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.cb-root .cb-grp.cb-g4 {
+  grid-column: 15 / 16;
+  justify-content: flex-end;
+}
+.cb-root .cb-grp .cb-gloss {
+  display: none;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted-dark);
+  white-space: nowrap;
+}
+.cb-root .cb-chh {
+  grid-row: 2;
+  padding: 4px 3px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border-left: 1px solid var(--cb-rule);
+  min-width: 0;
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+}
+.cb-root .cb-chh:hover {
+  background: var(--card-bg);
+}
+.cb-root .cb-chh .cb-gl,
+.cb-root .cb-chh .cb-gl-lg {
+  color: var(--cb-cc);
+}
+.cb-root .cb-chh .cb-n {
+  color: var(--foreground);
+}
+.cb-root .cb-chh .cb-n.cb-z {
+  color: var(--muted-dark);
+}
+.cb-root .cb-chh .cb-w {
+  color: var(--muted-dark);
+  white-space: nowrap;
+}
+.cb-root .cb-chh.cb-narrow .cb-w {
+  display: none;
+}
+.cb-root .cb-chh .cb-st {
+  width: 100%;
+  height: 5px;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+.cb-root .cb-chh .cb-st .cb-on {
+  background: var(--cb-cc);
+  height: 100%;
+  border-radius: 1px;
+}
+.cb-root .cb-chh .cb-st .cb-flat {
+  height: 1px;
+  width: 9px;
+  background: var(--muted-dark);
+  margin: 0 auto;
+  border-radius: 0;
+}
+.cb-root .cb-chh .cb-st .cb-unk {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 5px 100%;
+}
+.cb-root .cb-chh .cb-st .cb-unm {
+  flex: 1;
+  height: 100%;
+  border-radius: 1px;
+  background: repeating-linear-gradient(135deg, var(--cb-hatch) 0 1px, transparent 1px 4px);
+}
+.cb-root .cb-chh[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--cb-cc) 16%, transparent);
+}
+.cb-root .cb-hid {
+  grid-row: 2;
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-hid.cb-idb {
+  border-left: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 6px;
+  color: var(--muted);
+}
+.cb-root .cb-hid.cb-rankhead {
+  justify-content: flex-end;
+  padding-right: 5px;
+}
+.cb-root .cb-hid.cb-subjecthead {
+  padding-left: 2px;
+}
+.cb-root .cb-hid.cb-bundlehead {
+  justify-content: center;
+}
+.cb-root .cb-hid.cb-hrule {
+  grid-column: 11 / 12;
+  border-left: 0;
+}
+.cb-root .cb-hid.cb-tot {
+  grid-column: 15 / 16;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 4px 6px;
+  color: var(--muted-dark);
+}
+
+/* rows */
+.cb-root .cb-row {
+  height: var(--cb-rowh);
+  border-bottom: 1px solid var(--cb-rule);
+  cursor: zoom-in;
+  position: relative;
+  scroll-margin: 74px;
+  transition: background var(--duration-fast) ease;
+}
+.cb-root .cb-row:hover {
+  background: var(--card-bg);
+}
+.cb-root .cb-row.cb-cur {
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.cb-root .cb-row.cb-faded {
+  opacity: 0.26;
+}
+.cb-root .cb-row .cb-rk {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 5px;
+  color: var(--muted-dark);
+}
+.cb-root .cb-row.cb-cur .cb-rk {
+  color: var(--accent);
+  font-weight: 700;
+}
+.cb-root .cb-row .cb-stg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cb-root .cb-row .cb-sl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 0 6px 0 2px;
+}
+.cb-root .cb-row .cb-sl .cb-s {
+  white-space: nowrap;
+}
+.cb-root .cb-row.cb-cur .cb-sl .cb-s {
+  font-weight: 650;
+}
+.cb-root .cb-row .cb-sl .cb-path {
+  color: var(--muted-dark);
+  white-space: nowrap;
+  display: none;
+}
+.cb-root .cb-row .cb-bd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-dark);
+}
+.cb-root .cb-row .cb-bd.cb-unk {
+  color: var(--muted-foreground);
+}
+
+/* a cell: one channel, one subject */
+.cb-root .cb-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 3px;
+  border-left: 1px solid var(--cb-rule);
+  min-width: 0;
+  position: relative;
+  background: color-mix(in srgb, var(--cb-cc) calc(var(--cb-a, 0) * 100%), transparent);
+}
+.cb-root .cb-cell.cb-wide {
+  justify-content: flex-start;
+  padding: 0 5px;
+}
+.cb-root .cb-flat {
+  width: 9px;
+  height: 1px;
+  background: var(--muted-dark);
+  opacity: 0.75;
+  flex: none;
+  display: inline-block;
+  vertical-align: 4px;
+}
+.cb-root .cb-unkbox {
+  width: 16px;
+  height: 11px;
+  border-radius: 2px;
+  flex: none;
+  display: inline-block;
+  vertical-align: -1px;
+  box-shadow: inset 0 0 0 1px var(--cb-hatch);
+  background-image: radial-gradient(circle at 2px 50%, var(--cb-hatch) 1px, transparent 1.2px);
+  background-size: 5px 100%;
+}
+.cb-root .cb-pips {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.cb-root .cb-pips i {
+  width: 4px;
+  height: 11px;
+  border-radius: 1px;
+  background: var(--cb-cc);
+  display: block;
+}
+.cb-root .cb-pips i.cb-o {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--cb-cc);
+  opacity: 0.65;
+}
+.cb-root .cb-track {
+  flex: 1;
+  min-width: 16px;
+  height: 11px;
+  position: relative;
+}
+.cb-root .cb-track .cb-fl {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cb-cc);
+  border-radius: 2px;
+}
+.cb-root .cb-track .cb-cl {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border: 1px dashed var(--cb-cc);
+  border-left: 0;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+.cb-root .cb-chip {
+  border: 1px solid var(--cb-cc);
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+  line-height: 17px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted-foreground);
+}
+.cb-root .cb-num {
+  white-space: nowrap;
+  color: var(--foreground);
+}
+.cb-root .cb-num .cb-ce {
+  color: var(--muted-dark);
+}
+.cb-root .cb-vrule {
+  border-left: 1px solid var(--cb-rule-2);
+}
+.cb-root .cb-tot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 4px 0 6px;
+  border-left: 1px solid var(--cb-rule);
+}
+.cb-root .cb-tot .cb-tb {
+  flex: 1;
+  height: 9px;
+  display: flex;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.cb-root .cb-tot .cb-tb i {
+  display: block;
+  height: 100%;
+}
+.cb-root .cb-tot .cb-tn {
+  min-width: 20px;
+  text-align: right;
+}
+.cb-root .cb-tot .cb-tn.cb-z {
+  color: var(--muted-dark);
+}
+
+/* aggregate bands: the corpus the plan does not touch stays on the surface */
+.cb-root .cb-band {
+  border-bottom: 1px solid var(--cb-rule);
+  background: var(--card-bg);
+  min-height: 46px;
+}
+.cb-root .cb-band .cb-sl {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding: 6px 2px;
+}
+.cb-root .cb-band .cb-cell {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 2px;
+}
+.cb-root .cb-band .cb-cell.cb-wide {
+  align-items: flex-start;
+}
+.cb-root .cb-note {
+  grid-column: 1 / -1;
+  padding: 8px 2px 10px;
+  color: var(--muted-foreground);
+  max-width: 104ch;
+}
+.cb-root .cb-noteline {
+  display: flex;
+  gap: var(--space-md);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+/* ---- LAYER TWO: the same row, grown ------------------------------------- */
+.cb-root .cb-deep {
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  padding: 0 var(--cb-gutter);
+}
+.cb-root[data-layer='deep'] .cb-deep {
+  display: flex;
+}
+.cb-root .cb-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--background);
+  z-index: 0;
+  opacity: 1;
+}
+.cb-root .cb-dorigin {
+  position: relative;
+  z-index: 2;
+  background: var(--background);
+  border-bottom: 1px solid var(--cb-rule-2);
+  box-shadow: 0 6px 14px -12px var(--background);
+  cursor: zoom-out;
+}
+.cb-root .cb-dorigin .cb-row {
+  cursor: zoom-out;
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+.cb-root .cb-dorigin .cb-cell.cb-ring {
+  outline: 2px solid var(--cb-cc);
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+.cb-root .cb-dorigin .cb-cell.cb-ring::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--cb-cc);
+}
+.cb-root .cb-dwrap {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cb-root .cb-dhead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-md);
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--cb-rule);
+  flex: none;
+  align-items: center;
+}
+.cb-root .cb-dhead .cb-idy {
+  min-width: 0;
+  flex: 1;
+}
+.cb-root .cb-dhead .cb-at {
+  color: var(--muted);
+  word-break: break-all;
+}
+.cb-root .cb-dhead .cb-facts {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: baseline;
+  color: var(--muted);
+}
+.cb-root .cb-dhead .cb-tbtn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+}
+.cb-root .cb-dbody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+  gap: 0 var(--density-gap);
+}
+.cb-root .cb-dchans {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: var(--space-sm) 0 var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cb-root .cb-dside {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  border-left: 1px solid var(--cb-rule);
+  padding: var(--space-sm) 0 var(--space-xl) var(--density-gap);
+}
+
+.cb-root .cb-strip {
+  border: 1px solid var(--cb-rule);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--cb-panel) 92%, var(--background));
+  border-left: 3px solid var(--cb-cc);
+  position: relative;
+  will-change: transform;
+}
+.cb-root .cb-strip.cb-empty {
+  background: transparent;
+  border-left-color: color-mix(in srgb, var(--cb-cc) 30%, transparent);
+}
+.cb-root .cb-strip.cb-empty .cb-strip-in {
+  grid-template-columns: 26px auto auto auto minmax(0, 1fr) auto;
+  padding: 3px 10px 4px;
+}
+.cb-root .cb-strip.cb-empty .cb-gl-lg {
+  grid-row: auto;
+  opacity: 0.5;
+}
+.cb-root .cb-strip.cb-empty .cb-say {
+  grid-column: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-strip.cb-empty .cb-w {
+  display: none;
+}
+.cb-root .cb-strip-in {
+  padding: 6px 10px 7px;
+  display: grid;
+  grid-template-columns: 26px auto minmax(0, 1fr) auto;
+  gap: 2px var(--space-sm);
+  align-items: center;
+}
+.cb-root .cb-strip .cb-gl-lg,
+.cb-root .cb-strip .cb-gl {
+  color: var(--cb-cc);
+  grid-row: 1 / span 2;
+  justify-self: center;
+}
+.cb-root .cb-strip .typo-title {
+  color: var(--cb-cc);
+}
+.cb-root .cb-strip .cb-hd {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.cb-root .cb-strip .cb-hd .cb-w {
+  color: var(--muted-dark);
+}
+.cb-root .cb-strip .cb-pts {
+  text-align: right;
+  white-space: nowrap;
+}
+.cb-root .cb-strip .cb-pts.cb-z {
+  color: var(--muted-dark);
+}
+.cb-root .cb-strip .cb-say {
+  grid-column: 3 / -1;
+  color: var(--muted-foreground);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-strip .cb-draw {
+  grid-column: 3 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.cb-root .cb-strip .cb-ruler {
+  display: flex;
+  gap: 1px;
+  align-items: flex-end;
+  height: 10px;
+  align-self: center;
+  opacity: 0.85;
+}
+.cb-root .cb-strip .cb-ruler i {
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--cb-rule-2);
+}
+.cb-root .cb-strip .cb-ruler i.cb-me {
+  height: 10px;
+  background: var(--cb-cc);
+}
+.cb-root .cb-strip:focus-visible,
+.cb-root .cb-strip:hover {
+  outline: 2px solid var(--cb-cc);
+  outline-offset: 1px;
+}
+
+.cb-root .cb-sect {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  margin: var(--space-md) 0 var(--space-sm);
+}
+.cb-root .cb-sect:first-child {
+  margin-top: 0;
+}
+.cb-root .cb-sect .cb-ln {
+  flex: 1;
+  height: 1px;
+  background: var(--cb-rule);
+}
+.cb-root .cb-pj {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(60px, 2.1fr) auto;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: 3px 0;
+  border-radius: var(--radius-sm);
+}
+.cb-root .cb-pj.cb-lit {
+  background: color-mix(in srgb, var(--brand-amber) 15%, transparent);
+  box-shadow: inset 2px 0 0 var(--brand-amber);
+}
+.cb-root .cb-pj.cb-lit .cb-pn {
+  color: var(--foreground);
+}
+.cb-root .cb-pj.cb-dull {
+  opacity: 0.42;
+}
+.cb-root .cb-pj .cb-pn {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.cb-root .cb-pj .cb-pv {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.cb-root .cb-pj .cb-pv b {
+  color: var(--foreground);
+  font-weight: 650;
+}
+.cb-root .cb-kv {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px var(--density-gap);
+  align-items: baseline;
+}
+.cb-root .cb-kv dt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cb-root .cb-kv dd {
+  color: var(--muted-foreground);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cb-root .cb-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.cb-root .cb-chips .cb-chip {
+  border-color: var(--cb-rule-2);
+}
+
+/* ---- top bar and footer -------------------------------------------------- */
+.cb-root .cb-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  height: 44px;
+  border-bottom: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+  position: relative;
+  z-index: 40;
+}
+.cb-root .cb-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex: none;
+}
+.cb-root .cb-meta {
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.cb-root .cb-tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  padding: 0 9px;
+  border-radius: var(--radius-interactive);
+  border: 1px solid var(--cb-rule);
+  background: var(--card-bg);
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.cb-root .cb-tbtn:hover {
+  border-color: var(--cb-rule-2);
+  color: var(--foreground);
+}
+.cb-root .cb-tbtn[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--foreground);
+}
+.cb-root .cb-pill {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-amber);
+  color: var(--background);
+}
+.cb-root .cb-pill.cb-zero {
+  background: var(--cb-rule-2);
+  color: var(--muted);
+}
+.cb-root .cb-find {
+  width: 142px;
+  height: 27px;
+  padding: 0 9px;
+  border-radius: var(--radius-interactive);
+  border: 1px solid var(--cb-rule);
+  background: var(--cb-panel-2);
+}
+.cb-root .cb-find:focus {
+  width: 208px;
+}
+.cb-root .cb-foot {
+  border-top: 1px solid var(--cb-rule-2);
+  background: var(--cb-panel);
+  padding: 4px var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-height: 34px;
+  z-index: 40;
+}
+.cb-root .cb-legend {
+  display: flex;
+  gap: 2px var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  color: var(--muted);
+}
+.cb-root .cb-legend .cb-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.cb-root .cb-legend .cb-lg .cb-gl {
+  color: var(--cb-cc);
+}
+.cb-root .cb-gauge {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+.cb-root .cb-gauge > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.cb-root .cb-gauge b {
+  color: var(--muted-foreground);
+  font-weight: 650;
+}
+.cb-root .cb-gbar {
+  width: 46px;
+  height: 6px;
+  border: 1px solid var(--cb-rule-2);
+  border-radius: 2px;
+  display: flex;
+  overflow: hidden;
+}
+.cb-root .cb-gbar i {
+  display: block;
+  height: 100%;
+  background: var(--brand-amber);
+}
+
+/* How far Curator may reach into a checkout, beside its name. `unknown` wears
+   the muted mark and never the refused one: a door that did not name the
+   project is not a person who said no. */
+.cb-root .cb-reach {
+  margin-left: 5px;
+  font-style: normal;
+}
+.cb-root .cb-reach-granted {
+  color: var(--status-success);
+}
+.cb-root .cb-reach-refused {
+  color: var(--status-error);
+}
+.cb-root .cb-reach-never_asked {
+  color: var(--muted-dark);
+}
+.cb-root .cb-reach-off {
+  color: var(--muted-dark);
+}
+.cb-root .cb-reach-unknown {
+  color: var(--muted-foreground);
+}
+.cb-root .cb-gauge b.cb-unset {
+  color: var(--muted-dark);
+  font-weight: 400;
+}
+.cb-root .cb-drift {
+  margin-left: 4px;
+  font-style: normal;
+  color: var(--status-warning);
+}
+
+/* ---- the key sheet ------------------------------------------------------- */
+.cb-root.cb-help {
+  padding: var(--space-lg) var(--space-xl);
+}
+.cb-root .cb-kgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 4px var(--space-xl);
+  margin: 12px 0;
+}
+.cb-root .cb-krow {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: baseline;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--cb-rule);
+}
+.cb-root .cb-krow .cb-kk {
+  flex: none;
+  width: 104px;
+}
+
+/* ---- responsive ---------------------------------------------------------- */
+@media (min-width: 1400px) {
+  .cb-root {
+    --cb-thin: 48px;
+    --cb-devw: 128px;
+    --cb-stkw: 130px;
+    --cb-clkw: 40px;
+    --cb-totw: 84px;
+    --cb-rkw: 32px;
+    --cb-stw: 18px;
+    --cb-bdw: 40px;
+    --cb-subw: 300px;
+    --cb-gutter: 14px;
+    --cb-rowh: 32px;
+  }
+  .cb-root .cb-chh.cb-narrow .cb-w {
+    display: block;
+  }
+  .cb-root .cb-grp .cb-gloss {
+    display: inline;
+  }
+  .cb-root .cb-strip.cb-empty .cb-w {
+    display: inline;
+  }
+  .cb-root .cb-dbody {
+    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  }
+}
+/* The taxonomy address only appears where the whole of it fits beside the
+   longest slug in the corpus. The ledger never abbreviates: it either shows
+   the thing or it does not carry it. */
+@media (min-width: 1660px) {
+  .cb-root .cb-row .cb-sl .cb-path {
+    display: block;
+  }
+}
+@media (max-height: 700px) {
+  .cb-root {
+    --cb-rowh: 27px;
+  }
+}
+@media (max-width: 900px) {
+  .cb-root {
+    --cb-subw: 200px;
+    --cb-thin: 30px;
+    --cb-devw: 74px;
+    --cb-stkw: 86px;
+    --cb-totw: 54px;
+  }
+  .cb-root .cb-verdict {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cb-root .cb-vb + .cb-vb {
+    border-left: 0;
+    border-top: 1px solid var(--cb-rule);
+    padding-left: 0;
+    padding-top: 6px;
+  }
+  .cb-root .cb-dbody {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+  .cb-root .cb-dchans,
+  .cb-root .cb-dside {
+    overflow: visible;
+    min-height: auto;
+  }
+  .cb-root .cb-dside {
+    border-left: 0;
+    border-top: 1px solid var(--cb-rule);
+    padding-left: 0;
+    margin-top: var(--space-md);
+  }
+}
+
+/* ---- motion: one transition, and it survives being switched off ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .cb-root *,
+  .cb-root *::before,
+  .cb-root *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
