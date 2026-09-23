@@ -1,7 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useToastStore } from '@/stores/toastStore';
+import { useSettings } from '@/hooks/utility/data/useSettings';
+import {
+  NOTIFICATION_PREFS_KEY,
+  parseNotificationPrefs,
+  shouldToastHealing,
+} from '@/lib/notifications/notificationPrefs';
 
 /**
  * HealingToast -- no longer renders its own UI.
@@ -12,6 +18,10 @@ import { useToastStore } from '@/stores/toastStore';
  *
  * Also listens for `healing-issue-updated` events to selectively re-fetch
  * the affected issue instead of polling the full list.
+ *
+ * Which severities toast is the operator's `notification_prefs` choice (the
+ * Notifications tab), read here at the event door. `useSettings` refetches on
+ * `settings-changed`, so a toggle applies to the next event with no reload.
  */
 
 interface HealingEventPayload {
@@ -34,6 +44,11 @@ interface HealingEventPayload {
 export function HealingToast() {
   const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
   const subscribeHealingEvents = useOverviewStore((s) => s.subscribeHealingEvents);
+  const { values } = useSettings([NOTIFICATION_PREFS_KEY]);
+  const prefs = useMemo(() => parseNotificationPrefs(values[NOTIFICATION_PREFS_KEY]), [values]);
+  // The listener below subscribes once; it reads the latest prefs through this ref.
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   // Subscribe to healing-issue-updated for selective re-fetch
   useEffect(() => {
@@ -58,10 +73,8 @@ export function HealingToast() {
     listen<HealingEventPayload>('healing-event', (event) => {
       if (cancelled) return;
       const payload = event.payload;
-      // Only show toasts for non-auto-fixed issues
-      if (payload.auto_fixed) return;
-      // Only show for critical and high severity
-      if (payload.severity !== 'critical' && payload.severity !== 'high') return;
+      // Auto-fixed issues never toast; otherwise the severity's toggle decides.
+      if (!shouldToastHealing(prefsRef.current, payload)) return;
 
       useToastStore.getState().addHealingToast({
         issueId: payload.issue_id,

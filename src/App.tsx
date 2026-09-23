@@ -132,6 +132,7 @@ const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/Guid
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
+const SpendAlertWatcher = lazyRetry(() => import("@/features/overview/components/feedback/SpendAlertWatcher").then(m => ({ default: m.SpendAlertWatcher })));
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
@@ -178,6 +179,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/onboarding/components/TourHandoffOffer"),
   () => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
+  () => import("@/features/overview/components/feedback/SpendAlertWatcher"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/chrome/notifications/NotificationCenter"),
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
@@ -419,6 +421,7 @@ export default function App() {
               <SilentErrorBoundary name="GlobalOverlays">
                 <Suspense fallback={null}>
                   <OverlayIsland name="healing-toast"><HealingToast /></OverlayIsland>
+                  <OverlayIsland name="spend-alerts"><SpendAlertWatcher /></OverlayIsland>
                   <OverlayIsland name="alert-toasts"><AlertToastContainer /></OverlayIsland>
                   <OverlayIsland name="guided-tour"><GuidedTour /></OverlayIsland>
                   <OverlayIsland name="tour-spotlight"><TourSpotlight /></OverlayIsland>

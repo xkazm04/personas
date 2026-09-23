@@ -9,32 +9,19 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WebhookSubscriptionsPanel } from './WebhookSubscriptionsPanel';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
+import {
+  DEFAULT_NOTIFICATION_PREFS,
+  NOTIFICATION_PREFS_KEY,
+  parseNotificationPrefs,
+  type NotificationPrefs,
+} from '@/lib/notifications/notificationPrefs';
 
 type HealingSeverity = 'critical' | 'high' | 'medium' | 'low';
 
-const SETTINGS_KEY = 'notification_prefs';
-
-interface NotificationPrefs {
-  healing_critical: boolean;
-  healing_high: boolean;
-  healing_medium: boolean;
-  healing_low: boolean;
-  /**
-   * The monthly spend ceiling's 80% / 100% crossings. Default ON: a ceiling the
-   * operator set is a ceiling they want to hear about, and before this row the
-   * cap was a silent progress bar in Limits. Read by
-   * `settings/sub_limits/components/LimitsSettings.tsx`.
-   */
-  spend_alerts: boolean;
-}
-
-const DEFAULT_PREFS: NotificationPrefs = {
-  healing_critical: true,
-  healing_high: true,
-  healing_medium: false,
-  healing_low: false,
-  spend_alerts: true,
-};
+// The blob's shape, defaults and parser live in one accessor. This tab writes
+// it; the doors read it where their events arrive (HealingToast for the four
+// severities, SpendAlertWatcher for spend_alerts), whether or not this tab is
+// mounted.
 
 const SEVERITY_ROWS: Array<{
   key: keyof NotificationPrefs;
@@ -94,7 +81,7 @@ function WeeklyDigestToggle() {
 }
 
 export default function NotificationSettings() {
-  const setting = useAppSetting(SETTINGS_KEY, JSON.stringify(DEFAULT_PREFS), (v) => {
+  const setting = useAppSetting(NOTIFICATION_PREFS_KEY, JSON.stringify(DEFAULT_NOTIFICATION_PREFS), (v) => {
     try { const p = JSON.parse(v); return typeof p === 'object' && p !== null; } catch { /* intentional: non-critical -- JSON parse fallback */ return false; }
   });
   const hasLoadedOnce = useRef(false);
@@ -118,14 +105,7 @@ export default function NotificationSettings() {
     return () => clearTimeout(timer);
   }, [setting.loaded, setting.value]);
 
-  const prefs = useMemo<NotificationPrefs>(() => {
-    try {
-      return { ...DEFAULT_PREFS, ...JSON.parse(setting.value) };
-    } catch {
-      // intentional: non-critical -- JSON parse fallback
-      return DEFAULT_PREFS;
-    }
-  }, [setting.value]);
+  const prefs = useMemo<NotificationPrefs>(() => parseNotificationPrefs(setting.value), [setting.value]);
 
   // Ref tracks latest prefs synchronously so rapid toggles before re-render
   // don't lose intermediate changes (stale-closure + batched-setState race).

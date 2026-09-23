@@ -15,16 +15,13 @@ import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import Button from '@/features/shared/components/buttons/Button';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
-import { useToastStore } from '@/stores/toastStore';
-import { decideSpendAlert, readSentBands, recordSentBand } from './spendAlerts';
+import { SPEND_WARNING_RATIO } from './spendAlerts';
+import { bucketMonthlySpend, CEILING_KEY, MONTHLY_SPEND_DAYS, parseCeiling, type MonthSpend } from './monthlySpend';
 
-const CEILING_KEY = 'monthly_cost_ceiling_usd';
-const WARNING_THRESHOLD = 0.8;
-
-// Notification preferences live in one JSON blob owned by Notification
-// Settings; `spend_alerts` is the row that governs the ceiling alerts below.
-const NOTIFICATION_PREFS_KEY = 'notification_prefs';
+// The 80% / 100% crossing ALERTS are not raised here: this tab unmounts 30s
+// after the operator leaves Settings, so they run in the always-mounted
+// `overview/components/feedback/SpendAlertWatcher.tsx`. This tab only draws
+// the bar, with the same bucketing and the same shoulder.
 
 // Global concurrency cap (max_parallel_executions). Mirrors the Rust bounds in
 // src-tauri/src/db/settings_keys.rs — keep in sync.
@@ -92,9 +89,6 @@ function DynamicBudgetsRow() {
   );
 }
 
-/** One trailing calendar month of total spend, for the usage table. */
-type MonthSpend = { key: string; label: string; spend: number };
-
 function isValidCeiling(value: string): boolean {
   if (value.trim() === '') return true; // empty = unset; treated as 0
   const n = Number(value);
@@ -130,32 +124,8 @@ export default function LimitsSettings() {
       // Daily cost points over ~6 months, bucketed into the trailing 5
       // calendar months so the table shows the bigger spending picture
       // rather than just the current month.
-      const data = await getMetricsChartData(186);
-      const byMonth = new Map<string, number>();
-      for (const pt of data.chart_points) {
-        const key = pt.date.slice(0, 7); // YYYY-MM (server-bucketed calendar date)
-        byMonth.set(key, (byMonth.get(key) ?? 0) + (pt.cost ?? 0));
-      }
-      // Anchor "current month" on the server's own bucketed date domain (the
-      // max chart_points date) rather than the client's local clock — a
-      // client behind/ahead of the server around a month boundary would
-      // otherwise mislabel the head row for a few hours.
-      const maxKey = data.chart_points.reduce<string | null>((acc, pt) => {
-        const key = pt.date.slice(0, 7);
-        return !acc || key > acc ? key : acc;
-      }, null);
-      const anchor = maxKey ? new Date(`${maxKey}-01T00:00:00Z`) : new Date();
-      const months: MonthSpend[] = [];
-      for (let i = 0; i < 5; i++) {
-        const d = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() - i, 1));
-        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-        months.push({
-          key,
-          label: d.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' }),
-          spend: byMonth.get(key) ?? 0,
-        });
-      }
-      setMonthly(months); // index 0 = current month (descending)
+      const data = await getMetricsChartData(MONTHLY_SPEND_DAYS);
+      setMonthly(bucketMonthlySpend(data.chart_points)); // index 0 = current month (descending)
     } catch (e) {
       setSpendError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -167,37 +137,7 @@ export default function LimitsSettings() {
     void loadSpend();
   }, [loadSpend]);
 
-  const ceilingNum = useMemo(() => {
-    const n = Number(ceiling.value);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  }, [ceiling.value]);
-
-  // Read-only view of the notification preferences blob. Written by
-  // Notification Settings; this tab only asks whether spend alerts are on.
-  const notificationPrefsSetting = useAppSetting(
-    NOTIFICATION_PREFS_KEY,
-    '{}',
-    (v) => {
-      try {
-        const p = JSON.parse(v);
-        return typeof p === 'object' && p !== null;
-      } catch {
-        return false;
-      }
-    },
-  );
-  const notificationPrefs = useMemo<{ spend_alerts: boolean }>(() => {
-    try {
-      // Narrowed, not asserted: the prefs blob is owned by another tab and a
-      // previous version of the app may have written a different shape.
-      const parsed: unknown = JSON.parse(notificationPrefsSetting.value);
-      if (typeof parsed !== 'object' || parsed === null) return { spend_alerts: true };
-      // Default ON: a ceiling the operator set is a ceiling they want to hear about.
-      return { spend_alerts: (parsed as { spend_alerts?: unknown }).spend_alerts !== false };
-    } catch {
-      return { spend_alerts: true };
-    }
-  }, [notificationPrefsSetting.value]);
+  const ceilingNum = useMemo(() => parseCeiling(ceiling.value), [ceiling.value]);
 
   // Current month is the head of the descending list.
   const totalSpend = monthly[0]?.spend ?? 0;
@@ -215,37 +155,7 @@ export default function LimitsSettings() {
   }, [ceilingNum, totalSpend]);
 
   const isOverBudget = ceilingNum > 0 && totalSpend >= ceilingNum;
-  const isApproaching = ceilingNum > 0 && progressPct >= WARNING_THRESHOLD && !isOverBudget;
-
-  // The ceiling used to be a quiet progress bar: the 80% and 100% crossings
-  // coloured it and nothing else, so an operator learned about a cap after the
-  // month closed rather than while they could still pause work. Emit at most
-  // one durable notification per threshold per calendar month (dedupe lives in
-  // spendAlerts.ts), plus a toast for the session that is open.
-  const currentMonthKey = monthly[0]?.key ?? null;
-  useEffect(() => {
-    if (spendLoading || !currentMonthKey || !notificationPrefs.spend_alerts) return;
-    const band = decideSpendAlert({
-      monthKey: currentMonthKey,
-      spend: totalSpend,
-      ceiling: ceilingNum,
-      alreadySent: readSentBands(currentMonthKey),
-    });
-    if (!band) return;
-    recordSentBand(currentMonthKey, band);
-
-    const message = band === 'over' ? s.over_budget : s.approaching_budget;
-    useNotificationCenterStore.getState().addNotification({
-      pipelineId: 0,
-      projectId: null,
-      status: band === 'over' ? 'failed' : 'warning',
-      ref: s.ceiling_section,
-      webUrl: '',
-      title: s.ceiling_section,
-      message,
-    });
-    useToastStore.getState().addToast(message, band === 'over' ? 'error' : 'warning');
-  }, [spendLoading, currentMonthKey, totalSpend, ceilingNum, notificationPrefs.spend_alerts, s]);
+  const isApproaching = ceilingNum > 0 && progressPct >= SPEND_WARNING_RATIO && !isOverBudget;
 
   // Disable the input's "Set" button while ceiling.value matches the persisted
   // value; ceiling.saved is set by useAppSetting after a successful save.
