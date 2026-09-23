@@ -13,7 +13,7 @@ import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -177,7 +177,14 @@ export default function CouncilPage() {
           ended short of the window with the field clipped inside it. The flex
           branch is `h-full` with no padding, which is what a stage needs. */}
       <ContentBody flex>
-        <div data-testid="council-stage" className="relative flex min-h-0 flex-1 flex-col" data-variant={variant}>
+        {/* The variant strip promises it selects among mutually exclusive
+            regions, so the stage DECLARES that it is one of them. */}
+        <div
+          {...segmentedTabPanelProps(COUNCIL_VARIANT_TAB_PREFIX, variant)}
+          data-testid="council-stage"
+          className="relative flex min-h-0 flex-1 flex-col"
+          data-variant={variant}
+        >
           <Stage
             bench={
               /* The bench RISES. It is a drawer taking two thirds of the

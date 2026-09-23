@@ -229,7 +229,13 @@ export default function FeaturesPage() {
       />
 
       <ContentBody flex>
-        <div className="flex min-h-0 flex-1 flex-col" data-testid="features-stage">
+        {/* The variant strip promises it selects among mutually exclusive
+            regions, so the stage DECLARES that it is one of them. */}
+        <div
+          {...segmentedTabPanelProps(FEATURES_VARIANT_TAB_PREFIX, variant)}
+          className="flex min-h-0 flex-1 flex-col"
+          data-testid="features-stage"
+        >
           {/* Permanent chrome: the band renders whether or not the read landed,
               so a fetch never blanks the page (loading pattern v2, law 1).
               The Cadastre carries its own band (share + three tags). */}
