@@ -47,10 +47,14 @@
   line-height: normal;
   font-variant-numeric: tabular-nums lining-nums;
 }
+/* The prototype's light theme was its own warm paper; the product's light
+   themes are not, so the light surfaces are mixed from the product's tokens
+   and repaint with every light theme. (The dark values above are the
+   winner's literals: the contract compares them exactly.) */
 [data-theme^='light'] .fz {
-  --panel: rgba(250, 249, 246, 0.97);
-  --dock: rgba(236, 233, 225, 0.96);
-  --scrim: rgba(243, 241, 236, 0.93);
+  --panel: color-mix(in srgb, var(--background) 97%, transparent);
+  --dock: color-mix(in srgb, var(--secondary) 96%, transparent);
+  --scrim: color-mix(in srgb, var(--background) 93%, transparent);
 }
 .fz.fz-wide { --nav-w: 316px; }
 .fz * { box-sizing: border-box; }

@@ -9,6 +9,7 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 
 import type { GalaxyEngine, StageInsets } from '../engine/GalaxyEngine';
+import { glassFill } from './bezelDial';
 import type { HudMode } from './hudMode';
 import { useFusedStore } from './fusedStore';
 
@@ -72,6 +73,8 @@ export function useStageFrame({ engine, stageRef, navRef, size, dockH }: FrameAr
     const navW = navRef.current?.getBoundingClientRect().width ?? 284;
     const docW = technique ? docWidth(size.w, navW) : 0;
     stageRef.current?.style.setProperty('--doc-w', `${docWidth(size.w, navW)}px`);
+    // Inside the glass a focus is framed to the glass, not to the stage.
+    engine.setFrameFill(mode === 'lens' ? glassFill : null);
     engine.setInsets(insetsFor(mode, size, navW, dockH, docW));
   }, [engine, ready, mode, technique, size, dockH, navRef, stageRef]);
 

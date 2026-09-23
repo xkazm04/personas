@@ -21,6 +21,7 @@ import { useCouncilStore } from '../../councilStore';
 import type { GalaxyEngine } from '../engine/GalaxyEngine';
 import { useHudReservations } from '../useHudReservations';
 import { useRegistryRoot } from '../useRegistryRoot';
+import { BezelLens } from './BezelLens';
 import { CrossSectionDock } from './CrossSectionDock';
 import { DecisionsPanel } from './DecisionsPanel';
 import { FieldTip } from './FieldTip';
@@ -97,6 +98,7 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
 
   if (!registryRoot && !fixtureOn) return <FusedUnpaired />;
   const lit = focus.kind === 'council' ? new Set(focus.registrySubjects) : null;
+  const waitingSubjects = data.decisions.flatMap((d) => d.stars);
   // Over the lens on a narrow stage, below the sky, the panel folds to its count.
   const fold = mode === 'lens' && !path.technique && levelOf(path) >= 1 && size.w < 1400 && focus.kind !== 'council';
 
@@ -108,6 +110,18 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
       data-testid="council-fused-stage"
     >
       <FusedCanvas describedBy={LIST_ID} onEngine={setEngine} />
+      {layout ? (
+        <BezelLens
+          engine={engine}
+          layout={layout}
+          path={path}
+          colors={colors}
+          lit={lit}
+          waiting={waitingSubjects}
+          stageRef={stageRef}
+          beaconRef={beaconRef}
+        />
+      ) : null}
       <NavColumn engine={engine} path={path} data={data} navRef={navRef} />
       <DecisionsPanel decisions={data.decisions} fold={fold} beaconRef={beaconRef} />
       {layout ? (
