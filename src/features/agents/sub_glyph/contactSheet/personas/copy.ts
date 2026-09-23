@@ -1,0 +1,113 @@
+/** Prototype strings for the Contact Sheet (Personas) layout, gathered in one
+ *  place so consolidation can extract them into `en.json` in a single pass.
+ *  Dimension labels/descriptions, Launch, Refine, Open and the intent
+ *  placeholder already exist in i18n and are read from `t` instead. */
+export const COPY = {
+  heroTitle: "What should this agent do for you?",
+  composerLabel: "Describe the outcome",
+  composerHint: "Usually 3 to 6 min",
+  contextChip: "Context",
+  contextChipSet: "Context added",
+  launching: "Launching",
+
+  // frame captions
+  capNeedsYou: "Needs you",
+  capDeveloping: "Developing",
+  capNotSet: "Not set",
+  capError: "Could not resolve",
+  capAnswered: "Answered",
+  capManual: "Runs when you ask",
+  capEveryDay: "Every day",
+  capWeekdays: "Weekdays",
+  capAt: (days: string, time: string) => `${days} at ${time}`,
+  capMonthly: (day: number, time: string) => `Day ${day} of the month at ${time}`,
+  capOn: "On",
+  capMemoryOn: "Learns between runs",
+  capReviewOn: "You approve first",
+  capInbox: "App inbox",
+  capNoEvents: "Ignores other agents",
+  capOneCapability: "1 capability",
+  capCapabilities: (n: number) => `${n} capabilities`,
+  capDecidedByBuild: "Decided during the build",
+
+  // slate
+  slateAgent: "Agent",
+  slatePhase: "Phase",
+  slateTime: "Time",
+  slateTake: "Take",
+  slateNewAgent: "New agent",
+  slateFirstPassNote: "The first pass usually lands between 50 s and 2 min 35 s, all at once.",
+  slateWiringNote: "Wiring your answers into apps and triggers. Usually under a minute.",
+  slateWaitingNote: "Waiting for the build to continue.",
+  phaseStarting: "Starting",
+
+  // questions
+  questionsLanded: (secs: string) => `First pass landed in ${secs}`,
+  questionsCount: (n: number) => (n === 1 ? "1 question for you" : `${n} questions for you`),
+  questionsNote: "Developed frames were decided without asking. Highlighted frames need you.",
+  questionsResume: "Answer",
+  questionsReview: "Review answers",
+  questionsSend: "Send answers",
+  questionsSending: "Sending",
+  questionsNothingSent: "Nothing is sent until you press Send.",
+  questionsReady: (n: number) => (n === 1 ? "1 answer ready" : `${n} answers ready`),
+  questionsLeft: (n: number) => (n === 1 ? "1 question left" : `${n} questions left`),
+  questionOf: (i: number, n: number) => `${i} / ${n}`,
+  next: "Next",
+  back: "Back",
+  freeTextOptional: "Account, repository or detail, optional",
+  pickHint: "Press a number to pick",
+
+  // frame inner layer
+  layerBack: "Back to the sheet",
+  layerEsc: "Esc",
+  layerChoose: "Choose",
+  layerChange: "Change",
+  layerLockedNote: "Locked while the build runs. You can refine it once the draft is ready.",
+  layerErrorNote: "The build decides error handling. You can refine it once the draft is ready.",
+  layerNoValue: "Nothing set for this frame yet.",
+  layerPerCapability: "Per capability",
+  layerNotUsed: "Not used",
+  contextTitle: "Reference context",
+  contextHelp: "Paste docs, notes or examples the build should read. It is sent with your intent.",
+  contextPlaceholder: "Paste reference material here",
+  contextDone: "Done",
+
+  // draft / test / promote
+  draftLabel: "Draft ready",
+  draftCapabilities: "Capabilities",
+  runTests: "Run tests",
+  testing: "Testing",
+  testingNote: "Each tool is called once with a sample input.",
+  testsPassed: (ok: number, n: number) => `${ok} of ${n} passed`,
+  testsAllPassed: "All tests passed",
+  testsFailed: "Some tests failed",
+  testLog: "Test log",
+  promote: "Promote",
+  promoteAnyway: "Promote anyway",
+  promoteAnywayTitle: "Promote with failing tests?",
+  promoteAnywayBody:
+    "Some tests did not pass. The agent will be promoted as it is and may fail when it runs. You can refine it later.",
+  reject: "Reject",
+  refineTitle: "Refine the draft",
+  promotedMarquee: "Now showing",
+  openAgent: "Open agent",
+  starring: "Starring",
+  stampPassed: "PASSED",
+  stampFailed: "FAILED",
+  stampSkipped: "SKIPPED",
+
+  // failure
+  failedTitle: "Build stopped",
+  failedAt: (secs: string) => `Build stopped at ${secs}`,
+  failedNote: "Your intent and answers are kept. Frames that could not resolve are marked.",
+  cliLog: "Build log",
+  cliLogEmpty: "No output was captured.",
+
+  // rail
+  railLabel: "Build time",
+  railLlm: "Building",
+  railYou: "Your answers",
+  railTest: "Tests",
+  railWindow: "First pass window",
+} as const;
