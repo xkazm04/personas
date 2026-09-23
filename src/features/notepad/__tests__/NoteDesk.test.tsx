@@ -110,8 +110,11 @@ const visibleIds = (all: DevNote[]) =>
  *  questions and the tests have to ask both. */
 const onRailIds = (all: DevNote[]) =>
   all.filter((n) => {
-    const row = document.querySelector(`[data-goal-id="${n.id}"] .ql-row`);
-    return row && !row.classList.contains('is-off');
+    // Design-agnostic on purpose: the row design is an A/B that will be
+    // consolidated, and a test that names one design's class would go red on a
+    // switch that changed nothing about the lens.
+    const wrap = document.querySelector(`[data-goal-id="${n.id}"]`);
+    return wrap && !wrap.querySelector('.is-off');
   }).map((n) => n.id);
 
 const reveal = { hasEntered: () => true, markEntered: vi.fn() };
@@ -300,7 +303,7 @@ describe('the desk forecast', () => {
     stale = true;
     desk(withHistory);
     fireEvent.keyDown(window, { key: 'x' });
-    await waitFor(() => expect(document.querySelector('.ql-detail')).not.toBeNull());
-    expect(document.querySelector('.ql-detail')?.textContent ?? '').not.toContain('2026-03-05');
+    await waitFor(() => expect(document.querySelector('.rw-detail, .ql-detail')).not.toBeNull());
+    expect(document.querySelector('.rw-detail, .ql-detail')?.textContent ?? '').not.toContain('2026-03-05');
   });
 });

@@ -7,7 +7,8 @@ import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 import { noteStatusMeta } from '../../noteStatusMeta';
 import { DESK_KEY, Keycap } from '../parts/Keycap';
 import { groupRuns, type QuestZone as Zone } from './questlogModel';
-import { QuestItem, QuestRow, type GoalSignals, type RowDetail, NO_SIGNALS } from './QuestRow';
+import { QuestItem, type GoalSignals, type RowDetail, NO_SIGNALS } from './QuestRow';
+import type { RowView } from './rows';
 
 interface QuestZoneProps {
   zone: Zone;
@@ -23,6 +24,10 @@ interface QuestZoneProps {
   /** Builds the second row for one goal, or returns undefined. Only ever
    *  non-undefined for the goal the cursor is on and the operator expanded. */
   detailFor: (noteId: string) => RowDetail | undefined;
+  /** The row design in force. Chosen once by the host, identical for every
+   *  zone - a page where some rows are ledger lines and others are orbs reads
+   *  as two documents. */
+  RowView: RowView;
   onContextGoal: (noteId: string, e: ReactMouseEvent) => void;
   onFocusZone: () => void;
   onSelectGoal: (id: string) => void;
@@ -43,7 +48,7 @@ interface QuestZoneProps {
  * relative size of the work directly.
  */
 export const QuestZone = memo(function QuestZone({
-  zone, signals, mode, current, selectedGoalId, query, matches, detailFor, onContextGoal,
+  zone, signals, mode, current, selectedGoalId, query, matches, detailFor, onContextGoal, RowView,
   onFocusZone, onSelectGoal, onOpenGoal,
 }: QuestZoneProps) {
   const { t } = useTranslation();
@@ -99,7 +104,7 @@ export const QuestZone = memo(function QuestZone({
           <Fragment key={run.goals[0]!.id}>
             {run.breakBefore && <div className="ql-split" aria-hidden />}
             {run.goals.length === 1 ? (
-              <QuestRow
+              <RowView
                 note={run.goals[0]!}
                 signals={signals[run.goals[0]!.id] ?? NO_SIGNALS}
                 wired={false}
@@ -142,7 +147,7 @@ export const QuestZone = memo(function QuestZone({
           <Fragment key={run.goals[0]!.id}>
             {run.breakBefore && <div className="ql-split" aria-hidden />}
             {run.goals.map((note, i) => (
-              <QuestRow
+              <RowView
                 key={note.id}
                 note={note}
                 signals={signals[note.id] ?? NO_SIGNALS}
