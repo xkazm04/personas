@@ -451,14 +451,17 @@ pub fn idle_streaks(pool: &DbPool) -> Result<HashMap<String, u32>, AppError> {
         // Newest run first. `created_at DESC, id DESC` is `current_plan`'s
         // ordering, so "most recent" means the same thing in both places.
         let mut stmt = conn.prepare(
-            "SELECT i.subject_id, i.state
+            "SELECT i.subject_id AS subject_id, i.state AS state
                FROM curator_plan_item i
                JOIN curator_plan_run r ON r.id = i.plan_run_id
               ORDER BY r.created_at DESC, r.id DESC",
         )?;
         let rows = stmt
             .query_map([], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                Ok((
+                    row.get::<_, String>("subject_id")?,
+                    row.get::<_, String>("state")?,
+                ))
             })?
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -649,7 +652,7 @@ mod tests {
     /// A second projection supersedes the first, and the first keeps its items
     /// so the plan a person saw can still be read whole.
     #[test]
-    fn a_second_projection_supersedes_the_first_without_erasing_it() {
+    fn a_second_projection_supersedes_the_first_without_erasing_it() -> Result<(), AppError> {
         let pool = init_test_db().unwrap();
         insert_plan(
             &pool,
@@ -675,17 +678,18 @@ mod tests {
         assert_eq!(current.items.len(), 2);
         assert_eq!(current.run.superseded_by, None);
 
-        let conn = pool.get().unwrap();
-        let (superseded, old_items): (Option<String>, i64) = conn
-            .query_row(
-                "SELECT (SELECT superseded_by FROM curator_plan_run WHERE id = 'run-1'),
-                        (SELECT COUNT(*) FROM curator_plan_item WHERE plan_run_id = 'run-1')",
-                [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .unwrap();
+        let conn = pool.get()?;
+        let (superseded, old_items): (Option<String>, i64) = conn.query_row(
+            "SELECT (SELECT superseded_by FROM curator_plan_run WHERE id = 'run-1')
+                        AS superseded,
+                    (SELECT COUNT(*) FROM curator_plan_item WHERE plan_run_id = 'run-1')
+                        AS old_items",
+            [],
+            |r| Ok((r.get("superseded")?, r.get("old_items")?)),
+        )?;
         assert_eq!(superseded.as_deref(), Some("run-2"));
         assert_eq!(old_items, 1, "the superseded plan keeps what it showed");
+        Ok(())
     }
 
     #[test]
@@ -781,18 +785,35 @@ mod tests {
     // Saturation - hers, measured from her own outcomes
     // -----------------------------------------------------------------------
 
+    /// Land a projection and then settle each subject's outcome, so the
+    /// saturation walk below has a history to read.
+    ///
+    /// The seam is split in two because a pool checkout is the one operation a
+    /// persistence layer EXPECTS to fail under load, and a fixture that panics
+    /// on it hides exactly the saturation the product would hit. The inner
+    /// function propagates; the wrapper is where a seed failure becomes a test
+    /// failure, with a message.
     fn land_run(pool: &DbPool, run_id: &str, created_at: &str, states: &[(&str, &str)]) {
+        land_run_inner(pool, run_id, created_at, states).expect("seed a settled plan run");
+    }
+
+    fn land_run_inner(
+        pool: &DbPool,
+        run_id: &str,
+        created_at: &str,
+        states: &[(&str, &str)],
+    ) -> Result<(), AppError> {
         let items: Vec<PlanItemInput> = states.iter().map(|(s, _)| item(s)).collect();
-        insert_plan(pool, run_id, &run_input(created_at), &items).unwrap();
-        let conn = pool.get().unwrap();
+        insert_plan(pool, run_id, &run_input(created_at), &items)?;
+        let conn = pool.get()?;
         for (subject, state) in states {
             conn.execute(
                 "UPDATE curator_plan_item SET state = ?3
                   WHERE plan_run_id = ?1 AND subject_id = ?2",
                 params![run_id, subject, state],
-            )
-            .unwrap();
+            )?;
         }
+        Ok(())
     }
 
     /// A subject she has never dispatched is NOT suppressed. An absent history

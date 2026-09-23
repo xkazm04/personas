@@ -433,7 +433,7 @@ mod tests {
             .query_row(
                 "SELECT enabled, consent_state FROM curator_project WHERE slug = 'personas'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("enabled")?, r.get("consent_state")?)),
             )
             .unwrap();
         assert_eq!(enabled, 0);
@@ -499,7 +499,7 @@ mod tests {
             .query_row(
                 "SELECT plan_item_id, plan_run_id FROM curator_decision WHERE id = 'dec-1'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("plan_item_id")?, r.get("plan_run_id")?)),
             )
             .unwrap();
         assert_eq!(item, None);
@@ -515,7 +515,11 @@ mod tests {
         conn.execute("DELETE FROM curator_plan_run WHERE id = 'run-1'", [])
             .unwrap();
         let left: i64 = conn
-            .query_row("SELECT COUNT(*) FROM curator_plan_item", [], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) AS items_left FROM curator_plan_item",
+                [],
+                |r| r.get("items_left"),
+            )
             .unwrap();
         assert_eq!(left, 0);
     }
@@ -547,9 +551,10 @@ mod tests {
             .unwrap();
         let (count, decision): (i64, Option<String>) = conn
             .query_row(
-                "SELECT COUNT(*), MAX(decision_id) FROM curator_commit",
+                "SELECT COUNT(*) AS rows_left, MAX(decision_id) AS decision
+                 FROM curator_commit",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("rows_left")?, r.get("decision")?)),
             )
             .unwrap();
         assert_eq!(count, 1);
@@ -569,7 +574,13 @@ mod tests {
                 "SELECT has_applied_row, demand_json, last_swept FROM curator_plan_item
                  WHERE id = 'item-1'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                |r| {
+                    Ok((
+                        r.get("has_applied_row")?,
+                        r.get("demand_json")?,
+                        r.get("last_swept")?,
+                    ))
+                },
             )
             .unwrap();
         assert_eq!(applied, None);
@@ -586,7 +597,7 @@ mod tests {
             .query_row(
                 "SELECT has_applied_row FROM curator_plan_item WHERE id = 'item-1'",
                 [],
-                |r| r.get(0),
+                |r| r.get("has_applied_row"),
             )
             .unwrap();
         assert_eq!(applied, Some(0));
@@ -647,9 +658,10 @@ mod tests {
             .unwrap();
         let (count, superseded): (i64, Option<String>) = conn
             .query_row(
-                "SELECT COUNT(*), MAX(superseded_by) FROM curator_plan_run",
+                "SELECT COUNT(*) AS rows_left, MAX(superseded_by) AS superseded
+                 FROM curator_plan_run",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("rows_left")?, r.get("superseded")?)),
             )
             .unwrap();
         assert_eq!(count, 1);
