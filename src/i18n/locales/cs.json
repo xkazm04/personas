@@ -5087,7 +5087,8 @@
     "network_offline": "Žádné internetové připojení",
     "not_found": "Požadovaný zdroj nebyl nalezen",
     "rate_limited": "Příliš mnoho požadavků -- počkej chvíli a zkus to znovu",
-    "validation": "Neplatný vstup: {detail}"
+    "validation": "Neplatný vstup: {detail}",
+    "run_superseded": "Nové spuštění této úlohy bylo zahájeno jinde v aplikaci, proto bylo toto zastaveno. Pokud ho stále potřebujete, spusťte ho znovu zde."
   },
   "eval_strategies": {
     "composite_description": "Vážená kombinace všech strategií",

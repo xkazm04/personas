@@ -5087,7 +5087,8 @@
     "network_offline": "Không có kết nối internet",
     "not_found": "Không tìm thấy tài nguyên yêu cầu",
     "rate_limited": "Quá nhiều yêu cầu -- thử lại sau một chút",
-    "validation": "Đầu vào không hợp lệ: {detail}"
+    "validation": "Đầu vào không hợp lệ: {detail}",
+    "run_superseded": "Một lượt chạy mới của tác vụ này đã được bắt đầu ở nơi khác trong ứng dụng, nên lượt này đã bị dừng. Hãy bắt đầu lại tại đây nếu bạn vẫn cần."
   },
   "eval_strategies": {
     "composite_description": "Kết hợp có trọng số của tất cả chiến lược",

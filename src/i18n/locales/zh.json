@@ -5087,7 +5087,8 @@
     "network_offline": "无网络连接",
     "not_found": "请求的资源未找到",
     "rate_limited": "请求过多 -- 请稍后重试",
-    "validation": "输入无效：{detail}"
+    "validation": "输入无效：{detail}",
+    "run_superseded": "此任务已在应用的其他位置开始了新的运行，因此本次运行已停止。如仍需要，请在此处重新开始。"
   },
   "eval_strategies": {
     "composite_description": "所有策略的加权组合",

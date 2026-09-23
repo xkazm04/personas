@@ -18,5 +18,6 @@
   "network_offline": "Pas de connexion Internet",
   "not_found": "La ressource demandée est introuvable",
   "rate_limited": "Trop de requêtes -- réessayez dans un instant",
-  "validation": "Entrée invalide : {detail}"
+  "validation": "Entrée invalide : {detail}",
+  "run_superseded": "Une nouvelle exécution de cette tâche a été lancée ailleurs dans l'application, celle-ci a donc été arrêtée. Relancez-la ici si vous en avez encore besoin."
 }

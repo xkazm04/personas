@@ -14238,6 +14238,7 @@ export type Translations = {
     internal: string;
     cloud_error: string;
     gitlab_error: string;
+    run_superseded: string;
   };
   error_registry: {
     decision_conflict_message: string;

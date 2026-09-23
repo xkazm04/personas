@@ -5087,7 +5087,8 @@
     "network_offline": "Tidak ada koneksi internet",
     "not_found": "Sumber daya yang diminta tidak ditemukan",
     "rate_limited": "Terlalu banyak permintaan -- coba lagi sebentar",
-    "validation": "Input tidak valid: {detail}"
+    "validation": "Input tidak valid: {detail}",
+    "run_superseded": "Proses baru untuk tugas ini dimulai di bagian lain aplikasi, jadi proses ini dihentikan. Mulai lagi di sini jika Anda masih membutuhkannya."
   },
   "eval_strategies": {
     "composite_description": "Kombinasi tertimbang dari semua strategi",

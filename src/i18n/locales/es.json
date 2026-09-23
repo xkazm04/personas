@@ -5087,7 +5087,8 @@
     "network_offline": "Sin conexión a internet",
     "not_found": "El recurso solicitado no fue encontrado",
     "rate_limited": "Demasiadas solicitudes -- intenta de nuevo en un momento",
-    "validation": "Entrada inválida: {detail}"
+    "validation": "Entrada inválida: {detail}",
+    "run_superseded": "Se inició una nueva ejecución de esta tarea en otra parte de la aplicación, por lo que esta se detuvo. Vuelve a iniciarla aquí si aún la necesitas."
   },
   "eval_strategies": {
     "composite_description": "Combinación ponderada de todas las estrategias",
