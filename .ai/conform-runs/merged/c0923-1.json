@@ -1,0 +1,176 @@
+{
+  "worker": "c0923-1",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    { "context": "03960450-6979-4412-9de3-35c897fe56d2", "subject": "trace-rollup-and-attribution", "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 adds nullable origCost into totalCostOriginal, and BulkRunCohort carries no count of unpriced runs. BulkRerunReport.tsx:90 prints that total with fmtCost, so a cohort of unrecorded runs reads $0.0000, a total that looks complete over rows that each show a dash. The old CostSparkline/ExecutionListRow anchor was deleted in 69bc0bacc.",
+      "techniques": [
+        { "technique": "unpriced-span-accounting", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 sums the priced rows and puts no unmeasured count beside the sum; :146 returns meanCostDelta 0 when no pair is priced, which renders as 'no change'. The same tree gets this right at bulkRerunPreflight.ts:28 (unpricedCount) and useChainTrace.ts:59 (priced count carried with the sum)." },
+        { "technique": "derived-trace-rollup", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:106 keys nodes by span_id, last write wins, so a duplicated span id renders the later call twice and loses the first. Parent cycles and self-parented spans are dropped from the output rather than promoted to roots (:98)." },
+        { "technique": "keyset-trace-pagination", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/components/list/useExecutionPaging.ts:51 pages with a server OFFSET over created_at DESC. If a run is deleted or pruned between fetches, the window shifts and one row is silently skipped." },
+        { "technique": "single-shape-rule", "verdict": "unread", "evidence": "src/features/agents/sub_executions/components/list/useExecutionColumns.tsx:134 the list reads cost straight from the row field; agreement between list and detail duration was not verified" },
+        { "technique": "span-cap-truncation-signal", "verdict": "unread", "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:59 not checked for a cap on the chain fold" },
+        { "technique": "tenant-scoped-trace-ids", "verdict": "unread", "evidence": "src/features/agents/sub_executions/libs/useChainTrace.ts:59 single-user desktop store; tenancy not established" }
+      ] },
+    { "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9", "subject": "trace-rollup-and-attribution", "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:106 (called by the inspector at useTraceData.ts:250) builds the span forest last-write-wins and drops cycle and self-parented spans, while the Spans tile counts unifiedTrace.spans.length (TraceInspector.tsx:185). The waterfall can therefore omit or duplicate rows the strip counts. The old deviation, an unpriced run shown as $0.00, is FIXED (formatters.ts:300 now returns a dash for null).",
+      "techniques": [
+        { "technique": "derived-trace-rollup", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:106 breaks 'every event appears exactly once': a duplicate id loses the first call, and cycle spans that cannot be reached are never promoted to roots (:98)" },
+        { "technique": "unpriced-span-accounting", "verdict": "conformant", "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:45 keeps the root cost nullable all the way to the tile. inspectorShared.tsx:48 now renders a dash through src/lib/utils/formatters.ts:300, and ChainTraceView.tsx:101 shows 'priced of total' beside the chain sum." },
+        { "technique": "single-shape-rule", "verdict": "conformant", "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 passes spanCount down from the merged set the waterfall renders, next to errorCount; the strip does no counting of its own" },
+        { "technique": "span-cap-truncation-signal", "verdict": "conformant", "evidence": "src/features/agents/sub_executions/detail/inspector/TraceSummary.tsx:135 shows a banner for the backend's evicted_span_count, and TraceInspector.tsx:193 shows one for a frontend buffer overflow" },
+        { "technique": "keyset-trace-pagination", "verdict": "unread", "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 the detail view is not paged" },
+        { "technique": "tenant-scoped-trace-ids", "verdict": "unread", "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 single-user store; tenancy not established" }
+      ],
+      "registryProposal": "span-cap-truncation-signal says 'keep the oldest', but pinning the root and evicting the oldest completed non-root spans (src-tauri/core/src/trace.rs:314) meets all three of its stated reasons; the technique should say whether that counts as conformant." },
+    { "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "llm-call-telemetry-model", "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:3 the only event record in this context is a management-API request trail (method/path/status/persona/origin/time). No LLM call event, token counter, cost field or ingest path exists in its files, so the subject's receiving-schema precondition fails.",
+      "techniques": [
+        { "technique": "nullable-cost-never-zero", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:3 the audited record has no cost field" },
+        { "technique": "token-usage-quadruple", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:3 no token counters" },
+        { "technique": "server-owned-fields", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.tsx:3 no call-event ingest in this context" },
+        { "technique": "metadata-attribution-keys", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:90 keys can carry personas:execute scopes, but attributing that spend would happen on the execution record, outside this context" }
+      ] },
+    { "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97", "subject": "operator-surfaces-for-llm-spend", "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 the card's only number is a build-completeness percentage. None of the listed sub_glyph files carries a cost, budget, token or margin value, so the precondition (an operator report layer over an LLM spend store) fails.",
+      "techniques": [
+        { "technique": "single-render-layer-many-consumers", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 renders no accounting payload" },
+        { "technique": "glyph-encoded-business-thresholds", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 has no ranked financial table; 'glyph' here means a persona card, not a threshold glyph" },
+        { "technique": "read-tools-default-writes-gated", "verdict": "not-applicable", "evidence": "src/features/agents/sub_glyph/GlyphCoreContent.tsx:255 exposes no spend store to an agent" }
+      ] },
+    { "context": "4810daf8-0549-4899-95d2-99c81cde6455", "subject": "breach-alerting-and-attribution", "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/stores/slices/overview/alertSlice.ts:431 keys the cooldown on rule.id alone, yet useGlobalAlertEvaluator.ts:26 evaluates the same rule over a 1-day window and useObservabilityData.ts:70 over the tab's selected range. Whichever window fires first silences the other for an hour, and the alert never says which window its value covers.",
+      "techniques": [
+        { "technique": "scoped-dedup-keys", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:431 the window is not part of the key (it is not a rule field at all); :453 stamps the cooldown per rule.id across both evaluation windows" },
+        { "technique": "top-contributor-attribution", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:153 the message reads 'label is value (threshold)', and the FiredAlert built at :460 carries no contributors" },
+        { "technique": "scope-inverted-attribution", "verdict": "deviation", "evidence": "src/stores/slices/overview/alertSlice.ts:85 evaluateRule never reads rule.persona_id, and the background loop fetches an all-persona bundle, so a persona-scoped rule is judged against all-persona totals" },
+        { "technique": "identity-scope-attribution-refusal", "verdict": "unread", "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 local single-operator audience" },
+        { "technique": "notification-channel-security", "verdict": "unread", "evidence": "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 local toasts only; this context has no webhook sink" }
+      ] },
+
+    { "context": "8650ca36-36fe-4862-98f5-745e866a2687", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS is four authoring panels over ONE persona draft, and the tool runner (useToolRunner.ts:25) runs one tool call for one persona. No set of concurrent sessions is registered, dispatched or harvested, so the subject's precondition fails. The old anchor file DesignTab.tsx no longer exists.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "not-applicable", "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 authoring tabs, no session entries" },
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:25 one tool invocation per persona, no fan-out" }
+      ] },
+    { "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'. The deck is a human-review surface over build questions and practice suggestions that already exist; in this context 'dispatch' means routing a verdict, and nothing creates, tracks or harvests agent sessions. The review-surface concerns belong to hitl-approval.",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 verdict routing, not session dispatch" },
+        { "technique": "result-harvest", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:14 the deck consumes decisions; it has no dispatch roster to account for" }
+      ] },
+    { "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/fleet/pty.rs:420 allows multiple sessions per cwd by design, and the one admission door (queue.rs:133 DispatchRequest carries cwd, with no write set; door_verdict_for at queue.rs:720 decides on cap, time gate and budget only) never checks disjointness. N concurrent sessions in one repo can therefore collide unseen. The stale.rs inline state write is FIXED: the sweep now goes through registry::apply_transition.",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/queue.rs:133 the request has no declared write scope, so a collision cannot be refused at admission; the cap, durable queue and same-id promotion are realized at queue.rs:795" },
+        { "technique": "session-registry", "verdict": "conformant", "evidence": "src-tauri/src/commands/fleet/registry.rs:676 one transition door refuses illegal edges; the one documented bypass is the re-assertable death stamp at registry.rs:1600" },
+        { "technique": "lifecycle-signals", "verdict": "conformant", "evidence": "src-tauri/src/commands/fleet/stale.rs:566 the sweeper applies its verdicts through registry::apply_transition, not by assigning state inline" }
+      ] },
+    { "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:4 the context is generic display primitives (table, badges, status dots). It has no session, process, dispatch or harvest concept, so the fleet precondition fails.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "not-applicable", "evidence": "src/features/shared/components/display/UnifiedTable.tsx:4 generic list primitive with no domain vocabulary" }
+      ] },
+    { "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 still tells each dispatched capability resolver 'do NOT ask clarifying questions, pick sensible defaults', which is silent inference where the brief technique wants a flagged question. The module is now wired but reachable only through an env var (fanout.rs:13), no longer unwired dead code.",
+      "techniques": [
+        { "technique": "brief-carries-the-session", "verdict": "deviation", "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 orders the worker to infer defaults. The brief does carry siblings-not-yours (:92) and authoritative clarifications (:94), and it refuses to guess destinations, but it has no general 'leave unresolved and flag' path" },
+        { "technique": "parallel-dispatch", "verdict": "conformant", "evidence": "src-tauri/src/engine/build_session/fanout.rs:295 bounded run_lanes(max_parallel); each resolver runs in its own temp dir, so write sets are disjoint by construction" },
+        { "technique": "result-harvest", "verdict": "deviation", "evidence": "src-tauri/src/engine/build_session/fanout.rs:280 a capability with no id is filter_map'd out of the roster with no account, while every lane that does run returns a resolution or an error (:295)" }
+      ],
+      "registryProposal": "brief-carries-the-session's 'ask rather than infer' assumes a worker can talk back; for a one-shot, non-interactive worker the technique should name the equivalent (emit the field as unresolved plus a question), which this brief already does for destinations." },
+    { "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/fleet/monitor/monitorModel.ts:120 status visuals are now keyed on the CLOSED ActiveProcessStatus union, and an unrecognized token resolves to a neutral, non-pulsing meta (:154), never running. The recorded deviation (a union widened to string that defaulted to a live pulse) is FIXED.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "conformant", "evidence": "src/features/fleet/monitor/monitorModel.ts:120 Record<ActiveProcessStatus, ...> is derived from the single list at src/stores/slices/processActivitySlice.ts:10, so a new status is a compile error here" },
+        { "technique": "absent-status-passthrough", "verdict": "conformant", "evidence": "src/features/fleet/monitor/monitorModel.ts:137 UNKNOWN_PROCESS_STATUS_META is inert, and :154 uses it for any unknown token instead of substituting a busy state" },
+        { "technique": "lifecycle-signals", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/useMonitorData.ts:1 a read-side data layer; it produces no transitions" },
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 fires one operator-confirmed execution; admission belongs to the engine, not this context" },
+        { "technique": "hibernation-and-resume", "verdict": "not-applicable", "evidence": "src/stores/slices/processActivitySlice.ts:10 the process vocabulary has no parked state" },
+        { "technique": "result-harvest", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/useMonitorData.ts:1 no dispatch roster to account for" },
+        { "technique": "durable-fleet-state", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/useMonitorData.ts:1 reads stores; persists nothing" },
+        { "technique": "heterogeneous-model-panels", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 single persona execution, no panel" },
+        { "technique": "outbound-compute-plane", "verdict": "not-applicable", "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 local IPC to the in-process engine" }
+      ],
+      "registryProposal": "Nine of the eighteen cites are not-applicable. For a read-side consumer context, fleet-orchestration could name the three techniques that govern consumers (session-registry, absent-status-passthrough, lifecycle-signals) so the evidence floor measures something." },
+    { "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:92 a compile-time exhaustiveness assertion now ties GROUP_ORDER to FleetSessionState, and the finished row exists (:82). The recorded deviation (finished sessions vanishing from the list) is FIXED, and the union has since grown to nine states (queued), all of which are covered.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "conformant", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:92 an exhaustive derivation from the one vocabulary; FleetSummaryPills.tsx:21 counts by Record<FleetSessionState, number>" },
+        { "technique": "absent-status-passthrough", "verdict": "conformant", "evidence": "src/features/plugins/fleet/fleetAttention.ts:40 parkedKind returns null when neither the typed staleKind nor the state says anything, instead of inventing a kind" },
+        { "technique": "lifecycle-signals", "verdict": "conformant", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:203 the page listener handles only toasts; the store mutation belongs to fleetSlice, so a signal is never handled twice" },
+        { "technique": "hibernation-and-resume", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:115 the card only gates the hibernate control by state; park and wake semantics live in the Rust registry" },
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:100 Spawn and Broadcast are handed off to modals in fleet-terminal-manager" },
+        { "technique": "result-harvest", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:96 a sessions view; the harvest lives in sub_harvest" },
+        { "technique": "durable-fleet-state", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:96 a view over the store; persists nothing" },
+        { "technique": "heterogeneous-model-panels", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:96 convenes no panel" },
+        { "technique": "substrate-reconciliation", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:96 no substrate is managed from the view" }
+      ] },
+    { "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 fans the broadcast through a bounded pool (width chosen at :30, not the selection size). It reports all-sent / partial (:181) / none with exact counts and narrows a retry to exactly the failed ids (:205). Terminal attachment is a lease (fleetTerminalManager.ts:16).",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "conformant", "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 bounded mapWithConcurrency; every target is attempted; FleetSpawnTaskModal.tsx:14 leaves admission to the Rust door" },
+        { "technique": "session-registry", "verdict": "conformant", "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:16 detach never disposes; :18 the Rust ring keeps buffering, so the work outlives its observer" },
+        { "technique": "lifecycle-signals", "verdict": "conformant", "evidence": "src/features/plugins/fleet/useFleetOrphanScan.ts:14 orphans are counted and flagged only, never adopted or killed without corroboration" },
+        { "technique": "result-harvest", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:181 accounts delivery of input to live sessions, not a dispatched roster; the run harvest lives in sub_harvest" },
+        { "technique": "outbound-compute-plane", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetPairDevice.tsx:20 pairs a LAN controller device, not an executor" },
+        { "technique": "hibernation-and-resume", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:16 terminal views only; park and wake are Rust-side" },
+        { "technique": "durable-fleet-state", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:16 holds xterm views, no fleet state" },
+        { "technique": "heterogeneous-model-panels", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 sends the same text to sessions; no panel verdict" },
+        { "technique": "substrate-reconciliation", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetMobilePreview.tsx:12 preview render; no substrate" }
+      ],
+      "registryProposal": "FleetSpawnTaskModal.tsx:14 still names a one-per-cwd error surface, which src-tauri/src/commands/fleet/pty.rs:420 no longer has (a stale comment, repo-side)." },
+    { "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:14 the widgets are inline chat cards Athena emits into the cockpit (:23 informational, writes nothing). None of them creates, tracks, dispatches or harvests a session.",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "not-applicable", "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:23 writes no selection and dispatches nothing" }
+      ] },
+    { "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New roadmap view, next to a guided-tour and power-move catalogue whose only fleet reference is a deep link (powerMoves/registry.ts:170). There is no session, roster, dispatch or harvest.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "not-applicable", "evidence": "src/features/home/sub_learning/powerMoves/registry.ts:170 navigation target only" }
+      ] },
+    { "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check (is one already running for this idea?) and discards the returned session id, so the task row created at :80 is never bound to the session. A re-fired signal opens a duplicate, and nothing can find the session again.",
+      "techniques": [
+        { "technique": "parallel-dispatch", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no derived key, no binding persisted on the idea or task; the cap is now enforced by the Rust admission door" },
+        { "technique": "result-harvest", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 the fleet arm declares no drop point; verification joins only through the task row, which carries no session id" }
+      ] },
+    { "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 still asserts full-lifecycle coverage over a hand-typed list of 7 of the now 9 FleetSessionState values, omitting finished and queued, although production deriveAxes handles both (FleetStatusDots.tsx:36). The test certifies a coverage it does not check.",
+      "techniques": [
+        { "technique": "session-registry", "verdict": "deviation", "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:15 the six-state mapping test and :68 are private copies of the vocabulary; fleetRunMarkdown.ts:21 keeps a third, Record<string, string>, that also omits queued" },
+        { "technique": "result-harvest", "verdict": "deviation", "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:21 the run report sorts members into delivered / exited / live only, with no class for failed-reported, claimed-without-result or timed-out" }
+      ] },
+    { "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "fleet-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/fleetSlice.ts:306 stamps lastActivityMs = Date.now() on EVERY FLEET_SESSION_STATE event, a value the payload never carried. The registry deliberately does not reset the staleness clock on a declared completion (src-tauri/src/commands/fleet/registry.rs:2024), and no paired refresh follows, so a parked or finished session reads as just-active and sorts to the top of its group.",
+      "techniques": [
+        { "technique": "absent-status-passthrough", "verdict": "deviation", "evidence": "src/stores/slices/system/fleetSlice.ts:306 the projector substitutes its receive time for a field the event did not carry" },
+        { "technique": "lifecycle-signals", "verdict": "deviation", "evidence": "src/stores/slices/system/fleetSlice.ts:306 records observation time as source time, contradicting registry.rs:2026 apply_transition_parked" },
+        { "technique": "session-registry", "verdict": "conformant", "evidence": "src/stores/slices/system/fleetSlice.ts:137 a thin cache over the Rust registry; :292 patches only from Rust-typed events; :345 re-fetches the full row on added/updated rather than patching" }
+      ] }
+  ],
+  "declined": [
+    { "subject": "fleet-orchestration", "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e", "reason": "The recorded premise dissolved: heterogeneous-model-panels (rev 24) now says role-prompted seats from one provider are division of labour, not a sampling run in costume. The old anchor DeliberationRail.tsx:52 drifted to a comment. The remaining candidate, channels/types.ts:21 restating PresenceStatus from useTeamChannel.ts:37, is compile-guarded, and whether the deliberation engine (src-tauri/src/engine/deliberation.rs, outside this context) records agreement as concordance was not read." },
+    { "subject": "fleet-orchestration", "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "reason": "The old not-applicable rested on build_session.rs:263 alone, but the context also holds team_assignment.rs:4, the step and status models of a DAG orchestrator that kicks off persona executions, which is fleet-shaped (roster plus step terminal set). Judging it needs engine::team_assignment_orchestrator, which was not read." }
+  ]
+}

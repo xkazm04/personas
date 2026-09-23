@@ -1,0 +1,193 @@
+{
+  "worker": "c0923-5",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    {
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "settings", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 hard-deletes the key with no settings_audit_log insert while create (:46) and revoke (:78) write one, so the one irreversible key mutation is the only one missing from Settings > History.",
+      "techniques": [
+        { "technique": "settings-audit-and-history", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 delete is unaudited; and create keys its record by the key's name (:49) while revoke keys it by id (:78), so one key's history is split across two identifiers." },
+        { "technique": "save-experience", "verdict": "conformant", "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:322 delete is arm-then-confirm, and a failed delete is surfaced (:158) rather than swallowed." }
+      ]
+    },
+    {
+      "context": "14c7d145-2166-454b-aee5-d69d9d527d79", "subject": "settings", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/appearanceMirror.ts:165 rebuilds the durable appearance_preferences document from only the members this build knows and writes it whole (:166), so any appearance member a newer build wrote is deleted by the next change made in an older build.",
+      "techniques": [
+        { "technique": "in-place-document-patch", "verdict": "deviation", "evidence": "src/lib/appearanceMirror.ts:165 whole-document write from a known-member snapshot; hydrate does patch the live store in place through its setters (:138), but the write side drops unknown members." },
+        { "technique": "typed-accessors", "verdict": "conformant", "evidence": "src-tauri/db/src/settings_keys.rs:1516 validates the stable enums at the write door, and src/lib/appearanceMirror.ts:92 coerces each field on read, keeping the current value when a field is invalid." },
+        { "technique": "save-experience", "verdict": "deviation", "evidence": "src/lib/appearanceMirror.ts:175 the 400 ms debounce is never flushed on close, and boot only pushes when no row exists (:211), so an edit lost in that window leaves the durable mirror stale until the next change." }
+      ],
+      "registryProposal": "The settings Boundaries section hands 'client-side persistence' to client-state. It should also say that a localStorage-authoritative value with a durable app_settings mirror is in scope; the prior not-applicable verdict came from reading that boundary without the mirror."
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "settings", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:146 keeps the guard open with the reason when Save fails, and useSettingsSaveToast.ts:18 confirms quietly; the realized techniques are save-experience and inherited-default-override, and the store-level techniques have no key in this hooks-only context.",
+      "techniques": [
+        { "technique": "save-experience", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:146 failed save keeps the modal open and reports why (:156); settings-tab navigation is guarded (:117); success confirms quietly (useSettingsSaveToast.ts:18)." },
+        { "technique": "inherited-default-override", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useMotion.ts:49 resolves reduced motion at read time from the live OS source OR the in-app toggle and re-resolves on source change (:30), never storing the resolved value." },
+        { "technique": "key-registry", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 the guard receives dirtiness from its caller; no hook in this context reads or writes a settings key." },
+        { "technique": "typed-accessors", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 takes only a message and a duration and reads no stored value." },
+        { "technique": "read-batching", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 no settings read happens in this context." },
+        { "technique": "settings-audit-and-history", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 no write path to audit; the caller owns the save." },
+        { "technique": "setting-kinds", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 no key is classified or written here." }
+      ]
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "subject": "settings", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 defaults monthly_cost_ceiling_usd to '0', which every consumer reads as 'no ceiling' (src-tauri/src/commands/infrastructure/overnight.rs:328), so an install that never opened Limits dispatches overnight work with no app-wide dollar ceiling: the fail-open inversion.",
+      "techniques": [
+        { "technique": "typed-accessors", "verdict": "deviation", "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 an absent or zero ceiling means unlimited (empty is also treated as 0, :99), where the rule is that an absent safety ceiling fails closed." },
+        { "technique": "settings-audit-and-history", "verdict": "deviation", "evidence": "src/features/settings/sub_history/components/SettingsHistoryTab.tsx:208 renders the raw key and raw serialized before/after values (:234) instead of display labels, and RecentChangeChip.tsx:50 shows a category's last change at any age, with no freshness horizon." },
+        { "technique": "key-registry", "verdict": "deviation", "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:22 the key is a local string literal, not a shared constant; the Rust allowlist catches write typos, but a read typo silently returns the default." }
+      ]
+    },
+    {
+      "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "subject": "voice-io", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/athenaSlice.ts:353 still defaults speech capture to the browser engine, which on WebView2 sends raw microphone audio to the OS vendor's cloud (disclosed only once the user opens sub_voice/SttPanel.tsx:87). Cloud capture is the default instead of an affirmative opt-in.",
+      "techniques": [
+        { "technique": "on-device-vs-cloud", "verdict": "deviation", "evidence": "src/stores/slices/system/athenaSlice.ts:353 athenaSttEngine: 'browser' is the default; the local whisper engine must be chosen." },
+        { "technique": "tts-pipeline", "verdict": "deviation", "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:330 plays the preview once the in-flight synth resolves, even after Stop was pressed during 'synth' (:316); and BubbleReadAloud.tsx:73 plays outside the two exclusive channels in chat/athenaChatAudio.ts, so read-aloud can overlap an auto-spoken reply." },
+        { "technique": "speech-ready-text", "verdict": "deviation", "evidence": "src/features/companions/athena/BubbleReadAloud.tsx:66 sends the raw markdown reply to synthesis, bypassing the stripMarkdownForSpeech door used by the chat voice paths." }
+      ]
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "subject": "voice-io", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 'voice' here is the persona's written style/output_format; no file in the context captures, transcribes or synthesizes audio (the 'transcript' is Claude Code JSONL, cli_session_awareness/transcript.rs:1), so every voice-io precondition fails.",
+      "techniques": [
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/cli_session_awareness/transcript.rs:1 the transcript parsed is a CLI JSONL log, not speech." },
+        { "technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:245 'voice' is prompt tone, not synthesis." }
+      ]
+    },
+    {
+      "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474", "subject": "voice-io", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is a desktop-to-Supabase row sync writer; its four files carry no audio capture, transcription, synthesis or engine adapter, so no voice-io technique's precondition holds.",
+      "techniques": [
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/src/cloud/sync/mod.rs:1 row sync, no capture path." },
+        { "technique": "on-device-vs-cloud", "verdict": "not-applicable", "evidence": "src-tauri/src/cloud/sync/mod.rs:1 the cloud here is a database tenant, not a speech engine." }
+      ]
+    },
+    {
+      "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "subject": "voice-io", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona's 'voice' block (style + output_format) as prompt text; the only other audio match is a template file name (template_checksums.rs:16). No webhook, relay or engine file carries an audio path.",
+      "techniques": [
+        { "technique": "tts-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/template_v3.rs:844 persona tone block, no synthesis." },
+        { "technique": "stt-pipeline", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/template_checksums.rs:16 a checksum entry for a template named audio-briefing-host.json; no capture." }
+      ]
+    },
+    {
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b", "subject": "eval-harness", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 sorts versions by a weighted composite of three metrics (0.4/0.4/0.2, :180) and crowns the top one winner (:229) with no declared optimized metric, no thresholds and no spread-versus-noise check, so the Lab reports a winner that a sorted draw produced.",
+      "techniques": [
+        { "technique": "metric-role-contract", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:180 folds tool accuracy, output quality and protocol compliance into one composite, which the report ranks by (reportGenerator.ts:199)." },
+        { "technique": "resolution-precondition", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 winnerId = aggs[0] with no within-condition SD against between-condition spread; a tie is never reported." }
+      ]
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e", "subject": "eval-harness", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/lib/harness/types.ts:3 declares an autonomous Plan > Execute > Verify work loop whose verification is build gates (verifier.ts:13: typecheck, lint, build). Nothing scores model output, repeats a cell or compares versions, so the eval-harness preconditions fail.",
+      "techniques": [
+        { "technique": "judge-stability", "verdict": "not-applicable", "evidence": "src/lib/harness/verifier.ts:13 the gates are deterministic commands; no judge exists." },
+        { "technique": "comparison-modes", "verdict": "not-applicable", "evidence": "src/lib/harness/types.ts:3 a single-candidate work loop; nothing is compared." }
+      ]
+    },
+    {
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884", "subject": "eval-harness", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/eval.rs:607 pins the judge to DEFAULT_BALANCED, a tier alias for SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44), and the result row (src/lib/bindings/LabEvalResult.ts:3) records no judge identity, so a roster bump silently changes the instrument under every Lab trend.",
+      "techniques": [
+        { "technique": "judge-stability", "verdict": "deviation", "evidence": "src-tauri/engine/src/eval.rs:607 a first-party tier alias pin; the resolved model is written only to the spend ledger (:654), not stamped on the eval result." },
+        { "technique": "metric-role-contract", "verdict": "deviation", "evidence": "src-tauri/engine/src/eval.rs:380 a weighted composite of three metrics decides pass at composite >= 50 (:401), so a breach of one metric can be bought back by the others." }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433", "subject": "sql-console", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 drives Playwright browser-automated credential capture; no file in the context (autoCred, design, desktop) connects to a user database or executes SQL, so no sql-console precondition holds.",
+      "techniques": [
+        { "technique": "safe-mode-guarding", "verdict": "not-applicable", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 browser-automation surface, no query executor." },
+        { "technique": "introspection-architecture", "verdict": "not-applicable", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 no schema browser." }
+      ]
+    },
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae", "subject": "sql-console", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:48 copies a NULL cell as the string 'NULL' (formatCell, :221), so a copied NULL is indistinguishable from the text 'NULL' once it leaves the grid. The recorded batch-refusal deviation is FIXED (safeModeUtils.ts:242).",
+      "techniques": [
+        { "technique": "safe-mode-guarding", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:242 refuses any payload with a statement after a separator; the authority refuses batches too (src-tauri/src/engine/db_query.rs:720); safe mode defaults on (hooks/useQuerySafeMode.ts:24)." },
+        { "technique": "introspection-architecture", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:6 the client SQL builders were deleted; only a clipboard SELECT helper remains, and live introspection uses the backend parameterized commands." },
+        { "technique": "result-fidelity", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:221 NULL is serialized as 'NULL' for copy and aria-label; only the on-screen italic class (:164) marks it." }
+      ]
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857", "subject": "sql-console", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 asserts only the text 'NULL', which the literal string 'NULL' satisfies identically, so the italic marker that is the component's only NULL distinction can regress with the suite green; :80 matches /truncated/ without the 500-row bound.",
+      "techniques": [
+        { "technique": "result-fidelity", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 the NULL-vs-text distinction is unpinned, and the truncation bound is unpinned at :80." },
+        { "technique": "safe-mode-guarding", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:51 pins the batch refusal for 'SELECT 1; DROP TABLE audit_log'." },
+        { "technique": "introspection-architecture", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:24 pins the backend-result-to-render shape of the single remaining introspection door." }
+      ]
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "subject": "sql-console", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 builds and executes `TYPE \"<key>\"` client-side with hand-rolled escaping: an executed second introspection door that introspectionQueries.ts:6 says was deleted.",
+      "techniques": [
+        { "technique": "introspection-architecture", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 a client-composed introspection statement sent to the executor, not requested by name." },
+        { "technique": "nl-assist-gating", "verdict": "conformant", "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:292 generated SQL enters the same guardedExecute (safe mode, consent gate) as typed SQL." }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433", "subject": "connector-catalog", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx:173 enables Save on canSaveCredential, which is healthcheck success alone (CredentialDesignHelpers.ts:177). That success comes from a Claude-authored probe scored without checking that it substitutes any declared field (src-tauri/src/commands/credentials/credential_design.rs:263), so a probe that never sends the credential goes green for any value and mints the connector with it.",
+      "techniques": [
+        { "technique": "schema-driven-forms", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/phases/PreviewPhase.tsx:173 no declared-field-versus-probe cross-check before the green gate. The mint-then-fail seam is reaped (src/hooks/design/credential/useCredentialDesign.ts:125)." },
+        { "technique": "catalog-as-data", "verdict": "conformant", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:99 looks up a learned recipe by catalog identity before spending a live discovery run." },
+        { "technique": "matching-and-ranking", "verdict": "conformant", "evidence": "src/hooks/design/credential/useCredentialDesign.ts:79 reuses an existing row on exact case-insensitive identity before minting a new operator row." }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "subject": "connector-catalog", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 filters and counts on the scalar category even though src/lib/credentials/builtinConnectors.ts:231 unions category with categories[], so a straddling connector is findable under only one of its categories. The filter pipeline (:81) has no lifecycle predicate because rows carry no deprecated or retired state.",
+      "techniques": [
+        { "technique": "catalog-as-data", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:84 the consumer forks from the union accessor." },
+        { "technique": "catalog-lifecycle", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:81 no deprecation or retirement predicate exists, so a retired entry is offered forever." },
+        { "technique": "schema-driven-forms", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:177 the api_key save gate is probe success with no check that the probe references a declared field (the vacuous green)." }
+      ]
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18", "subject": "connector-catalog", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:118 mints an operator connector's identity from the typed display name (sanitize lower-cases and collapses punctuation, schemaFormTypes.ts:56), so 'My DB' and 'my-db' collide on one key and a rename cannot be expressed.",
+      "techniques": [
+        { "technique": "catalog-as-data", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:118 identity derived from the label." },
+        { "technique": "schema-driven-forms", "verdict": "conformant", "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:171 a failed credential save deletes the just-minted connector row and records a rollback failure." }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "subject": "connector-catalog", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:98 reads a null healthcheck_config as 'no probe needed' and drops the save gate (:211), so a row that declares credential fields but has no probe recipe admits any typed value unverified and is never marked as unverifiable.",
+      "techniques": [
+        { "technique": "schema-driven-forms", "verdict": "deviation", "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:98 a field-declaring row without a probe is neither probed nor explicitly marked unauthenticated." }
+      ],
+      "registryProposal": "schema-driven-forms names only the fieldless case ('explicitly marked unauthenticated'). It should say what a row that declares fields but ships no probe recipe must do: block, or save as explicitly unverified. The code's reading, where no recipe means ungated, is defensible and the technique does not settle it."
+    }
+  ],
+  "declined": [
+    { "subject": "eval-harness", "context": "908be532-ef83-412b-8da3-caff9ff4d8ad", "reason": "The context's code no longer exists: commit 8a2ce465f (2026-09-22) deleted all of src/features/overview/sub_certification. No file in the context resolves, so no anchor is possible. The recorded deviation (judge read-model without model/version) dissolved with the surface; the binding src/lib/bindings/Judge.ts:10 remains dead-but-registered. The context-map row is stale and should be retired on the next map regeneration." }
+  ]
+}

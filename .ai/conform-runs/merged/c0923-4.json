@@ -1,0 +1,185 @@
+{
+  "worker": "c0923-4",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    { "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "conversation-orchestration", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:4 the surface is a reviewer flicking through a stack of pre-existing queue cards (:19 it replaced the Quick Answer popover); no model-authored turn runs here, so the subject's precondition (a resident companion whose turn outlives the user's attention) fails for every technique.",
+      "techniques": [
+        { "technique": "progress-beat-grammar", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:4 human verdicts on queued cards; no streaming model turn to narrate." },
+        { "technique": "narration-promote-on-finish", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:4 no turn settles here, so there is no beat stream to promote." },
+        { "technique": "recall-transparency", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:4 no memory-grounded companion turn." },
+        { "technique": "model-proposed-quick-replies", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:4 the deck's digit branches are authored card actions, not model-proposed next messages." },
+        { "technique": "two-surface-doctrine", "verdict": "not-applicable", "evidence": "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx:19 a full-app review deck, not a companion's ambient or conversation surface." }
+      ] },
+
+    { "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "subject": "conversation-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/QuickReplies.tsx:34 the 1-9 chip accelerator is a bare window keydown listener guarded only against text fields (:25), bypassing the AppKeyboardProvider authority (src/lib/keyboard/AppKeyboardProvider.tsx:48) that the orb's ;-leader digits register with, so one digit press can fire a chip and another surface's option at once.",
+      "techniques": [
+        { "technique": "model-proposed-quick-replies", "verdict": "deviation", "evidence": "src/features/companions/athena/QuickReplies.tsx:34 window listener instead of the app keyboard authority, which the technique names as the failure; send-never-execute and staleness hold (:46 onPick sends the text, chat/AthenaChatFooter.tsx:49 onPick={onSend})." },
+        { "technique": "structured-visual-replies", "verdict": "deviation", "evidence": "src/features/companions/athena/Bubble.tsx:185 every assistant body, including markdown tables rendered at :207 (connectors return markdown tables), is capped inside the 85%/92% bubble column; no model-composed block escapes the bubble at full width, has a drop count, or has a readable floor." },
+        { "technique": "progress-beat-grammar", "verdict": "conformant", "evidence": "src/features/companions/athena/Bubble.tsx:105 persisted PROGRESS beats render as their own quiet aside messages (the stronger message form), distinct from the considered reply." },
+        { "technique": "recall-transparency", "verdict": "unread", "evidence": "src/features/companions/athena/Bubble.tsx:144 this context renders brain links, not the recall strip; recall is judged in companion-narration-ops." }
+      ] },
+
+    { "context": "d77a22ee-23cb-42f3-a910-590f8622977f", "subject": "conversation-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/athenaStore.ts:1308 resetStreamingNarration clears the live trail with no promotion, and it is the only action the error path (chat/athenaChatStream.ts:180) and the payload-less finished path (:144) call, so a failed or interrupted turn keeps no account of the work it got through.",
+      "techniques": [
+        { "technique": "narration-promote-on-finish", "verdict": "deviation", "evidence": "src/features/companions/athena/athenaStore.ts:1308 drop without promote on the terminal paths; the success path is right: :1283 attachNarrationToEpisode releases and writes in one set(), keyed by episode id as a replace (:1298)." },
+        { "technique": "model-proposed-quick-replies", "verdict": "conformant", "evidence": "src/features/companions/athena/athenaStore.ts:317 chip set is one-shot, cleared on any send or reset (chat/athenaChatSend.ts:80)." }
+      ] },
+
+    { "context": "50bf2ad0-3da7-4405-991a-6e22695903a2", "subject": "conversation-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/RecallChip.tsx:98 a disclosed memory's only action is opening it in the Brain Viewer; there is no 'this is wrong' or 'forget this' door into the memory store's write path, so the strip is inspectable but the correction signal it exists to collect is lost.",
+      "techniques": [
+        { "technique": "recall-transparency", "verdict": "deviation", "evidence": "src/features/companions/athena/RecallChip.tsx:98 no correction door; RecallStrip.tsx:152 also renders every retrieved entry per group with no surfacing filter (echo/same-day command) and no two-chip cap. The count predicate is honest: RecallStrip.tsx:180 prints the rejected-below-floor count only when a floor ran." },
+        { "technique": "narration-promote-on-finish", "verdict": "deviation", "evidence": "src/features/companions/athena/NarrationThread.tsx:97 NarrationTrail takes no outcome, so a failed or interrupted turn's trail collapses exactly like a success; :107 the step count is the retained (capped) entries with no true total carried." },
+        { "technique": "progress-beat-grammar", "verdict": "conformant", "evidence": "src/features/companions/athena/NarrationThread.tsx:74 the live log is bounded to LIVE_MAX_ROWS with an honest '+N earlier' count." }
+      ] },
+
+    { "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "subject": "conversation-orchestration", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/orb/TrackedGlowRing.tsx:57 a walkthrough target that never resolves renders nothing and is counted nowhere (the runner's anchor wait resolves null silently at guidance/useGuidanceRunner.ts:53), so a walkthrough degrading to a centred orb on half its steps is a broken anchor contract the product never reports.",
+      "techniques": [
+        { "technique": "show-dont-tell-walkthrough", "verdict": "deviation", "evidence": "src/features/companions/athena/orb/TrackedGlowRing.tsx:57 failed resolutions uncounted; the non-dimming, click-through ring itself is right (:63 pointer-events-none)." },
+        { "technique": "two-surface-doctrine", "verdict": "deviation", "evidence": "src/features/companions/athena/orb/AthenaOrbLayer.tsx:164 the ;-leader arms a ref only, so arming is invisible to the user; the rest holds: registered with the app keyboard authority (:128), 0 means explain (:148), a failed option keeps the decision pending (decision/useDecisionQueue.ts:101)." }
+      ] },
+
+    { "context": "3effd422-2610-4c8a-bc02-53aceafd827c", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:204 update_identity still accepts a full `content` replacement of identity.md (content mode is unchecked at propose time, dispatcher/dispatch.rs:2357), and under autonomous mode every proposed action auto-fires (approval_autopilot.rs:22), so the self-model can be rewritten wholesale with no human reading the change.",
+      "techniques": [
+        { "technique": "anchored-identity-diffs", "verdict": "deviation", "evidence": "src-tauri/src/commands/companion/approvals/approval_exec_core.rs:204 whole-file write through the diff door; :180 the applied/skipped lists are only traced and :191 reports the same success line whether or not diffs were skipped, so a half-applied proposal reads as whole." },
+        { "technique": "constitution-self-model-split", "verdict": "conformant", "evidence": "src-tauri/src/commands/companion/brain.rs:461 the command layer exposes no write or delete path for the constitution; only identity has one." }
+      ] },
+
+    { "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/disk.rs:93 the pre-upgrade backup of the user's constitution is `let _ = fs::copy(...)`, its failure discarded, and :94 then overwrites the file, so a version bump can destroy the person's amendments with no preserved copy.",
+      "techniques": [
+        { "technique": "constitution-self-model-split", "verdict": "deviation", "evidence": "src-tauri/src/companion/disk.rs:93 swallowed backup; the stamp-gated, once-per-bump upgrade shape is right (:87) and seeding is if-absent (:66), but the baseline is written with no origin marker (:77). dev_mode.rs:8 still documents dev_improve as never auto-firing although the autopilot now fires every proposal in autonomous mode, so the companion retains an unreviewed path to the template the upgrade copies over the user's law." },
+        { "technique": "disk-truth-db-index", "verdict": "conformant", "evidence": "src-tauri/src/companion/disk.rs:6 the durable self is a folder of plain documents under the brain root." }
+      ] },
+
+    { "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/backlog.rs:440 the tree states there is no rebuild-from-disk pass anywhere, so the index over the brain folder names no recomputation and any drift or loss of the SQL index cannot be recovered from the documents.",
+      "techniques": [
+        { "technique": "disk-truth-db-index", "verdict": "deviation", "evidence": "src-tauri/src/companion/brain/backlog.rs:440 no total rebuild command. The recorded deviation is FIXED: resolve_item now rewrites the markdown frontmatter (:203), and reminded_count (:305) is dead code (#[allow(dead_code)] at :301), so no live index-only state remains in backlog." },
+        { "technique": "anchored-identity-diffs", "verdict": "deviation", "evidence": "src-tauri/src/companion/brain/identity.rs:47 IdentityDiff has no reason field, so the per-diff rationale the prompt demands is parsed away and only the batch rationale survives." },
+        { "technique": "operator-profile-synthesis", "verdict": "deviation", "evidence": "src-tauri/src/companion/brain/profile_synthesis.rs:349 synthesis diffs are filtered only for structural validity; keeping the pass off the 'About me' self-model sections is a prompt instruction (:300), not a check. Default-off is realized (:64)." },
+        { "technique": "constitution-self-model-split", "verdict": "conformant", "evidence": "src-tauri/src/companion/brain/identity.rs:5 constitution lives in its own file and the identity engine never writes it." }
+      ] },
+
+    { "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/ApprovalCard.tsx:91 an update_identity approval shows the batch rationale and hides the diffs in a collapsed raw-JSON details block with no before-to-after line and no edit-before-approval, so self-model changes are approved without the change in view and a nearly-right diff can only be rejected.",
+      "techniques": [
+        { "technique": "anchored-identity-diffs", "verdict": "deviation", "evidence": "src/features/companions/athena/ApprovalCard.tsx:91 approval envelope does not show the change or permit editing (identity.rs preview() exists but feeds only the apply trace). The correction loop is right: BrainViewer.tsx:879 files an anchored remove for a claim marked wrong." },
+        { "technique": "constitution-self-model-split", "verdict": "conformant", "evidence": "src/features/companions/athena/BrainViewer.tsx:122 constitution is its own read-only kind; editing is gated to identity alone (:676)." },
+        { "technique": "operator-profile-synthesis", "verdict": "conformant", "evidence": "src/features/companions/athena/BrainViewer.tsx:879 every profile claim is visible and correctable by its subject from the viewer." },
+        { "technique": "disk-truth-db-index", "verdict": "conformant", "evidence": "src/features/companions/athena/BrainViewer.tsx:725 the person edits the identity document itself, the shared-custody property." }
+      ] },
+
+    { "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:87 every pending approval, update_identity included, becomes an orb decision whose prompt is only label plus batch rationale, and option 1 applies it (:109), so a self-model rewrite is answerable by ;1 from the orb with the diffs never shown.",
+      "techniques": [
+        { "technique": "anchored-identity-diffs", "verdict": "deviation", "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:87 approval envelope without operation, anchor or before/after; actionRisk.ts:82 marks update_identity elevated, which changes only the recommendation text, not what is shown." },
+        { "technique": "constitution-self-model-split", "verdict": "not-applicable", "evidence": "src/features/companions/athena/sub_memory/MemoryPanel.tsx:189 the identity documents are viewed through the embedded BrainViewer, judged in companion-chat-bubbles; nothing here writes law or self." }
+      ] },
+
+    { "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "subject": "companion-identity", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/companions/athena/inbox/hooks/adapters/approvalAdapter.ts:10 the inbox's 'approval' items are persona ManualReviewItems, not companion approvals; no file in this context (inbox adapters, guidance, MCP request panel) reads or writes a constitution, self-model, profile, brain probe or capability inventory.",
+      "techniques": [
+        { "technique": "anchored-identity-diffs", "verdict": "not-applicable", "evidence": "src/features/companions/athena/inbox/hooks/adapters/approvalAdapter.ts:10 approvals here are persona manual reviews, so no identity diff reaches this surface." },
+        { "technique": "constitution-self-model-split", "verdict": "not-applicable", "evidence": "src/features/companions/athena/inbox/hooks/adapters/approvalAdapter.ts:10 no identity document is touched." }
+      ] },
+
+    { "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "subject": "mcp-tools", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:90 execute is minted as one personas:execute:persona:<id> scope per pick, not a blanket grant, with a 90-day default expiry (:49), and the audit drawer keys on the minted key id (ApiKeyAuditDrawer.tsx:54), which is the identity rule rev 29 added.",
+      "techniques": [
+        { "technique": "authentication-and-scoping", "verdict": "conformant", "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:90 per-persona scopes; :49 90-day default reaper; ApiKeyAuditDrawer.tsx:54 audit by keyId, never by the key's name." },
+        { "technique": "client-integration", "verdict": "conformant", "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:4 a pairing mints nothing without the user's click, and the key it mints is origin-bound, scoped and expiring." },
+        { "technique": "transport-selection", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 this context only displays the listener address; the listener is chosen in engine/webhook.rs." },
+        { "technique": "tool-schema-design", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 key management UI; publishes no tools." },
+        { "technique": "server-composition", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no registry or dispatch door here." },
+        { "technique": "untrusted-result-handling", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 consumes no tool results." },
+        { "technique": "egress-argument-gating", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 gates no outbound tool calls." },
+        { "technique": "write-freshness-gate", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no model write tools." },
+        { "technique": "catalog-projection-modes", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 publishes no catalog." },
+        { "technique": "tool-identity-vs-tool-name", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no tool ledger." },
+        { "technique": "one-server-many-registrations", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 registers no servers with a host." },
+        { "technique": "sanctioned-session-state", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 single local listener, no replicas." },
+        { "technique": "caller-differentiated-capability", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no engine surface defined here." },
+        { "technique": "fluent-syntax-bounded-grammar", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 accepts no model-written notation." },
+        { "technique": "suspendable-request-classes", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 defines no protocol requests." },
+        { "technique": "sealed-continuation-state", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 hands no continuation to callers." },
+        { "technique": "enumeration-without-a-scope", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 lists only the operator's own keys in their own app." },
+        { "technique": "ambient-selection-is-not-an-argument", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no tool arguments." },
+        { "technique": "command-audit-by-position", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 runs no commands." },
+        { "technique": "orchestration-to-tool-migration", "verdict": "not-applicable", "evidence": "src/features/settings/sub_api_keys/libs/mcpServer.ts:8 no pipeline or tool surface decisions." }
+      ] },
+
+    { "context": "7f6d3238-7136-4361-af8f-bca556ae2042", "subject": "mcp-tools", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/mcp_server/auth.rs:86 tools/call exact-matches `personas:execute`, while the HTTP surface honours resource-scoped personas:execute:persona:<id> grants, so a least-privilege key cannot call any MCP tool and the only working token is the omnibus grant install.rs mints with no expiry (install.rs:71 passes None as expires_at).",
+      "techniques": [
+        { "technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/auth.rs:86 one omnibus scope gates every tool, and the install token names no reaper (install.rs:71). Registry reuse and minted-id audit hold (:91 audits against key.id)." },
+        { "technique": "server-composition", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/tools.rs:1190 dispatch is a name match separate from the hand-written listing at :775, two authorities for one catalog." },
+        { "technique": "tool-schema-design", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/tools.rs:775 the listing publishes no behaviour annotations at all, so no tool carries a read-only or destructive verdict for a host to tier on." }
+      ] },
+
+    { "context": "a7ece012-8300-4780-b286-b9cea81801fc", "subject": "mcp-tools", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/tool_usage.rs:15 the usage ledger records and aggregates (:24) invocations with no success/error dimension, so usage analytics cannot tell a working tool from a failing one, although the audit model beside it carries result_status (tool_audit.rs:16).",
+      "techniques": [
+        { "technique": "tool-schema-design", "verdict": "deviation", "evidence": "src-tauri/core/src/models/tool_usage.rs:15 aggregates tool calls without propagating their error flag, the 'rebuilt empty-success one layer up' case the technique names." }
+      ] },
+
+    { "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5", "subject": "mcp-tools", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:27 the server's is_error flag drives the result status rather than being flattened, and load failure (McpToolsTab.tsx:105), not-yet-discovered and honestly-empty (ToolDetail.tsx:93) render as three distinct states.",
+      "techniques": [
+        { "technique": "tool-schema-design", "verdict": "conformant", "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:27 error flag propagated; :8 an empty result prints '(empty)', never a blank that reads as nothing." },
+        { "technique": "client-integration", "verdict": "conformant", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:105 an unreachable server is an error banner, distinct from the zero-tools state at ToolDetail.tsx:93." },
+        { "technique": "untrusted-result-handling", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:57 the result goes to UI state for a human reader; no model context receives it." },
+        { "technique": "transport-selection", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 the tab calls a backend command; transport is chosen elsewhere." },
+        { "technique": "authentication-and-scoping", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 passes a credential id; token handling is backend-side." },
+        { "technique": "server-composition", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 a caller, not a publisher." },
+        { "technique": "egress-argument-gating", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 the human composes the call; no model call to gate." },
+        { "technique": "write-freshness-gate", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 no model-issued write." },
+        { "technique": "catalog-projection-modes", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 publishes no catalog." },
+        { "technique": "tool-identity-vs-tool-name", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 keeps no per-tool ledger." },
+        { "technique": "one-server-many-registrations", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 one credential, one server, no host registration." },
+        { "technique": "sanctioned-session-state", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 no server-side session state." },
+        { "technique": "caller-differentiated-capability", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 the engine belongs to the third-party server." },
+        { "technique": "fluent-syntax-bounded-grammar", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 no model-written notation." },
+        { "technique": "suspendable-request-classes", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 defines no protocol requests." },
+        { "technique": "sealed-continuation-state", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 carries no continuation." },
+        { "technique": "enumeration-without-a-scope", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 defines no list operation." },
+        { "technique": "ambient-selection-is-not-an-argument", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 does not front a single-seat application." },
+        { "technique": "command-audit-by-position", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 runs no commands." },
+        { "technique": "orchestration-to-tool-migration", "verdict": "not-applicable", "evidence": "src/features/vault/shared/playground/tabs/McpToolsTab.tsx:56 a manual test surface, no pipeline." }
+      ] },
+
+    { "context": "767b2bb5-4662-4be1-ad24-c881ac334016", "subject": "mcp-tools", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/cli_mcp_config.rs:168 every persona spawn's MCP token is the one process-wide system key (runner/mod.rs:1655), which never expires (management_api.rs:776) and carries personas:read + personas:execute + proxy, so all runs share one omnibus bearer credential and the MCP audit cannot attribute a call to the persona run that made it.",
+      "techniques": [
+        { "technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src-tauri/engine/src/cli_mcp_config.rs:168 shared token instead of a per-consumer one; the system key is also found by name at management_api.rs:771, so a user-created key named 'system' is revoked on every boot, the name-as-identity hole rev 29 names." },
+        { "technique": "catalog-projection-modes", "verdict": "conformant", "evidence": "src-tauri/engine/src/cli_mcp_config.rs:265 always_loaded keeps a single fitting catalog (:277, one server) in the cached prefix for an unattended headless caller, which the second-budget and withholding sections now call the right default. The recorded deviation (defeating the host's deferral) is dissolved by the standard." },
+        { "technique": "client-integration", "verdict": "conformant", "evidence": "src-tauri/engine/src/cli_mcp_config.rs:251 the secret-bearing config is scrubbed before each write and on every exit path, and the server entry is an argument array, not a shell string." }
+      ],
+      "registryProposal": "client-integration's progressive-discovery bullet should state its precondition (a federated catalog the host cannot fit), because catalog-projection-modes now prices deferring a single fitting server as a capability-reach loss for a capped saving, and the two currently read as opposite instructions for an always-load flag." }
+  ],
+  "declined": [
+    { "subject": "conversation-orchestration", "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "Playwright-spec context. Only 2 of 8 techniques have a spec: walkthrough tracking and clean stop (tests/playwright/athena-guided-walkthrough.spec.ts:92, :102) and the honest 'Thinking...' fallback (tests/playwright/companion-stream-phase.spec.ts:58). That is below the evidence floor for conformant. No spec asserts behaviour that contradicts the standard, so there is no deviation to anchor either." }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "worker": "c0923-2",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    {
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/mcp_server/tools.rs:1496 keys the sidecar's note by slug(title) with no minted id, and :1513 then atomically replaces whatever sits at that path, with no divergence check. Two titles that slugify alike overwrite each other, and an MCP rewrite silently replaces a note the human edited. (The recorded quote-replace and truncating-write defects were FIXED in 48f2f2c0bc: :1507 yaml_quote, :1513 atomic_write.)",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/tools.rs:1496 derives the record's path from slugify(title) with no frontmatter id (\"Note title (becomes the filename)\", :1096), so 'Q3 Plan' and 'q3-plan' are one record, the same many-to-one clobber mod.rs:517 fixed for the sync lane. Emit side realized: :1507 yaml_quote." },
+        { "technique": "editor-interop", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/tools.rs:1513 writes atomically (realized) but unconditionally over an existing note. The Brain's push path re-reads the disk and refuses to clobber a divergent vault edit (commands/obsidian_brain/mod.rs:617); the sidecar has no such check, so the human loses the tie." },
+        { "technique": "vault-walking", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/vault.rs:21 is a hand-rolled sixth walker. Its own premise, that it 'cannot reuse commands::obsidian_brain' (:5), is now false: tools.rs:1507 already calls crate::commands::obsidian_brain. It should consume vault_fs::walk_markdown_files, not a copy that must be kept 'in sync with graph.rs' by hand." },
+        { "technique": "replicated-substrate", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/vault.rs:42 admits every .md, including sync-conflict copies, with no name-pattern exclusion or report, so an AI search returns a note and its replication duplicate as two hits." },
+        { "technique": "link-graph-extraction", "verdict": "not-applicable", "evidence": "src-tauri/src/mcp_server/vault.rs:84 tokenizes note bodies for TF-IDF only; the sidecar extracts no links and builds no graph." },
+        { "technique": "knowledge-integrity-lint", "verdict": "not-applicable", "evidence": "src-tauri/src/mcp_server/tools.rs:1225 dispatches only vault search and write_note; the sidecar runs no lint or repair pass." },
+        { "technique": "mirror-indexes", "verdict": "not-applicable", "evidence": "src-tauri/src/mcp_server/tools.rs:1450 re-walks the vault on every query; no second store is derived or persisted." },
+        { "technique": "read-triggered-reconciliation", "verdict": "not-applicable", "evidence": "src-tauri/src/mcp_server/tools.rs:1450 computes each answer from a fresh walk with no persisted derivation, so no reconcile trigger exists to choose." },
+        { "technique": "projection-covers-the-record", "verdict": "not-applicable", "evidence": "src-tauri/src/mcp_server/vault.rs:84 scores the whole body as one field; there is no extract-and-strip projection whose partition could hold a hole." }
+      ],
+      "registryProposal": "editor-interop and vault-as-database both imply that an agent-facing write tool must not replace an existing note without a base-hash or existence check, but neither says so for a write keyed by a caller-chosen title. A sentence covering the tool-call writer (an MCP or agent write keyed by title) would have anchored this defect directly."
+    },
+    {
+      "context": "0c029a55-8e0a-47aa-a636-6e941425a7dc",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:484 still counts an orphan as any note with no backlink, while lint.rs:121 exempts entry points, so the Graph stats and the lint report give two orphan counts and neither declares its predicate. The recorded watcher leak also persists: graph.rs:778 spawns a debounce `loop` that never exits, and stop_watcher (:822) drops only the watcher.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "conformant", "evidence": "src-tauri/src/commands/obsidian_brain/markdown.rs:17 yaml_quote escapes every scalar, with the round trip tested at :384; the id is minted and quoted at :112; the injective filename is at mod.rs:517; there are two path funnels (mod.rs:1489 resolve_vault_subpath, graph.rs:264 ensure_within_vault); atomic_write is at mod.rs:65." },
+        { "technique": "link-graph-extraction", "verdict": "deviation", "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:484 orphan_count applies no exemption, while lint.rs:121 applies is_likely_entry_point. The two counts differ on any vault with top-level notes, and no count names its predicate." },
+        { "technique": "knowledge-integrity-lint", "verdict": "deviation", "evidence": "src-tauri/src/commands/obsidian_brain/lint.rs:87 silently `continue`s past a note it cannot read, yet :129 reports it in scanned_count, so a partially read vault still lints clean for that note's links. Directory-level Abort (:145) and the declared exemption predicate (:160) are realized." },
+        { "technique": "vault-walking", "verdict": "conformant", "evidence": "src-tauri/src/commands/obsidian_brain/vault_fs.rs:38 WalkOptions makes depth, error policy and hidden-file handling explicit per caller; lint.rs:145 chooses Abort and graph.rs:128 chooses the skip/depth-12 defaults." },
+        { "technique": "mirror-indexes", "verdict": "deviation", "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:353 hash-gates the projection against the sync_state ledger only. A mirrored note that is deleted or edited in Obsidian stays 'current' until the source row changes, and neither a reconcile nor a declaration covers it; the projected note (mod.rs:398) carries no 'generated, edits overwritten' marker. The two-way lane is realized (mod.rs:617 classify_push)." },
+        { "technique": "read-triggered-reconciliation", "verdict": "conformant", "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:103 is a 30s TTL under the watcher invalidation. Because the reconcile is not on the read, the time bound the technique requires is present." },
+        { "technique": "projection-covers-the-record", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:135 keeps each note's whole body as the searched field; no extract-and-strip pass splits the record, so no partition hole can arise." },
+        { "technique": "editor-interop", "verdict": "deviation", "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:778 spawns an unterminated debounce thread per start_watcher call, and :822 drops only the watcher. GraphPanel.tsx:145 stops and restarts on every unmount, so each visit leaks a thread. The watcher does not name its reaper. Atomic write (mod.rs:65) and directory watching (graph.rs:772) are realized." },
+        { "technique": "replicated-substrate", "verdict": "deviation", "evidence": "src-tauri/src/commands/obsidian_brain/vault_fs.rs:120 collects every .md, including sync-conflict copies, with no exclusion or report anywhere in obsidian_brain, and staleness reads mtime alone (lint.rs:72) with no in-band review date. A cloud-synced vault inflates the orphan count, and a fresh checkout silences staleness." }
+      ]
+    },
+    {
+      "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts:36 strips a value's wrapping quotes without YAML-unescaping. A field the app's own yaml_quote wrote (`\"Acme \\\"Pro\\\"\"`) displays as `Acme \\\"Pro\\\"`, so the Browse panel disagrees with the Rust reader about the app's own records. The recorded orphan stat/list mismatch was FIXED in adf8f3c377.",
+      "techniques": [
+        { "technique": "vault-as-database", "verdict": "deviation", "evidence": "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts:36 only trims quote characters, and no \\\" \\\\ \\n unescape follows. Every quoted or multi-line frontmatter value that Personas emits renders with literal escapes." },
+        { "technique": "editor-interop", "verdict": "deviation", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:375 (and :328, :396) passes the graph command's absolute path (graph.rs:434) to the `file=` deep link. That parameter is resolved from the vault root, and the technique asks for a full vault-relative path. BrowsePanel's relative paths and openInObsidian.ts:8 normalization are realized, as is the watcher stop at GraphPanel.tsx:145." },
+        { "technique": "link-graph-extraction", "verdict": "conformant", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:358 now shows 'N of M' against the same no-backlink predicate as the stat tile (:249), and the list names the predicate 'No incoming links' (src/i18n/locales/en.json:17123)." },
+        { "technique": "knowledge-integrity-lint", "verdict": "conformant", "evidence": "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx:46 refuses a repair pass with no declared goal, and RevitalizeSummaryCard.tsx:59 shows the measured notes before and after." },
+        { "technique": "mirror-indexes", "verdict": "conformant", "evidence": "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx:311 escalates a both-sides conflict to the human (keep-app / keep-vault) with ConflictDiffView showing the divergence." },
+        { "technique": "vault-walking", "verdict": "unread", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:249 consumes backend results; the UI does no walking of its own." },
+        { "technique": "read-triggered-reconciliation", "verdict": "unread", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:145 only manages the watcher lifecycle; the derivation lives in the obsidian-brain context." },
+        { "technique": "projection-covers-the-record", "verdict": "unread", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:328 renders search hits; no projection happens in this context." },
+        { "technique": "replicated-substrate", "verdict": "unread", "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:249 displays the backend counts; substrate handling lives in obsidian-brain." }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 imports checkPlaywrightAvailable from @/api/vault/autoCredBrowser: the 'vault' here is the credential vault and the context captures connector credentials in a browser. No directory of markdown records exists, so every technique's precondition fails."
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 renders a connector/credential picker over ConnectorDefinition and CredentialMetadata rows. No markdown note store, frontmatter or link graph exists in this context."
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:13 getMcpSchema builds connector credential form schemas. The context's only Obsidian mention is a setup-status label case (src/features/vault/components/SetupStatusBadge.tsx:51), not a store. No file-as-record contract exists."
+    },
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_credentials/components/features/CredentialIntelligence.tsx:10 reads audit logs, usage stats and dependents from @/api/vault/credentials. This is credential intelligence UI with no frontmatter, links or file walk anywhere in the context."
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 imports vaultStatus from @/api/vault/credentials. The context holds credential entry, OAuth and import forms, not a markdown record store."
+    },
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:9 ConnectorFamily (postgres/mysql/redis/convex/sqlite/notion/airtable) shows that this context is a SQL/API database explorer for connected external databases, not a filesystem of markdown records."
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:16 tests the connector-family mapping for SQL introspection. No markdown record store is under test in this context."
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:19 TablesTab({ credentialId, serviceType }) browses the tables of a connected database. The markdown record store this subject governs does not exist here."
+    },
+    {
+      "context": "77b8c703-0803-42bc-808a-f255725cc293",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:23 toAgentNodeId mints `agent:<persona_id>` nodes for a credential/persona/event dependency graph. That graph is built from data-model relations, not links extracted from markdown note bodies."
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/playground/tabs/OverviewTab.tsx:7 types the panel over CredentialMetadata and ConnectorDefinition. Every playground tab (API explorer, MCP tools, executions) operates on the credential vault's API surface, not a markdown note store."
+    },
+    {
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "subject": "markdown-vault",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/shared/vector/ingest/IngestDirectoryPicker.tsx:30 ingests source code, logs and config (*.rs, *.log, *.toml...) alongside .md into a vector KB for RAG. That is a heterogeneous document index, not markdown records with frontmatter, minted identity or a link graph shared with a human editor. It is a technique-shaped resonance (derived index over a directory), and the subject's precondition fails."
+    }
+  ],
+  "declined": []
+}
