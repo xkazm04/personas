@@ -54,6 +54,11 @@ export interface GlyphFullLayoutProps {
    *  build-layout toggle could silently strip mentality/traits/model from the
    *  promote stamp. */
   onLaunchCoreSnapshot?: (snapshot: PersonaCoreLaunchSnapshot) => void;
+  /** Optional reference context ("Add reference context"). The container renders its own
+   *  BuildContextField for the cinema layouts; the Contact Sheet prototypes own it one
+   *  layer down instead, so they receive the value and setter. */
+  contextText?: string;
+  onContextChange?: (v: string) => void;
 }
 
 export type { GlyphDimension, GlyphRow, BuildQuestion, CellBuildStatus, BuildPhase, QuickConfigState };

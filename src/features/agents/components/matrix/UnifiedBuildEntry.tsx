@@ -14,6 +14,11 @@ import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
 import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
+// TODO(prototype, 2026-09-23): consolidate the Contact Sheet switcher - three
+// transformation variants of the /contest winner, pick one and delete the rest.
+import { ContactSheetCinemaLayout } from "@/features/agents/sub_glyph/contactSheet/cinema/ContactSheetCinemaLayout";
+import { ContactSheetPersonasLayout } from "@/features/agents/sub_glyph/contactSheet/personas/ContactSheetPersonasLayout";
+import { ContactSheetWildLayout } from "@/features/agents/sub_glyph/contactSheet/wild/ContactSheetWildLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
@@ -53,9 +58,10 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // pieces (DialogueComposePanel/DialogueStageSurface, used by GlyphDialogueCinemaLayout)
 // — but "glyph-full", "composer-prototype" and "dialogue" are no longer selectable.
 // "dialogue-cinema" is the default.
-type BuildLayout = "cinema" | "dialogue-cinema";
+type BuildLayout = "cinema" | "dialogue-cinema" | "sheet-cinema" | "sheet-personas" | "sheet-wild";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema"];
+const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema", "sheet-cinema", "sheet-personas", "sheet-wild"];
+const isSheetLayout = (l: BuildLayout) => l.startsWith("sheet-");
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
@@ -827,6 +833,24 @@ export function UnifiedBuildEntry() {
           >
             Dialogue+Cinema
           </button>
+          {([
+            ["sheet-cinema", "Sheet · Cinema", "Contact Sheet fused with the Cinema style (prototype)"],
+            ["sheet-personas", "Sheet · Personas", "Contact Sheet translated into the Personas design system (prototype)"],
+            ["sheet-wild", "Sheet · Wild", "Contact Sheet wildcard: best look, guidelines optional (prototype)"],
+          ] as const).map(([key, label, hint]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleLayoutChange(key)}
+              className={`rounded-full px-3 py-1 typo-caption transition ${
+                layout === key ? "bg-primary/20 text-primary" : "text-foreground hover:text-foreground"
+              }`}
+              title={hint}
+              data-testid={`build-layout-toggle-${key}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -846,7 +870,7 @@ export function UnifiedBuildEntry() {
         onDismiss={() => setTemplateSuggestionDismissed(true)}
       />
 
-      {!build.isBuilding && !hasDesignResult && (
+      {!build.isBuilding && !hasDesignResult && !isSheetLayout(layout) && (
         <BuildContextField
           value={contextText}
           onChange={setContextText}
@@ -893,9 +917,16 @@ export function UnifiedBuildEntry() {
           // A layout preference therefore cannot change which identity source
           // the promote stamp gets.
           onLaunchCoreSnapshot: handleLaunchCoreSnapshot,
+          contextText,
+          onContextChange: setContextText,
         };
-        const LayoutComponent =
-          layout === "cinema" ? GlyphCinemaLayout : GlyphDialogueCinemaLayout;
+        const LayoutComponent = {
+          "cinema": GlyphCinemaLayout,
+          "dialogue-cinema": GlyphDialogueCinemaLayout,
+          "sheet-cinema": ContactSheetCinemaLayout,
+          "sheet-personas": ContactSheetPersonasLayout,
+          "sheet-wild": ContactSheetWildLayout,
+        }[layout];
         return <LayoutComponent {...layoutProps} />;
       })()}
 

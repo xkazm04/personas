@@ -86,7 +86,7 @@ export function strongMatches(
  * confidence gate above, not the layout, decides whether it is worth showing.
  */
 export function shouldSurfaceTemplateSuggestion(
-  _layout: 'cinema' | 'dialogue-cinema',
+  _layout: string,
   pendingQuestionCount: number,
   dismissed: boolean,
 ): boolean {
