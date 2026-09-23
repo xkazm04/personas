@@ -137,6 +137,12 @@
 .cad .btn.ghost { background: transparent; }
 .cad .btn.sm { height: 30px; padding: 0 10px; font-size: 0.8125rem; }
 .cad .btn[disabled] { opacity: .6; cursor: default; }
+/* the product's Button (AsyncButton carries the spinner) paints its own hover fill from a utility;
+   the winner's buttons keep their surface on hover, so each variant restates it */
+.cad .btn:hover { background: var(--surface-2); }
+.cad .btn.primary:hover { background: var(--btn-primary); }
+.cad .btn.gate:hover { background: color-mix(in srgb, var(--c-gate) 14%, var(--surface-2)); }
+.cad .btn.ghost:hover { background: transparent; }
 .cad .spin { width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: cad-spin 0.8s linear infinite; flex: none; }
 @keyframes cad-spin { to { transform: rotate(360deg); } }
 .cad .seg { display: inline-flex; align-items: center; padding: 3px; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; flex: none; }
@@ -172,8 +178,10 @@
 .cad .ftag:disabled { opacity: .45; }
 @container cad (max-width: 1120px) { .cad .hide-narrow { display: none !important; } .cad .band { gap: 10px; padding: 0 12px; } .cad .ftag { padding: 0 6px 0 10px; } }
 
-.cad .main { display: grid; grid-template-columns: 312px minmax(0, 1fr); min-height: 0; grid-row: 2; grid-column: 1; }
-@container cad (min-width: 1500px) { .cad .main { grid-template-columns: 340px minmax(0, 1fr); } }
+/* the winner's 312px / 340px register, in rem: at the 16px root it was judged at it is exactly
+   312px, and at the product's larger text scales the column grows with the names it holds */
+.cad .main { display: grid; grid-template-columns: 19.5rem minmax(0, 1fr); min-height: 0; grid-row: 2; grid-column: 1; }
+@container cad (min-width: 1500px) { .cad .main { grid-template-columns: 21.25rem minmax(0, 1fr); } }
 
 /* swatches (key, lists, tooltip) */
 .cad .sw { width: 13px; height: 13px; flex: none; border-radius: 3px; display: inline-block; }
@@ -225,7 +233,7 @@
 .cad .row.claims-hot { box-shadow: inset -3px 0 0 var(--accent); }
 .cad .row .rk { font-family: var(--font-mono); font-size: 0.8125rem; font-variant-numeric: tabular-nums; color: var(--text-3); text-align: right; }
 .cad .row .nm { font-size: 0.875rem; white-space: nowrap; min-width: 0; display: flex; align-items: center; }
-.cad .row .nt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cad .row .nt { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 0 auto; max-width: 100%; }
 .cad .row.st-none .nm { color: var(--text-2); }
 .cad .row .sp { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
 .cad .row .sp svg { width: 11px; height: 11px; }
@@ -233,7 +241,10 @@
 .cad .row .sc.none { color: var(--text-3); font-weight: 400; }
 .cad .sc.proven { color: var(--c-proven); } .cad .sc.gate { color: var(--c-gate); } .cad .sc.trouble { color: var(--c-trouble); }
 .cad .nullbar { display: inline-block; width: 34px; height: 10px; border-radius: 3px; border: 1px dashed var(--text-3); background: repeating-linear-gradient(135deg, transparent 0 3px, var(--hatch-ink) 3px 4px); vertical-align: middle; }
-.cad .dup { font-style: normal; font-size: 0.8125rem; color: var(--text-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; flex: none; line-height: 1.35; }
+/* a rehearsal copy's marker gives way before the name does: its wrapper shrinks to nothing first,
+   so every name that fits the register column is shown whole (the winner clipped the name) */
+.cad .dupw { flex: 0 1 auto; min-width: 0; overflow: hidden; display: inline-flex; font-style: normal; }
+.cad .dup { font-style: normal; font-size: 0.8125rem; color: var(--text-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; flex: none; line-height: 1.35; white-space: nowrap; }
 .cad .reg-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--line); font-size: 0.8125rem; color: var(--text-3); }
 .cad .reg-foot span { display: inline-flex; align-items: center; gap: 3px; }
 .cad .empty { padding: 20px 14px; color: var(--text-2); }

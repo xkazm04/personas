@@ -8,7 +8,7 @@ import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/context
 import { FEATURE_MOVES, FEATURE_SORTS, type FeatureSort } from '../featureRules';
 import { moveLabel, type TFeatures } from '../featuresModel';
 import { groupTone, type CadFilter, type CadRow } from './cadastreModel';
-import { RegisterRow, rowDomId } from './RegisterRow';
+import { RegisterRow } from './RegisterRow';
 
 export interface RegisterProps {
   visible: CadRow[];
@@ -22,6 +22,8 @@ export interface RegisterProps {
   filterRef: RefObject<HTMLInputElement | null>;
   listRef: RefObject<HTMLDivElement | null>;
   focus: string | null;
+  /** The listbox's active option (a deed row, or an unclaimed context in `u` mode). */
+  activeDescendant: string | undefined;
   hotClaims: ReadonlySet<string>;
   onOpen: (key: string, el: HTMLElement) => void;
   onPreview: (key: string | null) => void;
@@ -162,7 +164,7 @@ export function Register(p: RegisterProps) {
         tabIndex={0}
         role="listbox"
         aria-label={og ? t.cadastre_unclaimed_title : t.cadastre_register_title}
-        aria-activedescendant={!og && p.focus ? rowDomId(p.focus) : undefined}
+        aria-activedescendant={p.activeDescendant}
         onMouseLeave={() => p.onPreview(null)}
         data-testid="cad-list"
       >

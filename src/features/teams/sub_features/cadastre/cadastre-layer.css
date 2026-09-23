@@ -1,0 +1,182 @@
+/* The Cadastre's nested layer: a deed at full scale over the page. The winner's app.css, from
+   "the nested layer" to "the view transition", ported as written and scoped under `.cad`; the
+   palette variables it reads are defined in cadastre.css. */
+
+.cad .layer.fallback-in { animation: cad-layer-in var(--duration-slow) cubic-bezier(.2,.8,.2,1); }
+@keyframes cad-layer-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.cad .ly-bar { display: flex; align-items: center; gap: 8px; height: 46px; flex: none; padding: 0 12px 0 16px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 80%, transparent); }
+.cad .crumb { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; white-space: nowrap; font-size: 0.875rem; }
+.cad .crumb button { color: var(--text-2); padding: 4px 6px; border-radius: 6px; font-weight: 600; }
+.cad .crumb button:hover { color: var(--accent); }
+.cad .crumb .sep { color: var(--text-3); }
+.cad .crumb .cur { color: var(--foreground); font-weight: 800; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
+.cad .ly-pos { font-size: 0.8125rem; color: var(--text-3); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.cad .ly-bar .ctl { height: 32px; padding: 0 6px; }
+.cad .ly-bar .ctl .kbd { margin-left: 0; }
+.cad .ly-bar .ctl:last-child { padding: 0 8px 0 10px; }
+.cad .ly-bar .ctl:last-child .kbd { margin-left: 8px; }
+.cad .ly-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(380px, 48%) minmax(0, 1fr); }
+@container cad (min-width: 1500px) { .cad .ly-body { grid-template-columns: minmax(380px, 44%) minmax(0, 1fr); } }
+.cad .ly-left { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 10px 16px; border-right: 1px solid var(--line); min-height: 0; overflow: hidden;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tone) 10%, transparent), transparent 85%); }
+.cad .rosebox { flex: 1; min-height: 0; width: 100%; position: relative; }
+.cad .rosebox .bigrose { position: absolute; left: 0; top: 0; }
+.cad .rose-cap { max-width: 440px; text-align: center; color: var(--text-2); font-size: 0.875rem; line-height: 1.55; margin-top: 2px; }
+.cad .rose-cap b { color: var(--foreground); }
+.cad .ly-right:focus { outline: none; }
+.cad .ly-right { overflow: auto; min-height: 0; padding: 20px 26px 34px; overscroll-behavior: contain; container-type: inline-size; }
+.cad .ly-head .deed-title { font-size: clamp(1.625rem, 2.4vw, 2.375rem); line-height: 1.12; letter-spacing: -0.04em; font-weight: 800; margin: 6px 0 12px; }
+.cad .ly-head .dupt { font-size: 0.875rem; letter-spacing: 0; font-weight: 600; color: var(--text-3); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; vertical-align: middle; }
+.cad .ly-head .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cad .lede { margin-top: 14px; font-size: 0.9375rem; line-height: 1.62; color: var(--foreground); max-width: 70ch; opacity: .94; }
+.cad .actbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+.cad .actbar .btn { padding: 0 12px; line-height: inherit; }
+.cad .actbar .btn .kbd { margin-left: 7px; }
+.cad .actbar .why { flex-basis: 100%; font-size: 0.875rem; color: var(--text-2); margin-top: 2px; }
+.cad .actbar .why:empty { display: none; }
+.cad .insession { display: inline-flex; align-items: center; gap: 10px; color: var(--c-session); font-weight: 700; padding: 8px 12px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--c-session) 45%, transparent); }
+.cad .insession i { width: 9px; height: 9px; border-radius: 50%; background: var(--c-session); animation: cad-pulse 2s ease-in-out infinite; }
+.cad .nothing { color: var(--text-2); padding: 8px 4px; font-weight: 600; }
+.cad .reason { margin-top: 14px; padding: 10px 14px; border-left: 3px solid var(--tone); background: color-mix(in srgb, var(--tone) 6%, transparent); border-radius: 0 10px 10px 0; max-width: 74ch; }
+.cad .reason.rej { border-left-color: var(--c-trouble); background: color-mix(in srgb, var(--c-trouble) 6%, transparent); }
+.cad .reason .t-label { display: block; margin-bottom: 3px; }
+.cad .reason p { font-size: 0.875rem; line-height: 1.6; }
+.cad .ly-cols { display: grid; grid-template-columns: 1fr; gap: 0 36px; }
+@container (min-width: 900px) { .cad .ly-cols { grid-template-columns: 1fr 1fr; } }
+.cad .sec { margin-top: 26px; }
+.cad .sec-h { font-size: 0.9375rem; font-weight: 800; margin: 0 0 10px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; letter-spacing: -0.01em; }
+.cad .sec-h .dim { font-weight: 400; font-size: 0.8125rem; letter-spacing: 0; }
+.cad .figs { display: flex; gap: 14px 26px; flex-wrap: wrap; align-items: center; }
+.cad .fig { display: flex; align-items: center; gap: 12px; }
+.cad .fig .lbl { font-size: 0.8125rem; color: var(--text-3); line-height: 1.4; }
+.cad .fig .lbl b { color: var(--foreground); font-size: 0.875rem; }
+.cad .fig .val { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.cad .nmi { font-style: italic; font-weight: 500; color: var(--text-3); font-size: 0.875rem; letter-spacing: 0; }
+.cad .ring-nm { width: 76px; height: 76px; border-radius: 50%; border: 6px dashed var(--line); display: grid; place-items: center; color: var(--text-3); }
+.cad .rg-trk { fill: none; stroke: var(--line); stroke-width: 7; }
+.cad .rg-val { fill: none; stroke-width: 7; stroke-linecap: round; }
+.cad .rg-tick { stroke: var(--foreground); stroke-width: 2; }
+.cad .rg-t { font-size: 15px; font-weight: 800; fill: var(--foreground); font-variant-numeric: tabular-nums; }
+.cad .rd-bar { stroke: var(--foreground); stroke-dasharray: 4 4; opacity: .45; }
+.cad .rd-ax { font-size: 13px; fill: var(--text-3); }
+.cad .rd-ax.on { fill: var(--text-2); }
+.cad .rd-v { font-size: 13px; font-weight: 800; fill: var(--foreground); font-variant-numeric: tabular-nums; }
+.cad .rd-pt { fill: var(--text-3); }
+.cad .rd-pt.last { fill: var(--tone); }
+.cad .rd-nm { fill: none; stroke: var(--text-3); stroke-dasharray: 2 2; }
+.cad .rd-empty { fill: none; stroke: var(--line); stroke-dasharray: 2 2; }
+.cad .rd-line { fill: none; stroke: var(--text-3); stroke-width: 1.5; }
+.cad .dimrow { display: grid; grid-template-columns: 96px 38px minmax(0, 1fr) 104px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+.cad .dimrow:last-child { border-bottom: 0; }
+.cad .dimrow .dn { font-weight: 700; }
+.cad .dimrow .dw { font-size: 0.8125rem; color: var(--text-3); font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.cad .dimrow .dv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+.cad .dimrow .dv.nm { font-weight: 500; font-style: italic; color: var(--text-3); font-size: 0.8125rem; }
+.cad .dimrow .dv.hit { color: var(--c-trouble); }
+.cad .dimrow svg { width: 100%; height: 22px; display: block; }
+.cad .defs { position: absolute; }
+.cad .db-trk { fill: var(--line); }
+.cad .db-nm { stroke: var(--text-3); stroke-dasharray: 3 3; }
+.cad .db-val { fill: var(--tone); }
+.cad .db-val.hit { fill: var(--c-trouble); }
+.cad .db-bar { stroke: var(--foreground); stroke-dasharray: 2 2; opacity: .55; }
+.cad .db-floor { stroke: var(--c-trouble); stroke-width: 2; }
+
+/* the rose */
+.cad .bigrose { display: block; overflow: visible; }
+.cad .r-guide { fill: none; stroke: var(--line); stroke-width: 1; }
+.cad .r-grid { fill: none; stroke: var(--line-soft); stroke-width: 1; }
+.cad .r-growth { fill: none; stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 1 3; opacity: .7; }
+.cad .petal { animation: cad-bloom 520ms cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 55ms + 120ms); transform-origin: center; transform-box: view-box; }
+.cad .petal-edge { fill: none; stroke: var(--pc); stroke-width: 3; stroke-linecap: round; animation: cad-bloom 520ms cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 55ms + 120ms); transform-origin: center; transform-box: view-box; }
+.cad .petal.ghost { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
+@keyframes cad-bloom { from { transform: scale(.25); opacity: 0; } to { transform: none; opacity: 1; } }
+.cad .floor { fill: var(--foreground); opacity: .8; }
+.cad .floor.hit { fill: var(--c-trouble); opacity: 1; }
+.cad .r-bar { fill: none; stroke: var(--foreground); stroke-width: 1.2; stroke-dasharray: 4 4; opacity: .6; }
+.cad .r-barl { font-size: 13px; fill: var(--text-2); paint-order: stroke; stroke: var(--background); stroke-width: 4px; stroke-linejoin: round; }
+.cad .r-drift { fill: none; stroke: var(--c-gate); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.cad .r-running { fill: none; stroke: var(--c-session); stroke-width: 2; }
+.cad .r-hub { fill: var(--background); stroke: var(--line); stroke-width: 1; }
+.cad .r-ov { fill: var(--foreground); font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.cad .r-hubs { fill: var(--text-3); font-size: 14px; font-style: italic; }
+.cad .r-lab { font-size: 13px; font-weight: 700; fill: var(--text-2); }
+.cad .r-w { font-size: 13px; font-weight: 500; font-style: normal; fill: var(--text-3); font-family: var(--font-mono); }
+.cad .r-val { font-size: 16px; font-weight: 800; fill: var(--foreground); font-variant-numeric: tabular-nums; }
+.cad .r-val.nm { font-size: 13px; font-weight: 500; font-style: italic; fill: var(--text-3); }
+.cad .r-val.hit { fill: var(--c-trouble); }
+.cad .envcell { stroke-width: 1.2; transition: transform 160ms; transform-origin: center; transform-box: view-box; cursor: default; }
+.cad .envcell.e-holds { fill: color-mix(in srgb, var(--c-proven) 62%, var(--surface)); stroke: var(--c-proven); }
+.cad .envcell.e-weak { fill: color-mix(in srgb, var(--c-trouble) 62%, var(--surface)); stroke: var(--c-trouble); }
+.cad .envcell.e-unmeasured { stroke: var(--text-3); stroke-dasharray: 3 3; }
+.cad .envcell.e-proposed { fill: none; stroke: var(--text-3); stroke-dasharray: 4 3; }
+.cad .envcell.e-out_of_scope { fill: none; stroke: var(--line); }
+.cad .envcell.hot { stroke: var(--accent); stroke-width: 2.5; }
+.cad .envn { font-size: 13px; font-weight: 800; fill: var(--foreground); pointer-events: none; }
+.cad .envn.on { fill: #fff; }
+[data-theme^="light"] .cad .envcell.e-holds { fill: color-mix(in srgb, var(--c-proven) 85%, #fff); }
+[data-theme^="light"] .cad .envcell.e-weak { fill: color-mix(in srgb, var(--c-trouble) 85%, #fff); }
+
+/* envelope list */
+.cad .envtag { display: inline-flex; font-size: 0.8125rem; padding: 1px 9px; border-radius: 999px; font-weight: 700; border: 1px solid var(--line); color: var(--text-2); margin-left: auto; }
+.cad .envtag.holds { color: var(--c-proven); border-color: var(--c-proven); }
+.cad .envtag.weak { color: var(--c-trouble); border-color: var(--c-trouble); }
+.cad .envtag.unmeasured { border-style: dashed; }
+.cad .scn { margin-top: 10px; }
+.cad .sc-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 10px 8px; margin: 0 -8px; border-bottom: 1px solid var(--line-soft); border-radius: 8px; }
+.cad .sc-row:last-child { border-bottom: 0; }
+.cad .sc-row.hot { background: var(--glow); }
+.cad .sc-row .no { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; font-size: 13px; font-weight: 800; position: relative; }
+.cad .sc-row .tt { font-weight: 700; }
+.cad .sc-row .ax { font-size: 0.8125rem; color: var(--text-3); }
+.cad .sc-row .sm { grid-column: 2 / 4; font-size: 0.875rem; line-height: 1.55; color: var(--text-2); }
+.cad .sc-f { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.0625rem; white-space: nowrap; }
+.cad .sc-f.holds { color: var(--c-proven); } .cad .sc-f.weak { color: var(--c-trouble); }
+.cad .sc-f small { display: block; font-size: 0.8125rem; font-weight: 500; color: var(--text-3); }
+.cad .no.e-holds { background: color-mix(in srgb, var(--c-proven) 62%, var(--surface)); box-shadow: inset 0 0 0 1px var(--c-proven); color: #fff; }
+.cad .no.e-weak { background: color-mix(in srgb, var(--c-trouble) 62%, var(--surface)); box-shadow: inset 0 0 0 1px var(--c-trouble); color: #fff; }
+.cad .no.e-unmeasured { background: repeating-linear-gradient(135deg, transparent 0 3px, var(--hatch-ink) 3px 4.5px); box-shadow: inset 0 0 0 1px var(--text-3); }
+.cad .no.e-proposed { box-shadow: inset 0 0 0 1.5px var(--text-3); color: var(--text-3); outline: 1px dashed var(--text-3); outline-offset: -4px; }
+.cad .no.e-out_of_scope { box-shadow: inset 0 0 0 1px var(--line); color: var(--text-3); }
+.cad .no.adv::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(135deg, transparent 0 3px, rgba(0,0,0,.35) 3px 5px); }
+.cad .adv { font-size: 0.8125rem; color: var(--c-gate); font-weight: 600; }
+
+/* slice */
+.cad .minibox { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: var(--map-bg); padding: 6px; }
+.cad .minimap { display: block; width: 100%; height: auto; }
+.cad .mdr { fill: var(--surface); stroke: var(--line-soft); }
+.cad .mdr.touch { stroke: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.cad .mp { opacity: .32; }
+.cad .mp.c-proven { fill: var(--p-proven); } .cad .mp.c-gate { fill: var(--p-gate); } .cad .mp.c-trouble { fill: var(--p-trouble); } .cad .mp.c-session { fill: var(--p-session); }
+.cad .mp.c-staked { fill: var(--p-staked); } .cad .mp.c-platform { fill: var(--p-platform); } .cad .mp.c-tests { fill: var(--p-tests); }
+.cad .mp.c-open, .cad .mp.c-unknown { fill: none; stroke: var(--p-open-line); stroke-dasharray: 2 1.5; stroke-width: .8; }
+.cad .mp.in { opacity: 1; stroke: var(--foreground); stroke-width: 1.2; stroke-dasharray: none; }
+.cad .mp.hot { opacity: 1; stroke: var(--accent); stroke-width: 2.5; }
+.cad .slice { margin-top: 12px; }
+.cad .slice-g { margin: 0 0 10px; }
+.cad .slice-g .gn { font-size: 0.8125rem; font-weight: 700; color: var(--text-3); margin-bottom: 2px; }
+.cad .ctxline { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.cad .ctxline .cn { font-family: var(--font-mono); font-size: 0.8125rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cad .ctxline .pri { font-size: 0.8125rem; color: var(--accent); font-weight: 700; }
+.cad .ctxline .co { font-size: 0.8125rem; color: var(--text-3); margin-left: auto; white-space: nowrap; }
+
+/* staggered rise of the layer's blocks */
+.cad .rise { animation: cad-rise 420ms cubic-bezier(.2,.8,.2,1) both; }
+.cad .ly-head.rise { animation-delay: 60ms; } .cad .actbar.rise { animation-delay: 110ms; }
+.cad .ly-col .rise:nth-child(1) { animation-delay: 160ms; } .cad .ly-col .rise:nth-child(2) { animation-delay: 210ms; } .cad .ly-col .rise:nth-child(3) { animation-delay: 260ms; }
+@keyframes cad-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* the view transition: the row grows into the layer, the root cross-fades (named per page: cad-deed) */
+::view-transition-group(cad-deed) { animation-duration: 440ms; animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+::view-transition-image-pair(cad-deed) { overflow: hidden; border-radius: 12px; }
+::view-transition-old(cad-deed) { animation: cad-vt-fade-out 180ms ease-out both; height: 100%; object-fit: cover; object-position: left top; }
+::view-transition-new(cad-deed) { animation: cad-vt-fade-in 300ms 60ms ease-out both; height: 100%; object-fit: cover; object-position: left top; }
+.cad-vt-out::view-transition-old(cad-deed) { animation: cad-vt-fade-out 260ms ease-in both; }
+.cad-vt-out::view-transition-new(cad-deed) { animation: cad-vt-fade-in 160ms 200ms ease-out both; }
+.cad-vt-in::view-transition-old(root), .cad-vt-in::view-transition-new(root),
+.cad-vt-out::view-transition-old(root), .cad-vt-out::view-transition-new(root) { animation-duration: 240ms; }
+@keyframes cad-vt-fade-out { to { opacity: 0; } }
+@keyframes cad-vt-fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(cad-deed), ::view-transition-old(cad-deed), ::view-transition-new(cad-deed) { animation: none; }
+}

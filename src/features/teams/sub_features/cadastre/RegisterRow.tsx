@@ -84,7 +84,7 @@ export const RegisterRow = memo(function RegisterRow({ r, focused, claimsHot, wi
       <DeedGlyph kind={r.row.kind} tDev={tDev} />
       <span className="nm">
         <span className="nt">{feature.name}</span>
-        {r.dup != null ? <i className="dup">{tx(t.cadastre_copy, { n: r.dup })}</i> : null}
+        {r.dup != null ? <i className="dupw"><span className="dup">{tx(t.cadastre_copy, { n: r.dup })}</span></i> : null}
       </span>
       {withSpan ? (
         <span className="sp" aria-label={tx(t.cadastre_parcels, { count: feature.contextIds.length })}>

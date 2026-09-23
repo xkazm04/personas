@@ -13,88 +13,58 @@
 // This component owns selection, filter, focus and the keyboard; the parts
 // draw. Its root carries the page's state as data attributes so a browser
 // drive can assert on what the page holds, not on its pixels.
-import { useCallback, useMemo, useRef, type RefObject } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import type { TDevTools } from '@/features/plugins/dev-tools/sub_context/contextLedgerShared';
-import type { Translations } from '@/i18n/en';
-import type { FeatureBoard } from '@/lib/bindings/FeatureBoard';
-import type { UpsertScenarioInput } from '@/lib/bindings/UpsertScenarioInput';
-
-import type { FeatureRow } from '../featureRules';
-import type { FeaturesModel } from '../featuresModel';
 import { IS_DEV } from '../fixture/featuresFixture';
+import { makeMeasure } from './cadastreLayout';
 import { claimedShare, countCats, type CadFilter, type ParcelCat } from './cadastreModel';
-import { CadastreMap } from './CadastreMap';
 import { CadastreHeader } from './CadastreHeader';
-import { runDeedTransition } from './deedTransition';
-import { Register } from './Register';
+import { CadastreMap } from './CadastreMap';
+import { DeedActions } from './DeedActions';
+import { DeedLayer } from './DeedLayer';
+import type { CadastrePageProps } from './cadastrePageProps';
 import { MapKey } from './MapKey';
 import { ParcelTip } from './ParcelTip';
+import { Register } from './Register';
 import { rowDomId } from './RegisterRow';
+import { UnclaimedList, unclaimedDomId } from './UnclaimedList';
 import { useCadastre } from './useCadastre';
 import { useCadastreKeys } from './useCadastreKeys';
+import { useDeedActions } from './useDeedActions';
+import { useDeedLayer } from './useDeedLayer';
 import { useMapTip } from './useMapTip';
 import './cadastre.css';
-
-export interface CadastrePageProps {
-  board: FeatureBoard;
-  model: FeaturesModel;
-  /** True while the checked-in fixture is on: every write is refused. */
-  fixture: boolean;
-  /** `/` lands here, exactly as it does on the Board. */
-  filterRef: RefObject<HTMLInputElement | null>;
-  onOpenContext: () => void;
-  onOpenDecision: (subjectId: string) => void;
-  onRunCouncil: (row: FeatureRow) => void;
-  onToggleTier: (row: FeatureRow) => Promise<void>;
-  onUpsertScenario: (input: UpsertScenarioInput) => Promise<void>;
-  onDeleteScenario: (id: string) => Promise<void>;
-  t: Translations['features'];
-  tDev: TDevTools;
-  tCommon: { save: string; cancel: string; delete: string };
-  tx: (template: string, vars: Record<string, string | number>) => string;
-  language: string;
-}
+import './cadastre-layer.css';
 
 const FILTER_CAT: Record<CadFilter, ParcelCat> = { waiting: 'gate', trouble: 'trouble', unclaimed: 'open' };
 
 export function CadastrePage(props: CadastrePageProps) {
   const { model, t, tDev, tx, language, filterRef } = props;
   const cad = useCadastre(model, language);
-  const listRef = useRef<HTMLDivElement>(null);
-  const layerRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [family, setFamily] = useState('sans-serif');
+  useLayoutEffect(() => { if (rootRef.current) setFamily(getComputedStyle(rootRef.current).fontFamily); }, []);
+  const measure = useMemo(() => makeMeasure(family), [family]);
+  const { listRef, layerRef, fallbackIn, openDeed, closeLayer } = useDeedLayer(cad);
+  const deed = useDeedActions(model, cad.selected, props);
 
   const share = useMemo(() => claimedShare(cad.cats), [cad.cats]);
-  const waiting = cad.ranked.filter((r) => r.row.move === 'waiting').length;
-  const trouble = cad.ranked.filter((r) => r.row.move === 'trouble').length;
-
-  const openDeed = useCallback((key: string, from?: HTMLElement | null) => {
-    if (!cad.byKey.has(key)) return;
-    const update = () => { cad.focusRow(key); cad.setSel(key); };
-    if (cad.open) { update(); return; }
-    const src = from ?? document.getElementById(rowDomId(key));
-    runDeedTransition(update, src, () => layerRef.current, 'in');
-  }, [cad]);
-
-  const closeLayer = useCallback(() => {
-    if (!cad.open) return;
-    const key = cad.sel;
-    runDeedTransition(() => cad.setSel(null), layerRef.current, () => (key ? document.getElementById(rowDomId(key)) : null), 'out');
-    listRef.current?.focus({ preventScroll: true });
-  }, [cad]);
+  const counts = useMemo(() => countCats(cad.cats), [cad.cats]);
+  const groupName = useMemo(() => new Map(model.plots.map((p) => [p.group.id, p.group.name])), [model.plots]);
 
   useCadastreKeys(
     cad,
-    { openDeed, closeLayer, runAction: () => {}, toggleTier: () => {}, openUnclaimed: props.onOpenContext },
+    { openDeed, closeLayer, runAction: deed.runAction, toggleTier: () => deed.setAsk('tier'), openUnclaimed: props.onOpenContext },
     { filter: filterRef, list: listRef },
-    { enabled: true, rehearsal: IS_DEV },
+    { enabled: deed.ask == null, rehearsal: IS_DEV },
   );
-
   const tip = useMapTip(cad, openDeed);
-  const counts = useMemo(() => countCats(cad.cats), [cad.cats]);
+  const og = cad.filter === 'unclaimed';
+  const position = { index: cad.visible.findIndex((r) => r.key === cad.sel), count: cad.visible.length };
 
   return (
     <div
+      ref={rootRef}
       className="cad"
       data-role="cad-page"
       data-testid="features-cadastre"
@@ -106,11 +76,13 @@ export function CadastrePage(props: CadastrePageProps) {
       data-rows={cad.visible.length}
       data-tip={tip.hover?.p?.id ?? ''}
       data-hot={cad.hotCtx ?? ''}
+      data-ask={deed.ask ?? ''}
+      data-last-write={deed.lastWrite}
     >
       <CadastreHeader
         share={share}
-        waiting={waiting}
-        trouble={trouble}
+        waiting={cad.ranked.filter((r) => r.row.move === 'waiting').length}
+        trouble={cad.ranked.filter((r) => r.row.move === 'trouble').length}
         unclaimed={model.unclaimed.length}
         filter={cad.filter}
         onFilter={(f) => { cad.toggleFilter(f); listRef.current?.focus({ preventScroll: true }); }}
@@ -133,11 +105,24 @@ export function CadastrePage(props: CadastrePageProps) {
           filterRef={filterRef}
           listRef={listRef}
           focus={cad.focus}
+          activeDescendant={og ? (cad.ogFocus ? unclaimedDomId(cad.ogFocus) : undefined) : cad.focus ? rowDomId(cad.focus) : undefined}
           hotClaims={tip.hotClaims}
           onOpen={openDeed}
           onPreview={(key) => cad.setPreview(key ?? cad.focus)}
-          unclaimedList={null}
-          unclaimedCount=""
+          unclaimedList={og ? (
+            <UnclaimedList
+              cells={cad.unclaimed}
+              groupName={(id) => groupName.get(id) ?? id}
+              focus={cad.ogFocus}
+              onFocus={(id) => { cad.setOgFocus(id); cad.setHotCtx(id); }}
+              onHover={(id) => cad.setHotCtx(id ?? cad.ogFocus)}
+              onOpenContext={props.onOpenContext}
+              query={cad.query}
+              t={t}
+              tx={tx}
+            />
+          ) : null}
+          unclaimedCount={tx(t.cadastre_contexts, { count: cad.unclaimed.length })}
           t={t}
           tDev={tDev}
           tx={tx}
@@ -161,7 +146,25 @@ export function CadastrePage(props: CadastrePageProps) {
           <MapKey counts={counts} onHover={cad.setHlCat} onFilter={cad.toggleFilter} t={t} tx={tx} />
         </section>
       </div>
-      <section ref={layerRef} className="layer" data-role="cad-layer" hidden={!cad.open} aria-label={t.cadastre_layer_label} />
+      <DeedLayer
+        ref={layerRef}
+        r={cad.selected}
+        position={position}
+        fallbackIn={fallbackIn}
+        model={model}
+        cats={cad.cats}
+        claims={cad.claims}
+        measure={measure}
+        actions={cad.selected ? (
+          <DeedActions r={cad.selected} ask={deed.ask} onAsk={deed.setAsk} busy={deed.busy} onMain={deed.runAction} onConfirmPromote={deed.confirmPromote} onConfirmTier={deed.confirmTier} onMap={closeLayer} t={t} tDev={tDev} tx={tx} />
+        ) : null}
+        onClose={closeLayer}
+        onStep={cad.stepDeed}
+        t={t}
+        tDev={tDev}
+        tx={tx}
+        language={language}
+      />
       <ParcelTip
         hover={cad.open ? null : tip.hover}
         claims={cad.claims}
@@ -177,4 +180,5 @@ export function CadastrePage(props: CadastrePageProps) {
   );
 }
 
+export type { CadastrePageProps };
 export default CadastrePage;
