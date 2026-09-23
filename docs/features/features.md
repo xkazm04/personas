@@ -182,6 +182,10 @@ rules the Rust side uses, because the fixture has no Rust behind it.
 
 ---
 
+## The Cadastre variant
+
+A **Board / Cadastre** switch in the page header (remembered per person; an unknown saved value falls back to Board) selects a second rendering of the same board: the Cadastre, the winner of the 2026-09-22/23 design contest (`.contest/Contest/contests/features-page-r2.md`), ported to the winner's captured style contract at zero deviations. The context map is drawn as districts (groups) of parcels (contexts) coloured by the claim on each one: the open ground is a dashed outline, a platform context carries a thin edge, and a selected deed's parcels are joined by a survey line. The header keeps the claimed share and the three move tags (`w`, `i`, `u`), which filter the register and light parcels; `u` swaps the register for the list of unclaimed contexts by district. The register keeps the Board's whose-move groups and sort at 32 px rows. `Enter` (or a click on a row or a parcel) opens the deed as a full-scale layer over the page with a view transition: the rating as weighted wedges with the bar ring, floor bands, earlier rounds as faint rings and a hatched petal for a score never measured; the state's one action with its key; coverage, the round trend and spend; the scenarios envelope; and the slice over a miniature of the map. `[` `]` step deeds, Esc closes and returns focus to the row. A figure the board does not carry (the council's finding, spend, a context description) reads `not measured`, never a substitute. Code: `sub_features/cadastre/`; the contract and shots live machine-local under `.claude/features-reference/`.
+
 ## Where the code lives
 
 | Piece | Path |

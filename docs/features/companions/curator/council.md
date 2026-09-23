@@ -289,7 +289,11 @@ with no backend behind it. Approve and reject work in memory and the gate says
 so out loud. With the fixture off and no backend, every read fails into the
 page's own honest error and empty states rather than into a blank field.
 
-### In a dev build, decisions repaint the sky
+### The fused instrument (variant)
+
+A **Classic / Fused** switch in the page header (remembered per person; an unknown saved value falls back to Classic) selects a second stage over the same registry galaxy: the fused HUD, the owner's fusion of the 2026-09-22/23 design contest's Cross-section and Bezel (`.contest/Contest/contests/council-hud-r2-r3.md`), ported onto the product's own galaxy engine with a `fused` style profile (labels never cover a star and fall back to the rank number, one level is named at a time, halos and council rings are capped at half the gap to the nearest neighbour, one claim palette is shared by stars, bars and arcs) and measured against the winner's captured style contract. On the left an altitude timeline (Sky, Domain, Category, Subject, Technique) whose needle rides the camera, the current rung as the counts card, soundings for what lies below, and the numbered list of the level below with care marks; at the top right the decisions waiting on the person, named with their overall (`W` lights their stars). `M` cycles three modes, named where they are switched and announced: **Bezel**, the field seen through a dial whose rim carries the whole registry, one notch per technique, re-engraved at every altitude so 12 o'clock is where you stand (`←` `→` turn it, an arc click flies); **Cross-section**, a bottom dock that opens folded to the subjects needing care at desktop width (the three chips filter it, `S` spreads it to one row per altitude with the preview row under the pointer; at 1600 x 900 and above it opens spread); **None**, the galaxy alone. A pinned technique opens as a document beside a shrunken dial. The classic stage, its strip and its counts card are unchanged. Code: `council/galaxy/fused/` and `council/galaxy/engine/profile.ts`; the contract and shots live machine-local under `.claude/council-reference/`.
+
+## In a dev build, decisions repaint the sky
 
 With the fixture on there is no backend to write to, so an approval or a
 rejection is held in memory - and folded into the overlay the field is
