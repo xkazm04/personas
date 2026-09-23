@@ -20,6 +20,8 @@ mod loopback_tests;
 
 use std::sync::Arc;
 use std::time::Duration;
+
+use futures_util::FutureExt as _;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
@@ -287,32 +289,8 @@ impl NetworkService {
             .await;
         });
 
-        // Auto-connect owned devices: once now (for devices discovered in an
-        // earlier session), again whenever mDNS writes new peers, and on every
-        // health-check tick (a device that dropped and came back). This is the
-        // reader `NetworkConfig.auto_connect` never had: owned devices ALWAYS
-        // connect; `auto_connect` additionally opts trusted (non-owned) peers in.
-        {
-            let this = self.auto_connector();
-            let signal = self.mdns.discovery_signal();
-            let config_ac = self.config.clone();
-            let cancel = token.clone();
-            tokio::spawn(async move {
-                loop {
-                    this.sweep().await;
-                    let secs = config_ac
-                        .try_read()
-                        .map(|c| c.health_check_interval_secs)
-                        .unwrap_or(15);
-                    tokio::select! {
-                        _ = cancel.cancelled() => break,
-                        _ = signal.notified() => {}
-                        _ = tokio::time::sleep(Duration::from_secs(secs)) => {}
-                    }
-                }
-                tracing::info!("p2p auto-connect loop stopped");
-            });
-        }
+        // Auto-connect owned devices (see `spawn_auto_connect`).
+        self.spawn_auto_connect(token.clone());
 
         // Start periodic rate-tracker cleanup via PeriodicTask so it honors
         // the shutdown cancel token (the previous receive_loop ignored cancel
@@ -588,6 +566,45 @@ impl NetworkService {
             emit_event(app, event_name::NETWORK_SNAPSHOT_UPDATED, &snapshot);
         }
     }
+
+    /// Auto-connect owned devices: once now (for devices discovered in an
+    /// earlier session), again whenever mDNS writes new peers, and on every
+    /// health-check tick (a device that dropped and came back). This is the
+    /// reader `NetworkConfig.auto_connect` never had: owned devices ALWAYS
+    /// connect; `auto_connect` additionally opts trusted (non-owned) peers in.
+    fn spawn_auto_connect(&self, token: CancellationToken) {
+        let this = self.auto_connector();
+        let signal = self.mdns.discovery_signal();
+        let config_ac = self.config.clone();
+        let cancel = token;
+        // The loop is detached, so its panic boundary is inside it: a panic
+        // in one sweep is caught, logged at error with its message, and the
+        // loop goes on to the next tick instead of silently ending
+        // auto-connect for the rest of the session.
+        tokio::spawn(async move {
+            loop {
+                let pass = std::panic::AssertUnwindSafe(this.sweep()).catch_unwind();
+                if let Err(panic) = pass.await {
+                    let what = panic
+                        .downcast_ref::<&str>()
+                        .map(|s| s.to_string())
+                        .or_else(|| panic.downcast_ref::<String>().cloned())
+                        .unwrap_or_else(|| "non-string panic".into());
+                    tracing::error!(panic = %what, "p2p auto-connect sweep panicked; continuing");
+                }
+                let secs = config_ac
+                    .try_read()
+                    .map(|c| c.health_check_interval_secs)
+                    .unwrap_or(15);
+                tokio::select! {
+                    _ = cancel.cancelled() => break,
+                    _ = signal.notified() => {}
+                    _ = tokio::time::sleep(Duration::from_secs(secs)) => {}
+                }
+            }
+            tracing::info!("p2p auto-connect loop stopped");
+        });
+    }
 }
 
 /// `Connected` / `Stale` / `Offline` for one device; see
@@ -635,7 +652,7 @@ impl AutoConnector {
         let mut candidates: Vec<String> = match owned_devices_repo::list_owned_devices(&self.pool) {
             Ok(devices) => devices.into_iter().map(|d| d.peer_id).collect(),
             Err(e) => {
-                tracing::warn!("auto-connect: could not list owned devices: {e}");
+                tracing::warn!(error = %e, "auto-connect: could not list owned devices");
                 Vec::new()
             }
         };

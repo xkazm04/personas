@@ -517,7 +517,7 @@ impl MdnsService {
         )?;
 
         if deleted > 0 {
-            tracing::debug!("Pruned {} long-absent stranger peers", deleted);
+            tracing::debug!(deleted, "Pruned long-absent stranger peers");
         }
 
         Ok(PruneOutcome {
@@ -680,39 +680,30 @@ mod tests {
     }
 
     fn test_pool() -> DbPool {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:mdns_prune_testdb_{id}?mode=memory&cache=shared");
-        let pool = r2d2::Pool::builder()
-            .max_size(2)
-            .build(r2d2_sqlite::SqliteConnectionManager::file(&uri))
-            .expect("pool");
-        {
-            let conn = pool.get().expect("conn");
-            personas_db::migrations::run(&conn).expect("migrations");
-            personas_db::migrations::run_incremental(&conn).expect("incremental");
-            conn.execute(
-                "INSERT INTO local_identity (id, peer_id, public_key, display_name)
-                 VALUES (1, 'local-peer', X'00', 'This Device')",
-                [],
-            )
+        let pool = personas_db::init_test_db().expect("test db");
+        pool.get()
+            .map_err(personas_core::error::AppError::from)
+            .and_then(|conn| {
+                conn.execute(
+                    "INSERT INTO local_identity (id, peer_id, public_key, display_name)
+                     VALUES (1, 'local-peer', X'00', 'This Device')",
+                    [],
+                )
+                .map_err(Into::into)
+            })
             .expect("seed local_identity");
-        }
         pool
     }
 
-    fn seen(pool: &DbPool, peer_id: &str, ago_secs: i64, connected: bool) {
+    fn seen(pool: &DbPool, peer_id: &str, ago_secs: i64, connected: bool) -> Result<(), AppError> {
         let at = (chrono::Utc::now() - chrono::Duration::seconds(ago_secs)).to_rfc3339();
-        pool.get()
-            .expect("conn")
-            .execute(
-                "INSERT INTO discovered_peers
-                   (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
-                 VALUES (?1, ?1, '[\"127.0.0.1:4242\"]', ?2, ?2, ?3, NULL, 'unverified')",
-                rusqlite::params![peer_id, at, connected as i32],
-            )
-            .expect("seed peer");
+        pool.get()?.execute(
+            "INSERT INTO discovered_peers
+               (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
+             VALUES (?1, ?1, '[\"127.0.0.1:4242\"]', ?2, ?2, ?3, NULL, 'unverified')",
+            rusqlite::params![peer_id, at, connected as i32],
+        )?;
+        Ok(())
     }
 
     /// THE regression test for the recorded deviation: an absent peer is
@@ -720,7 +711,7 @@ mod tests {
     /// the two-minute prune; an owned device is never deleted at all; only a
     /// stranger absent past the retention window goes.
     #[test]
-    fn the_prune_demotes_absent_peers_instead_of_deleting_them() {
+    fn the_prune_demotes_absent_peers_instead_of_deleting_them() -> Result<(), AppError> {
         let pool = test_pool();
         let group = personas_db::repos::resources::owned_devices::ensure_device_group_id(&pool)
             .expect("group");
@@ -730,11 +721,11 @@ mod tests {
             )
             .expect("pair");
         }
-        seen(&pool, "owned-recent", 300, false); // absent 5 min
-        seen(&pool, "owned-ancient", 30 * 24 * 3600, false); // absent 30 days
-        seen(&pool, "stranger-recent", 300, false);
-        seen(&pool, "stranger-ancient", 30 * 24 * 3600, false);
-        seen(&pool, "stranger-live", 300, true); // quiet on mDNS but connected
+        seen(&pool, "owned-recent", 300, false)?; // absent 5 min
+        seen(&pool, "owned-ancient", 30 * 24 * 3600, false)?; // absent 30 days
+        seen(&pool, "stranger-recent", 300, false)?;
+        seen(&pool, "stranger-ancient", 30 * 24 * 3600, false)?;
+        seen(&pool, "stranger-live", 300, true)?; // quiet on mDNS but connected
 
         let mdns = MdnsService::new(pool.clone());
         let outcome = mdns.prune_stale_peers(120).expect("prune");
@@ -771,6 +762,7 @@ mod tests {
             live.is_connected,
             "a live connection is never demoted by the prune"
         );
+        Ok(())
     }
 
     #[test]

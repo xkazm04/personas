@@ -45,21 +45,9 @@ fn install_crypto_provider() {
 }
 
 fn test_pool() -> DbPool {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-    let uri = format!("file:p2p_loopback_testdb_{id}?mode=memory&cache=shared");
-    let pool = r2d2::Pool::builder()
-        .max_size(8)
-        .build(r2d2_sqlite::SqliteConnectionManager::file(&uri))
-        .expect("pool");
-    {
-        let conn = pool.get().expect("conn");
-        conn.execute_batch("PRAGMA foreign_keys = ON;").expect("fk");
-        personas_db::migrations::run(&conn).expect("migrations");
-        personas_db::migrations::run_incremental(&conn).expect("incremental");
-    }
-    pool
+    // The production-shaped fixture: a file-backed pool with the production
+    // pragmas (foreign keys on), one fresh database per call.
+    personas_db::init_test_db().expect("test db")
 }
 
 struct Node {
@@ -76,17 +64,7 @@ async fn node(name: &str) -> Node {
     let key = SigningKey::generate(&mut rand::rngs::OsRng);
     // The row the process identity would have written; `owned_devices` needs it
     // to anchor a device group. Never read for signing (the key is injected).
-    pool.get()
-        .expect("conn")
-        .execute(
-            "INSERT INTO local_identity (id, peer_id, public_key, display_name) VALUES (1, ?1, ?2, ?3)",
-            rusqlite::params![
-                crate::identity::public_key_to_peer_id(&key.verifying_key()),
-                key.verifying_key().as_bytes().to_vec(),
-                name
-            ],
-        )
-        .expect("seed local_identity");
+    seed_identity(&pool, &key, name).expect("seed local_identity");
     let svc = NetworkService::new_with_test_identity(pool.clone(), key, name.to_string())
         .expect("service");
     let port = svc.start_transport_for_test().await.expect("bind");
@@ -100,6 +78,18 @@ async fn node(name: &str) -> Node {
     }
 }
 
+fn seed_identity(pool: &DbPool, key: &SigningKey, name: &str) -> Result<(), AppError> {
+    pool.get()?.execute(
+        "INSERT INTO local_identity (id, peer_id, public_key, display_name) VALUES (1, ?1, ?2, ?3)",
+        rusqlite::params![
+            crate::identity::public_key_to_peer_id(&key.verifying_key()),
+            key.verifying_key().as_bytes().to_vec(),
+            name
+        ],
+    )?;
+    Ok(())
+}
+
 /// `on` records `peer` as one of its own paired devices.
 fn trust(on: &Node, peer: &Node) {
     let group = owned_repo::ensure_device_group_id(&on.pool).expect("group");
@@ -107,23 +97,20 @@ fn trust(on: &Node, peer: &Node) {
 }
 
 /// `on` learns where `peer` listens: the row mDNS would have written.
-fn know_address(on: &Node, peer: &Node) {
+fn know_address(on: &Node, peer: &Node) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
-    on.pool
-        .get()
-        .expect("conn")
-        .execute(
-            "INSERT INTO discovered_peers
-               (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
-             VALUES (?1, ?2, ?3, ?4, ?4, 0, NULL, 'unverified')",
-            rusqlite::params![
-                peer.id,
-                peer.name,
-                format!("[\"127.0.0.1:{}\"]", peer.port),
-                now
-            ],
-        )
-        .expect("discovered row");
+    on.pool.get()?.execute(
+        "INSERT INTO discovered_peers
+           (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
+         VALUES (?1, ?2, ?3, ?4, ?4, 0, NULL, 'unverified')",
+        rusqlite::params![
+            peer.id,
+            peer.name,
+            format!("[\"127.0.0.1:{}\"]", peer.port),
+            now
+        ],
+    )?;
+    Ok(())
 }
 
 /// Poll `$cond` (which may `.await`) every 20 ms until it holds, or panic
@@ -194,13 +181,16 @@ struct Stub {
     release: Arc<Notify>,
     command_seen: Arc<Notify>,
     commands: Arc<Mutex<Vec<(String, RemoteSessionCommand, Option<String>)>>>,
+    /// Every job's task, kept so the test can prove none of them panicked.
+    tasks: Arc<Mutex<Vec<tokio::task::JoinHandle<()>>>>,
 }
 
 #[async_trait::async_trait]
 impl RemoteJobExecutor for Stub {
     async fn execute(&self, job: RemoteJobAssignment, handle: RemoteJobHandle) {
         let stub = self.clone();
-        tokio::spawn(async move {
+        let tasks = self.tasks.clone();
+        tasks.lock().unwrap().push(tokio::spawn(async move {
             if job.kind == REMOTE_JOB_KIND_FLEET_SESSION {
                 for _ in 0..500 {
                     if handle.output_subscribed() {
@@ -239,7 +229,7 @@ impl RemoteJobExecutor for Stub {
                     .await
                     .expect("complete");
             }
-        });
+        }));
     }
 
     async fn command(
@@ -267,7 +257,7 @@ async fn two_nodes_carry_jobs_across_a_drop_an_outbox_and_a_fleet_session() {
     let desktop = node("Desktop").await; // runs
     trust(&laptop, &desktop);
     trust(&desktop, &laptop);
-    know_address(&laptop, &desktop);
+    know_address(&laptop, &desktop).expect("address");
     let stub = Stub::default();
     desktop
         .svc
@@ -463,6 +453,12 @@ async fn two_nodes_carry_jobs_across_a_drop_an_outbox_and_a_fleet_session() {
             .await,
         Err(AppError::Validation(_))
     ));
+
+    let tasks: Vec<_> = std::mem::take(&mut *stub.tasks.lock().unwrap());
+    assert_eq!(tasks.len(), 3, "one executor task per accepted job");
+    for task in tasks {
+        task.await.expect("no executor task panicked");
+    }
 }
 
 /// Step 8: a third identity completes the handshake (any LAN peer may) but was
@@ -474,7 +470,7 @@ async fn an_unpaired_identity_is_refused_and_leaves_nothing_behind() {
     let stranger = node("Stranger").await;
     // The stranger believes home is its device; home has never heard of it.
     trust(&stranger, &home);
-    know_address(&stranger, &home);
+    know_address(&stranger, &home).expect("address");
     connect(&stranger, &home).await;
 
     let job = stranger

@@ -308,176 +308,6 @@ pub fn mark_cancelled(pool: &DbPool, id: &str, reason: &str) -> Result<bool, App
     finish(pool, id, RemoteJobStatus::Cancelled, reason)
 }
 
-// -- The outbox ---------------------------------------------------------------
-//
-// An outbound job sent while its peer is offline is persisted `queued` and goes
-// on the wire when the link next comes up. The two transitions below are
-// CONDITIONAL updates, so two drains racing for the same row (a simultaneous
-// connect raises link-up on both connections) cannot both send it: exactly one
-// `mark_pending` reports `true`.
-
-/// Outbound jobs waiting in the outbox for one peer, oldest first — the order
-/// they are drained in.
-pub fn list_queued_for_peer(pool: &DbPool, peer_id: &str) -> Result<Vec<RemoteJob>, AppError> {
-    let conn = pool.get()?;
-    let rows = conn
-        .prepare(&format!(
-            "SELECT {COLUMNS} FROM remote_jobs
-             WHERE direction = 'outbound' AND peer_id = ?1 AND status = 'queued'
-             ORDER BY created_at ASC, rowid ASC"
-        ))?
-        .query_map(rusqlite::params![peer_id], map_job)?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(rows)
-}
-
-/// Claim a queued job for sending: `queued` → `pending`. `false` when the row
-/// was not queued (another drain claimed it, or it has since moved on).
-pub fn mark_pending(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    transition(pool, id, RemoteJobStatus::Queued, RemoteJobStatus::Pending)
-}
-
-/// Put a job whose send did not get an answer back in the outbox:
-/// `pending` → `queued`. A send that failed on the wire is a suspension, not a
-/// failure — the peer either never saw the request (and will get it on the next
-/// link-up) or already accepted it (and will re-ack the repeat without running
-/// it twice, because `create_inbound` is idempotent on the job id). `false` when
-/// the row was not pending (an ack or a result landed in the meantime).
-pub fn mark_queued(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    transition(pool, id, RemoteJobStatus::Pending, RemoteJobStatus::Queued)
-}
-
-/// Return every outbound `pending` row to the outbox. Called once at network
-/// start: nothing can be in flight across a restart, so a row still `pending`
-/// is one whose send died with the process, and leaving it would strand it
-/// (the drain only takes `queued`, and the resume exchange has nothing to ask
-/// the peer about a request it may never have received).
-pub fn requeue_stranded_pending(pool: &DbPool) -> Result<usize, AppError> {
-    let conn = pool.get()?;
-    let n = conn.execute(
-        "UPDATE remote_jobs SET status = 'queued', updated_at = ?1
-          WHERE direction = 'outbound' AND status = 'pending'",
-        rusqlite::params![chrono::Utc::now().to_rfc3339()],
-    )?;
-    Ok(n)
-}
-
-fn transition(
-    pool: &DbPool,
-    id: &str,
-    from: RemoteJobStatus,
-    to: RemoteJobStatus,
-) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let n = conn.execute(
-        "UPDATE remote_jobs SET status = ?3, updated_at = ?4 WHERE id = ?1 AND status = ?2",
-        rusqlite::params![
-            id,
-            from.as_str(),
-            to.as_str(),
-            chrono::Utc::now().to_rfc3339()
-        ],
-    )?;
-    Ok(n > 0)
-}
-
-// -- Receipt and mirror -------------------------------------------------------
-
-/// Store a job's completion receipt (a serialized `FleetSessionJobReceipt`).
-/// The caller validates the JSON; this layer stores it verbatim, and
-/// [`map_job`] reads an unparseable value back as absent.
-pub fn set_receipt(pool: &DbPool, id: &str, receipt_json: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    let n = conn.execute(
-        "UPDATE remote_jobs SET receipt_json = ?2, updated_at = ?3 WHERE id = ?1",
-        rusqlite::params![id, receipt_json, chrono::Utc::now().to_rfc3339()],
-    )?;
-    if n == 0 {
-        return Err(AppError::NotFound(format!("No remote job with id {id}")));
-    }
-    Ok(())
-}
-
-/// The last-known view of a remote session, as the running device last mirrored
-/// it to this (originating) device. Latest-wins: each mirror replaces the last.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RemoteJobMirror {
-    /// The running device's serialized `RemoteSessionView`, verbatim.
-    pub view_json: String,
-    /// RFC 3339, this device's clock, when the frame landed.
-    pub mirror_at: String,
-}
-
-/// Replace a job's mirror. Deliberately does NOT touch `updated_at`: a mirror is
-/// a live view, not a change to the job, and `updated_at` is what the liveness
-/// rule reads as "when the job last changed state".
-pub fn set_mirror(
-    pool: &DbPool,
-    id: &str,
-    mirror_json: &str,
-    mirror_at: &str,
-) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    let n = conn.execute(
-        "UPDATE remote_jobs SET mirror_json = ?2, mirror_at = ?3 WHERE id = ?1",
-        rusqlite::params![id, mirror_json, mirror_at],
-    )?;
-    if n == 0 {
-        return Err(AppError::NotFound(format!("No remote job with id {id}")));
-    }
-    Ok(())
-}
-
-/// A job's last mirror, or `None` when none has arrived (or the job is unknown).
-pub fn get_mirror(pool: &DbPool, id: &str) -> Result<Option<RemoteJobMirror>, AppError> {
-    let conn = pool.get()?;
-    match conn.query_row(
-        "SELECT mirror_json, mirror_at FROM remote_jobs WHERE id = ?1",
-        rusqlite::params![id],
-        map_mirror,
-    ) {
-        Ok(mirror) => Ok(mirror),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
-}
-
-/// Every outbound job of `kind` that is still open, or finished at or after
-/// `terminal_since` (RFC 3339), with its last mirror — newest first. The read
-/// behind the originating device's remote-session tiles.
-pub fn list_outbound_with_mirrors(
-    pool: &DbPool,
-    kind: &str,
-    terminal_since: &str,
-) -> Result<Vec<(RemoteJob, Option<RemoteJobMirror>)>, AppError> {
-    let conn = pool.get()?;
-    let rows = conn
-        .prepare(&format!(
-            "SELECT {COLUMNS}, mirror_json, mirror_at FROM remote_jobs
-             WHERE direction = 'outbound' AND kind = ?1
-               AND (completed_at IS NULL OR completed_at >= ?2)
-             ORDER BY created_at DESC, id DESC
-             LIMIT 200"
-        ))?
-        .query_map(rusqlite::params![kind, terminal_since], |row| {
-            Ok((map_job(row)?, map_mirror(row)?))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(rows)
-}
-
-fn map_mirror(row: &rusqlite::Row<'_>) -> rusqlite::Result<Option<RemoteJobMirror>> {
-    let view_json: Option<String> = row.get("mirror_json")?;
-    let mirror_at: Option<String> = row.get("mirror_at")?;
-    Ok(match (view_json, mirror_at) {
-        (Some(view_json), Some(mirror_at)) => Some(RemoteJobMirror {
-            view_json,
-            mirror_at,
-        }),
-        _ => None,
-    })
-}
-
 fn set_status(
     pool: &DbPool,
     id: &str,
@@ -509,6 +339,190 @@ fn set_status(
         return Err(AppError::NotFound(format!("No remote job with id {id}")));
     }
     Ok(())
+}
+
+// -- The outbox ---------------------------------------------------------------
+//
+// An outbound job sent while its peer is offline is persisted `queued` and goes
+// on the wire when the link next comes up. The two transitions below are
+// CONDITIONAL updates, so two drains racing for the same row (a simultaneous
+// connect raises link-up on both connections) cannot both send it: exactly one
+// `mark_pending` reports `true`.
+
+/// Outbound jobs waiting in the outbox for one peer, oldest first — the order
+/// they are drained in.
+pub fn list_queued_for_peer(pool: &DbPool, peer_id: &str) -> Result<Vec<RemoteJob>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::list_queued_for_peer", {
+        let conn = pool.get()?;
+        let rows = conn
+            .prepare(&format!(
+                "SELECT {COLUMNS} FROM remote_jobs
+                 WHERE direction = 'outbound' AND peer_id = ?1 AND status = 'queued'
+                 ORDER BY created_at ASC, rowid ASC"
+            ))?
+            .query_map(rusqlite::params![peer_id], map_job)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+/// Claim a queued job for sending: `queued` → `pending`. `false` when the row
+/// was not queued (another drain claimed it, or it has since moved on).
+pub fn mark_pending(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    transition(pool, id, RemoteJobStatus::Queued, RemoteJobStatus::Pending)
+}
+
+/// Put a job whose send did not get an answer back in the outbox:
+/// `pending` → `queued`. A send that failed on the wire is a suspension, not a
+/// failure — the peer either never saw the request (and will get it on the next
+/// link-up) or already accepted it (and will re-ack the repeat without running
+/// it twice, because `create_inbound` is idempotent on the job id). `false` when
+/// the row was not pending (an ack or a result landed in the meantime).
+pub fn mark_queued(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    transition(pool, id, RemoteJobStatus::Pending, RemoteJobStatus::Queued)
+}
+
+/// Return every outbound `pending` row to the outbox. Called once at network
+/// start: nothing can be in flight across a restart, so a row still `pending`
+/// is one whose send died with the process, and leaving it would strand it
+/// (the drain only takes `queued`, and the resume exchange has nothing to ask
+/// the peer about a request it may never have received).
+pub fn requeue_stranded_pending(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::requeue_stranded_pending", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET status = 'queued', updated_at = ?1
+              WHERE direction = 'outbound' AND status = 'pending'",
+            rusqlite::params![chrono::Utc::now().to_rfc3339()],
+        )?;
+        Ok(n)
+    })
+}
+
+fn transition(
+    pool: &DbPool,
+    id: &str,
+    from: RemoteJobStatus,
+    to: RemoteJobStatus,
+) -> Result<bool, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::transition", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET status = ?3, updated_at = ?4 WHERE id = ?1 AND status = ?2",
+            rusqlite::params![
+                id,
+                from.as_str(),
+                to.as_str(),
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(n > 0)
+    })
+}
+
+// -- Receipt and mirror -------------------------------------------------------
+
+/// Store a job's completion receipt (a serialized `FleetSessionJobReceipt`).
+/// The caller validates the JSON; this layer stores it verbatim, and
+/// [`map_job`] reads an unparseable value back as absent.
+pub fn set_receipt(pool: &DbPool, id: &str, receipt_json: &str) -> Result<(), AppError> {
+    timed_query!("remote_jobs", "remote_jobs::set_receipt", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET receipt_json = ?2, updated_at = ?3 WHERE id = ?1",
+            rusqlite::params![id, receipt_json, chrono::Utc::now().to_rfc3339()],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("No remote job with id {id}")));
+        }
+        Ok(())
+    })
+}
+
+/// The last-known view of a remote session, as the running device last mirrored
+/// it to this (originating) device. Latest-wins: each mirror replaces the last.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteJobMirror {
+    /// The running device's serialized `RemoteSessionView`, verbatim.
+    pub view_json: String,
+    /// RFC 3339, this device's clock, when the frame landed.
+    pub mirror_at: String,
+}
+
+/// Replace a job's mirror. Deliberately does NOT touch `updated_at`: a mirror is
+/// a live view, not a change to the job, and `updated_at` is what the liveness
+/// rule reads as "when the job last changed state".
+pub fn set_mirror(
+    pool: &DbPool,
+    id: &str,
+    mirror_json: &str,
+    mirror_at: &str,
+) -> Result<(), AppError> {
+    timed_query!("remote_jobs", "remote_jobs::set_mirror", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE remote_jobs SET mirror_json = ?2, mirror_at = ?3 WHERE id = ?1",
+            rusqlite::params![id, mirror_json, mirror_at],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("No remote job with id {id}")));
+        }
+        Ok(())
+    })
+}
+
+/// A job's last mirror, or `None` when none has arrived (or the job is unknown).
+pub fn get_mirror(pool: &DbPool, id: &str) -> Result<Option<RemoteJobMirror>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::get_mirror", {
+        let conn = pool.get()?;
+        match conn.query_row(
+            "SELECT mirror_json, mirror_at FROM remote_jobs WHERE id = ?1",
+            rusqlite::params![id],
+            map_mirror,
+        ) {
+            Ok(mirror) => Ok(mirror),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
+/// Every outbound job of `kind` that is still open, or finished at or after
+/// `terminal_since` (RFC 3339), with its last mirror — newest first. The read
+/// behind the originating device's remote-session tiles.
+pub fn list_outbound_with_mirrors(
+    pool: &DbPool,
+    kind: &str,
+    terminal_since: &str,
+) -> Result<Vec<(RemoteJob, Option<RemoteJobMirror>)>, AppError> {
+    timed_query!("remote_jobs", "remote_jobs::list_outbound_with_mirrors", {
+        let conn = pool.get()?;
+        let rows = conn
+            .prepare(&format!(
+                "SELECT {COLUMNS}, mirror_json, mirror_at FROM remote_jobs
+                 WHERE direction = 'outbound' AND kind = ?1
+                   AND (completed_at IS NULL OR completed_at >= ?2)
+                 ORDER BY created_at DESC, id DESC
+                 LIMIT 200"
+            ))?
+            .query_map(rusqlite::params![kind, terminal_since], |row| {
+                Ok((map_job(row)?, map_mirror(row)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
+fn map_mirror(row: &rusqlite::Row<'_>) -> rusqlite::Result<Option<RemoteJobMirror>> {
+    let view_json: Option<String> = row.get("mirror_json")?;
+    let mirror_at: Option<String> = row.get("mirror_at")?;
+    Ok(match (view_json, mirror_at) {
+        (Some(view_json), Some(mirror_at)) => Some(RemoteJobMirror {
+            view_json,
+            mirror_at,
+        }),
+        _ => None,
+    })
 }
 
 /// Mint the next progress sequence number for a job we are running.
@@ -1042,7 +1056,7 @@ mod tests {
     /// Receipt and mirror round-trip, and the list behind the remote tiles
     /// carries both while skipping long-finished and foreign-kind rows.
     #[test]
-    fn receipts_and_mirrors_round_trip_and_feed_the_tile_list() {
+    fn receipts_and_mirrors_round_trip_and_feed_the_tile_list() -> Result<(), AppError> {
         let pool = test_pool();
         queued(&pool, "job-1", "peerA");
         assert!(get_mirror(&pool, "job-1").expect("mirror").is_none());
@@ -1080,14 +1094,10 @@ mod tests {
         outbound(&pool, "job-instruction");
         queued(&pool, "job-old", "peerA");
         finish(&pool, "job-old", RemoteJobStatus::Completed, "done").expect("finish");
-        {
-            let conn = pool.get().expect("conn");
-            conn.execute(
-                "UPDATE remote_jobs SET completed_at = '2000-01-01T00:00:00Z' WHERE id = 'job-old'",
-                [],
-            )
-            .expect("age it");
-        }
+        pool.get()?.execute(
+            "UPDATE remote_jobs SET completed_at = '2000-01-01T00:00:00Z' WHERE id = 'job-old'",
+            [],
+        )?;
         let rows = list_outbound_with_mirrors(&pool, "fleet_session", "2026-01-01T00:00:00Z")
             .expect("list");
         assert_eq!(rows.len(), 1, "only the open fleet_session job: {rows:?}");
@@ -1096,6 +1106,7 @@ mod tests {
             rows[0].1.as_ref().map(|m| m.mirror_at.as_str()),
             Some("2026-09-23T10:00:05Z")
         );
+        Ok(())
     }
 
     /// Deleting a job takes its notes with it (FK cascade), so a cleared history
