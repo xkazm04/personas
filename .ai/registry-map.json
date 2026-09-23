@@ -27,7 +27,7 @@
     "medianTopScore": 916.9,
     "carriedVerdicts": 178,
     "restoredPairs": 26,
-    "staleVerdicts": 121,
+    "staleVerdicts": 106,
     "orphanedVerdicts": 0,
     "renamedContexts": 0,
     "arrivedContexts": 0
@@ -4214,10 +4214,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:86-93 deletes a key with no settings-audit record while create, revoke and pair all write one, so the single irreversible mutation is the only one absent from the history the surface advertises.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 deletes the key with no settings_audit_log row while create (:46) and revoke (:78) write one and the settings page advertises an api_keys history, so the one irreversible action is missing from that history",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "dynamic-secret-lifecycle",
@@ -5043,11 +5043,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "Every component under src/features/settings/sub_appearance/components/ reads and writes only src/stores/themeStore.ts (zustand `persist` middleware to localStorage) — grep found zero references to src/api/system/settings.ts or get_app_setting/set_app_setting anywhere in the directory. The settings golden path's own Boundaries section draws this exact line ('client-side persistence mechanics... belong to client-state. This subject owns the durable, backend-held key space'), so no technique's precondition holds for this context.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:113 computes dirty against the stored theme but the explicit Save & Apply form registers no unsaved guard, so switching settings tabs silently discards a custom-theme draft; the old not-applicable was wrong (values mirror into the registered key at src-tauri/db/src/settings_keys.rs:903)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "render-mount-pipeline",
@@ -10005,10 +10005,10 @@
           "changedAt": "2026-09-16",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/ contains no audio capture, synthesis, engine adapter or transcript; every technique's precondition fails, and the match is lexical resonance on 'voice' as persona tone (fanout.rs:395) and 'synthesize' as gate-question generation (gates.rs:886).",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/src/engine/build_session/gates.rs:886 'synthesize' mints clarifying questions and :737 'elevenlabs' is a connector keyword; no capture, synthesis, playback or speech engine in the context, so voice-io's precondition (a product that listens or speaks) fails",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
+          "evaluatedRevision": 18
         },
         {
           "subject": "translation-quality-measurement",
@@ -13616,10 +13616,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22 (checkmark via useSaveFeedback.ts:8-25 plus a success toast) gives settings panels save-experience's 'confirm quietly' feedback, and useUnsavedGuard.ts's guardSettingsTab option (:92-112) guards settings-tab navigation specifically — the save-experience technique's realized half. The other five settings techniques are not-applicable to this hooks-only context (no key space, no store logic; that lives in src-tauri/db/src/settings_keys.rs and repos/core/settings.rs).",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:116 guards settings-tab navigation while dirty and keeps a failed save visible (:156); useMotion.ts:49 is the single door resolving the inherited reduced-motion default; the other eleven techniques' preconditions are unmet in hooks that never touch the key space, each anchored",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "narrative-scroll-surface",
@@ -14383,10 +14383,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:128,135,165 sorts version aggregates by compositeScore (toolAccuracy*0.4 + outputQuality*0.4 + protocolCompliance*0.2, mirrored from Rust SCORE_WEIGHTS) and crowns winnerId as the top score — folding three metrics into one composite verdict with no declared single optimized metric and threshold gates, the same collapse already flagged one layer down in test-runner-lab's eval.rs:380.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 sorts versions by the weighted composite and crowns winnerId with no declared optimized metric, no all-of-N and no noise check; ed5fd8058a added a conditioned cost view but left the winner rule",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:8c48af435a78adbe",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",
@@ -15034,10 +15034,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/lib/harness/types.ts:3 declares an autonomous Plan -> Execute -> Verify loop over a codebase; its 'scenario' is a set of quality goals with gate commands (scenario-parser.ts:23-56), not an input with an expected property, and nothing here scores a model's output, runs a cell N times, or pins a judge.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/lib/harness/types.ts:3 is an autonomous Plan-Execute-Verify development loop whose scenarios are codebase quality goals verified by shell commands (verifier.ts:18); nothing runs candidates against scenarios for comparable scores - quality-gates governs it",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:8c48af435a78adbe",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-instruction-files",
@@ -18046,10 +18046,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/lib/bindings/Judge.ts:10 - the judge read-model carries dims, personas and notes but no model, version, rubric or parameters, and JudgePanel.tsx:64 renders scores without them, so RunHistoryView's cross-run trend cannot distinguish a system change from a judge upgrade.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src/lib/bindings/Judge.ts:10 carries no judge model or version and the bundle's rubricVersion is rendered nowhere, while TrajectoryChart.tsx:21 plots teamScore across runs (missing as 0), so a judge or rubric change reads as a team change; CertOverview.tsx:47 drops the provisional mark the streak counts",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:8c48af435a78adbe",
+          "evaluatedRevision": 34
         },
         {
           "subject": "test-harness",
@@ -26155,11 +26155,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src/features/settings/sub_network/components/IdentitySettings.tsx:11-22 calls useSystemStore actions (setDisplayName, exportIdentityCard, importTrustedPeer, revokePeerTrust) that route through src-tauri/src/commands/network/identity.rs:20 (set_display_name) into a dedicated db/repos/resources/identity.rs peer-identity table — a separate device-identity/trust domain, never the app_settings key-value store or settings_audit_log this subject governs. Same boundary failure as appearance-settings, different underlying domain (peer identity, not client state).",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 defaults monthly_cost_ceiling_usd to '0' meaning no ceiling and src-tauri/src/commands/infrastructure/overnight.rs:137 turns that into Allow, so an unconfigured spend ceiling fails open for unattended dispatch, and it is raised or removed with an unconfirmed one-click Set (:399); the old not-applicable predates the context absorbing limits, history and notifications",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "agent-memory",
@@ -28527,10 +28527,10 @@
           "changedAt": "2026-09-16",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:1-14 is a desktop-to-Supabase database row sync pipeline (SQLite -> cloud, RLS-scoped, fault-isolated per table) with no microphone capture, transcription, synthesis, or engine adapter anywhere in cursor.rs/client.rs/rows.rs; every voice-io technique's precondition (an audio capture or playback pipeline) fails. Same lexical-resonance pattern already recorded as not-applicable for sibling contexts engine-build-session and webhook-ingestion in this same subject ('cloud'/'device'/'pipeline' matched vocabulary, no audio path).",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:155574232fcec29f",
-          "stale": true
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:58 syncs database projections with no audio or transcript table; no capture, synthesis or engine in the context",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
+          "evaluatedRevision": 18
         },
         {
           "subject": "test-harness",
@@ -32128,10 +32128,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:607 pins the judge to DEFAULT_BALANCED, which is an alias for SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44), so the pin moves whenever the alias is bumped and no run records which judge produced it; and eval.rs:380 folds three metrics into one weighted composite scored from a single run.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/engine/src/eval.rs:607 pins the judge to DEFAULT_BALANCED, a tier alias for the current Sonnet, and no result row records which judge scored it, so a roster bump silently re-judges every later run; the live composite verdict is test_runner/scoring.rs:76 (eval.rs:380 is dead code)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:8c48af435a78adbe",
+          "evaluatedRevision": 34
         },
         {
           "subject": "test-harness",
@@ -33284,10 +33284,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx and its siblings (AutoCredBrowser, AutoCredConsent, AutoCredReview) drive a Playwright browser-automation credential-capture flow (checkPlaywrightAvailable from @/api/vault/autoCredBrowser) — no SQL, no database connection, no schema browsing anywhere in the context. The subject's precondition ('the application manages connections to external databases') never holds.",
-          "evaluatedAt": "2026-08-31",
-          "evaluatedAgainst": "sha256:2bfbfa501f794edb",
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 drives a Playwright credential-capture flow; nothing executes SQL, introspects a schema or hosts a query surface, so the subject's precondition does not hold",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1
         },
         {
           "subject": "connector-catalog",
@@ -34255,10 +34255,10 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:182-213 never looks for a statement separator, so `SELECT 1; DROP TABLE audit_log` classifies as a read, raises no confirm banner and is dispatched with allowMutation:false — safe mode must refuse batches outright.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:2bfbfa501f794edb",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:51 shows an acknowledged mutation as the 'No rows returned' success state with no affected-row count, and :221 copies SQL NULL as the literal text 'NULL'; the old batch deviation is fixed (b4b0000670)",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1
         },
         {
           "subject": "markdown-vault",
@@ -34408,10 +34408,10 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:50 pins NULL rendering as the literal text 'NULL' and :76 pins a truncation warning carrying no bound, locking both fidelity defects into the suite as intended behaviour.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:2bfbfa501f794edb",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 pins NULL as the bare text 'NULL' and no case asserts zero-row, mutation-acknowledged or NULL-vs-text shapes, so the fidelity defects are locked in as intended; batch tests landed in b4b0000670",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1
         },
         {
           "subject": "markdown-vault",
@@ -34500,10 +34500,10 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:41-44 composes and executes `TYPE \"<key>\"` client-side with hand-rolled backslash/quote escaping — a second door the introspection module's own header (introspectionQueries.ts:1-8) claims was deleted.",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:2bfbfa501f794edb",
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 still builds a TYPE command on the client with hand-rolled escaping and executes it - a second door the introspection technique says to delete, not harden",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1
         },
         {
           "subject": "markdown-vault",
@@ -35525,10 +35525,10 @@
           "changedAt": "2026-09-16",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "The webhook/relay and engine-pipeline files carry no audio path; the match is lexical on template_v3.rs:839 (persona 'voice' block: style + output_format) and template_checksums.rs:24 (a template file named audio-briefing-host.json).",
-          "evaluatedAt": "2026-08-29",
-          "evaluatedAgainst": "sha256:0bcbae4cb89ac1bf",
-          "stale": true
+          "evidence": "src-tauri/engine/src/template_v3.rs:843 'voice' is the persona's written tone block and template_checksums.rs:16 only checksums a template named audio-briefing-host; no capture, synthesis or speech engine in the context",
+          "evaluatedAt": "2026-09-23",
+          "evaluatedAgainst": "sha256-b2:4337a608b34cbe4a",
+          "evaluatedRevision": 18
         },
         {
           "subject": "test-harness",

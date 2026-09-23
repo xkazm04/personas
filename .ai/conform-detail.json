@@ -301,198 +301,125 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "scenario-design",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/scenario-parser.ts:23 - a ScenarioGoal is a title, a description and prose successCriteria for the repository; it is a specification, not a versioned fixture with an input and a declared expected property, so scenario identity and cache-key scoping have no subject."
+          "evidence": "src/lib/harness/scenario-parser.ts:23 goals are repository quality goals, not fixtures"
         },
         {
           "technique": "judge-stability",
           "verdict": "not-applicable",
-          "evidence": "No model scores another model's output anywhere in these paths; verification is shell commands (verifier.ts:13-34)."
-        },
-        {
-          "technique": "metric-role-contract",
-          "verdict": "not-applicable",
-          "evidence": "types.ts:21 carries a 1-5 `quality` per feature, but nothing is optimized against thresholds - the loop's verdict is a gate report, not a metric set."
-        },
-        {
-          "technique": "assertion-vs-judgment",
-          "verdict": "not-applicable",
-          "evidence": "Everything is deterministic by construction; there is no judged property, so the layering decision never arises."
-        },
-        {
-          "technique": "comparison-modes",
-          "verdict": "not-applicable",
-          "evidence": "There are no candidates to compare - one repository is improved in place."
-        },
-        {
-          "technique": "eval-economics",
-          "verdict": "not-applicable",
-          "evidence": "No matrix of models x variants x scenarios x trials exists to budget."
-        },
-        {
-          "technique": "unaided-baseline-screening",
-          "verdict": "not-applicable",
-          "evidence": "There is no candidate that can be deprived of the material under test; the gates read the repository directly."
-        },
-        {
-          "technique": "overshoot-and-restore",
-          "verdict": "not-applicable",
-          "evidence": "The loop adds work rather than bounding a reduction search; the suite is not used as a bound to push against."
-        },
-        {
-          "technique": "failure-attribution",
-          "verdict": "not-applicable",
-          "evidence": "A red gate is a shell exit code attributed to the area under work; there is no label/dataset/prompt/model ownership question."
-        },
-        {
-          "technique": "certification-levels",
-          "verdict": "not-applicable",
-          "evidence": "No theoretical level gates an empirical one; there is one level, running commands."
-        },
-        {
-          "technique": "discriminating-task-selection",
-          "verdict": "not-applicable",
-          "evidence": "No population of candidates is ranked."
+          "evidence": "src/lib/harness/verifier.ts:18 verification is shell commands; no model scores output"
         }
-      ],
-      "registryProposal": "Corrected pairing, and it matters: src/lib/harness is governed by quality-gates, which the matcher never proposed (it paired on the word 'harness'). Judged against quality-gates the context carries a severe deviation on severity-by-construction and gate-liveness: every custom audit gate's command ends in `| wc -l` (verifier.ts:41-53, 57-70), so the pipeline's exit status is wc's and is always 0; runGate returns passed:true whenever execSync does not throw (verifier.ts:104-110), and the '0 means pass' branch that would interpret the count lives in the catch block (verifier.ts:116-125), which those gates can never reach. The result is a gate that reports 37 violations as a pass. Both audits are also `required:false` while verify() counts only required failures (verifier.ts:143-150), so the severity label is neutralized twice over. Recommend adding the quality-gates pair to this context in the map."
+      ]
     },
     "908be532-ef83-412b-8da3-caff9ff4d8ad/eval-harness": {
       "context": "overview-certification",
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "judge-stability",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_certification/components/JudgePanel.tsx:64 - the panel shows meanJudge / minPersonaOutput / portfolioBalance and per-persona dimension grades with no judge identity anywhere in the type (src/lib/bindings/Judge.ts:10); no anchor-set drift is surfaced, and no own-family disclosure accompanies scores produced by a model of the same family as the candidates. RunHistoryView ranks runs by verdict and score across time (RunHistoryView.tsx:10-15), which is exactly the artifact an unpinned judge turns into fiction."
+          "evidence": "src/lib/bindings/Judge.ts:10 no judge identity; JudgePanel.tsx:76 renders judge means without the instrument"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_certification/components/TrajectoryChart.tsx:21 plots a missing score as 0 and marks no rubric discontinuity"
         },
         {
           "technique": "certification-levels",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_certification/components/CertOverview.tsx:47 drops the provisional flag while the streak (src-tauri/src/commands/eval_runs.rs:667) counts provisional verdicts"
+        },
+        {
+          "technique": "reliability-aggregation",
           "verdict": "conformant",
-          "evidence": "src/lib/bindings/Judge.ts:6-7 - judge is null for deterministic-only scorecards, and VerdictBadge.tsx:24-51 marks those verdicts `provisional` with a trailing asterisk and a distinct title, so a candidate certified by the cheap level is never presented as having passed the expensive one; the four-level ladder itself is a declared closed vocabulary (VerdictBadge.tsx:17-22)."
+          "evidence": "src/features/overview/sub_certification/components/TeamCertCells.tsx:16 certifies only on 3 consecutive held-out production runs"
         },
         {
           "technique": "assertion-vs-judgment",
           "verdict": "conformant",
-          "evidence": "src/features/overview/sub_certification/components/GateBreakdown.tsx:44 - deterministic build/lint/test steps render as the outer gate with a three-state read (pass / fail / '-' for absent, lines 13-19), and the judged dimensions sit inside it in JudgePanel; a missing gate step is never painted as a pass."
-        },
-        {
-          "technique": "metric-role-contract",
-          "verdict": "unknown",
-          "evidence": "DimensionBars.tsx:5-9 applies one uniform 80/60 band to all five deterministic dimensions including grounding, and the surface shows them as peers under a composite verdict - but whether the bundle producer declares one optimized metric and N thresholds is decided in the eval_runs backend, outside these paths."
-        },
-        {
-          "technique": "scenario-design",
-          "verdict": "not-applicable",
-          "evidence": "Read-only viewer of bundles produced elsewhere; the run's seed is surfaced (RunHistoryView.tsx:68-73, RunDetailView.tsx:64) but scenario identity, sourcing and cache keys are all decided in the docs/test/runs producer."
-        },
-        {
-          "technique": "failure-attribution",
-          "verdict": "not-applicable",
-          "evidence": "The technique prescribes a manual review over a sample of both tails, producing classes; this context neither performs nor records attribution, and there is no field for an owner class on a red case."
-        },
-        {
-          "technique": "comparison-modes",
-          "verdict": "not-applicable",
-          "evidence": "The viewer shows absolute per-run scorecards; no pairwise or matrix comparison is constructed here."
-        },
-        {
-          "technique": "eval-economics",
-          "verdict": "not-applicable",
-          "evidence": "Cadence, caps, caches and mock modes are producer-side; the viewer only reads finished bundles from disk."
-        },
-        {
-          "technique": "unaided-baseline-screening",
-          "verdict": "not-applicable",
-          "evidence": "No deprived-candidate control can be run from a read-only surface."
-        },
-        {
-          "technique": "overshoot-and-restore",
-          "verdict": "not-applicable",
-          "evidence": "The harness is used as a certification gate, not as a bound on a reduction search."
-        },
-        {
-          "technique": "discriminating-task-selection",
-          "verdict": "not-applicable",
-          "evidence": "The surface reports per-team certification status, not a selection search ranking a population."
+          "evidence": "src/features/overview/sub_certification/components/GateBreakdown.tsx:18 deterministic gates rendered three-state, outside the judge panel"
         }
-      ],
-      "registryProposal": "Upward lesson for policy-projection (quality-gates) with a real anchor: DimensionBars.tsx:14-15 clamps a bar's visual width to 100% while printing the true number, with the reason written next to it ('Bars can exceed 100... clamp the visual width but show the true number'). That is the display-cap-is-not-a-data-cap rule realized as a two-line habit rather than as a postmortem, and it belongs in the application layer as a positive citation."
+      ]
     },
     "6a81750d-fdbf-4518-bae6-689303e1a884/eval-harness": {
       "context": "test-runner-lab",
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "judge-stability",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:605-607 - the intent is right and documented ('Pinned deliberately so scoring runs on a consistent judge rather than the undeclared account default'), but the pin resolves through DEFAULT_BALANCED -> SONNET_CURRENT (src-tauri/core/src/model_ids.rs:44): bumping the alias silently re-judges every future run against a different instrument, and the run artifact records the model only in the spend ledger (eval.rs:654), not against the score. No anchor set is re-scored for drift, and the judge is the same family as the candidate with no disclosure."
+          "evidence": "src-tauri/engine/src/eval.rs:607 judge pinned to a tier alias (src-tauri/core/src/model_ids.rs:44); no judge identifier on the result (src-tauri/engine/src/test_runner/summaries.rs:140)"
         },
         {
           "technique": "metric-role-contract",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:380 - tool_accuracy, output_quality and protocol_compliance are combined by fixed weights into one composite with `passed: Some(composite_score >= 50)` (eval.rs:400), so a high score on one dimension buys a failing score on another and no dimension is declared the constraint. One half IS right, and is the important half: confusion detection is a hard threshold that overrides the composite to zero rather than being weighted into it (eval.rs:366-379)."
-        },
-        {
-          "technique": "comparison-modes",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:400 - a verdict is rendered from a single run with no N, no declared aggregation and no variance; the `confidence` field beside it (eval.rs:116,129,161) is a hardcoded per-branch heuristic, not a measurement over repeated trials, so a score that travels carries no aggregation rule and flakiness is invisible rather than reported."
+          "evidence": "src-tauri/engine/src/test_runner/scoring.rs:76 passes a cell on a weighted composite >= 50; no metric declared optimized or threshold"
         },
         {
           "technique": "assertion-vs-judgment",
-          "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:1-5 is a full deterministic band - regex, contains, not_contains, json_path, json_schema and length rules with per-assertion persisted results - and src-tauri/engine/src/verification_command.rs:1-9 adds the exit-code primitive precisely because the previous quality_gate 'only pattern-matches output text; it cannot run a deterministic check'; the judge is reserved for what is left, behind a structured JSON verdict channel (eval.rs:595-601)."
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/scoring.rs:121 sends every output to the judge with no deterministic gate first; inconclusive third state realized (:67)"
+        },
+        {
+          "technique": "probe-the-decision-not-the-artifact",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:568 the judge scores tool_accuracy though expected and actual tool sequences are recorded; the comparator (:177) runs only on fallback"
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:336 each cell runs exactly once; the repeated-trial mode is dead code (modes.rs:299)"
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/summaries.rs:87 crowns a best model by composite with no within-condition spread check"
+        },
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:444 errored cells (cost 0, duration 0) enter the tracker, so an erroring arm looks faster and cheaper"
+        },
+        {
+          "technique": "selection-over-noise",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/evolution.rs:479 keeps the max of N once-measured challengers against a single incumbent draw; the winner is never re-run"
+        },
+        {
+          "technique": "failure-attribution",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/improvement.rs:214 routes every weak dimension to a prompt patch; no label, dataset or tool-surface owner attribution"
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/types.rs:57 a scenario is identified only by its generated name, no stable id or content version"
         },
         {
           "technique": "eval-economics",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/queue.rs:8-10 caps depth per persona and global concurrency; rate_limiter.rs:24 bounds per-key event rates; both caches declare lifetimes and eviction (prepared_run_cache.rs:10-11, session_pool.rs:20 with explicit invalidation on config change or failure); and every judge call lands in the dev_llm_spend ledger with its model and trigger (eval.rs:645-658), so the budget is an observable design input rather than an afterthought."
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:30 fan-out capped; cache lifetime declared (scenarios.rs:17); budget halt (lab.rs:355)"
         },
         {
-          "technique": "failure-attribution",
+          "technique": "comparison-modes",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/eval.rs:428-436 - the per-metric rationale fields are `#[serde(default)]` specifically because their absence once failed deserialization and 'silently degraded EVERY LLM eval to the keyword-match heuristic'; the fix keeps an instrument failure from masquerading as a low score, which is the third-state discipline this technique pushes down to the case."
-        },
-        {
-          "technique": "scenario-design",
-          "verdict": "not-applicable",
-          "evidence": "prepared_run_cache.rs:30-64 keys on the persona's own prompt, tools and input - correctly, because it caches the candidate's prepared prompt rather than a generated scenario; there is no generated-scenario cache in these paths whose key scope could exclude candidate material."
-        },
-        {
-          "technique": "certification-levels",
-          "verdict": "not-applicable",
-          "evidence": "This lane runs the live level only; the theoretical/empirical promotion ladder lives in the eval_runs certification bundles, surfaced by the overview-certification context."
-        },
-        {
-          "technique": "unaided-baseline-screening",
-          "verdict": "not-applicable",
-          "evidence": "No deprived-candidate control exists; the strategies score a persona against its own expected behaviour with nothing withheld."
-        },
-        {
-          "technique": "overshoot-and-restore",
-          "verdict": "not-applicable",
-          "evidence": "The suite is used as a scoring gate, never as a bound an agent pushes against to find a minimum."
-        },
-        {
-          "technique": "discriminating-task-selection",
-          "verdict": "not-applicable",
-          "evidence": "One persona is scored per run; no population is ranked, so scenario selection has nothing to discriminate."
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:541 fails a run whose cells were lost instead of rendering it complete"
         }
-      ],
-      "registryProposal": "Two notes. (1) The brief's path src-tauri/engine/src/test_runner.rs no longer exists - the map row is stale for this context. (2) judge-stability says 'the judge is pinned (model, version, parameters, rubric, exemplars)'; this repo pins deliberately and still fails, because the pin points at a semantic alias (DEFAULT_BALANCED -> SONNET_CURRENT) that a routine model-roster bump moves. Worth one explicit line: a pin must be to a concrete dated identifier AND recorded onto the run artifact, because a constant named for a tier is a moving target that reads as pinned in review."
+      ]
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/hitl-approval": {
       "context": "overview-manual-review",
@@ -835,122 +762,40 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-10",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/build_session/runner.rs:623 drives a text CLI turn loop; no microphone, capture buffer or transcript exists in this context."
-        },
-        {
-          "technique": "tts-pipeline",
-          "verdict": "not-applicable",
-          "evidence": "No utterance queue or playback resource anywhere in build_session/; the only 'synthesis' is gates.rs:886 synthesize_all_unopen_gates, which mints clarifying questions."
+          "evidence": "src-tauri/engine/src/cli_session_awareness/transcript.rs:1 parses CLI text transcripts, not speech"
         },
         {
           "technique": "engine-abstraction",
           "verdict": "not-applicable",
-          "evidence": "There is no transcription or synthesis engine to sit behind an interface; build_session/reference.rs and templates.rs handle persona templates."
-        },
-        {
-          "technique": "spoken-intent-parsing",
-          "verdict": "not-applicable",
-          "evidence": "parser.rs:1 parses the model's JSON event lines, not speech; no transcript enters this context."
-        },
-        {
-          "technique": "voice-ux-integration",
-          "verdict": "not-applicable",
-          "evidence": "Backend module with no surface; events.rs:1 emits build-progress events to the UI, none of them audio affordances."
-        },
-        {
-          "technique": "on-device-vs-cloud",
-          "verdict": "not-applicable",
-          "evidence": "No engine placement decision exists — the residency question this technique owns is about raw audio, and no audio is captured here."
-        },
-        {
-          "technique": "duplex-agent-sessions",
-          "verdict": "not-applicable",
-          "evidence": "runner.rs:683 resumes a text session with --continue; there is no live duplex voice session with a vendor."
-        },
-        {
-          "technique": "portable-provider-package",
-          "verdict": "not-applicable",
-          "evidence": "No engine layer to package."
-        },
-        {
-          "technique": "speech-ready-text",
-          "verdict": "not-applicable",
-          "evidence": "session_prompt.rs:176 assembles text for a model to read, never for an engine to voice; the 'voice' at fanout.rs:395 is the persona's written tone."
-        },
-        {
-          "technique": "transcript-normalization",
-          "verdict": "not-applicable",
-          "evidence": "No speech transcript reaches this context."
+          "evidence": "src-tauri/src/engine/build_session/gates.rs:737 a vendor named only as a connector keyword"
         }
-      ],
-      "registryProposal": "Coverage question, not a standard defect: the matcher routed by vocabulary ('voice', 'synthesize') rather than by the golden path's precondition (a product that listens and speaks). This pair should be dropped from the map; build_session is governed by prompt-assembly, which is separately paired here."
+      ]
     },
     "767b2bb5-4662-4be1-ad24-c881ac334016/voice-io": {
       "context": "webhook-ingestion",
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-10",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
-        {
-          "technique": "stt-pipeline",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/webhook.rs and smee_relay.rs carry HTTP payloads; no capture device, permission state or transcript exists in this context."
-        },
-        {
-          "technique": "tts-pipeline",
-          "verdict": "not-applicable",
-          "evidence": "No synthesis request, utterance queue or playback resource in any listed file."
-        },
-        {
-          "technique": "engine-abstraction",
-          "verdict": "not-applicable",
-          "evidence": "cli_capabilities.rs:1 declares CLI capabilities, not voice-engine capabilities; there is no per-direction voice interface to abstract."
-        },
-        {
-          "technique": "spoken-intent-parsing",
-          "verdict": "not-applicable",
-          "evidence": "No transcript-to-command crossing; webhook bodies are structured payloads, not speech."
-        },
-        {
-          "technique": "voice-ux-integration",
-          "verdict": "not-applicable",
-          "evidence": "Backend ingestion modules with no user-facing affordance."
-        },
-        {
-          "technique": "on-device-vs-cloud",
-          "verdict": "not-applicable",
-          "evidence": "cloud_webhook_relay.rs makes a transport residency choice, not an audio residency choice; the technique's subject is where raw microphone audio runs."
-        },
-        {
-          "technique": "duplex-agent-sessions",
-          "verdict": "not-applicable",
-          "evidence": "No vendor-run conversation session in this context."
-        },
-        {
-          "technique": "portable-provider-package",
-          "verdict": "not-applicable",
-          "evidence": "No engine layer exists to travel as a package."
-        },
         {
           "technique": "speech-ready-text",
           "verdict": "not-applicable",
-          "evidence": "template_v3.rs:838-855 prepends a persona's written 'Voice' block to identity text for a model to read; nothing is handed to a synthesis engine."
+          "evidence": "src-tauri/engine/src/template_v3.rs:843 assembles prompt text for a model, never for an engine to voice"
         },
         {
-          "technique": "transcript-normalization",
+          "technique": "unattended-caller-attribution",
           "verdict": "not-applicable",
-          "evidence": "No speech transcript exists in this context."
+          "evidence": "src-tauri/src/engine/webhook.rs:5 inbound HTTP triggers personas; no route makes the machine speak"
         }
-      ],
-      "registryProposal": "Coverage question plus a stale brief: the pairing is vocabulary resonance on the persona 'voice' block, and the brief lists src-tauri/engine/src/dream_replay.rs, which does not exist on disk — the map row's paths should be regenerated."
+      ]
     },
     "969f50a2-b70d-41e3-b573-284a75a67425/prompt-assembly": {
       "context": "prompt-assembly-engine",
@@ -2687,38 +2532,33 @@
       "subject": "sql-console",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "safe-mode-guarding",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:182-213 — a read leading keyword grants read-only status without a batch check, and :11 admits PRAGMA/ANALYZE into the read list, so a connection-state statement passes as a read; the stripper, CTE scan, EXPLAIN ANALYZE case and fail-closed posture (:167, :183, :209) are otherwise exemplary."
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:242 refuses batches; :230 strips literals and comments before scanning; :205 fails closed; hooks/useQuerySafeMode.ts:34 voids a pending consent when the target changes"
         },
         {
           "technique": "introspection-architecture",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1-8 records that the client-side SQL builders were deleted in favour of the backend's parameterized introspect_db_tables/introspect_db_columns; what remains at :128 emits a SELECT for the clipboard, which is the blessed emitted-not-executed helper."
+          "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:1 client builders deleted for the parameterized backend door"
         },
         {
           "technique": "dialect-capability-declaration",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:9-18 keeps one union read list mixing SQL and Redis verbs applied regardless of connector family, instead of a per-family read list the guard consults; the family map itself (introspectionQueries.ts:42-82) correctly derives language and NL dialect from one authority."
+          "evidence": "src/features/vault/sub_databases/safeModeUtils.ts:10 one read list mixing SQL and Redis verbs applies to every family"
         },
         {
           "technique": "editor-ergonomics",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:13-77 provides dialect-aware highlighting and a keyboard run binding but no schema-aware completion, no run-selection or statement-at-cursor, and no cancel affordance — the cancellation stack exists end to end at hooks/useDbQueryRunner.ts:60-63 and no editor surface here exposes it, which is the technique's named 'feature that does not exist for the user'."
+          "evidence": "src/features/vault/sub_databases/SqlEditor.tsx:34 Ctrl+Enter runs the whole buffer; no schema-aware completion, no run-selection"
         },
         {
           "technique": "result-fidelity",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:198-203 announces truncation with no bound (the QueryResult wire type carries `truncated: boolean` and no cap, so the surface structurally cannot name it), :221 renders and copies SQL NULL as the literal text 'NULL', :51-60 renders an acknowledged mutation as the zero-row empty state, and safeModeUtils.ts:217-224 relays engine errors with no credential scrubber in front of the result area."
-        },
-        {
-          "technique": "nl-assist-gating",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/SchemaManagerModal.tsx mounts the chat lane from tabs/ChatTab; no file in this context authors, gates or executes generated SQL."
+          "evidence": "src/features/vault/sub_databases/QueryResultTable.tsx:51 mutation acknowledgement shown as empty success; :221 NULL copied as text"
         }
       ]
     },
@@ -2727,38 +2567,33 @@
       "subject": "sql-console",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
+        {
+          "technique": "result-fidelity",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:59 pins NULL as plain text; :80 checks /truncated/i, not the bound"
+        },
         {
           "technique": "introspection-architecture",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:7-18 pins the rendered shape produced by the single trusted-side door and records the deletion of the client-side builders it replaced."
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:14 pins the single parameterized door"
         },
         {
           "technique": "dialect-capability-declaration",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts:60-77 asserts per-family classification including the unsupported fallback, and ConnectorCapabilityNote.test.tsx:24-40 asserts the note renders the backend-reported capability class rather than a client-side guess."
+          "evidence": "src/features/vault/sub_databases/__tests__/ConnectorCapabilityNote.test.tsx:32 asserts the backend-reported capability class"
         },
         {
           "technique": "nl-assist-gating",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:62 and :88 pin that a generated mutation is held at the same confirm banner and then run in write mode, while a generated read runs directly — the same-gate/same-door property asserted as behaviour."
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:67 a generated mutation is held at the same confirm banner"
         },
         {
           "technique": "safe-mode-guarding",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:62-88 is the only guard coverage in this context, and no fixture in the suite is shared with the Rust is_mutation; parity is maintained by the prose note at safeModeUtils.ts:25-31, which records a drift (DROP/ALTER) that already shipped, and no case covers batches or session-state statements."
-        },
-        {
-          "technique": "result-fidelity",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:50, :76 — the suite asserts the two defects (NULL as text, bound-less truncation) rather than the contract, so a fix would read as a regression."
-        },
-        {
-          "technique": "editor-ergonomics",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx:5-127 covers highlighting and the run bindings and nothing else; there is no case for completion, history, run-selection or cancel because none is implemented, so the suite records the editor floor as complete when it is not."
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:51 asserts batch refusal (file missing from the context map's path list)"
         }
       ]
     },
@@ -2767,38 +2602,33 @@
       "subject": "sql-console",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-3",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "introspection-architecture",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:41-44 — a user-influenced Redis key is escaped by hand and interpolated into a command fed straight to executeDbQuery; the technique's ruling on such helpers is deletion with the trusted-side door absorbing the call site, and the well-escaped variant is exactly the one it names as the vulnerability's seed."
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:43 a user-influenced key escaped by hand (:42) and sent straight to executeDbQuery"
         },
         {
           "technique": "nl-assist-gating",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:143 marks a completed generation status:'ready' with 'query generated' copy even when no SQL was extracted (the with_sql/no_sql distinction is already known at :135 and spent on telemetry only), and :202 executes without any generated-provenance marker, so history cannot tell a generated statement from a typed one weeks later."
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:195 a completion with no SQL is marked ready with 'Query generated.' copy; :256 executes with no generated-provenance marker"
         },
         {
           "technique": "safe-mode-guarding",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:211 reuses the editor's own useQuerySafeMode hook and :202 its executeDbQuery door — the same code path, not a re-implementation — and :222 voids a pending consent when the run target moves."
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:279 and ConsoleTab.tsx:99 share useQuerySafeMode; MutationConfirmBanner.tsx:45 shows the whole statement"
         },
         {
           "technique": "dialect-capability-declaration",
           "verdict": "conformant",
-          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:20-33 fetches the capability class from db_connector_capability, the authority that lives beside the execute dispatch, and ChatTab.tsx:285 renders it in the lane's chrome so the model lane never implies more than the connector supports."
-        },
-        {
-          "technique": "result-fidelity",
-          "verdict": "unknown",
-          "evidence": "src/features/vault/sub_databases/tabs/ChatMessages.tsx renders m.result through the shared grid; the fidelity contract belongs to the QueryResult wire type judged in the shell context and is not separately determinable here."
+          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:27 fetches the class from the backend capability command"
         },
         {
           "technique": "editor-ergonomics",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/ChatInput.tsx is a natural-language prompt box, not a SQL editing surface; no statement-authoring editor lives in this context."
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/ConsoleTab.tsx:97 history recorded only on success, with no verdict or timing, so failed statements vanish"
         }
       ]
     },
@@ -5734,41 +5564,25 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-9",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "settings-audit-and-history",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:86-93 (delete_external_api_key) writes no settings_audit_log row, while create (:46), revoke (:78) and pair (:187, :216) all do - so 'who removed that key, and when' is unanswerable for the one action that destroys the row too. The surface itself is right: src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:196 puts a recent-change marker at the scene linking through to the history tab, and the audit insert is best-effort relative to the write exactly as the technique requires (external_api_keys.rs:45-56 logs a warning and still returns the key)."
+          "evidence": "src-tauri/src/commands/credentials/external_api_keys.rs:91 repo::delete with no audit insert; create (:46) and revoke (:78) insert"
         },
         {
           "technique": "save-experience",
           "verdict": "deviation",
-          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:105 dismisses the dialog on a backdrop click, discarding an explicit-save draft (name, scopes, per-persona execute picks, expiry) with no unsaved-changes guard; and :228 disables submit for validation reasons rather than letting the press surface the blocker. Destructive row actions do get their ceremony - the two-step arm/confirm at ApiKeysSettings.tsx:322 via useConfirmClick - and write failures surface rather than pretending (:210-223)."
+          "evidence": "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx:105 a backdrop click discards the explicit-save draft with no guard; delete has arm/confirm (ApiKeysSettings.tsx:322)"
         },
         {
           "technique": "key-registry",
           "verdict": "not-applicable",
-          "evidence": "The precondition that fails is the existence of a settings key space: this context manages rows in external_api_keys, and the settings golden path excludes exactly this material ('Secrets are not settings... if a value would be redacted in a log, it does not belong here'). There is no key to register, namespace, migrate, or reap."
-        },
-        {
-          "technique": "typed-accessors",
-          "verdict": "not-applicable",
-          "evidence": "No settings key is read in this context, so there is no accessor, default, or fail direction to judge; src/features/settings/sub_api_keys/libs/mcpServer.ts:8 is a compile-time constant, not a stored setting behind a typed door."
-        },
-        {
-          "technique": "read-batching",
-          "verdict": "not-applicable",
-          "evidence": "No settings reads happen here, so there is no boot fan-out to collapse; the module-scoped cache at ApiKeysSettings.tsx:83 mirrors a domain list, not settings rows."
-        },
-        {
-          "technique": "setting-kinds",
-          "verdict": "not-applicable",
-          "evidence": "No registered key exists to classify by blast radius. Worth noting the instinct is present anyway outside the store: CreateApiKeyDialog.tsx:49 defaults the expiry to 90 days with 'never' available only as a deliberate pick - a ceiling that fails closed."
+          "evidence": "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx:111 reads external_api_keys rows; no app_settings key in the context - secrets are not settings"
         }
-      ],
-      "registryProposal": "Coverage question. Four of six techniques fail their precondition because the subject owns the durable key-value settings store while this context is credential management that merely lives under features/settings/. The match reads as directory-vocabulary rather than precondition: the material here is governed by credential-vault, and only the two surface-shaped techniques (settings-audit-and-history, save-experience) genuinely reach it. Either narrow the pairing to those two or route the context to credential-vault."
+      ]
     },
     "0a73aef0-7c50-4be1-b990-cbddad3671bd/usage-analytics": {
       "context": "lib-analytics",
@@ -6098,39 +5912,24 @@
       "context": "appearance-settings",
       "subject": "settings",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
-          "technique": "key-registry",
-          "verdict": "not-applicable",
-          "evidence": "theme/density/timezone/brightness keys live in themeStore's zustand shape, not the app_settings allow-listed key space"
-        },
-        {
-          "technique": "typed-accessors",
-          "verdict": "not-applicable",
-          "evidence": "zustand store fields are already typed at the store; no stringly app_settings read boundary is involved"
-        },
-        {
-          "technique": "read-batching",
-          "verdict": "not-applicable",
-          "evidence": "no backend round trip at all — themeStore hydrates from localStorage synchronously"
-        },
-        {
-          "technique": "setting-kinds",
-          "verdict": "not-applicable",
-          "evidence": "no registry entry, so no kind classification exists to apply"
-        },
-        {
-          "technique": "settings-audit-and-history",
-          "verdict": "not-applicable",
-          "evidence": "writes never reach settings_audit_log::insert (src-tauri/db/src/repos/core/settings.rs:55) because they never reach app_settings at all"
-        },
-        {
           "technique": "save-experience",
-          "verdict": "not-applicable",
-          "evidence": "the UI is pure immediate/auto-save against client state with no explicit-save form to guard"
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:113 dirty-vs-stored correct, but no useUnsavedGuard on the Save & Apply form"
+        },
+        {
+          "technique": "inherited-default-override",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceBrightnessSettings.tsx:78 the Reduce motion toggle shows the stored flag, not the resolved value (useMotion.ts:49 ORs it with the OS), so with OS reduce on it reads Off while motion is reduced; timezone does it right (AppearanceTimezoneSettings.tsx:19)"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "unknown",
+          "evidence": "src/lib/appearanceMirror.ts:47 hand-copies the key literal of settings_keys.rs:903 with no parity test; that file belongs to no context"
         }
       ]
     },
@@ -6138,42 +5937,41 @@
       "context": "settings-network",
       "subject": "settings",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
-          "technique": "key-registry",
-          "verdict": "not-applicable",
-          "evidence": "peer identity/trust fields live in a dedicated identity table, not the app_settings key space"
-        },
-        {
           "technique": "typed-accessors",
-          "verdict": "not-applicable",
-          "evidence": "identity.rs commands are typed Tauri commands over their own table, not app_settings string accessors"
-        },
-        {
-          "technique": "read-batching",
-          "verdict": "not-applicable",
-          "evidence": "get_local_identity/fetchTrustedPeers are dedicated endpoints, not app_settings bulk reads"
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:118 default '0' = no ceiling; src-tauri/src/commands/infrastructure/overnight.rs:137 None => Allow, the fail-open convention the technique names"
         },
         {
           "technique": "setting-kinds",
-          "verdict": "not-applicable",
-          "evidence": "no registry entry exists for these values to classify"
-        },
-        {
-          "technique": "settings-audit-and-history",
-          "verdict": "not-applicable",
-          "evidence": "identity/trust mutations never call settings_audit_log::insert"
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:399 the spend ceiling saves with the same unconfirmed Set as concurrency; no kinds declared"
         },
         {
           "technique": "save-experience",
-          "verdict": "not-applicable",
-          "evidence": "network dashboard/bundle export-import and identity edits are their own device-pairing/sharing UX, not a settings save form"
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:77 an instant-commit toggle beside Set-button fields on one surface, and no confirmation names the ceiling's consequence"
+        },
+        {
+          "technique": "settings-audit-and-history",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/shared/RecentChangeChip.tsx:50 shows the latest change of any age with no freshness horizon; history shows before/after as raw serialized values"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_notifications/components/NotificationSettings.tsx:53 reads 'health_digest_enabled' as an inline literal declared again elsewhere; no shared frontend key module, so a mistyped read silently returns the default"
+        },
+        {
+          "technique": "read-batching",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_limits/components/LimitsSettings.tsx:119 useAppSetting reads coalesce into one bulk IPC call per microtask (src/hooks/utility/data/useSettings.ts:109)"
         }
-      ],
-      "registryProposal": "The matcher scored settings-network at 698 on lexical overlap ('settings', 'history', 'change') alone (grounding: lexical-only) despite the context's real governance being peer-identity/device-trust and bundle export/import — a domain that already has a 'device-pairing' subject referenced elsewhere in this repo's docs (docs/concepts/paths/device-pairing/applications/rust--pairing-ceremony.md). Same over-match pattern hit appearance-settings (grounding: use_when, but code shows pure client-state). Worth checking whether device-pairing is the better subject for both settings-network and appearance-settings's theming half, or whether appearance belongs under client-state/design-tokens instead."
+      ]
     },
     "cc76d419-f457-4fe4-833c-6869efbc9287/accessibility": {
       "context": "hooks-utility-interaction",
@@ -6265,38 +6063,73 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "save-experience",
           "verdict": "conformant",
-          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13-22, useSaveFeedback.ts:8-25 (confirm quietly), useUnsavedGuard.ts:92-112 (guardSettingsTab)"
+          "evidence": "src/hooks/utility/interaction/useSaveFeedback.ts:14 transient checkmark; useUnsavedGuard.ts:116 settings-tab guard; :156 failed save stays open with its reason"
+        },
+        {
+          "technique": "inherited-default-override",
+          "verdict": "conformant",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:49 one function resolves OS query OR app toggle, re-evaluated live via :30; nothing written"
         },
         {
           "technique": "key-registry",
           "verdict": "not-applicable",
-          "evidence": "no key space owned by this hooks directory"
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 hooks take messages and flags, never a settings key"
         },
         {
           "technique": "typed-accessors",
           "verdict": "not-applicable",
-          "evidence": "no settings read/write accessor code here"
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 no accessor"
         },
         {
           "technique": "read-batching",
           "verdict": "not-applicable",
-          "evidence": "no settings fetch code here"
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 no settings reads"
         },
         {
           "technique": "setting-kinds",
           "verdict": "not-applicable",
-          "evidence": "no registry classification code here"
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 no key classification"
         },
         {
           "technique": "settings-audit-and-history",
           "verdict": "not-applicable",
-          "evidence": "no audit-write code here"
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13 no audit writes"
+        },
+        {
+          "technique": "cross-source-precedence-chain",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
+        },
+        {
+          "technique": "presence-decides-precedence",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
+        },
+        {
+          "technique": "applied-defaults-ledger",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
+        },
+        {
+          "technique": "config-backup-and-restore",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
+        },
+        {
+          "technique": "author-declared-include-graph",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
+        },
+        {
+          "technique": "in-place-document-patch",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:13"
         }
       ]
     },
@@ -6439,58 +6272,13 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
-        {
-          "technique": "stt-pipeline",
-          "verdict": "not-applicable",
-          "evidence": "no microphone capture anywhere in cloud/sync/*"
-        },
-        {
-          "technique": "tts-pipeline",
-          "verdict": "not-applicable",
-          "evidence": "no synthesis/playback queue in this context"
-        },
-        {
-          "technique": "engine-abstraction",
-          "verdict": "not-applicable",
-          "evidence": "no transcription/synthesis engine seam here"
-        },
-        {
-          "technique": "spoken-intent-parsing",
-          "verdict": "not-applicable",
-          "evidence": "no transcript-to-command crossing here"
-        },
-        {
-          "technique": "voice-ux-integration",
-          "verdict": "not-applicable",
-          "evidence": "no voice affordances in this backend sync module"
-        },
         {
           "technique": "on-device-vs-cloud",
           "verdict": "not-applicable",
-          "evidence": "the 'cloud' here is database row sync, not audio residency"
-        },
-        {
-          "technique": "duplex-agent-sessions",
-          "verdict": "not-applicable",
-          "evidence": "no live conversational session vendor involved"
-        },
-        {
-          "technique": "portable-provider-package",
-          "verdict": "not-applicable",
-          "evidence": "no engine-package seam here"
-        },
-        {
-          "technique": "speech-ready-text",
-          "verdict": "not-applicable",
-          "evidence": "no text-to-speech door here"
-        },
-        {
-          "technique": "transcript-normalization",
-          "verdict": "not-applicable",
-          "evidence": "no transcripts exist in this context"
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:58 no voice placement decision exists"
         }
       ]
     },
@@ -6584,13 +6372,38 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "metric-role-contract",
           "verdict": "deviation",
-          "evidence": "evalAggregation.ts:128-165 — winnerId is decided by a weighted composite of tool accuracy, output quality, and protocol compliance instead of one optimized metric with the others as thresholds"
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:180 folds three metrics into one composite that decides the winner"
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 publishes an order with no within-condition spread; labAggregation.ts:120 likewise"
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:168 reduces trials to means only"
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:201 an unscored metric becomes 0, so an unscored cell gets composite 0 instead of empty"
+        },
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:111 conditions per arm on any score rather than the both-succeeded subset; labAggregation.ts:65 has no conditioned view"
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:113 keys the matrix by generated scenario name"
         }
       ]
     },
@@ -6599,13 +6412,18 @@
       "subject": "sql-console",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-3",
       "techniques": [
         {
           "technique": "safe-mode-guarding",
           "verdict": "not-applicable",
-          "evidence": "there is no query execution surface in this context to guard"
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 no statement execution"
+        },
+        {
+          "technique": "introspection-architecture",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:17 no schema browsing"
         }
       ]
     },
