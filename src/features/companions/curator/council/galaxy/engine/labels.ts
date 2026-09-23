@@ -21,6 +21,7 @@
 //
 // The lens queues its own names at the top priority, which is how a lens
 // caption displaces a field caption instead of overprinting it.
+import { NUMBER_FONT_PX, placeFused, type Circle, type LabelWindow, type Side } from './labelsFused';
 import type { CanvasTheme } from './theme';
 import type { GalaxyNode, PickTarget } from './types';
 
@@ -45,6 +46,16 @@ export interface LabelRequest {
    * which is why the pick is minted here and not by the painter.
    */
   climb?: GalaxyNode;
+  /**
+   * The fused profile only (`labelsFused.ts`): the node this caption names,
+   * so the pass can try eight spots round it instead of one fixed box. The
+   * classic pass never reads it.
+   */
+  anchor?: { x: number; y: number; off: number; side?: Side; centre?: boolean; maxW?: number };
+  /** Fused only: the rank number that stands in when the name has no room. */
+  rank?: number;
+  /** Fused only: a second, smaller line under the name (a domain's counts). */
+  caption?: { text: string; size: number; color: string; weight: number };
 }
 
 /** A placed or reserved box, in stage pixels. */
@@ -153,6 +164,50 @@ export class LabelQueue {
       ctx.fillStyle = label.color;
       ctx.fillText(label.text, rect.a + 4, label.y);
     }
+    return this.dropped;
+  }
+
+  /**
+   * The fused profile's pass (`labelsFused.ts`): eight spots per node, every
+   * star an obstacle, two lines, then the rank number. Returns what it hid.
+   */
+  flushFused(
+    ctx: CanvasRenderingContext2D,
+    theme: CanvasTheme,
+    width: number,
+    bottom: number,
+    reserved: Rect[],
+    obstacles: Circle[],
+    win: LabelWindow | null,
+  ): number {
+    const measure = (text: string, size: number, weight: number) => {
+      ctx.font = `${weight} ${size}px ${theme.font}`;
+      return ctx.measureText(text).width;
+    };
+    const out = placeFused(this.items, measure, width, bottom, reserved, obstacles, win);
+    this.candidates = out.candidates;
+    this.dropped = out.dropped;
+    const ink = (text: string, x: number, y: number, size: number, weight: number, color: string, align: CanvasTextAlign) => {
+      ctx.font = `${weight} ${size}px ${theme.font}`;
+      ctx.textAlign = align;
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = theme.sky;
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+    };
+    for (const { req, box, lines, numberOnly } of out.placed) {
+      if (numberOnly) ink(String(req.rank), box.x + 3, box.y + 14, NUMBER_FONT_PX, 700, req.color, 'left');
+      else if (req.caption) {
+        ink(req.text, box.x + box.w / 2, box.y + 16, req.size, req.weight, req.color, 'center');
+        ink(req.caption.text, box.x + box.w / 2, box.y + 34, req.caption.size, req.caption.weight, req.caption.color, 'center');
+      } else if (lines) {
+        ink(lines[0], box.x + 3, box.y + 14, req.size, req.weight, req.color, 'left');
+        ink(lines[1], box.x + 3, box.y + 31, req.size, req.weight, req.color, 'left');
+      } else ink(req.text, box.x + 3, box.y + 15, req.size, req.weight, req.color, 'left');
+    }
+    ctx.textAlign = 'left';
     return this.dropped;
   }
 }
