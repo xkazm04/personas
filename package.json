@@ -71,6 +71,7 @@
     "test:rust": "node scripts/build/run-rust-tests.mjs",
     "test:smoke": "playwright test --config=playwright.config.ts module-smoke",
     "test:rust:crates": "node scripts/build/run-rust-tests.mjs --crates",
+    "athena:reply-stats": "node scripts/companion/reply-stats.mjs",
     "test:tours:fresh": "node scripts/test/run-tours-fresh.mjs",
     "test:watch": "vitest",
     "test:e2e:cli": "vitest run --config vitest.e2e.config.ts",
