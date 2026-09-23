@@ -70,7 +70,7 @@ export function ReportReader({
     };
   }, [reportId]);
 
-  // One rung above the full-screen layer (the DeckLayer precedent) so the
+  // One rung above the full-screen layer so the
   // reader closes before whatever it sits in; a modal raised inside still wins.
   useAppKeyboard(
     (e) => {
