@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useTauriStream, type TauriStreamActions } from './useTauriStream';
+import { useTauriStream, type TauriStreamActions, type TauriStreamErrorKind } from './useTauriStream';
+import { artifactDeadlineMs } from './artifactJobCorrelator';
 import { defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
 import type { SystemOperationType } from '@/lib/execution/pipeline';
 import { SystemTraceSession } from '@/lib/execution/systemTrace';
@@ -32,8 +33,22 @@ export interface AiArtifactTaskConfig<TArgs extends unknown[], TResult> {
   cancelFn?: () => Promise<unknown>;
   /** Default error message when start() throws. */
   errorMessage?: string;
-  /** Timeout in ms. Default: 5 minutes. */
+  /** Timeout in ms. Default: 5 minutes. Ignored when `backendTimeoutSecs` is set. */
   timeoutMs?: number;
+  /**
+   * The key the start result and every event carry the backend job id under
+   * (the Rust `AiArtifactMessages.id_field`). Set it and only this task's own
+   * job is followed; another run's events are dropped, and another run taking
+   * over the backend slot ends this one with `errorKind: 'superseded'`.
+   */
+  idField?: string;
+  /**
+   * The backend's own limit for this job (the Rust `AiArtifactMessages.timeout_secs`).
+   * The frontend deadline is derived from it (`artifactDeadlineMs`), so the UI
+   * never gives up on a run the backend still allows. At the deadline the job
+   * is cancelled through `cancelFn`.
+   */
+  backendTimeoutSecs?: number;
   /** Custom getLine extractor. Defaults to `defaultGetLine` (payload.line). */
   getLine?: (payload: Record<string, unknown>) => string;
   /** Custom resolveStatus. Defaults to `buildResolveStatus(errorMessage)`. */
@@ -50,6 +65,8 @@ export interface AiArtifactTaskState<TResult> {
   lines: string[];
   result: TResult | null;
   error: string | null;
+  /** Why the task ended in `error`: failed, start, timeout or superseded. */
+  errorKind: TauriStreamErrorKind | null;
 }
 
 export interface AiArtifactTaskActions<TArgs extends unknown[], TResult> {
@@ -102,6 +119,8 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     cancelFn,
     errorMessage = 'AI task failed',
     timeoutMs,
+    idField,
+    backendTimeoutSecs,
     getLine = defaultGetLine,
     resolveStatus: userResolveStatus,
     traceOperation,
@@ -145,8 +164,21 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     completedPhase,
     runningPhase,
     startErrorMessage: errorMessage,
-    timeoutMs,
+    timeoutMs: backendTimeoutSecs !== undefined ? artifactDeadlineMs(backendTimeoutSecs) : timeoutMs,
+    idField,
+    invokeCancelOnTimeout: cancelFn,
   });
+
+  // A timeout or a takeover ends the task without a status event, so the
+  // resolveStatus wrapper above never closes its trace session.
+  const endedWithoutStatus = stream.errorKind === 'timeout' || stream.errorKind === 'superseded'
+    ? stream.errorKind
+    : null;
+  useEffect(() => {
+    if (!endedWithoutStatus || !traceSessionRef.current) return;
+    traceSessionRef.current.complete(endedWithoutStatus);
+    traceSessionRef.current = null;
+  }, [endedWithoutStatus]);
 
   const start = useCallback(
     async (...args: TArgs) => {
@@ -175,6 +207,7 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     lines: stream.lines,
     result: stream.result,
     error: stream.error,
+    errorKind: stream.errorKind,
     start,
     cancel,
     reset: stream.reset,

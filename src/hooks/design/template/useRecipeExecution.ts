@@ -21,6 +21,9 @@ export function useRecipeExecution() {
     completedPhase: 'done',
     startFn: startRecipeExecution,
     cancelFn: cancelRecipeExecution,
+    // The backend job's id_field and timeout_secs, from recipes/recipe_execution.rs RECIPE_EXECUTION_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'execution_id',
+    backendTimeoutSecs: 120,
     errorMessage: 'Failed to execute recipe',
     traceOperation: 'recipe_execution',
   });
