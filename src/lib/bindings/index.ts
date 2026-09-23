@@ -323,6 +323,7 @@ export type { CuratorPlanItemState } from "./CuratorPlanItemState";
 export type { CuratorPlanRun } from "./CuratorPlanRun";
 export type { CuratorPolicy } from "./CuratorPolicy";
 export type { CuratorProject } from "./CuratorProject";
+export type { CuratorQuietBundle } from "./CuratorQuietBundle";
 export type { CuratorReason } from "./CuratorReason";
 export type { CuratorReasonCode } from "./CuratorReasonCode";
 export type { CyclePhase } from "./CyclePhase";
