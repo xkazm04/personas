@@ -14,9 +14,14 @@
  *   • connectors and capabilities arrive one per beat with Cinema's springs,
  *     docking into their frames and onto the title card's film strip;
  *   • the premiere turns the crowned persona into a poster while the frames
- *     slide down into a credits strip. */
+ *     slide down into a credits strip.
+ *  The camera itself (useCamera + Loupe) is the Wild cut's: the whole sheet,
+ *  sigil and all, pushes 2.5x into the frame and defocuses behind a
+ *  stage-sized layer that grows out of that frame, with a header that says
+ *  which frame, where it stands and how to get back. */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
@@ -29,9 +34,9 @@ import { useSheetState } from "./useSheetState";
 import { SheetFrame } from "./SheetFrame";
 import { SheetSigil } from "./SheetSigil";
 import { SheetCentre } from "./SheetCentre";
-import { SheetLayers, type Layer } from "./SheetLayers";
+import { SheetLayers, layerShot, type Layer } from "./SheetLayers";
 import { FilmRail } from "./FilmRail";
-import type { Rect } from "./PushLayer";
+import { SHEET_MOVE, SHEET_PUSHED, SHEET_PUSHED_REDUCED, SHEET_REST, useCamera, type Rect } from "./useCamera";
 import { useSheetKeys } from "./useSheetKeys";
 import { FRAME_CELL } from "./sheetModel";
 import { EASE } from "./cinemaMotion";
@@ -57,6 +62,7 @@ const layoutRect = (el: HTMLElement | null | undefined): Rect | null =>
 
 export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
   const s = useSheetState(props);
+  const reduce = useReducedMotion();
   const dimText = useGlyphDimText();
   const stageRef = useRef<HTMLDivElement | null>(null);
   const centreRef = useRef<HTMLDivElement | null>(null);
@@ -89,8 +95,10 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
 
   const questionOpen = act === "questions" && flow.stage === "asking" && !layer;
   const questionDim = flow.current ? CELL_KEY_TO_DIM[flow.current.cellKey] ?? null : null;
-  const pushedFrom: Rect | null = layer ? layer.from : questionOpen ? frameRect(questionDim) : null;
+  const shot = useCamera(layerShot(layer, s, questionOpen, frameRect), reduce);
+  const pushed = shot !== null;
   const sourceDim = layer?.kind === "frame" ? layer.dim : questionOpen ? questionDim : null;
+  const scene = COPY.scene[act === "questions" && (flow.stage === "review" || flow.stage === "sending") ? "review" : act];
 
   // Cinema's beat: let the coronation land before the camera pushes into the first question.
   useEffect(() => {
@@ -110,17 +118,24 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
   return (
     <div className="flex-1 min-h-0 w-full flex flex-col" data-testid="ContactSheetCinemaLayout" style={{ ["--cinema-accent" as string]: s.cast.accent }}>
       <div ref={stageRef} className="relative flex-1 min-h-0">
-        <SheetSigil size={sigilSize} cx={stage.w / 2} cy={sigilCy} petalStates={s.petalStates} activeDim={sourceDim} accent={s.cast.accent} presence={s.presence} onPetal={openFrame} />
+        {/* The camera: sigil and sheet move as one print under the lens. */}
         <motion.div
+          className="absolute inset-0"
+          style={{ transformOrigin: shot ? `${shot.x}px ${shot.y}px` : "50% 50%" }}
+          initial={false}
+          animate={pushed ? (reduce ? SHEET_PUSHED_REDUCED : SHEET_PUSHED) : SHEET_REST}
+          transition={reduce ? { duration: 0.2 } : SHEET_MOVE}
+          inert={pushed ? true : undefined}
+          aria-hidden={pushed ? true : undefined}
+        >
+        <SheetSigil size={sigilSize} cx={stage.w / 2} cy={sigilCy} petalStates={s.petalStates} activeDim={sourceDim} accent={s.cast.accent} presence={s.presence} onPetal={openFrame} />
+        <div
           className="absolute inset-0 grid"
           style={{
             gap: GAP,
             gridTemplateColumns: premiere ? "repeat(8, minmax(0, 1fr))" : "minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr)",
             gridTemplateRows: premiere ? `minmax(0, 1fr) ${STRIP_H}px` : "minmax(0, 1fr) minmax(0, 2.3fr) minmax(0, 1fr)",
-            transformOrigin: pushedFrom ? `${pushedFrom.x + pushedFrom.w / 2}px ${pushedFrom.y + pushedFrom.h / 2}px` : "50% 50%",
           }}
-          animate={{ scale: pushedFrom ? 1.035 : 1, filter: pushedFrom ? "blur(1.5px)" : "blur(0px)" }}
-          transition={{ duration: 0.5, ease: EASE }}
         >
           <LayoutGroup id="sheet-cinema-grid">
             {GLYPH_DIMENSIONS.map((dim, i) => (
@@ -134,7 +149,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
               >
                 <SheetFrame
                   dim={dim} label={dimText.label[dim]} state={s.frameStates[dim]} value={s.values[dim]}
-                  dimmed={!!pushedFrom && sourceDim !== dim} compact={premiere} onOpen={openFrame}
+                  dimmed={pushed && sourceDim !== dim} compact={premiere} onOpen={openFrame}
                 />
               </motion.div>
             ))}
@@ -143,7 +158,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
               layout
               transition={{ duration: 0.9, ease: EASE }}
               className="min-w-0 min-h-0 flex items-center justify-center px-2"
-              style={{ gridArea: premiere ? "1 / 1 / 2 / 9" : "2 / 2 / 3 / 3", opacity: pushedFrom ? 0.12 : 1, transition: "opacity 0.4s ease" }}
+              style={{ gridArea: premiere ? "1 / 1 / 2 / 9" : "2 / 2 / 3 / 3" }}
             >
               <SheetCentre
                 p={props} s={s} tight={tight} billing={billing}
@@ -159,13 +174,12 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
               />
             </motion.div>
           </LayoutGroup>
+        </div>
         </motion.div>
-        {stage.w > 0 && (
-          <SheetLayers p={props} s={s} layer={layer} questionOpen={questionOpen} stage={stage} dimText={dimText} frameRect={frameRect} close={closeLayer} openRefine={openRefine} />
-        )}
+        <SheetLayers p={props} s={s} layer={layer} shot={shot} scene={scene} dimText={dimText} close={closeLayer} openRefine={openRefine} />
       </div>
 
-      <FilmRail scene={COPY.scene[act === "questions" && (flow.stage === "review" || flow.stage === "sending") ? "review" : act]} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} />
+      <FilmRail scene={scene} elapsed={s.clock.elapsed} marks={s.clock.marks} showWindow={act === "casting"} />
 
       {s.isCompose && s.cfg.modals}
       {confirm && (

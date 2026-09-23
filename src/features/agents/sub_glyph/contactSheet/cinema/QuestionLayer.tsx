@@ -1,4 +1,5 @@
 /** QuestionLayer — the inside of a frame the camera pushed into for a question.
+ *  The frame's number, name and the round's count sit in the Loupe header.
  *  Number keys pick an option, Enter moves on, Backspace goes back; a pick is
  *  only a draft here, nothing reaches the build until "Send answers". Connector
  *  questions use the real vault picker, filtered by the question's category. */
@@ -11,13 +12,11 @@ import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/vault/components/VaultConnectorPicker";
 import Button from "@/features/shared/components/buttons/Button";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
-import { frameNumber } from "./sheetModel";
 import { COPY } from "./copy";
 
 interface QuestionLayerProps {
   question: BuildQuestion;
   dim: GlyphDimension | null;
-  label: string;
   index: number;
   total: number;
   draft: string;
@@ -30,7 +29,7 @@ interface QuestionLayerProps {
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 
-export function QuestionLayer({ question, dim, label, index, total, draft, onDraft, onPick, onNext, onPrev }: QuestionLayerProps) {
+export function QuestionLayer({ question, dim, index, total, draft, onDraft, onPick, onNext, onPrev }: QuestionLayerProps) {
   const color = dim ? DIM_META[dim].color : "#60a5fa";
   const options = useMemo(() => question.options ?? [], [question.options]);
   const isLast = index >= total - 1;
@@ -61,12 +60,7 @@ export function QuestionLayer({ question, dim, label, index, total, draft, onDra
   }, [options, draft, index, onPick, onNext, onPrev]);
 
   return (
-    <div className="flex-1 flex flex-col justify-center gap-4 max-w-[560px] w-full mx-auto">
-      <div className="flex items-center gap-2.5 typo-caption pr-10">
-        <span className="font-mono" style={{ color }}>{dim ? frameNumber(dim) : "--"}</span>
-        <span className="font-semibold uppercase tracking-[0.12em]" style={{ color }}>{label}</span>
-        <span className="ml-auto font-mono text-foreground">{COPY.questionOf(index + 1, total)}</span>
-      </div>
+    <div className="flex-1 flex flex-col justify-center gap-4 2xl:gap-5 max-w-[760px] 2xl:max-w-[880px] w-full mx-auto">
       <motion.h2
         key={question.question}
         initial={{ opacity: 0, y: 6 }}

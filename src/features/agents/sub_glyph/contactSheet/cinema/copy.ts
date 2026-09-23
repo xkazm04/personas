@@ -14,6 +14,13 @@ export const COPY = {
   done: "Done",
   back: "Back to the sheet",
 
+  loupe: {
+    esc: "Esc",
+    questionOf: (i: number, n: number) => `Question ${i} of ${n}`,
+    needsYou: "Needs you",
+    empty: "Nothing on this frame yet.",
+  },
+
   scene: {
     compose: "Scene 1 · Describe",
     casting: "Scene 2 · Casting",
@@ -74,6 +81,7 @@ export const COPY = {
   refine: "Refine",
   refineHint: "Say what should change. The draft is rebuilt and its tests reset.",
   reviewCaps: "Review capabilities",
+  capsHint: "What the draft will do, one capability at a time. Remove one, or split it into a refine.",
   screening: "Screening",
   passed: "PASSED",
   failed: "FAILED",
