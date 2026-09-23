@@ -197,5 +197,6 @@
   "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu",
   "directory_browse_failed": "Không thể mở trình chọn thư mục. Hãy thử lại hoặc nhập đường dẫn.",
   "recent_directories": "Thư mục gần đây",
-  "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế."
+  "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế.",
+  "md_spellcheck": "Chính tả và ngữ pháp"
 }

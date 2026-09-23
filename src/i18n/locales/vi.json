@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "Các thay đổi của bạn chưa được lưu",
     "directory_browse_failed": "Không thể mở trình chọn thư mục. Hãy thử lại hoặc nhập đường dẫn.",
     "recent_directories": "Thư mục gần đây",
-    "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế."
+    "model_not_in_catalog": "Không có trong danh mục mô hình. Hãy chọn một mô hình để thay thế.",
+    "md_spellcheck": "Chính tả và ngữ pháp"
   },
   "connector_licensing": {
     "enterprise": "Doanh nghiệp",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Ghi chú của Athena",
     "tabs_label": "Ghi chú",
     "timeline_title": "Vòng đời",
-    "title": "Sổ ghi chú",
     "to_goals": "Chuyển thành mục tiêu",
     "variant_split": "Canvas chia đôi",
     "variant_workbench": "Bàn làm việc",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "Làn ý tưởng",
     "desk_lane_plan": "Làn kế hoạch",
     "desk_room_back": "Bàn làm việc",
-    "desk_room_position": "Dự án {index}/{total}"
+    "title": "Tổng quan mục tiêu"
   },
   "browser": {
     "webview": {

@@ -55,7 +55,6 @@
   "suggestions_title": "Athena 的笔记",
   "tabs_label": "笔记",
   "timeline_title": "生命周期",
-  "title": "记事本",
   "to_goals": "转化为目标",
   "variant_split": "分屏画布",
   "variant_workbench": "工作台",
@@ -222,5 +221,5 @@
   "desk_lane_brainstorm": "构思轨道",
   "desk_lane_plan": "计划轨道",
   "desk_room_back": "工作台",
-  "desk_room_position": "项目 {index}/{total}"
+  "title": "目标概览"
 }

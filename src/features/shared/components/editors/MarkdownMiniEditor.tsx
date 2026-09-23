@@ -43,9 +43,11 @@ import {
   ListChecks,
   Code,
   Quote,
+  SpellCheck,
 } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 
 import { DeferredMarkdown } from './DeferredMarkdown';
 import { toggleHeading, toggleList, toggleWrap, type EditResult, type ListKind } from './markdownEdits';
@@ -59,6 +61,8 @@ export interface MarkdownMiniEditorHandle {
 
 /** How a rendered preview accompanies the textarea. */
 export type MarkdownPreviewMode = 'none' | 'toggle' | 'split';
+
+const SPELLCHECK_KEY = 'personas.editor.spellCheck';
 
 export interface MarkdownMiniEditorProps {
   value: string;
@@ -74,6 +78,12 @@ export interface MarkdownMiniEditorProps {
   testId?: string;
   /** Render the formatting toolbar above the textarea. */
   toolbar?: boolean;
+  /** Offer a toolbar switch for the browser's spelling and grammar underlines.
+   *  Off by default, so every existing caller keeps today's behaviour — the
+   *  squiggles stay on unless a surface opts into letting the writer kill them.
+   *  The choice is remembered per viewer, because a writer who turns them off
+   *  means it for more than one note. */
+  spellCheckToggle?: boolean;
   /** `'toggle'` adds a show/hide preview control; `'split'` always shows one. */
   preview?: MarkdownPreviewMode;
   /** Render the value read-only (no textarea, no toolbar) — for a note whose
@@ -210,6 +220,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
       className,
       testId,
       toolbar = false,
+      spellCheckToggle = false,
       preview = 'none',
       readOnly = false,
       containerClassName,
@@ -221,6 +232,11 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
     const taRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(ref, () => ({ focus: () => taRef.current?.focus() }), []);
     const [previewOpen, setPreviewOpen] = useState(false);
+    // Per-viewer convenience only, and never the authority for anything: a
+    // blocked or full storage falls back to ON, which is today's behaviour.
+    const [spellCheck, setSpellCheck] = useState(
+      () => safeLocalGet(SPELLCHECK_KEY, 'markdown editor spellcheck') !== '0',
+    );
 
     const runOp = useCallback(
       (op: MarkdownEditOp) => {
@@ -308,7 +324,7 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
         aria-label={ariaLabel}
         className={className}
         data-testid={testId}
-        spellCheck
+        spellCheck={spellCheck}
       />
     );
 
@@ -317,13 +333,36 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
 
     const showPreview = preview === 'split' || (preview === 'toggle' && previewOpen);
 
+    const spellToggle = spellCheckToggle ? (
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          const next = !spellCheck;
+          setSpellCheck(next);
+          safeLocalSet(SPELLCHECK_KEY, next ? '1' : '0', 'markdown editor spellcheck');
+        }}
+        aria-pressed={spellCheck}
+        aria-label={t.common.md_spellcheck}
+        title={t.common.md_spellcheck}
+        data-testid="md-toolbar-spellcheck"
+        className={`ml-1 w-7 h-7 rounded-input flex items-center justify-center transition-colors focus-ring ${
+          spellCheck ? 'text-foreground bg-secondary/50' : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
+        }`}
+      >
+        <SpellCheck className="w-3.5 h-3.5" aria-hidden />
+      </button>
+    ) : null;
+
     return (
       <div className={containerClassName ?? 'flex flex-col gap-2 min-h-0'}>
         {toolbar && (
           <MarkdownToolbar
             onOp={runOp}
             trailing={
-              preview === 'toggle' ? (
+              <>
+              {spellToggle}
+              {preview === 'toggle' ? (
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
@@ -334,7 +373,8 @@ export const MarkdownMiniEditor = forwardRef<MarkdownMiniEditorHandle, MarkdownM
                 >
                   {previewOpen ? t.notepad.preview_hide : t.notepad.preview_show}
                 </button>
-              ) : null
+              ) : null}
+              </>
             }
           />
         )}

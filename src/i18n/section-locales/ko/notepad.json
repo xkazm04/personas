@@ -55,7 +55,6 @@
   "suggestions_title": "Athena의 노트",
   "tabs_label": "노트",
   "timeline_title": "수명 주기",
-  "title": "노트패드",
   "to_goals": "목표로 전환",
   "variant_split": "분할 캔버스",
   "variant_workbench": "워크벤치",
@@ -222,5 +221,5 @@
   "desk_lane_brainstorm": "구상 레일",
   "desk_lane_plan": "계획 레일",
   "desk_room_back": "데스크",
-  "desk_room_position": "프로젝트 {index}/{total}"
+  "title": "목표 개요"
 }

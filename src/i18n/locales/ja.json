@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "変更は保存されませんでした",
     "directory_browse_failed": "フォルダーピッカーを開けませんでした。もう一度試すか、パスを入力してください。",
     "recent_directories": "最近のフォルダー",
-    "model_not_in_catalog": "モデルカタログにありません。置き換えるモデルを選んでください。"
+    "model_not_in_catalog": "モデルカタログにありません。置き換えるモデルを選んでください。",
+    "md_spellcheck": "スペルと文法"
   },
   "connector_licensing": {
     "enterprise": "エンタープライズ",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Athenaのメモ",
     "tabs_label": "メモ",
     "timeline_title": "ライフサイクル",
-    "title": "メモ帳",
     "to_goals": "目標に変換",
     "variant_split": "分割キャンバス",
     "variant_workbench": "ワークベンチ",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "アイデアレール",
     "desk_lane_plan": "プランレール",
     "desk_room_back": "デスク",
-    "desk_room_position": "プロジェクト {index} / {total}"
+    "title": "目標概要"
   },
   "browser": {
     "webview": {

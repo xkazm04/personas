@@ -55,7 +55,6 @@
   "suggestions_title": "Poznámky Athény",
   "tabs_label": "Poznámky",
   "timeline_title": "Životní cyklus",
-  "title": "Poznámkový blok",
   "to_goals": "Proměnit v cíle",
   "variant_split": "Rozdělené plátno",
   "variant_workbench": "Pracovní stůl",
@@ -222,5 +221,5 @@
   "desk_lane_brainstorm": "Kolej Brainstorm",
   "desk_lane_plan": "Kolej Plán",
   "desk_room_back": "Stůl",
-  "desk_room_position": "Projekt {index} z {total}"
+  "title": "Přehled cílů"
 }

@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "لم يتم حفظ تغييراتك",
     "directory_browse_failed": "تعذر فتح منتقي المجلدات. حاول مرة أخرى، أو اكتب المسار.",
     "recent_directories": "المجلدات الأخيرة",
-    "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله."
+    "model_not_in_catalog": "غير موجود في كتالوج النماذج. اختر نموذجًا لاستبداله.",
+    "md_spellcheck": "الإملاء والقواعد"
   },
   "connector_licensing": {
     "enterprise": "مؤسسي",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "ملاحظات أثينا",
     "tabs_label": "الملاحظات",
     "timeline_title": "دورة الحياة",
-    "title": "المفكرة",
     "to_goals": "تحويل إلى أهداف",
     "variant_split": "لوحة مقسّمة",
     "variant_workbench": "منضدة عمل",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "مسار العصف الذهني",
     "desk_lane_plan": "مسار الخطة",
     "desk_room_back": "المكتب",
-    "desk_room_position": "المشروع {index} من {total}"
+    "title": "نظرة عامة على الأهداف"
   },
   "browser": {
     "webview": {

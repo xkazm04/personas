@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
     "directory_browse_failed": "Pemilih folder tidak dapat dibuka. Coba lagi, atau ketik jalurnya.",
     "recent_directories": "Folder terbaru",
-    "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya."
+    "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya.",
+    "md_spellcheck": "Ejaan dan tata bahasa"
   },
   "connector_licensing": {
     "enterprise": "Perusahaan",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Catatan Athena",
     "tabs_label": "Catatan",
     "timeline_title": "Siklus hidup",
-    "title": "Buku Catatan",
     "to_goals": "Ubah menjadi goals",
     "variant_split": "Kanvas terbagi",
     "variant_workbench": "Meja Kerja",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "Jalur brainstorming",
     "desk_lane_plan": "Jalur rencana",
     "desk_room_back": "Meja",
-    "desk_room_position": "Proyek {index} dari {total}"
+    "title": "Ringkasan tujuan"
   },
   "browser": {
     "webview": {

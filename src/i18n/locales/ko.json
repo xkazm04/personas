@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "변경 사항이 저장되지 않았습니다",
     "directory_browse_failed": "폴더 선택기를 열 수 없습니다. 다시 시도하거나 경로를 입력하세요.",
     "recent_directories": "최근 폴더",
-    "model_not_in_catalog": "모델 카탈로그에 없습니다. 교체할 모델을 선택하세요."
+    "model_not_in_catalog": "모델 카탈로그에 없습니다. 교체할 모델을 선택하세요.",
+    "md_spellcheck": "맞춤법 및 문법"
   },
   "connector_licensing": {
     "enterprise": "엔터프라이즈",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Athena의 노트",
     "tabs_label": "노트",
     "timeline_title": "수명 주기",
-    "title": "노트패드",
     "to_goals": "목표로 전환",
     "variant_split": "분할 캔버스",
     "variant_workbench": "워크벤치",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "구상 레일",
     "desk_lane_plan": "계획 레일",
     "desk_room_back": "데스크",
-    "desk_room_position": "프로젝트 {index}/{total}"
+    "title": "목표 개요"
   },
   "browser": {
     "webview": {

@@ -55,7 +55,6 @@
   "suggestions_title": "Catatan Athena",
   "tabs_label": "Catatan",
   "timeline_title": "Siklus hidup",
-  "title": "Buku Catatan",
   "to_goals": "Ubah menjadi goals",
   "variant_split": "Kanvas terbagi",
   "variant_workbench": "Meja Kerja",
@@ -222,5 +221,5 @@
   "desk_lane_brainstorm": "Jalur brainstorming",
   "desk_lane_plan": "Jalur rencana",
   "desk_room_back": "Meja",
-  "desk_room_position": "Proyek {index} dari {total}"
+  "title": "Ringkasan tujuan"
 }

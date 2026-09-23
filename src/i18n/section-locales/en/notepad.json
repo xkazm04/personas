@@ -1,5 +1,5 @@
 {
-  "title": "Notepad",
+  "title": "Goals overview",
   "footer_open": "Open the notepad",
   "footer_close": "Close the notepad",
   "overlay_label": "Notepad",
@@ -220,7 +220,6 @@
   "desk_lane_plan": "Plan rail",
   "desk_lane_brainstorm": "Brainstorm rail",
   "desk_room_back": "Desk",
-  "desk_room_position": "Project {index} of {total}",
   "desk_key_expand": "Show more",
   "desk_key_open_project": "Open the project"
 }

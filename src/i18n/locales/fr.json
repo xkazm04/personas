@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "Vos modifications n'ont pas été enregistrées",
     "directory_browse_failed": "Le sélecteur de dossier n'a pas pu s'ouvrir. Réessayez ou saisissez le chemin.",
     "recent_directories": "Dossiers récents",
-    "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer."
+    "model_not_in_catalog": "Absent du catalogue de modèles. Choisissez-en un pour le remplacer.",
+    "md_spellcheck": "Orthographe et grammaire"
   },
   "connector_licensing": {
     "enterprise": "Entreprise",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Notes d’Athena",
     "tabs_label": "Notes",
     "timeline_title": "Cycle de vie",
-    "title": "Bloc-notes",
     "to_goals": "Transformer en objectifs",
     "variant_split": "Vue partagée",
     "variant_workbench": "Atelier",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "Voie Brainstorm",
     "desk_lane_plan": "Voie Plan",
     "desk_room_back": "Bureau",
-    "desk_room_position": "Projet {index} sur {total}"
+    "title": "Vue d'ensemble des objectifs"
   },
   "browser": {
     "webview": {

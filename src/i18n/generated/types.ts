@@ -1028,6 +1028,7 @@ export type Translations = {
     md_toolbar: string;
     directory_browse_failed: string;
     recent_directories: string;
+    md_spellcheck: string;
   };
   council: {
     galaxy: {
@@ -23483,7 +23484,6 @@ export type Translations = {
     desk_lane_plan: string;
     desk_lane_brainstorm: string;
     desk_room_back: string;
-    desk_room_position: string;
     desk_key_expand: string;
     desk_key_open_project: string;
   };

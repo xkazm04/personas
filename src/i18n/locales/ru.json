@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "Ваши изменения не сохранены",
     "directory_browse_failed": "Не удалось открыть выбор папки. Попробуйте ещё раз или введите путь.",
     "recent_directories": "Недавние папки",
-    "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены."
+    "model_not_in_catalog": "Нет в каталоге моделей. Выберите модель для замены.",
+    "md_spellcheck": "Орфография и грамматика"
   },
   "connector_licensing": {
     "enterprise": "Корпоративный",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Заметки Athena",
     "tabs_label": "Заметки",
     "timeline_title": "Жизненный цикл",
-    "title": "Блокнот",
     "to_goals": "Превратить в цели",
     "variant_split": "Разделённый холст",
     "variant_workbench": "Верстак",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "Дорожка мозгового штурма",
     "desk_lane_plan": "Дорожка плана",
     "desk_room_back": "Стол",
-    "desk_room_position": "Проект {index} из {total}"
+    "title": "Обзор целей"
   },
   "browser": {
     "webview": {

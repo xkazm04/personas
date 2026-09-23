@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "আপনার পরিবর্তনগুলি সংরক্ষিত হয়নি",
     "directory_browse_failed": "ফোল্ডার নির্বাচক খোলা যায়নি। আবার চেষ্টা করুন, বা পাথ টাইপ করুন।",
     "recent_directories": "সাম্প্রতিক ফোল্ডার",
-    "model_not_in_catalog": "মডেল ক্যাটালগে নেই। বদলাতে একটি বেছে নিন।"
+    "model_not_in_catalog": "মডেল ক্যাটালগে নেই। বদলাতে একটি বেছে নিন।",
+    "md_spellcheck": "বানান ও ব্যাকরণ"
   },
   "connector_licensing": {
     "enterprise": "এন্টারপ্রাইজ",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "অ্যাথেনার নোট",
     "tabs_label": "নোটসমূহ",
     "timeline_title": "জীবনচক্র",
-    "title": "নোটপ্যাড",
     "to_goals": "লক্ষ্যে রূপান্তর করুন",
     "variant_split": "স্প্লিট ক্যানভাস",
     "variant_workbench": "ওয়ার্কবেঞ্চ",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "মন্থন রেল",
     "desk_lane_plan": "পরিকল্পনা রেল",
     "desk_room_back": "ডেস্ক",
-    "desk_room_position": "{total}টির মধ্যে প্রজেক্ট {index}"
+    "title": "লক্ষ্যের সারসংক্ষেপ"
   },
   "browser": {
     "webview": {

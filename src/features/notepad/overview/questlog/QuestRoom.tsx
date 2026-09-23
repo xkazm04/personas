@@ -18,9 +18,6 @@ const QUESTLOG_ROOM_KEY_PRIORITY = NOTEPAD_LAYER_PRIORITY + 2;
 
 interface QuestRoomProps extends Omit<NoteOverviewProps, 'onCreate' | 'initialProjectId' | 'focusNoteId' | 'notes' | 'atCap'> {
   zone: QuestZone;
-  /** Where this project sits alphabetically, for the "3 of 17" orientation line. */
-  index: number;
-  total: number;
   signals: Readonly<Record<string, GoalSignals>>;
   summaries: Readonly<Record<string, import('@/lib/bindings/NotePlanSummary').NotePlanSummary>>;
   working: Readonly<Record<string, import('../../thread/useNoteWorking').NoteWorking>>;
@@ -48,10 +45,10 @@ interface QuestRoomProps extends Omit<NoteOverviewProps, 'onCreate' | 'initialPr
  * than one ladder.
  */
 export function QuestRoom({
-  zone, index, total, projects, saveStates, signals, summaries, working,
+  zone, projects, saveStates, signals, summaries, working,
   selectedGoalId, onSelectGoal, onStepProject, onClose, onOpen, onPatch, onDelete, onCertify,
 }: QuestRoomProps) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const reveal = useRevealTracker();
 
   const live = useMemo(
@@ -106,12 +103,7 @@ export function QuestRoom({
           {t.notepad.desk_room_back}
           <Keycap>{DESK_KEY.escape}</Keycap>
         </button>
-        <div className="min-w-0">
-          <p className="typo-label text-foreground/85 m-0">
-            {tx(t.notepad.desk_room_position, { index: index + 1, total })}
-          </p>
-          <h2 className="typo-heading-lg text-foreground m-0 truncate">{zone.name}</h2>
-        </div>
+        <h2 className="typo-heading-lg text-foreground m-0 truncate min-w-0">{zone.name}</h2>
         <div className="flex items-center gap-1.5 flex-wrap">
           {counts.map(([status, count]) => {
             const meta = noteStatusMeta(status);

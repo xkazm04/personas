@@ -197,5 +197,6 @@
   "unsaved_save_failed": "Tus cambios no se guardaron",
   "directory_browse_failed": "No se pudo abrir el selector de carpetas. Inténtalo de nuevo o escribe la ruta.",
   "recent_directories": "Carpetas recientes",
-  "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo."
+  "model_not_in_catalog": "No está en el catálogo de modelos. Elige uno para reemplazarlo.",
+  "md_spellcheck": "Ortografía y gramática"
 }

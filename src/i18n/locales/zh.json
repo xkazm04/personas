@@ -3647,7 +3647,8 @@
     "unsaved_save_failed": "你的更改未保存",
     "directory_browse_failed": "无法打开文件夹选择器。请重试，或直接输入路径。",
     "recent_directories": "最近的文件夹",
-    "model_not_in_catalog": "不在模型目录中。请选择一个替换它。"
+    "model_not_in_catalog": "不在模型目录中。请选择一个替换它。",
+    "md_spellcheck": "拼写和语法"
   },
   "connector_licensing": {
     "enterprise": "企业",
@@ -23073,7 +23074,6 @@
     "suggestions_title": "Athena 的笔记",
     "tabs_label": "笔记",
     "timeline_title": "生命周期",
-    "title": "记事本",
     "to_goals": "转化为目标",
     "variant_split": "分屏画布",
     "variant_workbench": "工作台",
@@ -23240,7 +23240,7 @@
     "desk_lane_brainstorm": "构思轨道",
     "desk_lane_plan": "计划轨道",
     "desk_room_back": "工作台",
-    "desk_room_position": "项目 {index}/{total}"
+    "title": "目标概览"
   },
   "browser": {
     "webview": {

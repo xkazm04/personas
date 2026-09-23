@@ -297,8 +297,6 @@ export function QuestLogOverview({
       {roomZone ? (
         <QuestRoom
           zone={roomZone}
-          index={zoneIds.indexOf(roomZone.id)}
-          total={zones.length}
           projects={projects}
           saveStates={saveStates}
           signals={signals}
@@ -315,32 +313,17 @@ export function QuestLogOverview({
         />
       ) : (
       <>
-      <div className="px-8 pt-5 pb-3 flex flex-col gap-3 shrink-0">
-        <div className="flex items-baseline justify-between gap-4">
-          <div className="flex items-baseline gap-3 min-w-0">
-            <h2 className="typo-heading-lg text-foreground">{t.notepad.tabs_label}</h2>
-            <span className="typo-caption text-foreground/85">
-              {tx(t.notepad.overview_count, { count: slotCount, cap: NOTE_CAP })}
-              {query.trim() ? ` · ${tx(t.notepad.desk_matching, { count: matches.size })}` : ''}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <SegmentedTabs
-              tabs={railTabs}
-              activeTab={rail}
-              onTabChange={pickRail}
-              size="sm"
-              fullWidth={false}
-              ariaLabel={t.notepad.desk_filter_label}
-              layoutId={RAIL_PREFIX}
-              idPrefix={RAIL_PREFIX}
-            />
-          </div>
+      <div className="px-8 pt-4 pb-3 flex items-center gap-3 shrink-0">
+        <div className="flex items-baseline gap-2 min-w-0 shrink-0">
+          <h2 className="typo-heading-lg text-foreground">{t.notepad.tabs_label}</h2>
+          <span className="typo-caption text-foreground/85 whitespace-nowrap">
+            {tx(t.notepad.overview_count, { count: slotCount, cap: NOTE_CAP })}
+            {query.trim() ? ` · ${tx(t.notepad.desk_matching, { count: matches.size })}` : ''}
+          </span>
         </div>
-
         <form
           onSubmit={(e) => { e.preventDefault(); submitCapture(); }}
-          className="flex items-center gap-2 px-3 rounded-input border border-primary/15 bg-secondary/15 focus-within:border-primary/35 transition-colors"
+          className="flex-1 min-w-0 flex items-center gap-2 px-3 rounded-input border border-primary/15 bg-secondary/15 focus-within:border-primary/35 transition-colors"
         >
           {searchOpen ? <Search className="w-4 h-4 text-primary shrink-0" aria-hidden />
             : <Sparkles className="w-4 h-4 text-primary/70 shrink-0" aria-hidden />}
@@ -353,7 +336,7 @@ export function QuestLogOverview({
               placeholder={t.notepad.desk_search_placeholder}
               aria-label={t.notepad.desk_search_label}
               data-testid="notepad-questlog-search"
-              className="flex-1 min-w-0 h-10 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none"
+              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none"
             />
           ) : (
             <input
@@ -364,7 +347,7 @@ export function QuestLogOverview({
               placeholder={atCap ? tx(t.notepad.cap_reached, { count: slotCount }) : t.notepad.overview_capture_placeholder}
               aria-label={t.notepad.overview_capture_placeholder}
               data-testid="notepad-questlog-capture"
-              className="flex-1 min-w-0 h-10 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none disabled:is-disabled"
+              className="flex-1 min-w-0 h-9 bg-transparent typo-body text-foreground placeholder:text-foreground/85 outline-none disabled:is-disabled"
             />
           )}
           <span className="hidden sm:inline-flex items-center gap-1.5 shrink-0 text-foreground/85">
@@ -372,6 +355,17 @@ export function QuestLogOverview({
             {!searchOpen && <CornerDownLeft className="w-4 h-4 opacity-40" aria-hidden />}
           </span>
         </form>
+
+        <SegmentedTabs
+          tabs={railTabs}
+          activeTab={rail}
+          onTabChange={pickRail}
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.notepad.desk_filter_label}
+          layoutId={RAIL_PREFIX}
+          idPrefix={RAIL_PREFIX}
+        />
       </div>
 
       {loading ? (

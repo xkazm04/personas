@@ -1021,7 +1021,8 @@
     "md_quote": "Quote",
     "md_toolbar": "Formatting",
     "directory_browse_failed": "The folder picker could not open. Try again, or type the path.",
-    "recent_directories": "Recent folders"
+    "recent_directories": "Recent folders",
+    "md_spellcheck": "Spelling and grammar"
   },
   "council": {
     "galaxy": {
@@ -23256,7 +23257,7 @@
     "vision_blog": "A personal blog — a clean post list, readable article pages with great typography, an about page, and an easy way to publish new posts."
   },
   "notepad": {
-    "title": "Notepad",
+    "title": "Goals overview",
     "footer_open": "Open the notepad",
     "footer_close": "Close the notepad",
     "overlay_label": "Notepad",
@@ -23477,7 +23478,6 @@
     "desk_lane_plan": "Plan rail",
     "desk_lane_brainstorm": "Brainstorm rail",
     "desk_room_back": "Desk",
-    "desk_room_position": "Project {index} of {total}",
     "desk_key_expand": "Show more",
     "desk_key_open_project": "Open the project"
   },

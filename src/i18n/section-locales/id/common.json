@@ -197,5 +197,6 @@
   "unsaved_save_failed": "Perubahan Anda tidak tersimpan",
   "directory_browse_failed": "Pemilih folder tidak dapat dibuka. Coba lagi, atau ketik jalurnya.",
   "recent_directories": "Folder terbaru",
-  "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya."
+  "model_not_in_catalog": "Tidak ada di katalog model. Pilih satu untuk menggantinya.",
+  "md_spellcheck": "Ejaan dan tata bahasa"
 }

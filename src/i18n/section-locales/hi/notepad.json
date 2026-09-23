@@ -55,7 +55,6 @@
   "suggestions_title": "Athena के नोट्स",
   "tabs_label": "नोट्स",
   "timeline_title": "जीवनचक्र",
-  "title": "नोटपैड",
   "to_goals": "गोल्स में बदलें",
   "variant_split": "स्प्लिट कैनवस",
   "variant_workbench": "वर्कबेंच",
@@ -222,5 +221,5 @@
   "desk_lane_brainstorm": "मंथन रेल",
   "desk_lane_plan": "प्लान रेल",
   "desk_room_back": "डेस्क",
-  "desk_room_position": "{total} में से प्रोजेक्ट {index}"
+  "title": "लक्ष्य अवलोकन"
 }
