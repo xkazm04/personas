@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "打开",
     "cadastre_foot_open_context": "在上下文地图中打开",
     "cadastre_map_label": "地块地图",
-    "cadastre_layer_label": "功能"
+    "cadastre_layer_label": "功能",
+    "cadastre_key_item": "{count} 个{label}",
+    "cadastre_lens": "放大镜",
+    "cadastre_tip_claimed_one": "被 {count} 个功能认领",
+    "cadastre_tip_claimed_other": "被 {count} 个功能认领",
+    "cadastre_tip_more": "还有 {count} 个",
+    "cadastre_tip_nobody": "没有功能认领此处。",
+    "cadastre_tip_all_unclaimed": "所有未认领的地块",
+    "cadastre_tip_district": "区域 · {count} 个上下文",
+    "cadastre_cat_gate": "待你决定",
+    "cadastre_cat_staked": "未审查"
   },
   "companions": {
     "nav": {

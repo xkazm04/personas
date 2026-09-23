@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "열기",
     "cadastre_foot_open_context": "컨텍스트 맵에서 열기",
     "cadastre_map_label": "구역 지도",
-    "cadastre_layer_label": "기능"
+    "cadastre_layer_label": "기능",
+    "cadastre_key_item": "{label} {count}개",
+    "cadastre_lens": "돋보기",
+    "cadastre_tip_claimed_one": "{count}개 기능이 점유",
+    "cadastre_tip_claimed_other": "{count}개 기능이 점유",
+    "cadastre_tip_more": "외 {count}개",
+    "cadastre_tip_nobody": "아무도 점유하지 않았습니다.",
+    "cadastre_tip_all_unclaimed": "모든 미점유 구역",
+    "cadastre_tip_district": "구역 · 컨텍스트 {count}개",
+    "cadastre_cat_gate": "내 결정",
+    "cadastre_cat_staked": "미심사"
   },
   "companions": {
     "nav": {

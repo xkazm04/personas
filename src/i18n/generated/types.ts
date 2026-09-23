@@ -1515,6 +1515,16 @@ export type Translations = {
     cadastre_foot_open_context: string;
     cadastre_map_label: string;
     cadastre_layer_label: string;
+    cadastre_key_item: string;
+    cadastre_lens: string;
+    cadastre_tip_claimed_one: string;
+    cadastre_tip_claimed_other: string;
+    cadastre_tip_more: string;
+    cadastre_tip_nobody: string;
+    cadastre_tip_all_unclaimed: string;
+    cadastre_tip_district: string;
+    cadastre_cat_gate: string;
+    cadastre_cat_staked: string;
   };
   chrome: {
     app_title: string;

@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "buka",
     "cadastre_foot_open_context": "buka di peta konteks",
     "cadastre_map_label": "Peta lahan",
-    "cadastre_layer_label": "Fitur"
+    "cadastre_layer_label": "Fitur",
+    "cadastre_key_item": "{count} {label}",
+    "cadastre_lens": "lensa",
+    "cadastre_tip_claimed_one": "Diklaim oleh {count} fitur",
+    "cadastre_tip_claimed_other": "Diklaim oleh {count} fitur",
+    "cadastre_tip_more": "dan {count} lainnya",
+    "cadastre_tip_nobody": "Tidak ada yang mengklaim ini.",
+    "cadastre_tip_all_unclaimed": "Semua lahan belum diklaim",
+    "cadastre_tip_district": "Distrik · {count} konteks",
+    "cadastre_cat_gate": "gerbang Anda",
+    "cadastre_cat_staked": "belum diperiksa"
   },
   "companions": {
     "nav": {

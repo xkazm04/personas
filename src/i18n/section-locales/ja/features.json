@@ -197,5 +197,15 @@
   "cadastre_foot_open": "開く",
   "cadastre_foot_open_context": "コンテキストマップで開く",
   "cadastre_map_label": "区画の地図",
-  "cadastre_layer_label": "機能"
+  "cadastre_layer_label": "機能",
+  "cadastre_key_item": "{label} {count} 件",
+  "cadastre_lens": "ルーペ",
+  "cadastre_tip_claimed_one": "{count} 件の機能が確保",
+  "cadastre_tip_claimed_other": "{count} 件の機能が確保",
+  "cadastre_tip_more": "ほか {count} 件",
+  "cadastre_tip_nobody": "どの機能も確保していません。",
+  "cadastre_tip_all_unclaimed": "未確保の区画をすべて表示",
+  "cadastre_tip_district": "地区 · {count} コンテキスト",
+  "cadastre_cat_gate": "あなたの判断",
+  "cadastre_cat_staked": "未審査"
 }

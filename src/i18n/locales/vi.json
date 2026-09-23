@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "mở",
     "cadastre_foot_open_context": "mở trong bản đồ ngữ cảnh",
     "cadastre_map_label": "Bản đồ khu đất",
-    "cadastre_layer_label": "Tính năng"
+    "cadastre_layer_label": "Tính năng",
+    "cadastre_key_item": "{count} {label}",
+    "cadastre_lens": "kính lúp",
+    "cadastre_tip_claimed_one": "Được {count} tính năng nhận",
+    "cadastre_tip_claimed_other": "Được {count} tính năng nhận",
+    "cadastre_tip_more": "và {count} mục khác",
+    "cadastre_tip_nobody": "Không ai nhận phần này.",
+    "cadastre_tip_all_unclaimed": "Toàn bộ vùng chưa được nhận",
+    "cadastre_tip_district": "Khu vực · {count} ngữ cảnh",
+    "cadastre_cat_gate": "chờ bạn duyệt",
+    "cadastre_cat_staked": "chưa xét"
   },
   "companions": {
     "nav": {

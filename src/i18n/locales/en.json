@@ -1508,7 +1508,17 @@
     "cadastre_foot_open": "open",
     "cadastre_foot_open_context": "open in the context map",
     "cadastre_map_label": "The map of the ground",
-    "cadastre_layer_label": "Feature"
+    "cadastre_layer_label": "Feature",
+    "cadastre_key_item": "{count} {label}",
+    "cadastre_lens": "lens",
+    "cadastre_tip_claimed_one": "Claimed by {count} feature",
+    "cadastre_tip_claimed_other": "Claimed by {count} features",
+    "cadastre_tip_more": "and {count} more",
+    "cadastre_tip_nobody": "Nobody claims this.",
+    "cadastre_tip_all_unclaimed": "All unclaimed ground",
+    "cadastre_tip_district": "District · {count} contexts",
+    "cadastre_cat_gate": "your gate",
+    "cadastre_cat_staked": "unexamined"
   },
   "chrome": {
     "app_title": "Personas",

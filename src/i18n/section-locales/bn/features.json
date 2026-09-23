@@ -197,5 +197,15 @@
   "cadastre_foot_open": "খুলুন",
   "cadastre_foot_open_context": "কনটেক্সট ম্যাপে খুলুন",
   "cadastre_map_label": "জমির মানচিত্র",
-  "cadastre_layer_label": "ফিচার"
+  "cadastre_layer_label": "ফিচার",
+  "cadastre_key_item": "{count}টি {label}",
+  "cadastre_lens": "লেন্স",
+  "cadastre_tip_claimed_one": "{count}টি ফিচারের দাবি",
+  "cadastre_tip_claimed_other": "{count}টি ফিচারের দাবি",
+  "cadastre_tip_more": "এবং আরও {count}টি",
+  "cadastre_tip_nobody": "কেউ এটি দাবি করে না।",
+  "cadastre_tip_all_unclaimed": "সব দাবিহীন জমি",
+  "cadastre_tip_district": "জেলা · {count}টি কনটেক্সট",
+  "cadastre_cat_gate": "আপনার সিদ্ধান্ত",
+  "cadastre_cat_staked": "অপরীক্ষিত"
 }

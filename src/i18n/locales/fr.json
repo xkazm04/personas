@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "ouvrir",
     "cadastre_foot_open_context": "ouvrir dans la carte des contextes",
     "cadastre_map_label": "La carte du terrain",
-    "cadastre_layer_label": "Fonctionnalité"
+    "cadastre_layer_label": "Fonctionnalité",
+    "cadastre_key_item": "{count} {label}",
+    "cadastre_lens": "loupe",
+    "cadastre_tip_claimed_one": "Revendiqué par {count} fonctionnalité",
+    "cadastre_tip_claimed_other": "Revendiqué par {count} fonctionnalités",
+    "cadastre_tip_more": "et {count} de plus",
+    "cadastre_tip_nobody": "Personne ne revendique ceci.",
+    "cadastre_tip_all_unclaimed": "Tout le terrain non revendiqué",
+    "cadastre_tip_district": "District · {count} contextes",
+    "cadastre_cat_gate": "votre décision",
+    "cadastre_cat_staked": "non examiné"
   },
   "companions": {
     "nav": {

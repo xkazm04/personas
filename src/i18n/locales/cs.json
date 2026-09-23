@@ -23852,7 +23852,17 @@
     "cadastre_foot_open": "otevřít",
     "cadastre_foot_open_context": "otevřít v mapě kontextů",
     "cadastre_map_label": "Mapa území",
-    "cadastre_layer_label": "Funkce"
+    "cadastre_layer_label": "Funkce",
+    "cadastre_key_item": "{label}: {count}",
+    "cadastre_lens": "lupa",
+    "cadastre_tip_claimed_one": "Zabráno {count} funkcí",
+    "cadastre_tip_claimed_other": "Zabráno funkcemi: {count}",
+    "cadastre_tip_more": "a dalších {count}",
+    "cadastre_tip_nobody": "Nikdo si to nenárokuje.",
+    "cadastre_tip_all_unclaimed": "Celé nezabrané území",
+    "cadastre_tip_district": "Okrsek · kontextů: {count}",
+    "cadastre_cat_gate": "vaše rozhodnutí",
+    "cadastre_cat_staked": "neprověřeno"
   },
   "companions": {
     "nav": {

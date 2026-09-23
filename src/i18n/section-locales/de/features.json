@@ -197,5 +197,15 @@
   "cadastre_foot_open": "öffnen",
   "cadastre_foot_open_context": "in der Kontextkarte öffnen",
   "cadastre_map_label": "Die Karte des Geländes",
-  "cadastre_layer_label": "Funktion"
+  "cadastre_layer_label": "Funktion",
+  "cadastre_key_item": "{count} {label}",
+  "cadastre_lens": "Lupe",
+  "cadastre_tip_claimed_one": "Beansprucht von {count} Feature",
+  "cadastre_tip_claimed_other": "Beansprucht von {count} Features",
+  "cadastre_tip_more": "und {count} weitere",
+  "cadastre_tip_nobody": "Niemand beansprucht das.",
+  "cadastre_tip_all_unclaimed": "Alles unbeanspruchte Gelände",
+  "cadastre_tip_district": "Bezirk · {count} Kontexte",
+  "cadastre_cat_gate": "deine Entscheidung",
+  "cadastre_cat_staked": "ungeprüft"
 }

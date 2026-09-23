@@ -197,5 +197,15 @@
   "cadastre_foot_open": "فتح",
   "cadastre_foot_open_context": "فتح في خريطة السياق",
   "cadastre_map_label": "خريطة الأرض",
-  "cadastre_layer_label": "الميزة"
+  "cadastre_layer_label": "الميزة",
+  "cadastre_key_item": "{count} {label}",
+  "cadastre_lens": "العدسة",
+  "cadastre_tip_claimed_one": "تطالب بها {count} ميزة",
+  "cadastre_tip_claimed_other": "تطالب بها {count} ميزات",
+  "cadastre_tip_more": "و{count} أخرى",
+  "cadastre_tip_nobody": "لا أحد يطالب بهذا.",
+  "cadastre_tip_all_unclaimed": "كل الأرض غير المُطالَب بها",
+  "cadastre_tip_district": "منطقة · {count} سياقًا",
+  "cadastre_cat_gate": "بوابتك",
+  "cadastre_cat_staked": "غير مفحوصة"
 }

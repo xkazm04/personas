@@ -23,13 +23,17 @@ import type { UpsertScenarioInput } from '@/lib/bindings/UpsertScenarioInput';
 import type { FeatureRow } from '../featureRules';
 import type { FeaturesModel } from '../featuresModel';
 import { IS_DEV } from '../fixture/featuresFixture';
-import { claimedShare, type CadFilter, type ParcelCat } from './cadastreModel';
+import { claimedShare, countCats, type CadFilter, type ParcelCat } from './cadastreModel';
+import { CadastreMap } from './CadastreMap';
 import { CadastreHeader } from './CadastreHeader';
 import { runDeedTransition } from './deedTransition';
 import { Register } from './Register';
+import { MapKey } from './MapKey';
+import { ParcelTip } from './ParcelTip';
 import { rowDomId } from './RegisterRow';
 import { useCadastre } from './useCadastre';
 import { useCadastreKeys } from './useCadastreKeys';
+import { useMapTip } from './useMapTip';
 import './cadastre.css';
 
 export interface CadastrePageProps {
@@ -86,7 +90,8 @@ export function CadastrePage(props: CadastrePageProps) {
     { enabled: true, rehearsal: IS_DEV },
   );
 
-  const hotClaims = useMemo(() => new Set<string>(), []);
+  const tip = useMapTip(cad, openDeed);
+  const counts = useMemo(() => countCats(cad.cats), [cad.cats]);
 
   return (
     <div
@@ -99,6 +104,8 @@ export function CadastrePage(props: CadastrePageProps) {
       data-sort={cad.sort}
       data-lens={cad.lens ? 'on' : 'off'}
       data-rows={cad.visible.length}
+      data-tip={tip.hover?.p?.id ?? ''}
+      data-hot={cad.hotCtx ?? ''}
     >
       <CadastreHeader
         share={share}
@@ -126,7 +133,7 @@ export function CadastrePage(props: CadastrePageProps) {
           filterRef={filterRef}
           listRef={listRef}
           focus={cad.focus}
-          hotClaims={hotClaims}
+          hotClaims={tip.hotClaims}
           onOpen={openDeed}
           onPreview={(key) => cad.setPreview(key ?? cad.focus)}
           unclaimedList={null}
@@ -136,9 +143,36 @@ export function CadastrePage(props: CadastrePageProps) {
           tx={tx}
           language={language}
         />
-        <section className="mapwrap" data-role="cad-mapwrap" aria-label={t.cadastre_map_label} />
+        <section className="mapwrap" data-role="cad-mapwrap" aria-label={t.cadastre_map_label}>
+          <CadastreMap
+            plots={model.plots}
+            cats={cad.cats}
+            ranked={cad.ranked}
+            claims={cad.claims}
+            active={cad.active}
+            filterCat={cad.filter ? FILTER_CAT[cad.filter] : null}
+            hlCat={cad.hlCat}
+            hotCtx={cad.hotCtx}
+            onHover={tip.onHover}
+            onParcel={tip.onParcel}
+            lens={cad.lens && !cad.open}
+            label={t.cadastre_map_label}
+          />
+          <MapKey counts={counts} onHover={cad.setHlCat} onFilter={cad.toggleFilter} t={t} tx={tx} />
+        </section>
       </div>
       <section ref={layerRef} className="layer" data-role="cad-layer" hidden={!cad.open} aria-label={t.cadastre_layer_label} />
+      <ParcelTip
+        hover={cad.open ? null : tip.hover}
+        claims={cad.claims}
+        onOpen={(key) => { tip.drop(); openDeed(key); }}
+        onUnclaimed={() => { tip.drop(); if (cad.filter !== 'unclaimed') cad.toggleFilter('unclaimed'); }}
+        onEnter={tip.keep}
+        onLeave={() => tip.onHover(null)}
+        t={t}
+        tDev={tDev}
+        tx={tx}
+      />
     </div>
   );
 }

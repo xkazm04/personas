@@ -197,5 +197,15 @@
   "cadastre_foot_open": "abrir",
   "cadastre_foot_open_context": "abrir en el mapa de contextos",
   "cadastre_map_label": "El mapa del terreno",
-  "cadastre_layer_label": "Función"
+  "cadastre_layer_label": "Función",
+  "cadastre_key_item": "{count} {label}",
+  "cadastre_lens": "lupa",
+  "cadastre_tip_claimed_one": "Reclamado por {count} función",
+  "cadastre_tip_claimed_other": "Reclamado por {count} funciones",
+  "cadastre_tip_more": "y {count} más",
+  "cadastre_tip_nobody": "Nadie reclama esto.",
+  "cadastre_tip_all_unclaimed": "Todo el terreno sin reclamar",
+  "cadastre_tip_district": "Distrito · {count} contextos",
+  "cadastre_cat_gate": "tu decisión",
+  "cadastre_cat_staked": "sin examinar"
 }

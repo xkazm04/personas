@@ -197,5 +197,15 @@
   "cadastre_foot_open": "खोलें",
   "cadastre_foot_open_context": "संदर्भ मानचित्र में खोलें",
   "cadastre_map_label": "ज़मीन का मानचित्र",
-  "cadastre_layer_label": "फ़ीचर"
+  "cadastre_layer_label": "फ़ीचर",
+  "cadastre_key_item": "{count} {label}",
+  "cadastre_lens": "लेंस",
+  "cadastre_tip_claimed_one": "{count} फ़ीचर का दावा",
+  "cadastre_tip_claimed_other": "{count} फ़ीचर का दावा",
+  "cadastre_tip_more": "और {count} अन्य",
+  "cadastre_tip_nobody": "इस पर किसी का दावा नहीं है।",
+  "cadastre_tip_all_unclaimed": "सारी बिना दावे की ज़मीन",
+  "cadastre_tip_district": "ज़िला · {count} संदर्भ",
+  "cadastre_cat_gate": "आपका निर्णय",
+  "cadastre_cat_staked": "अपरीक्षित"
 }
