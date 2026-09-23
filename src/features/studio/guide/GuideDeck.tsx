@@ -71,14 +71,14 @@ export default function GuideDeck({
             className="flex w-72 flex-col rounded-card border border-primary/25 bg-gradient-to-b from-secondary/95 to-background/95 p-4 shadow-elevation-3 backdrop-blur"
           >
             {c.goal && <p className="typo-caption text-foreground/90">{tx(g.serves, { goal: c.goal })}</p>}
-            <h3 className="mt-1 typo-body-lg font-semibold text-foreground">{title(c)}</h3>
+            <h3 className="mt-1 typo-title-lg text-foreground">{title(c)}</h3>
             <p className="mt-1 line-clamp-2 typo-body text-foreground/90">{why(c)}</p>
             <p className="mt-2 typo-caption text-foreground/90">{estimate}</p>
             <div className="mt-3 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => onAccept(c)}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 typo-body font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-full px-3 py-1.5 typo-title transition-colors ${
                   i === 0 ? 'bg-primary text-background hover:bg-primary/90' : 'border border-border text-foreground hover:border-primary/60'
                 }`}
               >

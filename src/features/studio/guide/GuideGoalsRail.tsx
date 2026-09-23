@@ -91,7 +91,7 @@ const GuideGoalsRail = forwardRef<
                   {status === 'done' && <Check className="h-3 w-3" strokeWidth={3} />}
                 </span>
                 <div className="min-w-0">
-                  <p className={`typo-body font-medium ${status === 'pending' ? 'text-foreground/90' : 'text-foreground'}`}>{p.title}</p>
+                  <p className={`typo-title ${status === 'pending' ? 'text-foreground/90' : 'text-foreground'}`}>{p.title}</p>
                   <p className={`typo-caption ${status === 'active' ? 'text-primary' : 'text-foreground/90'}`}>
                     {status === 'active' ? g.goal_now : status === 'done' ? (p.note || g.goal_done) : (p.note || null)}
                   </p>
@@ -129,7 +129,7 @@ const GuideGoalsRail = forwardRef<
               setAdding(true);
               window.requestAnimationFrame(() => inputRef.current?.focus());
             }}
-            className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-foreground/90 transition-colors hover:border-primary/60 hover:text-foreground disabled:opacity-40"
+            className="flex w-full items-center justify-between rounded-interactive border border-dashed border-border px-3 py-2 typo-body text-foreground/90 transition-colors hover:border-primary/60 hover:text-foreground disabled:is-disabled"
           >
             <span className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

@@ -3,7 +3,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { webbuildListProjects } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
-import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import StudioTabBar from './StudioTabBar';
 import StudioCurrentLayout from './StudioCurrentLayout';
 import GuideStudio from './guide/GuideStudio';
@@ -83,7 +83,9 @@ export default function StudioPage() {
         />
       </div>
       <div
-        {...segmentedTabPanelProps('studio-layout', layout)}
+        role="tabpanel"
+        id={`studio-layout-panel-${layout}`}
+        aria-labelledby={`studio-layout-tab-${layout}`}
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col"
       >
         {layout === 'guide' ? (

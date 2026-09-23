@@ -90,7 +90,7 @@ export default function GuideBlueprint({
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/50 font-mono text-xs text-primary">
                         {status === 'done' ? <Check className="h-3.5 w-3.5" /> : i + 1}
                       </span>
-                      <p className="typo-body font-semibold text-foreground">{p.title}</p>
+                      <p className="typo-title text-foreground">{p.title}</p>
                     </div>
                     <p className="mt-2 typo-body text-foreground/90">{p.note || (status === 'active' ? g.goal_now : g.frame_pending)}</p>
                   </motion.li>

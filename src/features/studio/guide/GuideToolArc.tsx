@@ -94,7 +94,7 @@ export default function GuideToolArc({
               }`}
             >
               <Icon className="h-4 w-4 text-primary" />
-              <span className="typo-body font-medium">{label[tool.id][0]}</span>
+              <span className="typo-title">{label[tool.id][0]}</span>
               <kbd className="rounded border border-border px-1.5 font-mono text-xs text-foreground/90">{i + 1}</kbd>
             </motion.button>
           );

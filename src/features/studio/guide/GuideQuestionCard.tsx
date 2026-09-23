@@ -44,7 +44,7 @@ export default function GuideQuestionCard({
     >
       <header className="flex items-center gap-2 border-b border-border px-5 py-3">
         <span className="h-2 w-2 rounded-full bg-status-warning" />
-        <span className="typo-body font-semibold text-status-warning">{g.needs_you}</span>
+        <span className="typo-title text-status-warning">{g.needs_you}</span>
         {lastTurnSecs !== null && (
           <span className="typo-caption text-foreground/90">
             {tx(g.after_step, { step, minutes: Math.max(1, Math.round(lastTurnSecs / 60)) })}
@@ -75,7 +75,7 @@ export default function GuideQuestionCard({
                   <kbd className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-border font-mono text-sm text-foreground/90">
                     {i + 1}
                   </kbd>
-                  <span className="typo-body-lg font-medium text-foreground">{o}</span>
+                  <span className="typo-title-lg text-foreground">{o}</span>
                 </button>
               </li>
             ))}
