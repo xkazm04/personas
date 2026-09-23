@@ -462,6 +462,73 @@ pub const CURATOR_ENABLED: &str = "curator_enabled";
 /// Default for [`CURATOR_ENABLED`] — off (opt-in).
 pub const CURATOR_ENABLED_DEFAULT: bool = false;
 
+// ---------------------------------------------------------------------------
+// Curator's policy — the nine keys `CuratorPolicy` is projected from
+//
+// These are the OPERATOR'S standing answers, read as one typed value by
+// `commands::curator::curator_policy_get`. They are stored as ordinary
+// `app_settings` rows rather than in a `curator_policy` table deliberately:
+// there is exactly one operator and one policy, `set_app_setting` already
+// carries the allow-list, the audit log and the change broadcast, and a
+// one-row table would be a second store for a fact this one already holds.
+//
+// Every one of them is validated in `validate_value` below. That is not
+// decoration: `repos::core::settings::set` calls it on every write, so an
+// out-of-set level or a negative cap is refused at the door rather than
+// clamped on read — the shape of setting that otherwise "does not take".
+//
+// The four caps have NO default constant, and that is the point. An unset cap
+// is not a cap of zero: `CuratorPolicy` carries `None`, which means the
+// operator has declared no ceiling. A `0` default would read as a companion
+// that may never run, which is a different claim entirely.
+// ---------------------------------------------------------------------------
+
+/// Authority level for research-shaped work (a scan, a read, a report).
+/// One of `L0`..`L3`; `L0` is always asked, `L3` runs under a standing grant.
+pub const CURATOR_LEVEL_RESEARCH: &str = "curator_level_research";
+/// Authority level for forging new subjects into the corpus.
+pub const CURATOR_LEVEL_FORGE: &str = "curator_level_forge";
+/// Authority level for judging a consumer project against the standard.
+pub const CURATOR_LEVEL_CONFORM: &str = "curator_level_conform";
+/// Authority level for a maintenance sweep over the corpus.
+pub const CURATOR_LEVEL_SWEEP: &str = "curator_level_sweep";
+/// Default for all four levels — `L0`, always ask.
+///
+/// An autonomy setting that has never been touched must not be read as
+/// permission, which is the same call [`CURATOR_ENABLED_DEFAULT`] makes.
+pub const CURATOR_LEVEL_DEFAULT: &str = "L0";
+
+/// Dollars Curator may spend in a day. Unset means NO ceiling declared.
+/// Stored as a decimal string; validated as a finite non-negative number.
+pub const CURATOR_DAILY_BUDGET_USD: &str = "curator_daily_budget_usd";
+/// Dispatches Curator may start in a day. Unset means no cap declared.
+pub const CURATOR_DAILY_RUN_CAP: &str = "curator_daily_run_cap";
+/// Commits Curator may land in a day. Unset means no cap declared.
+pub const CURATOR_DAILY_COMMIT_CAP: &str = "curator_daily_commit_cap";
+/// A window during which Curator stays quiet, e.g. `"22:00-07:00"`.
+/// Free-form: the loop package owns the parse, and pinning a grammar here
+/// before a reader exists would be guessing at one.
+pub const CURATOR_QUIET_HOURS: &str = "curator_quiet_hours";
+
+/// How many decisions awaiting an answer stop Curator queueing more. This is
+/// backpressure on the OPERATOR, not on the machine: a queue nobody is
+/// answering is a queue that should stop growing.
+pub const CURATOR_BACKPRESSURE_N: &str = "curator_backpressure_n";
+/// Default for [`CURATOR_BACKPRESSURE_N`].
+pub const CURATOR_BACKPRESSURE_N_DEFAULT: u32 = 8;
+/// Upper bound accepted by the validator — past this the setting is not
+/// backpressure any more.
+pub const CURATOR_BACKPRESSURE_N_MAX: u32 = 100;
+
+/// How many workers Curator may hold at once.
+pub const CURATOR_WORKER_CAP: &str = "curator_worker_cap";
+/// Default for [`CURATOR_WORKER_CAP`] — one.
+pub const CURATOR_WORKER_CAP_DEFAULT: u32 = 1;
+/// Upper bound accepted by the validator. The registry's own librarian caps a
+/// dispatch fan-out at 10 concurrent workers, which is the number two existing
+/// skills converged on across measured runs; this app must not exceed it.
+pub const CURATOR_WORKER_CAP_MAX: u32 = 10;
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -1171,6 +1238,17 @@ const ALLOWED_KEYS: &[&str] = &[
     ATHENA_ONBOARDED_AT,
     OVERSEER_ENABLED,
     CURATOR_ENABLED,
+    // Curator's policy — the nine keys `CuratorPolicy` is projected from.
+    CURATOR_LEVEL_RESEARCH,
+    CURATOR_LEVEL_FORGE,
+    CURATOR_LEVEL_CONFORM,
+    CURATOR_LEVEL_SWEEP,
+    CURATOR_DAILY_BUDGET_USD,
+    CURATOR_DAILY_RUN_CAP,
+    CURATOR_DAILY_COMMIT_CAP,
+    CURATOR_QUIET_HOURS,
+    CURATOR_BACKPRESSURE_N,
+    CURATOR_WORKER_CAP,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
@@ -1445,6 +1523,52 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             ATTENTION_FLEET_START_MARGIN_PCT_MIN,
             ATTENTION_FLEET_START_MARGIN_PCT_MAX,
         ),
+        // Curator's four authority levels. A level outside the set would be
+        // read as its fallback, which is the shape of setting that silently
+        // "does not take" - so it is refused here instead.
+        CURATOR_LEVEL_RESEARCH | CURATOR_LEVEL_FORGE | CURATOR_LEVEL_CONFORM
+        | CURATOR_LEVEL_SWEEP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            if personas_core::models::CURATOR_DECISION_LEVELS.contains(&value.trim()) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "value for '{key}' must be one of L0|L1|L2|L3, got {value:?}"
+                ))
+            }
+        }
+        // The four caps. A BLANK value is accepted and means "no ceiling
+        // declared" - which is not the same as zero, and is why none of them
+        // has a default constant. A negative or non-finite one is refused.
+        CURATOR_DAILY_BUDGET_USD => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_float_range(key, value, 0.0, f64::MAX)
+        }
+        CURATOR_DAILY_RUN_CAP | CURATOR_DAILY_COMMIT_CAP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 0, u32::MAX)
+        }
+        // Free-form on purpose: the loop package owns the parse, and pinning a
+        // grammar here before a reader exists would be guessing at one.
+        CURATOR_QUIET_HOURS => Ok(()),
+        CURATOR_BACKPRESSURE_N => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 1, CURATOR_BACKPRESSURE_N_MAX)
+        }
+        CURATOR_WORKER_CAP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 1, CURATOR_WORKER_CAP_MAX)
+        }
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -1624,6 +1748,14 @@ fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
 }
 
 /// An integer setting bounded to `min..=max` — the Autopilot steppers' shape.
+/// A value that is only whitespace is ABSENT, not malformed. Every reader of
+/// an optional setting in this file treats it that way already; saying so once
+/// here is what lets a "clear this field" write reach the store rather than be
+/// refused as a bad number.
+fn is_blank(value: &str) -> bool {
+    value.trim().is_empty()
+}
+
 fn validate_int_range(key: &str, value: &str, min: u32, max: u32) -> Result<(), String> {
     match value.trim().parse::<u32>() {
         Ok(n) if (min..=max).contains(&n) => Ok(()),
@@ -1842,7 +1974,17 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         // belongs in the History tab beside the loops it governs.
         | ATHENA_ENABLED
         | OVERSEER_ENABLED
-        | CURATOR_ENABLED => "autonomy",
+        | CURATOR_ENABLED
+        | CURATOR_LEVEL_RESEARCH
+        | CURATOR_LEVEL_FORGE
+        | CURATOR_LEVEL_CONFORM
+        | CURATOR_LEVEL_SWEEP
+        | CURATOR_DAILY_BUDGET_USD
+        | CURATOR_DAILY_RUN_CAP
+        | CURATOR_DAILY_COMMIT_CAP
+        | CURATOR_QUIET_HOURS
+        | CURATOR_BACKPRESSURE_N
+        | CURATOR_WORKER_CAP => "autonomy",
         // Obsidian brain / dev-tools integrations.
         OBSIDIAN_BRAIN_CONFIG
         | OBSIDIAN_MIRROR_CONFIG
@@ -1975,6 +2117,92 @@ mod tests {
         assert!(deprecated_replacement(ATHENA_ENABLED).is_none());
         assert!(deprecated_replacement(OVERSEER_ENABLED).is_none());
         assert!(deprecated_replacement(CURATOR_ENABLED).is_none());
+    }
+
+    /// Curator's nine policy keys. The registration half is the same argument
+    /// as the switches above - an unregistered key is refused on write, so the
+    /// setting would appear to move and be back on the next read. The
+    /// validation half is what makes the typed contract real: `repos::core::
+    /// settings::set` calls `validate_value` on every write, so a level
+    /// outside the set is refused at the door rather than silently read as its
+    /// fallback.
+    #[test]
+    fn curator_policy_keys_registered_named_validated_and_categorised() {
+        let all = [
+            (CURATOR_LEVEL_RESEARCH, "curator_level_research"),
+            (CURATOR_LEVEL_FORGE, "curator_level_forge"),
+            (CURATOR_LEVEL_CONFORM, "curator_level_conform"),
+            (CURATOR_LEVEL_SWEEP, "curator_level_sweep"),
+            (CURATOR_DAILY_BUDGET_USD, "curator_daily_budget_usd"),
+            (CURATOR_DAILY_RUN_CAP, "curator_daily_run_cap"),
+            (CURATOR_DAILY_COMMIT_CAP, "curator_daily_commit_cap"),
+            (CURATOR_QUIET_HOURS, "curator_quiet_hours"),
+            (CURATOR_BACKPRESSURE_N, "curator_backpressure_n"),
+            (CURATOR_WORKER_CAP, "curator_worker_cap"),
+        ];
+        for (key, name) in all {
+            assert_eq!(key, name);
+            assert!(validate_key(key).is_ok(), "{key} is not registered");
+            assert_eq!(audit_category(key), Some("autonomy"), "{key}");
+            assert!(deprecated_replacement(key).is_none(), "{key}");
+            // A blank value is ABSENT, never malformed - it is how a field is
+            // cleared back to "no ceiling declared".
+            assert!(validate_value(key, "").is_ok(), "{key} must accept blank");
+            assert!(
+                validate_value(key, "   ").is_ok(),
+                "{key} must accept blank"
+            );
+        }
+
+        for key in [
+            CURATOR_LEVEL_RESEARCH,
+            CURATOR_LEVEL_FORGE,
+            CURATOR_LEVEL_CONFORM,
+            CURATOR_LEVEL_SWEEP,
+        ] {
+            for level in personas_core::models::CURATOR_DECISION_LEVELS {
+                assert!(validate_value(key, level).is_ok(), "{key} = {level}");
+            }
+            assert!(validate_value(key, "L4").is_err(), "{key} accepted L4");
+            assert!(
+                validate_value(key, "l0").is_err(),
+                "{key} accepted lowercase"
+            );
+            assert!(validate_value(key, "yes").is_err(), "{key} accepted prose");
+        }
+        assert_eq!(CURATOR_LEVEL_DEFAULT, "L0");
+        assert!(personas_core::models::CURATOR_DECISION_LEVELS.contains(&CURATOR_LEVEL_DEFAULT));
+
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "12.50").is_ok());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "0").is_ok());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "-1").is_err());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "lots").is_err());
+
+        assert!(validate_value(CURATOR_DAILY_RUN_CAP, "20").is_ok());
+        assert!(validate_value(CURATOR_DAILY_RUN_CAP, "-2").is_err());
+        assert!(validate_value(CURATOR_DAILY_COMMIT_CAP, "3").is_ok());
+        assert!(validate_value(CURATOR_DAILY_COMMIT_CAP, "3.5").is_err());
+
+        // Backpressure and the worker cap are bounded BELOW at 1: a zero here
+        // would not be "no cap", it would be a companion that can never queue
+        // or never run, and the blank form above already says "unset".
+        assert!(validate_value(CURATOR_BACKPRESSURE_N, "8").is_ok());
+        assert!(validate_value(CURATOR_BACKPRESSURE_N, "0").is_err());
+        assert!(validate_value(
+            CURATOR_BACKPRESSURE_N,
+            &(CURATOR_BACKPRESSURE_N_MAX + 1).to_string()
+        )
+        .is_err());
+        assert!(validate_value(CURATOR_WORKER_CAP, "1").is_ok());
+        assert!(validate_value(CURATOR_WORKER_CAP, "0").is_err());
+        // The registry's own librarian caps a dispatch fan-out at 10; this app
+        // must not be able to exceed it.
+        assert_eq!(CURATOR_WORKER_CAP_MAX, 10);
+        assert!(validate_value(CURATOR_WORKER_CAP, "10").is_ok());
+        assert!(validate_value(CURATOR_WORKER_CAP, "11").is_err());
+
+        assert_eq!(CURATOR_BACKPRESSURE_N_DEFAULT, 8);
+        assert_eq!(CURATOR_WORKER_CAP_DEFAULT, 1);
     }
 
     #[test]
