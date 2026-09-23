@@ -17,7 +17,6 @@ import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDial
 // TODO(prototype, 2026-09-23): consolidate the Contact Sheet switcher - three
 // transformation variants of the /contest winner, pick one and delete the rest.
 import { ContactSheetCinemaLayout } from "@/features/agents/sub_glyph/contactSheet/cinema/ContactSheetCinemaLayout";
-import { ContactSheetPersonasLayout } from "@/features/agents/sub_glyph/contactSheet/personas/ContactSheetPersonasLayout";
 import { ContactSheetWildLayout } from "@/features/agents/sub_glyph/contactSheet/wild/ContactSheetWildLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import type { PersonaCoreLaunchSnapshot } from "@/features/agents/sub_glyph/personaCore";
@@ -58,9 +57,9 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // pieces (DialogueComposePanel/DialogueStageSurface, used by GlyphDialogueCinemaLayout)
 // — but "glyph-full", "composer-prototype" and "dialogue" are no longer selectable.
 // "dialogue-cinema" is the default.
-type BuildLayout = "cinema" | "dialogue-cinema" | "sheet-cinema" | "sheet-personas" | "sheet-wild";
+type BuildLayout = "cinema" | "dialogue-cinema" | "sheet-cinema" | "sheet-wild";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema", "sheet-cinema", "sheet-personas", "sheet-wild"];
+const BUILD_LAYOUTS: BuildLayout[] = ["cinema", "dialogue-cinema", "sheet-cinema", "sheet-wild"];
 const isSheetLayout = (l: BuildLayout) => l.startsWith("sheet-");
 function readLayoutPreference(): BuildLayout {
   try {
@@ -835,7 +834,6 @@ export function UnifiedBuildEntry() {
           </button>
           {([
             ["sheet-cinema", "Sheet · Cinema", "Contact Sheet fused with the Cinema style (prototype)"],
-            ["sheet-personas", "Sheet · Personas", "Contact Sheet translated into the Personas design system (prototype)"],
             ["sheet-wild", "Sheet · Wild", "Contact Sheet wildcard: best look, guidelines optional (prototype)"],
           ] as const).map(([key, label, hint]) => (
             <button
@@ -924,7 +922,6 @@ export function UnifiedBuildEntry() {
           "cinema": GlyphCinemaLayout,
           "dialogue-cinema": GlyphDialogueCinemaLayout,
           "sheet-cinema": ContactSheetCinemaLayout,
-          "sheet-personas": ContactSheetPersonasLayout,
           "sheet-wild": ContactSheetWildLayout,
         }[layout];
         return <LayoutComponent {...layoutProps} />;
