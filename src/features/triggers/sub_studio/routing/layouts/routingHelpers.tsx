@@ -1,8 +1,9 @@
 /**
  * Shared helpers + types for the routing view tree.
  *
- * This file contains small pure helpers (icon resolution, chain-trigger
- * parsing) and the row-model types consumed across ./routing/.
+ * This file contains small pure helpers (icon resolution) and the row-model
+ * types consumed across ./routing/. Trigger configs are decoded into routes by
+ * ../../libs/routeCodec, never here.
  *
  * The larger buildEventRows() derivation lives in a sibling file
  * (./buildEventRows.ts) to keep each file under the LOC budget; it's
@@ -11,8 +12,8 @@
  */
 import { Zap, type LucideIcon, Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow, Layers, FileEdit, CheckCircle2, XCircle, Store } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { EventSourceTemplate } from '@/features/triggers/lib/eventSourceTemplates';
+import type { LiveRoute } from '../../libs/routeCodec';
 
 // ── Icon resolution ─────────────────────────────────────────────────────
 
@@ -27,35 +28,6 @@ export function resolveIcon(tmpl: EventSourceTemplate | undefined): LucideIcon {
   return name ? (ICON_MAP[name] ?? Zap) : Zap;
 }
 
-// ── Chain trigger parsing ───────────────────────────────────────────────
-
-export interface ChainTriggerView {
-  trigger: PersonaTrigger;
-  sourcePersonaId: string;
-  eventType: string;
-  conditionType: string;
-}
-
-export function parseChainTrigger(t: PersonaTrigger): ChainTriggerView | null {
-  if (t.trigger_type !== 'chain' || !t.config) return null;
-  try {
-    const cfg = JSON.parse(t.config) as {
-      source_persona_id?: string;
-      event_type?: string;
-      condition?: { type?: string };
-    };
-    if (!cfg.source_persona_id) return null;
-    return {
-      trigger: t,
-      sourcePersonaId: cfg.source_persona_id,
-      eventType: cfg.event_type || 'chain_triggered',
-      conditionType: cfg.condition?.type || 'any',
-    };
-  } catch {
-    return null;
-  }
-}
-
 // ── Row types (consumed by ./routing/ and useRoutingState) ──────────────
 
 export type SourceClass = 'common' | 'persona' | 'external';
@@ -66,21 +38,26 @@ export interface SourcePersonaEntry {
 }
 
 export interface Connection {
-  kind: 'subscription' | 'chain' | 'trigger-listener';
+  /**
+   * `subscription` = a legacy persona_event_subscriptions row; `chain` = a
+   * persona-completion route; `signal` = a signal-source trigger route
+   * (schedule, webhook, file_watcher, ...); `trigger-listener` = an
+   * event_listener route (user listener or Marketplace feed).
+   */
+  kind: 'subscription' | 'chain' | 'signal' | 'trigger-listener';
   subscriptionId: string | null;
   triggerId: string | null;
   personaId: string;
   persona: Persona | undefined;
   /** Phase C4 — capability scope when the trigger is scoped to one use case. */
   useCaseId?: string | null;
-  chainCondition?: string;
   /**
-   * For `chain` connections: the source persona whose completion fires this
-   * route. Chains all share the `chain_triggered` event row, so the per-edge
-   * source must live on the connection (not the row) to keep A→B / C→B distinct
-   * and render the true source in a connection-centric view.
+   * The decoded route for every trigger-backed connection (routeCodec): its
+   * true source, condition, and the trigger that governs it. Chains all share
+   * the `chain_triggered` row and signal routes the `trigger_fired` row, so the
+   * per-edge source lives here, not on the row.
    */
-  sourcePersonaId?: string | null;
+  route?: LiveRoute;
 }
 
 export interface EventRow {

@@ -26,6 +26,7 @@ import {
   deleteSubscription,
 } from '@/api/overview/events';
 import { buildEventRows, type EventRow, type Connection } from './routingHelpers';
+import { disconnectPlan } from '../../libs/routeCodec';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -138,12 +139,15 @@ export function useRoutingState({
     if (!disconnectTarget) return;
     const { connection } = disconnectTarget;
     try {
+      // Runs only as the DisconnectDialog's confirm. A trigger-backed cable is
+      // removed as a whole route (routeCodec.disconnectPlan): a signal route
+      // deletes its source trigger and the backend cascades the auto-listener.
       if (connection.kind === 'subscription' && connection.subscriptionId) {
         await deleteSubscription(connection.subscriptionId);
-      } else if (connection.kind === 'trigger-listener' && connection.triggerId) {
-        await unlinkPersonaFromEvent(connection.triggerId);
-      } else if (connection.triggerId) {
-        await deleteTrigger(connection.triggerId, connection.personaId);
+      } else if (connection.route) {
+        const plan = disconnectPlan(connection.route);
+        if (plan.call === 'deleteTrigger') await deleteTrigger(plan.id, plan.personaId);
+        else await unlinkPersonaFromEvent(plan.triggerId);
       }
       await reload();
     } catch (err) { silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch4")(err); }

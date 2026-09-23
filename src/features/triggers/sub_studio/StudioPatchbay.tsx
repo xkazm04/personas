@@ -10,9 +10,9 @@
  * live distinguished only by state — the chain mental model made literal.
  *
  * Incomplete routes (an event with no listener — catalog noise / dangling
- * sources) are hidden by default behind a top-bar toggle. Chain routes carry
- * their true source on the connection, so A→B and C→B render as distinct
- * cables with the correct source persona.
+ * sources) are hidden by default behind a top-bar toggle. Every trigger-backed
+ * cable carries its decoded route (libs/routeCodec), so A→B and C→B, or two
+ * schedules into B, render as distinct cables with their true source.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -45,13 +45,7 @@ import { RenameEventDialog } from './routing/layouts/RenameEventDialog';
 interface LiveCable { row: EventRow; connection: Connection | null }
 
 type StudioStrings = ReturnType<typeof useStudioComposer>['st'];
-
-/** Label a live chain's backend condition token (any / success / failure). */
-function chainCondLabel(st: StudioStrings, cond?: string | null): string {
-  if (cond === 'success') return st.condition_on_success;
-  if (cond === 'failure') return st.condition_on_failure;
-  return st.condition_always;
-}
+type StudioT = ReturnType<typeof useStudioComposer>['t'];
 
 const CABLE_CASCADE_ROWS = 14;
 
@@ -246,14 +240,14 @@ export function StudioPatchbay() {
           {/* Live cables — complete edges (a real source→listener route) */}
           {connected.map((cb, i) => (
             <RevealItem
-              key={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.sourcePersonaId ?? ''}-${i}`}
-              revealId={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.sourcePersonaId ?? ''}-${i}`}
+              key={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.triggerId ?? cb.connection?.subscriptionId ?? ''}-${i}`}
+              revealId={`c-${cb.row.eventType}-${cb.connection?.personaId}-${cb.connection?.triggerId ?? cb.connection?.subscriptionId ?? ''}-${i}`}
               order={i}
               hasEntered={(id) => i >= CABLE_CASCADE_ROWS || enter.hasEntered(id)}
               markEntered={enter.markEntered}
             >
               <LiveCableRow
-                cb={cb} st={st} personas={personas}
+                cb={cb} t={t} st={st} personas={personas}
                 onRename={openRename}
                 onAdd={(row) => routing.setAddPersonaForEvent({ eventType: row.eventType })}
                 onDisconnect={(connection, row) => routing.setDisconnectTarget({ connection, personaName: connection.persona?.name ?? connection.personaId.slice(0, 8), eventLabel: row.template?.label ?? row.eventType })}
@@ -266,7 +260,7 @@ export function StudioPatchbay() {
             <div className="pt-2 pb-1 px-1 typo-caption uppercase tracking-wide text-foreground">{tx(st.proto_show_unconnected, { count: unconnected.length })}</div>
           )}
           {showUnconnected && unconnected.map((cb, i) => (
-            <LiveCableRow key={`u-${cb.row.eventType}-${i}`} cb={cb} st={st} personas={personas} dim
+            <LiveCableRow key={`u-${cb.row.eventType}-${i}`} cb={cb} t={t} st={st} personas={personas} dim
               onRename={openRename}
               onAdd={(row) => routing.setAddPersonaForEvent({ eventType: row.eventType })}
               onDisconnect={() => undefined}
@@ -343,8 +337,8 @@ export function StudioPatchbay() {
   );
 }
 
-function LiveCableRow({ cb, st, personas, dim, onRename, onAdd, onDisconnect }: {
-  cb: LiveCable; st: StudioStrings; personas: Persona[]; dim?: boolean;
+function LiveCableRow({ cb, t, st, personas, dim, onRename, onAdd, onDisconnect }: {
+  cb: LiveCable; t: StudioT; st: StudioStrings; personas: Persona[]; dim?: boolean;
   onRename: (row: EventRow) => void;
   onAdd: (row: EventRow) => void;
   onDisconnect: (connection: Connection, row: EventRow) => void;
@@ -353,17 +347,17 @@ function LiveCableRow({ cb, st, personas, dim, onRename, onAdd, onDisconnect }: 
   const EventIcon = resolveIcon(row.template);
   return (
     <div className={`group flex items-center gap-3 px-4 py-2.5 max-w-[calc(100%-50px)] rounded-card border border-border bg-background/60 hover:border-foreground/20 transition-colors ${dim ? 'opacity-70' : ''}`}>
-      <LiveSourceEnd row={row} connection={connection} personas={personas} />
+      <LiveSourceEnd row={row} connection={connection} personas={personas} completesLabel={st.persona_completes} />
       <div className="flex items-center gap-1.5 shrink-0">
         <div className="h-px w-4 bg-border" />
-        {connection && connection.kind === 'chain' ? (
+        {connection?.kind === 'chain' && connection.route ? (
           // A chain's "event" is the source's completion — `chain_triggered` is
           // shared by every chain and renaming it would rewire all of them, so
           // show the run-condition (read-only) instead of a renameable event.
           <span title={st.proto_chain_route}
             className="flex items-center gap-1.5 px-2 py-0.5 rounded-input border border-border text-foreground">
             <GitBranch className="w-3.5 h-3.5 text-primary" />
-            <span className="typo-body">{chainCondLabel(st, connection.chainCondition)}</span>
+            <span className="typo-body">{conditionLabel(t, connection.route.condition)}</span>
           </span>
         ) : (
           <button type="button" onClick={() => onRename(row)} title={st.proto_rename_event}
@@ -400,17 +394,13 @@ function LiveCableRow({ cb, st, personas, dim, onRename, onAdd, onDisconnect }: 
   );
 }
 
-function LiveSourceEnd({ row, connection, personas }: { row: EventRow; connection: Connection | null; personas: Persona[] }) {
-  // Chain routes carry their true source on the connection (all chains share
-  // the `chain_triggered` row, so the row-level source list can't attribute it).
-  if (connection?.kind === 'chain' && connection.sourcePersonaId) {
-    const p = personas.find((x) => x.id === connection.sourcePersonaId);
-    return (
-      <span className="flex items-center gap-1.5 min-w-0 shrink">
-        <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-        <span className="typo-body text-foreground truncate max-w-[7rem]">{p?.name ?? connection.sourcePersonaId.slice(0, 8)}</span>
-      </span>
-    );
+function LiveSourceEnd({ row, connection, personas, completesLabel }: { row: EventRow; connection: Connection | null; personas: Persona[]; completesLabel: string }) {
+  // A route renders its true source (chains share `chain_triggered`, signal
+  // routes `trigger_fired`, so the row cannot attribute them). A plain
+  // event_listener's real source is whoever emits the event: the row's emitters.
+  const route = connection?.route;
+  if (route && !(route.source.kind === 'trigger' && route.source.triggerType === 'event_listener')) {
+    return <SourceChip source={route.source} personas={personas} completesLabel={completesLabel} />;
   }
   if (row.sourcePersonas.length > 0) {
     const entry = row.sourcePersonas[0];

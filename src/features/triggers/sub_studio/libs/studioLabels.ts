@@ -1,9 +1,10 @@
 /**
  * studioLabels — shared label resolvers for Chain Studio surfaces. Kept out of
  * the components so the baseline switchboard and the deep-merge ledger variants
- * resolve the same condition tokens identically.
+ * resolve the same condition tokens identically — for a draft link and for a
+ * committed route read back through libs/routeCodec alike.
  */
-import { useTranslation } from '@/i18n/useTranslation';
+import type { useTranslation } from '@/i18n/useTranslation';
 import type { LinkCondition } from './studioDraftModel';
 
 type T = ReturnType<typeof useTranslation>['t'];
