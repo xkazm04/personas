@@ -30,7 +30,7 @@ use rusqlite::{params, OptionalExtension, Row};
 use crate::models::{
     CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDemand, CuratorEngine,
     CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy, CuratorProject,
-    CuratorReason, CuratorReasonCode, CURATOR_SATURATION_THRESHOLD,
+    CuratorQuietBundle, CuratorReason, CuratorReasonCode, CURATOR_SATURATION_THRESHOLD,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -38,7 +38,7 @@ use personas_core::error::AppError;
 const PROJECT_COLUMNS: &str = "slug, root_path, enabled, consent_state, granted_at, \
                                last_seen_at, created_at, updated_at";
 const RUN_COLUMNS: &str = "id, created_at, scan_generated_at, registry_head_sha, corpus_json, \
-                           consumers_json, policy_json, item_count, superseded_by";
+                           consumers_json, policy_json, quiet_json, item_count, superseded_by";
 const ITEM_COLUMNS: &str = "id, plan_run_id, subject_id, domain, at, points, reasons_json, \
                             dominant_reason, engine, techniques, applications, stacks_json, \
                             demand_known, demand_json, last_swept, registry_dry_streak, \
@@ -97,6 +97,20 @@ fn row_to_run(row: &Row) -> rusqlite::Result<crate::models::CuratorPlanRun> {
         item_count: row.get::<_, i64>("item_count")?.max(0) as u32,
         superseded_by: row.get("superseded_by")?,
     })
+}
+
+/// The quiet tail stored beside the run.
+///
+/// It hangs off [`CuratorPlan`] rather than off `CuratorPlanRun` because it is
+/// the OTHER half of `items` - the subjects the projection did not plan - and
+/// reading it beside them is what lets a surface show the whole corpus. The
+/// column is on the run row because that is where the projection's other two
+/// summaries already live.
+fn row_to_quiet(row: &Row) -> rusqlite::Result<Vec<CuratorQuietBundle>> {
+    Ok(parse_or_default(
+        &row.get::<_, String>("quiet_json")?,
+        "quiet_json",
+    ))
 }
 
 fn row_to_item(row: &Row) -> rusqlite::Result<CuratorPlanItem> {
@@ -261,7 +275,7 @@ pub fn set_consent(
 pub fn current_plan(pool: &DbPool) -> Result<Option<CuratorPlan>, AppError> {
     timed_query!("curator_plan_run", "curator::current_plan", {
         let conn = pool.get()?;
-        let run = conn
+        let standing = conn
             .query_row(
                 &format!(
                     "SELECT {RUN_COLUMNS} FROM curator_plan_run
@@ -270,10 +284,10 @@ pub fn current_plan(pool: &DbPool) -> Result<Option<CuratorPlan>, AppError> {
                       LIMIT 1"
                 ),
                 [],
-                row_to_run,
+                |row| Ok((row_to_run(row)?, row_to_quiet(row)?)),
             )
             .optional()?;
-        let Some(run) = run else {
+        let Some((run, quiet)) = standing else {
             return Ok(None);
         };
         let mut stmt = conn.prepare(&format!(
@@ -284,7 +298,7 @@ pub fn current_plan(pool: &DbPool) -> Result<Option<CuratorPlan>, AppError> {
         let items = stmt
             .query_map(params![run.id], row_to_item)?
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(Some(CuratorPlan { run, items }))
+        Ok(Some(CuratorPlan { run, items, quiet }))
     })
 }
 
@@ -297,6 +311,11 @@ pub struct PlanRunInput {
     pub corpus: CuratorCorpus,
     pub consumers: CuratorConsumers,
     pub policy: CuratorPolicy,
+    /// The subjects the projection did NOT plan, per bundle. Written with the
+    /// run so `sum(quiet.subjects) + item_count == corpus.subjects` holds for
+    /// the stored row, which is what tells a measured empty tail from a run
+    /// projected before the column existed (see the `e50` migration header).
+    pub quiet: Vec<CuratorQuietBundle>,
 }
 
 /// One item as the projection produced it. `state` is always `Planned` at this
@@ -341,12 +360,15 @@ pub fn insert_plan(
             .map_err(|e| AppError::Internal(format!("curator: consumers not serialisable: {e}")))?;
         let policy_json = serde_json::to_string(&run.policy)
             .map_err(|e| AppError::Internal(format!("curator: policy not serialisable: {e}")))?;
+        let quiet_json = serde_json::to_string(&run.quiet).map_err(|e| {
+            AppError::Internal(format!("curator: quiet tail not serialisable: {e}"))
+        })?;
 
         tx.execute(
             "INSERT INTO curator_plan_run
                 (id, created_at, scan_generated_at, registry_head_sha, corpus_json,
-                 consumers_json, policy_json, item_count)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                 consumers_json, policy_json, quiet_json, item_count)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
             params![
                 run_id,
                 run.created_at,
@@ -355,6 +377,7 @@ pub fn insert_plan(
                 corpus_json,
                 consumers_json,
                 policy_json,
+                quiet_json,
                 items.len() as i64,
             ],
         )?;
@@ -520,7 +543,33 @@ mod tests {
             at_risk_applications: 4,
             drift_unknown: 505,
             drift: 77,
+            no_clock_applications: 301,
+            demand_known_domains: vec!["software-engineering".into(), "recruiting".into()],
         }
+    }
+
+    /// Two of the ten bundles, one of each demand answer. `agent-operations`
+    /// carries a MEASURED zero tail, which must survive the round trip as a
+    /// row rather than be dropped into indistinguishability from "never
+    /// measured".
+    fn quiet() -> Vec<CuratorQuietBundle> {
+        vec![
+            CuratorQuietBundle {
+                domain: "software-engineering".into(),
+                subjects: 65,
+                demand_known: true,
+            },
+            CuratorQuietBundle {
+                domain: "localization".into(),
+                subjects: 14,
+                demand_known: false,
+            },
+            CuratorQuietBundle {
+                domain: "agent-operations".into(),
+                subjects: 0,
+                demand_known: false,
+            },
+        ]
     }
 
     fn consumers() -> CuratorConsumers {
@@ -549,6 +598,7 @@ mod tests {
             corpus: corpus(),
             consumers: consumers(),
             policy: policy(),
+            quiet: quiet(),
         }
     }
 
@@ -689,6 +739,154 @@ mod tests {
         )?;
         assert_eq!(superseded.as_deref(), Some("run-2"));
         assert_eq!(old_items, 1, "the superseded plan keeps what it showed");
+        Ok(())
+    }
+
+    /// A second projection brings its OWN quiet tail. The tail is a measurement
+    /// of one corpus reading, so it supersedes with its run rather than
+    /// surviving into the next one - and the superseded run keeps the tail it
+    /// was shown with, for the same reason it keeps its items.
+    #[test]
+    fn a_second_projection_supersedes_with_its_own_quiet_tail() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        insert_plan(
+            &pool,
+            "run-1",
+            &run_input("2026-09-23T09:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+
+        let mut second = run_input("2026-09-23T10:00:00Z");
+        second.quiet = vec![CuratorQuietBundle {
+            domain: "software-engineering".into(),
+            subjects: 64,
+            demand_known: true,
+        }];
+        insert_plan(
+            &pool,
+            "run-2",
+            &second,
+            &[
+                item("software-engineering/table"),
+                item("software-engineering/i18n"),
+            ],
+        )
+        .unwrap();
+
+        let current = current_plan(&pool).unwrap().expect("a standing plan");
+        assert_eq!(current.run.id, "run-2");
+        assert_eq!(current.quiet.len(), 1);
+        assert_eq!(
+            current.quiet[0].subjects, 64,
+            "the NEW reading, not the old"
+        );
+
+        // The superseded run kept its own three-bundle tail.
+        let conn = pool.get()?;
+        let stored: String = conn.query_row(
+            "SELECT quiet_json FROM curator_plan_run WHERE id = 'run-1'",
+            [],
+            |r| r.get("quiet_json"),
+        )?;
+        let old: Vec<CuratorQuietBundle> = serde_json::from_str(&stored).unwrap();
+        assert_eq!(old.len(), 3);
+        assert_eq!(old[0].subjects, 65);
+        Ok(())
+    }
+
+    /// The tail round-trips whole: the domain names, the counts, and - the one
+    /// that matters - a MEASURED zero and an unread bundle staying distinct
+    /// from each other and from a missing row.
+    #[test]
+    fn the_quiet_tail_round_trips_with_its_measured_zero() {
+        let pool = init_test_db().unwrap();
+        insert_plan(
+            &pool,
+            "run-1",
+            &run_input("2026-09-23T09:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+
+        let plan = current_plan(&pool).unwrap().unwrap();
+        assert_eq!(plan.quiet, quiet(), "the tail survives the store unchanged");
+
+        let measured_zero = plan
+            .quiet
+            .iter()
+            .find(|b| b.domain == "agent-operations")
+            .expect("a bundle with an empty tail keeps its row");
+        assert_eq!(measured_zero.subjects, 0);
+        assert!(!measured_zero.demand_known);
+
+        // And the corpus's own two new fields survive with it.
+        assert_eq!(plan.run.corpus.no_clock_applications, 301);
+        assert_eq!(
+            plan.run.corpus.demand_known_domains,
+            vec!["software-engineering", "recruiting"]
+        );
+    }
+
+    /// A plan with no tail at all is readable rather than an error - which is
+    /// exactly the shape a run projected before `e50` has. The column's
+    /// `DEFAULT '[]'` makes it an empty list, and the arithmetic in the `e50`
+    /// header (`sum(quiet) + item_count == corpus.subjects`) is what tells that
+    /// apart from a corpus whose every subject scores.
+    #[test]
+    fn a_run_written_before_the_column_reads_back_as_an_empty_tail() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        insert_plan(
+            &pool,
+            "run-1",
+            &run_input("2026-09-23T09:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+
+        // Exactly what an `ALTER TABLE ... DEFAULT '[]'` leaves on an older row.
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE curator_plan_run SET quiet_json = '[]' WHERE id = 'run-1'",
+            [],
+        )?;
+        drop(conn);
+
+        let plan = current_plan(&pool).unwrap().unwrap();
+        assert!(plan.quiet.is_empty());
+        let quiet: u32 = plan.quiet.iter().map(|b| b.subjects).sum();
+        assert_ne!(
+            quiet + plan.run.item_count,
+            plan.run.corpus.subjects,
+            "0 + 1 != 471: the run says for itself that its tail was never measured"
+        );
+        Ok(())
+    }
+
+    /// An unreadable tail reports as an empty list with a warning, the same
+    /// call the three other stored documents make: a plan whose tail is
+    /// malformed must still be readable, because the panel that would let the
+    /// operator re-project it is the one that reads it.
+    #[test]
+    fn a_malformed_tail_does_not_make_the_plan_unreadable() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        insert_plan(
+            &pool,
+            "run-1",
+            &run_input("2026-09-23T09:00:00Z"),
+            &[item("software-engineering/table")],
+        )
+        .unwrap();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE curator_plan_run SET quiet_json = '{not a list' WHERE id = 'run-1'",
+            [],
+        )?;
+        drop(conn);
+
+        let plan = current_plan(&pool).unwrap().expect("still readable");
+        assert!(plan.quiet.is_empty());
+        assert_eq!(plan.items.len(), 1, "the rest of the plan is untouched");
         Ok(())
     }
 

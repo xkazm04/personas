@@ -492,6 +492,13 @@ pub struct CuratorCorpus {
     /// From `check-currency`: applications verified against a version the
     /// fleet has since moved past.
     pub drift: u32,
+    /// Applications carrying no clock at all, so they cannot expire. Without it a
+    /// reader cannot tell `expiredApplications: 0` (nothing has expired) from
+    /// "most were never given a window". Measured 2026-09-23: 301 of 1825.
+    pub no_clock_applications: u32,
+    /// The bundles whose demand was actually read - five of ten today. A zero on a
+    /// demand-fed channel means something different in the other five.
+    pub demand_known_domains: Vec<String>,
 }
 
 /// One consumer project as the registry's map check sees it.
@@ -669,6 +676,25 @@ pub struct CuratorPlanItem {
     pub updated_at: String,
 }
 
+/// One bundle's share of the subjects that score nothing.
+///
+/// The projection makes a plan item only for a subject that scores, so the 170
+/// quiet subjects have no row anywhere. They are not noise: `table` scores 0 and
+/// still holds 16 stale verdicts across 6 projects. This carries them as counts
+/// so a surface can say "wanting nothing is a fact about the subject" rather
+/// than leaving them out and calling the remainder the corpus.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorQuietBundle {
+    pub domain: String,
+    /// Subjects in this bundle scoring zero.
+    pub subjects: u32,
+    /// False for the five bundles whose demand was never read, where a zero on the
+    /// demand-fed channels means "nobody looked", not "nothing found".
+    pub demand_known: bool,
+}
+
 /// A plan run with its items - what `curator_plan_current` and
 /// `curator_plan_refresh` both return.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -677,6 +703,10 @@ pub struct CuratorPlanItem {
 pub struct CuratorPlan {
     pub run: CuratorPlanRun,
     pub items: Vec<CuratorPlanItem>,
+    /// The subjects that score nothing, per bundle. The projection makes an item
+    /// only for a subject that scores, so these 170 have no row anywhere - and
+    /// `table` scores 0 while holding 16 stale verdicts across 6 projects.
+    pub quiet: Vec<CuratorQuietBundle>,
 }
 
 // ---------------------------------------------------------------------------

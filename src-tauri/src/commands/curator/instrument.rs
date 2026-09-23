@@ -133,10 +133,22 @@ pub struct ScanSubject {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanDomain {
+    /// The bundle's own name. Empty only when the scan omitted it, which no
+    /// version of the report has done - a nameless bundle is dropped from the
+    /// demand roster rather than reported under a blank name.
+    #[serde(default)]
+    pub domain: String,
     #[serde(default)]
     pub techniques: u32,
     #[serde(default)]
     pub applications: u32,
+    /// Whether ANY consumer reports demand for this BUNDLE. The scan writes it
+    /// per bundle as well as per subject, and the two agree on every one of the
+    /// ten bundles in the 2026-09-22 corpus - the bundle-level field is taken
+    /// here because a bundle whose subjects all score zero still has an answer
+    /// and would otherwise have to be derived from rows that do not exist.
+    #[serde(default)]
+    pub demand_known: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -217,6 +229,11 @@ pub struct CurrencyTotals {
     pub expired: u32,
     #[serde(default)]
     pub at_risk: u32,
+    /// Applications carrying no refresh clock at all, so they CANNOT expire.
+    /// Without it `expired` reads as "nothing has expired" when the truth may
+    /// be that most were never given a window.
+    #[serde(default)]
+    pub no_clock: u32,
     /// Applications whose stack version could not be compared at all. Unknown
     /// drift, never zero drift.
     #[serde(default)]
@@ -706,7 +723,8 @@ mod tests {
         let scan: LibrarianScan = serde_json::from_str(
             r#"{"generatedAt":"2026-09-22T22:39:52.343Z","today":"2026-09-22",
                 "demandKnownForAnyBundle":true,"aFieldAddedLater":1,
-                "domains":[{"domain":"x","subjects":8,"techniques":25,"applications":12}],
+                "domains":[{"domain":"x","subjects":8,"techniques":25,"applications":12,
+                            "demandKnown":true}],
                 "subjects":[{"id":"d/s","domain":"d","slug":"s","at":"c/s","category":null,
                              "techniques":3,"applications":2,"stacks":["process"],
                              "demandKnown":false,"demand":null,"lastSwept":null,
@@ -719,6 +737,11 @@ mod tests {
         assert_eq!(scan.subjects[0].demand, None);
         assert_eq!(scan.subjects[0].last_swept, None);
         assert_eq!(scan.domains[0].techniques, 25);
+        // The bundle names itself and answers the demand question for itself.
+        // Both are what the quiet tail and `demandKnownDomains` are built from,
+        // and neither can be derived from a subject that scores nothing.
+        assert_eq!(scan.domains[0].domain, "x");
+        assert!(scan.domains[0].demand_known);
         assert!(scan.demand_known_for_any_bundle);
 
         let map: MapCheck = serde_json::from_str(
@@ -746,6 +769,11 @@ mod tests {
         .unwrap();
         assert_eq!(currency.totals.drift_unknown, 505);
         assert_eq!(currency.totals.at_risk, 4);
+        // `expired: 0` beside `noClock: 301` is the whole reason this field is
+        // carried: 301 of these applications cannot expire, so the zero above
+        // is not the reassurance it looks like.
+        assert_eq!(currency.totals.expired, 0);
+        assert_eq!(currency.totals.no_clock, 301);
         assert_eq!(currency.drift.len(), 2);
     }
 

@@ -31,16 +31,30 @@
 //! them would bury the ones that do. `engine = none` stays reachable and
 //! meaningful: it is where an item lands when no clause was recognised, which
 //! is a finding about this app's matcher, not about the subject.
+//!
+//! ## And what is NOT planned, counted rather than dropped
+//!
+//! The 170 are not noise. `software-engineering/table` scores 0 and holds 16
+//! stale verdicts across 6 projects - the largest consumer gap in the estate,
+//! sitting in the tail an item-shaped read calls empty. [`bundles_of`] counts
+//! them per bundle into `PlanRunInput::quiet`, so a surface can say "wanting
+//! nothing is a fact about the subject" rather than leaving them out and
+//! calling the remainder the corpus.
+//!
+//! **This changes no ranking.** A quiet subject is still not an item, still
+//! scores no points, and still routes to no engine. `quiet` is a count beside
+//! the plan, never a row inside it, and `sum(quiet) + items == subjects` is the
+//! invariant that says the two halves together are the whole corpus.
 
 use std::collections::HashMap;
 
 use personas_core::models::{
     CuratorConsumerProject, CuratorConsumerTotals, CuratorConsumers, CuratorCorpus, CuratorDemand,
-    CuratorPolicy, CuratorReason, CuratorReasonCode,
+    CuratorPolicy, CuratorQuietBundle, CuratorReason, CuratorReasonCode,
 };
 use personas_db::repos::curator::{self as repo, PlanItemInput, PlanRunInput};
 
-use super::instrument::{InstrumentReading, ScanSubject};
+use super::instrument::{InstrumentReading, LibrarianScan, ScanSubject};
 
 /// A clause's sentence and the code it was recognised as, with whether the
 /// leading number multiplies the weight.
@@ -230,19 +244,76 @@ pub fn project(
         });
     }
 
+    let bundles = bundles_of(&reading.scan);
+
     Projection {
         run: PlanRunInput {
             created_at: now.to_string(),
             scan_generated_at: reading.scan.generated_at.clone(),
             registry_head_sha: reading.head_sha.clone(),
-            corpus: corpus_of(reading),
+            corpus: corpus_of(reading, &bundles),
             consumers: consumers_of(reading),
             policy: policy.clone(),
+            quiet: bundles,
         },
         items,
         unmatched,
         arithmetic_disagreements,
     }
+}
+
+/// Every bundle the scan describes, with the tail of its subjects the
+/// projection does not plan.
+///
+/// **Derived from the SCAN, never from the items.** A bundle whose subjects all
+/// score zero produces no plan item at all, and a roster built from items would
+/// therefore drop exactly the bundle a reader most needs to be told about.
+///
+/// The roster and each bundle's `demandKnown` come from the scan's own
+/// `domains[]`, which answers both questions per bundle. A subject whose domain
+/// the scan did not declare - which the 2026-09-22 corpus has none of - still
+/// lands in the tally, so `sum(quiet) + items` can never lose a subject; its
+/// bundle's `demandKnown` is then the OR of its own subjects', because there is
+/// no bundle row to ask.
+///
+/// A bundle with an empty tail is KEPT, at `subjects: 0`. That zero is measured
+/// against a declared bundle ("everything here has a finding") and is the
+/// mirror of the fact this whole tally exists for - unlike the `[]` a
+/// pre-`e50` run carries, which was never measured at all.
+fn bundles_of(scan: &LibrarianScan) -> Vec<CuratorQuietBundle> {
+    let mut bundles: Vec<CuratorQuietBundle> = scan
+        .domains
+        .iter()
+        .filter(|d| !d.domain.trim().is_empty())
+        .map(|d| CuratorQuietBundle {
+            domain: d.domain.clone(),
+            subjects: 0,
+            demand_known: d.demand_known,
+        })
+        .collect();
+
+    // Everything past this index was NOT declared by `domains[]`, which is the
+    // only case where a subject's own flag may move its bundle's answer.
+    let declared = bundles.len();
+    for subject in &scan.subjects {
+        let quiet = u32::from(subject.reasons.is_empty());
+        match bundles.iter().position(|b| b.domain == subject.domain) {
+            Some(idx) => {
+                bundles[idx].subjects += quiet;
+                if idx >= declared {
+                    bundles[idx].demand_known |= subject.demand_known;
+                }
+            }
+            // Undeclared: carried anyway, so the arithmetic cannot lose a
+            // subject, with the only demand answer that exists for it.
+            None => bundles.push(CuratorQuietBundle {
+                domain: subject.domain.clone(),
+                subjects: quiet,
+                demand_known: subject.demand_known,
+            }),
+        }
+    }
+    bundles
 }
 
 /// The highest-scoring clause present, in the weights' own order. `None` when
@@ -276,7 +347,10 @@ fn demand_of(subject: &ScanSubject) -> Option<CuratorDemand> {
     })
 }
 
-fn corpus_of(reading: &InstrumentReading) -> CuratorCorpus {
+/// The corpus summary. `bundles` is [`bundles_of`]'s output, passed in rather
+/// than recomputed so the roster behind `demandKnownDomains` and the roster
+/// behind the plan's `quiet` are one derivation and cannot disagree.
+fn corpus_of(reading: &InstrumentReading, bundles: &[CuratorQuietBundle]) -> CuratorCorpus {
     let scan = &reading.scan;
     CuratorCorpus {
         generated_at: scan.generated_at.clone(),
@@ -286,6 +360,14 @@ fn corpus_of(reading: &InstrumentReading) -> CuratorCorpus {
         applications: scan.domains.iter().map(|d| d.applications).sum(),
         domains: scan.domains.len() as u32,
         demand_known_for_any_bundle: scan.demand_known_for_any_bundle,
+        // WHICH bundles, where the boolean above can only say whether any. A
+        // zero on a demand-fed channel means "nothing found" in these and
+        // "nobody looked" in the rest, and one flag cannot carry both.
+        demand_known_domains: bundles
+            .iter()
+            .filter(|b| b.demand_known)
+            .map(|b| b.domain.clone())
+            .collect(),
         applied_subjects: reading
             .applied_subjects
             .as_ref()
@@ -294,6 +376,11 @@ fn corpus_of(reading: &InstrumentReading) -> CuratorCorpus {
         at_risk_applications: reading.currency.totals.at_risk,
         drift_unknown: reading.currency.totals.drift_unknown,
         drift: reading.currency.drift.len() as u32,
+        // Taken from the same instrument read that filled `expired_applications`
+        // two lines up, because the two are only readable together: an
+        // application with no clock cannot expire, so `expired: 0` beside
+        // `no_clock: 301` is not the reassurance the zero looks like.
+        no_clock_applications: reading.currency.totals.no_clock,
     }
 }
 
@@ -363,7 +450,8 @@ mod tests {
             )
             .unwrap(),
             currency: serde_json::from_str::<Currency>(
-                r#"{"totals":{"applications":1825,"expired":0,"atRisk":4,"driftUnknown":505},
+                r#"{"totals":{"applications":1825,"expired":0,"atRisk":4,"noClock":301,
+                              "driftUnknown":505},
                     "drift":[{"a":1},{"b":2},{"c":3}]}"#,
             )
             .unwrap(),
@@ -721,6 +809,240 @@ mod tests {
         assert!(!p.run.corpus.demand_known_for_any_bundle);
     }
 
+    // -----------------------------------------------------------------------
+    // The three absences a zero would have hidden
+    // -----------------------------------------------------------------------
+
+    /// `expiredApplications: 0` is only readable beside the count that cannot
+    /// expire at all. 301 of the 1,825 applications carry no clock, so the zero
+    /// says "none of the 1,524 that could expire have" - not "nothing has".
+    #[test]
+    fn an_application_with_no_clock_is_counted_rather_than_read_as_unexpired() {
+        let (_, p) = project_real();
+        assert_eq!(p.run.corpus.expired_applications, 0);
+        assert_eq!(
+            p.run.corpus.no_clock_applications, 301,
+            "the count that makes the zero above readable"
+        );
+
+        // It comes from the SAME instrument read, so it cannot drift from the
+        // zero it qualifies: move one and the other moves with it.
+        let mut r = reading(real_scan());
+        r.currency.totals.expired = 7;
+        r.currency.totals.no_clock = 0;
+        let p = project(
+            &r,
+            &CuratorPolicy::default(),
+            &HashMap::new(),
+            "2026-09-23T11:00:00Z",
+        );
+        assert_eq!(p.run.corpus.expired_applications, 7);
+        assert_eq!(p.run.corpus.no_clock_applications, 0);
+    }
+
+    /// WHICH bundles were asked, not merely whether any were. Five of the ten
+    /// today; in the other five a zero on a demand-fed channel means "nobody
+    /// looked". The boolean beside it stays, because it has a live consumer.
+    #[test]
+    fn the_demand_known_bundles_are_named_and_not_merely_counted() {
+        let (_, p) = project_real();
+        assert!(p.run.corpus.demand_known_for_any_bundle);
+        assert_eq!(
+            p.run.corpus.demand_known_domains,
+            vec![
+                "game-production",
+                "llm-observability",
+                "media-generation",
+                "recruiting",
+                "software-engineering",
+            ],
+            "five of the ten bundles, in the scan's own order"
+        );
+        assert_eq!(
+            p.run.corpus.demand_known_domains.len() + 5,
+            p.run.quiet.len(),
+            "and the other five are the ones a single boolean could not name"
+        );
+    }
+
+    /// **The list is derived from the SCAN, not from the items.** A bundle
+    /// whose subjects all score zero has no plan item at all, so a roster built
+    /// from items would drop exactly the bundle a reader most needs told about.
+    #[test]
+    fn a_bundle_with_no_scoring_subject_still_answers_the_demand_question() {
+        let mut scan = real_scan();
+        // Silence one whole bundle: every `media-generation` subject scores
+        // nothing, so it contributes no item to the plan.
+        for subject in scan.subjects.iter_mut() {
+            if subject.domain == "media-generation" {
+                subject.reasons.clear();
+                subject.points = 0;
+            }
+        }
+        let p = project(
+            &reading(scan),
+            &CuratorPolicy::default(),
+            &HashMap::new(),
+            "2026-09-23T11:00:00Z",
+        );
+
+        assert!(
+            !p.items.iter().any(|i| i.domain == "media-generation"),
+            "the bundle is entirely quiet, so it has no item to be derived from"
+        );
+        let bundle = p
+            .run
+            .quiet
+            .iter()
+            .find(|b| b.domain == "media-generation")
+            .expect("a bundle with no items still has a row in the quiet tail")
+            .clone();
+        assert_eq!(bundle.subjects, 21, "all 21 of its subjects");
+        assert!(
+            bundle.demand_known,
+            "its demand WAS read, which no item of its own could have said"
+        );
+        assert!(p
+            .run
+            .corpus
+            .demand_known_domains
+            .contains(&"media-generation".to_string()));
+    }
+
+    /// The quiet tail and the items are the two halves of the corpus, and the
+    /// arithmetic says so: 170 + 301 = 471 on the real scan. This is also the
+    /// invariant that tells a MEASURED empty tail from the `[]` a plan run
+    /// projected before `e50` carries (see that migration's header).
+    #[test]
+    fn the_quiet_tail_and_the_items_account_for_every_subject() {
+        let (r, p) = project_real();
+        let quiet: u32 = p.run.quiet.iter().map(|b| b.subjects).sum();
+        assert_eq!(quiet, 170, "the subjects that score nothing");
+        assert_eq!(p.items.len(), 301);
+        assert_eq!(
+            quiet as usize + p.items.len(),
+            r.scan.subjects.len(),
+            "170 + 301 = 471: the plan and its tail are the whole corpus"
+        );
+        assert_eq!(p.run.corpus.subjects, 471);
+
+        // Per bundle, measured against the 2026-09-22 corpus. `table`'s bundle
+        // is the biggest tail and the point of the whole column: 65 of
+        // `software-engineering`'s 229 subjects ask for nothing, and one of
+        // them holds 16 stale verdicts across 6 projects.
+        let by_domain = |domain: &str| {
+            p.run
+                .quiet
+                .iter()
+                .find(|b| b.domain == domain)
+                .unwrap_or_else(|| panic!("no quiet row for {domain}"))
+                .subjects
+        };
+        assert_eq!(by_domain("software-engineering"), 65);
+        assert_eq!(by_domain("game-production"), 46);
+        assert_eq!(by_domain("localization"), 14);
+        assert_eq!(by_domain("marketing"), 13);
+        assert_eq!(by_domain("llm-observability"), 12);
+        assert_eq!(by_domain("civic-intelligence"), 7);
+        assert_eq!(by_domain("grant-funding"), 5);
+        assert_eq!(by_domain("recruiting"), 5);
+        assert_eq!(by_domain("media-generation"), 3);
+        // Every one of `agent-operations`' 8 subjects has a finding. That zero
+        // is MEASURED against a declared bundle, so its row is kept rather than
+        // dropped - dropping it would make "nothing is quiet here" and "this
+        // bundle was never looked at" the same answer again.
+        assert_eq!(by_domain("agent-operations"), 0);
+        assert_eq!(p.run.quiet.len(), 10, "all ten bundles, none dropped");
+    }
+
+    /// `software-engineering/table` is the subject this column exists for: it
+    /// scores nothing, so it is in no plan, and it is the largest consumer gap
+    /// in the estate. The tail must contain it and the items must not.
+    #[test]
+    fn the_largest_consumer_gap_is_in_the_tail_and_in_no_plan() {
+        let (r, p) = project_real();
+        let table = r
+            .scan
+            .subjects
+            .iter()
+            .find(|s| s.id == "software-engineering/table")
+            .expect("the corpus has a table subject");
+        assert_eq!(table.points, 0);
+        assert!(table.reasons.is_empty());
+        assert!(
+            !p.items
+                .iter()
+                .any(|i| i.subject_id == "software-engineering/table"),
+            "it scores nothing, so it is not work and gets no item"
+        );
+        assert!(
+            p.run
+                .quiet
+                .iter()
+                .any(|b| b.domain == "software-engineering" && b.subjects > 0),
+            "and it is counted rather than dropped"
+        );
+    }
+
+    /// A subject whose bundle the scan never declared must still be counted -
+    /// otherwise the arithmetic above silently loses it, which is the failure
+    /// this tally was built to stop. Its demand answer is then the OR of its
+    /// own subjects', because no bundle row exists to ask.
+    #[test]
+    fn a_subject_from_an_undeclared_bundle_is_never_lost() {
+        let mut scan = real_scan();
+        let mut stray = scan.subjects[0].clone();
+        stray.id = "stowaway/one".into();
+        stray.domain = "stowaway".into();
+        stray.reasons.clear();
+        stray.points = 0;
+        stray.demand_known = false;
+        let mut loud = stray.clone();
+        loud.id = "stowaway/two".into();
+        loud.demand_known = true;
+        scan.subjects.push(stray);
+        scan.subjects.push(loud);
+
+        let subjects = scan.subjects.len();
+        let p = project(
+            &reading(scan),
+            &CuratorPolicy::default(),
+            &HashMap::new(),
+            "2026-09-23T11:00:00Z",
+        );
+        let quiet: u32 = p.run.quiet.iter().map(|b| b.subjects).sum();
+        assert_eq!(quiet as usize + p.items.len(), subjects);
+
+        let stowaway = p
+            .run
+            .quiet
+            .iter()
+            .find(|b| b.domain == "stowaway")
+            .expect("an undeclared bundle is carried, not dropped")
+            .clone();
+        assert_eq!(stowaway.subjects, 2);
+        assert!(
+            stowaway.demand_known,
+            "one of its two subjects reports demand, and there is no bundle row to ask"
+        );
+    }
+
+    /// The tail carries counts, and nothing else. It must not promote a quiet
+    /// subject into the plan, hand it points, or give it an engine.
+    #[test]
+    fn the_quiet_tail_changes_no_ranking() {
+        let (_, with_tail) = project_real();
+        assert_eq!(with_tail.items.len(), 301);
+        assert!(with_tail.items.iter().all(|i| i.points > 0));
+        assert!(with_tail
+            .items
+            .iter()
+            .all(|i| i.engine != CuratorEngine::None));
+        // The tail names bundles, never subjects - there is no door through
+        // which a quiet subject could reach a dispatch.
+        assert!(with_tail.run.quiet.iter().all(|b| !b.domain.contains('/')));
+    }
+
     /// The scan's `demand_known` flag and its `demand` block must never be
     /// able to disagree in the store: taking the conjunction is what makes the
     /// `demand_known` column and the `demand_json` column one fact.
@@ -810,6 +1132,7 @@ mod tests {
         assert_eq!(p.run.corpus.at_risk_applications, 4);
         assert_eq!(p.run.corpus.drift_unknown, 505);
         assert_eq!(p.run.corpus.drift, 3);
+        assert_eq!(p.run.corpus.no_clock_applications, 301);
 
         assert_eq!(p.run.consumers.totals.pairs, 8847);
         assert_eq!(p.run.consumers.totals.evaluated, 319);
