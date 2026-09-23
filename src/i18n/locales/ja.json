@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "Athenaの提案",
       "action_label_update_goal_status": "目標の状態を更新",
       "action_label_update_identity": "アイデンティティを更新",
+      "action_label_adjust_register": "返信の長さを変更",
       "action_label_write_backlog_item": "バックログに追加",
       "action_label_write_fact": "事実を記憶",
       "action_label_write_goal": "目標を記録",

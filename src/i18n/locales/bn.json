@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "Athena-র প্রস্তাব",
       "action_label_update_goal_status": "লক্ষ্যের অবস্থা আপডেট করুন",
       "action_label_update_identity": "পরিচয় আপডেট করুন",
+      "action_label_adjust_register": "উত্তরের দৈর্ঘ্য বদলান",
       "action_label_write_backlog_item": "ব্যাকলগে যোগ করুন",
       "action_label_write_fact": "একটি তথ্য মনে রাখুন",
       "action_label_write_goal": "একটি লক্ষ্য ট্র্যাক করুন",

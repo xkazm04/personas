@@ -6,7 +6,8 @@
  */
 export type ReplyShapeStats = { days: number, 
 /**
- * Chat turns in the window (the population the other fields are over).
+ * Layer-one turns (origin chat, autonomous or proactive) in the window:
+ * the population the other fields are measured over.
  */
 turns: number, medianWords: number | null, p90Words: number | null, 
 /**

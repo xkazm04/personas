@@ -193,6 +193,7 @@
     "action_label_unknown_fallback": "Propuesta de Athena",
     "action_label_update_goal_status": "Actualizar estado del objetivo",
     "action_label_update_identity": "Actualizar identidad",
+    "action_label_adjust_register": "Cambiar la longitud de las respuestas",
     "action_label_write_backlog_item": "Agregar al backlog",
     "action_label_write_fact": "Recordar un dato",
     "action_label_write_goal": "Rastrear un objetivo",

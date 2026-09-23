@@ -318,14 +318,14 @@ fixed order (`prompt/compose.rs`):
 
 | # | Block | Source |
 |---|---|---|
-| 1 | constitution | `<brain>/constitution.md`, seeded from `companion/templates/constitution.md` (1,787 lines, version 61), never edited by Athena. The version constant is the delivery mechanism: on init a higher constant backs up and overwrites the disk copy, and the prompt reads only the disk copy, so a change without a bump ships prose nothing reads |
+| 1 | constitution | `<brain>/constitution.md`, seeded from `companion/templates/constitution.md` (1,951 lines, version 67), never edited by Athena. The version constant is the delivery mechanism: on init a higher constant backs up and overwrites the disk copy, and the prompt reads only the disk copy, so a change without a bump ships prose nothing reads |
 | 2 | identity | `<brain>/identity.md`, the evolving model of the user and of herself |
 | 3 | briefing | optional synthesized recall (replaces the six raw memory blocks when present) |
 | 4 | facts, goals, procedurals | always-include tiers plus keyword and vector hits |
 | 5 | observability | a composite slot: app-state digest, operative-memory digest, conversation roster, agent index, dev-context index, skill index, canvas scene digest, paired devices |
 | 6 | episodes, backlog, doctrine | recalled conversation, open promises, app documentation chunks |
 | 7 | plugins, connectors | capabilities the user toggled on for her |
-| 8 | onboarding, voice, display | situational addenda |
+| 8 | onboarding, voice, display | situational addenda: onboarding interview, the one-line voice flag when voice is on, and (in `display`) the per-turn layer-one register flag, `Layer one this turn: at most N sentences.` ([layered-voice.md](layered-voice.md)) |
 | 9 | static addenda | tells her WebSearch/WebFetch exist and to delegate rather than inline |
 | 10 | mode addenda | autonomous mode, dev mode self-model, daily goals, reply language |
 
@@ -350,8 +350,15 @@ Since the hybrid-llm-engine spark the static core a turn is built on depends on 
 
 | Class | Static core | Who gets it |
 |---|---|---|
-| `full` | the constitution from the brain root, plus the two always-on static addenda (tools, delegation) and the voice/display addenda when voice is on: block 1 and blocks 8 and 9 above, unchanged | ASIDE and MICRO tiers, every non-MAIN caller, and MAIN when `PERSONAS_ATHENA_PROMPT_CLASS=full` |
-| `chat` | `companion/templates/chat-core.md` (hand-written: identity, register, provenance, Rule Zero, restraint, gated discipline, delegation, live-activity awareness, the four machine lines, the voice contract) + an op reference generated from the dispatcher catalog (`dispatcher::render_op_reference`: every op the dispatcher accepts, its gate, its exact `params` shape) + the three always-on builtins' capabilities. It replaces block 1, drops block 9, and reduces the voice addendum to a one-paragraph flag | MAIN tier (interactive chat and voice) once the bench certified it (`CHAT_FAMILY_CERTIFIED`), and any tier when `PERSONAS_ATHENA_PROMPT_CLASS=chat` |
+| `full` | the constitution from the brain root, plus the two always-on static addenda (tools, delegation), the PROGRESS grammar, the voice flag when voice is on and the layer-one register flag: block 1 and blocks 8 and 9 above | ASIDE and MICRO tiers, every non-MAIN caller, and MAIN when `PERSONAS_ATHENA_PROMPT_CLASS=full` |
+| `chat` | `companion/templates/chat-core.md` (hand-written: identity, register, provenance, Rule Zero, restraint, gated discipline, delegation, live-activity awareness, the four machine lines, `# Layer one`, the voice contract) + an op reference generated from the dispatcher catalog (`dispatcher::render_op_reference`: every op the dispatcher accepts, its gate, its exact `params` shape) + the three always-on builtins' capabilities. It replaces block 1 and drops block 9; blocks 8 carry the same voice and register flags as `full` | MAIN tier (interactive chat and voice) once the bench certified it (`CHAT_FAMILY_CERTIFIED`), and any tier when `PERSONAS_ATHENA_PROMPT_CLASS=chat` |
+
+Both static cores carry the same `# Layer one` section (since 2026-09-23, constitution v67): every
+reply is what she would say aloud, at most N sentences from the per-turn register flag, no printed
+ids, detail in a `show_report` or behind a `[phrase](ref:kind/handle)` link. Layer one is also the
+spoken register, so there is no voice-only register any more: the dual-language display addendum and
+the `# VOICE PLAYBACK` TTS addendum were deleted, and `TTS:` is an optional escape. See
+[layered-voice.md](layered-voice.md).
 
 Every dynamic block (identity, recall, observability with its indexes and live activity, plugins,
 pinned connectors, onboarding, mode addenda) rides in both classes in the same order, so the
@@ -410,7 +417,7 @@ assistant text for four grammars, strips them from what the user sees, and acts 
 ```
 OP: {"op":"propose_action","action":"<name>","params":{...},"rationale":"..."}
 PROGRESS: <one-line narration beat>          (persisted live as its own episode)
-TTS: "<what to speak>"                       (first line wins)
+TTS: "<what to speak>"                       (optional; first line wins)
 QR: ["quick reply", "quick reply"]           (capped at 6)
 ```
 

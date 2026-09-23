@@ -21,7 +21,7 @@ use super::read_ops::{
 use super::research;
 use super::types::{
     CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched,
-    NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
+    MintedReport, NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
     CANVAS_PANEL_SPEC_VERSION,
 };
 use crate::db::UserDbPool;
@@ -2090,6 +2090,84 @@ pub fn dispatch_with_sys(
                 }
             }
             // ─────────────────────────────────────────────────────────────
+            // Layered voice: `show_report` (auto-fire). The detail that does
+            // not belong in the layer-one reply goes into a report the reply
+            // links to as `[phrase](ref:report/new)`. The row is written HERE,
+            // before any event goes out, so the card and the rewritten link
+            // both point at something that exists (the durable-first rule the
+            // actionable cards follow). Its status is `unread`, never
+            // `pending`: a report is not waiting on him.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "show_report"
+                    || (env.op == "propose_action" && env.action == "show_report") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let report = match super::refs::parse_show_report(&fields) {
+                    Ok(r) => r,
+                    Err(reason) => {
+                        out.warnings.push(format!("rejected show_report: {reason}"));
+                        continue;
+                    }
+                };
+                match crate::companion::reports::insert_report(
+                    pool,
+                    session_id,
+                    None,
+                    &report.title,
+                    report.summary.as_deref(),
+                    &report.body,
+                ) {
+                    Ok(id) => {
+                        out.chat_cards.push(ChatCard {
+                            kind: crate::companion::reports::REPORT_KIND.to_string(),
+                            title: Some(report.title),
+                            config: serde_json::json!({
+                                "reportId": id,
+                                "summary": report.summary,
+                            }),
+                        });
+                        out.reports.push(MintedReport { id });
+                    }
+                    Err(e) => {
+                        out.warnings
+                            .push(format!("show_report could not be saved: {e}"));
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Layered voice: `adjust_register` (auto-fire from chat). He asked
+            // for longer or shorter replies, so the register moves now, source
+            // `operator`. The same action name is also in `ALLOWED_ACTIONS`
+            // for the OTHER door: a reflection-originated proposal the sleep
+            // cycle files as an approval row directly (never through this
+            // text path), executed by `execute_adjust_register` with source
+            // `reflection`. This arm sits ahead of the generic approval arm,
+            // so a chat op never becomes a card.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "adjust_register"
+                    || (env.op == "propose_action" && env.action == "adjust_register") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let applied = super::refs::parse_adjust_register(&fields).and_then(
+                    |(scope, sentences, reason)| {
+                        crate::companion::register::apply_op(
+                            pool,
+                            &scope,
+                            sentences,
+                            reason.as_deref(),
+                            "operator",
+                        )
+                        .map_err(|e| e.to_string())
+                    },
+                );
+                if let Err(reason) = applied {
+                    out.warnings
+                        .push(format!("rejected adjust_register: {reason}"));
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
             // Detail-on-demand read ops (auto-fire, read-only, no approval).
             //
             // The prompt carries a BOUNDED index of personas / dev contexts
@@ -2477,6 +2555,21 @@ pub fn dispatch_with_sys(
     // Trim the trailing whitespace introduced by stripped lines.
     while out.cleaned_text.ends_with(['\n', ' ']) {
         out.cleaned_text.pop();
+    }
+
+    // Layered voice: resolve the reply's reference links. Runs on the CLEANED
+    // text, after every op line is gone, so `report/new` can resolve to the
+    // report this reply just minted (the first one, when there are several).
+    // A link that does not resolve becomes its plain phrase, so the prose
+    // still reads. One indexed lookup per link; a reply without `(ref:` skips
+    // the walk entirely.
+    if out.cleaned_text.contains("(ref:") {
+        let minted = out.reports.first().map(|r| r.id.clone());
+        let (text, scan) = super::refs::rewrite_refs(&out.cleaned_text, |kind, handle| {
+            super::refs::validate_ref(pool, sys_db, kind, handle, minted.as_deref())
+        });
+        out.cleaned_text = text;
+        out.refs = scan;
     }
     Ok(out)
 }

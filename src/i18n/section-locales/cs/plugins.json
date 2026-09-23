@@ -193,6 +193,7 @@
     "action_label_unknown_fallback": "Návrh Atheny",
     "action_label_update_goal_status": "Aktualizovat stav cíle",
     "action_label_update_identity": "Aktualizovat identitu",
+    "action_label_adjust_register": "Změnit délku odpovědí",
     "action_label_write_backlog_item": "Přidat do backlogu",
     "action_label_write_fact": "Zapamatovat si fakt",
     "action_label_write_goal": "Sledovat cíl",

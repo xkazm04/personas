@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "Athena의 제안",
       "action_label_update_goal_status": "목표 상태 업데이트",
       "action_label_update_identity": "정체성 수정",
+      "action_label_adjust_register": "답변 길이 변경",
       "action_label_write_backlog_item": "백로그에 추가",
       "action_label_write_fact": "사실 기억",
       "action_label_write_goal": "목표 추적",

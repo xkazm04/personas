@@ -193,6 +193,7 @@
     "action_label_unknown_fallback": "Athenas Vorschlag",
     "action_label_update_goal_status": "Zielstatus aktualisieren",
     "action_label_update_identity": "Identität aktualisieren",
+    "action_label_adjust_register": "Antwortlänge ändern",
     "action_label_write_backlog_item": "Zum Backlog hinzufügen",
     "action_label_write_fact": "Fakt merken",
     "action_label_write_goal": "Ziel verfolgen",

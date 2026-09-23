@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "Đề xuất của Athena",
       "action_label_update_goal_status": "Cập nhật trạng thái mục tiêu",
       "action_label_update_identity": "Cập nhật danh tính",
+      "action_label_adjust_register": "Thay đổi độ dài câu trả lời",
       "action_label_write_backlog_item": "Thêm vào backlog",
       "action_label_write_fact": "Ghi nhớ một thông tin",
       "action_label_write_goal": "Theo dõi một mục tiêu",

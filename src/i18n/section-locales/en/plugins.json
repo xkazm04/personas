@@ -2606,6 +2606,7 @@
     "action_label_run_persona": "Run persona",
     "action_label_resolve_human_review": "Resolve review",
     "action_label_update_identity": "Update identity",
+    "action_label_adjust_register": "Change reply length",
     "action_label_write_fact": "Remember a fact",
     "action_label_delete_fact": "Forget a fact",
     "action_label_write_procedural": "Add behavior rule",

@@ -31,7 +31,15 @@ const BLOCK_BUDGETS: &[(&str, usize)] = &[
 /// (`chat_family::tests::chat_family_fits_budget`): the family exists to be
 /// small, so growing past the budget is a failed build, not a warning. At
 /// runtime the first composition still only warns, like every other block.
-pub const CHAT_FAMILY_BUDGET: usize = 24_000;
+///
+/// 24,000 -> 24,500 (2026-09-23, layered voice): the chat core gained the
+/// `# Layer one` section and the op reference two rows (`show_report`,
+/// `adjust_register`), with both ops taught in the canonical `propose_action`
+/// form. WP1 had already trimmed the chat core from 10,780 to 10,353 chars to
+/// make room, keeping every rule. Measured after that: 23,850 (chat core
+/// 10,523, op reference 12,654, builtins 672); the budget is that rounded up
+/// to the next 500, plus 500 of headroom. No rule was trimmed to fit.
+pub const CHAT_FAMILY_BUDGET: usize = 24_500;
 
 /// The declared char budget for a named block, or `None` for a block that has
 /// none. Public so the churn instrument can report "this block changed on 14

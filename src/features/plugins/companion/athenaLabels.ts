@@ -37,6 +37,8 @@ export function actionLabel(t: T, action: string): string {
       return c.action_label_resolve_human_review;
     case 'update_identity':
       return c.action_label_update_identity;
+    case 'adjust_register':
+      return c.action_label_adjust_register;
     case 'write_fact':
       return c.action_label_write_fact;
     case 'delete_fact':

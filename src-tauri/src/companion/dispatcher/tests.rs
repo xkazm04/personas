@@ -1877,3 +1877,455 @@ fn compose_tour_rejects_unknown_anchor_wholesale() {
         out.warnings
     );
 }
+
+// ── Layered voice: reference links, reports, register, reply shape ──
+//
+// These use the production user schema (`init_test_user_db`), not the
+// hand-built fixture above, because the ref validator reads real tables.
+
+mod layered_voice {
+    use super::super::refs::{
+        count_bare_ids, count_sentences, is_bare_id_token, reply_shape, rewrite_refs, word_count,
+        RefVerdict,
+    };
+    use super::super::{dispatch, stamp_reply_metrics};
+    use crate::companion::reports;
+    use crate::db::UserDbPool;
+    use crate::error::AppError;
+    use rusqlite::params;
+
+    fn pool() -> UserDbPool {
+        crate::db::init_test_user_db().expect("test user db")
+    }
+
+    fn report(pool: &UserDbPool) -> String {
+        reports::insert_report(
+            pool,
+            "conv",
+            None,
+            "Weekly spend",
+            Some("Up 12%"),
+            "# Spend",
+        )
+        .expect("insert report")
+    }
+
+    fn show_report_op(params: serde_json::Value) -> String {
+        let op = serde_json::json!({
+            "op": "propose_action",
+            "action": "show_report",
+            "params": params,
+            "rationale": "detail belongs in layer two",
+        });
+        format!("OP: {op}")
+    }
+
+    #[test]
+    fn a_valid_link_is_kept_verbatim() {
+        let pool = pool();
+        let id = report(&pool);
+        let text = format!("Spend is up. [The breakdown](ref:report/{id}) has the rest.");
+        let out = dispatch(&pool, "conv", &text).expect("dispatch");
+        assert_eq!(out.cleaned_text, text);
+        assert_eq!(out.refs.links.len(), 1);
+        assert_eq!(out.refs.links[0].kind, "report");
+        assert_eq!(out.refs.links[0].handle, id);
+        assert_eq!(out.refs.links[0].phrase, "The breakdown");
+        assert_eq!(out.refs.dropped, 0);
+    }
+
+    #[test]
+    fn an_unknown_kind_becomes_its_phrase() {
+        let pool = pool();
+        let out =
+            dispatch(&pool, "conv", "See [the thing](ref:banana/abc123) now.").expect("dispatch");
+        assert_eq!(out.cleaned_text, "See the thing now.");
+        assert!(out.refs.links.is_empty());
+        assert_eq!(out.refs.dropped, 1);
+    }
+
+    #[test]
+    fn a_missing_or_unresolved_handle_becomes_its_phrase() {
+        let pool = pool();
+        let out = dispatch(
+            &pool,
+            "conv",
+            "A [card](ref:card/) and a [plan](ref:card) and a [job](ref:job/job_nope) and \
+             [a spaced one](ref:card/has space).",
+        )
+        .expect("dispatch");
+        assert_eq!(
+            out.cleaned_text,
+            "A card and a plan and a job and a spaced one."
+        );
+        assert_eq!(out.refs.dropped, 4);
+    }
+
+    #[test]
+    fn report_new_resolves_to_the_report_this_reply_minted() {
+        let pool = pool();
+        let text = format!(
+            "Three things changed. [The release notes](ref:report/new) cover them.\n{}",
+            show_report_op(serde_json::json!({
+                "title": "Release notes",
+                "summary": "Three fixes",
+                "body": "## Fixes\n- a\n- b",
+            }))
+        );
+        let out = dispatch(&pool, "conv", &text).expect("dispatch");
+        assert_eq!(out.reports.len(), 1, "warnings: {:?}", out.warnings);
+        let id = &out.reports[0].id;
+        assert_eq!(
+            out.cleaned_text,
+            format!("Three things changed. [The release notes](ref:report/{id}) cover them.")
+        );
+        assert_eq!(out.refs.links.len(), 1);
+        assert_eq!(&out.refs.links[0].handle, id);
+        // The card rides along with its id, and the row is already durable.
+        let card = out
+            .chat_cards
+            .iter()
+            .find(|c| c.kind == "report")
+            .expect("report card");
+        assert_eq!(card.config["reportId"], serde_json::json!(id));
+        assert_eq!(card.title.as_deref(), Some("Release notes"));
+        let row = reports::get_report(&pool, id).expect("row");
+        assert_eq!(row.summary.as_deref(), Some("Three fixes"));
+        assert_eq!(row.body, "## Fixes\n- a\n- b");
+        assert_eq!(row.status, reports::REPORT_STATUS_UNREAD);
+    }
+
+    #[test]
+    fn report_new_without_a_minted_report_becomes_its_phrase() {
+        let pool = pool();
+        let out = dispatch(&pool, "conv", "Details are in [the notes](ref:report/new).")
+            .expect("dispatch");
+        assert_eq!(out.cleaned_text, "Details are in the notes.");
+        assert_eq!(out.refs.dropped, 1);
+        assert!(out.reports.is_empty());
+    }
+
+    #[test]
+    fn the_bare_op_spelling_also_mints_a_report() {
+        let pool = pool();
+        let op = serde_json::json!({"op": "show_report", "title": "Why", "body": "Because."});
+        let out = dispatch(&pool, "conv", &format!("Short answer.\nOP: {op}")).expect("dispatch");
+        assert_eq!(out.reports.len(), 1, "warnings: {:?}", out.warnings);
+        assert_eq!(out.cleaned_text, "Short answer.");
+    }
+
+    #[test]
+    fn two_refs_in_one_reply_are_both_resolved() {
+        let pool = pool();
+        pool.get()
+            .expect("conn")
+            .execute(
+                "INSERT INTO companion_approval (id, session_id, kind, payload, status)
+                 VALUES ('appr_abc123', 'conv', 'op_execute', '{}', 'pending')",
+                [],
+            )
+            .expect("approval row");
+        let card = crate::commands::companion::chat_cards::insert_card(
+            &pool,
+            "conv",
+            None,
+            "fleet_plan",
+            None,
+            "{}".into(),
+        )
+        .expect("card");
+        let text = format!(
+            "[The approval](ref:approval/appr_abc123) waits on [the plan](ref:card/{card})."
+        );
+        let out = dispatch(&pool, "conv", &text).expect("dispatch");
+        assert_eq!(out.cleaned_text, text);
+        assert_eq!(out.refs.links.len(), 2);
+        assert_eq!(out.refs.dropped, 0);
+    }
+
+    #[test]
+    fn a_ref_inside_code_is_left_alone() {
+        let pool = pool();
+        let text = "Write it as `[phrase](ref:card/nope)` in a reply.\n```\n[x](ref:job/nope)\n```";
+        let out = dispatch(&pool, "conv", text).expect("dispatch");
+        assert_eq!(out.cleaned_text, text);
+        assert!(out.refs.links.is_empty());
+        assert_eq!(out.refs.dropped, 0);
+    }
+
+    #[test]
+    fn an_ordinary_markdown_link_is_untouched() {
+        let pool = pool();
+        let text = "Read [the docs](https://example.com/docs) first.";
+        let out = dispatch(&pool, "conv", text).expect("dispatch");
+        assert_eq!(out.cleaned_text, text);
+        assert!(out.refs.links.is_empty());
+        assert_eq!(out.refs.dropped, 0);
+    }
+
+    #[test]
+    fn the_rewriter_keeps_multibyte_prose_intact() {
+        let (text, scan) = rewrite_refs("Déjà vu: [café ☕](ref:card/x) — fin.", |_, _| {
+            RefVerdict::Drop
+        });
+        assert_eq!(text, "Déjà vu: café ☕ — fin.");
+        assert_eq!(scan.dropped, 1);
+    }
+
+    #[test]
+    fn show_report_needs_a_title_and_a_body_and_is_capped() {
+        let pool = pool();
+        let out = dispatch(
+            &pool,
+            "conv",
+            &show_report_op(serde_json::json!({"body": "x"})),
+        )
+        .expect("dispatch");
+        assert!(out.reports.is_empty());
+        assert!(
+            out.warnings.iter().any(|w| w.contains("`title`")),
+            "{:?}",
+            out.warnings
+        );
+
+        let long_title = "t".repeat(200);
+        let long_body = "b".repeat(reports::MAX_REPORT_BODY_CHARS + 500);
+        let out = dispatch(
+            &pool,
+            "conv",
+            &show_report_op(serde_json::json!({"title": long_title, "body": long_body})),
+        )
+        .expect("dispatch");
+        let id = &out.reports[0].id;
+        let row = reports::get_report(&pool, id).expect("row");
+        assert_eq!(row.title.chars().count(), reports::MAX_REPORT_TITLE_CHARS);
+        assert_eq!(row.body.chars().count(), reports::MAX_REPORT_BODY_CHARS);
+        assert!(row.body.ends_with(reports::REPORT_TRUNCATED_MARKER));
+        assert_eq!(row.summary, None);
+    }
+
+    #[test]
+    fn a_report_round_trips_and_never_counts_as_waiting_on_him() -> Result<(), AppError> {
+        let pool = pool();
+        let out = dispatch(
+            &pool,
+            "conv",
+            &show_report_op(serde_json::json!({"title": "T", "body": "B"})),
+        )?;
+        let id = out.reports[0].id.clone();
+        reports::attach_episode(&pool, std::slice::from_ref(&id), "ep_abc");
+        let episode: Option<String> = pool.get()?.query_row(
+            "SELECT episode_id FROM companion_chat_card WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )?;
+        assert_eq!(episode.as_deref(), Some("ep_abc"));
+
+        let pending_card = crate::commands::companion::chat_cards::insert_card(
+            &pool,
+            "conv",
+            None,
+            "fleet_plan",
+            None,
+            "{}".into(),
+        )?;
+        let pending = crate::commands::companion::chat_cards::list_cards(&pool, "conv", true)?;
+        assert_eq!(
+            pending.iter().map(|c| c.id.as_str()).collect::<Vec<_>>(),
+            vec![pending_card.as_str()],
+            "the pending-card query must not list a report"
+        );
+        let all = crate::commands::companion::chat_cards::list_cards(&pool, "conv", false)?;
+        assert_eq!(all.len(), 2);
+
+        reports::mark_report_read(&pool, &id)?;
+        assert_eq!(
+            reports::get_report(&pool, &id)?.status,
+            reports::REPORT_STATUS_READ
+        );
+        let pending = crate::commands::companion::chat_cards::list_cards(&pool, "conv", true)?;
+        assert_eq!(pending.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn adjust_register_auto_fires_as_the_operator() -> Result<(), AppError> {
+        let pool = pool();
+        let op = serde_json::json!({
+            "op": "propose_action",
+            "action": "adjust_register",
+            "params": {"scope": "default", "sentences": 5, "reason": "he asked for more detail"},
+            "rationale": "asked",
+        });
+        let out = dispatch(&pool, "conv", &format!("Longer it is.\nOP: {op}"))?;
+        assert!(out.approvals.is_empty(), "a chat op must not become a card");
+        assert!(out.warnings.is_empty(), "{:?}", out.warnings);
+        assert_eq!(out.cleaned_text, "Longer it is.");
+        let rows = crate::companion::register::list(&pool)?;
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].sentences, 5);
+        assert_eq!(rows[0].source, "operator");
+
+        let op = serde_json::json!({
+            "op": "propose_action",
+            "action": "adjust_register",
+            "params": {"sentences": 40},
+        });
+        let out = dispatch(&pool, "conv", &format!("OP: {op}"))?;
+        assert!(
+            out.warnings
+                .iter()
+                .any(|w| w.starts_with("rejected adjust_register")),
+            "{:?}",
+            out.warnings
+        );
+        assert_eq!(crate::companion::register::list(&pool)?[0].sentences, 5);
+        Ok(())
+    }
+
+    // ── reply shape: parity with scripts/test/lib/reply-shape.mjs ──
+    //
+    // The expected values were produced by running the JS module over the
+    // same strings (node, 2026-09-23). A drift here is a drift between the
+    // bench's number and production's.
+
+    #[test]
+    fn reply_shape_matches_the_js_reference() {
+        let cases: &[(&str, u32, u32, u32)] = &[
+            (
+                "Three sessions are running. One is waiting on you!\nThe pumper sweep finished. Want the details?",
+                16,
+                4,
+                0,
+            ),
+            (
+                "Here is what changed:\n- auth fix\n- retry on 429\n- new cache\nThat is all.",
+                17,
+                3,
+                0,
+            ),
+            ("Findings:\n1. one\n2. two\n3. three\n4. four\nDone", 10, 6, 0),
+            (
+                "The job `job_a1b2c3` failed; see [the report](ref:report/5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a). Commit 3fa9c21e landed.\n```\nhash deadbeef1234 in a fence\n```\nSession 5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3b is idle.",
+                21,
+                3,
+                3,
+            ),
+            ("Plain words only, no ids at all... really? yes.", 9, 3, 0),
+            ("", 0, 0, 0),
+        ];
+        for (text, words, sentences, ids) in cases {
+            assert_eq!(word_count(text), *words, "words: {text:?}");
+            assert_eq!(count_sentences(text), *sentences, "sentences: {text:?}");
+            assert_eq!(count_bare_ids(text), *ids, "bareIds: {text:?}");
+        }
+    }
+
+    #[test]
+    fn bare_id_tokens_follow_the_contract() {
+        for id in [
+            "5f0c7e1a-9d7b-4c3e-8a21-0b7e4f1d2c3a",
+            "3fa9c21e",
+            "appr_abc123",
+            "sess_9f",
+            "task_1",
+        ] {
+            assert!(is_bare_id_token(id), "{id}");
+        }
+        for word in [
+            "decade",
+            "1234567",
+            "facade",
+            "fact_",
+            "fact_seed_0001",
+            "hello",
+        ] {
+            assert!(!is_bare_id_token(word), "{word}");
+        }
+    }
+
+    #[test]
+    fn a_measured_turn_carries_every_key_and_an_unmeasured_one_none() {
+        let pool = pool();
+        let text = format!(
+            "Done. See [the notes](ref:report/new) and [ghost](ref:job/nope).\n{}",
+            show_report_op(serde_json::json!({"title": "N", "body": "B"}))
+        );
+        let out = dispatch(&pool, "conv", &text).expect("dispatch");
+        let mut outcome = serde_json::json!({"approvals": 0});
+        stamp_reply_metrics(&mut outcome, &out);
+        let shape = reply_shape(&out.cleaned_text);
+        assert_eq!(outcome["replyWords"], serde_json::json!(shape.words));
+        assert_eq!(
+            outcome["replySentences"],
+            serde_json::json!(shape.sentences)
+        );
+        assert_eq!(outcome["bareIds"], serde_json::json!(0));
+        assert_eq!(outcome["refLinks"], serde_json::json!(1));
+        assert_eq!(outcome["refsDropped"], serde_json::json!(1));
+        assert_eq!(outcome["reportEmitted"], serde_json::json!(true));
+
+        // A headless or suppressed turn is never stamped: none of the keys.
+        let headless = serde_json::json!({"approvals": 0});
+        for key in [
+            "replyWords",
+            "replySentences",
+            "bareIds",
+            "refLinks",
+            "refsDropped",
+            "reportEmitted",
+        ] {
+            assert!(headless.get(key).is_none(), "{key}");
+            assert!(outcome.get(key).is_some(), "{key}");
+        }
+    }
+
+    #[test]
+    fn reply_shape_stats_aggregate_measured_rows_only() -> Result<(), AppError> {
+        let pool = pool();
+        let empty = reports::reply_shape_stats(&pool, 7)?;
+        assert_eq!(empty.turns, 0);
+        assert_eq!(empty.median_words, None);
+        assert_eq!(empty.id_rate, None);
+        assert_eq!(empty.reports_per_day, None);
+
+        let rows: &[(&str, &str, &str)] = &[
+            (
+                "t1",
+                "chat",
+                r#"{"replyWords":10,"bareIds":0,"refLinks":1,"refsDropped":0,"reportEmitted":true}"#,
+            ),
+            (
+                "t2",
+                "chat",
+                r#"{"replyWords":30,"bareIds":2,"refLinks":0,"refsDropped":1,"reportEmitted":false}"#,
+            ),
+            (
+                "t3",
+                "proactive",
+                r#"{"replyWords":20,"bareIds":0,"refLinks":0,"refsDropped":0,"reportEmitted":false}"#,
+            ),
+            // A pre-layered-voice row: a turn, but not measured.
+            ("t4", "chat", r#"{"approvals":1}"#),
+            // A headless row: outside the population entirely.
+            ("t5", "headless", r#"{"replyWords":999,"bareIds":9}"#),
+        ];
+        {
+            let conn = pool.get()?;
+            for (id, origin, outcome) in rows {
+                conn.execute(
+                    "INSERT INTO companion_turn (id, origin, outcome_json) VALUES (?1, ?2, ?3)",
+                    params![id, origin, outcome],
+                )?;
+            }
+        }
+        let stats = reports::reply_shape_stats(&pool, 7)?;
+        assert_eq!(stats.turns, 4);
+        assert_eq!(stats.median_words, Some(20.0));
+        assert_eq!(stats.p90_words, Some(30.0));
+        assert_eq!(stats.id_rate, Some(1.0 / 3.0));
+        assert_eq!(stats.ref_rate, Some(1.0 / 3.0));
+        assert_eq!(stats.reports_per_day, Some(1.0 / 7.0));
+        Ok(())
+    }
+}

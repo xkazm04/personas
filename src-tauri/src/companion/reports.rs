@@ -6,8 +6,8 @@
 //! `status = 'unread' | 'read'`. The reply links to it as
 //! `[<phrase>](ref:report/<id>)`.
 //!
-//! This module owns the READ side and the wire types. The dispatcher (the
-//! `show_report` op) owns the write side.
+//! This module owns the row: the insert the dispatcher's `show_report` arm
+//! calls, the read side, and the reply-shape stats over the turn ledger.
 //!
 //! Contract: `docs/features/companion/layered-voice.md`.
 
@@ -52,7 +52,8 @@ pub struct CompanionReport {
 pub struct ReplyShapeStats {
     #[ts(type = "number")]
     pub days: u32,
-    /// Chat turns in the window (the population the other fields are over).
+    /// Layer-one turns (origin chat, autonomous or proactive) in the window:
+    /// the population the other fields are measured over.
     #[ts(type = "number")]
     pub turns: u32,
     #[ts(type = "number | null")]
@@ -127,28 +128,157 @@ pub fn mark_report_read(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Reply-shape stats over the last `days` days.
+/// Mark appended to a report body cut at [`MAX_REPORT_BODY_CHARS`].
+pub const REPORT_TRUNCATED_MARKER: &str = "\n\n*(report truncated)*";
+
+/// Persist one report and return its id. The write side of `show_report`:
+/// the dispatcher calls it BEFORE the chat-card event goes out, so the card
+/// and every `ref:report/<id>` link point at a row that already exists.
 ///
-/// WP0 stub: counts the chat turns in the window and leaves every measure
-/// `null`, because no row carries the `outcome_json` shape keys yet. The real
-/// aggregation lands with the dispatcher work that writes those keys.
+/// Reports need their own insert rather than `chat_cards::insert_card`: that
+/// one mints `status = 'pending'`, which is the "waiting on you" state, and a
+/// report is never waiting on anyone. `unread` keeps it out of every
+/// pending-card query by construction.
+///
+/// Validation is the caller's (the dispatcher's) job; this only refuses what
+/// the row itself cannot hold.
+pub fn insert_report(
+    pool: &UserDbPool,
+    conversation_id: &str,
+    episode_id: Option<&str>,
+    title: &str,
+    summary: Option<&str>,
+    body: &str,
+) -> Result<String, AppError> {
+    let conversation_id = conversation_id.trim();
+    if conversation_id.is_empty() {
+        return Err(AppError::Validation(
+            "report: conversation id is required".into(),
+        ));
+    }
+    if title.trim().is_empty() {
+        return Err(AppError::Validation("report: title is required".into()));
+    }
+    let config_json = serde_json::json!({
+        "summary": summary.map(str::trim).filter(|s| !s.is_empty()),
+        "body": body,
+    })
+    .to_string();
+    let id = uuid::Uuid::new_v4().to_string();
+    pool.get()?.execute(
+        "INSERT INTO companion_chat_card
+             (id, conversation_id, episode_id, kind, title, config_json, status)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            id,
+            conversation_id,
+            episode_id,
+            REPORT_KIND,
+            title.trim(),
+            config_json,
+            REPORT_STATUS_UNREAD
+        ],
+    )?;
+    Ok(id)
+}
+
+/// Stamp the assistant episode onto reports minted before it existed (the
+/// dispatcher runs before the reply is persisted). Only fills a missing
+/// episode; best-effort, since a report without its episode still opens.
+pub fn attach_episode(pool: &UserDbPool, report_ids: &[String], episode_id: &str) {
+    let Ok(conn) = pool.get() else {
+        return;
+    };
+    for id in report_ids {
+        if let Err(e) = conn.execute(
+            "UPDATE companion_chat_card SET episode_id = ?2
+              WHERE id = ?1 AND kind = ?3 AND episode_id IS NULL",
+            params![id, episode_id, REPORT_KIND],
+        ) {
+            tracing::warn!(report_id = %id, error = %e, "report: episode stamp failed");
+        }
+    }
+}
+
+/// Turn origins the reply-shape stats read. `external` (remote devices, the
+/// bench) and the headless rows are not layer-one replies to him.
+const SHAPE_ORIGINS_SQL: &str = "('chat', 'autonomous', 'proactive')";
+
+/// Nearest-rank percentile over a sorted slice, the same rule as
+/// `scripts/test/lib/reply-shape.mjs` `percentile`.
+fn percentile(sorted: &[f64], p: f64) -> Option<f64> {
+    if sorted.is_empty() {
+        return None;
+    }
+    let idx = ((p / 100.0) * sorted.len() as f64).floor() as usize;
+    Some(sorted[idx.min(sorted.len() - 1)])
+}
+
+/// Reply-shape stats over the last `days` days, from the layered-voice keys
+/// the turn ledger writes into `companion_turn.outcome_json` (`replyWords`,
+/// `bareIds`, `refLinks`, `reportEmitted`). A measure is `None` when no row in
+/// the window carries its key: absent means not measured, never 0.
 pub fn reply_shape_stats(pool: &UserDbPool, days: u32) -> Result<ReplyShapeStats, AppError> {
     let days = days.clamp(1, 365);
+    let window = format!("-{days} days");
     let conn = pool.get()?;
     let turns: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM companion_turn
-          WHERE origin = 'chat' AND created_at >= datetime('now', ?1)",
-        params![format!("-{days} days")],
+        &format!(
+            "SELECT COUNT(*) FROM companion_turn
+              WHERE origin IN {SHAPE_ORIGINS_SQL} AND created_at >= datetime('now', ?1)"
+        ),
+        params![window],
         |r| r.get(0),
     )?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT outcome_json FROM companion_turn
+          WHERE origin IN {SHAPE_ORIGINS_SQL}
+            AND created_at >= datetime('now', ?1)
+            AND outcome_json LIKE '%\"replyWords\"%'"
+    ))?;
+    let blobs = stmt
+        .query_map(params![window], |r| r.get::<_, Option<String>>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut words: Vec<f64> = Vec::new();
+    let (mut id_rows, mut id_hits) = (0u32, 0u32);
+    let (mut ref_rows, mut ref_hits) = (0u32, 0u32);
+    let (mut report_rows, mut reports) = (0u32, 0u32);
+    for blob in blobs.into_iter().flatten() {
+        // Tolerant of shape drift: a row that does not parse is skipped, not
+        // an error for the whole window.
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&blob) else {
+            continue;
+        };
+        if let Some(w) = v.get("replyWords").and_then(|x| x.as_f64()) {
+            words.push(w);
+        }
+        if let Some(n) = v.get("bareIds").and_then(|x| x.as_u64()) {
+            id_rows += 1;
+            id_hits += u32::from(n > 0);
+        }
+        if let Some(n) = v.get("refLinks").and_then(|x| x.as_u64()) {
+            ref_rows += 1;
+            ref_hits += u32::from(n > 0);
+        }
+        if let Some(emitted) = v.get("reportEmitted") {
+            report_rows += 1;
+            reports += match emitted {
+                serde_json::Value::Bool(b) => u32::from(*b),
+                other => other.as_u64().map_or(0, |n| n as u32),
+            };
+        }
+    }
+    words.sort_by(|a, b| a.total_cmp(b));
+    let rate = |hits: u32, rows: u32| (rows > 0).then(|| f64::from(hits) / f64::from(rows));
     Ok(ReplyShapeStats {
         days,
         turns: u32::try_from(turns).unwrap_or(u32::MAX),
-        median_words: None,
-        p90_words: None,
-        id_rate: None,
-        ref_rate: None,
-        reports_per_day: None,
+        median_words: percentile(&words, 50.0),
+        p90_words: percentile(&words, 90.0),
+        id_rate: rate(id_hits, id_rows),
+        ref_rate: rate(ref_hits, ref_rows),
+        reports_per_day: (report_rows > 0).then(|| f64::from(reports) / f64::from(days)),
     })
 }
 
@@ -210,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn reply_shape_stats_stub_is_null_not_zero() -> Result<(), AppError> {
+    fn reply_shape_stats_is_null_not_zero_when_unmeasured() -> Result<(), AppError> {
         let pool = crate::db::init_test_user_db()?;
         let stats = reply_shape_stats(&pool, 7)?;
         assert_eq!(stats.days, 7);

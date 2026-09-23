@@ -193,6 +193,7 @@
     "action_label_unknown_fallback": "Athena 的提案",
     "action_label_update_goal_status": "更新目标状态",
     "action_label_update_identity": "更新身份",
+    "action_label_adjust_register": "调整回复长度",
     "action_label_write_backlog_item": "添加待办事项",
     "action_label_write_fact": "记住事实",
     "action_label_write_goal": "跟踪目标",

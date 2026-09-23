@@ -22,6 +22,8 @@ use std::sync::OnceLock;
 use super::budget::CHAT_FAMILY_BUDGET;
 use crate::companion::dispatcher::render_op_reference;
 use crate::companion::engine_settings::TurnTierClass;
+use crate::companion::register;
+use crate::db::UserDbPool;
 
 /// The env override. `full` forces the constitution on every class; `chat`
 /// forces the chat family on every class (the way to trial it on a tier the
@@ -149,19 +151,37 @@ fn compose_chat_static_core() -> String {
     out
 }
 
-/// The per-turn voice flag for the chat family. The RULES live in the chat
-/// core (static, cacheable); this block only says that voice is on, so the
-/// stable prefix does not change between a spoken and a typed turn.
-pub(super) fn chat_voice_flag(voice_enabled: bool) -> String {
+/// The per-turn voice flag, for both families. The RULES live in the static
+/// core (chat core `# Voice`, constitution `## Voice`); this block only says
+/// that voice is on, so the stable prefix does not change between a spoken and
+/// a typed turn. Layer one is already the spoken register, so the flag carries
+/// no second, voice-only register: only the optional `TTS:` escape.
+pub(super) fn voice_flag(voice_enabled: bool) -> String {
     if !voice_enabled {
         return String::new();
     }
     String::from(
         "\n\n# Voice is on for this turn\n\n\
          He will hear this reply as it streams, sentence by sentence, with the \
-         machine lines stripped. Write the prose to be spoken (see Voice above); \
-         a `TTS:` line is optional and must not repeat the prose.\n",
+         machine lines stripped. Layer one already reads aloud; a `TTS:` line is \
+         optional, only when the visible reply must differ from speech.\n",
     )
+}
+
+/// The per-turn register flag (`Layer one this turn: at most N sentences.`),
+/// read from the reply register. Never fails: an unreadable register is the
+/// base register (`register::effective`).
+pub(super) fn layer_one_flag_for(user_db: &UserDbPool) -> String {
+    register::layer_one_flag(&register::effective(user_db))
+}
+
+/// The register flag for a turn with no database (the bench): the base
+/// register, exactly what a fresh install's turns carry.
+pub(super) fn base_layer_one_flag() -> String {
+    register::layer_one_flag(&register::EffectiveRegister {
+        default_sentences: register::LAYER_ONE_BASE_SENTENCES,
+        overrides: Vec::new(),
+    })
 }
 
 #[cfg(test)]
@@ -258,13 +278,21 @@ mod tests {
 
     #[test]
     fn the_voice_flag_is_short_and_absent_when_voice_is_off() {
-        assert!(chat_voice_flag(false).is_empty());
-        let on = chat_voice_flag(true);
+        assert!(voice_flag(false).is_empty());
+        let on = voice_flag(true);
         assert!(on.contains("# Voice is on for this turn"));
         assert!(
             on.len() < 400,
             "the flag must stay a flag, not a second rulebook"
         );
+        // Layer one IS the spoken register: no voice-only duality text.
+        for gone in [
+            "DUAL-LANGUAGE",
+            "control panel",
+            "Write the prose to be spoken",
+        ] {
+            assert!(!on.contains(gone), "voice flag still carries: {gone}");
+        }
     }
 
     #[test]
@@ -286,6 +314,71 @@ mod tests {
         assert!(
             !CHAT_CORE_MD.contains('\u{2014}'),
             "chat core carries an em dash; rewrite the sentence"
+        );
+    }
+
+    #[test]
+    fn chat_core_teaches_layer_one() {
+        assert!(
+            CHAT_CORE_MD.contains("\n# Layer one"),
+            "chat core lost its `# Layer one` section"
+        );
+        for needle in [
+            "Layer one this turn:",
+            "\"action\":\"show_report\"",
+            "(ref:report/new)",
+            "(ref:approval/",
+            "(ref:session/",
+            "(ref:memory/",
+            "never invent one",
+            "Never describe a card",
+            "\"action\":\"adjust_register\"",
+        ] {
+            assert!(CHAT_CORE_MD.contains(needle), "layer one lost: {needle}");
+        }
+        // Both ops are taught in the canonical `propose_action` envelope the
+        // generated op reference prescribes, never the bare spelling.
+        for bare in ["\"op\":\"show_report\"", "\"op\":\"adjust_register\""] {
+            assert!(
+                !CHAT_CORE_MD.contains(bare),
+                "chat core teaches bare {bare}"
+            );
+        }
+        // The old register asked for ids in inline code; layer one forbids ids.
+        let lower = CHAT_CORE_MD.to_lowercase();
+        assert!(
+            !lower.contains("`inline code` for ids"),
+            "chat core still asks for ids in inline code"
+        );
+        assert!(
+            !CHAT_CORE_MD.contains("A short paragraph or two by default"),
+            "chat core still carries the old length rule"
+        );
+        // Voice no longer carries a second, voice-only register.
+        assert!(
+            !CHAT_CORE_MD.contains("the ear has no scrollbar"),
+            "chat core still teaches a voice-only register"
+        );
+    }
+
+    #[test]
+    fn the_register_flag_reflects_the_register_rows() {
+        let pool = crate::db::init_test_user_db().expect("test user db");
+        assert_eq!(
+            layer_one_flag_for(&pool),
+            "\n\nLayer one this turn: at most 3 sentences.\n",
+            "no rows is the base register"
+        );
+        assert_eq!(layer_one_flag_for(&pool), base_layer_one_flag());
+        register::upsert(&pool, "default", 2, "operator", None).expect("default row");
+        assert_eq!(
+            layer_one_flag_for(&pool),
+            "\n\nLayer one this turn: at most 2 sentences.\n"
+        );
+        register::upsert(&pool, "fleet updates", 5, "reflection", Some("x")).expect("topic row");
+        assert_eq!(
+            layer_one_flag_for(&pool),
+            "\n\nLayer one this turn: at most 2 sentences. Topic overrides: fleet updates 5.\n"
         );
     }
 }

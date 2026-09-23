@@ -193,6 +193,7 @@
     "action_label_unknown_fallback": "Предложение Athena",
     "action_label_update_goal_status": "Обновить статус цели",
     "action_label_update_identity": "Обновить личность",
+    "action_label_adjust_register": "Изменить длину ответов",
     "action_label_write_backlog_item": "Добавить в бэклог",
     "action_label_write_fact": "Запомнить факт",
     "action_label_write_goal": "Отслеживать цель",

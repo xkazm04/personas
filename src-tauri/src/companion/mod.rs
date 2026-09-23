@@ -29,9 +29,6 @@ pub mod plugins;
 pub mod proactive;
 pub mod projects;
 pub mod prompt;
-// WP0 (spark athena-layered-voice) contract items whose consumers land in WP1
-// (prompt + register) and WP2 (dispatcher). Remove this allow when they merge.
-#[allow(dead_code)]
 pub mod register;
 /// Athena's end of the cross-device link. Gated on `p2p` because the seam it
 /// implements (`engine::p2p::remote_jobs::RemoteJobExecutor`) and the transport
@@ -40,9 +37,6 @@ pub mod register;
 /// `commands::companion::approvals::approval_exec_devices`.
 #[cfg(feature = "p2p")]
 pub mod remote_jobs;
-// WP0 (spark athena-layered-voice) contract items whose consumers land in WP1
-// (prompt + register) and WP2 (dispatcher). Remove this allow when they merge.
-#[allow(dead_code)]
 pub mod reports;
 pub mod session;
 pub mod ship_ops;

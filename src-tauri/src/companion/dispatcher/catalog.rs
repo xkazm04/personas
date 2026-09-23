@@ -62,6 +62,11 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // `approval_exec_devices::gate_remote_instruct`, NOT in
     // `AUTOAPPROVE_ALLOWLIST` (which has no conditional form).
     "remote_instruct",
+    // Layered voice. A REFLECTION-originated register change: the sleep cycle
+    // files it as an approval row directly and the executor applies it with
+    // source `reflection`. The chat op of the same name never reaches the
+    // approval arm; see `CHAT_AUTO_FIRE_APPROVAL_ACTIONS`.
+    "adjust_register",
     // Ship layer (2026-08-20) — the two verbs the Ship tab gives a human, given
     // to Athena as well. `set_ship_scope` moves members between core/later/never
     // or drops them; `ship_milestone_lifecycle` cuts (freezing the scope) or
@@ -504,6 +509,15 @@ pub(crate) struct OpDoc {
     pub(crate) gate: OpGate,
 }
 
+/// Approval actions that ALSO have an auto-fire chat arm ahead of the
+/// generic approval arm. The model's own op auto-fires (he asked in this
+/// conversation, so the ask is the consent); the `ALLOWED_ACTIONS` entry is
+/// for the other door, a proposal filed as an approval row by a background
+/// pass (the sleep cycle's register signals) and executed on his click. The
+/// reference row teaches the chat gate, so it says `auto`.
+#[cfg(test)]
+pub(super) const CHAT_AUTO_FIRE_APPROVAL_ACTIONS: &[&str] = &["adjust_register"];
+
 /// Auto-fire actions handled by their own dispatch arms — the ones that are
 /// in NEITHER `ALLOWED_ACTIONS` (no approval card) nor `READ_OPS` (they are
 /// not lookups). Enumerated here so the reference renderer and its
@@ -546,6 +560,7 @@ pub(super) const AUTO_FIRE_ACTIONS: &[&str] = &[
     "point_at",
     "compose_walkthrough",
     "compose_tour",
+    "show_report",
 ];
 
 /// A reference section: a heading and the ops that belong under it, in the
@@ -612,6 +627,7 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("resolve_backlog_item", Approval, "close one", r#"{"id":"blog_<id>","dropped":false}"#),
             op!("update_identity", Approval, "append to his identity file", r#"{"diffs":[{"section":"<heading>","op":"append","new_text":"<bullet (ep_id)>","rationale":"<why>"}]}"#),
             op!("schedule_proactive", Approval, "ping him at a time; a real ask, not a musing", r#"{"message":"<what you will say>","when_iso":"<ISO8601 UTC>"}"#),
+            op!("adjust_register", Auto, "he asked for longer/shorter replies", r#"{"scope":"default|<topic>","sentences":1-8,"reason":"<why>"}"#),
         ],
     },
     OpSection {
@@ -743,6 +759,7 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("show_model_tier_choice", Auto, "", r#"{intent,recommended:haiku|sonnet|opus,tiers:[{tier,rationale}]}"#),
             op!("show_observability_plan", Auto, "", r#"{intent,error_handling:{triggers:[],escalation},success_metric:{kind:count_by_status|cost_per_run|latency|custom,description}}"#),
             op!("show_persona_ready", Auto, "", r#"{intent,recommended_action:build_oneshot|interactive|use_template,summary:{intent_line}}"#),
+            op!("show_report", Auto, "", r#"{title,summary?,body}"#),
             op!("show_browser_test_report", Auto, "", r#"{url,steps:[{label,result:pass|fail|warn,evidence}],defects:[{title,severity:high|medium|low,detail}],console_errors:[]}"#),
             op!("compose_dashboard", Auto, "", r#"{title,widgets:[kind:kpi_tile|executions_status_chart|cost_per_day_chart|top_personas_list|success_rate_gauge|activity_heatmap|recent_executions_table]}"#),
             op!("compose_cockpit", Auto, "", r#"{title,widgets:[kind:persona_overview|connected_services|decisions_panel|metric_spark|issue_list|text_callout|verdict|flow_steps|comparison_cards|timeline|stat_grid|log_excerpt]} (prefer over many items as prose)"#),
@@ -765,7 +782,11 @@ fn op_docs() -> impl Iterator<Item = &'static OpDoc> {
 /// Ceiling on the rendered reference, so the chat family's static core keeps
 /// room for the hand-written doctrine under its own 24k budget. Asserted by
 /// `op_reference_stays_compact`.
-pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_500;
+// 12,500 -> 12,700 (2026-09-23, layered voice): `show_report` and
+// `adjust_register` joined the reference at their shortest rows (the chat core
+// teaches both in full under `# Layer one`); the table was already within 20
+// chars of the old ceiling.
+pub(crate) const OP_REFERENCE_MAX_CHARS: usize = 12_700;
 
 /// The compact markdown op reference the chat-class prompt family carries in
 /// place of the constitution's per-op prose. One line per op: name, gate,
@@ -957,6 +978,18 @@ mod tests {
         for doc in op_docs() {
             if READ_OPS.contains(&doc.name) {
                 assert_eq!(doc.gate, OpGate::Read, "{} is a READ_OP", doc.name);
+            } else if CHAT_AUTO_FIRE_APPROVAL_ACTIONS.contains(&doc.name) {
+                assert!(
+                    ALLOWED_ACTIONS.contains(&doc.name),
+                    "{} is a chat-auto-fire APPROVAL action and must stay in ALLOWED_ACTIONS",
+                    doc.name
+                );
+                assert_eq!(
+                    doc.gate,
+                    OpGate::Auto,
+                    "{} auto-fires from chat; its row teaches that gate",
+                    doc.name
+                );
             } else if ALLOWED_ACTIONS.contains(&doc.name) {
                 assert!(
                     matches!(doc.gate, OpGate::Approval | OpGate::System),

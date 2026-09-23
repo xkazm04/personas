@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "Athena का प्रस्ताव",
       "action_label_update_goal_status": "लक्ष्य की स्थिति अपडेट करें",
       "action_label_update_identity": "पहचान अपडेट करें",
+      "action_label_adjust_register": "जवाब की लंबाई बदलें",
       "action_label_write_backlog_item": "बैकलॉग में जोड़ें",
       "action_label_write_fact": "एक तथ्य याद रखें",
       "action_label_write_goal": "एक लक्ष्य ट्रैक करें",

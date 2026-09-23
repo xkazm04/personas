@@ -42,7 +42,9 @@ raw to the UI as `companion://stream`; the server reads only the session id, the
 assistant text blocks and the terminal `result`. Ops (`OP: {json}`, `QR:`, `TTS:`,
 `PROGRESS:`) are a text grammar the dispatcher parses on the finalized text, so the
 contract is transport-agnostic. Voice is the same path: speech input becomes the same
-send, and the spoken reply is the `TTS:` line, played only after the turn returns. No
+send, and the reply itself is spoken (layer one is the spoken register; an optional `TTS:`
+line replaces it only when the visible reply must differ from speech; see
+`docs/features/companion/layered-voice.md`). No
 spawn-to-first-token measurement existed before this work.
 
 ## Grok CLI 1.0.34, as measured

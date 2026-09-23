@@ -195,12 +195,12 @@ pub(super) fn compose_for_class(
     // Onboarding sits at the very end so its instructions are the last
     // thing Athena reads before forming a reply — most recency-weighted.
     out.push_str(onboarding_md);
-    // Voice addendum: only included when the user has voice playback on.
+    // Voice flag: only non-empty when the user has voice playback on (the
+    // full family also carries the PROGRESS grammar in this slot).
     out.push_str(voice_md);
-    // Dual-language addendum: paired with voice — instructs Athena to
-    // write the *visual* reply as a tighter, button-shaped index when
-    // the user is also listening. Voice off ⇒ empty string ⇒ default
-    // prose register.
+    // Layer-one register flag (`Layer one this turn: at most N sentences.`),
+    // on every turn. Per-turn, so it rides after identity and outside the
+    // warm session's stable prefix; the rules it points at live in `core`.
     out.push_str(display_md);
     // Tools addendum: always on. Tells Athena she has WebSearch /
     // WebFetch via Claude Code so she stops guessing at time-sensitive

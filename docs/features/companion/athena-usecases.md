@@ -582,18 +582,24 @@ sherpa-onnx sidecar inference - no credential, no network at synth time
 
 **Two playback paths:**
 
-1. **Send-flow TTS** — when the user sends a message and Athena emits
-   a `TTS:` line in her reply, the panel synthesizes that spoken
-   summary and auto-plays it. Footer "🔊 Play it again" replays.
+1. **Send-flow TTS**: when the user sends a message, the panel speaks
+   the reply sentence by sentence as it streams (`athenaChatVoice`).
+   Athena may add an optional `TTS:` line when the visible reply must
+   differ from speech (a table, a snippet); it is played only when the
+   prose was not already spoken (`athenaChatSend.ts`). Footer
+   "🔊 Play it again" replays.
 2. **Arrival-TTS** — when a *new* message lands without the user
    asking (proactive nudge, background-job system episode), the
    always-mounted panel listener strips markdown and speaks the body.
    Works even when the chat is collapsed.
 
-If voice is on, Athena is also instructed to write her **chat-bubble
-text** in a tighter, skimmable format (short sentences, lean on QR
-chips) — the assumption being that the spoken summary carries the
-nuance, the visual is the scannable index.
+There is no separate voice register. Since the layered voice
+(2026-09-23, [layered-voice.md](layered-voice.md)) every reply is
+**layer one**: at most N sentences (base 3), no printed ids, and links to
+the detail. That reads the same aloud and on screen, so voice-on turns
+get only a one-line "voice is on" flag. The earlier dual-language rule,
+which asked for a skimmable bubble under a spoken summary, and the
+mandatory `TTS:` line were both retired.
 
 ## Athena as an MCP server (Direction 3)
 

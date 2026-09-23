@@ -71,7 +71,8 @@ pub fn follow_up_directive(question: &str, outcome: Result<&str, &str>) -> Strin
         Ok(findings) => {
             let mut s = format!(
                 "Your research on «{question}» finished. Read the findings in the system note \
-                 above and tell me what you think, briefly.\n\nFindings, inline so you need not \
+                 above and give me your verdict in layer one; if the sources and detail matter, \
+                 put them in a report and link it.\n\nFindings, inline so you need not \
                  recall them:\n\n"
             );
             let (body, cut) = cap_findings(findings);
@@ -171,7 +172,11 @@ mod tests {
     #[test]
     fn the_follow_up_names_the_question_and_carries_the_findings_inline() {
         let d = follow_up_directive("do the claims hold?", Ok("Verdict: mostly.\n\nSources: x"));
-        assert!(d.starts_with("Your research on «do the claims hold?» finished. Read the findings in the system note above and tell me what you think, briefly."));
+        assert!(d.starts_with("Your research on «do the claims hold?» finished. Read the findings in the system note above and give me your verdict in layer one;"));
+        assert!(
+            !d.contains("briefly"),
+            "the length rule is layer one, not an adverb"
+        );
         assert!(d.ends_with("Verdict: mostly.\n\nSources: x"));
         assert!(!d.contains("[findings cut"));
     }

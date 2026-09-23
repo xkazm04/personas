@@ -17493,6 +17493,7 @@ export type Translations = {
       action_label_run_persona: string;
       action_label_resolve_human_review: string;
       action_label_update_identity: string;
+      action_label_adjust_register: string;
       action_label_write_fact: string;
       action_label_delete_fact: string;
       action_label_write_procedural: string;

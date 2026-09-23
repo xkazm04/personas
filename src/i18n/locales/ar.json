@@ -10909,6 +10909,7 @@
       "action_label_unknown_fallback": "اقتراح Athena",
       "action_label_update_goal_status": "تحديث حالة الهدف",
       "action_label_update_identity": "تحديث الهوية",
+      "action_label_adjust_register": "تغيير طول الردود",
       "action_label_write_backlog_item": "إضافة إلى الأعمال المتراكمة",
       "action_label_write_fact": "تذكّر حقيقة",
       "action_label_write_goal": "تتبّع هدف",

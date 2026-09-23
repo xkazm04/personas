@@ -637,6 +637,11 @@ pub const COMPANION_PROFILE_SYNTHESIS_DEFAULT: bool = false;
 /// RFC3339 timestamp the synthesis pass last ran — gates the 7-day cadence.
 /// Free-form value (no typed validation).
 pub const COMPANION_PROFILE_SYNTHESIS_LAST: &str = "companion_profile_synthesis_last";
+/// RFC3339 timestamp the reply-register reflection pass last ran — gates its
+/// 7-day cadence (`companion::register::maybe_propose_register`). Independent of
+/// [`COMPANION_PROFILE_SYNTHESIS`]: the pass only files an approval card, so it
+/// needs no opt-in. Free-form value (no typed validation).
+pub const COMPANION_REGISTER_REFLECTION_LAST: &str = "companion_register_reflection_last";
 
 /// Whether the autonomous assignment-retry tick may, unattended, resume a team
 /// assignment that soft-paused at `awaiting_review` because a step failed for a
@@ -1142,6 +1147,7 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS,
     COMPANION_PROFILE_SYNTHESIS_LAST,
+    COMPANION_REGISTER_REFLECTION_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
@@ -1618,6 +1624,7 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     COMPANION_DAILY_ROLLUP_LAST,
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS_LAST,
+    COMPANION_REGISTER_REFLECTION_LAST,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,

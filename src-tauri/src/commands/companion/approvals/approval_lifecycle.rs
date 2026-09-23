@@ -160,6 +160,9 @@ pub(crate) async fn execute_approval_action(
         "write_ritual" => execute_write_ritual(&state, params),
         "set_ritual_active" => execute_set_ritual_active(&state, params),
         "delete_ritual" => execute_delete_ritual(&state, params),
+        // Layered voice — a reflection-originated register change (the chat
+        // op of the same name auto-fires in the dispatcher instead).
+        "adjust_register" => execute_adjust_register(&state, params),
         "write_backlog_item" => execute_write_backlog_item(&state, params),
         "resolve_backlog_item" => execute_resolve_backlog_item(&state, params),
         // Phase F — advanced UI control.
