@@ -5087,7 +5087,8 @@
     "network_offline": "インターネット接続がありません",
     "not_found": "リクエストされたリソースが見つかりません",
     "rate_limited": "リクエストが多すぎます -- しばらくしてから再試行してください",
-    "validation": "入力が無効です: {detail}"
+    "validation": "入力が無効です: {detail}",
+    "run_superseded": "このタスクの新しい実行がアプリ内の別の場所で開始されたため、この実行は停止されました。まだ必要な場合は、ここでもう一度開始してください。"
   },
   "eval_strategies": {
     "composite_description": "すべての戦略の加重組み合わせ",
@@ -24103,7 +24104,8 @@
       "page_decisions": "決定",
       "page_overseer": "監督者",
       "page_council": "評議会",
-      "page_blueprint": "Blueprint"
+      "page_blueprint": "Blueprint",
+      "page_process": "プロセス"
     },
     "state": {
       "active": "稼働中",
@@ -24417,6 +24419,47 @@
         "off": "無効",
         "unknown": "この扉が名指ししないチェックアウト"
       }
+    },
+    "process": {
+      "cohort_share": "全リポジトリ {pct}",
+      "coverage": "カバレッジ",
+      "empty": "この表示にはセッションがありません",
+      "error_title": "セッションを読み込めませんでした",
+      "failures": "失敗",
+      "left_here": "{count}件がここでエラーまたは中断により終了",
+      "mode_aria": "セッションモード",
+      "mode_headless": "自動実行",
+      "mode_interactive": "対話型",
+      "mode_note": "対話型セッションと自動実行セッションは別のプロセスのため、決してまとめて扱われません。",
+      "no_failures": "ここに失敗はありません",
+      "outcome_errored": "コミットなし、エラーあり",
+      "outcome_interrupted": "中断",
+      "outcome_landed": "コミット済み",
+      "outcome_quiet": "コミットなし、クリーン",
+      "outcomes_title": "セッションの終了状況",
+      "path_note": "このパスはセッションが最も頻繁に行った内容です。誰も宣言したものではありません。",
+      "phase_brief": "ブリーフ",
+      "phase_edit": "編集",
+      "phase_explore": "探索",
+      "phase_ship": "出荷",
+      "phase_verify": "検証",
+      "rank": "失敗数で{rank}位",
+      "reached": "{total}件中{reached}件",
+      "repo_all": "全リポジトリ",
+      "repo_aria": "リポジトリで絞り込む",
+      "repo_search": "リポジトリを検索",
+      "skipped": "{count}件がスキップ",
+      "source": "{scanned}件のトランスクリプトを読み込み、{cached}件のセッションを記憶",
+      "stat_landed": "コミットした",
+      "stat_whole": "全経路を歩んだ",
+      "stat_worst": "失敗が最も多い",
+      "stat_worst_none": "失敗なし",
+      "stumbled": "{count}件がここでツールエラーまたは中断に遭遇",
+      "subtitle_all": "{repos}リポジトリで{count}セッション",
+      "subtitle_repo": "{repo}で{count}セッション",
+      "time_note": "時間はアクティブ時間です。10分を超える間隔はすべて10分としてカウントされます。",
+      "wait": "待機時間の中央値 {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }

@@ -364,21 +364,6 @@
     {
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
-        "src/features/overview/**",
-        "src/features/shared/chrome/SystemLoadFooterIcon.tsx",
-        "src/features/shared/components/layout/systemLoad.ts",
-        "src-tauri/src/commands/infrastructure/system_metrics.rs"
-      ],
-      "onboardingFlows": [
-        "overview-dashboard",
-        "execution-activity",
-        "health-monitoring"
-      ],
-      "marketingModule": "overview"
-    },
-    {
-      "doc": "docs/features/overview/README.md",
-      "sourceGlobs": [
         "src/features/agents/quick-answer/**",
         "src/features/fleet/monitor/useMonitorData.ts"
       ]
@@ -644,6 +629,14 @@
         "src-tauri/src/commands/infrastructure/dev_tools/council*.rs",
         "src-tauri/db/src/repos/dev/council.rs",
         "src-tauri/core/src/models/council.rs"
+      ]
+    },
+    {
+      "doc": "docs/features/companions/curator/process.md",
+      "sourceGlobs": [
+        "src/features/companions/curator/process/**",
+        "src/api/companions/curator.ts",
+        "src-tauri/src/commands/curator/process.rs"
       ]
     },
     {

@@ -23,6 +23,7 @@ pub(super) fn shard(
         commands::curator::curator_project_set_consent,
         commands::curator::curator_plan_current,
         commands::curator::curator_plan_refresh,
+        commands::curator::curator_process_read,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,

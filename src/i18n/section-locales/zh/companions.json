@@ -11,7 +11,8 @@
     "page_decisions": "决策",
     "page_overseer": "监督者",
     "page_council": "评议会",
-    "page_blueprint": "Blueprint"
+    "page_blueprint": "Blueprint",
+    "page_process": "流程"
   },
   "state": {
     "active": "运行中",
@@ -325,5 +326,46 @@
       "off": "已关闭",
       "unknown": "这扇门未提及的检出"
     }
+  },
+  "process": {
+    "cohort_share": "所有仓库 {pct}",
+    "coverage": "覆盖率",
+    "empty": "此视图中没有会话",
+    "error_title": "无法读取会话",
+    "failures": "失败",
+    "left_here": "{count} 个在此因错误或中断而结束",
+    "mode_aria": "会话模式",
+    "mode_headless": "无人值守",
+    "mode_interactive": "交互式",
+    "mode_note": "交互式会话和无人值守会话是不同的进程，因此从不合并统计。",
+    "no_failures": "此处没有失败",
+    "outcome_errored": "未提交，有错误",
+    "outcome_interrupted": "已中断",
+    "outcome_landed": "已提交",
+    "outcome_quiet": "未提交，干净",
+    "outcomes_title": "会话是如何结束的",
+    "path_note": "该路径是会话最常执行的操作，并非任何人声明的。",
+    "phase_brief": "简介",
+    "phase_edit": "编辑",
+    "phase_explore": "探索",
+    "phase_ship": "发布",
+    "phase_verify": "验证",
+    "rank": "失败排名第 {rank} 位",
+    "reached": "{reached} / {total}",
+    "repo_all": "所有仓库",
+    "repo_aria": "按仓库筛选",
+    "repo_search": "查找仓库",
+    "skipped": "{count} 个跳过了它",
+    "source": "已读取 {scanned} 份记录，已记住 {cached} 个会话",
+    "stat_landed": "完成了提交",
+    "stat_whole": "走完了整条路径",
+    "stat_worst": "失败最多",
+    "stat_worst_none": "没有失败",
+    "stumbled": "{count} 个在此遇到工具错误或中断",
+    "subtitle_all": "{count} 个会话，分布在 {repos} 个仓库中",
+    "subtitle_repo": "{repo} 中的 {count} 个会话",
+    "time_note": "时间指活跃时间：超过 10 分钟的任何间隔都按 10 分钟计算。",
+    "wait": "中位等待时间 {value}",
+    "wait_p75": "p75 {value}"
   }
 }

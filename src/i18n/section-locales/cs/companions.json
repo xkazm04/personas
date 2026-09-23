@@ -11,7 +11,8 @@
     "page_decisions": "Rozhodnutí",
     "page_overseer": "Dozorce",
     "page_council": "Rada",
-    "page_blueprint": "Blueprint"
+    "page_blueprint": "Blueprint",
+    "page_process": "Proces"
   },
   "state": {
     "active": "Aktivní",
@@ -325,5 +326,46 @@
       "off": "vypnuto",
       "unknown": "checkout, který tato brána nejmenuje"
     }
+  },
+  "process": {
+    "cohort_share": "Všechna úložiště {pct}",
+    "coverage": "Pokrytí",
+    "empty": "V tomto zobrazení nejsou žádné relace",
+    "error_title": "Relace se nepodařilo načíst",
+    "failures": "Selhání",
+    "left_here": "{count} skončilo zde s chybami nebo přerušením",
+    "mode_aria": "Režim relace",
+    "mode_headless": "Bez obsluhy",
+    "mode_interactive": "Interaktivní",
+    "mode_note": "Interaktivní a bezobslužné relace jsou odlišné procesy, proto se nikdy neslučují.",
+    "no_failures": "Zde nejsou žádná selhání",
+    "outcome_errored": "Bez commitu, s chybami",
+    "outcome_interrupted": "Přerušeno",
+    "outcome_landed": "Commitnuto",
+    "outcome_quiet": "Bez commitu, čisté",
+    "outcomes_title": "Jak relace skončily",
+    "path_note": "Cesta je to, co relace dělaly nejčastěji. Nikdo ji nedeklaroval.",
+    "phase_brief": "Zadání",
+    "phase_edit": "Úprava",
+    "phase_explore": "Průzkum",
+    "phase_ship": "Nasazení",
+    "phase_verify": "Ověření",
+    "rank": "Č. {rank} v selháních",
+    "reached": "{reached} z {total}",
+    "repo_all": "Všechna úložiště",
+    "repo_aria": "Filtrovat podle úložiště",
+    "repo_search": "Najít úložiště",
+    "skipped": "{count} to přeskočilo",
+    "source": "{scanned} přepisů přečteno, {cached} relací zapamatováno",
+    "stat_landed": "dokončilo commit",
+    "stat_whole": "prošlo celou cestou",
+    "stat_worst": "nejvíce selhání",
+    "stat_worst_none": "žádná selhání",
+    "stumbled": "{count} narazilo zde na chybu nástroje nebo přerušení",
+    "subtitle_all": "{count} relací napříč {repos} úložišti",
+    "subtitle_repo": "{count} relací v {repo}",
+    "time_note": "Čas je aktivní čas: jakákoli mezera delší než 10 minut se počítá jako 10 minut.",
+    "wait": "Medián čekání {value}",
+    "wait_p75": "p75 {value}"
   }
 }

@@ -11,7 +11,8 @@
     "page_decisions": "Keputusan",
     "page_overseer": "Pengawas",
     "page_council": "Dewan",
-    "page_blueprint": "Blueprint"
+    "page_blueprint": "Blueprint",
+    "page_process": "Proses"
   },
   "state": {
     "active": "Aktif",
@@ -325,5 +326,46 @@
       "off": "dinonaktifkan",
       "unknown": "checkout yang tidak disebut oleh pintu ini"
     }
+  },
+  "process": {
+    "cohort_share": "Semua repositori {pct}",
+    "coverage": "Cakupan",
+    "empty": "Tidak ada sesi dalam tampilan ini",
+    "error_title": "Sesi tidak dapat dibaca",
+    "failures": "Kegagalan",
+    "left_here": "{count} berakhir di sini dengan error atau terinterupsi",
+    "mode_aria": "Mode sesi",
+    "mode_headless": "Otomatis",
+    "mode_interactive": "Interaktif",
+    "mode_note": "Sesi interaktif dan otomatis adalah proses yang berbeda, jadi keduanya tidak pernah digabung.",
+    "no_failures": "Tidak ada kegagalan di sini",
+    "outcome_errored": "Tanpa commit, ada error",
+    "outcome_interrupted": "Terinterupsi",
+    "outcome_landed": "Sudah commit",
+    "outcome_quiet": "Tanpa commit, bersih",
+    "outcomes_title": "Bagaimana sesi berakhir",
+    "path_note": "Jalur ini adalah yang paling sering dilakukan sesi. Tidak ada yang mendeklarasikannya.",
+    "phase_brief": "Ringkasan",
+    "phase_edit": "Ubah",
+    "phase_explore": "Eksplorasi",
+    "phase_ship": "Rilis",
+    "phase_verify": "Verifikasi",
+    "rank": "Peringkat {rank} untuk kegagalan",
+    "reached": "{reached} dari {total}",
+    "repo_all": "Semua repositori",
+    "repo_aria": "Filter berdasarkan repositori",
+    "repo_search": "Cari repositori",
+    "skipped": "{count} melewatkannya",
+    "source": "{scanned} transkrip dibaca, {cached} sesi diingat",
+    "stat_landed": "berhasil commit",
+    "stat_whole": "menjalani seluruh jalur",
+    "stat_worst": "kegagalan terbanyak",
+    "stat_worst_none": "tidak ada kegagalan",
+    "stumbled": "{count} mengalami error alat atau interupsi di sini",
+    "subtitle_all": "{count} sesi di {repos} repositori",
+    "subtitle_repo": "{count} sesi di {repo}",
+    "time_note": "Waktu adalah waktu aktif: jeda lebih dari 10 menit dihitung sebagai 10 menit.",
+    "wait": "Median waktu tunggu {value}",
+    "wait_p75": "p75 {value}"
   }
 }

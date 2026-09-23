@@ -5087,7 +5087,8 @@
     "network_offline": "Sin conexión a internet",
     "not_found": "El recurso solicitado no fue encontrado",
     "rate_limited": "Demasiadas solicitudes -- intenta de nuevo en un momento",
-    "validation": "Entrada inválida: {detail}"
+    "validation": "Entrada inválida: {detail}",
+    "run_superseded": "Se inició una nueva ejecución de esta tarea en otra parte de la aplicación, por lo que esta se detuvo. Vuelve a iniciarla aquí si aún la necesitas."
   },
   "eval_strategies": {
     "composite_description": "Combinación ponderada de todas las estrategias",
@@ -24103,7 +24104,8 @@
       "page_decisions": "Decisiones",
       "page_overseer": "Supervisor",
       "page_council": "Consejo",
-      "page_blueprint": "Blueprint"
+      "page_blueprint": "Blueprint",
+      "page_process": "Proceso"
     },
     "state": {
       "active": "Activo",
@@ -24417,6 +24419,47 @@
         "off": "desactivado",
         "unknown": "un checkout que esta puerta no nombra"
       }
+    },
+    "process": {
+      "cohort_share": "Todos los repositorios {pct}",
+      "coverage": "Cobertura",
+      "empty": "No hay sesiones en esta vista",
+      "error_title": "No se pudieron leer las sesiones",
+      "failures": "Fallos",
+      "left_here": "{count} terminaron aquí con errores o interrupciones",
+      "mode_aria": "Modo de sesión",
+      "mode_headless": "Automatizada",
+      "mode_interactive": "Interactiva",
+      "mode_note": "Las sesiones interactivas y automatizadas son procesos distintos, por lo que nunca se agrupan.",
+      "no_failures": "Sin fallos aquí",
+      "outcome_errored": "Sin commit, con errores",
+      "outcome_interrupted": "Interrumpida",
+      "outcome_landed": "Con commit",
+      "outcome_quiet": "Sin commit, limpia",
+      "outcomes_title": "Cómo terminaron las sesiones",
+      "path_note": "La ruta es lo que las sesiones hicieron con más frecuencia. Nadie la declaró.",
+      "phase_brief": "Resumen",
+      "phase_edit": "Edición",
+      "phase_explore": "Exploración",
+      "phase_ship": "Publicación",
+      "phase_verify": "Verificación",
+      "rank": "N.° {rank} en fallos",
+      "reached": "{reached} de {total}",
+      "repo_all": "Todos los repositorios",
+      "repo_aria": "Filtrar por repositorio",
+      "repo_search": "Buscar un repositorio",
+      "skipped": "{count} lo omitieron",
+      "source": "{scanned} transcripciones leídas, {cached} sesiones recordadas",
+      "stat_landed": "hizo un commit",
+      "stat_whole": "recorrió toda la ruta",
+      "stat_worst": "más fallos",
+      "stat_worst_none": "sin fallos",
+      "stumbled": "{count} encontraron un error de herramienta o interrupción aquí",
+      "subtitle_all": "{count} sesiones en {repos} repositorios",
+      "subtitle_repo": "{count} sesiones en {repo}",
+      "time_note": "El tiempo es tiempo activo: cualquier pausa mayor de 10 minutos cuenta como 10 minutos.",
+      "wait": "Espera mediana {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }

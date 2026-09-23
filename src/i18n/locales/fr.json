@@ -5087,7 +5087,8 @@
     "network_offline": "Pas de connexion Internet",
     "not_found": "La ressource demandée est introuvable",
     "rate_limited": "Trop de requêtes -- réessayez dans un instant",
-    "validation": "Entrée invalide : {detail}"
+    "validation": "Entrée invalide : {detail}",
+    "run_superseded": "Une nouvelle exécution de cette tâche a été lancée ailleurs dans l'application, celle-ci a donc été arrêtée. Relancez-la ici si vous en avez encore besoin."
   },
   "eval_strategies": {
     "composite_description": "Combinaison pondérée de toutes les stratégies",
@@ -24103,7 +24104,8 @@
       "page_decisions": "Décisions",
       "page_overseer": "Superviseur",
       "page_council": "Conseil",
-      "page_blueprint": "Blueprint"
+      "page_blueprint": "Blueprint",
+      "page_process": "Processus"
     },
     "state": {
       "active": "Actif",
@@ -24417,6 +24419,47 @@
         "off": "désactivé",
         "unknown": "un checkout que cette porte ne nomme pas"
       }
+    },
+    "process": {
+      "cohort_share": "Tous les dépôts {pct}",
+      "coverage": "Couverture",
+      "empty": "Aucune session dans cette vue",
+      "error_title": "Impossible de lire les sessions",
+      "failures": "Échecs",
+      "left_here": "{count} se sont terminées ici avec des erreurs ou une interruption",
+      "mode_aria": "Mode de session",
+      "mode_headless": "Automatisée",
+      "mode_interactive": "Interactif",
+      "mode_note": "Les sessions interactives et automatisées sont des processus distincts, elles ne sont donc jamais regroupées.",
+      "no_failures": "Aucun échec ici",
+      "outcome_errored": "Aucun commit, avec erreurs",
+      "outcome_interrupted": "Interrompue",
+      "outcome_landed": "Commit effectué",
+      "outcome_quiet": "Aucun commit, propre",
+      "outcomes_title": "Comment les sessions se sont terminées",
+      "path_note": "Le chemin correspond à ce que les sessions ont fait le plus souvent. Personne ne l'a déclaré.",
+      "phase_brief": "Consigne",
+      "phase_edit": "Modification",
+      "phase_explore": "Exploration",
+      "phase_ship": "Livraison",
+      "phase_verify": "Vérification",
+      "rank": "N° {rank} pour les échecs",
+      "reached": "{reached} sur {total}",
+      "repo_all": "Tous les dépôts",
+      "repo_aria": "Filtrer par dépôt",
+      "repo_search": "Rechercher un dépôt",
+      "skipped": "{count} l'ont ignoré",
+      "source": "{scanned} transcriptions lues, {cached} sessions mémorisées",
+      "stat_landed": "a effectué un commit",
+      "stat_whole": "a parcouru tout le chemin",
+      "stat_worst": "le plus d'échecs",
+      "stat_worst_none": "aucun échec",
+      "stumbled": "{count} ont rencontré une erreur d'outil ou une interruption ici",
+      "subtitle_all": "{count} sessions dans {repos} dépôts",
+      "subtitle_repo": "{count} sessions dans {repo}",
+      "time_note": "Le temps est le temps actif : tout écart de plus de 10 minutes compte pour 10 minutes.",
+      "wait": "Attente médiane {value}",
+      "wait_p75": "p75 {value}"
     }
   }
 }

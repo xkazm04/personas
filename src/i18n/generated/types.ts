@@ -14238,6 +14238,7 @@ export type Translations = {
     internal: string;
     cloud_error: string;
     gitlab_error: string;
+    run_superseded: string;
   };
   error_registry: {
     decision_conflict_message: string;
@@ -24110,6 +24111,7 @@ export type Translations = {
       page_overseer: string;
       page_council: string;
       page_blueprint: string;
+      page_process: string;
     };
     state: {
       active: string;
@@ -24423,6 +24425,47 @@ export type Translations = {
         off: string;
         unknown: string;
       };
+    };
+    process: {
+      subtitle_all: string;
+      subtitle_repo: string;
+      mode_aria: string;
+      mode_interactive: string;
+      mode_headless: string;
+      repo_aria: string;
+      repo_all: string;
+      repo_search: string;
+      stat_landed: string;
+      stat_whole: string;
+      stat_worst: string;
+      stat_worst_none: string;
+      phase_brief: string;
+      phase_explore: string;
+      phase_edit: string;
+      phase_verify: string;
+      phase_ship: string;
+      coverage: string;
+      failures: string;
+      reached: string;
+      skipped: string;
+      cohort_share: string;
+      left_here: string;
+      stumbled: string;
+      no_failures: string;
+      wait: string;
+      wait_p75: string;
+      rank: string;
+      outcomes_title: string;
+      outcome_landed: string;
+      outcome_interrupted: string;
+      outcome_errored: string;
+      outcome_quiet: string;
+      path_note: string;
+      time_note: string;
+      mode_note: string;
+      source: string;
+      empty: string;
+      error_title: string;
     };
   };
 };

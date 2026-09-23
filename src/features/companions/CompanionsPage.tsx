@@ -28,6 +28,7 @@ const DirectorCoachingTab = lazyRetry(() => import('./overseer'));
 const OverseerSetupPage = lazyRetry(() => import('./overseer/setup/OverseerSetupPage'));
 const CouncilPage = lazyRetry(() => import('./curator/council/CouncilPage'));
 const BlueprintPage = lazyRetry(() => import('./curator/blueprint/BlueprintPage'));
+const ProcessPage = lazyRetry(() => import('./curator/process/ProcessPage'));
 const CuratorSetupPage = lazyRetry(() => import('./curator/setup/CuratorSetupPage'));
 
 /** The one wrapper every destination gets: boundary, then a delayed ghost. */
@@ -53,6 +54,8 @@ function renderPage(page: CompanionsPageId) {
       return <Route name="Council"><CouncilPage /></Route>;
     case 'curator:blueprint':
       return <Route name="Blueprint"><BlueprintPage /></Route>;
+    case 'curator:process':
+      return <Route name="Process"><ProcessPage /></Route>;
     case 'curator:setup':
       return <Route name="Curator Setup"><CuratorSetupPage /></Route>;
     default:

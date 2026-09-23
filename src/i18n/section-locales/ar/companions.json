@@ -11,7 +11,8 @@
     "page_decisions": "القرارات",
     "page_overseer": "المشرف",
     "page_council": "المجلس",
-    "page_blueprint": "Blueprint"
+    "page_blueprint": "Blueprint",
+    "page_process": "العملية"
   },
   "state": {
     "active": "نشط",
@@ -325,5 +326,46 @@
       "off": "مُعطَّل",
       "unknown": "ليست نسخة عمل يذكرها هذا الباب"
     }
+  },
+  "process": {
+    "cohort_share": "جميع المستودعات {pct}",
+    "coverage": "التغطية",
+    "empty": "لا توجد جلسات في هذا العرض",
+    "error_title": "تعذرت قراءة الجلسات",
+    "failures": "الإخفاقات",
+    "left_here": "انتهت {count} هنا بأخطاء أو انقطاع",
+    "mode_aria": "وضع الجلسة",
+    "mode_headless": "تلقائي",
+    "mode_interactive": "تفاعلي",
+    "mode_note": "الجلسات التفاعلية والتلقائية عمليات مختلفة، لذلك لا تُجمع أبدًا معًا.",
+    "no_failures": "لا توجد إخفاقات هنا",
+    "outcome_errored": "لا يوجد commit، حدثت أخطاء",
+    "outcome_interrupted": "منقطعة",
+    "outcome_landed": "تم الـ commit",
+    "outcome_quiet": "لا يوجد commit، نظيفة",
+    "outcomes_title": "كيف انتهت الجلسات",
+    "path_note": "المسار هو ما فعلته الجلسات غالبًا. لم يحدده أحد.",
+    "phase_brief": "الموجز",
+    "phase_edit": "التحرير",
+    "phase_explore": "الاستكشاف",
+    "phase_ship": "الإطلاق",
+    "phase_verify": "التحقق",
+    "rank": "المرتبة {rank} في الإخفاقات",
+    "reached": "{reached} من {total}",
+    "repo_all": "جميع المستودعات",
+    "repo_aria": "تصفية حسب المستودع",
+    "repo_search": "البحث عن مستودع",
+    "skipped": "تخطتها {count}",
+    "source": "تمت قراءة {scanned} نسخة، وتذكّر {cached} جلسة",
+    "stat_landed": "أتم commit",
+    "stat_whole": "سار على المسار كاملاً",
+    "stat_worst": "أكثر الإخفاقات",
+    "stat_worst_none": "لا إخفاقات",
+    "stumbled": "واجهت {count} خطأ أداة أو انقطاعًا هنا",
+    "subtitle_all": "{count} جلسة عبر {repos} مستودع",
+    "subtitle_repo": "{count} جلسة في {repo}",
+    "time_note": "الوقت هو الوقت النشط: أي فجوة أطول من 10 دقائق تُحتسب كـ 10 دقائق.",
+    "wait": "متوسط الانتظار {value}",
+    "wait_p75": "p75 {value}"
   }
 }

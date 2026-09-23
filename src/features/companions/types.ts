@@ -32,6 +32,7 @@ export const COMPANIONS_PAGES = [
   "overseer:setup",
   "curator:council",
   "curator:blueprint",
+  "curator:process",
   "curator:setup",
 ] as const;
 export type CompanionsPage = (typeof COMPANIONS_PAGES)[number];

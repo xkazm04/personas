@@ -11,7 +11,8 @@
     "page_decisions": "निर्णय",
     "page_overseer": "पर्यवेक्षक",
     "page_council": "परिषद",
-    "page_blueprint": "Blueprint"
+    "page_blueprint": "Blueprint",
+    "page_process": "प्रक्रिया"
   },
   "state": {
     "active": "सक्रिय",
@@ -325,5 +326,46 @@
       "off": "निष्क्रिय",
       "unknown": "ऐसा checkout जिसका नाम यह द्वार नहीं लेता"
     }
+  },
+  "process": {
+    "cohort_share": "सभी रिपॉज़िटरी {pct}",
+    "coverage": "कवरेज",
+    "empty": "इस दृश्य में कोई सेशन नहीं",
+    "error_title": "सेशन नहीं पढ़े जा सके",
+    "failures": "विफलताएं",
+    "left_here": "{count} यहां त्रुटियों या रुकावट के साथ समाप्त हुए",
+    "mode_aria": "सेशन मोड",
+    "mode_headless": "स्वचालित",
+    "mode_interactive": "इंटरैक्टिव",
+    "mode_note": "इंटरैक्टिव और स्वचालित सेशन अलग-अलग प्रक्रियाएं हैं, इसलिए इन्हें कभी एक साथ नहीं गिना जाता।",
+    "no_failures": "यहां कोई विफलता नहीं",
+    "outcome_errored": "कमिट नहीं, त्रुटियां हुईं",
+    "outcome_interrupted": "बाधित",
+    "outcome_landed": "कमिट हुआ",
+    "outcome_quiet": "कमिट नहीं, साफ़",
+    "outcomes_title": "सेशन कैसे समाप्त हुए",
+    "path_note": "पथ वह है जो सेशन ने सबसे अधिक बार किया। इसे किसी ने घोषित नहीं किया।",
+    "phase_brief": "संक्षेप",
+    "phase_edit": "संपादन",
+    "phase_explore": "अन्वेषण",
+    "phase_ship": "शिप",
+    "phase_verify": "सत्यापन",
+    "rank": "विफलताओं में क्रम {rank}",
+    "reached": "{total} में से {reached}",
+    "repo_all": "सभी रिपॉज़िटरी",
+    "repo_aria": "रिपॉज़िटरी के अनुसार फ़िल्टर करें",
+    "repo_search": "रिपॉज़िटरी खोजें",
+    "skipped": "{count} ने इसे छोड़ दिया",
+    "source": "{scanned} ट्रांसक्रिप्ट पढ़े गए, {cached} सेशन याद रखे गए",
+    "stat_landed": "कमिट किया",
+    "stat_whole": "पूरा पथ तय किया",
+    "stat_worst": "सबसे अधिक विफलताएं",
+    "stat_worst_none": "कोई विफलता नहीं",
+    "stumbled": "{count} को यहां टूल त्रुटि या रुकावट का सामना करना पड़ा",
+    "subtitle_all": "{repos} रिपॉज़िटरी में {count} सेशन",
+    "subtitle_repo": "{repo} में {count} सेशन",
+    "time_note": "समय सक्रिय समय है: 10 मिनट से अधिक का कोई भी अंतराल 10 मिनट के रूप में गिना जाता है।",
+    "wait": "औसत प्रतीक्षा {value}",
+    "wait_p75": "p75 {value}"
   }
 }

@@ -35,6 +35,7 @@
 //! convenience for the consult lane, and it carries no stat.
 
 pub mod instrument;
+pub mod process;
 pub mod projection;
 
 use std::sync::Arc;
@@ -220,6 +221,24 @@ pub async fn curator_project_set_consent(
         repo::set_consent(&db, &slug, consent, &now)
     })
     .await
+}
+
+// ---------------------------------------------------------------------------
+// The process
+// ---------------------------------------------------------------------------
+
+/// The fleet's development sessions as structure-only process instances.
+///
+/// A read of the registry's extraction; the page derives the path and every
+/// per-station figure. Cached for a minute (see `process::read`).
+#[tauri::command]
+pub async fn curator_process_read(
+    state: State<'_, Arc<AppState>>,
+) -> Result<process::CuratorProcess, AppError> {
+    require_auth(&state).await?;
+    let root = registry_root(state.inner())?;
+    let reading = process::read(&root).await?;
+    Ok((*reading).clone())
 }
 
 // ---------------------------------------------------------------------------
