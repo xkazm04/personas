@@ -239,14 +239,15 @@ pub fn completion_summary(
 /// a pushed branch, so without one nothing could come back. The ONE check,
 /// shared by the "Run on" command and Athena's `remote_fleet_dispatch`.
 pub fn require_git_remote(payload: &FleetSessionJobPayload) -> Result<(), AppError> {
-    if payload.github_url.trim().is_empty() {
-        return Err(AppError::Validation(format!(
+    // The shared rule decides; only the sentence is ours, because "githubUrl
+    // cannot be empty" would not tell the operator why a remote is needed.
+    personas_core::validation::require_non_empty("githubUrl", &payload.github_url).map_err(|_| {
+        AppError::Validation(format!(
             "\"{}\" needs a git remote to run on another device: the work comes back as a \
              pushed branch. Set the project's GitHub URL first.",
             payload.project_name
-        )));
-    }
-    Ok(())
+        ))
+    })
 }
 
 /// The first seven characters of a SHA, for prose.

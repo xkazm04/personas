@@ -4,6 +4,7 @@
  * Lifecycle of a remote job, from either side's point of view.
  *
  * Machine tokens, not display strings — the frontend maps them through the
- * i18n `status_tokens` table. Only `Pending` and `Running` are non-terminal.
+ * i18n `status_tokens` table. Only `Queued`, `Pending` and `Running` are
+ * non-terminal.
  */
 export type RemoteJobStatus = "queued" | "pending" | "running" | "completed" | "failed" | "refused" | "cancelled";

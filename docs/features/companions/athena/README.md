@@ -92,6 +92,37 @@ pending decision inside chat under exactly the complementary condition — so a
 pending decision of ANY source (approval, incident, human review, message
 attention, ad-hoc) is always on one surface or the other, never neither.
 
+### Sending a fleet session to another device (`remote_fleet_dispatch`)
+
+Beside `remote_instruct` (ask the assistant on another device to do
+something), Athena has `remote_fleet_dispatch`: send a real Claude Code session
+to one of the operator's other paired devices.
+
+- **Parameters.** `device` (a name from her Paired devices block, a device id,
+  or `home`; omitted means home), `project` (a registered project's id or exact
+  name on THIS machine), `prompt` (the whole task), `mode` (`headless`, the
+  default, or `interactive`, which opens a live terminal tile).
+- **Same consent rule as `remote_instruct`.** With autonomous mode off it
+  reaches only the home device, behind an approval card; any other device is
+  refused with the reason. With autonomous mode on it fires to any paired
+  device. Both device ops are routed into that one rule by the autopilot before
+  its generic path (`DEVICE_GATED_ACTIONS`), and the executor checks it again,
+  so a card approved after the mode changed is still bound by it.
+- **One dispatch path.** The op resolves the project here (it must have a git
+  remote, or it refuses) and calls the same dispatch the **Run on** picker
+  uses, which mints the branch `remote/<this device>/<key>`.
+- **What she says.** "Sent the personas session to "Desk"" when the device
+  answered; "queued until Desk wakes" when it is offline (the job waits in the
+  outbox, it is not an error); the other device's reason when it declined, for
+  example `project_not_found` (the project is not on that machine).
+- **What she remembers.** When the session finishes, the harvest checks the
+  pushed commit on this machine and writes one memory: the device, the project,
+  the branch, the short SHA, and whether it was verified, not found after a
+  fetch, or could not be checked here.
+- **Constitution v68** teaches the op, when to use it instead of
+  `remote_instruct`, and corrects the reachability rule: an unreachable device
+  is no longer a dead end, so "sent" is never the word for a queued send.
+
 ## Footer avatar & hold-to-talk
 
 The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`), not a generic glyph — her idle/thinking/speaking video reflects what she's doing at a glance. The button has two gestures:
