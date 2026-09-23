@@ -6,139 +6,113 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:727 - state is mutated by ~12 sibling methods (set_state_direct, mark_alive, revive_to_running_on_activity, mark_exited, escalate_to_awaiting, park_recovered, mark_finished, finish_unanswered) plus direct writes in stale.rs:640/664/700, each re-implementing its own legality guard; there is no single (state, observation) transition door, so a new observation kind can be mapped inconsistently in one lane, and the entry carries no write-scope claim to release on exit. The closed vocabulary itself IS single-sourced (types.rs:25-97)."
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:630 apply_transition is the one state door, validated against transition_is_legal (:600); closed vocabulary types.rs:25 (old inline writes fixed in e7af845854)"
         },
         {
           "technique": "lifecycle-signals",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/stale.rs:414 - tick_once performs the staleness check but never asks the OS whether the recorded child_pid is alive and never runs an orphan scan; orphan detection is a frontend 60s poll gated on page mount and window visibility (src/features/plugins/fleet/useFleetOrphanScan.ts:22,38) that only badges a count, so a claude process that outlives the app is unaccounted until a human opens the Fleet page. The rest of tier one/tier two is exemplary: three provenance-separated recency stamps (registry.rs:264-270), a per-workload staleness multiplier with its reason written down (stale.rs:91), and baseline-at-first-sweep revival of spurious awaits (stale.rs:577-600)."
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:471 tick_once never probes recorded PIDs and runs no orphan scan; the only scan is a UI hook mounted by FleetPage.tsx:45"
         },
         {
           "technique": "durable-fleet-state",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/persist.rs:150 - every restored row becomes a dozing tombstone with child_pid=None regardless of whether its process survived, so reconciliation never reaches 'alive -> adopt' or 'ambiguous -> quarantine'; and src-tauri/src/commands/fleet/run.rs:191 builds the run harvest from FleetSessionRow, making the crash-recovery mirror a user-facing query surface whose writes are best-effort and warn-only (persist.rs:82-86). The piggyback write path (persist.rs:15-19,103) and the identity-not-handles projection (persist.rs:122) are exactly right."
+          "evidence": "src-tauri/src/commands/fleet/persist.rs:290 an unreadable mirror restores 0 like an empty one; restored rows get child_pid None (:218) so recovery never adopts or quarantines; writes best-effort (:86)"
         },
         {
           "technique": "hibernation-and-resume",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:1058 - hibernate() kills the child immediately with no quiesce or bounded grace, and the manual path passes require_resting=false (commands.rs:175), so an operator sleeping a Running session loses the in-flight turn and the entry records no interrupt marker for the resume to see. Everything else is conformant and unusually complete: two park depths (doze at registry.rs:1095), policy re-validation inside the lock (registry.rs:1046-1056), restart recovery reusing the doze path (persist.rs:23-26), edge-checked wake (resume_target registry.rs:1328) and lineage adoption (registry.rs:1305)."
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:1736 commits Hibernated before the kill at :1746 is confirmed; wake mints a new id (commands.rs:367), so identity does not survive the park"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:28 - no session declares a write set and no admission check proves disjointness; the DTO comment at types.rs:152-155 actively encourages 'multiple parallel sessions on the same project', so two claude sessions in one repo is a supported configuration with collision detection nowhere. The cap is also enforced by eviction rather than queueing (commands.rs:41 free_slot_for_spawn, stale.rs:1520) and there is no per-member deadline or straggler reaper at mint. The slot cap itself (stale.rs:154) and the run roster (run.rs:59) do exist."
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:126 no write set; admit_sync reads live_count (:806) and spawns (:828) with no held reservation, so concurrent admissions can both pass the cap (door, durable queue a9dd2c633, budgets realized)"
         },
         {
           "technique": "result-harvest",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/run.rs:206 - roster accounting has three buckets and '_ => active_count' swallows stale, lost, awaiting-input and running into one class; a session that reported finished but whose declared summary is unreadable still counts as finished_count (run.rs:207 vs 226), so 'succeeded, result missing' cannot be seen, and there is no straggler deadline, so a run can never be declared closed. The result contract is otherwise exact: summary_from_reason (run.rs:169-183) reports only what a session declared and never a paraphrase, and finish_unanswered (registry.rs:1265) deliberately refuses the completion prefix for a session that only ever asked a question."
+          "evidence": "src-tauri/src/commands/fleet/run.rs:253 '_ => active_count' merges stale, queued, awaiting and running, and finish_unanswered rows count as finished"
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:1988 mark_finished parks Finished on the model's FLEET:DONE text with no check against the artifact"
         },
         {
           "technique": "worker-trajectory-anatomy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/registry.rs:1234 - mark_finished accepts a FLEET:DONE declaration at face value and parks the session in Finished with the model's own summary; nothing checks the claim against the artifact even though the transcript rollup already knows files_touched (run.rs:228), so a fabricated completion enters the run report as a delivered result. No per-member step budget is set at dispatch either."
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:126 no recovery or step budget or deadline set at mint"
         },
         {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/fleet/commands.rs:31 - this module transports the task as an opaque args vector and never authors it; brief composition lives in the dispatcher (companion/approvals/approval_exec_fleet.rs) and in engine/build_session/fanout.rs, so the technique's decision rules have no subject here."
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/persist.rs:197 an unparseable persisted state token becomes Stale, a state no producer reported"
         },
         {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "The fleet is task-parallel - N sessions, N tasks, one claude binary; no seat ever answers the same question as another, so the precondition (one question across independently trained members) does not hold."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "Sessions are local PTY children of the orchestrator process (registry.rs:290-311 holds master/writer inline); there is no executor plane separated from the control plane, so the dial-out topology question does not arise in these paths."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "The substrate is in-process PTY children reaped by their own task; there is no container, volume or worktree daemon holding an inventory that can drift from the registry. The related orphan-process gap is recorded once, under lifecycle-signals."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No post-mortem lane classifies failed multi-session runs. The repo's stale_kind taxonomy (types.rs:210-218) answers a different question - why is this session parked - not which of specification/misalignment/verification owned a run failure."
+          "technique": "evidence-outranks-a-liveness-claim",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/stale.rs:1896 auto-hibernate kills Stale sessions, and Stale is reached by budget expiry alone (:328), so a quiet but working session can lose its process"
         }
-      ],
-      "registryProposal": "durable-fleet-state's 'the mirror is not a query surface' rule is stated absolutely, but this repo has a legitimate second reader: a harvest that must survive an orchestrator restart can only account a roster from the durable copy, because the in-memory registry forgot the sessions that ended before the crash. Worth a paragraph on the one sanctioned second reader (post-hoc run accounting) and the freshness contract it then owes, rather than leaving implementers to violate the rule silently."
+      ]
     },
     "cd8712a3-9546-4c21-895b-9e64a4b161b1/fleet-orchestration": {
       "context": "engine-build-session",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
-          "technique": "brief-carries-the-session",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fanout.rs:100 - 'do NOT ask clarifying questions; pick sensible defaults' inverts the technique's closing rule; a constraint the dispatcher settled with the user but omitted from the brief becomes a guess nobody can see. Mitigated only for the highest-risk field (fanout.rs:88-93 tells the worker to leave connectors unresolved rather than guess a destination). Everything else is a model realization: invariants restated in full every time (SCOPE RULES, fanout.rs:78-93), the user's authoritative answers carried as settled decisions (fanout.rs:76), siblings listed so the worker knows what is NOT its job (fanout.rs:74-75), and self-sufficiency stated as a design property (fanout.rs:58-59)."
+          "technique": "session-registry",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/mod.rs:99 one generation-stamped handle per session; HandleDropGuard (:80) releases on any exit"
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:81 silence-based kill calibrated to the slowest healthy turn, derivation written beside it"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/build_session/orchestrator.rs:57 - one semaphore-bounded door, panics isolated per lane, outcomes returned in input order tagged with a lane id; write sets fall out disjoint by construction because each capability resolves in its own fresh temp dir with no --continue (fanout.rs:5-6), and every member names its reaper at mint (FANOUT_LANE_TIMEOUT, fanout.rs:135). Live use is in tool_tests.rs:1006."
+          "evidence": "src-tauri/src/engine/build_session/orchestrator.rs:83 semaphore-bounded door; fresh temp dir per lane (fanout.rs:158); per-member deadline (fanout.rs:142)"
         },
         {
           "technique": "result-harvest",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/build_session/orchestrator.rs:29 - LaneOutcome is (lane, Result), so the accounting sums to the roster by construction: every dispatched lane yields exactly one outcome and a lane that panicked is reported as an error, never dropped. CapabilityResolution carries a per-member error field (fanout.rs:47-52)."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1354 a failed capability lane is only logged and assembly proceeds, so an N-of-M persona saves with no partial accounting"
         },
         {
-          "technique": "session-registry",
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 'pick sensible defaults' turns a missing constraint into a silent guess; no what-you-cannot-see line"
+        },
+        {
+          "technique": "inherited-state-provenance",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/build_session/mod.rs:98 - BuildSessionManager keys one handle per session_id with a monotonic generation, HandleDropGuard releases the entry on any exit path including panic (mod.rs:80-95), the phase vocabulary is the single-sourced BuildPhase, and mode is validated at the one start door (mod.rs:159-170) so callers cannot smuggle a state the machine does not define."
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:146 the fix worker is told the IR's provenance, attempt number and mandate"
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:408 fail-closed three-valued promote gate over the Rust-built tool-test report"
         },
         {
           "technique": "worker-trajectory-anatomy",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:49 - MAX_TEST_RETRIES is a recovery budget set at dispatch that kills the loop (oneshot.rs:183); and the completion claim is verified against the artifact rather than believed: evaluate_promote_gate (oneshot.rs:400-407) cross-checks the model's declared counts against the results array and refuses to read cli_native:true as evidence a call was made."
+          "evidence": "src-tauri/src/engine/build_session/oneshot.rs:57 MAX_TEST_RETRIES recovery budget set at dispatch, enforced at :183"
         },
         {
-          "technique": "lifecycle-signals",
-          "verdict": "unknown",
-          "evidence": "The build-session staleness lane (BuildWatcher, engine/background) is outside the listed paths; fix_pass.rs:38-42 shows a per-invocation timeout exists, but whether a periodic sweeper reconciles wedged Resolving sessions was not verified."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "unknown",
-          "evidence": "mod.rs:4-5 names checkpoint-based SQLite persistence, but nothing in the listed paths shows a startup reconciliation pass over build_sessions rows, and I did not read the repo layer."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "A build session has no park state - it runs to a terminal BuildPhase or fails; there is no 'exists but holds no process' rung in its lifecycle."
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "fanout.rs:104-111 assigns a per-capability model_override, but that is cost routing across tiers of one family, not N members answering one question; no seat's answer is compared against another's."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "Sub-agents are local CLI child processes spawned by the same process that holds the registry; there is no separated executor plane."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "The only substrate is a per-lane temp dir owned and dropped by the lane itself; no external daemon holds resources whose inventory could drift."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "The promote-gate decision table (tool_tests.rs:35-62) classifies test outcomes, not run failures by owner class; no lane sorts failed multi-agent runs into specification/misalignment/verification before proposing a fix."
+          "technique": "soft-budget-under-the-hard-cap",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/runner.rs:519 MAX_TURNS hard cap with no derived soft budget, and a cap-fired run finalizes as DraftReady (:1977)"
         }
       ]
     },
@@ -147,139 +121,78 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
-          "technique": "heterogeneous-model-panels",
+          "technique": "soft-budget-under-the-hard-cap",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:52 - advance / run-to-budget / split / merge drive a multi-round persona debate whose seats are personas, not independently trained models (TeamDeliberation carries a rosterIds list and no per-seat model), and it is the default path for routine team work with no voting-baseline comparison on record; the product is the transcript plus a proposal, never a concordance structure. Two rules ARE realized well: the run is bounded by cost rather than turns (costBudgetUsd, rail line 56) and by consecutiveStallRounds rather than a fixed round cap, which is a better answer to 'rounds continued after an unchanged-positions round'."
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:80 '?? 5' literal beside an enforced engine cap; the agenda stop conditions (:194) are sound"
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:173 role-prompted persona seats are division of labour under the revised technique, not a panel"
         },
         {
           "technique": "session-registry",
-          "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/types.ts:21 - PresenceMap introduces a two-value persona state ('working'|'waiting') alongside the store's closed ActiveProcessStatus and the monitor's own ExecState, so a persona that is failed, queued or input_required has no presence value and reads on the live map as merely waiting."
-        },
-        {
-          "technique": "result-harvest",
-          "verdict": "not-applicable",
-          "evidence": "A deliberation resolves into a proposal, not a dispatch roster; there is no set of members whose terminal accounts must sum, so the roster arithmetic has no referent here."
-        },
-        {
-          "technique": "lifecycle-signals",
-          "verdict": "not-applicable",
-          "evidence": "These surfaces consume a channel subscription; they neither emit lifecycle signals nor own a sweeper, so the two-tier mechanism has no implementation site in this context."
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "not-applicable",
-          "evidence": "The rail's split/runAllTracks buttons request a backend fan-out; capacity, assignment and roster accounting are all decided in engine/deliberation.rs, outside these paths."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "Read-only view over the pipeline store's channel cache; it holds no registry to mirror."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "No park/wake concept: a deliberation is paused or escalated as a status on the backend row, not by freeing a process under a preserved identity."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "The composer emits a directive into a channel a persona already subscribes to; no fresh worker session is minted here whose inherited context could be enumerated."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "The rail shows a deliberation's round and spend, never a member's step trajectory; there is no per-worker recovery budget or completion claim to verify at this layer."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "An escalated deliberation is handed to a human with a free-text decision (rail lines 113-135); nothing classifies it into the three-class taxonomy before a fix is chosen."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane in these paths."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate resources are owned or reconciled here."
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/grid/fleetGridModel.ts:31 grid squares derive from the shared pillarStateKey authority; presence is derived from step records (channels/types.ts:21)"
         }
-      ],
-      "registryProposal": "heterogeneous-model-panels splits the world into cross-family panels and same-weights sampling runs, and this repo sits in a third place the technique does not name: seats that are one provider's tiers (haiku/sonnet/opus) driven by materially different role prompts. That is not cross-family concordance, but it is also not variants of the same weights sampled N times. A sentence on where role-diverse, same-provider panels fall - and what, if anything, their agreement is evidence of - would stop implementers reading themselves into the conformant column."
+      ]
     },
     "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/fleet-orchestration": {
       "context": "fleet-monitor-shell",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "state": "conformant",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
-          "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/monitorModel.ts:130 - processStatusMeta takes `status: string` and falls back to PROCESS_STATUS_META.running, while the authority (src/stores/slices/processActivitySlice.ts:4-6) keeps a closed ActiveProcessStatus union with exhaustive `never` checks elsewhere (line 434); processStatusLabel's default (monitorModel.ts:145) likewise echoes the raw token. This is the mapping layer the technique names as where new states get silently dropped, and the chosen default is the worst available one: an unrecognized state impersonates a working process."
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:120 Record<ActiveProcessStatus,...> forces a new status to be handled at compile time"
+        },
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:149 unrecognised token gets UNKNOWN meta, its label passes through raw"
         },
         {
           "technique": "lifecycle-signals",
           "verdict": "not-applicable",
-          "evidence": "useMonitorData.ts:14 polls its feeds; it neither receives lifecycle signals nor owns the staleness sweep (the reap-running-past-cutoff pass lives in processActivitySlice.ts:399), so the two-tier mechanism has no site here."
-        },
-        {
-          "technique": "result-harvest",
-          "verdict": "not-applicable",
-          "evidence": "The monitor aggregates standing per-persona counts, not a dispatch roster; there is no run whose members must each reach a terminal account."
+          "evidence": "src/features/fleet/monitor/useMonitorData.ts:738 polls reviews and messages; process activity arrives via the store's event bridge outside this context"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "not-applicable",
-          "evidence": "MonitorCapabilities.tsx:33 fires a single execute_persona per click with a local re-fire lock; no capacity, assignment or roster decision is made in this context."
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 one execute per click behind a re-fire lock"
         },
         {
           "technique": "durable-fleet-state",
           "verdict": "not-applicable",
-          "evidence": "Read-only dashboard; it holds no registry and mirrors nothing."
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:15 read-only view over processActivitySlice"
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:15 standing per-persona state, no dispatch roster"
         },
         {
           "technique": "hibernation-and-resume",
           "verdict": "not-applicable",
-          "evidence": "No park/wake concept exists for personas in this surface."
+          "evidence": "src/features/fleet/monitor/monitorModel.ts:120 the process vocabulary has no park state"
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "not-applicable",
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 fires an execution; verification is the engine's"
         },
         {
           "technique": "brief-carries-the-session",
           "verdict": "not-applicable",
-          "evidence": "No worker session is dispatched with an authored brief here."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "The drawer shows a reasoning trace for a process but sets no recovery budget and verifies no completion claim; both are execution-engine concerns."
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "No panel is convened in this context."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane in these paths."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate resources are owned or reconciled here."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No run-failure classification lane exists in this surface."
+          "evidence": "src/features/fleet/monitor/MonitorCapabilities.tsx:80 forwards the operator's payload; no brief authored"
         }
       ]
     },
@@ -288,68 +201,28 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:69 - GROUP_ORDER is typed `id: FleetSessionState` but is not exhaustive: `finished` is missing, and `groups` filters GROUP_ORDER (line ~381), so Finished sessions never render a row. The shared authority beside it is complete (src/features/plugins/fleet/fleetStateMeta.ts:33-42 lists all eight), so FleetSummaryPills renders a teal 'Finished - N' pill whose filter resolves to an empty list. Everything else in this context derives correctly from the binding, including the tiles-never-move ordering that keeps a woken session in its slot (fleetSessionScope.ts:22)."
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:328 - every spawn from this page uses activeProject.root_path as its cwd, so the Spawn / Spawn-with-task / Broadcast controls fan work into one shared write scope by construction, with no per-session scope declaration and no collision surface anywhere in the UI."
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:92 compile-time exhaustiveness over FleetSessionState incl. queued and finished (fixed 84915c0b6)"
         },
         {
           "technique": "lifecycle-signals",
-          "verdict": "conformant",
-          "evidence": "src/features/plugins/fleet/useFleetOrphanScan.ts:22 - a periodic orphan scan over the OS process table, deliberately budgeted across visibility changes (lines 34-56), feeding a count the operator resolves through fleet_resume_orphan (adopt) or fleet_kill_pid (terminate); live state changes arrive as events rather than polls (FleetGridPage.tsx:189)."
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:216 the eviction has no typed signal kind and is inferred from prose"
         },
         {
           "technique": "hibernation-and-resume",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:196 - a policy park is announced to the operator rather than silently rearranging the fleet ('the tile just vanished... 2026-07-16 UAT F-MAJOR-14'), and hibernated/exited sessions stay as in-place tombstones the operator dismisses explicitly (fleetSessionScope.ts:5-13)."
+          "evidence": "src/features/plugins/fleet/fleetSessionScope.ts:7 hibernated and exited sessions stay as in-place tombstones; wake keeps the slot"
         },
         {
-          "technique": "result-harvest",
-          "verdict": "unknown",
-          "evidence": "FleetGridPage.tsx:48 mounts a FleetHarvestPanel, but src/features/plugins/fleet/sub_harvest/ is outside the listed paths and I did not read it; the harvest accounting defects are recorded against src-tauri/src/commands/fleet/run.rs."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "The spawn-with-task modal collects free prose from a human at the keyboard; the technique's decision rules bind a dispatching agent composing a brief for a worker it cannot see, which in this repo is approval_exec_fleet.rs, outside this context."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "The view reads snapshots and events; the mirror and its reconciliation live entirely in src-tauri/src/commands/fleet/persist.rs."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "FleetStateSparkline surfaces a session's state history, but the recovery budget and the completion-claim check are registry-side obligations recorded against commands-fleet; nothing in this view can set or enforce either."
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "Broadcast sends one task to many sessions of one runtime; no seat answers the same question as another."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane; sessions are local children."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No container/volume/worktree substrate is reconciled from this surface."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No failed-run classification lane in this view."
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetGridPage.tsx:342 every spawn uses the project root with no scope declaration or collision surface"
         }
       ]
     },
@@ -358,213 +231,70 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_design/DesignTab.tsx:18 keeps a conversation LIST for resume, but there is no concurrent roster and no capacity or ownership question to answer; the closed-vocabulary discipline the technique also carries IS honoured here (PhaseIndicator.tsx:11-21 maps every DesignPhase exhaustively via `satisfies Record<DesignPhase, StageKey>`), which is why the matcher resonated."
-        },
-        {
-          "technique": "lifecycle-signals",
-          "verdict": "not-applicable",
-          "evidence": "One attached conversation reports its own phase to a mounted component; there is no population of unwatched sessions whose silence must be converted into information."
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS are static panels; there is no session entity"
         },
         {
           "technique": "parallel-dispatch",
           "verdict": "not-applicable",
-          "evidence": "Analysis is started for the selected persona only (handleStartAnalysis, DesignTab.tsx:17); there is no fan-out, no cap and no roster."
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106 one IPC tool invocation, not a session spawn"
         },
         {
           "technique": "result-harvest",
           "verdict": "not-applicable",
-          "evidence": "One result is previewed and applied (handleApply, DesignTab.tsx:17); there is no roster whose members must each reach a terminal account."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "No registry exists to mirror; conversation persistence is per-persona draft state, not fleet state surviving an orchestrator restart."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "handleResumeConversation reopens a stored transcript in a fresh analysis; no process is parked under a preserved identity."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "The instruction is typed by the human in the tab, not composed by a dispatcher for a worker it cannot see."
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "No panel is convened."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate inventory."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No multi-agent run failures to classify."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "No dispatched worker whose trajectory is supervised; the human watches the phase indicator directly."
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:106 returns one result to one card; no roster"
         }
-      ],
-      "registryProposal": "Coverage question, technique-shaped resonance: the matcher paired this context on the vocabulary 'session / phase / awaiting-input / resume', all of which appear, while the subject's stated precondition (a fleet) fails outright. The context is a staged single-conversation design wizard, better governed by wizard-flows plus the single-session lifecycle sibling; routing by precondition rather than vocabulary would have skipped it."
+      ]
     },
     "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/fleet-orchestration": {
       "context": "home-cockpit-widgets",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "not-applicable",
-          "evidence": "The widgets render a config blob passed as CockpitWidgetProps; they hold no entity whose lifecycle state must be single-sourced."
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:23 render-only card"
         },
         {
           "technique": "result-harvest",
           "verdict": "not-applicable",
-          "evidence": "DecisionsPanelWidget.tsx:28 lists unified-inbox items - a standing decision surface, which is what the golden path's operator-medium section prescribes, but not a roster accounting over a dispatch."
-        },
-        {
-          "technique": "lifecycle-signals",
-          "verdict": "not-applicable",
-          "evidence": "No session emits signals to these cards and no sweeper runs from them."
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "not-applicable",
-          "evidence": "BrowserTestReportWidget.tsx:5 fires one report request per click; there is no capacity, assignment or accounting decision."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "No registry to mirror."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "No parked sessions."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "No worker is dispatched from these cards."
+          "evidence": "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx:17 lists inbox items; the decision surface is hitl-approval's ground"
         },
         {
           "technique": "heterogeneous-model-panels",
           "verdict": "not-applicable",
-          "evidence": "ModelTierChoiceWidget presents a tier recommendation for one persona's own runs; it convenes nothing."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "No worker trajectory is observed."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No run failures classified here."
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:23 recommends a tier and convenes nothing"
         }
-      ],
-      "registryProposal": "Coverage question: these widgets are a decision/observability surface, not fleet machinery. ObservabilityPlanWidget.tsx:20-25 encodes a real standard ('failures go to a queue a human can review, not a silent log; at least one success metric tracked') and DecisionsPanelWidget is a review-queue projection - so hitl-approval (review-queues) and an observability-plan subject govern this context, not fleet-orchestration."
+      ]
     },
     "b39776f5-3909-41e3-b69f-14c9a6c70bec/fleet-orchestration": {
       "context": "home-learning",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-1",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
-          "technique": "session-registry",
+          "technique": "parallel-dispatch",
           "verdict": "not-applicable",
-          "evidence": "The only enumerated states here are a fetch's freshness grades (useLiveRoadmap.ts:5-15: loading/fresh/cached/stale/unavailable) - cache provenance, not session lifecycle."
+          "evidence": "src/features/home/sub_learning/powerMoves/launchPowerMove.ts:34 deep-links to a surface and spawns nothing"
         },
         {
           "technique": "lifecycle-signals",
           "verdict": "not-applicable",
-          "evidence": "No session reports anything; the roadmap fetches once on mount."
-        },
-        {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "The disk cache backs content delivery, not a registry surviving an orchestrator restart."
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "not-applicable",
-          "evidence": "Nothing is dispatched."
-        },
-        {
-          "technique": "result-harvest",
-          "verdict": "not-applicable",
-          "evidence": "No roster to account."
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "No processes to park."
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "No worker briefs."
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "No panel."
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "No workers."
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "No executor plane."
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "No substrate."
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "No runs to triage."
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:2 one-shot fetch, no session reporting"
         }
-      ],
-      "registryProposal": "Coverage question, likely a corpus hole: useLiveRoadmap.ts:5-15 draws exactly the distinction the corpus values - `cached` (healthy reuse) vs `stale` (a rescue because the network failed) vs `unavailable` (no cache and no network), so a degraded read is never spelled like a healthy one, and roadmapItems.ts:6-8 keeps a schema-valid-but-empty live payload from blanking the view. That is a content-delivery-degradation subject worth a forge lead; fleet-orchestration governs none of it."
+      ]
     },
     "3084d603-7cdb-41cd-bbad-8f24a8015b3e/eval-harness": {
       "context": "lib-harness",
@@ -2257,38 +1987,33 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "vault-as-database",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1466-1470 escapes a title by mutating it (`\"` -> `'`) instead of quoting it, no minted id reaches frontmatter, identity is the slugged filename (:1457-1461) so two titles that slug alike overwrite each other, and there is no emit->parse round-trip test anywhere in the sidecar."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1496 keys the note on a lossy title slug (mod.rs:591-599 solves this for memories with id-suffixed names); escaping fixed in 48f2f2c0bc (tools.rs:1507 yaml_quote)"
         },
         {
           "technique": "editor-interop",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1471 uses std::fs::write, which truncates then streams, so Obsidian refreshing mid-write renders a torn note — the app crate already has atomic_write (src-tauri/src/commands/obsidian_brain/mod.rs:59) and the sidecar does not use it."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1513 writes atomically but replaces an existing note unconditionally, so the last writer wins against a human edit"
         },
         {
           "technique": "vault-walking",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/mcp_server/vault.rs:21-56 is a second hand-rolled walker whose own header (:5-8) admits it duplicates graph.rs and must be kept in sync by hand; depth 12, dot-skip and skip-silently are hardcoded rather than the WalkOptions the app crate already extracted."
+          "evidence": "src-tauri/src/mcp_server/vault.rs:21 duplicates vault_fs::walk_markdown_files with undeclared policies; vault.rs:45 reads every body per search"
         },
         {
           "technique": "link-graph-extraction",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/vault.rs:77-119 — the sidecar resolves no links at all (TF-IDF over titles and bodies only); the precondition 'a feature that needs the link graph' does not hold here."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1190-1191 — the sidecar exposes exactly two vault tools (search, write_note) and no defect-reporting surface; the precondition 'a pass that measures corpus integrity' does not hold."
+          "evidence": "src-tauri/src/mcp_server/vault.rs:77 search is TF-IDF over titles and bodies; no links resolved"
         },
         {
           "technique": "mirror-indexes",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/tools.rs:1369-1387 reads obsidian_mirror_config only as an on/off gate; the sidecar maintains no derived store beside the vault, so there is no derivation to keep honest."
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1450 re-walks on every search; no derived store kept"
         }
       ]
     },
@@ -2297,38 +2022,43 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "vault-as-database",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/obsidian_brain/markdown.rs:17 escapes every scalar, :286 accepts bare/single-quoted values it did not write, :384 drives hostile values through the full round trip; a minted id lives in frontmatter (:96,:112) and writes are temp+rename (mod.rs:59). Two named path funnels — mod.rs:1479 for relative fragments, graph.rs:268 for absolute candidates — with an explicit standing rule against a third."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:947 pull treats a missing ledgered path as removed and never looks the note up by its frontmatter id, so a rename in Obsidian leaves a duplicate and stops the sync; record contract realized (markdown.rs:17)"
         },
         {
           "technique": "vault-walking",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/obsidian_brain/vault_fs.rs:78 is one shared walker with depth, hidden-file and error policy as explicit options; :18-54 records which original caller each default traces to, and lint.rs:142 opts into Abort while graph.rs:115 and revitalize.rs:104 keep SkipSilently — behaviour-preserving unification, exactly as the technique prescribes."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/obsidian_brain/lint.rs:29 detects all three defect classes read-only, the orphan exemption is one visible predicate at :160, and :142 aborts on an unreadable directory so a partial scan can never report clean; repair is a separate bounded goal-declared pass (revitalize.rs:39,:43,:75) measured before/after even when it fails (:429,:460-462)."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:334 gates each mirrored write on the ledgered content hash, mirror errors are logged not raised (:445), a full rebuild is a first-class command (:453), and conflict.rs:44 runs the real three-way comparison with lucky convergence surfaced distinctly rather than collapsed into NoChange."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:778 spawns an unowned debounce thread that graph.rs:816 never stops (it drops only WatcherHandle._watcher), so every vault switch or Graph-tab remount leaks a thread that keeps emitting obsidian:vault-changed for the previous vault path — the watcher names a reaper, its debounce machinery does not."
+          "evidence": "src-tauri/src/commands/obsidian_brain/vault_fs.rs:77 one shared walker with declared WalkOptions; per-consumer policies at lint.rs:145, drive.rs:846, revitalize.rs:108"
         },
         {
           "technique": "link-graph-extraction",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:482 (stats) and :431 (list) count every note with no incoming link, while lint.rs:118 exempts top-level and index-style entry points; the same vault therefore yields two different 'orphan' numbers and neither surface states its exemptions. The shared extractor (vault_fs.rs:148) and the watcher+30s-TTL cache (graph.rs:95-116) are otherwise realized well."
+          "evidence": "src-tauri/src/commands/obsidian_brain/graph.rs:356 duplicate basenames resolve last-wins here but first-wins at lint.rs:48; graph.rs:484 counts orphans with no exemption while lint.rs:121 exempts entry points; vault_fs.rs:152 counts links inside code fences"
+        },
+        {
+          "technique": "knowledge-integrity-lint",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/lint.rs:87 skips an unreadable note silently while :129 still counts it scanned; revitalize.rs:125 lets prune delete notes flagged stale by a proxy"
+        },
+        {
+          "technique": "mirror-indexes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/mod.rs:353 the skip-gate compares the ledger, not the disk, and neither code nor the projected note declares the gap or the overwrite contract; hash gate :349 and three-way compare conflict.rs:44 realized"
+        },
+        {
+          "technique": "editor-interop",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/drive.rs:767 truncating overwrite into the vault; graph.rs:778 spawns a debounce thread that stop (graph.rs:822) never ends"
+        },
+        {
+          "technique": "replicated-substrate",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/obsidian_brain/lint.rs:70 staleness reads only mtime while the app's own Drive pull (drive.rs:634) rewrites the mtime of every note it pulls; vault_fs.rs:120 admits conflict copies as notes"
         }
       ]
     },
@@ -2337,38 +2067,33 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "editor-interop",
-          "verdict": "conformant",
-          "evidence": "src/features/plugins/obsidian-brain/openInObsidian.ts:7 addresses the note by full vault-relative path (never basename), normalizes separators, encodes the components, and :17 degrades to a visible no-op before a vault is known; GraphPanel.tsx:85-107 starts the backend watcher in an effect and stops it in the cleanup on unmount and on vault switch."
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:375 absolute path where the scheme expects vault-relative; separator normalization openInObsidian.ts:8 realized"
         },
         {
           "technique": "link-graph-extraction",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:210 renders stats.orphanCount as 'Orphans' with no exemption predicate, next to the lint tab's orphan list computed under a different exemption policy — the predicate-free count the technique names."
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:256 tile and list share one predicate, stated in the subtitle (:361) - old deviation fixed in adf8f3c37"
         },
         {
           "technique": "knowledge-integrity-lint",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx:26-28 makes prune/merge/refresh explicit operator input and :45-49 refuses to start with no goal selected, so the repair pass is goal-declared rather than the repairer's mood; detection is a separate surface and never mutates."
-        },
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:22-34 — the renderer only calls IPC commands; no frontmatter is emitted or parsed and no caller-supplied path is resolved here, so the record contract's preconditions all fail in this layer."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx:1-38 — nothing in this context traverses a filesystem; the walk's three decisions have no site here."
+          "evidence": "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx:46 refuses a repair with no goal selected"
         },
         {
           "technique": "mirror-indexes",
-          "verdict": "unknown",
-          "evidence": "src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx:11-18 is the Google Drive vault backup, not the app-to-vault mirror; the conflict/sync surface that would carry the direction contract lives in sub_sync/, outside this context's declared paths, so I cannot judge it honestly from here."
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx:311 escalates each conflict to a human choice"
+        },
+        {
+          "technique": "vault-as-database",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts:36 strips quotes but not yaml_quote's escapes, so Browse shows escaped quotes in titles (display only)"
         }
       ]
     },
@@ -2377,201 +2102,45 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:18 — the records here are connector credentials fetched over IPC, not files with frontmatter; there is no emitter, parser, filename or vault root."
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredCards.tsx:1 — no note store, so no inline links to extract."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/display/AutoCredErrorDisplay.tsx:1 — the defect classes (broken links, orphans, staleness) have no referent in a credential-capture flow."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup.tsx:1 — nothing traverses a directory tree here."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:1 — there is no second store derived from a file vault in this context."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:1 — no peer writer (a human's text editor) shares custody of anything this context touches."
-        }
-      ],
-      "registryProposal": "Matcher miss, not a corpus hole: five contexts under src/features/vault/** are the CREDENTIAL vault, and the registry already holds the subject that governs them — knowledge/software-engineering/security/credential-vault/credential-vault.md, which p2p-networking's golden path links by name as the custody boundary secrets live behind. markdown-vault matched on the bare word 'vault'. Route on the subject's precondition (is the store a directory of markdown records?) before its vocabulary, and add credential-vault as the pairing for the five vault-* contexts."
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "3619ab0d-0367-43d0-b4eb-ec39c1302d65/markdown-vault": {
       "context": "vault-catalog-picker",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:2 imports ConnectorDefinition/CredentialMetadata — DB rows over IPC, not files with frontmatter."
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/PickerGrid.tsx:1 — no notes, no inline links."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/usePickerFilters.ts:1 — filtering a connector catalog is not corpus integrity; the three defect classes have no referent."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:1 — no directory traversal."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/design/orchestratorDerived.ts:1 derives view state from props, not a second store beside a file vault."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:1 — no external peer writer shares custody of these records."
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "b62fa237-32b4-41c3-bf56-3e498b643da9/markdown-vault": {
       "context": "vault-credentials-components-forms",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/CredentialEditForm.tsx:3 — the record is an encrypted credential row; there is no file, no frontmatter, no filename identity."
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/EditFormFields.tsx:1 — no note bodies to scan for links."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/HealthcheckResultDisplay.tsx:1 — this is a connector reachability check, not knowledge-corpus rot detection."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:1 — no filesystem walk."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/ConnectorCredentialModal.tsx:1 — no derived store beside a file vault."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/OAuthSection.tsx:1 — the browser/OAuth provider is a peer, but not a peer WRITER to a shared file store, which is the constraint this technique exists for."
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "e1bc4bef-5cf0-4bc0-9b12-a26e88065857/markdown-vault": {
       "context": "vault-database-tests",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:1 — the 'database' here is a real relational engine the user connected, the inverse of the files-as-records mapping this technique governs."
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/QueryResultTable.test.tsx:1 — no note links."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/SchemaManagerModal.test.tsx:1 — no corpus whose rot these detectors would measure."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/DatabaseListView.test.tsx:1 — no directory traversal."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/DatabaseCard.test.tsx:1 — no derivation of a file vault."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/__tests__/SqlEditor.test.tsx:1 — the SQL editor is the app's own; no external peer writer shares custody."
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "647d6a54-3813-4149-bbf7-2d96a57a77c7/markdown-vault": {
       "context": "vault-databases-tabs",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-29",
-      "worker": "p-2",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:6 imports introspectionQueries — a real engine enforces this schema, so the whole 'no engine to enforce it' asymmetry the technique is built on does not apply."
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TableDetailPanel.tsx:1 — foreign keys are relational, not inline wikilinks; the shared-extractor problem has no site."
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx:1 — no knowledge corpus to lint."
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:1 — enumeration is a SQL introspection query, not a directory walk."
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:1 — no second store derived from a file vault."
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_databases/tabs/AssistantSqlBlock.tsx:1 — no human text editor holds concurrent custody of these records."
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "eba8081c-3a43-4529-b172-9bef07493935/p2p-networking": {
       "context": "p2p-lan-network",
@@ -6281,13 +5850,33 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w1-personas-agent-platform",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "session-registry",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:16-23 (deriveAxes cases) and :68 (the 'full lifecycle' states array) both hard-code a 7-member list, missing 'finished' from FleetSessionState; sibling sub_grid/__tests__/fleetGridGroupOrder.test.ts (not in this context) shows the project's own fix pattern — assert against the shared authority (FLEET_STATE_META / a type-level exhaustiveness check) instead of a literal array."
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 a private partial copy of the vocabulary instead of deriving from src/lib/bindings/FleetSessionState.ts:16"
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:22 maps a self-declared finished to delivered and :45 headlines 'Delivered: x/y'; exited is not split into failed or lost"
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/FleetHarvestPanel.tsx:19 the harvest folds FLEET:DONE declarations with no verdict against the artifact"
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_settings/FleetProcessScanner.tsx:111 counts every untracked interactive claude process as an orphan, external ones included, and one Resume click kills it with no pid/cmd/cwd re-check though the Kill path re-checks (:67)"
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/sub_settings/FleetAutoHibernateSettings.tsx:7 idle-parking is a stated policy with a threshold"
         }
       ]
     },
@@ -6390,33 +5979,64 @@
       "context": "recipe-build-models",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w1-personas-agent-platform",
-      "techniques": []
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:321 no never-started or cut-off class; src-tauri/src/engine/team_assignment_learning.rs:189 counts the total over all steps"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:150 'pub status: String' beside the closed enum at :31; consumers compare string literals. BuildSession (build_session.rs:263) is a single session and not-applicable"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "unknown",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:152 max_parallel_steps is a per-assignment cap; fleet-wide admission lives in the engine, outside this context"
+        }
+      ]
     },
     "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e/fleet-orchestration": {
       "context": "fleet-terminal-manager",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w1-personas-agent-platform",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "parallel-dispatch",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:134-166 (BROADCAST_CONCURRENCY-bounded pool, per-session failure isolation)."
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:154 bounded mapWithConcurrency with a stated reason and per-target failure isolation"
         },
         {
           "technique": "result-harvest",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:167-216 (three explicit outcomes, failed-id-scoped retry)."
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:181 sent/total/failed accounting; :209 retries exactly the failed ids"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 a hand list that missed queued (added 2026-09-17) instead of a shared liveness predicate"
         },
         {
           "technique": "hibernation-and-resume",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 ignores the dozing flag, targeting a light-parked session with no writer"
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/useFleetOrphanScan.ts:39 the orphan scan stops while hidden, runs only while FleetPage is mounted, counts but never adopts or quarantines"
+        },
+        {
+          "technique": "absent-status-passthrough",
           "verdict": "conformant",
-          "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:86-97 (hibernated sessions excluded as broadcast targets, with the reason stated)."
+          "evidence": "src/features/plugins/fleet/useFleetOrphanScan.ts:47 a failed scan keeps the last count and retries rather than writing 0"
         }
       ]
     },
@@ -6425,9 +6045,20 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w1-personas-agent-platform",
-      "techniques": []
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:787 reads a halted build session as a question source; holds no registry entry"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 routes verdicts to writes, not sessions"
+        }
+      ]
     },
     "03960450-6979-4412-9de3-35c897fe56d2/diff-comparison": {
       "context": "agents-executions-components",
@@ -6459,45 +6090,9 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "no markdown record store; records here are SQL rows in external databases, not files with frontmatter"
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "no inter-note links to extract; SQL foreign keys are not this technique's target"
-        },
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "no notes to go stale, orphan, or broken-link"
-        },
-        {
-          "technique": "vault-walking",
-          "verdict": "not-applicable",
-          "evidence": "introspectionQueries.ts walks SQL schemas via backend commands, not a directory tree of notes"
-        },
-        {
-          "technique": "mirror-indexes",
-          "verdict": "not-applicable",
-          "evidence": "no vault to mirror; the SQL connection is the primary store, not a derivation of a markdown corpus"
-        },
-        {
-          "technique": "editor-interop",
-          "verdict": "not-applicable",
-          "evidence": "no human text editor peer writing markdown files here"
-        },
-        {
-          "technique": "replicated-substrate",
-          "verdict": "not-applicable",
-          "evidence": "no replicated markdown corpus; the underlying data lives in the connected SQL/Redis/Notion service"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "14c7d145-2166-454b-aee5-d69d9d527d79/settings": {
       "context": "appearance-settings",
@@ -6709,69 +6304,24 @@
       "context": "stores-slices-system",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w2-personas-infrastructure",
+      "state": "deviation",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "lifecycle-signals",
           "verdict": "conformant",
-          "evidence": "src/stores/slices/system/fleetSlice.ts:247-291 — event-driven primary channel (FLEET_SESSION_STATE/FLEET_SESSION_EXITED/FLEET_REGISTRY_CHANGED), no process polling"
+          "evidence": "src/stores/slices/system/fleetSlice.ts:293 event-driven primary channel, no process polling"
         },
         {
           "technique": "session-registry",
-          "verdict": "not-applicable",
-          "evidence": "fleetSlice.ts:101-107 explicitly delegates the authoritative registry to Rust; this slice is a cache by design, not a second registry"
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:304 'state as FleetSessionState' over a string payload, bypassing the grid's compile-time exhaustiveness"
         },
         {
-          "technique": "durable-fleet-state",
-          "verdict": "not-applicable",
-          "evidence": "durability/restart-recovery is the Rust engine's concern, no footprint in this zustand slice"
-        },
-        {
-          "technique": "hibernation-and-resume",
-          "verdict": "not-applicable",
-          "evidence": "hibernate/wake semantics are backend; this slice only surfaces toggles (fleetAutoHibernate) that call fleetApi"
-        },
-        {
-          "technique": "parallel-dispatch",
-          "verdict": "not-applicable",
-          "evidence": "dispatch/collision-domain logic is backend, not this store"
-        },
-        {
-          "technique": "result-harvest",
-          "verdict": "not-applicable",
-          "evidence": "no harvest-phase aggregation logic in this slice"
-        },
-        {
-          "technique": "heterogeneous-model-panels",
-          "verdict": "not-applicable",
-          "evidence": "no panel-convening logic here"
-        },
-        {
-          "technique": "outbound-compute-plane",
-          "verdict": "not-applicable",
-          "evidence": "no executor-plane topology code here"
-        },
-        {
-          "technique": "substrate-reconciliation",
-          "verdict": "not-applicable",
-          "evidence": "no container/volume reconciliation code here"
-        },
-        {
-          "technique": "brief-carries-the-session",
-          "verdict": "not-applicable",
-          "evidence": "worker-briefing is a dispatch-time backend concern"
-        },
-        {
-          "technique": "coordination-failure-triage",
-          "verdict": "not-applicable",
-          "evidence": "no failure-taxonomy classification code here"
-        },
-        {
-          "technique": "worker-trajectory-anatomy",
-          "verdict": "not-applicable",
-          "evidence": "no per-worker trajectory analysis code here"
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/system/fleetSlice.ts:306 fills a field the record does not carry, so a parked session reads as active until the next snapshot"
         }
       ]
     },
@@ -6949,80 +6499,45 @@
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "no markdown record store — this is a document vector index, not a note database"
-        },
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "no inter-note links exist to extract; the graph subject here (dependency graph) is a separate context"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "77b8c703-0803-42bc-808a-f255725cc293/markdown-vault": {
       "context": "vault-dependency-graph",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
-      "techniques": [
-        {
-          "technique": "link-graph-extraction",
-          "verdict": "not-applicable",
-          "evidence": "credentialGraph.ts:16-24 — edges are typed domain relationships (credential->persona->event), not markdown-link edges"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "6229df3d-d54e-47bb-8091-abb479003c18/markdown-vault": {
       "context": "vault-catalog-schemas",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "schemaConfigs.tsx defines in-memory form config objects, not a markdown record schema"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/markdown-vault": {
       "context": "vault-shared-playground",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
-      "techniques": [
-        {
-          "technique": "vault-as-database",
-          "verdict": "not-applicable",
-          "evidence": "no markdown record store anywhere in shared/playground/tabs"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/markdown-vault": {
       "context": "vault-credentials-components-features",
       "subject": "markdown-vault",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
-      "techniques": [
-        {
-          "technique": "knowledge-integrity-lint",
-          "verdict": "not-applicable",
-          "evidence": "there is no markdown corpus here to lint for broken links/orphans/staleness"
-        }
-      ]
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
+      "techniques": []
     },
     "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/credential-vault": {
       "context": "vault-shared-playground",
@@ -7044,13 +6559,23 @@
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-08-31",
-      "worker": "w3-personas-plugin-ecosystem",
+      "evaluatedAt": "2026-09-23",
+      "worker": "deepen-2026-09-23-conform-2",
       "techniques": [
         {
           "technique": "parallel-dispatch",
           "verdict": "deviation",
-          "evidence": "dispatch.ts:72-86 — no derived dispatch key is checked against the registry before spawnSession, so re-dispatching the same finding (e.g. a retried automation) can open a second fleet session in the same working directory unchecked"
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:84 no derived-key dedupe, session unnamed; the backend door src-tauri/src/commands/fleet/commands.rs:41 caps slots but checks no scope or duplicate"
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:37 the prompt carries title, evidence and acceptance bar but no invariants and no 'what you cannot see' line, and can reach an unattended auto-mode session"
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/verify.ts:107 an unprobed sensor gives unknown/pending, never cleared; the verdict re-measures the signal"
         }
       ]
     },
