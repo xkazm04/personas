@@ -2,7 +2,7 @@
 // the decisions waiting on the person) and where the reader stands. Both
 // come from what the classic stage already holds - `councilStore` and the
 // engine - so the fused HUD adds no fetch and no second authority.
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { decidable } from '../../councilRules';
@@ -10,7 +10,6 @@ import { effectiveSubject } from '../../bench/queueModel';
 import { useCouncilStore } from '../../councilStore';
 import type { EnginePath, GalaxyEngine } from '../engine/GalaxyEngine';
 import { decisionsOf, type Decision } from './fusedModel';
-import { useFusedStore } from './fusedStore';
 
 export interface FusedData {
   decisions: Decision[];
@@ -48,21 +47,27 @@ export function useFusedData(): FusedData {
 const EMPTY_PATH: EnginePath = { domain: null, category: null, subject: null, technique: null };
 
 /**
- * Where the reader stands, as nodes. Re-read whenever the focus the engine
- * publishes or the pinned technique changes, which are the only two things
- * that move it.
+ * Where the reader stands, as nodes, read from the ENGINE after it has
+ * applied a focus - never during render, when a focus the store just changed
+ * has not reached the engine yet (the relay is an effect). Every focus change
+ * and every pin makes the engine draw, so its frame callback is the one
+ * signal that is never early; the state only changes when the path does.
  */
 export function useFusedPath(engine: GalaxyEngine | null): EnginePath {
   const focus = useCouncilStore((s) => s.focus);
-  const layout = useCouncilStore((s) => s.layout);
-  const technique = useFusedStore((s) => s.technique);
-  return useMemo(() => {
-    if (!engine) return EMPTY_PATH;
-    // Council focus stands at the sky: the lit set is the altitude.
-    if (focus.kind === 'council') return EMPTY_PATH;
-    const path = engine.getPath();
-    return { ...path, technique };
-    // `focus` and `layout` are the signals that the engine's path moved.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engine, focus, layout, technique]);
+  const [path, setPath] = useState<EnginePath>(EMPTY_PATH);
+  useEffect(() => {
+    if (!engine) return;
+    const read = () => {
+      const next = useCouncilStore.getState().focus.kind === 'council' ? EMPTY_PATH : engine.getPath();
+      setPath((prev) =>
+        prev.domain === next.domain && prev.category === next.category && prev.subject === next.subject && prev.technique === next.technique
+          ? prev
+          : next,
+      );
+    };
+    read();
+    return engine.onFrame(read);
+  }, [engine, focus]);
+  return path;
 }
