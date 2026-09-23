@@ -50,7 +50,10 @@ use super::types::{
 const EXITED_RETENTION_MS: i64 = 24 * 60 * 60 * 1000;
 
 enum Job {
-    Upsert(Box<FleetSessionRow>),
+    /// The row, and - for a session a paired device dispatched here - its
+    /// `(remote_job_id, origin_peer_id)`, stamped right after the upsert (the
+    /// row itself does not carry them; see `fleet_sessions::set_remote_origin`).
+    Upsert(Box<FleetSessionRow>, Option<(String, String)>),
     Delete(String),
 }
 
@@ -79,7 +82,15 @@ fn writer(pool: DbPool) -> Option<Sender<Job>> {
             .spawn(move || {
                 while let Ok(job) = rx.recv() {
                     let result = match &job {
-                        Job::Upsert(row) => fleet_sessions::upsert(&pool, row),
+                        Job::Upsert(row, origin) => {
+                            fleet_sessions::upsert(&pool, row).and_then(|()| match origin {
+                                Some((job_id, peer_id)) => fleet_sessions::set_remote_origin(
+                                    &pool, &row.id, job_id, peer_id,
+                                )
+                                .map(|_| ()),
+                                None => Ok(()),
+                            })
+                        }
                         Job::Delete(id) => fleet_sessions::delete(&pool, id),
                     };
                     if let Err(err) = result {
@@ -112,7 +123,10 @@ pub fn note_changed(app: &AppHandle, session_id: &str) {
         map.get(session_id).and_then(row_from_inner)
     };
     let Some(row) = row else { return };
-    enqueue(app, Job::Upsert(Box::new(row)));
+    // Read after the registry lock is released (lock order: registry, then
+    // the remote link table).
+    let origin = super::remote_exec::origin_of(session_id);
+    enqueue(app, Job::Upsert(Box::new(row), origin));
 }
 
 /// Forget a session that left the registry (dismissed, or replaced by a wake).
@@ -324,6 +338,10 @@ pub fn rehydrate(app: &AppHandle) -> usize {
         registry().insert(inner_from_row(row));
         restored += 1;
     }
+    // A session a paired device had dispatched here keeps its provenance, so
+    // its restored tile still says who asked. (Its job did not survive: the
+    // remote-job sweep failed it at boot.)
+    super::remote_exec::restore_from(&pool);
     if restored > 0 {
         tracing::info!(
             restored,

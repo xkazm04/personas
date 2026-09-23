@@ -14,6 +14,15 @@ pub(super) fn shard(
         commands::companions::companions_status,
         commands::companions::companions_set_enabled,
         commands::companions::athena_mark_onboarded,
+        // Curator -- what she KNOWS: the registry instrument, the projection
+        // she makes from it, her allowlist and her policy. Nothing here acts:
+        // there is no dispatch and no commit writer yet.
+        commands::curator::curator_policy_get,
+        commands::curator::curator_projects_list,
+        commands::curator::curator_project_set_enabled,
+        commands::curator::curator_project_set_consent,
+        commands::curator::curator_plan_current,
+        commands::curator::curator_plan_refresh,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,

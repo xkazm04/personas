@@ -646,6 +646,7 @@ fn push_display_line(app: &AppHandle, session_id: &str, ring: &Arc<Mutex<OutputR
         r.push(framed.as_bytes());
         r.is_subscribed()
     };
+    super::remote_exec::forward_output(session_id, framed.as_bytes());
     if subscribed {
         let _ = app.emit(
             event_name::FLEET_SESSION_OUTPUT,
@@ -779,7 +780,12 @@ const ONE_SHOT_REAP_GRACE: Duration = Duration::from_secs(5);
 /// process, and a `result` event on them means only "your turn, operator".
 pub(super) fn settle_one_shot_turn(app: &AppHandle, session_id: &str, final_text: Option<&str>) {
     use super::classify::WorkerTurnEnd;
-    if !registry().is_one_shot_worker(session_id) {
+    // A headless session a paired device dispatched here is one prompt, one
+    // turn, exactly like a one-shot worker: its turn ending IS its job ending.
+    // It is settled through the same arms. The reap below is a no-op for it
+    // (`claim_reap` keys on the one-shot run labels); the remote executor ends
+    // the process itself once the receipt is sent.
+    if !registry().is_one_shot_worker(session_id) && !super::remote_exec::is_remote(session_id) {
         return;
     }
     match super::classify::worker_turn_end(final_text) {

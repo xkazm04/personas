@@ -438,7 +438,8 @@
         "src/features/plugins/fleet/**",
         "src-tauri/src/commands/fleet/**",
         "src/stores/slices/system/fleetSlice.ts",
-        "src/api/fleet/**"
+        "src/api/fleet/**",
+        "src/features/shared/dispatch/**"
       ]
     },
     {
@@ -506,7 +507,12 @@
         "src-tauri/src/commands/network/**",
         "src-tauri/src/engine/bundle.rs",
         "src-tauri/src/engine/share_link.rs",
-        "src-tauri/engine/src/p2p/**"
+        "src-tauri/engine/src/p2p/**",
+        "src-tauri/src/companion/remote_jobs.rs",
+        "src-tauri/src/companion/prompt/devices.rs",
+        "src/api/network/**",
+        "src/stores/slices/network/**",
+        "src/lib/network/**"
       ]
     },
     {

@@ -196,6 +196,10 @@ pub(crate) async fn execute_approval_action(
         // filed while autonomous mode was on and clicked after it was turned
         // off is refused at fire time, naming the reason.
         "remote_instruct" => execute_remote_instruct(&state, params).await,
+        // Two machines, one operator: a whole fleet session sent to a paired
+        // device, through the same device rule and the same dispatch path as
+        // the "Run on" picker.
+        "remote_fleet_dispatch" => execute_remote_fleet_dispatch(&state, params).await,
         // Ship layer — act on a milestone that already exists. The CREATE path
         // is the editable `show_ship_milestone` chat card, not an approval.
         "set_ship_scope" => execute_set_ship_scope(&state, params),

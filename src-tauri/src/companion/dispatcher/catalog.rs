@@ -62,6 +62,10 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // `approval_exec_devices::gate_remote_instruct`, NOT in
     // `AUTOAPPROVE_ALLOWLIST` (which has no conditional form).
     "remote_instruct",
+    // Two machines, one operator — send a whole fleet session to a paired
+    // device (its own branch, pushed, verified on return). Same device rule as
+    // `remote_instruct` (`DEVICE_GATED_ACTIONS`), same surface in a lite build.
+    "remote_fleet_dispatch",
     // Ship layer (2026-08-20) — the two verbs the Ship tab gives a human, given
     // to Athena as well. `set_ship_scope` moves members between core/later/never
     // or drops them; `ship_milestone_lifecycle` cuts (freezing the scope) or
@@ -680,7 +684,7 @@ const OP_SECTIONS: &[OpSection] = &[
     OpSection {
         title: "Fleet (live CLI sessions) and other devices",
         gate: Some(OpGate::Approval),
-        note: "Approval unless marked. `session_id` = the FULL fleet session id (never the cc: id); `confidence` high|medium|low; `decision_class` drive_forward|choice; `cwd` a REGISTERED project path. Start real work with `show_fleet_plan` (editable plan card, nothing spawns until he confirms), not bare spawns.",
+        note: "Approval unless marked. `session_id` = the FULL fleet session id (never the cc: id); `confidence` high|medium|low; `decision_class` drive_forward|choice; `cwd` a REGISTERED project path. Start real work with `show_fleet_plan` (nothing spawns until he confirms), not bare spawns.",
         compact: true,
         ops: &[
             op!("show_fleet_plan", Card, "", r#"{operation_intent,rows:[{cwd,objective,skill?}]}"#),
@@ -693,7 +697,8 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("fleet_redirect_op", Approval, "", r#"{op_id (FULL),new_intent}"#),
             op!("fleet_wake", Approval, "", r#"{session_id,confidence,decision_class}"#),
             op!("fleet_resume", Approval, "", r#"{pid,cwd,confidence,decision_class}"#),
-            op!("remote_instruct", Approval, "", r#"{device?,instruction} (HIS other paired device; a complete self-contained request; omit device for home)"#),
+            op!("remote_instruct", Approval, "", r#"{device?,instruction} (no device = home)"#),
+            op!("remote_fleet_dispatch", Approval, "", r#"{device?,project,prompt,mode?:headless|interactive}"#),
             op!("continue_autonomously", Auto, "", r#"{rationale} (autonomous mode only)"#),
         ],
     },

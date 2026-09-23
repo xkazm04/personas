@@ -904,6 +904,10 @@ fn reader_loop(
                     r.push(&buf[..n]);
                     r.is_subscribed()
                 };
+                // A session a paired device dispatched here also feeds that
+                // device's live tail. Lossy and non-blocking by contract; a
+                // local session pays one atomic load.
+                super::remote_exec::forward_output(&session_id, &buf[..n]);
                 if !subscribed {
                     // Nothing is being emitted, so a carried tail would be
                     // spliced onto bytes that are many reads newer by the time
@@ -1043,6 +1047,9 @@ pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: 
     }
 
     registry().mark_exited(session_id, exit_code);
+    // The exit does not pass through `emit_session_state`, so the remote
+    // executor hears it here: its last mirror and note, and the receipt.
+    super::remote_exec::on_state(session_id, "exited");
     // `mark_exited` folds claude's own last screen line into the exit reason for
     // a non-zero code, so this line usually self-explains a crash.
     super::debug_log::lifecycle(
@@ -1148,6 +1155,10 @@ pub fn emit_session_state(
     // channel send) — the SQLite write happens on the persistence thread, so a
     // slow DB can never wedge a PTY reader or the staleness ticker.
     super::persist::note_changed(app, session_id);
+    // A session a paired device dispatched here: one mirror and one progress
+    // note per transition, and the completion when its job is over. Sync and
+    // non-blocking; a local session pays one atomic load.
+    super::remote_exec::on_state(session_id, state);
     let _ = app.emit(
         event_name::FLEET_SESSION_STATE,
         SessionStatePayload {

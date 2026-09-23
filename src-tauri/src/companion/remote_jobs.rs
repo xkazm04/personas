@@ -16,6 +16,13 @@
 //!   `network:remote-job-updated` event so that what the OTHER machine did
 //!   lands in this Athena's memory as episodes. Without it she can watch a job
 //!   finish in the Devices tab and still have nothing to say about it.
+//! - **`fleet_session` jobs** — the other kind. Admission, execution and
+//!   steering are routed to the fleet's remote executor
+//!   (`commands::fleet::remote_exec`), which runs it as an ordinary fleet
+//!   session; it is not an Athena turn. On the originating side a finished one
+//!   is HARVESTED before it is remembered ([`harvest_fleet_session`]): the
+//!   pushed SHA is fetched and checked, `verified` is written into the receipt,
+//!   and the one episode says whether the work is really there.
 //!
 //! ## Why no deny-list
 //!
@@ -55,10 +62,15 @@ use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter, Listener, Manager};
 
-use crate::db::models::{RemoteJob, RemoteJobDirection, RemoteJobStatus};
+use crate::db::models::{
+    FleetSessionJobPayload, FleetSessionJobReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus,
+    RemoteSessionCommand, REMOTE_JOB_KIND_FLEET_SESSION,
+};
 use crate::db::repos::resources::remote_jobs as repo;
 use crate::engine::event_registry::event_name;
-use crate::engine::p2p::remote_jobs::{RemoteJobAssignment, RemoteJobExecutor, RemoteJobHandle};
+use crate::engine::p2p::remote_jobs::{
+    Admission, RemoteJobAssignment, RemoteJobExecutor, RemoteJobHandle,
+};
 
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::{
@@ -103,7 +115,34 @@ pub struct AthenaRemoteJobs {
 
 #[async_trait::async_trait]
 impl RemoteJobExecutor for AthenaRemoteJobs {
+    /// A `fleet_session` is checked before anything is persisted: its project
+    /// must exist here and be a git checkout (the refusal reason, e.g.
+    /// `project_not_found`, becomes the originator's `refusal_reason`). An
+    /// `instruction` is always admitted; its gates run inside the turn.
+    async fn admit(&self, job: &RemoteJobAssignment) -> Admission {
+        if job.kind == REMOTE_JOB_KIND_FLEET_SESSION {
+            return crate::commands::fleet::remote_exec::admit(&self.app, job).await;
+        }
+        Admission::Accept
+    }
+
+    /// Steering reaches only a `fleet_session`: the fleet's remote executor
+    /// maps it onto the local verbs. An instruction has nothing to steer.
+    async fn command(
+        &self,
+        job_id: &str,
+        command: RemoteSessionCommand,
+        text: Option<String>,
+    ) -> Result<(), AppError> {
+        crate::commands::fleet::remote_exec::command(&self.app, job_id, command, text).await
+    }
+
     /// Runs on the inbound dispatch task — returns immediately, always.
+    ///
+    /// A `fleet_session` goes to the fleet's remote executor, which runs it as
+    /// an ordinary fleet session; it is not an Athena turn, so her master
+    /// switch does not apply to it. Everything below is the `instruction` kind,
+    /// unchanged.
     ///
     /// The one thing it does BEFORE spawning is read Athena's master switch,
     /// which is a single indexed settings read. It belongs here rather than
@@ -112,6 +151,10 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
     /// not threaten the immediate-return contract above.
     async fn execute(&self, job: RemoteJobAssignment, handle: RemoteJobHandle) {
         let app = self.app.clone();
+        if job.kind == REMOTE_JOB_KIND_FLEET_SESSION {
+            crate::commands::fleet::remote_exec::execute(app, job, handle).await;
+            return;
+        }
         if athena_switched_off(&app) {
             refuse_while_switched_off(&app, &job, &handle).await;
             return;
@@ -489,6 +532,127 @@ fn episode_worthy(job: &RemoteJob) -> bool {
     job.status.is_terminal() || (job.status == RemoteJobStatus::Running && job.last_seq == 1)
 }
 
+// ── Outbound fleet sessions: the harvest ──────────────────────────────────
+
+/// A terminal OUTBOUND `fleet_session` job: the moment the harvest runs.
+fn is_fleet_session_verdict(job: &RemoteJob) -> bool {
+    job.direction == RemoteJobDirection::Outbound
+        && job.kind == REMOTE_JOB_KIND_FLEET_SESSION
+        && job.status.is_terminal()
+}
+
+/// Is this update the harvest's OWN re-announcement? The running device never
+/// fills `verified`, so a receipt that carries one was written here, by
+/// [`harvest_fleet_session`], which re-emits the job only after writing it.
+/// The durable receipt is what makes the second arrival a no-op; nothing is
+/// remembered in the process. (The engine emits a job's terminal transition
+/// once, and a replayed result after a reconnect emits nothing.)
+fn already_harvested(job: &RemoteJob) -> bool {
+    job.receipt.as_ref().is_some_and(|r| r.verified.is_some())
+}
+
+/// The ORIGINATING device's end of a `fleet_session` (design decision D5):
+/// fetch the pushed branch into the local project matched by `github_url`,
+/// check the SHA really exists, write `verified` back into the receipt,
+/// re-announce the job, and record ONE episode that says what came back.
+async fn harvest_fleet_session(app: &AppHandle, job: RemoteJob) {
+    if already_harvested(&job) {
+        return;
+    }
+    let state = app.state::<Arc<AppState>>();
+    let Some(mut receipt) = job.receipt.clone() else {
+        // Refused, failed or cancelled without a receipt: the ordinary note.
+        append_outbound_episode(app, &job).await;
+        return;
+    };
+    let payload: Option<FleetSessionJobPayload> = job
+        .payload_json
+        .as_deref()
+        .and_then(|p| serde_json::from_str(p).ok());
+    if receipt.verified.is_none() {
+        if let Some(payload) = payload.as_ref() {
+            receipt.verified =
+                crate::commands::fleet::remote_exec::verify_receipt(&state.db, payload, &receipt)
+                    .await;
+        }
+        if receipt.verified.is_some() {
+            match serde_json::to_string(&receipt) {
+                Ok(json) => {
+                    if let Err(e) = repo::set_receipt(&state.db, &job.id, &json) {
+                        tracing::warn!(job_id = %job.id, error = %e, "remote harvest: verdict not stored");
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(job_id = %job.id, error = %e, "remote harvest: receipt did not serialize")
+                }
+            }
+            reannounce(app, &state, &job.id);
+        }
+    }
+    let project = payload
+        .as_ref()
+        .map(|p| p.project_name.clone())
+        .unwrap_or_else(|| "the project".into());
+    let content = fleet_session_note(&job, &project, &receipt);
+    write_system_episode(app, &job.id, &content).await;
+}
+
+/// Re-emit a job whose receipt the harvest just completed, so the Devices tab
+/// and the Monitor tile show `verified`. The engine emits only on its own
+/// transitions and this write is not one of them, so the app re-announces it:
+/// the job row as `REMOTE_JOB_UPDATED`, and the view the ENGINE builds for it
+/// (`RemoteJobs::session_view`) as `REMOTE_SESSION_UPDATED`.
+fn reannounce(app: &AppHandle, state: &AppState, job_id: &str) {
+    if let Ok(Some(job)) = repo::get(&state.db, job_id) {
+        crate::engine::event_registry::emit_event(app, event_name::REMOTE_JOB_UPDATED, &job);
+    }
+    let view = state
+        .network
+        .as_ref()
+        .and_then(|net| net.remote_jobs.session_view(job_id).ok().flatten());
+    if let Some(view) = view {
+        crate::engine::event_registry::emit_event(app, event_name::REMOTE_SESSION_UPDATED, &view);
+    }
+}
+
+/// The originator's memory of one finished remote session, e.g.
+/// `Desk finished personas: branch remote/ab/cd at 0123456, verified`.
+fn fleet_session_note(job: &RemoteJob, project: &str, receipt: &FleetSessionJobReceipt) -> String {
+    use crate::commands::fleet::remote_exec::sha7;
+    let name = job.peer_display_name.trim();
+    let name = if name.is_empty() {
+        "The paired device"
+    } else {
+        name
+    };
+    let verdict = match job.status {
+        RemoteJobStatus::Completed => "finished",
+        _ => "could not finish",
+    };
+    let work = match (&receipt.pushed_sha, receipt.verified) {
+        (Some(sha), Some(true)) => format!("branch {} at {}, verified", receipt.branch, sha7(sha)),
+        (Some(sha), Some(false)) => format!(
+            "branch {} at {}, but that commit was NOT found here after a fetch",
+            receipt.branch,
+            sha7(sha)
+        ),
+        (Some(sha), None) => format!(
+            "branch {} at {}, not verified (the project is not on this machine)",
+            receipt.branch,
+            sha7(sha)
+        ),
+        (None, _) => format!(
+            "branch {}, nothing pushed ({})",
+            receipt.branch,
+            receipt.push_error.as_deref().unwrap_or("no reason given")
+        ),
+    };
+    format!(
+        "[device: {name}] {name} {verdict} {project}: {work}.{report}",
+        report = remote_report_block(name, job.summary.as_deref().unwrap_or("")),
+    )
+}
+
 // ── Startup wiring ─────────────────────────────────────────────────────
 
 /// Fail every inbound job left `Running` by a crash / force-quit.
@@ -564,7 +728,13 @@ pub async fn install(app: &AppHandle, network: &Arc<crate::engine::p2p::NetworkS
         }
         let app = listener_app.clone();
         tauri::async_runtime::spawn(async move {
-            append_outbound_episode(&app, &job).await;
+            // A finished `fleet_session` is harvested before it is remembered:
+            // the episode says whether the pushed branch is really there.
+            if is_fleet_session_verdict(&job) {
+                harvest_fleet_session(&app, job).await;
+            } else {
+                append_outbound_episode(&app, &job).await;
+            }
         });
     });
     tracing::info!("Athena remote-job executor installed");
@@ -809,6 +979,70 @@ mod tests {
             sweep_interrupted(&db).unwrap().is_empty(),
             "a swept job must never be reported — and so never noted — twice"
         );
+    }
+
+    fn receipt(sha: Option<&str>, verified: Option<bool>) -> FleetSessionJobReceipt {
+        FleetSessionJobReceipt {
+            session_id: "s".into(),
+            branch: "remote/ab/cd".into(),
+            pushed_sha: sha.map(str::to_string),
+            push_error: sha.is_none().then(|| "no commits".to_string()),
+            verified,
+        }
+    }
+
+    /// The harvest's note carries the three verdicts in words that cannot be
+    /// confused: verified, not found, and could-not-check.
+    #[test]
+    fn the_harvest_note_says_what_came_back_and_whether_it_is_real() {
+        let mut j = job(RemoteJobDirection::Outbound, RemoteJobStatus::Completed, 3);
+        j.kind = REMOTE_JOB_KIND_FLEET_SESSION.into();
+        j.peer_display_name = "Desk".into();
+        let sha = "0123456789abcdef0123456789abcdef01234567";
+        let ok = fleet_session_note(&j, "personas", &receipt(Some(sha), Some(true)));
+        assert!(
+            ok.starts_with(
+                "[device: Desk] Desk finished personas: branch remote/ab/cd at 0123456, verified"
+            ),
+            "{ok}"
+        );
+        let bad = fleet_session_note(&j, "personas", &receipt(Some(sha), Some(false)));
+        assert!(bad.contains("NOT found"), "{bad}");
+        let unknown = fleet_session_note(&j, "personas", &receipt(Some(sha), None));
+        assert!(unknown.contains("not verified"), "{unknown}");
+        let none = fleet_session_note(&j, "personas", &receipt(None, None));
+        assert!(none.contains("nothing pushed (no commits)"), "{none}");
+    }
+
+    /// Only a TERMINAL OUTBOUND fleet session is harvested, and the harvest's
+    /// own re-announcement (a receipt that already carries `verified`) is not
+    /// harvested again.
+    #[test]
+    fn a_fleet_session_is_harvested_once_and_only_when_it_is_over() {
+        let mut j = job(RemoteJobDirection::Outbound, RemoteJobStatus::Running, 1);
+        j.kind = REMOTE_JOB_KIND_FLEET_SESSION.into();
+        assert!(!is_fleet_session_verdict(&j));
+        j.status = RemoteJobStatus::Completed;
+        assert!(is_fleet_session_verdict(&j));
+        j.direction = RemoteJobDirection::Inbound;
+        assert!(!is_fleet_session_verdict(&j));
+        let instruction = job(RemoteJobDirection::Outbound, RemoteJobStatus::Completed, 1);
+        assert!(!is_fleet_session_verdict(&instruction));
+
+        let mut fresh = job(RemoteJobDirection::Outbound, RemoteJobStatus::Completed, 1);
+        fresh.kind = REMOTE_JOB_KIND_FLEET_SESSION.into();
+        fresh.receipt = Some(receipt(Some("abc"), None));
+        assert!(
+            !already_harvested(&fresh),
+            "the runner never fills verified"
+        );
+        fresh.receipt = Some(receipt(Some("abc"), Some(false)));
+        assert!(
+            already_harvested(&fresh),
+            "a verdict means this device wrote it"
+        );
+        fresh.receipt = None;
+        assert!(!already_harvested(&fresh));
     }
 
     #[test]

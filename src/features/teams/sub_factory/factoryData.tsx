@@ -19,6 +19,7 @@ import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 import { mapWithConcurrency } from './passport/usePassportData';
 import { silentCatch } from '@/lib/silentCatch';
+import { codeProjectsOnly } from '@/lib/devProjectKind';
 
 import type {
   MockProject,
@@ -236,7 +237,11 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
         // L1 / L2 first paint only needs id+name+stack. KPIs, measurements,
         // and the per-project 3-IPC tree used to gate a single setState, so a
         // cover click could not enter L2 until the last sibling assembled.
-        const projects = await devApi.listProjects();
+        // Registry checkouts are excluded: a Factory cover promises KPIs,
+        // contexts and use cases, and a knowledge repo has none of the three.
+        // This is also the list the KPI-scan pickers (`KpiProposalsPanel`,
+        // `FactoryOverviewTab`) take their project from.
+        const projects = codeProjectsOnly(await devApi.listProjects());
         if (cancelled) return;
         const skeletons: MockProject[] = projects.map((p) => ({
           id: p.id,

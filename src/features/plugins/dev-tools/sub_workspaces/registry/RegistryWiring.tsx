@@ -85,7 +85,7 @@ function LocalFolderLink({
               );
               return;
             }
-            const registry = linkLocalRegistry(workspaceId, path, probe);
+            const registry = await linkLocalRegistry(workspaceId, path, probe);
             addToast(tx(tr.local_linked, { name: registry.fullName }), 'success');
             onLinked?.(registry);
           }}
@@ -216,7 +216,7 @@ export function RegistryWiring({
           icon={<RefreshCw className="w-3.5 h-3.5" />}
           onClick={async () => {
             if (!repo || !dispatchCwd) return;
-            const registry = linkRegistry(
+            const registry = await linkRegistry(
               workspaceId,
               { fullName: repo.fullName, defaultBranch: repo.defaultBranch },
               credentialId,

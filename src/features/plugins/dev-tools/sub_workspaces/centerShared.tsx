@@ -7,6 +7,7 @@ import { ArrowRight, X } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { resolveTechIcon } from '@/features/teams/sub_factory/passport/techIcons';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import { codeProjectsOnly } from '@/lib/devProjectKind';
 import { useSystemStore } from '@/stores/systemStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,7 +42,15 @@ export function useWorkspaceCenter(): WorkspaceCenter {
     if (projects.length === 0) void fetchProjects();
   }, [projects.length, fetchProjects]);
 
-  const sortedProjects = useMemo(() => [...projects].sort(byName), [projects]);
+  // The Atlas draws territory: crest member chips, the unassigned bucket and
+  // the membership panel that moves a project between workspaces. A registry
+  // checkout is wired to a workspace through the Registry section, not by
+  // project assignment (the backend keeps its `workspace_id` NULL), so
+  // offering it here would be an assignment that silently does not stick.
+  const sortedProjects = useMemo(
+    () => codeProjectsOnly([...projects]).sort(byName),
+    [projects],
+  );
   const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
 
   return useMemo(

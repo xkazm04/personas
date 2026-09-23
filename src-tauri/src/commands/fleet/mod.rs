@@ -42,6 +42,7 @@ pub mod process_scan;
 pub mod pty;
 pub mod queue;
 pub mod registry;
+pub mod remote_exec;
 pub mod run;
 pub mod screen_activity;
 pub mod stale;

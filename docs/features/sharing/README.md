@@ -112,7 +112,129 @@ Events: `network:remote-session-updated` (one whole `RemoteSessionView`) and `ne
 
 **The payload** (`FleetSessionJobPayload`) carries the project as three keys (`projectId`, `githubUrl`, `projectName`) because the two machines share no project id yet; the receiver resolves the git remote first. A project needs a git remote for this kind at all: the work comes back as a pushed branch, and the **receipt** (`FleetSessionJobReceipt`) names the branch and the SHA read from `git ls-remote` on the running device. The asking device fetches the branch and fills `verified`: `true` (the commit is here), `false` (it is not), or `null` (this device has no checkout to look in, which is "could not verify", not "broken").
 
-<!-- remote-sessions: engine + executor sections -->
+#### The device lane: outbox, reconnection and remote sessions
+
+Paired devices talk over the LAN lane (QUIC on :4242, protocol **v4**, a channel-bound Ed25519
+handshake). Only a device with a row in **Settings > Devices** (`owned_devices`) can send this
+device work or report on work it asked for. Every job and remote-session frame from any other
+peer is refused and logged, and nothing is written for it.
+
+##### Sending work to a device that is asleep
+
+- A job sent to a paired device that is **not connected** is kept in this device's **outbox**
+  with the status `queued`. It is not an error.
+- When the link next comes up, the outbox is sent oldest first, before anything else is
+  resumed. A job whose send gets no answer goes back to `queued`. The other device re-acks a
+  job it already accepted and never runs it twice.
+- If the app restarts in the middle of a send, the job goes back to the outbox at the next
+  start.
+
+##### Staying connected
+
+- **Owned devices always connect on their own.** This happens when mDNS discovers them, when
+  the network starts (for devices seen in an earlier session), and on every health-check tick
+  after a drop. **Auto-connect** in the network settings also adds trusted peers that are not
+  your own devices.
+- Only one side dials: the device whose peer id sorts first. If both dial anyway, one
+  connection is kept deterministically.
+- A device that disappears from the LAN is **not forgotten**. Its entry stays and reads as
+  *stale*. Other peers' entries are removed after 7 days away. Your own devices' entries are
+  removed only when you unpair them.
+- Reachability, as the "Run on" pickers show it:
+  - **connected**: a verified connection is up.
+  - **stale**: this device has seen it on the LAN, but it is not connected now.
+  - **offline**: never seen on this LAN. Work sent now waits in the outbox until it wakes.
+
+##### Remote sessions: watching and steering
+
+A `fleet_session` job runs a fleet session on the other device. On top of the durable job
+record (acknowledgement, progress notes, result), it carries three live streams. None of them is
+replayed after a reconnect:
+
+- **Mirror.** The other device's current view of the session: its state, title and reason.
+  Only the latest mirror counts. This device keeps the last one, so a restart shows the last
+  known state.
+  - A running session with no mirror for **45 seconds** reads as **unknown**, never as running.
+- **Output tail.** Sent only while a viewer is open, and it can drop output. At most 64 chunks
+  wait on the other device, and when the queue is full the oldest chunk is dropped. A gap in
+  the chunk numbers shows that output was skipped. A slow link never slows the session itself.
+  - Closing the viewer stops the tail. It never stops the session.
+  - An open viewer re-subscribes by itself after a reconnect.
+- **Commands.** Send input, kill and wake go to the other device, and each waits for its
+  answer. An unreachable device or a refusal comes back as a clear error.
+
+When the session finishes, the result carries a **receipt**: the branch and the pushed commit,
+read from the remote. This device stores the receipt once and never overwrites it with a
+replayed result.
+
+#### The running device: the fleet's remote executor
+
+A `fleet_session` job is run by `src-tauri/src/commands/fleet/remote_exec.rs`,
+installed through the same executor seam as `instruction` jobs
+(`companion/remote_jobs.rs` routes by job kind; `instruction` is unchanged).
+
+- **Admission, before any row exists.** The payload must parse and carry a
+  `remote/…` branch (`bad_payload`), the project must exist here, matched by
+  git remote first (case, `.git` suffix and trailing slash ignored), then by
+  project id, then by exact name (`project_not_found`), and it must be a git
+  checkout with a main branch that resolves (`branch_setup_failed: …`). The
+  refusal reason becomes the asking device's `refusal_reason`. Admission only
+  looks things up; nothing is written, because the asking device's ack waits
+  on it.
+- **Where the session works: an isolated worktree, never the project folder.**
+  After acceptance the executor creates a `git worktree` for the branch under
+  the app data directory (`<app data>/worktrees/<project8>/<hash8>`, the same
+  place and the same dependency borrowing the unattended workers use), off the
+  project's main branch. The operator's own checkout on that machine is never
+  switched to another branch, and two sessions sent to the same project do not
+  collide. A worktree that cannot be made fails the job with
+  `branch_setup_failed: <git's first line>`.
+- **The session.** It is admitted through the fleet queue like any other
+  (`DispatchOrigin::Remote`, run label `remote:<job8>`), so it waits its turn
+  at the cap. Its prompt is the sent prompt plus the branch rules: commit on
+  this branch, do not push, do not switch branches. On this machine its tile is
+  an ordinary fleet tile that says **From <device>** (`FleetSession.originPeerId`,
+  persisted in `fleet_sessions.origin_peer_id` so a restart keeps it).
+- **Live view.** Every state transition sends one mirror of the session to the
+  asking device and writes one progress note in plain words ("running",
+  "waiting for input", "finished", "exited (code 1)"). A running session is
+  also re-mirrored every 15 s, because the asking device reads a session it has
+  not heard from for 45 s as `unknown`. Terminal output is forwarded only while
+  the asking device has a viewer open; it is lossy and never slows the session.
+- **Steering.** `send_input` types the text into the session and submits it,
+  `kill` is the local kill, `wake` is the local wake (a woken session keeps its
+  job across the new session id). A command for a session that has ended is
+  refused with `remote_command_refused: session_exited`.
+- **Completion.** The job ends when the session exits. A headless session ends
+  when its turn finishes: it is settled like a one-shot worker, the receipt is
+  sent, and then its process is ended to free the slot. The receipt is built on
+  this machine: commits ahead of the main branch are pushed
+  (`git push -u origin <branch>`, 2 minute limit) unless the remote already has
+  them, and `pushedSha` is read back with `git ls-remote`, never taken from the
+  model. No commits gives `pushError: "no commits"` and no SHA. The job
+  **completes** when the session exited cleanly, reached `finished`, or was
+  ended by the asking device's `kill`; otherwise it **fails**, and the failure
+  summary names the branch and what happened to it (a failed job carries no
+  receipt). The worktree is removed afterwards when it is clean, and kept when
+  anything is uncommitted.
+- **After a restart** the running device fails the job (the startup sweep
+  covers both kinds) and the tile comes back with its **From <device>** chip.
+
+#### The asking device: the harvest
+
+When a sent session finishes, the asking device harvests it before it records
+anything (`companion/remote_jobs.rs`): it finds its own copy of the project by
+git remote, runs `git fetch origin <branch>` and `git cat-file -e <sha>`, and
+writes `verified` into the stored receipt: `true`, `false`, or left `null` when
+this machine has no copy of the project or nothing was pushed. It then
+re-announces the job (`network:remote-job-updated`, and the rebuilt
+`network:remote-session-updated`) so the Devices history and the Monitor tile
+show the verdict, and writes one Athena memory such as "Desk finished personas:
+branch remote/ab12cd34/ef56ab78 at 0123456, verified".
+
+**Offline is a queue, not an error.** Since the outbox landed, a send to a
+paired device that is not connected returns a `queued` job instead of failing
+with `NetworkOffline`. It goes out when the two devices next see each other.
 
 ### `exposure.rs` — locally exposed resources
 

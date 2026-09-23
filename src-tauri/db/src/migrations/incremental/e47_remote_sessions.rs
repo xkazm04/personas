@@ -107,12 +107,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_real_chain_carries_every_column_and_a_rerun_is_a_no_op() {
-        let pool = crate::init_test_db().expect("test db");
-        let conn = pool.get().expect("conn");
-        assert!(every_column_present(&conn, "remote_jobs", REMOTE_JOB_COLUMNS).unwrap());
-        assert!(every_column_present(&conn, "fleet_sessions", FLEET_SESSION_COLUMNS).unwrap());
-        run(&conn).expect("a second run over an applied schema is idempotent");
-        assert!(every_column_present(&conn, "remote_jobs", REMOTE_JOB_COLUMNS).unwrap());
+    fn the_real_chain_carries_every_column_and_a_rerun_is_a_no_op() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let conn = pool.get()?;
+        assert!(every_column_present(
+            &conn,
+            "remote_jobs",
+            REMOTE_JOB_COLUMNS
+        )?);
+        assert!(every_column_present(
+            &conn,
+            "fleet_sessions",
+            FLEET_SESSION_COLUMNS
+        )?);
+        // A second run over an already-applied schema is a no-op.
+        run(&conn)?;
+        assert!(every_column_present(
+            &conn,
+            "remote_jobs",
+            REMOTE_JOB_COLUMNS
+        )?);
+        Ok(())
     }
 }

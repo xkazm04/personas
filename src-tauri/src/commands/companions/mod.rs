@@ -174,6 +174,32 @@ fn starred_count(db: &DbPool) -> u32 {
     }
 }
 
+/// The registry that makes Curator eligible, or `None`.
+///
+/// Two terms, and both are load-bearing. **Held by a workspace**: a registry
+/// row nobody holds is leftover wiring, not a corpus she was given. **On this
+/// disk right now**: a `stat` rather than a row read, because a clone that was
+/// moved or deleted is exactly the state that has to show as blocked - the row
+/// still says everything is wired, and only the filesystem disagrees.
+///
+/// Lowest id when several qualify, so two reads a second apart name the same
+/// registry.
+pub(crate) fn curator_registry(db: &DbPool) -> Option<crate::db::models::DevRegistry> {
+    match crate::db::repos::dev_registries::mapped(db) {
+        Ok(rows) => rows.into_iter().find(|r| {
+            let path = r.clone_path.trim();
+            !path.is_empty() && std::path::Path::new(path).is_dir()
+        }),
+        Err(e) => {
+            // A failed read must not report a wiring that may well be there.
+            // Blocked is the reading that claims least, and the Setup page's
+            // remedy ("map a registry") is harmless if one already is.
+            tracing::warn!(error = %e, "companions: registry read failed - reporting Curator blocked");
+            None
+        }
+    }
+}
+
 /// Overseer is ACTIVE when the operator has switched him on **and** he has
 /// something to watch. Both terms are re-read here rather than cached, so a
 /// star or a switch takes effect on the next call.
@@ -250,13 +276,12 @@ fn athena_onboarded(state: &Arc<AppState>) -> bool {
 /// Build the whole category's standing. Shared by the command, the event
 /// emitter and the tests, so there is one definition of each companion's state.
 ///
-/// **Curator's eligibility is deliberately optimistic here.** The workspace ->
-/// registry link lives in the frontend's `localStorage`
-/// (`sub_workspaces/registry/registryLinkStore.ts`), which Rust cannot read, so
-/// this stage reports `eligible: true, blocker: None` and `useCompanionsStatus`
-/// overrides both from that store. The seam closes when the link is promoted to
-/// a table (the same move `dev_workspaces` itself made); at that point this
-/// function reads it and the frontend override is deleted.
+/// All three companions answer from the database here. Curator's did not until
+/// the workspace -> registry link was promoted out of the browser (migration
+/// e48): this function reported `eligible: true, blocker: None` and the
+/// frontend hook patched both from `localStorage`, which meant the one surface
+/// that could see her prerequisite was the one surface her loop will never run
+/// in. That seam is closed - the hook now renders what this says.
 pub fn status_snapshot(state: &Arc<AppState>) -> CompanionsStatusDto {
     let db = &state.db;
 
@@ -304,13 +329,20 @@ pub fn status_snapshot(state: &Arc<AppState>) -> CompanionsStatusDto {
                     },
                 }
             },
-            CompanionStatusDto {
-                id: CompanionId::Curator,
-                enabled: curator_enabled(db),
-                eligible: true,
-                blocker: None,
-                onboarded: true,
-                detail: CompanionDetailDto::default(),
+            {
+                let registry = curator_registry(db);
+                CompanionStatusDto {
+                    id: CompanionId::Curator,
+                    enabled: curator_enabled(db),
+                    eligible: registry.is_some(),
+                    blocker: registry.is_none().then_some(CompanionBlocker::NoRegistry),
+                    onboarded: true,
+                    detail: CompanionDetailDto {
+                        registry_name: registry.as_ref().map(|r| r.full_name.clone()),
+                        registry_path: registry.as_ref().map(|r| r.clone_path.clone()),
+                        ..CompanionDetailDto::default()
+                    },
+                }
             },
         ],
     }
@@ -442,6 +474,67 @@ mod tests {
         let db = personas_db::init_test_db().expect("test db");
         assert!(!overseer_enabled(&db));
         assert!(!overseer_active(&db));
+    }
+
+    /// Curator's prerequisite, which until migration e48 no Rust could see at
+    /// all. Three states, and the middle one is the whole reason this is a
+    /// `stat` and not a row read: a registry row can say everything is wired
+    /// while the working copy it names is gone.
+    #[test]
+    fn curator_needs_a_held_registry_whose_checkout_is_on_disk() {
+        use crate::db::models::{DevRegistryInput, RegistryPairingState};
+        use crate::db::repos::dev_registries as registries;
+        let db = personas_db::init_test_db().expect("test db");
+
+        // Nothing wired at all.
+        assert!(curator_registry(&db).is_none());
+
+        let root = std::env::temp_dir().join(format!("personas_curator_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).expect("temp checkout");
+        let clone_path = root.to_string_lossy().to_string();
+        let input = DevRegistryInput {
+            id: "org/reg".into(),
+            full_name: "org/reg".into(),
+            url: None,
+            default_branch: "main".into(),
+            credential_id: None,
+            clone_path: clone_path.clone(),
+            state: RegistryPairingState::Paired,
+            session_id: None,
+            lanes: vec!["knowledge".into()],
+            domains: Vec::new(),
+            sha: None,
+            paired_at: None,
+            error: None,
+        };
+        registries::upsert(&db, &input).expect("registry");
+
+        // A registry nobody holds is leftover wiring, not a corpus she was
+        // given.
+        assert!(
+            curator_registry(&db).is_none(),
+            "an unheld registry must not make her eligible"
+        );
+
+        // Through the workspaces repo, not a hand-written INSERT: the command
+        // layer has no business checking a connection out, and a fixture that
+        // builds its own row stops matching production the moment a column
+        // lands.
+        let workspace =
+            crate::db::repos::workspaces::org::create_workspace(&db, "Alpha", None, None, false)
+                .expect("workspace");
+        registries::link_workspace(&db, &workspace.id, "org/reg").expect("link");
+        let found = curator_registry(&db).expect("held and present");
+        assert_eq!(found.full_name, "org/reg");
+        assert_eq!(found.clone_path, clone_path);
+
+        // The checkout goes away and the row does not. Blocked is the only
+        // honest answer, and it is the one the operator can act on.
+        std::fs::remove_dir_all(&root).expect("remove checkout");
+        assert!(
+            curator_registry(&db).is_none(),
+            "a row pointing at a vanished clone is not a wiring"
+        );
     }
 
     /// The refusal is a typed `Validation` carrying a message that names the

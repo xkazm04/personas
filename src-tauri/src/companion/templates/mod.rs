@@ -575,4 +575,17 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// under Plugins, so she stops sending him there to find herself. Also fixes
 /// the `compose_dashboard` line, which had promised a `Companion → Dashboard`
 /// tab that was retired: a composed dashboard lands in Home → Cockpit.
-pub const CONSTITUTION_VERSION: u32 = 67;
+///
+/// v68 (two machines, one operator): adds `remote_fleet_dispatch` — a whole
+/// fleet session sent to another of Michal's paired devices, run there on its
+/// own `remote/…` branch, pushed by the app, and verified on this machine
+/// before she reports it. What needed teaching rather than listing: when it is
+/// the right op instead of `remote_instruct` (code in a project vs a question
+/// for the assistant there); that the project needs a git remote or nothing
+/// can come back; that `project_not_found` means the other machine lacks the
+/// project, not that the send failed; and that a verified branch is a fact
+/// while an unverified one is a claim. It also corrects the reachability
+/// doctrine v51 taught: an unreachable device is no longer a dead end — work
+/// sent there queues in the outbox until it wakes, so the honest word is
+/// "queued until <device> wakes", never "sent".
+pub const CONSTITUTION_VERSION: u32 = 68;
