@@ -1,6 +1,8 @@
-//! `approval_exec_devices` — the `remote_instruct` op: Athena hands an
+//! `approval_exec_devices` — the two device ops. `remote_instruct` hands an
 //! instruction to one of the operator's OTHER paired devices, where that
-//! device's own Athena runs it as a normal turn.
+//! device's own Athena runs it as a normal turn; `remote_fleet_dispatch` sends
+//! a whole fleet session there, which runs on its own branch, pushes it, and
+//! comes back as a verified SHA.
 //!
 //! Part of the approval module family (split from the former approvals.rs god
 //! file, 2026-07-24); shared imports and types live in `mod.rs`.
@@ -8,7 +10,8 @@
 //! ## The operator rule, and where it lives
 //!
 //! There is exactly ONE statement of the rule — [`gate_remote_instruct`] — and
-//! both paths that could ever fire this op go through it:
+//! both paths that could ever fire EITHER op go through it (the consent
+//! question is "may I send work to that machine", whatever the work is):
 //!
 //! | autonomous mode | target        | outcome                              |
 //! |-----------------|---------------|--------------------------------------|
@@ -22,9 +25,12 @@
 //! "only the home device, and only when the mode is off" through it is not
 //! possible without inventing a second policy language. Instead
 //! `auto_resolve_if_allowed` grows one dedicated arm that returns BEFORE the
-//! allowlist check, and `remote_instruct` is asserted absent from the allowlist
-//! (`remote_instruct_is_not_on_the_generic_allowlist`) so the generic path can
-//! never pick it up if someone adds the name later.
+//! allowlist check. The allowlist itself was retired on 2026-08-10 (under
+//! autonomous mode every proposal now fires); what replaced the old
+//! "asserted absent from the allowlist" test is [`DEVICE_GATED_ACTIONS`]: the
+//! autopilot routes both ops into the device arm by that list, BEFORE its
+//! generic fire-everything path, and
+//! `device_ops_never_reach_the_generic_autopilot_path` pins it.
 //!
 //! The refusal half cannot be bypassed either, because it does not live in the
 //! autopilot: [`execute_remote_instruct`] itself calls the gate, so the manual
@@ -37,8 +43,20 @@
 #[allow(unused_imports)]
 use super::*;
 
-use crate::db::models::OwnedDevice;
+use crate::db::models::{
+    DevProject, FleetSessionJobPayload, OwnedDevice, RemoteJob, RemoteJobStatus, RemoteSessionMode,
+};
 use crate::db::repos::resources::owned_devices as devices_repo;
+
+/// The ops that carry the mode-conditional device rule. The autopilot routes
+/// every name here into [`auto_resolve_remote_instruct`] BEFORE its generic
+/// auto-fire path, so neither can ever be fired by action name alone.
+pub(crate) const DEVICE_GATED_ACTIONS: &[&str] = &["remote_instruct", "remote_fleet_dispatch"];
+
+/// Is `action` one of the device-gated ops?
+pub(crate) fn is_device_gated(action: &str) -> bool {
+    DEVICE_GATED_ACTIONS.contains(&action)
+}
 
 /// What the rule says to do with one proposed `remote_instruct`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -151,6 +169,133 @@ fn instruction_of(params: &serde_json::Value) -> Result<String, AppError> {
     Ok(text)
 }
 
+/// The session prompt of a `remote_fleet_dispatch`, validated.
+fn prompt_of(params: &serde_json::Value) -> Result<String, AppError> {
+    let text = params
+        .get("prompt")
+        .or_else(|| params.get("objective"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    personas_core::validation::require_non_empty("prompt", &text)?;
+    Ok(text)
+}
+
+/// `headless` (the default: nobody is watching that terminal) or `interactive`.
+fn mode_of(params: &serde_json::Value) -> Result<RemoteSessionMode, AppError> {
+    match params
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .map(|m| m.trim().to_ascii_lowercase())
+        .as_deref()
+    {
+        None | Some("") | Some("headless") | Some("cli") => Ok(RemoteSessionMode::Headless),
+        Some("interactive") | Some("fleet") => Ok(RemoteSessionMode::Interactive),
+        Some(other) => Err(AppError::Validation(format!(
+            "Unknown session mode '{other}' (expected 'headless' or 'interactive')."
+        ))),
+    }
+}
+
+/// Resolve the op's `project` on THIS device: an exact project id, else a
+/// unique case-insensitive name. The payload carries its id, name and git
+/// remote; the other device matches the remote first.
+fn resolve_local_project(
+    projects: &[DevProject],
+    params: &serde_json::Value,
+) -> Result<DevProject, AppError> {
+    let requested = params
+        .get("project")
+        .or_else(|| params.get("project_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    personas_core::validation::require_non_empty("project", &requested)?;
+    if let Some(p) = projects.iter().find(|p| p.id == requested) {
+        return Ok(p.clone());
+    }
+    let mut by_name = projects
+        .iter()
+        .filter(|p| p.name.trim().eq_ignore_ascii_case(&requested));
+    match (by_name.next(), by_name.next()) {
+        (Some(one), None) => Ok(one.clone()),
+        (Some(_), Some(_)) => Err(AppError::Validation(format!(
+            "More than one project is called \"{requested}\". Name it by its id instead."
+        ))),
+        _ => Err(AppError::NotFound(format!(
+            "\"{requested}\" is not a registered project on this device."
+        ))),
+    }
+}
+
+/// The payload a `remote_fleet_dispatch` sends. `branch` is left empty on
+/// purpose: the one dispatch path mints it.
+fn fleet_payload_of(
+    projects: &[DevProject],
+    params: &serde_json::Value,
+) -> Result<FleetSessionJobPayload, AppError> {
+    let prompt = prompt_of(params)?;
+    let mode = mode_of(params)?;
+    let project = resolve_local_project(projects, params)?;
+    // A project with no git remote is refused by the ONE dispatch path
+    // (`remote_exec::require_git_remote`), for this op and the picker alike.
+    let github_url = project.github_url.clone().unwrap_or_default();
+    Ok(FleetSessionJobPayload {
+        project_id: project.id,
+        github_url,
+        project_name: project.name,
+        prompt,
+        mode,
+        branch: String::new(),
+        persona_id: params
+            .get("persona_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string),
+    })
+}
+
+/// Execute an approved (or auto-fired) `remote_fleet_dispatch`: the same
+/// device rule as `remote_instruct`, then the SAME dispatch path the "Run on"
+/// picker uses (`commands::fleet::remote_exec::dispatch`).
+pub(crate) async fn execute_remote_fleet_dispatch(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let projects = crate::db::repos::dev_tools::list_projects(&state.db, None)?;
+    let payload = fleet_payload_of(&projects, params)?;
+    let target = resolve_remote_target(&state.db, params)?;
+    let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
+    if let RemoteInstructGate::Refused(reason) = gate_remote_instruct(autonomous, &target) {
+        return Err(AppError::Forbidden(reason));
+    }
+    send_fleet_session(state, &target, payload).await
+}
+
+/// What Athena says after a send, from the job the transport returned. An
+/// OFFLINE paired device is not an error any more: the job waits in the
+/// outbox as `queued`, and "sent" would be a claim nobody can check yet.
+#[cfg_attr(not(feature = "p2p"), allow(dead_code))]
+fn sent_message(target: &OwnedDevice, job: &RemoteJob, what: &str) -> String {
+    let name = &target.display_name;
+    match job.status {
+        RemoteJobStatus::Refused => format!(
+            "\"{name}\" declined that. {}",
+            job.refusal_reason.clone().unwrap_or_default()
+        ),
+        RemoteJobStatus::Queued => format!(
+            "\"{name}\" is not reachable right now, so {what} is queued until {name} wakes. \
+             It goes out on its own when the two devices see each other again."
+        ),
+        _ => format!(
+            "Sent {what} to \"{name}\". It's running there now, and I'll tell you what comes back."
+        ),
+    }
+}
+
 /// Execute an approved (or auto-fired) `remote_instruct`.
 pub(crate) async fn execute_remote_instruct(
     state: &State<'_, Arc<AppState>>,
@@ -165,8 +310,9 @@ pub(crate) async fn execute_remote_instruct(
     send_instruction(state, &target, &instruction).await
 }
 
-/// The autonomous-mode arm for `remote_instruct`, called from
-/// `auto_resolve_if_allowed` BEFORE the generic allowlist check.
+/// The autonomous-mode arm for BOTH device ops (`remote_instruct` and
+/// `remote_fleet_dispatch`, see [`DEVICE_GATED_ACTIONS`]), called from
+/// `auto_resolve_if_allowed` BEFORE the generic auto-fire path.
 ///
 /// Returns `Ok(true)` when the proposal was resolved here (fired, or fired and
 /// failed), `Ok(false)` when it is left pending for a deliberate click — which
@@ -205,10 +351,15 @@ pub(crate) async fn auto_resolve_remote_instruct(
     // From here the manual path's shape, exactly: atomic pending→running, run,
     // finalize, log the outcome as an episode.
     let (action, params) = load_pending(&state, &approval.id)?;
-    let (status_text, log) = match execute_remote_instruct(&state, &params).await {
+    let executed = if action == "remote_fleet_dispatch" {
+        execute_remote_fleet_dispatch(&state, &params).await
+    } else {
+        execute_remote_instruct(&state, &params).await
+    };
+    let (status_text, log) = match executed {
         Ok(r) => (APPROVAL_STATUS_APPROVED, r.message),
         Err(e) => {
-            tracing::warn!(error = %e, "companion: auto-fired remote_instruct failed");
+            tracing::warn!(error = %e, action = %action, "companion: auto-fired device op failed");
             (
                 APPROVAL_STATUS_APPROVED_FAILED,
                 format!("Sorry, I couldn't reach that device. ({e})"),
@@ -246,14 +397,25 @@ async fn send_instruction(
     let job = jobs
         .send_instruction(&target.peer_id, None, instruction)
         .await?;
-    let name = &target.display_name;
-    Ok(ExecuteResult::message(match job.status {
-        crate::db::models::RemoteJobStatus::Refused => format!(
-            "\"{name}\" declined that. {}",
-            job.refusal_reason.unwrap_or_default()
-        ),
-        _ => format!("Sent to \"{name}\". It's running there now, and I'll tell you what it says."),
-    }))
+    Ok(ExecuteResult::message(sent_message(
+        target,
+        &job,
+        "the request",
+    )))
+}
+
+/// The fleet-session transport half: the ONE dispatch path.
+#[cfg(feature = "p2p")]
+async fn send_fleet_session(
+    state: &State<'_, Arc<AppState>>,
+    target: &OwnedDevice,
+    payload: FleetSessionJobPayload,
+) -> Result<ExecuteResult, AppError> {
+    let project = payload.project_name.clone();
+    let job =
+        crate::commands::fleet::remote_exec::dispatch(state, &target.peer_id, payload).await?;
+    let what = format!("the {project} session");
+    Ok(ExecuteResult::message(sent_message(target, &job, &what)))
 }
 
 /// The transport half in a LITE build (`--features desktop`), where `p2p` and
@@ -273,11 +435,26 @@ async fn send_instruction(
     target: &OwnedDevice,
     _instruction: &str,
 ) -> Result<ExecuteResult, AppError> {
-    Err(AppError::Validation(format!(
+    Err(no_device_link(target))
+}
+
+/// The fleet-session transport half in a LITE build: the same honest sentence.
+#[cfg(not(feature = "p2p"))]
+async fn send_fleet_session(
+    _state: &State<'_, Arc<AppState>>,
+    target: &OwnedDevice,
+    _payload: FleetSessionJobPayload,
+) -> Result<ExecuteResult, AppError> {
+    Err(no_device_link(target))
+}
+
+#[cfg(not(feature = "p2p"))]
+fn no_device_link(target: &OwnedDevice) -> AppError {
+    AppError::Validation(format!(
         "This build has no device link, so I can't reach \"{}\". \
          The full desktop build is the one that talks to your other devices.",
         target.display_name
-    )))
+    ))
 }
 
 #[cfg(test)]
@@ -336,6 +513,160 @@ mod tests {
             gate_remote_instruct(true, &device("Work laptop", false)),
             RemoteInstructGate::Autofire
         );
+    }
+
+    // -- remote_fleet_dispatch --------------------------------------------
+
+    /// The consent decision `execute_remote_fleet_dispatch` and the autopilot
+    /// arm both make for a proposed fleet session: the SAME rule as
+    /// `remote_instruct`, reached through the same routing.
+    fn fleet_dispatch_gate(autonomous: bool, target: &OwnedDevice) -> RemoteInstructGate {
+        assert!(is_device_gated("remote_fleet_dispatch"));
+        gate_remote_instruct(autonomous, target)
+    }
+
+    #[test]
+    fn fleet_dispatch_mode_off_home_files_an_approval_card() {
+        assert_eq!(
+            fleet_dispatch_gate(false, &device("Desktop", true)),
+            RemoteInstructGate::NeedsApproval
+        );
+    }
+
+    #[test]
+    fn fleet_dispatch_mode_off_non_home_is_refused() {
+        assert!(matches!(
+            fleet_dispatch_gate(false, &device("Work laptop", false)),
+            RemoteInstructGate::Refused(reason) if reason.contains("Work laptop")
+        ));
+    }
+
+    #[test]
+    fn fleet_dispatch_mode_on_home_autofires() {
+        assert_eq!(
+            fleet_dispatch_gate(true, &device("Desktop", true)),
+            RemoteInstructGate::Autofire
+        );
+    }
+
+    #[test]
+    fn fleet_dispatch_mode_on_non_home_autofires() {
+        assert_eq!(
+            fleet_dispatch_gate(true, &device("Work laptop", false)),
+            RemoteInstructGate::Autofire
+        );
+    }
+
+    /// The successor of `remote_instruct_is_not_on_the_generic_allowlist`: the
+    /// allowlist is gone, so what keeps a device op from firing by its name
+    /// alone is the autopilot routing every one of them into the device arm.
+    #[test]
+    fn device_ops_never_reach_the_generic_autopilot_path() {
+        for op in ["remote_instruct", "remote_fleet_dispatch"] {
+            assert!(is_device_gated(op), "{op} must go through the device rule");
+        }
+        assert!(!is_device_gated("fleet_spawn"));
+        assert!(!is_device_gated("remote_instruct "), "exact names only");
+    }
+
+    /// The git-remote refusal lives in the one dispatch path, so the op and
+    /// the picker say the same thing.
+    #[test]
+    fn a_fleet_payload_needs_a_prompt_a_project_and_a_git_remote() {
+        let db = crate::db::init_test_db().unwrap();
+        let with_remote = crate::db::repos::dev_tools::create_project(
+            &db,
+            "Personas",
+            "C:/personas",
+            None,
+            None,
+            None,
+            Some("https://github.com/o/personas"),
+            None,
+        )
+        .unwrap();
+        crate::db::repos::dev_tools::create_project(
+            &db,
+            "Scratch",
+            "C:/scratch",
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let projects = crate::db::repos::dev_tools::list_projects(&db, None).unwrap();
+
+        let p = fleet_payload_of(
+            &projects,
+            &serde_json::json!({ "project": "personas", "prompt": " fix it " }),
+        )
+        .unwrap();
+        assert_eq!(p.project_id, with_remote.id);
+        assert_eq!(p.github_url, "https://github.com/o/personas");
+        assert_eq!(p.prompt, "fix it");
+        assert_eq!(
+            p.mode,
+            RemoteSessionMode::Headless,
+            "headless is the default"
+        );
+        assert!(p.branch.is_empty(), "the dispatch path mints the branch");
+
+        let p = fleet_payload_of(
+            &projects,
+            &serde_json::json!({ "project": with_remote.id, "prompt": "x", "mode": "interactive" }),
+        )
+        .unwrap();
+        assert_eq!(p.mode, RemoteSessionMode::Interactive);
+
+        let no_remote = fleet_payload_of(
+            &projects,
+            &serde_json::json!({ "project": "Scratch", "prompt": "x" }),
+        )
+        .unwrap();
+        let refused =
+            crate::commands::fleet::remote_exec::require_git_remote(&no_remote).unwrap_err();
+        assert!(refused.to_string().contains("git remote"), "{refused}");
+        assert!(
+            fleet_payload_of(&projects, &serde_json::json!({ "project": "Personas" })).is_err()
+        );
+        assert!(fleet_payload_of(&projects, &serde_json::json!({ "prompt": "x" })).is_err());
+        assert!(fleet_payload_of(
+            &projects,
+            &serde_json::json!({ "project": "Personas", "prompt": "x", "mode": "console" })
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn an_offline_device_is_queued_until_it_wakes_not_sent() {
+        let target = device("Desk", false);
+        let mut job = RemoteJob {
+            id: "j".into(),
+            direction: crate::db::models::RemoteJobDirection::Outbound,
+            peer_id: "peer-Desk".into(),
+            peer_display_name: "Desk".into(),
+            kind: "fleet_session".into(),
+            instruction: "go".into(),
+            payload_json: None,
+            receipt: None,
+            status: RemoteJobStatus::Queued,
+            summary: None,
+            refusal_reason: None,
+            last_seq: 0,
+            created_at: "now".into(),
+            updated_at: "now".into(),
+            completed_at: None,
+        };
+        let queued = sent_message(&target, &job, "the request");
+        assert!(queued.contains("queued until Desk wakes"), "{queued}");
+        assert!(!queued.starts_with("Sent"), "{queued}");
+        job.status = RemoteJobStatus::Running;
+        assert!(sent_message(&target, &job, "the request").starts_with("Sent the request"));
+        job.status = RemoteJobStatus::Refused;
+        job.refusal_reason = Some("project_not_found".into());
+        assert!(sent_message(&target, &job, "x").contains("project_not_found"));
     }
 
     #[test]
