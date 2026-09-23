@@ -26,7 +26,7 @@
     "Cargo.toml": {"count":2,"sections":[0],"contexts":["(4,801 `.ts`/`.tsx`), `src-tauri/` (963 `.rs`), both `Cargo.toml` sets and"],"resolved":false},
     "package.json": {"count":2,"sections":[0],"contexts":["`package.json`, plus **executed replays** of four diff kernels transcribed"]},
     "parameterEditing.tsx": {"count":2,"sections":[7],"lines":["101","102"],"contexts":["| `parameterEditing.tsx:101` | per-parameter `isDirty` | spurious dirty |"],"resolved":false},
-    "rules.json": {"count":1,"sections":[],"contexts":["**Site-level overlap: 0.** No rule in `rules.json` (184 rules, all read) keys on"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[],"contexts":["**Site-level overlap: 0.** No rule in `rules.json` (184 rules, all read) keys on"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/": {"count":1,"sections":[],"contexts":["(4,801 `.ts`/`.tsx`), `src-tauri/` (963 `.rs`), both `Cargo.toml` sets and"],"resolved":false,"isDir":true},
     "src-tauri/db/src/repos/execution/change_journal.rs": {
       "count": 1,

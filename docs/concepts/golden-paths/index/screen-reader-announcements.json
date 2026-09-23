@@ -111,8 +111,7 @@
       "resolved": false
     },
     "plugins/research-lab/shared/useIngestSource.ts": {"count":1,"sections":[7],"lines":["24"],"contexts":["| `plugins/research-lab/shared/useIngestSource.ts:24` | `'Indexing source…'` |"],"resolved":false},
-    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
-    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
+    "scripts/census/rules.json": {"count":2,"sections":[9],"contexts":["scratch rules file, never against `scripts/census/rules.json`."]},
     "scripts/report-hardcoded-ui-strings.mjs": {
       "count": 2,
       "sections": [7],

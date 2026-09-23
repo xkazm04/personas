@@ -59,7 +59,6 @@
       "resolvedFrom": "basename",
       "verbatim": "shared-facts.json"
     },
-    "enSectionStrings.ts": {"count":1,"sections":[3],"lines":["1-2"],"contexts":["and `enSectionStrings.ts:1-2` follow it. **34 committed files carry a generated header and the"],"resolved":false},
     "env.d.ts": {"count":2,"sections":[8],"contexts":["4. **Vite's `import.meta.env` is an untyped string bag.** There is no `env.d.ts` declaring the"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["20"],"contexts":["pre-commit hook runs `--quiet --max-warnings 99999` (`lefthook.yml:20`), where `--quiet` discards"]},
     "openapi.json": {"count":2,"sections":[],"contexts":["test**, that the committed `openapi.json` equals what the code generates — EOL-insensitive, failing"],"resolved":false},
@@ -325,6 +324,14 @@
     },
     "src/features/settings/sub_account/components/AccountSettings.tsx": {"count":1,"sections":[7],"lines":["42"],"contexts":["`src/features/settings/sub_account/components/AccountSettings.tsx:42`), which returns"]},
     "src/features/shared/chrome/sidebar/Sidebar.tsx": {"count":1,"sections":[7],"lines":["130"],"contexts":["`getVersion()` from `@tauri-apps/api/app` (`src/features/shared/chrome/sidebar/Sidebar.tsx:130`,"]},
+    "src/i18n/generated/enSectionStrings.ts": {
+      "count": 1,
+      "sections": [3],
+      "lines": ["1-2"],
+      "contexts": ["and `enSectionStrings.ts:1-2` follow it. **34 committed files carry a generated header and the"],
+      "resolvedFrom": "basename",
+      "verbatim": "enSectionStrings.ts"
+    },
     "src/i18n/generated/types.ts": {"count":1,"sections":[3],"lines":["1-5"],"contexts":["(*\"Generated from src-tauri/src/lib.rs invoke_handler (1585 commands)\"*). `src/i18n/generated/types.ts:1-5`"]},
     "src/i18n/section-locales/": {"count":1,"sections":[7],"contexts":["`scripts/i18n/split-locales.mjs:21` writes **793** JSON files under `src/i18n/section-locales/` from a"],"resolved":false,"isDir":true},
     "src/i18n/useTranslation.ts": {"count":1,"sections":[7],"contexts":["in the repo that are **not compiled**: `src/i18n/useTranslation.ts` loads them through"]},

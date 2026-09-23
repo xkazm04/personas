@@ -73,7 +73,6 @@
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[4],"lines":["425"],"contexts":["`crates/brainiac-server/src/openapi.rs:425` `committed_document_is_current` (§ Convergence)."],"resolved":false},
     "docs/": {"count":1,"sections":[9],"contexts":["`src/`, `src-tauri/`, `docs/` or `.claude/` is a value in `TASKS` **or** carries an allowlist entry"],"resolved":false,"isDir":true},
     "docs/concepts/shared-facts.json": {"count":4,"sections":[4,7],"contexts":["`catalog-curation.md`, `.claude/codebase-context.md`, `shared-facts.json`,"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
-    "enSectionStrings.ts": {"count":1,"sections":[7],"contexts":["`enSectionStrings.ts`, which lives in a directory `removeDir` does not touch — can ever take the fast"],"resolved":false},
     "lefthook.yml": {"count":3,"sections":[7,9],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
     "openapi.json": {"count":4,"sections":[],"contexts":["(`openapi.json`) is verified by a unit test, and hop 2 (`console/src/lib/api-schema.d.ts`, generated"],"resolved":false},
     "package.json": {"count":9,"sections":[0,4,6,7],"contexts":["**four** `tauri.*.conf.json`, `package.json`'s 84 scripts, `lefthook.yml`, `.github/workflows/ci.yml`."]},
@@ -352,7 +351,13 @@
       "resolvedFrom": "basename",
       "verbatim": "pulseGlyphData.ts"
     },
-    "src/i18n/generated/enSectionStrings.ts": {"count":1,"sections":[],"contexts":["| `src/i18n/generated/enSectionStrings.ts` | `i18n/split-locales.mjs` | `TASKS`, both presets | **FRESH** |"]},
+    "src/i18n/generated/enSectionStrings.ts": {
+      "count": 2,
+      "sections": [7],
+      "contexts": ["`enSectionStrings.ts`, which lives in a directory `removeDir` does not touch — can ever take the fast"],
+      "resolvedFrom": "basename",
+      "verbatim": "enSectionStrings.ts"
+    },
     "src/i18n/generated/types.ts": {"count":1,"sections":[],"contexts":["| `src/i18n/generated/types.ts` | `i18n/gen-types.mjs` | `TASKS`, both presets | **FRESH** |"]},
     "src/i18n/section-locales/**/*.json": {"count":1,"sections":[],"contexts":["| `src/i18n/section-locales/**/*.json` — **793 files** | `i18n/split-locales.mjs` | `TASKS`, both presets | **FRESH — all 793** |"],"resolved":false},
     "src/i18n/useTranslation.ts": {"count":2,"sections":[0,7],"lines":["27"],"contexts":["at run time by `useTranslation.ts:27`'s `import.meta.glob`."],"resolvedFrom":"basename","verbatim":"useTranslation.ts"},

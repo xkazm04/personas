@@ -67,7 +67,7 @@
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the whole reason to put it here rather than in `eslint.config.js` — as"]},
     "overview/sub_analytics/ExecutionHeatmap.tsx": {"count":1,"sections":[7],"lines":["444"],"contexts":["| `overview/sub_analytics/ExecutionHeatmap.tsx:444` | **justified** (SVG `<rect>` trigger), reasoning at `:440-442` |"],"resolved":false},
     "overview/sub_certification/GateBreakdown.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["`overview/sub_certification/GateBreakdown.tsx:29` (the gate log tail, available nowhere"],"resolved":false},
-    "rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolved":false},
+    "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"lines":["19-38"],"contexts":["contract (`run-census.mjs:19-38`) was exercised against this exact rule:"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
     "src/**/*.tsx": {"count":1,"sections":[7],"contexts":["Parsed, not grepped. Every JSX opening tag in `src/**/*.tsx` was read with a"],"resolved":false},
     "src/design/focus-contract.test.ts": {"count":1,"sections":[7],"lines":["29-60"],"contexts":["(`src/design/focus-contract.test.ts:29-60`) — the mechanism a tooltip contract needs,"],"resolved":false},
