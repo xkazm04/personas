@@ -1,7 +1,8 @@
 /**
- * FrameTop — the top edge: her latest words, capped at four rows, and the
- * mode keys. Expanding stretches the piece down the screen into the whole
- * conversation; a turn's tick strip opens that turn's detail in place.
+ * FrameTop — the top edge: her latest words, four rows that scroll, and the
+ * mode keys. Expanding stretches the piece down the centre column into the
+ * whole conversation; a turn's tick strip opens that turn's detail in place.
+ * The header row stays fixed in both states; only the words scroll.
  *
  * The dev row (the op ledger) and the one-at-a-time tool strips ride under the
  * keys exactly as they do under the Current header.
@@ -67,7 +68,7 @@ export function FrameTop({
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <div className="flex items-center gap-3 px-4 pt-3 pb-2 text-foreground">
+      <div className="shrink-0 flex items-center gap-3 px-4 pt-3 pb-2 text-foreground">
         <img
           src="/athena/athena_baseline.jpg"
           alt=""
@@ -144,10 +145,11 @@ export function FrameTop({
               onClick={onExpand}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onExpand()}
               aria-label={C.expandConversation}
-              className={`block w-full cursor-pointer text-left rounded-interactive focus-ring max-h-[8.4rem] overflow-hidden athena-chat-md [mask-image:linear-gradient(to_bottom,#000_70%,transparent)] ${look.message}`}
+              className={`block w-full cursor-pointer text-left rounded-interactive focus-ring max-h-[4lh] overflow-y-auto scrollbar-thin pr-2 athena-chat-md ${look.message}`}
             >
-              {/* A four-row preview: no fold (the mask already clips it), but
-                  ref links and the id net apply like everywhere else. */}
+              {/* Four rows of the reply's own line height (`lh`), then it
+                  scrolls: no mask, so nothing is clipped out of reach. No
+                  fold, but ref links and the id net apply as everywhere. */}
               <AssistantProse content={stripModelDirectives(last.content)} fold={false} />
             </div>
           ) : (

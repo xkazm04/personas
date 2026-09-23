@@ -1,5 +1,5 @@
 /**
- * useProcessColumns — the fused side panel's model: one column per affected
+ * useProcessColumns — the Frame right panel's model: one column per affected
  * project, each holding what waits on the operator (decisions) apart from what
  * is running (processes).
  *

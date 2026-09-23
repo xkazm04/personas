@@ -20,7 +20,7 @@ export interface FrameLook {
   id: FrameLookId;
   /** Surface classes of a piece (background, border, radius, shadow). */
   surface: { top: string; bottom: string; left: string; right: string; center: string };
-  /** Where each piece sits in the viewport. */
+  /** Where each piece sits in `VariantFrame`'s grid (never sized from 100vw). */
   place: { top: string; bottom: string; left: string; right: string; center: string };
   /** Wrap each piece in the workforce state frame (`.athena-frame`). */
   framed: boolean;
@@ -29,9 +29,6 @@ export interface FrameLook {
   label: string;
   columns: ColumnsLook;
 }
-
-// Top edge sits under the title bar (48px) and the prototype switcher.
-const TOP = 'top-[100px]';
 
 export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
   halo: {
@@ -43,12 +40,15 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
       right: 'rounded-modal',
       center: 'rounded-modal',
     },
+    // Placement inside `VariantFrame`'s full-app grid, never from the viewport
+    // width: top and bottom are capped and centred in the centre column, the
+    // centre piece fills the column's middle cell, the rails size to content.
     place: {
-      top: `${TOP} left-1/2 -translate-x-1/2 w-[min(900px,calc(100vw-800px))]`,
-      bottom: 'bottom-6 left-1/2 -translate-x-1/2 w-[min(780px,calc(100vw-800px))]',
-      left: 'left-5 top-1/2 -translate-y-1/2',
-      right: `right-5 ${TOP} bottom-6`,
-      center: 'left-1/2 -translate-x-1/2 top-[400px] bottom-[104px] w-[min(880px,calc(100vw-800px))]',
+      top: 'relative w-full max-w-[920px] mx-auto',
+      bottom: 'relative w-full max-w-[780px] mx-auto',
+      left: 'relative self-center max-h-full',
+      right: 'relative h-full min-h-0',
+      center: 'absolute inset-0 mx-auto w-full max-w-[920px]',
     },
     framed: true,
     icon: {

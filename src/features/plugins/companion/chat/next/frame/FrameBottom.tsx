@@ -15,9 +15,17 @@ import { createSendNonce } from '../../../sendNonceLedger';
 import { useSpeechInput } from '../../../useSpeechInput';
 import { useCompanionStore } from '../../../companionStore';
 import type { AthenaChatEngine } from '../../athenaChatEngine';
-import { aboutPrefix } from '../NextComposer';
 import { NEXT_COPY as C } from '../nextCopy';
 import type { WorkItem } from '../useWorkforce';
+
+/**
+ * The one-line `[re: …]` prefix a message carries while a decision card is in
+ * focus, so Athena answers about the card the operator is looking at without
+ * either side copying text across.
+ */
+export function aboutPrefix(item: WorkItem): string {
+  return `[re: ${C.kind[item.kind].toLowerCase()} "${item.title.slice(0, 80)}"] `;
+}
 
 export function FrameBottom({
   engine,

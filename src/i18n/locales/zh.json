@@ -11691,6 +11691,8 @@
       "sleep_cycle_hours_ago": "上次周期在 {hours} 小时前",
       "sleep_cycle_never": "从未运行",
       "sleep_cycle_pressure_tip": "睡眠压力：{chars} / {threshold} 字符 · {last}",
+      "sleep_cycle_confirm": "现在运行一次记忆睡眠周期？",
+      "sleep_cycle_confirm_run": "运行",
       "sleep_cycle_skipped": "未启动周期：{reason}",
       "sleep_cycle_started": "睡眠周期 {id} 已启动。可在“记忆”中查看。",
       "slow_progress_firm": "Athena 仍在处理。如需中断，请点击停止按钮。",

@@ -35,7 +35,7 @@ export function FramePiece({
   frame?: string;
   working?: boolean;
   className?: string;
-  /** Extra placement on the outer piece (e.g. stretching the top edge down). */
+  /** Extra placement on the outer piece (e.g. letting the top edge grow). */
   sectionClassName?: string;
   children: ReactNode;
   label?: string;
@@ -48,7 +48,7 @@ export function FramePiece({
       animate={{ opacity: 1, x: 0, y: 0 }}
       transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
       aria-label={label}
-      className={`absolute pointer-events-auto ${place} ${sectionClassName} ${look.framed ? `athena-frame ${surface}` : ''}`}
+      className={`pointer-events-auto ${place} ${sectionClassName} ${look.framed ? `athena-frame ${surface}` : ''}`}
       style={look.framed ? ({ ['--athena-frame' as string]: frame } as CSSProperties) : undefined}
       data-working={look.framed && working ? 'true' : 'false'}
     >

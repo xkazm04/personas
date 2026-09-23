@@ -975,6 +975,8 @@
     "sleep_cycle_hours_ago": "letzter Zyklus vor {hours} Std.",
     "sleep_cycle_never": "nie ausgeführt",
     "sleep_cycle_pressure_tip": "Schlafdruck: {chars} / {threshold} Zeichen · {last}",
+    "sleep_cycle_confirm": "Jetzt einen Schlafzyklus des Gedächtnisses ausführen?",
+    "sleep_cycle_confirm_run": "Ausführen",
     "sleep_cycle_skipped": "Kein Zyklus gestartet: {reason}",
     "sleep_cycle_started": "Schlafzyklus {id} gestartet. Verfolge ihn unter Speicher.",
     "slow_progress_firm": "Athena arbeitet noch. Klicken Sie auf die Stopp-Schaltfläche, wenn Sie unterbrechen möchten.",

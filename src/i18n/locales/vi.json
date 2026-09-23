@@ -11691,6 +11691,8 @@
       "sleep_cycle_hours_ago": "chu kỳ gần nhất {hours} giờ trước",
       "sleep_cycle_never": "chưa từng chạy",
       "sleep_cycle_pressure_tip": "Áp lực ngủ: {chars} / {threshold} ký tự · {last}",
+      "sleep_cycle_confirm": "Chạy chu kỳ ngủ của bộ nhớ ngay bây giờ?",
+      "sleep_cycle_confirm_run": "Chạy",
       "sleep_cycle_skipped": "Không có chu kỳ nào bắt đầu: {reason}",
       "sleep_cycle_started": "Đã bắt đầu chu kỳ ngủ {id}. Theo dõi trong Bộ nhớ.",
       "slow_progress_firm": "Athena vẫn đang xử lý. Nhấn nút dừng nếu bạn muốn ngắt.",

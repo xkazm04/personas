@@ -11691,6 +11691,8 @@
       "sleep_cycle_hours_ago": "siklus terakhir {hours} jam lalu",
       "sleep_cycle_never": "belum pernah dijalankan",
       "sleep_cycle_pressure_tip": "Tekanan tidur: {chars} / {threshold} karakter · {last}",
+      "sleep_cycle_confirm": "Jalankan siklus tidur memori sekarang?",
+      "sleep_cycle_confirm_run": "Jalankan",
       "sleep_cycle_skipped": "Tidak ada siklus yang dimulai: {reason}",
       "sleep_cycle_started": "Siklus tidur {id} dimulai. Pantau di Memori.",
       "slow_progress_firm": "Athena masih bekerja. Klik tombol berhenti jika Anda ingin menghentikannya.",

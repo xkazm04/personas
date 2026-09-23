@@ -975,6 +975,8 @@
     "sleep_cycle_hours_ago": "آخر دورة قبل {hours} ساعة",
     "sleep_cycle_never": "لم تُشغَّل قط",
     "sleep_cycle_pressure_tip": "ضغط النوم: {chars} / {threshold} حرف · {last}",
+    "sleep_cycle_confirm": "هل تريد تشغيل دورة نوم الذاكرة الآن؟",
+    "sleep_cycle_confirm_run": "تشغيل",
     "sleep_cycle_skipped": "لم تبدأ أي دورة: {reason}",
     "sleep_cycle_started": "بدأت دورة النوم {id}. تابعها في الذاكرة.",
     "slow_progress_firm": "لا تزال Athena تعمل. انقر زر الإيقاف إذا رغبت في المقاطعة.",

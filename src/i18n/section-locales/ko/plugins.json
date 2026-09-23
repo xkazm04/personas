@@ -975,6 +975,8 @@
     "sleep_cycle_hours_ago": "마지막 주기 {hours}시간 전",
     "sleep_cycle_never": "실행된 적 없음",
     "sleep_cycle_pressure_tip": "수면 압력: {chars} / {threshold}자 · {last}",
+    "sleep_cycle_confirm": "지금 메모리 수면 주기를 실행할까요?",
+    "sleep_cycle_confirm_run": "실행",
     "sleep_cycle_skipped": "주기가 시작되지 않음: {reason}",
     "sleep_cycle_started": "수면 주기 {id}을(를) 시작했습니다. 메모리에서 확인하세요.",
     "slow_progress_firm": "아테나가 계속 작업하고 있습니다. 중단하려면 정지 버튼을 클릭하세요.",

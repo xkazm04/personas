@@ -11691,6 +11691,8 @@
       "sleep_cycle_hours_ago": "dernier cycle il y a {hours} h",
       "sleep_cycle_never": "jamais exécuté",
       "sleep_cycle_pressure_tip": "Pression de sommeil : {chars} / {threshold} caractères · {last}",
+      "sleep_cycle_confirm": "Lancer un cycle de sommeil de la mémoire maintenant ?",
+      "sleep_cycle_confirm_run": "Lancer",
       "sleep_cycle_skipped": "Aucun cycle démarré : {reason}",
       "sleep_cycle_started": "Cycle de sommeil {id} démarré. Suivez-le dans Mémoire.",
       "slow_progress_firm": "Athena travaille toujours. Cliquez sur le bouton d’arrêt si vous souhaitez interrompre.",

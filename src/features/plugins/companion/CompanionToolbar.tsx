@@ -64,8 +64,10 @@ export function CompanionToolbar(props: {
   onToggleCompact?: () => void;
   /**
    * `left` docks the rail on the LEFT edge of a floating chat (the two-layer
-   * prototypes): no width handle, its own surface classes, and connector menus
-   * that open to the right instead of off-screen.
+   * prototypes): no width handle, no Brain button (the Current panel keeps
+   * it), its own surface classes, connector menus that open to the right
+   * instead of off-screen, and enabled connectors moved into a second narrow
+   * rail attached to the primary one's right edge.
    */
   dock?: 'panel' | 'left';
   /** Root surface classes when `dock="left"`. */
@@ -146,7 +148,56 @@ export function CompanionToolbar(props: {
     }
   };
 
-  return (
+  // One pinned connector button, shared by the primary rail and (docked left)
+  // the attached rail of enabled connectors, so the toggle, the remove path and
+  // the right-click menu behave identically in both.
+  const renderConnector = (c: (typeof connectors)[number]) => (
+    <ConnectorIconButton
+      key={c.connectorName}
+      menuSide={dock === 'left' ? 'right' : 'left'}
+      name={c.connectorName}
+      enabled={c.enabled}
+      onToggle={async () => {
+        const next = !c.enabled;
+        try {
+          await companionSetConnectorEnabled(c.connectorName, next);
+          setConnectors(
+            connectors.map((row) =>
+              row.connectorName === c.connectorName
+                ? { ...row, enabled: next }
+                : row,
+            ),
+          );
+        } catch (err: unknown) {
+          addToast(
+            err instanceof Error ? err.message : String(err),
+            'error',
+          );
+          silentCatch('companion_set_connector_enabled')(err);
+        }
+      }}
+      onRemove={async () => {
+        try {
+          await companionRemoveConnector(c.connectorName);
+          setConnectors(
+            connectors.filter(
+              (row) => row.connectorName !== c.connectorName,
+            ),
+          );
+        } catch (err: unknown) {
+          addToast(
+            err instanceof Error ? err.message : String(err),
+            'error',
+          );
+          silentCatch('companion_remove_connector')(err);
+        }
+      }}
+    />
+  );
+
+  const enabledConnectors = dock === 'left' ? connectors.filter((c) => c.enabled) : [];
+
+  const primary = (
     <aside
       className={
         dock === 'left'
@@ -186,13 +237,16 @@ export function CompanionToolbar(props: {
 
       <Divider />
 
-      {/* Assist group (existing) */}
-      <ToolbarButton
-        icon={<Brain className="w-4 h-4" />}
-        label={t.plugins.companion.brain_open}
-        onClick={onOpenBrain}
-        active={brainOpen}
-      />
+      {/* Assist group (existing). The left-docked rail carries no Brain
+          button: the Current panel keeps it. */}
+      {dock === 'panel' && (
+        <ToolbarButton
+          icon={<Brain className="w-4 h-4" />}
+          label={t.plugins.companion.brain_open}
+          onClick={onOpenBrain}
+          active={brainOpen}
+        />
+      )}
       {voiceConfigured && <VoiceControlPopover />}
 
       {/* Spacer pushes the connectors group to the bottom. */}
@@ -200,50 +254,9 @@ export function CompanionToolbar(props: {
 
       <Divider />
 
-      {/* Connectors group */}
-      {connectors.map((c) => (
-        <ConnectorIconButton
-          key={c.connectorName}
-          menuSide={dock === 'left' ? 'right' : 'left'}
-          name={c.connectorName}
-          enabled={c.enabled}
-          onToggle={async () => {
-            const next = !c.enabled;
-            try {
-              await companionSetConnectorEnabled(c.connectorName, next);
-              setConnectors(
-                connectors.map((row) =>
-                  row.connectorName === c.connectorName
-                    ? { ...row, enabled: next }
-                    : row,
-                ),
-              );
-            } catch (err: unknown) {
-              addToast(
-                err instanceof Error ? err.message : String(err),
-                'error',
-              );
-              silentCatch('companion_set_connector_enabled')(err);
-            }
-          }}
-          onRemove={async () => {
-            try {
-              await companionRemoveConnector(c.connectorName);
-              setConnectors(
-                connectors.filter(
-                  (row) => row.connectorName !== c.connectorName,
-                ),
-              );
-            } catch (err: unknown) {
-              addToast(
-                err instanceof Error ? err.message : String(err),
-                'error',
-              );
-              silentCatch('companion_remove_connector')(err);
-            }
-          }}
-        />
-      ))}
+      {/* Connectors group. Docked left, the enabled ones move to the attached
+          second rail; only the pinned-but-off ones stay here. */}
+      {(dock === 'left' ? connectors.filter((c) => !c.enabled) : connectors).map(renderConnector)}
       <ToolbarButton
         icon={<Plus className="w-4 h-4" />}
         label={t.plugins.companion.connectors_add}
@@ -281,6 +294,24 @@ export function CompanionToolbar(props: {
         }}
       />
     </aside>
+  );
+
+  if (dock !== 'left' || enabledConnectors.length === 0) return primary;
+
+  // Docked left: the enabled connectors ride in a second narrow rail attached
+  // to the primary one's right edge, so the pair reads as one piece.
+  return (
+    <div className="flex items-stretch">
+      {primary}
+      <div
+        className="shrink-0 w-11 flex flex-col items-center py-3 gap-1.5 border-l border-foreground/10"
+        aria-label={t.plugins.companion.connectors_section_label}
+        role="group"
+        data-testid="companion-toolbar-enabled-connectors"
+      >
+        {enabledConnectors.map(renderConnector)}
+      </div>
+    </div>
   );
 }
 

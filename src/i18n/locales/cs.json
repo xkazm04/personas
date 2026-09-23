@@ -11691,6 +11691,8 @@
       "sleep_cycle_hours_ago": "poslední cyklus před {hours} h",
       "sleep_cycle_never": "nikdy neproběhl",
       "sleep_cycle_pressure_tip": "Spánkový tlak: {chars} / {threshold} znaků · {last}",
+      "sleep_cycle_confirm": "Spustit teď spánkový cyklus paměti?",
+      "sleep_cycle_confirm_run": "Spustit",
       "sleep_cycle_skipped": "Žádný cyklus nezačal: {reason}",
       "sleep_cycle_started": "Spánkový cyklus {id} spuštěn. Sleduj ho v Paměti.",
       "slow_progress_firm": "Athena stále pracuje. Pokud chcete přerušit, klikněte na tlačítko Zastavit.",
