@@ -12,6 +12,7 @@
 import {
   categoryScale,
   domainScale,
+  easeStandard,
   fitToSet,
   MAX_SCALE,
   skyScale,
@@ -37,7 +38,29 @@ import type {
   GalaxyLayout,
   GalaxyNode,
   SubjectNode,
+  TechniqueNode,
 } from './types';
+
+/**
+ * Space the fused HUD's chrome takes from the field, in stage pixels: the
+ * left column, the technique document on the right, the dock at the bottom.
+ * All zero for the classic stage, whose viewport is then exactly what it was.
+ */
+export interface StageInsets {
+  l: number;
+  r: number;
+  b: number;
+}
+
+const NO_INSETS: StageInsets = { l: 0, r: 0, b: 0 };
+
+/** Where the reader stands, as nodes rather than slugs. */
+export interface EnginePath {
+  domain: DomainNode | null;
+  category: CategoryNode | null;
+  subject: SubjectNode | null;
+  technique: TechniqueNode | null;
+}
 
 export interface EngineCallbacks {
   /** The reader moved: the rail and the breadcrumb follow this, not the camera. */
@@ -128,6 +151,33 @@ export class GalaxyEngine {
 
   /** Fused only: the bezel's glass, when the field is framed inside it. */
   private labelWindow: LabelWindow | null = null;
+
+  // ── the fused stage's seams (all inert for the classic stage) ────────────
+
+  /** The insets as drawn this frame; they ease on the flight's own curve. */
+  private insets: StageInsets = NO_INSETS;
+
+  private insetsTo: StageInsets | null = null;
+
+  /**
+   * How much of the usual frame a focus may fill, per level (0 sky .. 3
+   * subject). The bezel frames the field inside its glass with this. Null
+   * is 1 everywhere, which is the classic stage.
+   */
+  private frameFill: ((level: number) => number) | null = null;
+
+  private readonly frameListeners = new Set<() => void>();
+
+  /** Eased progress of the current flight, 1 at rest; the id moves per flight. */
+  private flightE = 1;
+
+  private flightId = 0;
+
+  private altitudeFrom = 0;
+
+  private altitudeTo = 0;
+
+  private altitudeNow = 0;
 
   private frame = 0;
 
@@ -289,6 +339,167 @@ export class GalaxyEngine {
     return { ...this.camera };
   }
 
+  // ── the fused stage's seams ──────────────────────────────────────────────
+
+  /**
+   * Run after every frame the engine draws. The fused instruments (needle,
+   * dock, bezel) follow the camera here, so they move on its curve and cost
+   * nothing at rest: the engine only draws when something moves.
+   */
+  onFrame(listener: () => void): () => void {
+    this.frameListeners.add(listener);
+    return () => {
+      this.frameListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Give the chrome room. The change EASES on a flight that re-frames the
+   * current focus into the space that is left, so the dock rises and the
+   * document opens with the field rather than snapping beside it.
+   */
+  setInsets(next: StageInsets, reframe = true): void {
+    const current = this.insetsTo ?? this.insets;
+    if (current.l === next.l && current.r === next.r && current.b === next.b) return;
+    if (!this.layout || !reframe) {
+      this.insets = { ...next };
+      this.insetsTo = null;
+      this.invalidate();
+      return;
+    }
+    this.insetsTo = { ...next };
+    this.reframe();
+  }
+
+  getInsets(): StageInsets {
+    return { ...this.insets };
+  }
+
+  /** The insets the current flight is heading to. */
+  getTargetInsets(): StageInsets {
+    return { ...(this.insetsTo ?? this.insets) };
+  }
+
+  setFrameFill(fill: ((level: number) => number) | null): void {
+    this.frameFill = fill;
+  }
+
+  /** Fly back to the frame the current focus deserves (Fit, a mode switch). */
+  reframe(ms = FLIGHT_MS): void {
+    if (!this.layout) return;
+    if (this.focus.kind === 'council') {
+      const stars = this.focus.registrySubjects
+        .map((slug) => this.layout?.bySlug.get(slug))
+        .filter((s): s is SubjectNode => Boolean(s));
+      const target = fitToSet(this.frameViewport(), stars);
+      if (target) this.flyTo(target, ms);
+      return;
+    }
+    this.flyTo(this.frameOf(this.subject ?? this.category ?? this.domain), ms);
+  }
+
+  getViewport(): Viewport {
+    return this.viewport();
+  }
+
+  getSize(): { width: number; height: number } {
+    return { width: this.width, height: this.height };
+  }
+
+  getLayout(): GalaxyLayout | null {
+    return this.layout;
+  }
+
+  getPath(): EnginePath {
+    const technique = this.pinned?.node.kind === 'technique' ? this.pinned.node : null;
+    return { domain: this.domain, category: this.category, subject: this.subject, technique };
+  }
+
+  getHover(): GalaxyNode | null {
+    return this.hover;
+  }
+
+  /** Eased progress (0..1) of the flight in progress and its id; e is 1 at rest. */
+  getFlight(): { id: number; e: number; flying: boolean } {
+    return { id: this.flightId, e: this.flightE, flying: this.flight !== 0 };
+  }
+
+  /**
+   * Where the reader is on the altitude ladder, continuously: 0 sky, 1
+   * domain, 2 category, 3 subject, 4 a technique. It moves on the flight's
+   * eased curve, so a needle that reads it lands WITH the camera.
+   */
+  getAltitude(): number {
+    return this.altitudeNow;
+  }
+
+  private level(): number {
+    if (this.pinned?.node.kind === 'technique') return 4;
+    if (this.subject) return 3;
+    if (this.category) return 2;
+    if (this.domain) return 1;
+    return 0;
+  }
+
+  /** The frame a node (or the sky, for null) is shown at. */
+  private frameOf(node: DomainNode | CategoryNode | SubjectNode | null): CameraState {
+    const v = this.frameViewport();
+    if (!node) return { x: 0, y: 0, k: this.skyK() };
+    if (node.kind === 'domain') return { x: node.x, y: node.y, k: domainScale(v, node) };
+    if (node.kind === 'category') return { x: node.x, y: node.y, k: categoryScale(v, node) };
+    return { x: node.x, y: node.y, k: subjectScale(v) };
+  }
+
+  /**
+   * Go to any node from outside the field (the list, a care cell, the dial):
+   * a technique opens as the pinned technique of its own subject, anything
+   * else is descended into, remembering the view it leaves.
+   */
+  goTo(node: GalaxyNode, replace = false): void {
+    // `replace` steps to a neighbour: the view is swapped rather than
+    // stacked, so Esc still climbs to the parent instead of the sibling.
+    const depth = this.stack.length;
+    if (node.kind === 'technique') {
+      if (this.subject !== node.subject) {
+        this.unpin();
+        this.descend(node.subject);
+        if (replace) this.stack.length = depth;
+      }
+      const v = this.viewport();
+      const { cx, cy } = viewportCentre(v);
+      this.pin(node, cx, cy);
+      return;
+    }
+    this.unpin();
+    this.descend(node);
+    if (replace) this.stack.length = depth;
+  }
+
+  /**
+   * Climb straight to one rung (0 sky .. 3 subject). Frames the descent
+   * pushed are popped on the way, so a climb that retraces clicks returns to
+   * the exact camera it left; a rung reached by a jump is framed afresh.
+   */
+  climbTo(level: number): void {
+    this.unpin();
+    const path: [DomainNode | null, CategoryNode | null, SubjectNode | null] = [this.domain, this.category, this.subject];
+    const target = level <= 0 ? null : (path[level - 1] ?? null);
+    if (this.level() <= level) return;
+    let frame: CameraFrame | undefined;
+    while (this.stack.length > 0) {
+      frame = this.stack.pop();
+      if (frame && depthOf(frame.focus) <= level) break;
+    }
+    this.domain = level >= 1 ? path[0] : null;
+    this.category = level >= 2 ? path[1] : null;
+    this.subject = level >= 3 ? path[2] : null;
+    this.thread = null;
+    const exact = frame && depthOf(frame.focus) === level && sameTarget(frame.focus, target);
+    if (frame && !exact) this.stack.push(frame);
+    this.flyTo(exact && frame ? { x: frame.x, y: frame.y, k: frame.k } : this.frameOf(target));
+    this.emitFocus();
+  }
+
   restoreCamera(camera: CameraState, ms = FLIGHT_MS): void {
     this.flyTo(camera, ms);
   }
@@ -343,7 +554,7 @@ export class GalaxyEngine {
       } else if (domains.size === 1) {
         this.domain = [...domains][0] ?? null;
       }
-      const target = fitToSet(this.viewport(), stars);
+      const target = fitToSet(this.frameViewport(), stars);
       if (target && fly) this.flyTo(target, FLIGHT_MS);
       return;
     }
@@ -353,9 +564,9 @@ export class GalaxyEngine {
       this.category = this.domain?.categories.find((c) => c.id === focus.categoryId) ?? null;
       this.subject = this.category?.subjects.find((s) => s.slug === focus.subjectSlug) ?? null;
       if (!fly) return;
-      if (this.subject) this.flyTo({ x: this.subject.x, y: this.subject.y, k: subjectScale(this.viewport()) });
-      else if (this.category) this.flyTo({ x: this.category.x, y: this.category.y, k: categoryScale(this.viewport(), this.category) });
-      else if (this.domain) this.flyTo({ x: this.domain.x, y: this.domain.y, k: domainScale(this.viewport(), this.domain) });
+      if (this.subject) this.flyTo({ x: this.subject.x, y: this.subject.y, k: subjectScale(this.frameViewport()) });
+      else if (this.category) this.flyTo({ x: this.category.x, y: this.category.y, k: categoryScale(this.frameViewport(), this.category) });
+      else if (this.domain) this.flyTo({ x: this.domain.x, y: this.domain.y, k: domainScale(this.frameViewport(), this.domain) });
       return;
     }
     if (fly) this.flyTo({ x: 0, y: 0, k: this.skyK() });
@@ -382,17 +593,17 @@ export class GalaxyEngine {
       this.domain = node;
       this.category = null;
       this.subject = null;
-      this.flyTo({ x: node.x, y: node.y, k: domainScale(this.viewport(), node) });
+      this.flyTo({ x: node.x, y: node.y, k: domainScale(this.frameViewport(), node) });
     } else if (node.kind === 'category') {
       this.domain = node.domain;
       this.category = node;
       this.subject = null;
-      this.flyTo({ x: node.x, y: node.y, k: categoryScale(this.viewport(), node) });
+      this.flyTo({ x: node.x, y: node.y, k: categoryScale(this.frameViewport(), node) });
     } else {
       this.domain = node.domain;
       this.category = node.category;
       this.subject = node;
-      this.flyTo({ x: node.x, y: node.y, k: subjectScale(this.viewport()) });
+      this.flyTo({ x: node.x, y: node.y, k: subjectScale(this.frameViewport()) });
     }
     this.thread = null;
     this.emitFocus();
@@ -447,12 +658,27 @@ export class GalaxyEngine {
 
   // ── geometry ─────────────────────────────────────────────────────────────
 
-  private viewport(): Viewport {
-    return { x0: 0, x1: this.width, y0: 0, y1: Math.max(150, this.height - this.benchHeight) };
+  private viewport(ins: StageInsets = this.insets): Viewport {
+    return { x0: ins.l, x1: this.width - ins.r, y0: 0, y1: Math.max(150, this.height - this.benchHeight - ins.b) };
+  }
+
+  /**
+   * The viewport a NEW frame is computed against: the one the flight is
+   * heading to, shrunk round its centre by the frame fill. With no insets
+   * and no fill it is exactly `viewport()`.
+   */
+  private frameViewport(): Viewport {
+    const v = this.viewport(this.insetsTo ?? this.insets);
+    if (!this.frameFill) return v;
+    const f = this.frameFill(Math.min(3, this.level()));
+    const { cx, cy } = viewportCentre(v);
+    const hw = ((v.x1 - v.x0) / 2) * f;
+    const hh = ((v.y1 - v.y0) / 2) * f;
+    return { x0: cx - hw, x1: cx + hw, y0: cy - hh, y1: cy + hh };
   }
 
   private skyK(): number {
-    return skyScale(this.viewport(), this.layout?.boundRadius ?? 1);
+    return skyScale(this.frameViewport(), this.layout?.boundRadius ?? 1);
   }
 
   private altitude(): Altitude {
@@ -490,8 +716,23 @@ export class GalaxyEngine {
     if (this.flight) cancelAnimationFrame(this.flight);
     const from = { ...this.camera };
     const t0 = performance.now();
+    // The fused seams ride the same curve: the insets (dock, column,
+    // document) and the altitude the needle reads. Both are inert for the
+    // classic stage, whose insets never move.
+    const insFrom = this.insetsTo ? { ...this.insets } : null;
+    const insTo = this.insetsTo;
+    this.flightId += 1;
+    this.altitudeFrom = this.altitudeNow;
+    this.altitudeTo = this.level();
     const step = (now: number) => {
       const p = Math.min(1, (now - t0) / ms);
+      const e = p >= 1 ? 1 : easeStandard(p);
+      this.flightE = e;
+      this.altitudeNow = this.altitudeFrom + (this.altitudeTo - this.altitudeFrom) * e;
+      if (insFrom && insTo) {
+        this.insets = p >= 1 ? { ...insTo } : lerpInsets(insFrom, insTo, e);
+        if (p >= 1 && this.insetsTo === insTo) this.insetsTo = null;
+      }
       // The last frame SNAPS to the target rather than interpolating to it:
       // the log-space `k` tween lands within a float epsilon of the target,
       // which is invisible on screen and fatal to "the camera returns
@@ -533,6 +774,8 @@ export class GalaxyEngine {
         : {}),
     });
     this.callbacks.onCounts(this.counts());
+    if (this.frame === 0 && this.flight === 0) this.altitudeNow = this.level();
+    for (const listener of this.frameListeners) listener();
   }
 
   private counts(): GalaxyCounts {
@@ -731,7 +974,7 @@ export class GalaxyEngine {
   private syncAltitude(): void {
     const layout = this.layout;
     if (!layout || this.thread) return;
-    const v = this.viewport();
+    const v = this.frameViewport();
     let changed = false;
     const nearest = <T extends { x: number; y: number }>(items: T[]): T | null => {
       let best: T | null = null;
@@ -796,3 +1039,25 @@ export class GalaxyEngine {
 }
 
 export { LENS_R };
+
+function lerpInsets(a: StageInsets, b: StageInsets, e: number): StageInsets {
+  return { l: a.l + (b.l - a.l) * e, r: a.r + (b.r - a.r) * e, b: a.b + (b.b - a.b) * e };
+}
+
+/** How deep a remembered focus stood: 0 sky .. 3 subject. */
+function depthOf(focus: GalaxyFocus): number {
+  if (focus.kind !== 'node') return 0;
+  if (focus.subjectSlug) return 3;
+  if (focus.categoryId) return 2;
+  if (focus.domainSlug) return 1;
+  return 0;
+}
+
+function sameTarget(focus: GalaxyFocus, node: GalaxyNode | null): boolean {
+  if (!node) return focus.kind !== 'node' || depthOf(focus) === 0;
+  if (focus.kind !== 'node') return false;
+  if (node.kind === 'domain') return focus.domainSlug === node.slug;
+  if (node.kind === 'category') return focus.categoryId === node.id;
+  if (node.kind === 'subject') return focus.subjectSlug === node.slug;
+  return false;
+}

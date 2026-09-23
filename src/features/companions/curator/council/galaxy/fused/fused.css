@@ -1,0 +1,157 @@
+/* The fused Council HUD, ported from the contest winner's stylesheet
+   (council-hud-r2-r3 A/3, `index.html` <style>) in the form it was written:
+   the same selectors under one scope, the same numbers, colours through the
+   product's tokens. Font sizes are the winner's pixels expressed in rem, so
+   the app's text-scale setting still scales them; everything else is the
+   winner's pixels. The style contract at
+   `.claude/council-reference/style-contract/` holds this file to the winner.
+
+   The claim palette is defined ONCE, here, and the field engine reads the
+   same four variables (`engine/profile.ts`), so a star, its bar in the
+   cross-section and its arc on the bezel are one colour. They are the
+   galaxy's own tones the owner asked for in round 1 ("subtly adjust the
+   tones"), not the status pastels they replaced. */
+
+/* On the root rather than the stage: the field engine resolves colours
+   through a probe element parked on <body>, outside `.fz`. */
+:root {
+  --gx-star: #dbe7f5;
+  --gx-halo: #06b6d4;
+  --gx-ok: #2cc4a0;
+  --gx-warn: #f0a83a;
+  --gx-err: #ef5a7a;
+  --gx-none: #a3b7ce;
+}
+:root[data-theme^='light'] {
+  --gx-star: #0f172a;
+  --gx-halo: #0e7490;
+  --gx-ok: #0b8a72;
+  --gx-warn: #b56a08;
+  --gx-err: #c3325a;
+  --gx-none: #5b6d84;
+}
+.fz {
+  --panel: rgba(15, 21, 32, 0.95);
+  --dock: rgba(10, 15, 23, 0.95);
+  --scrim: rgba(10, 14, 20, 0.88);
+  --nav-w: 284px;
+  --dock-h: 104px;
+  --doc-w: 460px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: normal;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+[data-theme^='light'] .fz {
+  --panel: rgba(250, 249, 246, 0.97);
+  --dock: rgba(236, 233, 225, 0.96);
+  --scrim: rgba(243, 241, 236, 0.93);
+}
+.fz.fz-wide { --nav-w: 316px; }
+.fz * { box-sizing: border-box; }
+.fz button { font: inherit; color: inherit; line-height: inherit; }
+.fz :focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+.fz .fz-field { position: absolute; inset: 0; }
+.fz .fz-bezel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 1; }
+.fz .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fz kbd { font-family: inherit; font-size: 0.8125rem; font-weight: 700; min-width: 20px; padding: 0 5px; line-height: 19px; text-align: center; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent); color: var(--muted-foreground); background: color-mix(in srgb, var(--background) 60%, transparent); display: inline-block; }
+
+/* ------------------------------------------------ left: the altitude timeline and the nested list */
+.fz .fz-nav.tight .fz-tree, .fz .fz-nav.tight .keys { display: none; }
+.fz .fz-nav.tight { gap: 5px; padding-top: 8px; }
+.fz .fz-nav.tight .rung { min-height: 22px; padding: 1px 0; }
+.fz .fz-nav.tight .rung.current { padding: 3px 0 4px; }
+.fz .fz-nav.tight .figs { margin-top: 3px; }
+.fz .fz-nav.tight .fz-hides { padding-top: 4px; }
+.fz .fz-nav { position: absolute; left: 0; top: 0; bottom: var(--dock-h); width: var(--nav-w); z-index: 6; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 12px 22px 10px 14px; background: linear-gradient(90deg, var(--scrim) 0%, var(--scrim) 90%, transparent 100%); }
+.fz .n-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; min-height: 28px; }
+.fz .fixture { font-size: 0.8125rem; font-weight: 600; color: var(--gx-warn); border: 1px solid color-mix(in srgb, var(--gx-warn) 50%, transparent); border-radius: var(--radius-pill); padding: 1px 9px; white-space: nowrap; }
+.fz .fz-track { position: relative; flex: none; }
+.fz .fz-track .line { position: absolute; left: 7px; top: 12px; bottom: 12px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 75%, transparent), color-mix(in srgb, var(--muted) 22%, transparent)); }
+.fz .fz-needle { position: absolute; left: 0; top: 0; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent), 0 0 16px color-mix(in srgb, var(--accent) 55%, transparent); will-change: transform; pointer-events: none; z-index: 2; }
+.fz .fz-rungs { list-style: none; margin: 0; padding: 0 0 0 26px; }
+.fz .rung { position: relative; display: grid; grid-template-columns: 70px 1fr auto; align-items: baseline; gap: 0 6px; padding: 2px 0; min-height: 25px; }
+.fz .rung::before { content: ''; position: absolute; left: -22px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted-dark); }
+.fz .rung.reached::before { background: var(--foreground); }
+.fz .rung .tag { font-size: 0.8125rem; font-weight: 600; color: var(--muted); line-height: 20px; }
+.fz .rung .nm { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 0; font-size: 0.875rem; line-height: 1.35; color: var(--muted-foreground); cursor: pointer; border-radius: var(--radius-interactive); }
+.fz .rung.reached .nm:hover { color: var(--foreground); }
+.fz .rung.reached .nm::after { content: ' \2191'; color: var(--muted); }
+.fz .rung.current { grid-template-columns: 1fr; padding: 6px 0 8px; }
+.fz .rung.current::before { top: 12px; background: transparent; }
+.fz .rung.current .tag { color: var(--accent); }
+.fz .rung.current .nm { font-size: 1.125rem; font-weight: 700; color: var(--foreground); cursor: default; line-height: 1.25; margin-top: 1px; }
+.fz .rung.current.tech .nm { color: color-mix(in srgb, var(--brand-purple) 70%, var(--foreground)); }
+.fz .rung.below .sound { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fz .sound i { display: block; height: 6px; border-radius: 3px; flex: none; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), color-mix(in srgb, var(--accent) 16%, transparent)); }
+.fz .sound b { font-size: 0.875rem; font-weight: 700; }
+.fz .sound span { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
+.fz .rung .nb { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: 1px; }
+.fz .figs { display: flex; flex-wrap: wrap; gap: 2px 16px; margin-top: 6px; }
+.fz .fig b { display: block; font-size: 1.1875rem; font-weight: 700; line-height: 1.2; }
+.fz .fig span { font-size: 0.8125rem; color: var(--muted); }
+.fz .fig.lit b { color: var(--accent); }
+.fz .fig.nm2 b { font-size: 0.875rem; font-style: italic; font-weight: 600; color: var(--muted); line-height: 23px; }
+.fz .fz-hides { flex: none; font-size: 0.875rem; color: var(--muted); line-height: 1.45; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
+.fz .fz-hides b { color: var(--foreground); }
+
+.fz .fz-tree { flex: 1; min-height: 70px; display: flex; flex-direction: column; border-top: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); padding-top: 6px; }
+.fz .fz-tree h3 { margin: 0 0 4px; font-size: 0.8125rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; flex: none; }
+.fz .fz-tree h3 .k { margin-left: auto; font-weight: 500; white-space: nowrap; }
+.fz .fz-tree h3 .care { color: var(--gx-warn); font-weight: 700; }
+.fz .fz-tree ol { list-style: none; margin: 0; padding: 0 4px 0 0; overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; }
+.fz .it { display: grid; grid-template-columns: 24px 1fr auto; gap: 0 6px; align-items: start; width: 100%; text-align: left; background: none; border: 0; padding: 3px 6px; border-radius: var(--radius-interactive); font-size: 0.875rem; line-height: 1.35; cursor: pointer; color: var(--foreground); }
+.fz .it .rk { color: var(--muted); font-weight: 600; text-align: right; }
+.fz .it .ct { color: var(--muted); font-size: 0.8125rem; white-space: nowrap; display: flex; align-items: center; gap: 6px; line-height: 19px; }
+.fz .it .cb { font-weight: 700; color: var(--gx-warn); }
+.fz .it .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.fz .it:hover, .fz .it.cur { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.fz .it.cur .t { color: var(--accent); font-weight: 600; }
+.fz .it.pinned { background: color-mix(in srgb, var(--brand-purple) 18%, transparent); }
+.fz .it.pinned .t { font-weight: 600; }
+.fz .sub { list-style: none; margin: 1px 0 5px 20px; padding: 0 0 0 8px; border-left: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+.fz .sub .it { color: var(--muted-foreground); grid-template-columns: 22px 1fr auto; }
+.fz .sub .more { font-size: 0.8125rem; color: var(--muted); padding: 2px 6px; }
+
+/* the instrument switch: three modes of one HUD, named where they are switched */
+.fz .fz-cmds { flex: none; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.fz .fz-modes { flex: none; display: flex; align-items: center; gap: 6px; }
+.fz .fz-modes .seg { flex: 1; min-width: 0; display: flex; gap: 2px; padding: 2px; border-radius: var(--radius-interactive); border: 1px solid var(--card-border); background: var(--card-bg); }
+.fz .fz-modes .seg button { flex: 1 1 auto; height: 28px; padding: 0 7px; border: 0; border-radius: 5px; background: none; font-size: 0.8125rem; font-weight: 600; color: var(--muted-foreground); cursor: pointer; white-space: nowrap; }
+.fz .fz-modes .seg button:hover { color: var(--foreground); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.fz .fz-modes .seg button[aria-pressed='true'] { color: var(--foreground); background: color-mix(in srgb, var(--accent) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent); }
+.fz .fz-modes.flash .seg button[aria-pressed='true'] { animation: fz-modeflash 1.4s ease-out; }
+@keyframes fz-modeflash { 0% { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .fz .fz-modes.flash .seg button[aria-pressed='true'] { animation: none; } }
+.fz .cmd { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 32px; padding: 0 7px 0 10px; border-radius: var(--radius-interactive); border: 1px solid var(--card-border); background: var(--card-bg); cursor: pointer; font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+.fz .cmd:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.fz .cmd[aria-pressed='true'] { background: var(--btn-primary); color: var(--btn-primary-fg); border-color: transparent; }
+[data-theme^='light'] .fz .cmd[aria-pressed='true'] { background: var(--primary); color: var(--btn-primary-fg); }
+.fz .cmd[aria-pressed='true'] kbd { color: inherit; border-color: color-mix(in srgb, var(--btn-primary-fg) 50%, transparent); background: transparent; }
+.fz .keys { flex: none; font-size: 0.8125rem; color: var(--muted); line-height: 1.5; }
+.fz .fz-say { position: absolute; z-index: 30; max-width: 340px; font-size: 0.875rem; line-height: 1.5; padding: 8px 10px; border-radius: var(--radius-card); background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: var(--shadow-elevation-3); pointer-events: none; }
+.fz .fz-say b { color: var(--accent); font-weight: 600; }
+.fz .fz-say kbd { margin: 0 1px; }
+
+/* ------------------------------------------------ tooltip, finder */
+.fz .fz-tip { position: absolute; pointer-events: none; z-index: 40; max-width: 300px; padding: 9px 12px; border-radius: var(--radius-card); background: var(--panel); border: 1px solid var(--card-border); box-shadow: var(--shadow-elevation-3); display: none; }
+.fz .fz-tip.on { display: block; }
+.fz .fz-tip .k { font-size: 0.8125rem; color: var(--muted); font-weight: 600; }
+.fz .fz-tip .n { font-size: 0.9375rem; font-weight: 700; margin: 1px 0 2px; }
+.fz .fz-tip .f { font-size: 0.8125rem; color: var(--muted-foreground); }
+.fz .fz-tip .go { font-size: 0.8125rem; color: var(--accent); margin-top: 4px; font-weight: 600; }
+.fz .fz-tip .cz { font-size: 0.8125rem; margin-top: 3px; }
+.fz .fz-finder { position: absolute; top: 12px; left: calc(var(--nav-w) + 4px); width: min(480px, calc(100% - var(--nav-w) - 340px)); min-width: 300px; z-index: 35; background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: var(--radius-card); box-shadow: var(--shadow-elevation-4); padding: 8px; }
+.fz .fz-finder input { width: 100%; font: inherit; font-size: 0.9375rem; padding: 8px 10px; border-radius: var(--radius-input); border: 1px solid var(--card-border); background: var(--background); color: var(--foreground); outline: none; }
+.fz .fz-finder ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 340px; overflow-y: auto; }
+.fz .fz-finder li > button { display: grid; grid-template-columns: 84px 1fr; gap: 2px 8px; width: 100%; text-align: left; background: none; border: 0; padding: 6px 8px; border-radius: var(--radius-interactive); cursor: pointer; }
+.fz .fz-finder li.sel > button, .fz .fz-finder li > button:hover { background: color-mix(in srgb, var(--accent) 13%, transparent); }
+.fz .fz-finder .fk { font-size: 0.8125rem; color: var(--muted); font-weight: 600; grid-row: span 2; padding-top: 1px; }
+.fz .fz-finder .fn { font-size: 0.875rem; font-weight: 600; }
+.fz .fz-finder .fp { font-size: 0.8125rem; color: var(--muted); }
+.fz .fz-finder .empty { font-size: 0.875rem; color: var(--muted); padding: 8px; display: block; cursor: default; }
