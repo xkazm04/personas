@@ -227,8 +227,9 @@ export function titleCase(slug: string): string {
 }
 
 /**
- * Strip Athena's reply-shaping directives (`OP:`, `QR:`, `TTS:`, raw
- * `{"op":` lines) from streaming text so the user never sees raw JSON
+ * Strip Athena's reply-shaping directives (`OP:`, `QR:`, `TTS:`, `PROGRESS:`,
+ * raw `{"op":` lines — the same set as Rust `clean_segment_for_display` in
+ * `companion/session/stream.rs`) from streaming text so the user never sees raw JSON
  * lines flash before the backend's dispatcher finalizes the cleaned
  * version. The dispatcher does the same strip server-side on persist;
  * this is purely a display filter on the in-flight bubble.
@@ -245,6 +246,7 @@ export function stripModelDirectives(text: string): string {
       trimmed.startsWith('OP:') ||
       trimmed.startsWith('QR:') ||
       trimmed.startsWith('TTS:') ||
+      trimmed.startsWith('PROGRESS:') ||
       trimmed.startsWith('{"op"')
     ) {
       continue;

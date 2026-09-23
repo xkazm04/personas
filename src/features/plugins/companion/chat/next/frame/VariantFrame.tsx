@@ -21,6 +21,9 @@ import { DeckLayer } from '../fused/DeckLayer';
 import { NEXT_COPY as C } from '../nextCopy';
 import { frameGradient } from '../tones';
 import { useLayer } from '../useLayer';
+import { useLayerRefOpener } from '../useLayerRefOpener';
+import { ReportReader } from '../../refs/ReportReader';
+import { RefOpenerProvider } from '../../refs/RefOpenerContext';
 import { useProcessColumns } from '../useProcessColumns';
 import { useWorkforce } from '../useWorkforce';
 import { FrameBottom } from './FrameBottom';
@@ -34,6 +37,7 @@ export function VariantFrame({ engine, lifted, lookId }: { engine: AthenaChatEng
   const columns = useProcessColumns(workforce, C.athena);
   const layer = useLayer();
   const { view } = layer;
+  const refOpener = useLayerRefOpener(layer, workforce.items);
   const [expanded, setExpanded] = useState(false);
   const streaming = useCompanionStore((s) => s.streaming);
   const brainOpen = useCompanionStore((s) => s.brainView.open);
@@ -44,9 +48,10 @@ export function VariantFrame({ engine, lifted, lookId }: { engine: AthenaChatEng
     () => (view.kind === 'work' ? (workforce.items.find((i) => i.id === focusId) ?? null) : null),
     [view.kind, workforce.items, focusId],
   );
-  const centre = brainOpen || view.kind === 'work';
+  const centre = brainOpen || view.kind === 'work' || view.kind === 'report';
 
   return (
+    <RefOpenerProvider value={refOpener}>
     <div className={`fixed inset-0 ${lifted ? 'z-[220]' : 'z-[60]'} pointer-events-none`} data-testid="companion-panel">
       <FramePiece
         edge="top"
@@ -91,6 +96,8 @@ export function VariantFrame({ engine, lifted, lookId }: { engine: AthenaChatEng
                 onClose={() => useCompanionStore.getState().setBrainView({ open: false, kind: null, id: null })}
               />
             </div>
+          ) : view.kind === 'report' ? (
+            <ReportReader reportId={view.id} onClose={layer.back} overlay={false} escToClose={false} />
           ) : (
             <div className="h-full flex flex-col">
               <DeckLayer
@@ -106,5 +113,6 @@ export function VariantFrame({ engine, lifted, lookId }: { engine: AthenaChatEng
         </FramePiece>
       )}
     </div>
+    </RefOpenerProvider>
   );
 }

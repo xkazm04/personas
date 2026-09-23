@@ -12,12 +12,12 @@
 import { memo, useMemo, useState } from 'react';
 import { Brain, ChevronUp, CornerDownRight } from 'lucide-react';
 import type { CompanionMessage } from '@/api/companion';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { stripModelDirectives } from '../../athenaLabels';
 import { useCompanionStore } from '../../companionStore';
 import { AthenaChatTurnActions } from '../AthenaChatTurnActions';
+import { AssistantProse } from '../refs/AssistantProse';
 import { buildTurns, MACHINE_TONE, type Turn } from './exchange';
 import { NEXT_COPY as C } from './nextCopy';
 
@@ -149,7 +149,7 @@ function TurnBlock({
 
       {turn.replies.map((r) => (
         <div key={r.id} className="mt-3 typo-body-lg text-foreground max-w-[68ch] break-words athena-chat-md">
-          <MarkdownRenderer content={stripModelDirectives(r.content)} className="athena-chat-md" codeBlockActions />
+          <AssistantProse content={stripModelDirectives(r.content)} codeBlockActions />
         </div>
       ))}
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Activity, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCompanionStore } from './companionStore';
@@ -14,7 +14,9 @@ import { TaskTag } from './TaskTag';
  */
 export function ActivityTray() {
   const { t, tx } = useTranslation();
-  const [collapsed, setCollapsed] = useState(false);
+  // Lifted into the store so a `ref:job/…` link can unfold the tray.
+  const collapsed = useCompanionStore((s) => s.activityTrayCollapsed);
+  const setCollapsed = useCompanionStore((s) => s.setActivityTrayCollapsed);
   const jobsById = useCompanionStore((s) => s.jobsById);
   const inTurnToolJobs = useCompanionStore((s) => s.inTurnToolJobs);
 
@@ -43,7 +45,7 @@ export function ActivityTray() {
     >
       <button
         type="button"
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={() => setCollapsed(!collapsed)}
         className="flex items-center gap-2 w-full px-2.5 py-1.5 typo-caption text-foreground focus-ring rounded-card"
       >
         <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />

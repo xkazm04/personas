@@ -344,6 +344,16 @@ interface CompanionStore {
   brainView: BrainViewState;
   setBrainView: (next: BrainViewState) => void;
 
+  /** Layered voice: the report open in the Current layout's reader overlay
+   *  (null = closed). The prototypes route reports through `useLayer` instead. */
+  reportViewId: string | null;
+  setReportViewId: (id: string | null) => void;
+
+  /** Activity tray fold state, lifted out of the tray so a `ref:job/…` link
+   *  can unfold it from anywhere in the transcript. */
+  activityTrayCollapsed: boolean;
+  setActivityTrayCollapsed: (collapsed: boolean) => void;
+
   // Dev mode availability (debug build?) — fetched once from
   // companion_beta_flags; gates the wrench toggle in the header.
   devModeAvailable: boolean;
@@ -1004,6 +1014,12 @@ export const useCompanionStore = create<CompanionStore>()(
 
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),
+
+  reportViewId: null,
+  setReportViewId: (reportViewId) => set({ reportViewId }),
+
+  activityTrayCollapsed: false,
+  setActivityTrayCollapsed: (activityTrayCollapsed) => set({ activityTrayCollapsed }),
 
   devModeAvailable: false,
   setDevModeAvailable: (devModeAvailable) => set({ devModeAvailable }),

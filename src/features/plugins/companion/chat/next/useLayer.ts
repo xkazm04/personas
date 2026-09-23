@@ -12,7 +12,9 @@ export type LayerView =
   | { kind: 'chat' }
   | { kind: 'work'; focus: string | null; project: string | null }
   | { kind: 'turn'; turn: Turn }
-  | { kind: 'modes' };
+  | { kind: 'modes' }
+  /** Layered voice: a report opened from a ref link or its one-line card. */
+  | { kind: 'report'; id: string };
 
 export function useLayer() {
   const [view, setView] = useState<LayerView>({ kind: 'chat' });
@@ -22,6 +24,7 @@ export function useLayer() {
     [],
   );
   const openTurn = useCallback((turn: Turn) => setView({ kind: 'turn', turn }), []);
+  const openReport = useCallback((id: string) => setView({ kind: 'report', id }), []);
   const openModes = useCallback(() => setView((v) => (v.kind === 'modes' ? { kind: 'chat' } : { kind: 'modes' })), []);
   const toggleWork = useCallback(
     () => setView((v) => (v.kind === 'work' ? { kind: 'chat' } : { kind: 'work', focus: null, project: null })),
@@ -48,7 +51,7 @@ export function useLayer() {
     { priority: FULLSCREEN_LAYER_PRIORITY },
   );
 
-  return { view, setView, back, openWork, openTurn, openModes, toggleWork };
+  return { view, setView, back, openWork, openTurn, openReport, openModes, toggleWork };
 }
 
 export type LayerApi = ReturnType<typeof useLayer>;

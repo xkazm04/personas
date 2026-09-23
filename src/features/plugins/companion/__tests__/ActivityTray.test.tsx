@@ -30,6 +30,9 @@ function job(over: Partial<BackgroundJob> = {}): BackgroundJob {
 beforeEach(() => {
   useCompanionStore.getState().clearAllConnectorJobs();
   useCompanionStore.getState().clearInTurnToolJobs();
+  // The fold state lives in the store now (a `ref:job/…` link unfolds it), so
+  // a test that collapses the tray must not leak that into the next one.
+  useCompanionStore.getState().setActivityTrayCollapsed(false);
 });
 
 describe('ActivityTray', () => {

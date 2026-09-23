@@ -11,7 +11,6 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, Square } from 'lucide-react';
 import type { CompanionMessage } from '@/api/companion';
 import { Collapse } from '@/features/shared/components/display/Collapse';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { ConversationSwitcher } from '../../../ConversationSwitcher';
@@ -28,6 +27,7 @@ import type { ToolStrip } from '../../AthenaChatHeader';
 import type { AthenaChatEngine } from '../../athenaChatEngine';
 import { ExchangeTranscript } from '../ExchangeTranscript';
 import { TurnPane } from '../NextPanes';
+import { AssistantProse } from '../../refs/AssistantProse';
 import type { Turn } from '../exchange';
 import { NEXT_COPY as C } from '../nextCopy';
 import { FrameKeys } from './FrameKeys';
@@ -146,7 +146,9 @@ export function FrameTop({
               aria-label={C.expandConversation}
               className={`block w-full cursor-pointer text-left rounded-interactive focus-ring max-h-[8.4rem] overflow-hidden athena-chat-md [mask-image:linear-gradient(to_bottom,#000_70%,transparent)] ${look.message}`}
             >
-              <MarkdownRenderer content={stripModelDirectives(last.content)} className="athena-chat-md" />
+              {/* A four-row preview: no fold (the mask already clips it), but
+                  ref links and the id net apply like everywhere else. */}
+              <AssistantProse content={stripModelDirectives(last.content)} fold={false} />
             </div>
           ) : (
             <p className={look.message}>{C.noMessageYet}</p>

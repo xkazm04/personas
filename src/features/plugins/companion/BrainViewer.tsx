@@ -45,6 +45,7 @@ import {
   companionSaveIdentity,
   companionCorrectIdentityClaim,
   companionGetAdaptations,
+  companionListReplyRegister,
   type BrainDetail,
   type BrainKind,
   type BrainListItem,
@@ -55,6 +56,8 @@ import { BrainLinksStrip } from './BrainLinksStrip';
 import { BrainCycleReports } from './BrainCycleReports';
 import { BrainHealthPanel } from './BrainHealthPanel';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
+import type { ReplyRegisterRow } from '@/lib/bindings/ReplyRegisterRow';
+import { BASE_REPLY_SENTENCES } from './chat/refs/replyFold';
 import { parseIdentityClaims } from './identityClaims';
 
 type KindLabelKey =
@@ -836,17 +839,29 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
   );
 }
 
-/** "What Athena adapts" — the active engagement budget modulations (F4). */
+/** "What Athena adapts" — the active engagement budget modulations (F4), then
+ *  the reply register (layered voice): how many sentences layer one may run,
+ *  globally and per topic, who set it and why. */
 function IdentityAdaptations() {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
   const [mods, setMods] = useState<AthenaAdaptation[]>([]);
+  const [register, setRegister] = useState<ReplyRegisterRow[] | null>(null);
   useEffect(() => {
     companionGetAdaptations()
       .then(setMods)
       .catch(silentCatch('companion_get_adaptations'));
+    companionListReplyRegister()
+      .then(setRegister)
+      .catch(silentCatch('companion_list_reply_register'));
   }, []);
-  if (mods.length === 0) return null;
+  // Until the register read settles there is nothing honest to say about it;
+  // once it has, an empty list IS a fact (the base register applies).
+  if (mods.length === 0 && register === null) return null;
+  const hasDefault = register?.some((r) => r.scope === 'default') ?? false;
+  const scopeLabel = (scope: string) => (scope === 'default' ? c.register_scope_default : scope);
+  const sourceLabel = (source: string) =>
+    source === 'operator' ? c.register_source_operator : source === 'reflection' ? c.register_source_reflection : source;
   return (
     <div className="rounded-card border border-primary/15 bg-primary/[0.03] px-3 py-2.5 space-y-1">
       <div className="typo-caption tracking-wide text-primary">{c.identity_adapts_title}</div>
@@ -861,6 +876,26 @@ function IdentityAdaptations() {
           })}
         </div>
       ))}
+      {register !== null && (
+        <div className="pt-1.5 space-y-1" data-testid="companion-reply-register">
+          <div className="typo-caption tracking-wide text-primary">{c.register_title}</div>
+          {!hasDefault && (
+            <div className="typo-caption text-foreground">
+              {tx(c.register_base_row, { scope: c.register_scope_default, sentences: BASE_REPLY_SENTENCES })}
+            </div>
+          )}
+          {register.map((r) => (
+            <div key={r.scope} className="typo-caption text-foreground">
+              {tx(c.register_row, {
+                scope: scopeLabel(r.scope),
+                sentences: r.sentences,
+                source: sourceLabel(r.source),
+              })}
+              {r.reason && <span className="text-foreground">{` — ${r.reason}`}</span>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

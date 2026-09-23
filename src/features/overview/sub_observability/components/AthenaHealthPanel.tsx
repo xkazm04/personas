@@ -3,6 +3,7 @@ import { Bot, Filter, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaHealth } from '../libs/useAthenaHealth';
 import { AthenaSpendSection } from './AthenaSpendSection';
+import { ReplyShapePanel } from '@/features/plugins/companion/ReplyShapePanel';
 
 /**
  * Athena operational-health panel in the Observability tab (direction 6 / A4).
@@ -143,6 +144,9 @@ export const AthenaHealthPanel = memo(function AthenaHealthPanel() {
           <AthenaSpendSection />
         </>
       )}
+      {/* Layered voice: reply shape. Its own fetch and its own day windows
+          (7 / 30), so it reads the same whatever the page filter says. */}
+      <ReplyShapePanel />
     </div>
   );
 });

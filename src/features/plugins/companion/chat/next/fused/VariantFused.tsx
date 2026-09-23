@@ -16,6 +16,9 @@ import { NextShell } from '../NextShell';
 import { ProcessColumns } from '../ProcessColumns';
 import { NEXT_COPY as C } from '../nextCopy';
 import { useLayer } from '../useLayer';
+import { useLayerRefOpener } from '../useLayerRefOpener';
+import { ReportReader } from '../../refs/ReportReader';
+import { RefOpenerProvider } from '../../refs/RefOpenerContext';
 import { useProcessColumns } from '../useProcessColumns';
 import { useWorkforce } from '../useWorkforce';
 import { DeckLayer } from './DeckLayer';
@@ -25,6 +28,7 @@ export function VariantFused({ engine, lifted }: { engine: AthenaChatEngine; lif
   const columns = useProcessColumns(workforce, C.athena);
   const layer = useLayer();
   const { view } = layer;
+  const refOpener = useLayerRefOpener(layer, workforce.items);
 
   const scoped = useMemo(() => {
     if (view.kind !== 'work' || view.project === null) return workforce.items;
@@ -45,11 +49,15 @@ export function VariantFused({ engine, lifted }: { engine: AthenaChatEngine; lif
       />
     ) : view.kind === 'turn' ? (
       <div className="flex-1 overflow-y-auto scrollbar-thin px-8 py-8"><TurnPane turn={view.turn} /></div>
+    ) : view.kind === 'report' ? (
+      // useLayer owns Esc here, so the reader does not register its own.
+      <ReportReader reportId={view.id} onClose={layer.back} overlay={false} escToClose={false} />
     ) : view.kind === 'modes' ? (
       <div className="flex-1 overflow-y-auto scrollbar-thin px-8 py-8"><ModesPane /></div>
     ) : undefined;
 
   return (
+    <RefOpenerProvider value={refOpener}>
     <NextShell workforce={workforce} layer={layer} onInterrupt={engine.interrupt} lifted={lifted}>
       <ConversationColumn engine={engine} layer={layer} nested={nested} about={about} onClearAbout={layer.back} />
       <aside className="shrink-0 max-w-[40%] border-l border-foreground/10 bg-secondary/25 min-h-0" aria-label={C.usage}>
@@ -61,5 +69,6 @@ export function VariantFused({ engine, lifted }: { engine: AthenaChatEngine; lif
         />
       </aside>
     </NextShell>
+    </RefOpenerProvider>
   );
 }
