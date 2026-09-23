@@ -205,7 +205,7 @@ describe('arm', () => {
       'Thanks — agreed.',
       'forum.example.com',
       undefined,
-      undefined,
+      '{"kind":"placement"}',
       false,
     );
   });

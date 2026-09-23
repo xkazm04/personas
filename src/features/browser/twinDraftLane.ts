@@ -14,7 +14,7 @@
 // the draft is typed STRAIGHT INTO the box (`browser_webview_fill`) — there is
 // no app-side draft panel, the user edits in the page and sends with the
 // site's own button or the toolbar's Submit. Every insert is a twin
-// communication on channel `browser`.
+// communication on channel `browser`, tagged as a placement - never a send.
 //
 // REFS DIE ON NAVIGATION. The ref the page minted is bound to its ref
 // generation, so the lane follows the tab list and drops back to idle the
@@ -27,6 +27,7 @@
 // so a late answer from an abandoned run cannot overwrite a newer state.
 import * as browserApi from '@/api/browser';
 import * as twinApi from '@/api/twin/twin';
+import { placementFacts } from '@/api/twin/placement';
 import type { TwinChannelKind } from '@/api/enums';
 import type { PickedTarget } from '@/lib/bindings/PickedTarget';
 import type { TwinPageContext } from '@/lib/bindings/TwinPageContext';
@@ -234,6 +235,11 @@ async function draftAndFill(gen: number, twinId: string, tabId: number, target: 
     // The text is already in the box: a failed ledger write is telemetry, not
     // a failed insert, and telling the user "failed" over a draft they can see
     // would be a lie. Sentry + console, no state change.
+    //
+    // The row records the app's own act - a PLACEMENT - not a send: the page's
+    // own button is the gate and the app never sees it pressed. The table only
+    // has `in`/`out`, so the row carries the placement tag and every reader
+    // that means "sent" leaves it out (`@/api/twin/placement`).
     twinApi
       .recordInteraction(
         twinId,
@@ -242,7 +248,7 @@ async function draftAndFill(gen: number, twinId: string, tabId: number, target: 
         result.draft,
         contactHandleOf(target.url),
         undefined,
-        undefined,
+        placementFacts(),
         false,
       )
       .catch(silentCatch('twin browser record interaction'));

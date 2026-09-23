@@ -220,8 +220,11 @@ the comment being replied to, earlier comments, the highlighted text — is
 capped and wrapped in nonce-fenced, provenance-labelled blocks the prompt
 declares as untrusted DATA, never instructions; a draft that echoes a fence is
 discarded as an injection trip. Only the user's own started text sits in the
-trusted frame. Inserting the draft is recorded as an outbound `browser`
-communication and, like every outbox reply, is never learned from.
+trusted frame. Inserting the draft is recorded as a `browser` placement, not a
+send: the page's own button is the gate and the app never sees it pressed, so
+the row carries `{"kind":"placement"}` in `key_facts_json` and the Sent replies
+list and per-channel send counts leave it out (`src/api/twin/placement.ts`).
+Like every outbox reply, it is never learned from.
 
 ### Twin × Persona binding
 
