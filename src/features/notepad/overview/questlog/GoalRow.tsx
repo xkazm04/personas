@@ -2,10 +2,10 @@ import { memo } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { noteStatusMeta } from '../../../noteStatusMeta';
-import { splitHighlight } from '../../deskModel';
+import { noteStatusMeta } from '../../noteStatusMeta';
+import { splitHighlight } from '../deskModel';
 import { goalFraction, journeyOf } from './journey';
-import { dotsFor, type RowViewProps } from './types';
+import { dotsFor, type GoalRowProps } from './goalRowModel';
 
 /**
  * LEDGER — the desk as a ruled book.
@@ -20,9 +20,9 @@ import { dotsFor, type RowViewProps } from './types';
  * carrying the journey as ticks and the sub-goal progress as ink laid along it.
  * Nothing in it is a word — the marks are the reading.
  */
-export const RowLedger = memo(function RowLedger({
+export const GoalRow = memo(function GoalRow({
   note, signals, wired, rail, selected, query, matched, detail, onSelect, onOpen, onContextMenu,
-}: RowViewProps) {
+}: GoalRowProps) {
   const { t, tx } = useTranslation();
   const meta = noteStatusMeta(note.status);
   const waiting = signals.unread > 0;
@@ -76,12 +76,12 @@ export const RowLedger = memo(function RowLedger({
         </span>
       </button>
 
-      {detail && <LedgerDetail note={note} detail={detail} />}
+      {detail && <GoalRowDetail note={note} detail={detail} />}
     </div>
   );
 });
 
-function LedgerDetail({ note, detail }: { note: RowViewProps['note']; detail: NonNullable<RowViewProps['detail']> }) {
+function GoalRowDetail({ note, detail }: { note: GoalRowProps['note']; detail: NonNullable<GoalRowProps['detail']> }) {
   const { t, tx } = useTranslation();
   const { steps, at } = journeyOf(note);
   const frac = goalFraction(detail.summary?.goalsTotal, detail.summary?.goalsDone);

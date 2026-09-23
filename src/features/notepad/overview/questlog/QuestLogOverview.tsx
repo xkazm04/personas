@@ -3,7 +3,6 @@ import { CornerDownLeft, Search, Sparkles } from 'lucide-react';
 
 import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { NOTEPAD_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
-import { safeLocalGet, safeLocalSet } from '@/lib/safeLocalStorage';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 
@@ -22,11 +21,11 @@ import { publishFleet, toGoals } from '../../notepadActions';
 import { NoteAskQuickInput, NoteCardMenu } from '../parts/NoteCardMenu';
 import { deskForecasts } from '../deskForecast';
 import type { RailNext } from '../parts/NoteLifecycleRail';
-import { ROW_DESIGNS, ROW_DESIGN_KEY, ROW_VIEWS, type RowDesign } from './rows';
+import './goalRow.css';
 import { QuestBelow } from './QuestBelow';
 import { QuestRoom } from './QuestRoom';
 import { QuestZone } from './QuestZone';
-import type { GoalSignals, RowDetail } from './QuestRow';
+import type { GoalSignals, RowDetail } from './goalSignals';
 import {
   buildZones, cursorColumns, firstGoalOf, isLate, lateDays, moveGoal, stepZone,
 } from './questlogModel';
@@ -91,13 +90,6 @@ export function QuestLogOverview({
   const [roomId, setRoomId] = useState<string | null>(null);
   /** The selected goal's second row is open. One at a time, by construction. */
   const [expanded, setExpanded] = useState(false);
-  // THROWAWAY: the row-design A/B. Deleted with the losers once one is chosen.
-  const [rowDesign, setRowDesign] = useState<RowDesign>(
-    () => (ROW_DESIGNS.some((d) => d.id === safeLocalGet(ROW_DESIGN_KEY, 'notepad row design read'))
-      ? safeLocalGet(ROW_DESIGN_KEY, 'notepad row design read') as RowDesign
-      : 'ledger'),
-  );
-  const RowView = ROW_VIEWS[rowDesign];
 
   // Every signal a row can carry, assembled once for the whole desk. A row
   // never reaches into a store: ninety rows each holding their own
@@ -333,19 +325,6 @@ export function QuestLogOverview({
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {/* TODO(prototype, 2026-09-23): delete this strip and the three
-                losing designs once one is chosen. Tracked in active-runs under
-                `questlog-row-design`. */}
-            <SegmentedTabs
-              tabs={ROW_DESIGNS.map((d) => ({ id: d.id, label: d.label }))}
-              activeTab={rowDesign}
-              onTabChange={(id) => { setRowDesign(id); safeLocalSet(ROW_DESIGN_KEY, id, 'notepad row design write'); }}
-              size="sm"
-              fullWidth={false}
-              ariaLabel="Row design"
-              layoutId="notepad-questlog-rowdesign"
-              idPrefix="notepad-questlog-rowdesign"
-            />
             <SegmentedTabs
               tabs={railTabs}
               activeTab={rail}
@@ -431,7 +410,6 @@ export function QuestLogOverview({
                     query={query}
                     matches={matches}
                     detailFor={detailFor}
-                    RowView={RowView}
                     onContextGoal={(id, e) => {
                       e.preventDefault();
                       setAsk(null);

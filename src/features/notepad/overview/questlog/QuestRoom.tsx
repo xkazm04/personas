@@ -10,7 +10,7 @@ import { noteStatusMeta } from '../../noteStatusMeta';
 import { NoteDeskCard } from '../NoteDeskCard';
 import { DESK_KEY, Keycap } from '../parts/Keycap';
 import type { NoteOverviewProps } from '../types';
-import type { GoalSignals } from './QuestRow';
+import type { GoalSignals } from './goalSignals';
 import { railOf, type QuestZone } from './questlogModel';
 
 /** One rung above the desk: the room is the surface in front of the operator. */

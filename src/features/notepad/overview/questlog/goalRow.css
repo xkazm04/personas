@@ -1,0 +1,138 @@
+/* The journal desk's goal row, and the expansion it opens.
+ *
+ * A row and its second row are ONE design — the operator asked for them
+ * together because the expansion is the row at a different scale, not a panel
+ * that happens to appear underneath. So each design owns both, and the shared
+ * block below is only what none of them should be free to disagree about:
+ * where the title sits, that it is never clipped, and that the whole thing is
+ * driven by the fit ladder's --ql-fs / --ql-lh.
+ *
+ * Colour comes from the app's tokens and nothing else.
+ */
+
+/* ---------------------------------------------------------------- shared */
+
+.rw { display: block; }
+
+.rw-line {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 6px;
+  width: 100%;
+  padding: 0 6px 0 2px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--ql-fs);
+  line-height: var(--ql-lh);
+  transition: opacity var(--duration-normal), background var(--duration-fast);
+}
+
+.rw-body { display: block; min-width: 0; }
+
+/* NEVER clipped, in any design. The fit ladder changes the type and then the
+   form; a title is not what gives way. */
+.rw-title {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+  text-wrap: pretty;
+}
+
+.rw-title mark {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+  color: var(--foreground);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.rw-marks { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; vertical-align: baseline; }
+
+.rw-mk { display: inline-flex; align-items: center; gap: 2px; font-size: 0.75rem; font-weight: 700; line-height: 1; }
+.rw-mk i { width: 5px; height: 5px; border-radius: var(--radius-pill); background: currentColor; display: block; }
+
+.rw-wait { color: var(--brand-rose); }
+.rw-work { color: var(--status-pending); }
+.rw-late { color: var(--status-error); }
+.rw-late i { border-radius: 0; transform: rotate(45deg); width: 6px; height: 6px; }
+
+.rw-line.is-off { opacity: 0.3; }
+.rw-line.is-dim { opacity: 0.22; }
+.rw-line.is-hit { background: color-mix(in srgb, var(--accent) 20%, transparent); border-radius: var(--radius-sm); }
+
+.rw-detail { margin: 2px 0 6px 32px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rw-line, .rw-detail * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------- the ledger row */
+
+.rw-ledger .rw-line { padding-left: 0; }
+
+.rw-ledger .rw-margin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: calc(var(--ql-fs) * var(--ql-lh));
+  color: inherit;
+}
+
+/* The one rule that runs the length of the column. Selection thickens it; it
+   never becomes a filled box. */
+.rw-ledger .rw-rule {
+  position: absolute;
+  left: 3px;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: color-mix(in srgb, currentColor 40%, transparent);
+  transition: width var(--duration-fast), background var(--duration-fast);
+}
+
+.rw-ledger[data-state='selected'] .rw-rule { width: 3px; background: var(--accent); }
+.rw-ledger[data-state='waiting'] .rw-rule { width: 2px; background: var(--brand-rose); }
+
+.rw-ledger .rw-margin > svg { width: 11px; height: 11px; margin-left: 8px; }
+.rw-ledger .rw-cont {
+  width: 4px; height: 1px; margin-left: 8px;
+  background: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+.rw-ledger-detail { gap: 0; margin-left: 14px; }
+
+.rw-ticks {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 0 0 auto;
+}
+
+/* Ticks on a rule: reached are solid, the current one is a full-height stroke,
+   what is left is a hairline. */
+.rw-ticks .rw-tick { position: relative; width: 26px; height: 10px; display: grid; place-items: center; }
+.rw-ticks .rw-tick::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%;
+  height: 1px; background: var(--card-border);
+}
+.rw-ticks .rw-tick i { position: relative; width: 1.5px; height: 5px; background: currentColor; opacity: 0.55; }
+.rw-ticks .rw-tick.is-now i { height: 11px; width: 2px; opacity: 1; }
+.rw-ticks .rw-tick.is-ahead i { height: 3px; opacity: 0.3; }
+
+.rw-ink {
+  display: block;
+  width: 56px;
+  height: 2px;
+  margin-left: 10px;
+  background: var(--card-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.rw-ink i { display: block; height: 100%; }
+
+/* ---------------------------------------------------------------- light */
+
+[data-theme^='light'] .rw-title { color: var(--foreground); }

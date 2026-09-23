@@ -1,7 +1,7 @@
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 
-import { NOTE_LIFECYCLE_BRAINSTORM, NOTE_LIFECYCLE_PLAN, noteLifecycleFor } from '../../../noteStatusMeta';
+import { NOTE_LIFECYCLE_BRAINSTORM, NOTE_LIFECYCLE_PLAN, noteLifecycleFor } from '../../noteStatusMeta';
 
 export interface Journey {
   steps: readonly NoteStatus[];
