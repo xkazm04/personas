@@ -1,7 +1,7 @@
 /**
- * ChatVariantHost — renders the chat prototype picked in the switcher. Every
- * non-Current tab is the Frame · Halo layout; the tab id picks its slots
- * (right panel + decision stage, see `frame/slots.ts`).
+ * ChatVariantHost — renders the chat prototype picked in the switcher: the
+ * Frame · Halo layout with the Spread slots (right panel + decision stage, see
+ * `frame/slots.ts`). Owner kept Spread and Current on 2026-09-23.
  * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
  */
 
@@ -9,16 +9,10 @@ import type { AthenaChatEngine } from '../athenaChatEngine';
 import type { ChatVariant } from './ChatVariantTabs';
 import { VariantFrame } from './frame/VariantFrame';
 import type { HaloSlots } from './frame/slots';
-import { BASE_SLOTS } from './frame/slots/base';
-import { HALO_A_SLOTS } from './frame/variants/a';
-import { HALO_B_SLOTS } from './frame/variants/b';
 import { HALO_C_SLOTS } from './frame/variants/c';
 
 const SLOTS: Record<Exclude<ChatVariant, 'current'>, HaloSlots> = {
-  halo: BASE_SLOTS,
-  'halo-a': HALO_A_SLOTS,
-  'halo-b': HALO_B_SLOTS,
-  'halo-c': HALO_C_SLOTS,
+  spread: HALO_C_SLOTS,
 };
 
 export function ChatVariantHost({

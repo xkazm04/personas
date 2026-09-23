@@ -12,7 +12,6 @@
  * duotone icons in tinted discs.
  */
 
-import type { ColumnsLook } from '../ProcessColumns';
 
 export type FrameLookId = 'halo';
 
@@ -27,7 +26,6 @@ export interface FrameLook {
   icon: { button: string; active: string; stroke: number; size: string };
   message: string;
   label: string;
-  columns: ColumnsLook;
 }
 
 export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
@@ -59,6 +57,5 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
     },
     message: 'typo-body-lg text-foreground',
     label: 'typo-label uppercase tracking-wider text-primary',
-    columns: 'halo',
   },
 };
