@@ -237,6 +237,7 @@
     "project_tip": "{slug} : {evaluated} paires jugées sur {pairs} ({pct}), dont {stale} périmées. État de la carte {state}.",
     "quiet_bundle_tip": "{domain} : {n} sujets n'obtiennent rien sur tous les canaux mesurables.",
     "quiet_bundle_tip_unknown": "{domain} : {n} sujets n'obtiennent rien sur tous les canaux mesurables, et dans ce lot, les canaux 1 et 7 n'ont pas pu être mesurés du tout.",
+    "quiet_bundle_tip_none": "{domain} : ici, chaque sujet obtient quelque chose, donc sa queue silencieuse est un zéro mesuré, pas un lot que personne n'a compté.",
     "row_bundle_known": "{domain}, la demande est mesurée ici",
     "row_bundle_unknown": "{domain}, la demande N'EST PAS mesurée dans ce lot",
     "row_state_tip": "{state}, moteur {engine} : {say}",

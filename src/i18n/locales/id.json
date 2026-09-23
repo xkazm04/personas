@@ -24329,6 +24329,7 @@
       "project_tip": "{slug}: {evaluated} dari {pairs} pasangan dinilai ({pct}), {stale} di antaranya kedaluwarsa. Status peta {state}.",
       "quiet_bundle_tip": "{domain}: {n} subjek tidak mendapat skor apa pun pada setiap kanal yang dapat diukur.",
       "quiet_bundle_tip_unknown": "{domain}: {n} subjek tidak mendapat skor apa pun pada setiap kanal yang dapat diukur, dan dalam bundel ini kanal 1 dan 7 sama sekali tidak dapat diukur.",
+      "quiet_bundle_tip_none": "{domain}: di sini setiap subjek mendapat skor, sehingga ekor yang sunyi ini adalah nol yang terukur, bukan bundel yang tidak dihitung siapa pun.",
       "row_bundle_known": "{domain}, permintaan dibaca di sini",
       "row_bundle_unknown": "{domain}, permintaan TIDAK dibaca dalam bundel ini",
       "row_state_tip": "{state}, mesin {engine}: {say}",

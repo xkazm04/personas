@@ -24329,6 +24329,7 @@
       "project_tip": "{slug}: {pairs}ペア中{evaluated}ペアが判定済み({pct})、そのうち{stale}件が失効。マップ状態 {state}。",
       "quiet_bundle_tip": "{domain}: {n}件の主題が、測定可能なすべてのチャンネルで得点がない。",
       "quiet_bundle_tip_unknown": "{domain}: {n}件の主題が、測定可能なすべてのチャンネルで得点がなく、このバンドルではチャンネル1と7はそもそも測定できなかった。",
+      "quiet_bundle_tip_none": "{domain}: ここではすべての主題が何かを得点しているため、その静かな尾部は誰も数えなかったバンドルではなく、測定済みのゼロである。",
       "row_bundle_known": "{domain}、ここでは需要が測定されている",
       "row_bundle_unknown": "{domain}、このバンドルでは需要が測定されていない",
       "row_state_tip": "{state}、エンジン {engine}: {say}",

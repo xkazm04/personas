@@ -24329,6 +24329,7 @@
       "project_tip": "{slug}：{pairs} 对中已评判 {evaluated} 对（{pct}），其中 {stale} 对已过期。映射状态为 {state}。",
       "quiet_bundle_tip": "{domain}：{n} 个主题在每个可测量的通道上都不得分。",
       "quiet_bundle_tip_unknown": "{domain}：{n} 个主题在每个可测量的通道上都不得分，并且该合集中的通道 1 和通道 7 根本无法测量。",
+      "quiet_bundle_tip_none": "{domain}：这里每个主题都有得分，因此它的安静尾部是已测量的零，而不是无人计数的合集。",
       "row_bundle_known": "{domain}，此处需求已被读取",
       "row_bundle_unknown": "{domain}，该合集中的需求未被读取",
       "row_state_tip": "{state}，引擎 {engine}：{say}",

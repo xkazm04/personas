@@ -24267,6 +24267,7 @@
       "band_quiet_tip": "Not a zero row and not an empty one. These subjects score nothing on every channel that could be measured; the dotted bundles are the ones where demand is unknown, so there they read nothing on seven channels and unknown on two. Wanting nothing is a fact about the subject.",
       "quiet_bundle_tip": "{domain}: {n} subjects score nothing on every channel that could be measured.",
       "quiet_bundle_tip_unknown": "{domain}: {n} subjects score nothing on every channel that could be measured, and in this bundle channels 1 and 7 could not be measured at all.",
+      "quiet_bundle_tip_none": "{domain}: every subject here scores something, so its quiet tail is a measured zero rather than a bundle nobody counted.",
       "legend_measured_nothing": "measured nothing",
       "legend_measured_nothing_tip": "An instrument ran and found none.",
       "legend_unknown": "unknown",

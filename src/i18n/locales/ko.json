@@ -24329,6 +24329,7 @@
       "project_tip": "{slug}: {pairs}쌍 중 {evaluated}쌍 판정됨({pct}), 그중 {stale}개는 오래됨. 맵 상태 {state}.",
       "quiet_bundle_tip": "{domain}: {n}개 주제가 측정 가능한 모든 채널에서 아무 점수도 얻지 못함.",
       "quiet_bundle_tip_unknown": "{domain}: {n}개 주제가 측정 가능한 모든 채널에서 아무 점수도 얻지 못하며, 이 번들에서는 채널 1과 7을 아예 측정할 수 없었습니다.",
+      "quiet_bundle_tip_none": "{domain}: 여기서는 모든 주제가 무언가를 얻으므로, 조용한 꼬리 부분은 아무도 집계하지 않은 번들이 아니라 측정된 0입니다.",
       "row_bundle_known": "{domain}, 여기서는 수요가 측정됨",
       "row_bundle_unknown": "{domain}, 이 번들에서는 수요가 측정되지 않음",
       "row_state_tip": "{state}, 엔진 {engine}: {say}",

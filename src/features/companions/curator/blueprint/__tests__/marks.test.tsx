@@ -93,7 +93,45 @@ describe('the quiet band renders from CuratorPlan.quiet', () => {
     expect(unread.getAttribute('data-cb-tip')).toContain('channels 1 and 7 could not be measured');
   });
 
-  it('draws no band at all when the tail is empty', () => {
+  it('draws a bundle measured at ZERO, rather than dropping it', () => {
+    // The projection declares a row for every bundle, including one whose
+    // quiet tail is 0. Dropping it would make "looked, found none" look
+    // exactly like "never mentioned" - the one mistake this page exists to
+    // prevent, applied to its own band.
+    const p = plan();
+    p.quiet = [
+      { domain: 'software-engineering', subjects: 3, demandKnown: true },
+      { domain: 'agent-operations', subjects: 0, demandKnown: true },
+    ];
+    const model = buildModel(p);
+    const { container } = render(
+      <BlueprintWordsProvider value={words}>
+        <Bands model={model} />
+      </BlueprintWordsProvider>,
+    );
+    const chips = [...container.querySelectorAll('[data-role="cb-band-row"] .cb-chip')];
+    expect(chips).toHaveLength(2);
+    const zero = chips.find((c) => c.textContent?.includes('AO'))!;
+    expect(zero).toBeDefined();
+    expect(zero.textContent).toContain('0');
+    expect(zero.getAttribute('data-cb-tip')).toContain('measured zero');
+  });
+
+  it('still draws the band when every bundle is measured at zero', () => {
+    const p = plan();
+    p.quiet = [{ domain: 'software-engineering', subjects: 0, demandKnown: true }];
+    p.run.corpus.subjects = 2;
+    const model = buildModel(p);
+    expect(model.quietSubjects).toBe(0);
+    const { container } = render(
+      <BlueprintWordsProvider value={words}>
+        <Bands model={model} />
+      </BlueprintWordsProvider>,
+    );
+    expect(container.querySelectorAll('[data-role="cb-band-row"]')).toHaveLength(1);
+  });
+
+  it('draws no band at all when the projection declares no tail', () => {
     const p = plan();
     p.quiet = [];
     p.run.corpus.subjects = 2;

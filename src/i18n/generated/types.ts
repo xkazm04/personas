@@ -24273,6 +24273,7 @@ export type Translations = {
       band_quiet_tip: string;
       quiet_bundle_tip: string;
       quiet_bundle_tip_unknown: string;
+      quiet_bundle_tip_none: string;
       legend_measured_nothing: string;
       legend_measured_nothing_tip: string;
       legend_unknown: string;

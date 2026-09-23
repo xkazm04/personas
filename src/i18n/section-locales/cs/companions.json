@@ -237,6 +237,7 @@
     "project_tip": "{slug}: posouzeno {evaluated} z {pairs} párů ({pct}), z toho {stale} zastaralých. Stav mapy {state}.",
     "quiet_bundle_tip": "{domain}: {n} subjektů nedosahuje žádného skóre v žádném kanálu, který šlo změřit.",
     "quiet_bundle_tip_unknown": "{domain}: {n} subjektů nedosahuje žádného skóre v žádném kanálu, který šlo změřit, a v tomto balíku nešlo kanály 1 a 7 změřit vůbec.",
+    "quiet_bundle_tip_none": "{domain}: každý subjekt zde něco skóruje, takže jeho tichý ocas je změřená nula, ne balík, který nikdo nespočítal.",
     "row_bundle_known": "{domain}, poptávka se zde sleduje",
     "row_bundle_unknown": "{domain}, poptávka se v tomto balíku NESLEDUJE",
     "row_state_tip": "{state}, mechanismus {engine}: {say}",

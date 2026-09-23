@@ -24329,6 +24329,7 @@
       "project_tip": "{slug}: {evaluated} de {pairs} pares juzgados ({pct}), {stale} de ellos obsoletos. Estado del mapa {state}.",
       "quiet_bundle_tip": "{domain}: {n} temas no puntúan nada en ningún canal que se pudiera medir.",
       "quiet_bundle_tip_unknown": "{domain}: {n} temas no puntúan nada en ningún canal que se pudiera medir, y en este paquete los canales 1 y 7 no se pudieron medir en absoluto.",
+      "quiet_bundle_tip_none": "{domain}: aquí cada tema puntúa algo, así que su cola silenciosa es un cero medido, no un paquete que nadie contó.",
       "row_bundle_known": "{domain}, la demanda se lee aquí",
       "row_bundle_unknown": "{domain}, la demanda NO se lee en este paquete",
       "row_state_tip": "{state}, motor {engine}: {say}",

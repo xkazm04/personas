@@ -58,7 +58,12 @@ function UnlistedBand({ model }: { model: BlueprintModel }) {
 
 function QuietBand({ model }: { model: BlueprintModel }) {
   const { w, tx } = useWords();
-  const bundles = [...model.quiet].filter((q) => q.subjects > 0).sort((a, b) => b.subjects - a.subjects);
+  // EVERY declared bundle gets a chip, including one measured at zero. A
+  // bundle whose tail is 0 has been looked at and found to have no quiet
+  // subject; dropping it would make that measurement indistinguishable from a
+  // bundle the projection never mentioned, which is the one mistake this whole
+  // page exists to prevent.
+  const bundles = [...model.quiet].sort((a, b) => b.subjects - a.subjects || a.domain.localeCompare(b.domain));
   return (
     <div className="cb-lrow cb-band" data-role="cb-band-row">
       <div className="cb-note" data-cb-tip={w.band_quiet_tip}>
@@ -74,10 +79,14 @@ function QuietBand({ model }: { model: BlueprintModel }) {
                   borderColor: 'var(--cb-rule-2)',
                   borderStyle: q.demandKnown ? undefined : 'dotted',
                 }}
-                data-cb-tip={tx(q.demandKnown ? w.quiet_bundle_tip : w.quiet_bundle_tip_unknown, {
-                  domain: q.domain,
-                  n: q.subjects,
-                })}
+                data-cb-tip={
+                  q.subjects === 0
+                    ? tx(w.quiet_bundle_tip_none, { domain: q.domain })
+                    : tx(q.demandKnown ? w.quiet_bundle_tip : w.quiet_bundle_tip_unknown, {
+                        domain: q.domain,
+                        n: q.subjects,
+                      })
+                }
               >
                 {`${model.bundleMark[q.domain] ?? q.domain} ${String(q.subjects)}`}
               </span>
@@ -93,7 +102,10 @@ export function Bands({ model }: { model: BlueprintModel }) {
   return (
     <>
       {model.unlisted > 0 && <UnlistedBand model={model} />}
-      {model.quietSubjects > 0 && <QuietBand model={model} />}
+      {/* The band is drawn whenever the projection DECLARED a tail, even one
+          that is zero everywhere. A tail of nothing is a measurement; an
+          absent tail is not. */}
+      {model.quiet.length > 0 && <QuietBand model={model} />}
     </>
   );
 }

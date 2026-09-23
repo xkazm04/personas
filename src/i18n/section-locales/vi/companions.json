@@ -237,6 +237,7 @@
     "project_tip": "{slug}: {evaluated} trên {pairs} cặp đã được phán quyết ({pct}), trong đó {stale} đã cũ. Trạng thái bản đồ {state}.",
     "quiet_bundle_tip": "{domain}: {n} chủ đề không đạt điểm nào trên mọi kênh có thể đo lường.",
     "quiet_bundle_tip_unknown": "{domain}: {n} chủ đề không đạt điểm nào trên mọi kênh có thể đo lường, và trong gói này, kênh 1 và 7 hoàn toàn không thể đo được.",
+    "quiet_bundle_tip_none": "{domain}: ở đây mọi chủ đề đều đạt được điểm gì đó, nên phần đuôi im lặng của nó là một số không đã được đo, chứ không phải một gói mà không ai đếm.",
     "row_bundle_known": "{domain}, nhu cầu được đọc ở đây",
     "row_bundle_unknown": "{domain}, nhu cầu KHÔNG được đọc trong gói này",
     "row_state_tip": "{state}, động cơ {engine}: {say}",

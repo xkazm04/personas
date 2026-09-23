@@ -237,6 +237,7 @@
     "project_tip": "{slug}: {evaluated} من أصل {pairs} زوج مُقيَّم ({pct})، منها {stale} قديم. حالة الخريطة {state}.",
     "quiet_bundle_tip": "{domain}: {n} موضوعًا لا يسجّل شيئًا في كل قناة يمكن قياسها.",
     "quiet_bundle_tip_unknown": "{domain}: {n} موضوعًا لا يسجّل شيئًا في كل قناة يمكن قياسها، وفي هذه الحزمة تعذَّر قياس القناتين 1 و7 تمامًا.",
+    "quiet_bundle_tip_none": "{domain}: يسجّل كل موضوع هنا شيئًا، لذا فإن ذيله الصامت صفر تم قياسه، لا حزمة لم يعدّها أحد.",
     "row_bundle_known": "{domain}، الطلب مقروء هنا",
     "row_bundle_unknown": "{domain}، الطلب غير مقروء في هذه الحزمة",
     "row_state_tip": "{state}، المحرك {engine}: {say}",

@@ -237,6 +237,7 @@
     "project_tip": "{slug}: {evaluated} von {pairs} Paaren beurteilt ({pct}), davon {stale} veraltet. Map-Status {state}.",
     "quiet_bundle_tip": "{domain}: {n} Themen erzielen auf jedem messbaren Kanal nichts.",
     "quiet_bundle_tip_unknown": "{domain}: {n} Themen erzielen auf jedem messbaren Kanal nichts, und in diesem Bündel konnten die Kanäle 1 und 7 überhaupt nicht gemessen werden.",
+    "quiet_bundle_tip_none": "{domain}: Hier erzielt jedes Thema etwas, daher ist sein stiller Ausläufer eine gemessene Null und kein Bündel, das niemand gezählt hat.",
     "row_bundle_known": "{domain}, Nachfrage wird hier erfasst",
     "row_bundle_unknown": "{domain}, Nachfrage wird in diesem Bündel NICHT erfasst",
     "row_state_tip": "{state}, Engine {engine}: {say}",
