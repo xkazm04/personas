@@ -1,5 +1,4 @@
-import { memo } from 'react';
-import { Fragment } from 'react';
+import { memo, Fragment, type MouseEvent as ReactMouseEvent } from 'react';
 import { PauseCircle } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -24,6 +23,7 @@ interface QuestZoneProps {
   /** Builds the second row for one goal, or returns undefined. Only ever
    *  non-undefined for the goal the cursor is on and the operator expanded. */
   detailFor: (noteId: string) => RowDetail | undefined;
+  onContextGoal: (noteId: string, e: ReactMouseEvent) => void;
   onFocusZone: () => void;
   onSelectGoal: (id: string) => void;
   onOpenGoal: (id: string) => void;
@@ -43,7 +43,7 @@ interface QuestZoneProps {
  * relative size of the work directly.
  */
 export const QuestZone = memo(function QuestZone({
-  zone, signals, mode, current, selectedGoalId, query, matches, detailFor,
+  zone, signals, mode, current, selectedGoalId, query, matches, detailFor, onContextGoal,
   onFocusZone, onSelectGoal, onOpenGoal,
 }: QuestZoneProps) {
   const { t } = useTranslation();
@@ -110,6 +110,7 @@ export const QuestZone = memo(function QuestZone({
                 detail={detailFor(run.goals[0]!.id)}
                 onSelect={() => onSelectGoal(run.goals[0]!.id)}
                 onOpen={() => onOpenGoal(run.goals[0]!.id)}
+                onContextMenu={(e) => onContextGoal(run.goals[0]!.id, e)}
               />
             ) : (
               <div className={`ql-row is-rail-${run.rail} ${runToneClass(run.status)}`}>
@@ -127,6 +128,7 @@ export const QuestZone = memo(function QuestZone({
                         matched={matches.has(note.id)}
                         onSelect={() => onSelectGoal(note.id)}
                         onOpen={() => onOpenGoal(note.id)}
+                        onContextMenu={(e) => onContextGoal(note.id, e)}
                       />
                     </Fragment>
                   ))}
@@ -152,6 +154,7 @@ export const QuestZone = memo(function QuestZone({
                 detail={detailFor(note.id)}
                 onSelect={() => onSelectGoal(note.id)}
                 onOpen={() => onOpenGoal(note.id)}
+                onContextMenu={(e) => onContextGoal(note.id, e)}
               />
             ))}
           </Fragment>

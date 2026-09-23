@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { CalendarClock, Clock, MessageSquare, Send } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -90,6 +90,8 @@ interface QuestRowProps {
   detail?: RowDetail;
   onSelect: () => void;
   onOpen: () => void;
+  /** Right-click anywhere on the row — the card's own quick-action menu. */
+  onContextMenu: (e: ReactMouseEvent) => void;
 }
 
 /**
@@ -103,7 +105,7 @@ interface QuestRowProps {
  * the column scrolls and says what is below. It never shortens a title.
  */
 export const QuestRow = memo(function QuestRow({
-  note, signals, wired, rail, selected, query, matched, detail, onSelect, onOpen,
+  note, signals, wired, rail, selected, query, matched, detail, onSelect, onOpen, onContextMenu,
 }: QuestRowProps) {
   const { t } = useTranslation();
   const meta = noteStatusMeta(note.status);
@@ -122,7 +124,11 @@ export const QuestRow = memo(function QuestRow({
   ].filter(Boolean).join(' ');
 
   return (
-    <div className="ql-rowwrap" data-goal-id={note.id}>
+    <div
+      className="ql-rowwrap"
+      data-goal-id={note.id}
+      onContextMenu={(e) => { onSelect(); onContextMenu(e); }}
+    >
     <button
       type="button"
       className={cls}
@@ -269,6 +275,7 @@ interface QuestItemProps {
   matched: boolean;
   onSelect: () => void;
   onOpen: () => void;
+  onContextMenu: (e: ReactMouseEvent) => void;
 }
 
 /**
@@ -277,7 +284,7 @@ interface QuestItemProps {
  * the line break between goals is given up, and a middot takes its place.
  */
 export const QuestItem = memo(function QuestItem({
-  note, signals, selected, query, matched, onSelect, onOpen,
+  note, signals, selected, query, matched, onSelect, onOpen, onContextMenu,
 }: QuestItemProps) {
   const { t } = useTranslation();
   const waiting = signals.unread > 0;
@@ -303,6 +310,7 @@ export const QuestItem = memo(function QuestItem({
       tabIndex={-1}
       onPointerDown={onSelect}
       onClick={onOpen}
+      onContextMenu={(e) => { onSelect(); onContextMenu(e); }}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();

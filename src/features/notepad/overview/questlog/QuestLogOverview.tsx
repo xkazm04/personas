@@ -8,16 +8,17 @@ import type { Translations } from '@/i18n/generated/types';
 
 import { NOTE_CAP } from '../../notepadStore';
 import { noteOccupiesSlot } from '../../noteStatusMeta';
-import { useNotepadPlanSummaries } from '../../useNotepad';
+import { useNotepadPlanSummaries, useNotepadStatus } from '../../useNotepad';
 import { useNoteUnreadMap } from '../../thread/noteThreadStore';
 import { useNotesWorkingMap } from '../../thread/useNoteWorking';
 import { DESK_FILTERS, matchesDeskFilter, readDeskFilter, writeDeskFilter, type DeskFilter } from '../deskFilter';
 import { isTypingSurface, matchesQuery, overlayOwnsKeys } from '../deskModel';
-import { DeskCheatSheet } from '../parts/DeskCheatSheet';
 import { DESK_KEY, Keycap } from '../parts/Keycap';
 import { OverviewGhost } from '../parts/NoteCardBits';
 import type { NoteOverviewProps } from '../types';
+import { archiveNote } from '../../notepadStore';
 import { publishFleet, toGoals } from '../../notepadActions';
+import { NoteAskQuickInput, NoteCardMenu } from '../parts/NoteCardMenu';
 import { deskForecasts } from '../deskForecast';
 import type { RailNext } from '../parts/NoteLifecycleRail';
 import { QuestBelow } from './QuestBelow';
@@ -65,6 +66,7 @@ export function QuestLogOverview({
   const working = useNotesWorkingMap();
   const unread = useNoteUnreadMap();
   const summaries = useNotepadPlanSummaries();
+  const { planSummariesStale } = useNotepadStatus();
 
   // ELEMENTS, not refs. This desk renders only after the pad stops loading, so
   // a ref object read by an effect that depends on the ref (which never changes)
@@ -76,7 +78,10 @@ export function QuestLogOverview({
   const [rail, setRail] = useState<DeskFilter>(readDeskFilter);
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [cheatOpen, setCheatOpen] = useState(false);
+  /** Right-click position for the quick-action menu, and for the Ask field it
+   *  opens — both portaled, both the card's own components. */
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [ask, setAsk] = useState<{ id: string; x: number; y: number } | null>(null);
   const [capture, setCapture] = useState('');
   const [zoneId, setZoneId] = useState<string | null>(initialProjectId ?? null);
   const [goalId, setGoalId] = useState<string | null>(focusNoteId);
@@ -130,11 +135,31 @@ export function QuestLogOverview({
     () => cursorColumns(zones, layout.groups, isOnRail),
     [zones, layout.groups, isOnRail],
   );
-  const forecasts = useMemo(() => deskForecasts(notes, summaries), [notes, summaries]);
+  // Suppressed entirely while the plan join is stale: a median taken off the
+  // last good map is a guess built on a guess, and "unknown" is the honest
+  // reading. The card desk guarded this and the first port of the journal did
+  // not — restored 2026-09-23.
+  const forecasts = useMemo(
+    () => (planSummariesStale ? {} : deskForecasts(notes, summaries)),
+    [notes, summaries, planSummariesStale],
+  );
   const roomZone = roomId ? zones.find((z) => z.id === roomId) ?? null : null;
   const placeCaret = useQuestCaret(rootEl, caretEl, currentZoneId);
 
   useEffect(() => { placeCaret(); }, [placeCaret, layout, signature]);
+
+  // Park the cursor on a real goal as soon as there is one, and re-park it when
+  // the rail filter takes the current goal away. Without this the desk opens
+  // with nothing selected, so "x" and Enter do nothing until an arrow is
+  // pressed - and both keys are advertised in the hint rail, so they have to
+  // work the moment the desk is on screen.
+  useEffect(() => {
+    const flat = cursorCols.flat();
+    if (flat.length === 0) return;
+    if (goalId && flat.includes(goalId)) return;
+    const first = (currentZoneId && firstGoalOf(zones.find((z) => z.id === currentZoneId), isOnRail)) || flat[0]!;
+    setGoalId(first);
+  }, [cursorCols, goalId, currentZoneId, zones, isOnRail]);
 
   const slotCount = useMemo(() => notes.filter((n) => noteOccupiesSlot(n.status)).length, [notes]);
   const railPanel = segmentedTabPanelProps(RAIL_PREFIX, rail);
@@ -217,11 +242,10 @@ export function QuestLogOverview({
       if (owner) setZoneId(owner.id);
       return true;
     };
-    if (k === '?') { setCheatOpen((v) => !v); return true; }
     if (k === '/') { setSearchOpen(true); queueMicrotask(() => searchRef.current?.focus()); return true; }
     if (k === 'Escape') {
       // The desk's own Escape ladder, in the order the operator built the state.
-      if (cheatOpen) { setCheatOpen(false); return true; }
+      if (menu || ask) { setMenu(null); setAsk(null); return true; }
       if (query) { setQuery(''); return true; }
       if (searchOpen) { setSearchOpen(false); return true; }
       return; // nothing of ours is open — let the pad's layer ladder have it
@@ -247,7 +271,7 @@ export function QuestLogOverview({
       return true;
     }
   }, [cursorCols, currentIndex, currentZoneId, zones, goalId, isOnRail,
-      query, searchOpen, cheatOpen, pickRail, openGoal, openRoom, stepProject]);
+      query, searchOpen, menu, ask, pickRail, openGoal, openRoom, stepProject]);
 
   // The room owns the keyboard while it is up: its cards carry the desk's verbs
   // already, and two handlers claiming the same arrows is how a surface starts
@@ -310,15 +334,6 @@ export function QuestLogOverview({
               layoutId={RAIL_PREFIX}
               idPrefix={RAIL_PREFIX}
             />
-            <button
-              type="button"
-              onClick={() => setCheatOpen((v) => !v)}
-              aria-label={t.notepad.desk_keys_title}
-              className="h-8 px-2 rounded-interactive flex items-center gap-1.5 text-foreground/85 hover:bg-secondary/50 focus-ring"
-            >
-              <Keycap>{DESK_KEY.help}</Keycap>
-              <span className="typo-caption">{t.notepad.desk_hint_keys}</span>
-            </button>
           </div>
         </div>
 
@@ -394,6 +409,11 @@ export function QuestLogOverview({
                     query={query}
                     matches={matches}
                     detailFor={detailFor}
+                    onContextGoal={(id, e) => {
+                      e.preventDefault();
+                      setAsk(null);
+                      setMenu({ id, x: e.clientX, y: e.clientY });
+                    }}
                     onFocusZone={() => openRoom(zone.id)}
                     onSelectGoal={setGoalId}
                     onOpenGoal={openGoal}
@@ -419,7 +439,30 @@ export function QuestLogOverview({
       )}
 
 
-      <DeskCheatSheet open={cheatOpen} onClose={() => setCheatOpen(false)} />
+      {menu && (() => {
+        const note = notes.find((n) => n.id === menu.id);
+        if (!note) return null;
+        return (
+          <NoteCardMenu
+            note={note}
+            x={menu.x}
+            y={menu.y}
+            onClose={() => setMenu(null)}
+            handlers={{
+              onOpen: () => openGoal(note.id),
+              onAsk: () => setAsk(menu),
+              onPublish: () => { void publishFleet(note, projects.find((p) => p.id === note.projectId) ?? null); },
+              onToGoals: () => { void toGoals(note, projects.find((p) => p.id === note.projectId) ?? null); },
+              onArchive: () => { void archiveNote(note.id); },
+              onDelete: () => onDelete(note),
+            }}
+          />
+        );
+      })()}
+      {ask && (() => {
+        const note = notes.find((n) => n.id === ask.id);
+        return note ? <NoteAskQuickInput note={note} x={ask.x} y={ask.y} onClose={() => setAsk(null)} /> : null;
+      })()}
     </div>
   );
 }
