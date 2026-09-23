@@ -160,5 +160,10 @@
   "tier_toggle_label": "主要ティア",
   "unreadable_retry": "再試行",
   "unreadable_title": "ボードを読み込めませんでした",
-  "weakness_title": "最大の弱点"
+  "weakness_title": "最大の弱点",
+  "variant_board": "ボード",
+  "variant_cadastre": "地籍図",
+  "variant_switcher_aria": "機能ページのスタイル",
+  "cadastre_pending_title": "地籍図を移植中です",
+  "cadastre_pending_subtitle": "それまではボードに戻してください。"
 }

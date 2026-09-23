@@ -232,5 +232,12 @@
     "robustness": "المتانة",
     "economics": "الاقتصاد",
     "reversibility": "قابلية التراجع"
+  },
+  "variant": {
+    "classic": "كلاسيكي",
+    "fused": "مدمج",
+    "switcher_aria": "نمط صفحة المجلس",
+    "fused_pending_title": "يجري نقل الأداة المدمجة",
+    "fused_pending_subtitle": "ارجع إلى الكلاسيكي حتى يكتمل."
   }
 }

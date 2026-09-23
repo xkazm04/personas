@@ -160,5 +160,10 @@
   "tier_toggle_label": "Уровень «основная»",
   "unreadable_retry": "Повторить",
   "unreadable_title": "Не удалось прочитать доску",
-  "weakness_title": "Главная слабость"
+  "weakness_title": "Главная слабость",
+  "variant_board": "Доска",
+  "variant_cadastre": "Кадастр",
+  "variant_switcher_aria": "Стиль страницы функций",
+  "cadastre_pending_title": "Кадастр переносится",
+  "cadastre_pending_subtitle": "Пока вернитесь к доске."
 }

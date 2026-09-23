@@ -232,5 +232,12 @@
     "robustness": "robustez",
     "economics": "economía",
     "reversibility": "reversibilidad"
+  },
+  "variant": {
+    "classic": "Clásico",
+    "fused": "Fusionado",
+    "switcher_aria": "Estilo de la página del consejo",
+    "fused_pending_title": "El instrumento fusionado se está portando",
+    "fused_pending_subtitle": "Vuelve a Clásico hasta que esté listo."
   }
 }

@@ -23644,6 +23644,13 @@
       "robustness": "দৃঢ়তা",
       "economics": "অর্থনীতি",
       "reversibility": "প্রত্যাবর্তনযোগ্যতা"
+    },
+    "variant": {
+      "classic": "ক্লাসিক",
+      "fused": "সংযুক্ত",
+      "switcher_aria": "কাউন্সিল পাতার ধরন",
+      "fused_pending_title": "সংযুক্ত যন্ত্রটি স্থানান্তর করা হচ্ছে",
+      "fused_pending_subtitle": "এটি আসা পর্যন্ত ক্লাসিকে ফিরে যান।"
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "প্রধান স্তর",
     "unreadable_retry": "আবার চেষ্টা করুন",
     "unreadable_title": "বোর্ড পড়া যায়নি",
-    "weakness_title": "শীর্ষ দুর্বলতা"
+    "weakness_title": "শীর্ষ দুর্বলতা",
+    "variant_board": "বোর্ড",
+    "variant_cadastre": "ক্যাডাস্ট্রে",
+    "variant_switcher_aria": "ফিচার পাতার ধরন",
+    "cadastre_pending_title": "ক্যাডাস্ট্রে স্থানান্তর করা হচ্ছে",
+    "cadastre_pending_subtitle": "এটি আসা পর্যন্ত বোর্ডে ফিরে যান।"
   },
   "companions": {
     "nav": {

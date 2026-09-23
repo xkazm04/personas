@@ -13,6 +13,7 @@ import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
 
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,10 +24,16 @@ import { effectiveSubject } from './bench/queueModel';
 import { decidableCount } from './councilRules';
 import { useCouncilStore } from './councilStore';
 import { GalaxyStage } from './galaxy/GalaxyStage';
+import { FusedStage } from './galaxy/fused/FusedStage';
+import { COUNCIL_VARIANTS, COUNCIL_VARIANT_TAB_PREFIX, useCouncilVariant, type CouncilVariant } from './councilVariant';
 
 export default function CouncilPage() {
   const { t, tx } = useTranslation();
   const b = t.council.bench;
+  const v = t.council.variant;
+  /* Classic or fused: two stages behind one persisted switch while the
+     contest winner is promoted (`councilVariant.ts`). */
+  const [variant, setVariant] = useCouncilVariant();
   const benchOpen = useCouncilStore((s) => s.benchOpen);
   const tableOpen = useCouncilStore((s) => s.tableSubjectId !== null);
   const setBenchOpen = useCouncilStore((s) => s.setBenchOpen);
@@ -111,6 +118,10 @@ export default function CouncilPage() {
     };
   }, [benchOpen, tableOpen]);
 
+  /* One element type per variant, chosen before render so React mounts a
+     fresh stage (and a fresh engine) when the switch flips. */
+  const Stage = variant === 'fused' ? FusedStage : GalaxyStage;
+
   const aim = useCallback(
     (subject: CouncilSubjectState) => focusCouncil(subject, null),
     [focusCouncil],
@@ -124,6 +135,20 @@ export default function CouncilPage() {
         title={t.sidebar.council}
         fitWidth
         actions={
+          <div className="flex items-center gap-2">
+          <SegmentedTabs<CouncilVariant>
+            tabs={COUNCIL_VARIANTS.map((id) => ({
+              id,
+              label: id === 'classic' ? v.classic : v.fused,
+              testId: `council-variant-${id}`,
+            }))}
+            activeTab={variant}
+            onTabChange={setVariant}
+            ariaLabel={v.switcher_aria}
+            idPrefix={COUNCIL_VARIANT_TAB_PREFIX}
+            size="sm"
+            fullWidth={false}
+          />
           <button
             type="button"
             onClick={() => setBenchOpen(!benchOpen)}
@@ -143,6 +168,7 @@ export default function CouncilPage() {
             ) : null}
             <kbd className="rounded border border-current/40 px-1 font-mono opacity-70">Q</kbd>
           </button>
+          </div>
         }
       />
       {/* `flex`, not the default body: the default wraps its children in a
@@ -151,8 +177,8 @@ export default function CouncilPage() {
           ended short of the window with the field clipped inside it. The flex
           branch is `h-full` with no padding, which is what a stage needs. */}
       <ContentBody flex>
-        <div data-testid="council-stage" className="relative flex min-h-0 flex-1 flex-col">
-          <GalaxyStage
+        <div data-testid="council-stage" className="relative flex min-h-0 flex-1 flex-col" data-variant={variant}>
+          <Stage
             bench={
               /* The bench RISES. It is a drawer taking two thirds of the
                  field, which is the app's `gentle` rung (400 ms, a large

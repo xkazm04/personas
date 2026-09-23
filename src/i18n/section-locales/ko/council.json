@@ -232,5 +232,12 @@
     "robustness": "견고성",
     "economics": "경제성",
     "reversibility": "가역성"
+  },
+  "variant": {
+    "classic": "클래식",
+    "fused": "통합",
+    "switcher_aria": "평의회 페이지 스타일",
+    "fused_pending_title": "통합 계기를 이식하는 중입니다",
+    "fused_pending_subtitle": "완료될 때까지 클래식으로 돌아가세요."
   }
 }

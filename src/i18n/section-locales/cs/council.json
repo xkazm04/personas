@@ -232,5 +232,12 @@
     "robustness": "robustnost",
     "economics": "ekonomika",
     "reversibility": "vratnost"
+  },
+  "variant": {
+    "classic": "Klasické",
+    "fused": "Sloučené",
+    "switcher_aria": "Styl stránky rady",
+    "fused_pending_title": "Sloučený přístroj se právě přenáší",
+    "fused_pending_subtitle": "Do té doby se vraťte na Klasické."
   }
 }

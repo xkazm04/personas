@@ -2,6 +2,11 @@
 
 ## Active
 
+### promote-contest-2026-09-23 — promote the Cadastre Features page and the fused Council HUD as switchable variants (contest winners)
+- **[2026-09-23 14:02]**
+- **Paths:** `src/features/teams/sub_features/**` · `src/features/companions/curator/council/**` · `src/i18n/**` · `docs/design/promotions/**`
+- **Status:** started
+
 - **[2026-09-22 09:52]**
 - **Paths:** `src/features/teams/sub_kpis/**`
 - **Status:** started

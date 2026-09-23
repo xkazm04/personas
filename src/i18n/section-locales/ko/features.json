@@ -160,5 +160,10 @@
   "tier_toggle_label": "주요 등급",
   "unreadable_retry": "다시 시도",
   "unreadable_title": "보드를 읽을 수 없습니다",
-  "weakness_title": "가장 큰 약점"
+  "weakness_title": "가장 큰 약점",
+  "variant_board": "보드",
+  "variant_cadastre": "지적도",
+  "variant_switcher_aria": "기능 페이지 스타일",
+  "cadastre_pending_title": "지적도를 이식하는 중입니다",
+  "cadastre_pending_subtitle": "완료될 때까지 보드로 돌아가세요."
 }

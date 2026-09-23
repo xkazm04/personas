@@ -232,5 +232,12 @@
     "robustness": "堅牢性",
     "economics": "経済性",
     "reversibility": "可逆性"
+  },
+  "variant": {
+    "classic": "クラシック",
+    "fused": "統合",
+    "switcher_aria": "評議会ページのスタイル",
+    "fused_pending_title": "統合計器を移植中です",
+    "fused_pending_subtitle": "それまではクラシックに戻してください。"
   }
 }

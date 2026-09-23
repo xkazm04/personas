@@ -232,5 +232,12 @@
     "robustness": "Robustheit",
     "economics": "Wirtschaftlichkeit",
     "reversibility": "Umkehrbarkeit"
+  },
+  "variant": {
+    "classic": "Klassisch",
+    "fused": "Verschmolzen",
+    "switcher_aria": "Stil der Ratsseite",
+    "fused_pending_title": "Das verschmolzene Instrument wird gerade portiert",
+    "fused_pending_subtitle": "Bis dahin zu Klassisch zurückwechseln."
   }
 }

@@ -1300,6 +1300,13 @@
       "robustness": "robustness",
       "economics": "economics",
       "reversibility": "reversibility"
+    },
+    "variant": {
+      "classic": "Classic",
+      "fused": "Fused",
+      "switcher_aria": "Council page style",
+      "fused_pending_title": "The fused instrument is being ported",
+      "fused_pending_subtitle": "Switch back to Classic until it lands."
     }
   },
   "features": {
@@ -1464,7 +1471,12 @@
     "no_features_subtitle": "Scan the codebase and the features it declares land here with the contexts each one claims.",
     "no_features_action": "Open the Context Map",
     "no_project_title": "No project selected",
-    "no_project_subtitle": "Pick a project above and its features load."
+    "no_project_subtitle": "Pick a project above and its features load.",
+    "variant_board": "Board",
+    "variant_cadastre": "Cadastre",
+    "variant_switcher_aria": "Features page style",
+    "cadastre_pending_title": "The Cadastre is being ported",
+    "cadastre_pending_subtitle": "Switch back to Board until it lands."
   },
   "chrome": {
     "app_title": "Personas",

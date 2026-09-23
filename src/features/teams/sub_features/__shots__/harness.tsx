@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom/client';
 
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
+import { safeLocalSet } from '@/lib/safeLocalStorage';
 import { useThemeStore } from '@/stores/themeStore';
 import '@/styles/globals.css';
 
@@ -16,6 +17,10 @@ import FeaturesPage from '../FeaturesPage';
 
 const params = new URLSearchParams(window.location.search);
 useThemeStore.getState().setTheme(params.get('theme') === 'light' ? 'light' : 'dark-midnight');
+// `?variant=board|cadastre` pins the persisted switch before the page reads it,
+// so a shot names the surface it shows.
+const variant = params.get('variant');
+if (variant) safeLocalSet('features-variant', variant, 'features:variant');
 
 await preloadSectionsAsync('en', ['features', 'plugins', 'sidebar', 'common', 'empty_states', 'council']);
 

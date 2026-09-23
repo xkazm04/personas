@@ -23644,6 +23644,13 @@
       "robustness": "堅牢性",
       "economics": "経済性",
       "reversibility": "可逆性"
+    },
+    "variant": {
+      "classic": "クラシック",
+      "fused": "統合",
+      "switcher_aria": "評議会ページのスタイル",
+      "fused_pending_title": "統合計器を移植中です",
+      "fused_pending_subtitle": "それまではクラシックに戻してください。"
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "主要ティア",
     "unreadable_retry": "再試行",
     "unreadable_title": "ボードを読み込めませんでした",
-    "weakness_title": "最大の弱点"
+    "weakness_title": "最大の弱点",
+    "variant_board": "ボード",
+    "variant_cadastre": "地籍図",
+    "variant_switcher_aria": "機能ページのスタイル",
+    "cadastre_pending_title": "地籍図を移植中です",
+    "cadastre_pending_subtitle": "それまではボードに戻してください。"
   },
   "companions": {
     "nav": {

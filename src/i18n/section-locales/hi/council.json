@@ -232,5 +232,12 @@
     "robustness": "मज़बूती",
     "economics": "अर्थशास्त्र",
     "reversibility": "प्रतिवर्तनीयता"
+  },
+  "variant": {
+    "classic": "क्लासिक",
+    "fused": "संयुक्त",
+    "switcher_aria": "काउंसिल पेज की शैली",
+    "fused_pending_title": "संयुक्त उपकरण को पोर्ट किया जा रहा है",
+    "fused_pending_subtitle": "तब तक क्लासिक पर वापस जाएँ।"
   }
 }

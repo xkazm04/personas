@@ -23644,6 +23644,13 @@
       "robustness": "मज़बूती",
       "economics": "अर्थशास्त्र",
       "reversibility": "प्रतिवर्तनीयता"
+    },
+    "variant": {
+      "classic": "क्लासिक",
+      "fused": "संयुक्त",
+      "switcher_aria": "काउंसिल पेज की शैली",
+      "fused_pending_title": "संयुक्त उपकरण को पोर्ट किया जा रहा है",
+      "fused_pending_subtitle": "तब तक क्लासिक पर वापस जाएँ।"
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "प्रमुख स्तर",
     "unreadable_retry": "फिर से कोशिश करें",
     "unreadable_title": "बोर्ड पढ़ा नहीं जा सका",
-    "weakness_title": "सबसे बड़ी कमज़ोरी"
+    "weakness_title": "सबसे बड़ी कमज़ोरी",
+    "variant_board": "बोर्ड",
+    "variant_cadastre": "भूमि-अभिलेख",
+    "variant_switcher_aria": "फ़ीचर पेज की शैली",
+    "cadastre_pending_title": "भूमि-अभिलेख को पोर्ट किया जा रहा है",
+    "cadastre_pending_subtitle": "तब तक बोर्ड पर वापस जाएँ।"
   },
   "companions": {
     "nav": {

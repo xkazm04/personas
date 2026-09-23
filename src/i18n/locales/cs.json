@@ -23644,6 +23644,13 @@
       "robustness": "robustnost",
       "economics": "ekonomika",
       "reversibility": "vratnost"
+    },
+    "variant": {
+      "classic": "Klasické",
+      "fused": "Sloučené",
+      "switcher_aria": "Styl stránky rady",
+      "fused_pending_title": "Sloučený přístroj se právě přenáší",
+      "fused_pending_subtitle": "Do té doby se vraťte na Klasické."
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "Klíčová úroveň",
     "unreadable_retry": "Zkusit znovu",
     "unreadable_title": "Nástěnku se nepodařilo načíst",
-    "weakness_title": "Největší slabina"
+    "weakness_title": "Největší slabina",
+    "variant_board": "Tabule",
+    "variant_cadastre": "Katastr",
+    "variant_switcher_aria": "Styl stránky funkcí",
+    "cadastre_pending_title": "Katastr se právě přenáší",
+    "cadastre_pending_subtitle": "Do té doby se vraťte na Tabuli."
   },
   "companions": {
     "nav": {

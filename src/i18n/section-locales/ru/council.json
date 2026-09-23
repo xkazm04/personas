@@ -232,5 +232,12 @@
     "robustness": "надёжность",
     "economics": "экономика",
     "reversibility": "обратимость"
+  },
+  "variant": {
+    "classic": "Классический",
+    "fused": "Объединённый",
+    "switcher_aria": "Стиль страницы совета",
+    "fused_pending_title": "Объединённый прибор переносится",
+    "fused_pending_subtitle": "Пока вернитесь к классическому."
   }
 }

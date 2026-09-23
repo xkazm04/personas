@@ -232,5 +232,12 @@
     "robustness": "robustness",
     "economics": "economics",
     "reversibility": "reversibility"
+  },
+  "variant": {
+    "classic": "Classic",
+    "fused": "Fused",
+    "switcher_aria": "Council page style",
+    "fused_pending_title": "The fused instrument is being ported",
+    "fused_pending_subtitle": "Switch back to Classic until it lands."
   }
 }

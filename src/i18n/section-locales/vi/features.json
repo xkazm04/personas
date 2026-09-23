@@ -160,5 +160,10 @@
   "tier_toggle_label": "Cấp độ chính",
   "unreadable_retry": "Thử lại",
   "unreadable_title": "Không thể đọc được bảng",
-  "weakness_title": "Điểm yếu lớn nhất"
+  "weakness_title": "Điểm yếu lớn nhất",
+  "variant_board": "Bảng",
+  "variant_cadastre": "Địa bạ",
+  "variant_switcher_aria": "Kiểu trang tính năng",
+  "cadastre_pending_title": "Địa bạ đang được chuyển sang",
+  "cadastre_pending_subtitle": "Hãy quay lại Bảng cho đến khi hoàn tất."
 }

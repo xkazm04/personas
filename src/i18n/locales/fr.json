@@ -23644,6 +23644,13 @@
       "robustness": "robustesse",
       "economics": "économie",
       "reversibility": "réversibilité"
+    },
+    "variant": {
+      "classic": "Classique",
+      "fused": "Fusionné",
+      "switcher_aria": "Style de la page du conseil",
+      "fused_pending_title": "L'instrument fusionné est en cours de portage",
+      "fused_pending_subtitle": "Revenez à Classique en attendant."
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "Niveau majeur",
     "unreadable_retry": "Réessayer",
     "unreadable_title": "Le tableau n'a pas pu être lu",
-    "weakness_title": "Principale faiblesse"
+    "weakness_title": "Principale faiblesse",
+    "variant_board": "Tableau",
+    "variant_cadastre": "Plan cadastral",
+    "variant_switcher_aria": "Style de la page des fonctionnalités",
+    "cadastre_pending_title": "Le plan cadastral est en cours de portage",
+    "cadastre_pending_subtitle": "Revenez au tableau en attendant."
   },
   "companions": {
     "nav": {

@@ -160,5 +160,10 @@
   "tier_toggle_label": "主要等级",
   "unreadable_retry": "重试",
   "unreadable_title": "无法读取看板",
-  "weakness_title": "最大薄弱点"
+  "weakness_title": "最大薄弱点",
+  "variant_board": "看板",
+  "variant_cadastre": "地籍图",
+  "variant_switcher_aria": "功能页面样式",
+  "cadastre_pending_title": "地籍图正在移植中",
+  "cadastre_pending_subtitle": "在此之前请切换回看板。"
 }

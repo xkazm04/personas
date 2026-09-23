@@ -23644,6 +23644,13 @@
       "robustness": "Robustheit",
       "economics": "Wirtschaftlichkeit",
       "reversibility": "Umkehrbarkeit"
+    },
+    "variant": {
+      "classic": "Klassisch",
+      "fused": "Verschmolzen",
+      "switcher_aria": "Stil der Ratsseite",
+      "fused_pending_title": "Das verschmolzene Instrument wird gerade portiert",
+      "fused_pending_subtitle": "Bis dahin zu Klassisch zurückwechseln."
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "Wichtige Stufe",
     "unreadable_retry": "Erneut versuchen",
     "unreadable_title": "Das Board konnte nicht gelesen werden",
-    "weakness_title": "Größte Schwäche"
+    "weakness_title": "Größte Schwäche",
+    "variant_board": "Tafel",
+    "variant_cadastre": "Kataster",
+    "variant_switcher_aria": "Stil der Funktionsseite",
+    "cadastre_pending_title": "Das Kataster wird gerade portiert",
+    "cadastre_pending_subtitle": "Bis dahin zur Tafel zurückwechseln."
   },
   "companions": {
     "nav": {

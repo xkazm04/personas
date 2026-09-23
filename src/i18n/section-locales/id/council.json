@@ -232,5 +232,12 @@
     "robustness": "ketahanan",
     "economics": "ekonomi",
     "reversibility": "reversibilitas"
+  },
+  "variant": {
+    "classic": "Klasik",
+    "fused": "Terpadu",
+    "switcher_aria": "Gaya halaman dewan",
+    "fused_pending_title": "Instrumen terpadu sedang dipindahkan",
+    "fused_pending_subtitle": "Kembali ke Klasik sampai selesai."
   }
 }

@@ -23644,6 +23644,13 @@
       "robustness": "robustez",
       "economics": "economía",
       "reversibility": "reversibilidad"
+    },
+    "variant": {
+      "classic": "Clásico",
+      "fused": "Fusionado",
+      "switcher_aria": "Estilo de la página del consejo",
+      "fused_pending_title": "El instrumento fusionado se está portando",
+      "fused_pending_subtitle": "Vuelve a Clásico hasta que esté listo."
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "Nivel mayor",
     "unreadable_retry": "Intentar de nuevo",
     "unreadable_title": "No se pudo leer el tablero",
-    "weakness_title": "Principal debilidad"
+    "weakness_title": "Principal debilidad",
+    "variant_board": "Tablero",
+    "variant_cadastre": "Catastro",
+    "variant_switcher_aria": "Estilo de la página de funciones",
+    "cadastre_pending_title": "El catastro se está portando",
+    "cadastre_pending_subtitle": "Vuelve al tablero hasta que esté listo."
   },
   "companions": {
     "nav": {

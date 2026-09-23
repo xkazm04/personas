@@ -232,5 +232,12 @@
     "robustness": "稳健性",
     "economics": "经济性",
     "reversibility": "可逆性"
+  },
+  "variant": {
+    "classic": "经典",
+    "fused": "融合",
+    "switcher_aria": "议事会页面样式",
+    "fused_pending_title": "融合仪表正在移植中",
+    "fused_pending_subtitle": "在此之前请切换回经典。"
   }
 }

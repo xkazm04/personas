@@ -21,7 +21,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "evidence": {},
     "state": {},
     "trust": {},
-    "member": {}
+    "member": {},
+    "variant": {}
   },
   "features": {},
   "chrome": {

@@ -232,5 +232,12 @@
     "robustness": "độ bền vững",
     "economics": "kinh tế",
     "reversibility": "khả năng đảo ngược"
+  },
+  "variant": {
+    "classic": "Cổ điển",
+    "fused": "Hợp nhất",
+    "switcher_aria": "Kiểu trang hội đồng",
+    "fused_pending_title": "Thiết bị hợp nhất đang được chuyển sang",
+    "fused_pending_subtitle": "Hãy quay lại Cổ điển cho đến khi hoàn tất."
   }
 }

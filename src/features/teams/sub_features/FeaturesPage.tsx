@@ -44,6 +44,8 @@ import type { FeatureRow, FeatureSort } from './featureRules';
 import { IS_DEV, loadFeaturesFixture } from './fixture/featuresFixture';
 import { MapTab } from './map/MapTab';
 import { useFeatureBoard } from './useFeatureBoard';
+import { CadastrePage } from './cadastre/CadastrePage';
+import { FEATURES_VARIANTS, FEATURES_VARIANT_TAB_PREFIX, useFeaturesVariant, type FeaturesVariant } from './featuresVariant';
 
 type ContentTab = 'map' | 'feature';
 
@@ -57,6 +59,9 @@ export default function FeaturesPage() {
   const setPendingCouncilSubjectId = useSystemStore((s) => s.setPendingCouncilSubjectId);
 
   const [fixture, setFixture] = useState<{ boards: FeatureBoard[]; runningSlugs: Set<string> } | null>(null);
+  /* Board or Cadastre: two surfaces behind one persisted switch while the
+     contest winner is promoted (`featuresVariant.ts`). */
+  const [variant, setVariant] = useFeaturesVariant();
   const [tab, setTab] = useState<ContentTab>('map');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -189,6 +194,19 @@ export default function FeaturesPage() {
         fitWidth
         actions={
           <div className="flex items-center gap-2">
+            <SegmentedTabs<FeaturesVariant>
+              tabs={FEATURES_VARIANTS.map((id) => ({
+                id,
+                label: id === 'board' ? f.variant_board : f.variant_cadastre,
+                testId: `features-variant-${id}`,
+              }))}
+              activeTab={variant}
+              onTabChange={setVariant}
+              ariaLabel={f.variant_switcher_aria}
+              idPrefix={FEATURES_VARIANT_TAB_PREFIX}
+              size="sm"
+              fullWidth={false}
+            />
             {IS_DEV ? (
               <Tooltip content={f.fixture_note}>
                 <span>
@@ -260,6 +278,24 @@ export default function FeaturesPage() {
                 action={devToolsReachable ? { label: f.no_features_action, onClick: openContext } : undefined}
               />
             </div>
+          ) : model && board && variant === 'cadastre' ? (
+            <CadastrePage
+              board={board}
+              model={model}
+              fixture={fixtureBoard != null}
+              filterRef={filterRef}
+              onOpenContext={openContext}
+              onOpenDecision={openDecision}
+              onRunCouncil={runCouncil}
+              onToggleTier={doToggleTier}
+              onUpsertScenario={doUpsert}
+              onDeleteScenario={doDelete}
+              t={f}
+              tDev={tDev}
+              tCommon={{ save: t.common.save, cancel: t.common.cancel, delete: t.common.delete }}
+              tx={tx}
+              language={language}
+            />
           ) : model && board ? (
             <div className="flex min-h-0 flex-1">
               {columnOpen ? (

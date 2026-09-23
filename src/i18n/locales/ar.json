@@ -23644,6 +23644,13 @@
       "robustness": "المتانة",
       "economics": "الاقتصاد",
       "reversibility": "قابلية التراجع"
+    },
+    "variant": {
+      "classic": "كلاسيكي",
+      "fused": "مدمج",
+      "switcher_aria": "نمط صفحة المجلس",
+      "fused_pending_title": "يجري نقل الأداة المدمجة",
+      "fused_pending_subtitle": "ارجع إلى الكلاسيكي حتى يكتمل."
     }
   },
   "features": {
@@ -23808,7 +23815,12 @@
     "tier_toggle_label": "الفئة الرئيسية",
     "unreadable_retry": "أعد المحاولة",
     "unreadable_title": "تعذّرت قراءة اللوحة",
-    "weakness_title": "أبرز نقطة ضعف"
+    "weakness_title": "أبرز نقطة ضعف",
+    "variant_board": "لوحة",
+    "variant_cadastre": "السجل العقاري",
+    "variant_switcher_aria": "نمط صفحة الميزات",
+    "cadastre_pending_title": "يجري نقل السجل العقاري",
+    "cadastre_pending_subtitle": "ارجع إلى اللوحة حتى يكتمل."
   },
   "companions": {
     "nav": {

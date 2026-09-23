@@ -1307,6 +1307,13 @@ export type Translations = {
       economics: string;
       reversibility: string;
     };
+    variant: {
+      classic: string;
+      fused: string;
+      switcher_aria: string;
+      fused_pending_title: string;
+      fused_pending_subtitle: string;
+    };
   };
   features: {
     page_title: string;
@@ -1471,6 +1478,11 @@ export type Translations = {
     no_features_action: string;
     no_project_title: string;
     no_project_subtitle: string;
+    variant_board: string;
+    variant_cadastre: string;
+    variant_switcher_aria: string;
+    cadastre_pending_title: string;
+    cadastre_pending_subtitle: string;
   };
   chrome: {
     app_title: string;

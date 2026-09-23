@@ -13,6 +13,7 @@ import ReactDOM from 'react-dom/client';
 
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
+import { safeLocalSet } from '@/lib/safeLocalStorage';
 import { useThemeStore } from '@/stores/themeStore';
 import '@/styles/globals.css';
 
@@ -35,6 +36,10 @@ declare global {
 
 const params = new URLSearchParams(window.location.search);
 useThemeStore.getState().setTheme(params.get('theme') === 'light' ? 'light' : 'dark-midnight');
+// `?variant=classic|fused` pins the persisted switch before the page reads it,
+// so a shot names the stage it shows.
+const variant = params.get('variant');
+if (variant) safeLocalSet('council-variant', variant, 'council:variant');
 
 // The council strings and the chrome the page borrows. `sidebar` carries the
 // page's own title through `ContentHeader`.
