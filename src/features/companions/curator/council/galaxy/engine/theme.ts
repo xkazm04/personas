@@ -15,6 +15,11 @@
 //   --sky            -> background   (the stage IS the page in this app)
 //   --panel*         -> card / secondary  (used by the HTML chrome, not here)
 //   --hair / --hair-2-> card-border / border
+//
+// The `fused` style profile (`profile.ts`) reads the four claim colours from
+// the galaxy's own `--gx-*` tokens instead of the status tokens; nothing else
+// about the read changes.
+import { CLAIM_TOKENS, type StyleProfile } from './profile';
 
 /** Every colour the galaxy paints with, already resolved to rgb()/rgba(). */
 export interface CanvasTheme {
@@ -83,8 +88,9 @@ export function isLightTheme(): boolean {
  * to call per frame — the engine caches the result and re-reads only when the
  * root's `data-theme` / `data-brightness` actually changes.
  */
-export function readCanvasTheme(): CanvasTheme {
+export function readCanvasTheme(profile: StyleProfile = 'classic'): CanvasTheme {
   const probe = probeElement();
+  const claims = CLAIM_TOKENS[profile];
   const light = isLightTheme();
   const pick = (token: string, fallback: string) =>
     resolveColor(probe, `var(${token})`, fallback);
@@ -107,15 +113,15 @@ export function readCanvasTheme(): CanvasTheme {
     hair: pick('--card-border', light ? 'rgba(15,23,42,.10)' : 'rgba(255,255,255,.10)'),
     hair2: pick('--border', light ? '#cdd5e1' : '#1e293b'),
     accent,
-    ok: pick('--status-success', light ? '#047857' : '#34d399'),
-    err: pick('--status-error', light ? '#be1b1b' : '#f87171'),
-    pend: pick('--status-pending', light ? '#92400e' : '#fbbf24'),
+    ok: pick(claims.ok, light ? '#047857' : '#34d399'),
+    err: pick(claims.err, light ? '#be1b1b' : '#f87171'),
+    pend: pick(claims.pend, light ? '#92400e' : '#fbbf24'),
     purple: pick('--brand-purple', light ? '#7c3aed' : '#a78bfa'),
     // The reference's five rgba literals, rebuilt from the same two inks so a
     // re-themed app re-tints them instead of keeping a dark-theme constant.
     dust: withAlpha(light ? ink1 : ink1, light ? 0.14 : 0.26),
     domainGlow: withAlpha(light ? ink1 : accent, light ? 0.055 : 0.085),
-    uncouncilled: withAlpha(ink1, light ? 0.45 : 0.55),
+    uncouncilled: withAlpha(claims.none ? pick(claims.none, ink3) : ink1, light ? 0.45 : 0.55),
     rimTrack: withAlpha(ink1, 0.1),
     lensFill: withAlpha(accent, 0.07),
   };

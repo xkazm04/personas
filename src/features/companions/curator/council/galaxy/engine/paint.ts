@@ -6,6 +6,8 @@
 // reference's, unchanged, because those numbers ARE the approved design.
 import { applyLens, LENS_NAME_AT_DEPTH, LENS_NAME_AT_SKY, LENS_R, lensShadows, type LensState } from './lens';
 import { LabelQueue, type Rect } from './labels';
+import type { Circle, LabelWindow } from './labelsFused';
+import { decorationCap, nearestGaps, type StyleProfile } from './profile';
 import { TAU } from './layout';
 import { withAlpha, type CanvasTheme } from './theme';
 import type { Viewport } from './camera';
@@ -75,6 +77,27 @@ export interface FrameInput {
   picks: PickTarget[];
   /** Chrome boxes, taken by the occupancy pass before any label is placed. */
   reserved: Rect[];
+  /**
+   * The style profile (`profile.ts`). Absent or `classic` paints exactly the
+   * shipped field; every `fused` branch below is one of its four rules.
+   */
+  profile?: StyleProfile;
+  /** Fused only: the glass the bezel frames the field in, if it is open. */
+  labelWindow?: LabelWindow | null;
+  /** Fused only: every node drawn this frame, which a label may not cover. */
+  obstacles?: Circle[];
+}
+
+const isFused = (f: FrameInput): boolean => f.profile === 'fused';
+
+/** Fused rule 3: half the gap to the nearest neighbour, in screen pixels. */
+function capFor(f: FrameInput, s: SubjectNode, inkR: number, m: number): number {
+  if (!isFused(f)) return Infinity;
+  return decorationCap(inkR, nearestGaps(f.layout).get(s) ?? Infinity, f.camera.k, m);
+}
+
+function obstacle(f: FrameInput, x: number, y: number, r: number): void {
+  if (f.obstacles) f.obstacles.push({ x, y, r });
 }
 
 function markColour(theme: CanvasTheme, mark: CouncilMark): string {
@@ -177,14 +200,25 @@ function drawSkyStars(f: FrameInput, p: Projector, d: DomainNode): void {
       ctx.beginPath();
       ctx.arc(x, y, rr, 0, TAU);
       ctx.fill();
+      obstacle(f, x, y, rr + 2);
       if (threaded) {
         ctx.strokeStyle = theme.accent;
         ctx.lineWidth = 1.4;
         ctx.beginPath();
-        ctx.arc(x, y, rr + 4.5, 0, TAU);
+        ctx.arc(x, y, Math.min(rr + 4.5, capFor(f, s, rr, mg)), 0, TAU);
         ctx.stroke();
         f.picks.push({ x, y, r: rr + 8, node: s });
-        f.labels.push({ x, y: y - rr - 10, text: s.title, size: 14.5, color: theme.accent, weight: 670, align: 'center', priority: 1 });
+        f.labels.push({
+          x,
+          y: y - rr - 10,
+          text: s.title,
+          size: 14.5,
+          color: theme.accent,
+          weight: 670,
+          align: 'center',
+          priority: 1,
+          anchor: isFused(f) ? { x, y, off: rr + 6, maxW: 190 } : undefined,
+        });
       } else if (mg > LENS_NAME_AT_SKY) {
         f.labels.push({ x, y: y - rr - 7, text: s.title, size: 15, color: theme.ink1, weight: 680, align: 'center', priority: 0 });
       }
@@ -206,6 +240,7 @@ function drawTechniques(f: FrameInput, p: Projector, s: SubjectNode): void {
     ctx.beginPath();
     ctx.arc(x, y, tr, 0, TAU);
     ctx.fill();
+    obstacle(f, x, y, tr + 2);
     // A technique is a CHILD of the subject the reader is standing on: 24 px
     // of target and a name at the chrome's heading size, unconditionally. It
     // used to be named only above 4.2 px of ink, which left the small ones
@@ -222,6 +257,8 @@ function drawTechniques(f: FrameInput, p: Projector, s: SubjectNode): void {
       // At subject altitude the technique names ARE the content. They yield
       // to the subject's own title and to nothing else.
       priority: P_CHILD,
+      rank: t.rank,
+      anchor: isFused(f) ? { x, y, off: tr + 6, side: sideFrom(x - p.sx(s.x), y - p.sy(s.y)), maxW: 200 } : undefined,
     });
   }
 }
@@ -243,16 +280,19 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
   if (isChild) pickChild(f, x, y, r + 4, s);
   else f.picks.push({ x, y, r: Math.max(r + 4, 8), node: s });
 
+  const cap = capFor(f, s, r, m);
   if (s.mark !== 'none') {
     const colour = markColour(theme, s.mark);
-    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
+    const glowR = Math.min(r * 4, cap);
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, glowR);
     glow.addColorStop(0, withAlpha(colour, theme.light ? 0.33 : 0.4));
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(x, y, r * 4, 0, TAU);
+    ctx.arc(x, y, glowR, 0, TAU);
     ctx.fill();
   }
+  if (!thread || threaded) obstacle(f, x, y, r + 2);
   if (s.mark === 'rejected') {
     ctx.fillStyle = theme.err;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
@@ -284,7 +324,7 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
     ctx.strokeStyle = theme.accent;
     ctx.lineWidth = 1.7;
     ctx.beginPath();
-    ctx.arc(x, y, r * 2.4, 0, TAU);
+    ctx.arc(x, y, Math.min(r * 2.4, Math.max(r + 2, cap)), 0, TAU);
     ctx.stroke();
   }
 
@@ -294,8 +334,10 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
   // subject's techniques for the same space. Not queued at all, so it can
   // neither win a slot nor be counted as a label the view withheld.
   const dimmedBySibling = f.subject !== null && !isSelected;
-  const wantName = isSelected || threaded || f.hover === s || lensed || (isChild && !dimmedBySibling);
-  if (isSelected) {
+  const wantName = isFused(f)
+    ? threaded || lensed || (isChild && !dimmedBySibling)
+    : isSelected || threaded || f.hover === s || lensed || (isChild && !dimmedBySibling);
+  if (isSelected && !isFused(f)) {
     // The node the reader is standing on. Its own title is the ONE caption
     // that outranks its children, and it is the way back up: clicking it
     // climbs, which is the canvas twin of clicking the breadcrumb.
@@ -320,10 +362,16 @@ function drawSubject(f: FrameInput, p: Projector, s: SubjectNode, inCategory: bo
       weight: lensed || isChild ? 680 : 620,
       align: 'center',
       priority: isChild || threaded ? P_CHILD : f.hover === s ? P_CURRENT : lensed ? 2 : 6,
+      rank: isChild ? s.rank : undefined,
+      anchor: isFused(f)
+        ? { x, y, off: r + 6, side: x < p.sx(s.category.x) - 4 ? 'left' : 'right', maxW: 190 }
+        : undefined,
     });
   }
   if (isSelected) {
     drawTechniques(f, p, s);
+  }
+  if (isSelected && !isFused(f)) {
     const [sx, sy] = applyLens(f.lens, p.sx(s.x), p.sy(s.y));
     f.labels.push({
       x: sx,
@@ -357,7 +405,9 @@ function drawCategory(f: FrameInput, p: Projector, c: CategoryNode, dimmedByDoma
   ctx.stroke();
   if (isChild) pickChild(f, ccx, ccy, cr, c);
   else f.picks.push({ x: ccx, y: ccy, r: cr, node: c });
-  if (cr > 24 || isChild) {
+  // Fused rule 2: a category is named only from inside its domain, never
+  // again once the reader stands in it.
+  if (isFused(f) ? isChild : cr > 24 || isChild) {
     f.labels.push({
       x: ccx,
       y: ccy - Math.max(cr, isChild ? CHILD_HIT_R : cr) - 8,
@@ -370,9 +420,11 @@ function drawCategory(f: FrameInput, p: Projector, c: CategoryNode, dimmedByDoma
       // Only while it IS the node being stood in — a category title at
       // sky or domain altitude descends, it does not climb.
       climb: isCurrent && f.subject === null ? c : undefined,
+      rank: c.rank,
+      anchor: isFused(f) ? { x: ccx, y: ccy, off: cr + 4, side: 'top', centre: true } : undefined,
     });
   }
-  if (isCurrent && cr > 150 && c.wedges.length > 1) {
+  if (isCurrent && cr > 150 && c.wedges.length > 1 && !isFused(f)) {
     for (const w of c.wedges) {
       ctx.save();
       ctx.strokeStyle = theme.hair2;
@@ -429,6 +481,23 @@ function drawDomain(f: FrameInput, p: Projector, d: DomainNode): void {
     const shadowed = lensShadows(f.lens, dx, dy + dr + 31);
     drawSkyStars(f, p, d);
     ctx.globalAlpha = f.thread ? 0.55 : 1;
+    if (isFused(f)) {
+      f.labels.push({
+        x: dx,
+        y: dy + dr + 22,
+        text: `${d.rank}. ${d.title}`,
+        size: 15,
+        color: f.hover === d ? theme.accent : theme.ink1,
+        weight: 700,
+        align: 'center',
+        priority: shadowed ? 6 : P_CHILD,
+        rank: d.rank,
+        caption: { text: f.captions.domainCaption(d), size: 13, color: theme.ink3, weight: 400 },
+        anchor: { x: dx, y: dy, off: dr + 8, side: 'bottom' },
+      });
+      ctx.globalAlpha = 1;
+      return;
+    }
     f.labels.push({
       x: dx,
       y: dy + dr + 22,
@@ -521,6 +590,7 @@ export function paintFrame(f: FrameInput): number {
   ctx.fillRect(0, 0, width, height);
   f.labels.reset();
   f.picks.length = 0;
+  if (f.obstacles) f.obstacles.length = 0;
   const p = projector(f.camera, f.viewport);
   drawDust(f, p);
   for (const d of f.layout.domains) drawDomain(f, p, d);
@@ -528,5 +598,17 @@ export function paintFrame(f: FrameInput): number {
   drawLensCircle(f);
   // The label pass mints the last picks: a title is only clickable once it
   // has actually been PLACED, which nothing but the occupancy pass knows.
+  if (isFused(f)) {
+    return f.labels.flushFused(ctx, theme, width, f.viewport.y1, f.reserved, f.obstacles ?? [], f.labelWindow ?? null);
+  }
   return f.labels.flush(ctx, theme, width, f.viewport.y1, f.reserved, f.picks);
+}
+
+/** Which side of its parent a node sits on, so its name reads outward. */
+function sideFrom(dx: number, dy: number): 'left' | 'right' | 'top' | 'bottom' {
+  const d = Math.hypot(dx, dy) || 1;
+  const c = dx / d;
+  if (c > 0.35) return 'right';
+  if (c < -0.35) return 'left';
+  return dy < 0 ? 'top' : 'bottom';
 }

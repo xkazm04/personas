@@ -21,6 +21,8 @@ import {
   type Viewport,
 } from './camera';
 import { LabelQueue, type Rect } from './labels';
+import type { Circle, LabelWindow } from './labelsFused';
+import type { StyleProfile } from './profile';
 import { LENS_R, type LensState } from './lens';
 import { paintFrame, type CanvasCaptions } from './paint';
 import type { PickTarget } from './types';
@@ -117,6 +119,15 @@ export class GalaxyEngine {
   private reserved: Rect[] = [];
 
   private labelsHidden = 0;
+
+  /** `profile.ts`. Classic unless a host asks for the fused field. */
+  private profile: StyleProfile = 'classic';
+
+  /** Fused only: the nodes drawn this frame, which labels may not cover. */
+  private readonly obstacles: Circle[] = [];
+
+  /** Fused only: the bezel's glass, when the field is framed inside it. */
+  private labelWindow: LabelWindow | null = null;
 
   private frame = 0;
 
@@ -232,6 +243,34 @@ export class GalaxyEngine {
       });
     if (same) return;
     this.reserved = next;
+    this.invalidate();
+  }
+
+  /**
+   * The style profile the field paints with (`profile.ts`). `classic` is the
+   * shipped field, byte for byte; `fused` is the promoted HUD's four rules.
+   */
+  setProfile(profile: StyleProfile): void {
+    if (this.profile === profile) return;
+    this.profile = profile;
+    this.invalidate();
+  }
+
+  getProfile(): StyleProfile {
+    return this.profile;
+  }
+
+  /** Fused only: a label must sit inside this circle to be placed. */
+  setLabelWindow(win: LabelWindow | null): void {
+    const same =
+      win === this.labelWindow ||
+      (win !== null &&
+        this.labelWindow !== null &&
+        win.x === this.labelWindow.x &&
+        win.y === this.labelWindow.y &&
+        win.r === this.labelWindow.r);
+    if (same) return;
+    this.labelWindow = win;
     this.invalidate();
   }
 
@@ -489,6 +528,9 @@ export class GalaxyEngine {
       labels: this.labels,
       picks: this.picks,
       reserved: this.reserved,
+      ...(this.profile === 'fused'
+        ? { profile: this.profile, obstacles: this.obstacles, labelWindow: this.labelWindow }
+        : {}),
     });
     this.callbacks.onCounts(this.counts());
   }
