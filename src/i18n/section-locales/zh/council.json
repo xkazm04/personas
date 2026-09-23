@@ -354,6 +354,26 @@
     "spread_point_category": "指向一个类别",
     "spread_point_subject": "指向一个主题",
     "spread_rest_domain": "将指针停在某个领域上，无论在视场中还是列表中，它的主题会先在这里绘出。",
-    "spread_rest": "将指针停在某一项上，下探之前它的内容会先在这里绘出。"
+    "spread_rest": "将指针停在某一项上，下探之前它的内容会先在这里绘出。",
+    "doc_label": "已固定的技法",
+    "doc_prev": "上一个",
+    "doc_next": "下一个",
+    "doc_close": "关闭",
+    "doc_kick": "{subject} 中的技法，第 {index} 个，共 {count} 个",
+    "doc_siblings": "绑定于此的同级技法",
+    "doc_elsewhere": "也绑定在别处，涉及 {count} 个主题",
+    "doc_use_when": "适用场景",
+    "doc_no_triggers": "此技法未记录触发短语。",
+    "doc_council": "评审会对 {subject} 的审议",
+    "doc_of": "共 {count} 个",
+    "doc_proven": "个技法已验证",
+    "doc_councilled_for": "曾为 {projects} 经评审会审议，最近一次在 {last}。",
+    "doc_never": "{subject} 从未经评审会审议。其评审状态未测量，这不等于零。",
+    "doc_waits": "{title} 在此等待你决定 · 总体 {overall} · 第 {round} 轮",
+    "doc_proof": "在 {subject} 中被引用为 {dimension} 的{proof}证据，第 {round} 轮。",
+    "doc_proofs_unmeasured": "在参考样例之外，哪些评审会运行引用此技法作为证据尚未测量。",
+    "doc_laws": "它所遵循的法则",
+    "doc_law_binds": "约束 {subjects} 个主题中的 {count} 个技法",
+    "doc_no_laws": "此技法未引用任何法则。"
   }
 }

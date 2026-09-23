@@ -36,8 +36,9 @@ import { rowsWanted, spreadHeight } from './spreadPaint';
 import { levelOf } from './fusedModel';
 import { useFusedData, useFusedPath } from './useFused';
 import { useFusedKeys } from './useFusedKeys';
+import { TechniqueDocument } from './TechniqueDocument';
 import { useInstrumentColors } from './tokenColors';
-import { CARE_H, useStageFrame, useStageSize } from './useStageFrame';
+import { CARE_H, docWidth, useStageFrame, useStageSize } from './useStageFrame';
 import './fused.css';
 
 export function FusedStage({ bench }: { bench?: ReactNode }) {
@@ -134,6 +135,15 @@ export function FusedStage({ bench }: { bench?: ReactNode }) {
           target={dockH}
           narrow={size.w < 1200}
           colors={colors}
+        />
+      ) : null}
+      {layout ? (
+        <TechniqueDocument
+          engine={engine}
+          layout={layout}
+          technique={path.technique}
+          data={data}
+          wide={docWidth(size.w, navRef.current?.offsetWidth ?? 284) >= 700}
         />
       ) : null}
       <FieldTip layout={layout} waitingStars={data.waitingStars} />

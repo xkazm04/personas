@@ -354,6 +354,26 @@
     "spread_point_category": "Arahkan ke kategori",
     "spread_point_subject": "Arahkan ke subjek",
     "spread_rest_domain": "Diamkan penunjuk di atas domain, di bidang atau di daftar, dan subjeknya digambar di sini lebih dulu.",
-    "spread_rest": "Diamkan penunjuk di atas salah satunya dan isinya digambar di sini sebelum Anda turun."
+    "spread_rest": "Diamkan penunjuk di atas salah satunya dan isinya digambar di sini sebelum Anda turun.",
+    "doc_label": "Teknik yang disematkan",
+    "doc_prev": "Sebelumnya",
+    "doc_next": "Berikutnya",
+    "doc_close": "Tutup",
+    "doc_kick": "Teknik {index} dari {count} di {subject}",
+    "doc_siblings": "teknik saudara yang terikat di sini",
+    "doc_elsewhere": "terikat di tempat lain, di {count} subjek",
+    "doc_use_when": "Gunakan saat",
+    "doc_no_triggers": "Tidak ada frasa pemicu yang tercatat untuk teknik ini.",
+    "doc_council": "Dewan untuk {subject}",
+    "doc_of": "dari {count}",
+    "doc_proven": "teknik terbukti",
+    "doc_councilled_for": "Dibahas dewan untuk {projects}, terakhir pada {last}.",
+    "doc_never": "{subject} belum pernah dibahas dewan. Status dewannya belum diukur, dan itu tidak sama dengan nol.",
+    "doc_waits": "{title} menunggu Anda di sini · keseluruhan {overall} · putaran {round}",
+    "doc_proof": "Dikutip sebagai bukti {proof} untuk {dimension} di {subject}, putaran {round}.",
+    "doc_proofs_unmeasured": "Putaran dewan mana yang mengutip teknik ini sebagai bukti belum diukur di luar fixture referensi.",
+    "doc_laws": "Hukum yang dipatuhinya",
+    "doc_law_binds": "mengikat {count} teknik di {subjects} subjek",
+    "doc_no_laws": "Teknik ini tidak mengutip hukum apa pun."
   }
 }

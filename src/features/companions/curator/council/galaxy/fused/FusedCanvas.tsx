@@ -12,6 +12,7 @@ import { useCouncilStore } from '../../councilStore';
 import { GalaxyEngine } from '../engine/GalaxyEngine';
 import type { GalaxyFocus } from '../engine/types';
 import { buildCaptions } from '../galaxyCaptions';
+import { techniqueTitle } from './fusedModel';
 import { useFusedStore } from './fusedStore';
 import { useFusedTheme } from './useFusedTheme';
 
@@ -34,7 +35,7 @@ export function FusedCanvas({ describedBy, onEngine }: Props) {
   const lensOn = useFusedStore((s) => s.lensOn);
   const setTechnique = useFusedStore((s) => s.setTechnique);
   const setTip = useFusedStore((s) => s.setTip);
-  const captions = useMemo(() => buildCaptions(t), [t]);
+  const captions = useMemo(() => ({ ...buildCaptions(t), techniqueName: techniqueTitle }), [t]);
   const reduced = useReducedMotion();
 
   useEffect(() => {

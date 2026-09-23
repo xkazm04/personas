@@ -21,6 +21,7 @@ import type {
   GalaxyNode,
   PickTarget,
   SubjectNode,
+  TechniqueNode,
 } from './types';
 
 export type { PickTarget } from './types';
@@ -54,6 +55,11 @@ export interface CanvasCaptions {
   domainCaption: (d: DomainNode) => string;
   subjectFooter: (s: SubjectNode) => string;
   wedgeLabel: (key: string, n: number) => string;
+  /**
+   * A technique's display name. Optional: a host that omits it (the classic
+   * stage) keeps the slug the field has always printed.
+   */
+  techniqueName?: (t: TechniqueNode) => string;
 }
 
 export interface FrameInput {
@@ -249,7 +255,7 @@ function drawTechniques(f: FrameInput, p: Projector, s: SubjectNode): void {
     f.labels.push({
       x,
       y: y - Math.max(tr, CHILD_HIT_R) - 6,
-      text: `${t.rank}. ${t.slug.replace(/-/g, ' ')}`,
+      text: `${t.rank}. ${f.captions.techniqueName ? f.captions.techniqueName(t) : t.slug.replace(/-/g, ' ')}`,
       size: CHILD_LABEL_PX,
       color: shared ? theme.purple : theme.ink2,
       weight: 580,
@@ -599,7 +605,9 @@ export function paintFrame(f: FrameInput): number {
   // The label pass mints the last picks: a title is only clickable once it
   // has actually been PLACED, which nothing but the occupancy pass knows.
   if (isFused(f)) {
-    return f.labels.flushFused(ctx, theme, width, f.viewport.y1, f.reserved, f.obstacles ?? [], f.labelWindow ?? null);
+    // The right edge is the viewport's, not the stage's: the technique
+    // document is opaque and a name laid under it would be hidden by it.
+    return f.labels.flushFused(ctx, theme, f.viewport.x1, f.viewport.y1, f.reserved, f.obstacles ?? [], f.labelWindow ?? null);
   }
   return f.labels.flush(ctx, theme, width, f.viewport.y1, f.reserved, f.picks);
 }

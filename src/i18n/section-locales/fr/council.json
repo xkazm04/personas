@@ -354,6 +354,26 @@
     "spread_point_category": "Pointez une catégorie",
     "spread_point_subject": "Pointez un sujet",
     "spread_rest_domain": "Laissez le pointeur sur un domaine, dans le champ ou dans la liste, et ses sujets s'affichent ici en premier.",
-    "spread_rest": "Laissez le pointeur sur un élément et son contenu s'affiche ici avant que vous ne descendiez."
+    "spread_rest": "Laissez le pointeur sur un élément et son contenu s'affiche ici avant que vous ne descendiez.",
+    "doc_label": "Technique épinglée",
+    "doc_prev": "Précédente",
+    "doc_next": "Suivante",
+    "doc_close": "Fermer",
+    "doc_kick": "Technique {index} sur {count} dans {subject}",
+    "doc_siblings": "sœurs liées ici",
+    "doc_elsewhere": "liée ailleurs, dans {count} sujets",
+    "doc_use_when": "À utiliser quand",
+    "doc_no_triggers": "Aucune phrase déclencheuse enregistrée pour cette technique.",
+    "doc_council": "Le conseil sur {subject}",
+    "doc_of": "sur {count}",
+    "doc_proven": "techniques prouvées",
+    "doc_councilled_for": "Passé en conseil pour {projects}, dernière fois le {last}.",
+    "doc_never": "{subject} n’est jamais passé en conseil. Son état de conseil est non mesuré, ce qui n’équivaut pas à zéro.",
+    "doc_waits": "{title} vous attend ici · global {overall} · tour {round}",
+    "doc_proof": "Citée comme preuve de type {proof} pour {dimension} dans {subject}, tour {round}.",
+    "doc_proofs_unmeasured": "Hors du fixture de référence, on ne mesure pas quels passages du conseil citent cette technique comme preuve.",
+    "doc_laws": "Lois auxquelles elle répond",
+    "doc_law_binds": "lie {count} techniques dans {subjects} sujets",
+    "doc_no_laws": "Cette technique ne cite aucune loi."
   }
 }

@@ -23766,7 +23766,27 @@
       "spread_point_category": "Trỏ vào một danh mục",
       "spread_point_subject": "Trỏ vào một chủ đề",
       "spread_rest_domain": "Đặt con trỏ lên một miền, trên trường hoặc trong danh sách, và các chủ đề của nó sẽ hiện ở đây trước.",
-      "spread_rest": "Đặt con trỏ lên một mục và nội dung của nó hiện ở đây trước khi bạn đi xuống."
+      "spread_rest": "Đặt con trỏ lên một mục và nội dung của nó hiện ở đây trước khi bạn đi xuống.",
+      "doc_label": "Kỹ thuật đã ghim",
+      "doc_prev": "Trước",
+      "doc_next": "Tiếp",
+      "doc_close": "Đóng",
+      "doc_kick": "Kỹ thuật {index} trên {count} trong {subject}",
+      "doc_siblings": "kỹ thuật anh em gắn tại đây",
+      "doc_elsewhere": "gắn ở nơi khác, trong {count} chủ đề",
+      "doc_use_when": "Dùng khi",
+      "doc_no_triggers": "Chưa ghi nhận cụm từ kích hoạt nào cho kỹ thuật này.",
+      "doc_council": "Hội đồng về {subject}",
+      "doc_of": "trên {count}",
+      "doc_proven": "kỹ thuật đã chứng minh",
+      "doc_councilled_for": "Đã qua hội đồng cho {projects}, lần gần nhất vào {last}.",
+      "doc_never": "{subject} chưa từng qua hội đồng. Trạng thái hội đồng của nó chưa đo, điều này không giống với số không.",
+      "doc_waits": "{title} đang chờ bạn ở đây · tổng thể {overall} · vòng {round}",
+      "doc_proof": "Được trích dẫn làm bằng chứng {proof} cho {dimension} trong {subject}, vòng {round}.",
+      "doc_proofs_unmeasured": "Việc những lượt chạy hội đồng nào trích dẫn kỹ thuật này làm bằng chứng chưa được đo ngoài fixture tham chiếu.",
+      "doc_laws": "Các luật mà nó tuân theo",
+      "doc_law_binds": "ràng buộc {count} kỹ thuật trên {subjects} chủ đề",
+      "doc_no_laws": "Kỹ thuật này không trích dẫn luật nào."
     }
   },
   "features": {

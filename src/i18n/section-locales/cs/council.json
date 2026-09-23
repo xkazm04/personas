@@ -354,6 +354,26 @@
     "spread_point_category": "Ukažte na kategorii",
     "spread_point_subject": "Ukažte na téma",
     "spread_rest_domain": "Nechte ukazatel spočinout na doméně, v poli nebo v seznamu, a její témata se vykreslí tady jako první.",
-    "spread_rest": "Nechte na některé položce spočinout ukazatel a její obsah se tu vykreslí dřív, než sestoupíte."
+    "spread_rest": "Nechte na některé položce spočinout ukazatel a její obsah se tu vykreslí dřív, než sestoupíte.",
+    "doc_label": "Připnutá technika",
+    "doc_prev": "Předchozí",
+    "doc_next": "Další",
+    "doc_close": "Zavřít",
+    "doc_kick": "Technika {index} z {count} v tématu {subject}",
+    "doc_siblings": "sourozenci vázaní zde",
+    "doc_elsewhere": "vázáno jinde, v {count} tématech",
+    "doc_use_when": "Použijte, když",
+    "doc_no_triggers": "Pro tuto techniku nejsou zaznamenány žádné spouštěcí fráze.",
+    "doc_council": "Rada k tématu {subject}",
+    "doc_of": "z {count}",
+    "doc_proven": "prokázaných technik",
+    "doc_councilled_for": "Před radou pro {projects}, naposledy {last}.",
+    "doc_never": "Téma {subject} nikdy nebylo před radou. Jeho stav u rady je neměřený, což není totéž co nula.",
+    "doc_waits": "{title} tu čeká na vás · celkem {overall} · kolo {round}",
+    "doc_proof": "Citováno jako důkaz typu {proof} pro {dimension} v tématu {subject}, kolo {round}.",
+    "doc_proofs_unmeasured": "Které běhy rady citují tuto techniku jako důkaz, se mimo referenční fixture neměří.",
+    "doc_laws": "Zákony, jimž podléhá",
+    "doc_law_binds": "váže {count} technik napříč {subjects} tématy",
+    "doc_no_laws": "Tato technika necituje žádný zákon."
   }
 }

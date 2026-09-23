@@ -23766,7 +23766,27 @@
       "spread_point_category": "카테고리를 가리키세요",
       "spread_point_subject": "주제를 가리키세요",
       "spread_rest_domain": "필드나 목록에서 도메인 위에 포인터를 두면 그 주제들이 여기에 먼저 그려집니다.",
-      "spread_rest": "항목 위에 포인터를 두면 내려가기 전에 그 내용이 여기에 그려집니다."
+      "spread_rest": "항목 위에 포인터를 두면 내려가기 전에 그 내용이 여기에 그려집니다.",
+      "doc_label": "고정된 기법",
+      "doc_prev": "이전",
+      "doc_next": "다음",
+      "doc_close": "닫기",
+      "doc_kick": "{subject}의 기법 {count}개 중 {index}",
+      "doc_siblings": "여기에 묶인 형제 기법",
+      "doc_elsewhere": "다른 곳에도 묶임, 주제 {count}개",
+      "doc_use_when": "사용 시점",
+      "doc_no_triggers": "이 기법에 기록된 트리거 문구가 없습니다.",
+      "doc_council": "{subject}에 대한 위원회",
+      "doc_of": "/ {count}",
+      "doc_proven": "기법 입증됨",
+      "doc_councilled_for": "{projects}을(를) 위해 위원회 심의, 마지막은 {last}.",
+      "doc_never": "{subject}은(는) 위원회 심의를 받은 적이 없습니다. 위원회 상태는 측정 안 됨이며, 이는 0과 같지 않습니다.",
+      "doc_waits": "{title}이(가) 여기서 당신을 기다림 · 종합 {overall} · {round}라운드",
+      "doc_proof": "{subject}에서 {dimension}에 대한 {proof} 증거로 인용됨, {round}라운드.",
+      "doc_proofs_unmeasured": "어떤 위원회 실행이 이 기법을 증거로 인용하는지는 참조 픽스처 밖에서는 측정되지 않습니다.",
+      "doc_laws": "따르는 법칙",
+      "doc_law_binds": "주제 {subjects}개에 걸쳐 기법 {count}개를 묶음",
+      "doc_no_laws": "이 기법은 어떤 법칙도 인용하지 않습니다."
     }
   },
   "features": {

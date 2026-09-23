@@ -1429,6 +1429,26 @@ export type Translations = {
       spread_point_subject: string;
       spread_rest_domain: string;
       spread_rest: string;
+      doc_label: string;
+      doc_prev: string;
+      doc_next: string;
+      doc_close: string;
+      doc_kick: string;
+      doc_siblings: string;
+      doc_elsewhere: string;
+      doc_use_when: string;
+      doc_no_triggers: string;
+      doc_council: string;
+      doc_of: string;
+      doc_proven: string;
+      doc_councilled_for: string;
+      doc_never: string;
+      doc_waits: string;
+      doc_proof: string;
+      doc_proofs_unmeasured: string;
+      doc_laws: string;
+      doc_law_binds: string;
+      doc_no_laws: string;
     };
   };
   features: {

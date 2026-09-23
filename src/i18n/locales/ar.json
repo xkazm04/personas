@@ -23766,7 +23766,27 @@
       "spread_point_category": "أشر إلى فئة",
       "spread_point_subject": "أشر إلى موضوع",
       "spread_rest_domain": "أبقِ المؤشر على نطاق، في الحقل أو في القائمة، فتُرسم مواضيعه هنا أولًا.",
-      "spread_rest": "أبقِ المؤشر على عنصر فيُرسم محتواه هنا قبل أن تنزل إليه."
+      "spread_rest": "أبقِ المؤشر على عنصر فيُرسم محتواه هنا قبل أن تنزل إليه.",
+      "doc_label": "تقنية مثبّتة",
+      "doc_prev": "السابق",
+      "doc_next": "التالي",
+      "doc_close": "إغلاق",
+      "doc_kick": "التقنية {index} من {count} في {subject}",
+      "doc_siblings": "تقنيات شقيقة مرتبطة هنا",
+      "doc_elsewhere": "مرتبطة في مواضع أخرى، في {count} مواضيع",
+      "doc_use_when": "استخدمها عندما",
+      "doc_no_triggers": "لا توجد عبارات مُحفِّزة مسجّلة لهذه التقنية.",
+      "doc_council": "المجلس بشأن {subject}",
+      "doc_of": "من {count}",
+      "doc_proven": "تقنيات مُثبتة",
+      "doc_councilled_for": "عُرض على مجلس لصالح {projects}، آخرها في {last}.",
+      "doc_never": "لم يُعرض {subject} على مجلس قط. حالة مجلسه غير مقيسة، وهذا ليس مثل الصفر.",
+      "doc_waits": "{title} ينتظرك هنا · الإجمالي {overall} · الجولة {round}",
+      "doc_proof": "مستشهد بها كدليل {proof} على {dimension} في {subject}، الجولة {round}.",
+      "doc_proofs_unmeasured": "أيّ جولات المجلس تستشهد بهذه التقنية كدليل أمرٌ غير مقيس خارج التجهيزة المرجعية.",
+      "doc_laws": "القوانين التي تخضع لها",
+      "doc_law_binds": "تربط {count} تقنيات عبر {subjects} مواضيع",
+      "doc_no_laws": "لا تستشهد هذه التقنية بأي قانون."
     }
   },
   "features": {

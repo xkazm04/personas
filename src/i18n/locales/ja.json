@@ -23766,7 +23766,27 @@
       "spread_point_category": "カテゴリを指す",
       "spread_point_subject": "サブジェクトを指す",
       "spread_rest_domain": "フィールドまたはリストでドメインにポインターを置くと、そのサブジェクトがまずここに描かれます。",
-      "spread_rest": "項目にポインターを置くと、降りる前にその中身がここに描かれます。"
+      "spread_rest": "項目にポインターを置くと、降りる前にその中身がここに描かれます。",
+      "doc_label": "ピン留めしたテクニック",
+      "doc_prev": "前へ",
+      "doc_next": "次へ",
+      "doc_close": "閉じる",
+      "doc_kick": "{subject} のテクニック {count} 件中 {index}",
+      "doc_siblings": "ここに結び付く兄弟テクニック",
+      "doc_elsewhere": "他でも結び付く ({count} 件のサブジェクト)",
+      "doc_use_when": "使いどころ",
+      "doc_no_triggers": "このテクニックにはトリガーフレーズが記録されていません。",
+      "doc_council": "{subject} のカウンシル",
+      "doc_of": "/ {count}",
+      "doc_proven": "テクニック実証済み",
+      "doc_councilled_for": "{projects} のためにカウンシル実施、最終は {last}。",
+      "doc_never": "{subject} はカウンシル未実施です。カウンシル状態は未計測であり、ゼロとは異なります。",
+      "doc_waits": "{title} がここであなたを待っています · 総合 {overall} · ラウンド {round}",
+      "doc_proof": "{subject} の {dimension} について {proof} 証拠として引用、ラウンド {round}。",
+      "doc_proofs_unmeasured": "どのカウンシル実行がこのテクニックを証拠として引用しているかは、参照フィクスチャ以外では未計測です。",
+      "doc_laws": "従う法則",
+      "doc_law_binds": "{subjects} 件のサブジェクトにわたり {count} 件のテクニックを拘束",
+      "doc_no_laws": "このテクニックが引用する法則はありません。"
     }
   },
   "features": {

@@ -354,6 +354,26 @@
     "spread_point_category": "Auf eine Kategorie zeigen",
     "spread_point_subject": "Auf ein Thema zeigen",
     "spread_rest_domain": "Lass den Zeiger auf einer Domäne ruhen, im Feld oder in der Liste, und ihre Themen erscheinen hier zuerst.",
-    "spread_rest": "Lass den Zeiger auf einem Element ruhen, und sein Inhalt erscheint hier, bevor du absteigst."
+    "spread_rest": "Lass den Zeiger auf einem Element ruhen, und sein Inhalt erscheint hier, bevor du absteigst.",
+    "doc_label": "Angeheftete Technik",
+    "doc_prev": "Zurück",
+    "doc_next": "Weiter",
+    "doc_close": "Schließen",
+    "doc_kick": "Technik {index} von {count} in {subject}",
+    "doc_siblings": "Geschwister, hier gebunden",
+    "doc_elsewhere": "anderswo gebunden, in {count} Themen",
+    "doc_use_when": "Einsetzen, wenn",
+    "doc_no_triggers": "Für diese Technik sind keine Auslöserphrasen erfasst.",
+    "doc_council": "Der Rat zu {subject}",
+    "doc_of": "von {count}",
+    "doc_proven": "Techniken bewiesen",
+    "doc_councilled_for": "Vor dem Rat für {projects}, zuletzt am {last}.",
+    "doc_never": "{subject} war nie vor einem Rat. Sein Ratsstatus ist nicht gemessen, und das ist nicht dasselbe wie null.",
+    "doc_waits": "{title} wartet hier auf dich · gesamt {overall} · Runde {round}",
+    "doc_proof": "Zitiert als {proof}-Beleg für {dimension} in {subject}, Runde {round}.",
+    "doc_proofs_unmeasured": "Welche Ratsläufe diese Technik als Beleg zitieren, wird außerhalb der Referenz-Fixture nicht gemessen.",
+    "doc_laws": "Regeln, denen sie folgt",
+    "doc_law_binds": "bindet {count} Techniken über {subjects} Themen",
+    "doc_no_laws": "Diese Technik zitiert keine Regel."
   }
 }

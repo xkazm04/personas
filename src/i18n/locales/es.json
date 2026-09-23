@@ -23766,7 +23766,27 @@
       "spread_point_category": "Señala una categoría",
       "spread_point_subject": "Señala un tema",
       "spread_rest_domain": "Deja el puntero sobre un dominio, en el campo o en la lista, y sus temas se dibujan aquí primero.",
-      "spread_rest": "Deja el puntero sobre uno y su contenido se dibuja aquí antes de descender."
+      "spread_rest": "Deja el puntero sobre uno y su contenido se dibuja aquí antes de descender.",
+      "doc_label": "Técnica fijada",
+      "doc_prev": "Anterior",
+      "doc_next": "Siguiente",
+      "doc_close": "Cerrar",
+      "doc_kick": "Técnica {index} de {count} en {subject}",
+      "doc_siblings": "hermanas vinculadas aquí",
+      "doc_elsewhere": "vinculada en otros sitios, en {count} temas",
+      "doc_use_when": "Úsala cuando",
+      "doc_no_triggers": "No hay frases disparadoras registradas para esta técnica.",
+      "doc_council": "El consejo sobre {subject}",
+      "doc_of": "de {count}",
+      "doc_proven": "técnicas probadas",
+      "doc_councilled_for": "Pasó por consejo para {projects}, la última vez el {last}.",
+      "doc_never": "{subject} nunca ha pasado por consejo. Su estado de consejo está sin medir, que no es lo mismo que cero.",
+      "doc_waits": "{title} te espera aquí · global {overall} · ronda {round}",
+      "doc_proof": "Citada como prueba de {proof} para {dimension} en {subject}, ronda {round}.",
+      "doc_proofs_unmeasured": "Fuera del fixture de referencia no se mide qué ejecuciones del consejo citan esta técnica como prueba.",
+      "doc_laws": "Leyes a las que responde",
+      "doc_law_binds": "vincula {count} técnicas en {subjects} temas",
+      "doc_no_laws": "Esta técnica no cita ninguna ley."
     }
   },
   "features": {

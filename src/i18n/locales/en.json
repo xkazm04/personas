@@ -1422,7 +1422,27 @@
       "spread_point_category": "Point at a category",
       "spread_point_subject": "Point at a subject",
       "spread_rest_domain": "Rest the pointer on a domain, on the field or in the list, and its subjects draw here first.",
-      "spread_rest": "Rest the pointer on one and its contents draw here before you descend."
+      "spread_rest": "Rest the pointer on one and its contents draw here before you descend.",
+      "doc_label": "Pinned technique",
+      "doc_prev": "Previous",
+      "doc_next": "Next",
+      "doc_close": "Close",
+      "doc_kick": "Technique {index} of {count} in {subject}",
+      "doc_siblings": "siblings bound here",
+      "doc_elsewhere": "bound elsewhere, in {count} subjects",
+      "doc_use_when": "Use when",
+      "doc_no_triggers": "No trigger phrases recorded for this technique.",
+      "doc_council": "The council on {subject}",
+      "doc_of": "of {count}",
+      "doc_proven": "techniques proven",
+      "doc_councilled_for": "Councilled for {projects}, last on {last}.",
+      "doc_never": "{subject} has never been councilled. Its council state is not measured, which is not the same as zero.",
+      "doc_waits": "{title} waits on you here · overall {overall} · round {round}",
+      "doc_proof": "Cited as {proof} proof for {dimension} in {subject}, round {round}.",
+      "doc_proofs_unmeasured": "Which council runs cite this technique as proof is not measured outside the reference fixture.",
+      "doc_laws": "Laws it answers to",
+      "doc_law_binds": "binds {count} techniques across {subjects} subjects",
+      "doc_no_laws": "This technique cites no law."
     }
   },
   "features": {
