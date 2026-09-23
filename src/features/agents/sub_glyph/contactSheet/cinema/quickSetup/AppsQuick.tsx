@@ -75,7 +75,7 @@ export function AppsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
       </div>
       {dbSelected.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="typo-caption font-semibold uppercase tracking-[0.1em] text-foreground">{t.agents.glyph_db_scope_heading}</span>
+          <span className="typo-card-label uppercase tracking-[0.1em] text-foreground">{t.agents.glyph_db_scope_heading}</span>
           {dbSelected.map((tl) => (
             <ConnectorTableScopeRow
               key={tl.name}

@@ -27,7 +27,7 @@
 import { useAgentStore } from "@/stores/agentStore";
 import type { BuildPhase } from "@/lib/types/buildTypes";
 import { createModuleCache } from "@/hooks/utility/data/useModuleSubscription";
-import { silentCatch } from "@/lib/silentCatch";
+import { jsonOr, safeLocalGet, safeLocalSet } from "@/lib/safeLocalStorage";
 
 export type ClockKind = "build" | "test";
 export interface ClockMark { at: number; kind: ClockKind }
@@ -81,21 +81,12 @@ function persist(now: number) {
     const e = CLOCK.get(id);
     if (e) rows.push([id, e.open ? { ...e, seenAt: now } : e]);
   }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  } catch (err) {
-    silentCatch("sheetClock.persist")(err);
-  }
+  safeLocalSet(STORAGE_KEY, JSON.stringify(rows), "sheetClock.persist");
 }
 
 /** Restore after a restart: a stretch left open is banked to its heartbeat. */
 function restore() {
-  let rows: unknown;
-  try {
-    rows = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-  } catch {
-    rows = [];
-  }
+  const rows = jsonOr<unknown>(safeLocalGet(STORAGE_KEY, "sheetClock.restore"), []);
   if (!Array.isArray(rows)) return;
   for (const row of rows) {
     if (!Array.isArray(row) || typeof row[0] !== "string" || !row[1] || typeof row[1] !== "object") continue;
@@ -145,17 +136,25 @@ function reconcile() {
   }
 }
 
-type ClockGlobal = typeof globalThis & { __personasSheetClockStop?: () => void };
+type ClockGlobal = typeof globalThis & {
+  __personasSheetClockStop?: () => void;
+  __personasSheetClockOwner?: object;
+};
 
-/** Idempotent. Refcount-free one-way latch: the ledger must keep recording
+/** This module evaluation's identity. The globalThis slot below records which
+ *  evaluation owns the live subscription, so the guard survives an HMR swap
+ *  without a module-scope latch: a fresh evaluation has a fresh token, stops
+ *  the previous owner's subscription and installs its own. */
+const OWNER = {};
+
+/** Idempotent. Refcount-free on purpose: the ledger must keep recording
  *  while no sheet is mounted, which is the whole point. Re-running after an
  *  HMR module swap replaces the previous subscription instead of doubling it. */
-let installed = false;
 export function ensureClockTracking() {
-  if (installed) return;
-  installed = true;
   const g = globalThis as ClockGlobal;
+  if (g.__personasSheetClockOwner === OWNER) return;
   g.__personasSheetClockStop?.();
+  g.__personasSheetClockOwner = OWNER;
   restore();
   const unsub = useAgentStore.subscribe(reconcile);
   const onHide = () => persist(Date.now());

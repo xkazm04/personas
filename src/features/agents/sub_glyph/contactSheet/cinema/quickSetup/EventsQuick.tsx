@@ -72,8 +72,8 @@ export function EventsQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMor
                 className={`w-full flex items-center gap-3 p-2 rounded-card border text-left transition-colors ${on ? "" : "border-card-border hover:bg-secondary/40"}`}
                 style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.1) } : undefined}
               >
-                <span aria-hidden className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center typo-body font-semibold" style={{ background: colorWithAlpha(pc, 0.2), color: pc }}>
-                  {p.name.charAt(0).toUpperCase()}
+                <span aria-hidden className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center typo-title" style={{ background: colorWithAlpha(pc, 0.2), color: pc }}>
+                  {([...p.name][0] ?? "").toUpperCase()}
                 </span>
                 <span className="flex flex-col min-w-0 flex-1">
                   <span className="typo-body text-foreground truncate">{p.name}</span>

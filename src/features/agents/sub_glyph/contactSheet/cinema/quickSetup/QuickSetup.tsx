@@ -52,7 +52,7 @@ export function DecidedSetup({ dim, apps, lines }: { dim: GlyphDimension; apps?:
   if (!showApps && lines.length <= 1) return null;
   return (
     <div className="flex flex-col gap-2">
-      <span className="typo-caption font-semibold uppercase tracking-[0.1em] text-foreground">{QS.decided}</span>
+      <span className="typo-card-label uppercase tracking-[0.1em] text-foreground">{QS.decided}</span>
       {showApps ? (
         <ul className="m-0 p-0 list-none flex flex-wrap gap-2">
           {apps!.map((name) => {
