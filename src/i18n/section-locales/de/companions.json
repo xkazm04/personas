@@ -143,7 +143,7 @@
       "forge": "erschafft ein neues Thema",
       "intake": "nimmt ein Delta auf",
       "none": "keine Engine, die diese App kennt",
-      "reconcile": "reconcile"
+      "reconcile": "der eigene reconcile-Durchlauf des Registers"
     },
     "fig_a_grant": "eine Freigabe, kein Stück Arbeit",
     "fig_accept": "1 Annehmen",

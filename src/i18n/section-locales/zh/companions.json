@@ -143,7 +143,7 @@
       "forge": "forge 出一个新主题",
       "intake": "intake 一份增量",
       "none": "本应用无法识别的引擎",
-      "reconcile": "reconcile"
+      "reconcile": "注册库自身的 reconcile 流程"
     },
     "fig_a_grant": "是一种授权，而非一项工作",
     "fig_accept": "1 接受",

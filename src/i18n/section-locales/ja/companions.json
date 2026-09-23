@@ -143,7 +143,7 @@
       "forge": "新しい主題を forge する",
       "intake": "差分を intake する",
       "none": "このアプリが認識しているエンジンはない",
-      "reconcile": "reconcile"
+      "reconcile": "レジストリ自身の reconcile パス"
     },
     "fig_a_grant": "付与であり、作業の一部ではない",
     "fig_accept": "1 承認",
