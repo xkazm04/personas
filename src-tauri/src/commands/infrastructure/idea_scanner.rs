@@ -1043,6 +1043,7 @@ async fn run_idea_scan(
                     StreamLineType::AssistantToolUse {
                         tool_name,
                         input_preview,
+                        ..
                     } => {
                         let preview =
                             crate::utils::text::truncate_on_char_boundary(&input_preview, 100);

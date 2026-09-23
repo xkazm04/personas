@@ -294,6 +294,7 @@ async fn spawn_cli_and_collect_structured(
                 StreamLineType::AssistantToolUse {
                     tool_name,
                     input_preview,
+                    ..
                 } => {
                     tool_calls.push(tool_name.clone());
                     events.push(CreateLabResultEventInput {
@@ -319,7 +320,9 @@ async fn spawn_cli_and_collect_structured(
                         ts_ms_relative: ts_ms,
                     });
                 }
-                StreamLineType::ToolResult { content_preview } => {
+                StreamLineType::ToolResult {
+                    content_preview, ..
+                } => {
                     events.push(CreateLabResultEventInput {
                         event_index: idx,
                         event_type: "tool_result".to_string(),

@@ -1985,7 +1985,11 @@ async fn run_context_generation(
                 // Surface tool usage and result events
                 let (line_type, _) = parse_stream_line(&line);
                 match line_type {
-                    StreamLineType::AssistantToolUse { tool_name, input_preview } => {
+                    StreamLineType::AssistantToolUse {
+                        tool_name,
+                        input_preview,
+                        ..
+                    } => {
                         let preview =
                             crate::utils::text::truncate_on_char_boundary(&input_preview, 100);
                         // Tool lines are short (≤~130 bytes) and are the only
