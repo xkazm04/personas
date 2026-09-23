@@ -58,6 +58,14 @@ export function effectiveRemoteState(view: RemoteSessionView, nowMs: number): Re
   const mirrored: RemoteSessionState = REMOTE_STATES.has(view.state) ? view.state : 'unknown';
   if (view.jobStatus === 'running') {
     const heard = view.mirrorAtMs > 0 && nowMs - view.mirrorAtMs <= REMOTE_MIRROR_STALE_MS;
+    // The backend's grace window, mirrored: a just-accepted session that has
+    // not sent its first mirror yet reads `spawning` for the same 45 s,
+    // counted from acceptance (`lastActivityMs` carries the job's update time
+    // when no mirror exists - `engine/src/p2p/remote_sessions.rs::build_view`).
+    const justAccepted = view.mirrorAtMs === 0
+      && view.state === 'spawning'
+      && nowMs - view.lastActivityMs <= REMOTE_MIRROR_STALE_MS;
+    if (justAccepted) return 'spawning';
     if (!heard) return 'unknown';
   }
   return mirrored;

@@ -52,6 +52,13 @@ describe('effectiveRemoteState', () => {
     expect(effectiveRemoteState(view({ mirrorAtMs: 0 }), NOW)).toBe('unknown');
   });
 
+  it('grants a just-accepted session the same 45 s spawning grace as the backend, then turns unknown', () => {
+    const fresh = view({ state: 'spawning', mirrorAtMs: 0, lastActivityMs: NOW - 10_000 });
+    expect(effectiveRemoteState(fresh, NOW)).toBe('spawning');
+    const lapsed = view({ state: 'spawning', mirrorAtMs: 0, lastActivityMs: NOW - REMOTE_MIRROR_STALE_MS - 1 });
+    expect(effectiveRemoteState(lapsed, NOW)).toBe('unknown');
+  });
+
   it('is exactly on the boundary at 45 s', () => {
     expect(effectiveRemoteState(view({ mirrorAtMs: NOW - REMOTE_MIRROR_STALE_MS }), NOW)).toBe('running');
   });
