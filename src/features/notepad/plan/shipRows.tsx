@@ -9,7 +9,9 @@
 // nothing once the colour is a `var(--token)`. A shadow that only works for one
 // of the two colour forms is worse than no shadow.
 import type { ReactNode } from 'react';
-import { CirclePlus, Target } from 'lucide-react';
+import { CircleDashed, CirclePlus, Target } from 'lucide-react';
+
+import { goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
 
 import { PLAN_INK } from './planInk';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -80,7 +82,6 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
             style={{ background: hue }}
             role={stateLabel ? 'img' : undefined}
             aria-label={stateLabel ?? undefined}
-            title={stateLabel ?? undefined}
           />
         )}
         <span className="typo-body font-medium text-foreground/95 min-w-0">{name}</span>
@@ -194,16 +195,45 @@ export function LedgerEmpty({ children, tone = 'setup', testid }: {
  *  readiness) are exactly the readings the operator scans rather than reads. */
 export function KindMark({ label }: { label: string }) {
   return (
-    <span role="img" aria-label={label} title={label} className={PLAN_INK.accent}>
-      <Target className="w-3.5 h-3.5" aria-hidden />
-    </span>
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={PLAN_INK.accent}>
+        <Target className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
+  );
+}
+
+/** A goal's STATUS as its own glyph. The table already carries one per status
+ *  (`GOAL_STATUS_META.icon`) and the tint that goes with it, so the ledger and
+ *  the Goals feature cannot show the same status two different ways. */
+export function StatusMark({ status, label }: { status: string; label: string }) {
+  const meta = goalStatusMeta(status);
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={meta.tint}>
+        <meta.icon className="w-3.5 h-3.5" />
+      </span>
+    </Tooltip>
+  );
+}
+
+/** In the pool and assigned to no bucket yet. */
+export function UnassignedMark({ label }: { label: string }) {
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className="text-foreground/60">
+        <CircleDashed className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
   );
 }
 
 export function AfterCutMark({ label }: { label: string }) {
   return (
-    <span role="img" aria-label={label} title={label} className={PLAN_INK.athena}>
-      <CirclePlus className="w-3.5 h-3.5" aria-hidden />
-    </span>
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={PLAN_INK.athena}>
+        <CirclePlus className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
   );
 }

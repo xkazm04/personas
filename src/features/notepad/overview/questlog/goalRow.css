@@ -17,7 +17,10 @@
 .rw-line {
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr);
-  align-items: start;
+  /* stretch, not start: the ledger rule has to run the full height of a
+     WRAPPED row. Anchored to a one-line box it stopped halfway down every
+     two-line goal, which is the inconsistency you see scanning the column. */
+  align-items: stretch;
   column-gap: 6px;
   width: 100%;
   padding: 0 6px 0 2px;
@@ -72,9 +75,8 @@
 
 .rw-ledger .rw-margin {
   position: relative;
-  display: grid;
-  place-items: center;
-  height: calc(var(--ql-fs) * var(--ql-lh));
+  display: block;
+  min-height: var(--ql-line);
   color: inherit;
 }
 
@@ -83,8 +85,8 @@
 .rw-ledger .rw-rule {
   position: absolute;
   left: 3px;
-  top: -1px;
-  bottom: -1px;
+  top: 0;
+  bottom: 0;
   width: 1px;
   background: color-mix(in srgb, currentColor 40%, transparent);
   transition: width var(--duration-fast), background var(--duration-fast);
@@ -93,9 +95,19 @@
 .rw-ledger[data-state='selected'] .rw-rule { width: 3px; background: var(--accent); }
 .rw-ledger[data-state='waiting'] .rw-rule { width: 2px; background: var(--brand-rose); }
 
-.rw-ledger .rw-margin > svg { width: 11px; height: 11px; margin-left: 8px; }
+.rw-ledger .rw-margin > svg,
 .rw-ledger .rw-cont {
-  width: 4px; height: 1px; margin-left: 8px;
+  position: absolute;
+  left: 8px;
+  top: calc((var(--ql-line) - 11px) / 2 - 0.07em);
+}
+
+.rw-ledger .rw-margin > svg { width: 11px; height: 11px; }
+
+.rw-ledger .rw-cont {
+  width: 4px;
+  height: 1px;
+  top: calc(var(--ql-line) / 2 - 0.07em);
   background: color-mix(in srgb, currentColor 60%, transparent);
 }
 

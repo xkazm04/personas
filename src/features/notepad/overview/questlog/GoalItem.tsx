@@ -7,9 +7,9 @@ import { splitHighlight } from '../deskModel';
 import type { GoalSignals } from './goalSignals';
 
 /** The find query's first token, lit inside a title. */
-function Title({ title, query }: { title: string; query: string }) {
-  const split = query.trim() ? splitHighlight(title, query) : null;
-  if (!split) return <>{title}</>;
+function Title({ text, query }: { text: string; query: string }) {
+  const split = query.trim() ? splitHighlight(text, query) : null;
+  if (!split) return <>{text}</>;
   return (
     <>
       {split.pre}
@@ -71,7 +71,7 @@ export const GoalItem = memo(function GoalItem({
       }}
     >
       {waiting && <span className="ql-bang" aria-label={t.notepad.desk_needs_you}>!</span>}
-      <Title title={note.title} query={query} />
+      <Title text={note.title} query={query} />
       <Marks signals={signals} />
     </span>
   );
@@ -86,7 +86,7 @@ function Marks({ signals }: { signals: GoalSignals }) {
   return (
     <span className="rw-marks">
       {signals.unread > 0 && (
-        <span className="rw-mk rw-wait" title={t.notepad.desk_needs_you} aria-label={t.notepad.desk_needs_you}>
+        <span className="rw-mk rw-wait" aria-label={t.notepad.desk_needs_you}>
           {signals.unread > 3 ? signals.unread : Array.from({ length: signals.unread }, (_, i) => <i key={i} />)}
         </span>
       )}
@@ -97,7 +97,6 @@ function Marks({ signals }: { signals: GoalSignals }) {
         <span
           className="rw-mk rw-late"
           aria-label={tx(t.notepad.desk_days_late, { count: signals.lateDays })}
-          title={tx(t.notepad.desk_days_late, { count: signals.lateDays })}
         ><i /></span>
       )}
     </span>
