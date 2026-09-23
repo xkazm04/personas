@@ -234,22 +234,28 @@ fn parse_ref_link(s: &str) -> Option<ParsedLink<'_>> {
     })
 }
 
-/// Does `handle` name a real `kind` target? One indexed lookup per link, no
-/// network. `minted_report` is the report this reply created, if any, which
-/// is what `report/new` resolves to.
+/// Does `handle` name a real `kind` target, as far as the USER database can
+/// tell? One indexed lookup per link, no network. `minted_report` is the
+/// report this reply created, if any, which is what `report/new` resolves to.
+///
+/// Returns `None` when the answer lives in the app (system) database — a
+/// persona, or a goal that is not a companion goal. This function never holds
+/// that store, so it can never mistake "store not reachable" for "target does
+/// not exist": the caller, which knows whether it has the store, finishes the
+/// check with [`validate_system_ref`] or, on a path that genuinely has no app
+/// database, [`validate_ref_without_system_store`].
 pub(super) fn validate_ref(
     pool: &UserDbPool,
-    sys_db: Option<&crate::db::DbPool>,
     kind: &str,
     handle: &str,
     minted_report: Option<&str>,
-) -> RefVerdict {
+) -> Option<RefVerdict> {
     let found = match kind {
         "report" if handle == "new" => {
-            return match minted_report {
+            return Some(match minted_report {
                 Some(id) => RefVerdict::Rewrite(id.to_string()),
                 None => RefVerdict::Drop,
-            };
+            });
         }
         "report" => user_exists(
             pool,
@@ -275,22 +281,42 @@ pub(super) fn validate_ref(
         ),
         "memory" => memory_exists(pool, handle),
         "goal" => {
-            user_exists(pool, "SELECT 1 FROM companion_goal WHERE id = ?1", handle)
-                || sys_db.is_some_and(|db| {
-                    sys_exists(db, "SELECT 1 FROM dev_goals WHERE id = ?1", handle)
-                })
+            if user_exists(pool, "SELECT 1 FROM companion_goal WHERE id = ?1", handle) {
+                true
+            } else {
+                // Not a companion goal; it may still be a dev goal.
+                return None;
+            }
         }
-        "persona" => match sys_db {
-            Some(db) => sys_exists(db, "SELECT 1 FROM personas WHERE id = ?1", handle),
-            // No app database on this path (the bench harness): the id's
-            // shape is the only check available.
-            None => is_uuid(handle),
-        },
+        "persona" => return None,
         "session" => crate::commands::fleet::registry::registry()
             .resolve_session_id(handle)
             .is_some(),
         _ => false,
     };
+    Some(verdict_of(found))
+}
+
+/// Finish a [`validate_ref`] that answered `None`, against the app database.
+pub(super) fn validate_system_ref(db: &crate::db::DbPool, kind: &str, handle: &str) -> RefVerdict {
+    let found = match kind {
+        "goal" => sys_exists(db, "SELECT 1 FROM dev_goals WHERE id = ?1", handle),
+        "persona" => sys_exists(db, "SELECT 1 FROM personas WHERE id = ?1", handle),
+        _ => false,
+    };
+    verdict_of(found)
+}
+
+/// Finish a [`validate_ref`] that answered `None` on a path that has NO app
+/// database at all (the bench harness builds only a user DB). A persona id's
+/// shape is the only check available there, so a well-formed UUID is kept; a
+/// dev goal cannot be confirmed by shape, so its link is dropped to its plain
+/// phrase — the reply still reads, it just carries no link it cannot vouch for.
+pub(super) fn validate_ref_without_system_store(kind: &str, handle: &str) -> RefVerdict {
+    verdict_of(kind == "persona" && is_uuid(handle))
+}
+
+fn verdict_of(found: bool) -> RefVerdict {
     if found {
         RefVerdict::Keep
     } else {

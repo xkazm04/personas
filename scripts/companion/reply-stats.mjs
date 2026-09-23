@@ -51,9 +51,13 @@ const opt = (f, d = null) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
 };
 
+// `||`, not `??`: a variable SET TO THE EMPTY STRING (a blank `.env` line,
+// an unset CI expression) must fall through to the default exactly like an
+// unset one - `??` would hand the empty string on as a real path. See
+// docs/concepts/golden-paths/environment-variable-configuration.md.
 const BRAIN_DIR =
-  process.env.PERSONAS_BRAIN_DIR ??
-  opt('--brain-dir') ??
+  process.env.PERSONAS_BRAIN_DIR ||
+  opt('--brain-dir') ||
   path.join(os.homedir(), '.personas', 'companion-brain', 'episodes');
 
 const sinceArg = opt('--since');
@@ -104,6 +108,14 @@ function walk(dir, out) {
 
 const files = [];
 walk(BRAIN_DIR, files);
+// Fail loud on an empty enumeration: "looked at nothing" (a wrong
+// PERSONAS_BRAIN_DIR, an unreadable dir) must not print a table of zeros
+// that reads like "Athena wrote nothing". A --since window that filters every
+// reply out is a different, legitimate zero and is reported further down.
+if (files.length === 0) {
+  console.error(`no episode files (*.md) under ${BRAIN_DIR}: refusing to report`);
+  process.exit(1);
+}
 
 const pct = (n, d) => (d ? +((100 * n) / d).toFixed(1) : null);
 const fmt = (n) => (n == null ? 'n/a' : String(n));
@@ -150,9 +162,9 @@ function run() {
 
 // ── reports/day — read-only over the user db, never fails the run ─────────
 function reportsPerDay(earliest, latest) {
-  const dbPath =
-    process.env.PERSONAS_USER_DB ??
-    path.join(process.env.APPDATA ?? path.join(os.homedir(), 'AppData', 'Roaming'), 'com.personas.desktop', 'personas_data.db');
+  // `||` for the same unset-vs-empty reason as BRAIN_DIR above.
+  const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+  const dbPath = process.env.PERSONAS_USER_DB || path.join(appData, 'com.personas.desktop', 'personas_data.db');
   let Database;
   try {
     Database = require('better-sqlite3');

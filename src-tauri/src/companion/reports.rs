@@ -151,14 +151,8 @@ pub fn insert_report(
     body: &str,
 ) -> Result<String, AppError> {
     let conversation_id = conversation_id.trim();
-    if conversation_id.is_empty() {
-        return Err(AppError::Validation(
-            "report: conversation id is required".into(),
-        ));
-    }
-    if title.trim().is_empty() {
-        return Err(AppError::Validation("report: title is required".into()));
-    }
+    personas_core::validation::require_non_empty("report conversation id", conversation_id)?;
+    personas_core::validation::require_non_empty("report title", title)?;
     let config_json = serde_json::json!({
         "summary": summary.map(str::trim).filter(|s| !s.is_empty()),
         "body": body,

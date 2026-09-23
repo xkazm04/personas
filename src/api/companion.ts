@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
+import { EventName } from '@/lib/eventRegistry';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
 import type { DailyGoalsState } from '@/lib/bindings/DailyGoalsState';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
@@ -1288,8 +1289,9 @@ export async function companionRejectAction(
   return invoke<ApprovalOutcome>('companion_reject_action', { approvalId, reason });
 }
 
-/** Tauri event channel emitted when a turn produces new approval rows. */
-export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
+/** Tauri event channel emitted when a turn produces new approval rows. The
+ *  registry is the one authority for the wire string. */
+export const COMPANION_APPROVALS_EVENT = EventName.COMPANION_APPROVALS;
 
 /**
  * A `ClientAction` from an approval that resolved WITHOUT a card — i.e. the

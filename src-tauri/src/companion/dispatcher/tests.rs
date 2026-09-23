@@ -2015,16 +2015,13 @@ mod layered_voice {
     }
 
     #[test]
-    fn two_refs_in_one_reply_are_both_resolved() {
+    fn two_refs_in_one_reply_are_both_resolved() -> Result<(), AppError> {
         let pool = pool();
-        pool.get()
-            .expect("conn")
-            .execute(
-                "INSERT INTO companion_approval (id, session_id, kind, payload, status)
-                 VALUES ('appr_abc123', 'conv', 'op_execute', '{}', 'pending')",
-                [],
-            )
-            .expect("approval row");
+        pool.get()?.execute(
+            "INSERT INTO companion_approval (id, session_id, kind, payload, status)
+             VALUES ('appr_abc123', 'conv', 'op_execute', '{}', 'pending')",
+            [],
+        )?;
         let card = crate::commands::companion::chat_cards::insert_card(
             &pool,
             "conv",
@@ -2041,6 +2038,7 @@ mod layered_voice {
         assert_eq!(out.cleaned_text, text);
         assert_eq!(out.refs.links.len(), 2);
         assert_eq!(out.refs.dropped, 0);
+        Ok(())
     }
 
     #[test]

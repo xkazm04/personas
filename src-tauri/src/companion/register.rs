@@ -94,11 +94,7 @@ pub fn upsert(
     reason: Option<&str>,
 ) -> Result<(), AppError> {
     let scope = scope.trim();
-    if scope.is_empty() {
-        return Err(AppError::Validation(
-            "reply register: scope is required".into(),
-        ));
-    }
+    personas_core::validation::require_non_empty("reply register scope", scope)?;
     if scope.chars().count() > MAX_SCOPE_CHARS {
         return Err(AppError::Validation(format!(
             "reply register: scope exceeds {MAX_SCOPE_CHARS} characters"
@@ -473,8 +469,8 @@ const ADJUST_REGISTER_ACTION: &str = "adjust_register";
 
 /// Run the reply-register reflection pass if it is due and put its proposal,
 /// if any, in front of him as ONE pending `adjust_register` approval, then
-/// emit the approvals event the way `profile_synthesis::propose_identity_update`
-/// does. Best-effort: called from the proactive tick next to
+/// emit the registered approvals event (`event_name::COMPANION_APPROVALS`,
+/// the same wire name `profile_synthesis::propose_identity_update` emits). Best-effort: called from the proactive tick next to
 /// `maybe_run_synthesis`; a failure logs and is swallowed.
 ///
 /// Not gated by `companion_profile_synthesis`: that toggle guards a CLI call
@@ -488,7 +484,10 @@ pub fn maybe_propose_register(
     use tauri::Emitter;
     match run_reflection_pass(user_db, sys_db) {
         Ok(Some(created)) => {
-            if let Err(e) = app.emit(crate::companion::session::APPROVALS_EVENT, vec![created]) {
+            if let Err(e) = app.emit(
+                crate::engine::event_registry::event_name::COMPANION_APPROVALS,
+                vec![created],
+            ) {
                 tracing::warn!(error = %e, "register reflection: approvals event emit failed");
             }
         }
@@ -548,7 +547,9 @@ fn insert_register_approval(
     pool: &UserDbPool,
     proposal: &RegisterProposal,
 ) -> Result<crate::companion::dispatcher::CreatedApproval, AppError> {
-    let id = format!("appr_{}", crate::companion::util::short_id(12));
+    // The full 122-bit UUID, not a 12-hex truncation: an approval id is a primary
+    // key in a table that only grows (docs/concepts/golden-paths/id-generation.md).
+    let id = format!("appr_{}", uuid::Uuid::new_v4().simple());
     let params_value = proposal.params();
     let payload = serde_json::json!({
         "action": ADJUST_REGISTER_ACTION,

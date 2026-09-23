@@ -371,6 +371,10 @@ event_names! {
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
+    // New pending approval rows: from a turn, or from a background pass that
+    // files one (profile synthesis, the reply-register reflection). Payload:
+    // `Vec<CreatedApproval>`. `companion::session::APPROVALS_EVENT` aliases it.
+    COMPANION_APPROVALS          => "companion://approvals",
 }
 
 /// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of

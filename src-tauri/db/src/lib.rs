@@ -2685,7 +2685,7 @@ mod boot_tests {
             let (sentences, source): (i64, String) = conn.query_row(
                 "SELECT sentences, source FROM companion_reply_register WHERE scope = 'default'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get("sentences")?, r.get("source")?)),
             )?;
             assert_eq!((sentences, source.as_str()), (4, "operator"));
 

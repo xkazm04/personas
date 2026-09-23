@@ -326,6 +326,8 @@ export const EventName = {
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
+  /** New pending approval rows (a turn, or a background pass that files one). */
+  COMPANION_APPROVALS: 'companion://approvals',
 
   // Notepad — emitted by the run-artifact sweeper after it flips a note's
   // status (published → in_progress → completed/failed).
@@ -1204,6 +1206,7 @@ export interface EventPayloadMap {
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;
+  [EventName.COMPANION_APPROVALS]: import('@/api/companion').CreatedApproval[];
 
   // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
   // so a renamed variant breaks here rather than at a switch default.

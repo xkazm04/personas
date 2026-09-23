@@ -2566,7 +2566,15 @@ pub fn dispatch_with_sys(
     if out.cleaned_text.contains("(ref:") {
         let minted = out.reports.first().map(|r| r.id.clone());
         let (text, scan) = super::refs::rewrite_refs(&out.cleaned_text, |kind, handle| {
-            super::refs::validate_ref(pool, sys_db, kind, handle, minted.as_deref())
+            // The user-DB check first; only what it cannot answer reaches the
+            // app database, and absence of that store is decided HERE, where
+            // the Option is, never inside the resolver.
+            super::refs::validate_ref(pool, kind, handle, minted.as_deref()).unwrap_or_else(|| {
+                match sys_db {
+                    Some(db) => super::refs::validate_system_ref(db, kind, handle),
+                    None => super::refs::validate_ref_without_system_store(kind, handle),
+                }
+            })
         });
         out.cleaned_text = text;
         out.refs = scan;
