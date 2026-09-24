@@ -32,5 +32,9 @@
   "preview_aria_label": "Pre-run preview for {name}",
   "tool_count_one": "{count} tool",
   "tool_count_other": "{count} tools",
-  "missing_count": "{count} missing"
+  "missing_count": "{count} missing",
+  "bg_running": "{count} running",
+  "bg_failed": "{count} failed",
+  "bg_stop": "Stop run",
+  "bg_open": "Open run"
 }

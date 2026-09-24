@@ -32,5 +32,9 @@
   "tool_count_other": "{count} herramientas",
   "trust": "Confianza",
   "unpin_mini_player": "Desanclar mini-reproductor",
-  "waiting_for_output": "Esperando salida…"
+  "waiting_for_output": "Esperando salida…",
+  "bg_failed": "{count} con error",
+  "bg_open": "Abrir ejecución",
+  "bg_running": "{count} en curso",
+  "bg_stop": "Detener ejecución"
 }

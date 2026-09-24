@@ -20150,6 +20150,10 @@ export type Translations = {
     tool_count_one: string;
     tool_count_other: string;
     missing_count: string;
+    bg_running: string;
+    bg_failed: string;
+    bg_stop: string;
+    bg_open: string;
   };
   gitlab: {
     integration_title: string;

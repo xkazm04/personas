@@ -5231,7 +5231,11 @@
     "tool_count_other": "{count}টি টুল",
     "trust": "বিশ্বাস",
     "unpin_mini_player": "মিনি-প্লেয়ার আনপিন করুন",
-    "waiting_for_output": "আউটপুটের জন্য অপেক্ষা করা হচ্ছে…"
+    "waiting_for_output": "আউটপুটের জন্য অপেক্ষা করা হচ্ছে…",
+    "bg_failed": "{count}টি ব্যর্থ",
+    "bg_open": "রান খুলুন",
+    "bg_running": "{count}টি চলছে",
+    "bg_stop": "রান থামান"
   },
   "explore": {
     "agents": "এজেন্ট",

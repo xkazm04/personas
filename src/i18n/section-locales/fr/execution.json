@@ -32,5 +32,9 @@
   "tool_count_other": "{count} outils",
   "trust": "Confiance",
   "unpin_mini_player": "Désépingler le mini-lecteur",
-  "waiting_for_output": "En attente de la sortie…"
+  "waiting_for_output": "En attente de la sortie…",
+  "bg_failed": "{count} en échec",
+  "bg_open": "Ouvrir l'exécution",
+  "bg_running": "{count} en cours",
+  "bg_stop": "Arrêter l'exécution"
 }

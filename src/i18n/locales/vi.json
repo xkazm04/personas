@@ -5231,7 +5231,11 @@
     "tool_count_other": "{count} công cụ",
     "trust": "Độ tin cậy",
     "unpin_mini_player": "Bỏ ghim mini-player",
-    "waiting_for_output": "Đang chờ đầu ra…"
+    "waiting_for_output": "Đang chờ đầu ra…",
+    "bg_failed": "{count} thất bại",
+    "bg_open": "Mở lượt chạy",
+    "bg_running": "{count} đang chạy",
+    "bg_stop": "Dừng lượt chạy"
   },
   "explore": {
     "agents": "tác nhân",

@@ -5231,7 +5231,11 @@
     "tool_count_other": "{count} Tools",
     "trust": "Vertrauen",
     "unpin_mini_player": "Mini-Player lösen",
-    "waiting_for_output": "Warte auf Ausgabe…"
+    "waiting_for_output": "Warte auf Ausgabe…",
+    "bg_failed": "{count} fehlgeschlagen",
+    "bg_open": "Lauf öffnen",
+    "bg_running": "{count} laufen",
+    "bg_stop": "Lauf stoppen"
   },
   "explore": {
     "agents": "Agenten",

@@ -32,5 +32,9 @@
   "tool_count_other": "{count}개 도구",
   "trust": "신뢰도",
   "unpin_mini_player": "미니 플레이어 고정 해제",
-  "waiting_for_output": "출력 대기 중…"
+  "waiting_for_output": "출력 대기 중…",
+  "bg_failed": "{count}개 실패",
+  "bg_open": "실행 열기",
+  "bg_running": "{count}개 실행 중",
+  "bg_stop": "실행 중지"
 }
