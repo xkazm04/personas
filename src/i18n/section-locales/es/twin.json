@@ -684,357 +684,134 @@
       "use": "Usar este estilo"
     }
   },
-  "experience_opus": {
-    "create": {
-      "cancel": "Ahora no",
-      "creating": "Creando tu gemelo",
-      "footnote": "Por ahora solo se guardan el nombre, el símbolo y los idiomas. Todo lo demás espera a que lo conserves.",
-      "languages": "Idiomas en los que escribes",
-      "languagesHint": "Tócalos en orden. Tu gemelo escribe en el primero, salvo que un mensaje pida otro.",
-      "languagesMain": "principal",
-      "name": "Nombre",
-      "nameNeeded": "Ponle un nombre a tu gemelo primero.",
-      "namePlaceholder": "Tu nombre, o como quieras llamar a tu gemelo",
-      "sigil": "Símbolo",
-      "styleFlipHint": "Pasa el cursor para ver cómo suena",
-      "styleHint": "Elige uno y tu gemelo redactará respuestas para cada uno de tus canales, para que las revises. O sáltalo: tus propias respuestas enseñan tu voz mejor que cualquier preset.",
-      "styleNever": "Nunca:",
-      "styleNone": "Sin voz inicial",
-      "styleNoneHint": "Constrúyela a partir de tus respuestas. Más lento, y más fiel a cómo escribes de verdad.",
-      "styleRoll": "Repartirme tres",
-      "styleRollHint": "Tres estilos improvisados al momento. Elige uno, o pide tres más.",
-      "styleTitle": "Una voz inicial (opcional)",
-      "submit": "Crear y empezar",
-      "subtitle": "Con un nombre basta para empezar. El resto lo aprende de cómo respondes, una carta a la vez.",
-      "title": "Crea tu gemelo"
-    },
-    "keys": {
-      "close": "cerrar",
-      "edit": "editar",
-      "move": "mover",
-      "pick": "elegir",
-      "play": "jugar",
-      "skip": "omitir"
-    },
-    "launch": {
-      "body": "{score}% listo. Retoma donde lo dejaste, o empieza una ronda de entrenamiento.",
-      "resume": "Seguir configurando",
-      "title": "La mesa de {name}",
-      "titleNoTwin": "La mesa de tu gemelo",
-      "train": "Empezar una ronda de entrenamiento"
-    },
-    "loot": {
-      "edit": "Editar",
-      "keep": "Conservar",
-      "kind": {
-        "bio": "Biografía",
-        "constraints": "Regla",
-        "examples": "Ejemplo",
-        "role": "Rol",
-        "voice": "Voz"
-      },
-      "onChannel": "{kind} · {channel}",
-      "pass": "Pasar",
-      "sampleReason": "Tus propias palabras, conservadas tal como las escribiste.",
-      "stamp": {
-        "accepted": "Conservado",
-        "dismissed": "Pasado",
-        "edited": "Editado"
-      }
-    },
-    "mode": {
-      "fields": "Campos",
-      "label": "Vista",
-      "studio": "Lotes",
-      "table": "Mesa"
-    },
-    "notices": {
-      "completeBody": "Todos los palos están completos. Tu gemelo ya puede redactar con tu voz, y cada ronda de entrenamiento hace que suene más como tú.",
-      "completeClose": "Listo por ahora",
-      "completeTitle": "{name} está listo",
-      "completeTrain": "Seguir entrenando",
-      "fields": "Escribirlo tú mismo",
-      "guideDown": "La guía no pudo repartir esta carta. No se guardó nada y el palo sigue abierto.",
-      "inviteBody": "La configuración cubre quién eres y cómo escribes. Lo que recuerdas y lo que piensas viene de las rondas de entrenamiento, y cada respuesta ahí se guarda para que la apruebes.",
-      "inviteStart": "Empezar una ronda de entrenamiento",
-      "inviteTitle": "Los recuerdos vienen del entrenamiento",
-      "retry": "Repartir de nuevo"
-    },
-    "pile": {
-      "earlier": "{count} anteriores",
-      "empty": "Tus respuestas aparecen aquí.",
-      "hideEarlier": "Ocultar anteriores",
-      "label": "Jugadas",
-      "skipped": "Omitido",
-      "tally": "{played} jugadas · {kept} conservadas",
-      "you": "Tú"
-    },
-    "stage": {
-      "label": "Etapa",
-      "setup": "Configuración",
-      "training": "Entrenamiento"
-    },
-    "style": {
-      "backToTable": "Volver a la mesa",
-      "candidatesReady": "Tres estilos te esperan.",
-      "drafting": "Redactando respuestas con el estilo {name}…",
-      "draftsReady": "Los borradores con el estilo {name} están listos para que los revises.",
-      "hint": "Empieza con un preset o sortea tres. No se escribe nada hasta que conserves los borradores.",
-      "idle": "Elige una voz inicial, o sortea tres.",
-      "open": "Abrir el mazo de estilos",
-      "review": "Revisarlos",
-      "rolling": "Sorteando tres estilos…",
-      "saving": "Guardando los borradores que conservaste",
-      "title": "Estilo"
-    },
-    "suits": {
-      "channels": "Canales",
-      "identity": "Identidad",
-      "label": "Por configurar",
-      "memories": "Recuerdos",
-      "openHub": "Aprobar recuerdos en el Cerebro",
-      "statusLine": "{status} · {detail}",
-      "tone": "Voz"
-    },
-    "table": {
-      "composerPick": "O decirlo a tu manera",
-      "composerWrite": "Escribir tu respuesta",
-      "dealing": "Repartiendo la siguiente pregunta",
-      "greeting": "Retomamos donde lo dejaste. Todavía queda: {items}.",
-      "greetingFresh": "{name} está en la mesa. Cubriremos {items}, una pregunta a la vez.",
-      "handLabel": "Respuestas para elegir",
-      "incoming": "Escribieron",
-      "incomingFrom": "En {channel}, escribieron",
-      "noQuestion": "Nada más que preguntar por ahora.",
-      "playHint": "Pulsa de nuevo para jugar",
-      "ready": "{score}% listo",
-      "send": "Enviar",
-      "training": "Entrenamiento",
-      "writeHint": "Responde tal como lo enviarías de verdad, con erratas y todo. Puedes conservar tu respuesta como muestra de cómo escribes.",
-      "yourReply": "Tu respuesta",
-      "yourReplyOn": "Tu respuesta en {channel}"
-    },
-    "topics": {
-      "asks": {
-        "blurb": "Las preguntas que te llegan, respondidas a tu manera.",
-        "label": "Lo que la gente te pregunta",
-        "prompt": "Pregúntame las preguntas que la gente suele traerme en el trabajo, y déjame responderlas como le respondería a un colega."
-      },
-      "coverage": "{tier}. Recuerdos: {count}",
-      "drills": {
-        "blurb": "Mensajes realistas para responder a tu manera.",
-        "label": "Ejercicios de respuesta",
-        "prompt": "Dame mensajes realistas que la gente me envía, uno a la vez, y haz que responda exactamente como lo haría: una petición que rechazaría, una petición vaga, alguien que me insiste, un agradecimiento. Combina los canales que uso."
-      },
-      "label": "Mazo de entrenamiento",
-      "lines": {
-        "blurb": "Lo que no harás, y lo que tu gemelo nunca debe decir en tu nombre.",
-        "label": "Límites que mantienes",
-        "prompt": "Pregúntame qué no haré, a qué digo que sí enseguida, y qué es lo que mi gemelo nunca debe decir, prometer o aceptar en mi nombre."
-      },
-      "offClock": {
-        "blurb": "La vida fuera del trabajo: qué haces, de qué podrías hablar durante horas.",
-        "label": "Fuera de horario",
-        "prompt": "Pregúntame por mi vida fuera del trabajo: qué hago con mi tiempo, de qué podría hablar durante horas, en qué soy malo y aun así disfruto."
-      },
-      "sessions": "Rondas terminadas: {count}",
-      "stories": {
-        "blurb": "Una escena a la vez: un día que salió mal, una decisión que acertaste.",
-        "label": "Historias de trabajo",
-        "prompt": "Pídeme historias concretas de mi trabajo, una escena a la vez: un día que salió mal, una decisión que acerté, cómo acabé haciendo esto. Pregunta qué pasó, no qué aprendí."
-      },
-      "takes": {
-        "blurb": "Opiniones que defenderías, dentro y fuera de tu campo.",
-        "label": "Opiniones que defenderías",
-        "prompt": "Pregúntame qué pienso sobre cosas dentro y fuera de mi campo, las opiniones que defendería en una cena. Si no me defino, insiste una vez."
-      },
-      "tiers": {
-        "covered": "Bien cubierto",
-        "some": "Parcial",
-        "thin": "Poca"
-      }
-    },
-    "twinCard": {
-      "everywhere": "En todas partes",
-      "label": "Tu gemelo hasta ahora",
-      "memories": "Recuerdos: {detail}",
-      "noBio": "La biografía se completa a medida que respondes.",
-      "noRole": "Sin rol todavía",
-      "noVoice": "(sin voz todavía)",
-      "samplesAndRules": "Ejemplos: {samples}. Reglas: {rules}.",
-      "unnamed": "Tu gemelo",
-      "voices": "Voz por canal"
-    }
-  },
-  "experience_grok": {
-    "close": "Cerrar",
+  "experience": {
+    "title": "Construye tu gemelo",
+    "trainTitle": "Entrenar a {name}",
+    "unnamed": "Tu gemelo",
     "forge": {
-      "create": "Repartir la primera mano",
-      "creating": "Creando…",
       "eyebrow": "Nuevo gemelo",
-      "gender": "¿Cómo debe aparecer?",
-      "hint": "Nada se guarda hasta que juegues una carta.",
+      "title": "¿Quién debe ser este gemelo?",
+      "subtitle": "Con un nombre basta para empezar. El resto lo repartimos en cartas.",
       "name": "Nombre",
       "namePlaceholder": "El nombre que usas de verdad",
+      "gender": "¿Cómo debe aparecer?",
+      "languages": "Idiomas en los que escribe",
+      "languagesHint": "El primero es su idioma principal.",
+      "languagesMain": "principal",
       "style": "Voz de partida",
       "styleHint": "Opcional. Elige una voz de partida o sáltalo: la encontraremos en el entrenamiento.",
       "styleSkip": "Decidir después",
       "styleSkipHint": "Aprenderemos la voz por cómo respondes.",
       "styleSurprise": "Sorpréndeme",
       "styleSurpriseHint": "Sacar tres voces cuando este gemelo exista.",
-      "subtitle": "Con un nombre basta para empezar. El resto lo repartimos en cartas.",
-      "title": "¿Quién debe ser este gemelo?",
       "styleChoose": "Elige una voz…",
-      "styleChooseHint": "Diez voces iniciales para elegir."
-    },
-    "slots": {
-      "channels": {
-        "hint": "Dónde hablas, a quién, y para qué es ese sitio.",
-        "label": "Canales"
-      },
-      "identity": {
-        "hint": "Quién eres, por qué te conocen, en qué no cedes.",
-        "label": "Identidad"
-      },
-      "memories": {
-        "hint": "Hechos, opiniones e historias que merecen quedarse.",
-        "label": "Recuerdos"
-      },
-      "tone": {
-        "hint": "Cómo escribes de verdad: largo, calor, lo que nunca dirías.",
-        "label": "Voz"
-      }
+      "styleChooseHint": "Diez voces iniciales para elegir.",
+      "create": "Repartir la primera mano",
+      "creating": "Creando…",
+      "hint": "Nada se guarda hasta que juegues una carta."
     },
     "table": {
-      "composerPlaceholder": "O escríbelo con tus palabras",
-      "earlier": "{count} anteriores",
-      "earlierHide": "Ocultar anteriores",
-      "greeting": "Recorreremos {items} como una mano de cartas. Elige una, escribe la tuya o sáltala.",
-      "legendAccept": "Enter jugar",
-      "legendEdit": "E editar",
-      "legendPick": "1–3 elegir",
-      "legendSkip": "S saltar",
-      "noQuestion": "La mesa está limpia. Cada hueco está listo.",
-      "openFields": "Todos los campos",
-      "openGuide": "La mesa",
-      "pickCard": "Elegir esta respuesta",
-      "score": "Listo",
-      "send": "Jugar",
-      "skip": "Saltar esta carta",
-      "skipped": "Saltada",
       "stageLabel": "Etapa",
       "stageSetup": "Configuración",
       "stageTraining": "Entrenamiento",
+      "doors": "Abrir",
+      "score": "Listo",
       "thinking": "Repartiendo la siguiente carta",
-      "trailLabel": "Jugado hasta ahora",
-      "viewLabel": "Vista de configuración"
-    },
-    "title": "Construye tu gemelo",
-    "trainTitle": "Entrenar a {name}",
-    "voice": {
-      "dictate": "Dictar",
-      "stop": "Dejar de escuchar"
-    }
-  },
-  "experience_mirror": {
-    "answers": {
-      "keyEdit": "editar",
-      "keyPick": "elegir",
-      "keyPlay": "reproducir",
-      "keySkip": "omitir",
-      "label": "Respuestas para elegir",
-      "placeholder": "…o escribe la tuya",
-      "playHint": "Pulsa de nuevo para reproducir",
-      "skip": "Esta no",
-      "writePlaceholder": "Escribe tu respuesta"
-    },
-    "ask": {
+      "noQuestion": "La mesa está limpia. Cada hueco está listo.",
+      "greeting": "Recorreremos {items} como una mano de cartas. Elige una, escribe la tuya o sáltala.",
+      "training": "Entrenamiento",
       "everywhere": "En todas partes",
-      "greeting": "Aún abierto: {items}.",
-      "greetingFresh": "{name} existe. Aún abierto: {items}.",
       "incoming": "Escribieron",
       "incomingFrom": "En {channel} escribieron",
-      "training": "Entrenamiento",
-      "writeHint": "Responde como realmente lo harías — se guarda palabra por palabra."
+      "writeHint": "Responde como realmente lo harías — se guarda palabra por palabra.",
+      "handLabel": "Respuestas para elegir",
+      "pickCard": "Elegir esta respuesta",
+      "composerPlaceholder": "O escríbelo con tus palabras",
+      "writePlaceholder": "Escribe tu respuesta",
+      "send": "Jugar",
+      "skip": "Saltar esta carta",
+      "legendPick": "1–3 elegir",
+      "legendAccept": "Enter jugar",
+      "legendEdit": "E editar",
+      "legendSkip": "S saltar",
+      "trailLabel": "Jugado hasta ahora",
+      "earlier": "{count} anteriores",
+      "earlierHide": "Ocultar anteriores",
+      "skipped": "Saltada"
     },
-    "create": {
-      "ask": "¿A quién estás creando?",
-      "begin": "Empezar",
-      "creating": "Creando…",
-      "door": "Idiomas y voz inicial",
-      "hint": "Con un nombre basta para empezar. Todo lo demás lo aprende de ti.",
-      "languages": "Idiomas en los que escribe",
-      "languagesHint": "El primero es su idioma principal.",
-      "languagesMain": "principal",
-      "namePlaceholder": "Su nombre",
-      "optionsHint": "Ambos son opcionales, y ambos se pueden cambiar más tarde.",
-      "optionsTitle": "Antes de empezar",
-      "sigil": "Tratamiento",
-      "style": "Voz inicial",
-      "styleHint": "Un borrador al que reaccionar, en vez de una página en blanco.",
-      "styleNone": "Apréndelo de mí",
-      "styleNoneHint": "No se asume nada. La voz surge de lo que escribes.",
-      "styleRoll": "Sorpréndeme",
-      "styleRollHint": "Tres voces sugeridas para elegir."
-    },
-    "deck": {
-      "coverage": "{tier} · {count} memorias",
-      "hint": "Elige de qué tratarán las próximas preguntas.",
-      "rounds": "{count} rondas hasta ahora",
-      "tiers": {
-        "covered": "Cubierto",
-        "some": "Parcial",
-        "thin": "Poca"
+    "slots": {
+      "identity": {
+        "label": "Identidad",
+        "hint": "Quién eres, por qué te conocen, en qué no cedes."
       },
-      "title": "En qué entrenar"
+      "tone": {
+        "label": "Voz",
+        "hint": "Cómo escribes de verdad: largo, calor, lo que nunca dirías."
+      },
+      "channels": {
+        "label": "Canales",
+        "hint": "Dónde hablas, a quién, y para qué es ese sitio."
+      },
+      "memories": {
+        "label": "Recuerdos",
+        "hint": "Hechos, opiniones e historias que merecen quedarse."
+      }
     },
-    "launch": {
-      "resume": "Seguir con la configuración",
-      "title": "{name} está esperando",
-      "titleNoTwin": "Aún no hay gemelo",
-      "train": "Empezar una ronda de entrenamiento"
+    "dictation": {
+      "dictate": "Dictar",
+      "stop": "Dejar de escuchar"
     },
-    "notices": {
-      "completeBody": "La configuración está completamente rellenada. El entrenamiento sigue haciendo que suene más como tú.",
-      "completeClose": "Listo por ahora",
-      "completeTitle": "{name} está listo",
-      "completeTrain": "Entrenarlo",
-      "inviteBody": "La configuración no puede completar esto. Una ronda de entrenamiento pregunta sobre tu trabajo, tus frases y tu forma de responder — y cada respuesta se convierte en una memoria.",
-      "inviteStart": "Empezar entrenamiento",
-      "inviteTitle": "Las memorias vienen del entrenamiento",
-      "retry": "Inténtalo de nuevo"
-    },
-    "offer": {
-      "hint": "No se guarda nada hasta que lo confirmes.",
-      "title": "Quiere anotarlo"
-    },
-    "rail": {
-      "doors": "Abrir",
-      "unnamed": "Tu gemelo"
+    "offers": {
+      "title": "Quiere anotarlo",
+      "hint": "No se guarda nada hasta que lo confirmes."
     },
     "sheet": {
-      "everywhere": "En todas partes",
-      "hint": "Todo lo guardado hasta ahora. Nada de esto se escribió sin ti.",
-      "memories": "Memorias · {detail}",
-      "noBio": "Aún no hay bio",
-      "noRole": "Aún no hay rol",
-      "noVoice": "aún sin voz",
-      "openFields": "Editar todos los campos",
-      "samplesAndRules": "{samples} muestras, {rules} reglas",
       "title": "Lo que sabe",
-      "voices": "Voces"
+      "hint": "Todo lo guardado hasta ahora. Nada de esto se escribió sin ti.",
+      "noRole": "Aún no hay rol",
+      "noBio": "Aún no hay bio",
+      "noVoice": "aún sin voz",
+      "voices": "Voces",
+      "everywhere": "En todas partes",
+      "samplesAndRules": "{samples} muestras, {rules} reglas",
+      "memories": "Memorias · {detail}",
+      "openFields": "Editar todos los campos"
     },
-    "voice": {
-      "candidates": "Tres voces para elegir",
+    "deck": {
+      "title": "En qué entrenar",
+      "hint": "Elige de qué tratarán las próximas preguntas.",
+      "rounds": "{count} rondas hasta ahora",
+      "coverage": "{tier} · {count} memorias",
+      "tiers": {
+        "thin": "Poca",
+        "some": "Parcial",
+        "covered": "Cubierto"
+      }
+    },
+    "studio": {
+      "title": "Voz",
       "drafting": "Redactando {name}",
-      "idle": "Aún no hay voz redactada",
-      "ready": "{name} está listo para revisar",
       "rolling": "Sorteando tres voces",
+      "candidates": "Tres voces para elegir",
+      "ready": "{name} está listo para revisar",
       "saving": "Guardando",
-      "title": "Voz"
+      "idle": "Aún no hay voz redactada"
     },
-    "whisper": {
-      "kept": "Guardado · {field}"
+    "notices": {
+      "retry": "Inténtalo de nuevo",
+      "inviteTitle": "Las memorias vienen del entrenamiento",
+      "inviteBody": "La configuración no puede completar esto. Una ronda de entrenamiento pregunta sobre tu trabajo, tus frases y tu forma de responder — y cada respuesta se convierte en una memoria.",
+      "inviteStart": "Empezar entrenamiento",
+      "completeTitle": "{name} está listo",
+      "completeBody": "La configuración está completamente rellenada. El entrenamiento sigue haciendo que suene más como tú.",
+      "completeTrain": "Entrenarlo",
+      "completeClose": "Listo por ahora"
+    },
+    "launch": {
+      "title": "{name} está esperando",
+      "titleNoTwin": "Aún no hay gemelo",
+      "resume": "Seguir con la configuración",
+      "train": "Empezar una ronda de entrenamiento"
     }
   }
 }

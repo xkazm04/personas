@@ -21101,357 +21101,134 @@
         "use": "Dùng phong cách này"
       }
     },
-    "experience_opus": {
-      "create": {
-        "cancel": "Để sau",
-        "creating": "Đang tạo twin của bạn",
-        "footnote": "Hiện chỉ tên, biểu tượng và ngôn ngữ được lưu. Mọi thứ khác chờ đến khi bạn giữ lại.",
-        "languages": "Ngôn ngữ bạn dùng để viết",
-        "languagesHint": "Nhấn theo thứ tự. Twin của bạn viết bằng ngôn ngữ đầu tiên, trừ khi tin nhắn cần ngôn ngữ khác.",
-        "languagesMain": "chính",
-        "name": "Tên",
-        "nameNeeded": "Hãy đặt tên cho twin trước.",
-        "namePlaceholder": "Tên bạn, hoặc cách bạn muốn twin được gọi",
-        "sigil": "Biểu tượng",
-        "styleFlipHint": "Di chuột qua để xem thử giọng văn",
-        "styleHint": "Chọn một mẫu và twin sẽ soạn thử trả lời cho từng kênh để bạn xem qua. Hoặc bỏ qua: câu trả lời của chính bạn dạy giọng văn tốt hơn bất kỳ mẫu có sẵn nào.",
-        "styleNever": "Không bao giờ:",
-        "styleNone": "Không có giọng khởi đầu",
-        "styleNoneHint": "Thay vào đó, xây dựng giọng văn từ chính câu trả lời của bạn. Chậm hơn, nhưng sát với cách bạn thực sự viết.",
-        "styleRoll": "Chia cho tôi ba lá",
-        "styleRollHint": "Ba phong cách được tạo ngay tại chỗ. Chọn một, hoặc yêu cầu thêm ba phong cách khác.",
-        "styleTitle": "Giọng khởi đầu (tùy chọn)",
-        "submit": "Tạo và bắt đầu",
-        "subtitle": "Chỉ cần một cái tên là đủ để bắt đầu. Phần còn lại sẽ học được từ cách bạn trả lời, từng lá một.",
-        "title": "Tạo twin của bạn"
-      },
-      "keys": {
-        "close": "đóng",
-        "edit": "sửa",
-        "move": "di chuyển",
-        "pick": "chọn",
-        "play": "chơi",
-        "skip": "bỏ qua"
-      },
-      "launch": {
-        "body": "{score}% sẵn sàng. Tiếp tục từ chỗ bạn đã dừng, hoặc bắt đầu một ván huấn luyện.",
-        "resume": "Tiếp tục thiết lập",
-        "title": "Bàn của {name}",
-        "titleNoTwin": "Bàn twin của bạn",
-        "train": "Bắt đầu một ván huấn luyện"
-      },
-      "loot": {
-        "edit": "Sửa",
-        "keep": "Giữ",
-        "kind": {
-          "bio": "Tiểu sử",
-          "constraints": "Quy tắc",
-          "examples": "Mẫu",
-          "role": "Vai trò",
-          "voice": "Giọng nói"
-        },
-        "onChannel": "{kind} · {channel}",
-        "pass": "Bỏ",
-        "sampleReason": "Chính lời bạn viết, giữ nguyên như bạn đã viết.",
-        "stamp": {
-          "accepted": "Đã giữ",
-          "dismissed": "Đã bỏ",
-          "edited": "Đã chỉnh sửa"
-        }
-      },
-      "mode": {
-        "fields": "Trường",
-        "label": "Chế độ xem",
-        "studio": "Hàng loạt",
-        "table": "Bàn"
-      },
-      "notices": {
-        "completeBody": "Mọi chất đã được thiết lập. Giờ twin của bạn có thể soạn theo giọng văn, và mỗi ván huấn luyện sẽ khiến nó nghe giống bạn hơn.",
-        "completeClose": "Tạm xong",
-        "completeTitle": "{name} đã sẵn sàng",
-        "completeTrain": "Tiếp tục huấn luyện",
-        "fields": "Tự nhập",
-        "guideDown": "Hướng dẫn viên không chia được câu này. Chưa có gì được lưu, và chất này vẫn còn mở.",
-        "inviteBody": "Thiết lập bao gồm bạn là ai và cách bạn viết. Những gì bạn nhớ và nghĩ đến từ các ván huấn luyện, và mọi câu trả lời ở đó đều được lưu lại để bạn duyệt.",
-        "inviteStart": "Bắt đầu một ván huấn luyện",
-        "inviteTitle": "Ký ức đến từ huấn luyện",
-        "retry": "Chia lại"
-      },
-      "pile": {
-        "earlier": "{count} lá trước",
-        "empty": "Câu trả lời của bạn sẽ xuất hiện ở đây.",
-        "hideEarlier": "Ẩn mục trước",
-        "label": "Đã chơi",
-        "skipped": "Đã bỏ qua",
-        "tally": "{played} đã chơi · {kept} đã giữ",
-        "you": "Bạn"
-      },
-      "stage": {
-        "label": "Giai đoạn",
-        "setup": "Thiết lập",
-        "training": "Huấn luyện"
-      },
-      "style": {
-        "backToTable": "Quay lại bàn",
-        "candidatesReady": "Ba phong cách đang chờ bạn.",
-        "drafting": "Đang soạn trả lời theo phong cách {name}…",
-        "draftsReady": "Bản nháp theo phong cách {name} đã sẵn sàng để bạn xem qua.",
-        "hint": "Bắt đầu từ một phong cách có sẵn hoặc tạo ngẫu nhiên ba phong cách mới. Không có gì được lưu cho đến khi bạn giữ bản nháp.",
-        "idle": "Chọn một giọng khởi đầu, hoặc tạo ngẫu nhiên ba giọng.",
-        "open": "Mở bộ bài phong cách",
-        "review": "Xem qua",
-        "rolling": "Đang tạo ngẫu nhiên ba phong cách…",
-        "saving": "Đang lưu các bản nháp bạn đã giữ",
-        "title": "Phong cách"
-      },
-      "suits": {
-        "channels": "Kênh",
-        "identity": "Danh tính",
-        "label": "Cần thiết lập",
-        "memories": "Ký ức",
-        "openHub": "Duyệt ký ức trong Bộ não",
-        "statusLine": "{status} · {detail}",
-        "tone": "Giọng nói"
-      },
-      "table": {
-        "composerPick": "Hoặc nói theo cách của riêng bạn",
-        "composerWrite": "Gõ câu trả lời của bạn",
-        "dealing": "Đang chia câu hỏi tiếp theo",
-        "greeting": "Tiếp tục từ chỗ bạn đã dừng. Vẫn còn mở: {items}.",
-        "greetingFresh": "{name} đã lên bàn. Chúng ta sẽ cùng đi qua {items}, mỗi lần một câu hỏi.",
-        "handLabel": "Câu trả lời để chọn",
-        "incoming": "Họ viết",
-        "incomingFrom": "Trên {channel}, họ viết",
-        "noQuestion": "Hiện không còn gì để hỏi.",
-        "playHint": "Nhấn lại để chơi",
-        "ready": "{score}% sẵn sàng",
-        "send": "Gửi",
-        "training": "Huấn luyện",
-        "writeHint": "Trả lời đúng như bạn sẽ thực sự gửi, kể cả lỗi chính tả. Bạn có thể giữ câu trả lời này làm mẫu cho cách viết.",
-        "yourReply": "Câu trả lời của bạn",
-        "yourReplyOn": "Câu trả lời của bạn trên {channel}"
-      },
-      "topics": {
-        "asks": {
-          "blurb": "Những câu hỏi thường đến với bạn, được trả lời theo cách của bạn.",
-          "label": "Điều mọi người hỏi bạn",
-          "prompt": "Hãy hỏi tôi những câu hỏi mà mọi người thường mang đến cho tôi trong công việc, và để tôi trả lời như cách tôi trả lời một đồng nghiệp."
-        },
-        "coverage": "{tier}. Ký ức: {count}",
-        "drills": {
-          "blurb": "Những tin nhắn thực tế để bạn trả lời theo đúng cách của mình.",
-          "label": "Luyện trả lời",
-          "prompt": "Hãy đưa cho tôi những tin nhắn thực tế mà mọi người vẫn gửi cho tôi, từng tin một, và để tôi trả lời đúng như cách tôi vẫn làm: một yêu cầu tôi sẽ từ chối, một đề nghị mơ hồ, ai đó đang thúc giục tôi, một lời cảm ơn. Hãy trộn lẫn các kênh tôi dùng."
-        },
-        "label": "Bộ bài huấn luyện",
-        "lines": {
-          "blurb": "Điều bạn sẽ không làm, và điều twin không bao giờ được nói thay bạn.",
-          "label": "Giới hạn của bạn",
-          "prompt": "Hãy hỏi điều tôi sẽ không làm, điều tôi đồng ý ngay, và điều twin của tôi không bao giờ được nói, hứa hay đồng ý thay tôi."
-        },
-        "offClock": {
-          "blurb": "Cuộc sống ngoài công việc: điều bạn làm, điều bạn có thể nói cả giờ đồng hồ.",
-          "label": "Ngoài giờ làm",
-          "prompt": "Hãy hỏi về cuộc sống của tôi ngoài công việc: tôi làm gì với thời gian của mình, điều tôi có thể nói cả giờ đồng hồ, và điều tôi làm không giỏi nhưng vẫn thích."
-        },
-        "sessions": "Số ván đã hoàn thành: {count}",
-        "stories": {
-          "blurb": "Từng chuyện một: một ngày mọi thứ đi sai, một lần bạn đã quyết định đúng.",
-          "label": "Chuyện công việc",
-          "prompt": "Hãy hỏi tôi những câu chuyện cụ thể từ công việc, từng chuyện một: một ngày mọi thứ đi sai, một lần tôi đã quyết định đúng, hay vì sao tôi lại làm công việc này. Hãy hỏi chuyện gì đã xảy ra, không phải tôi đã học được gì."
-        },
-        "takes": {
-          "blurb": "Những quan điểm bạn sẵn sàng tranh luận, trong và ngoài lĩnh vực của bạn.",
-          "label": "Quan điểm bạn bảo vệ",
-          "prompt": "Hãy hỏi tôi nghĩ gì về những điều trong và ngoài lĩnh vực của mình, những quan điểm tôi sẽ tranh luận trong bữa tối. Nếu tôi lưỡng lự, hãy hỏi thêm một lần nữa."
-        },
-        "tiers": {
-          "covered": "Bao phủ tốt",
-          "some": "Bao phủ một phần",
-          "thin": "Ít dữ liệu"
-        }
-      },
-      "twinCard": {
-        "everywhere": "Mọi nơi",
-        "label": "Twin của bạn cho đến nay",
-        "memories": "Ký ức: {detail}",
-        "noBio": "Tiểu sử sẽ dần được điền khi bạn trả lời.",
-        "noRole": "Chưa có vai trò",
-        "noVoice": "(chưa có giọng nói)",
-        "samplesAndRules": "Mẫu: {samples}. Quy tắc: {rules}.",
-        "unnamed": "Twin của bạn",
-        "voices": "Giọng nói theo kênh"
-      }
-    },
-    "experience_grok": {
-      "close": "Đóng",
+    "experience": {
+      "title": "Dựng twin của bạn",
+      "trainTitle": "Huấn luyện {name}",
+      "unnamed": "Twin của bạn",
       "forge": {
-        "create": "Chia tay bài đầu",
-        "creating": "Đang tạo…",
         "eyebrow": "Twin mới",
-        "gender": "Nó sẽ xuất hiện thế nào?",
-        "hint": "Không gì được lưu cho đến khi bạn đánh một lá.",
+        "title": "Twin này nên là ai?",
+        "subtitle": "Một cái tên là đủ để bắt đầu. Phần còn lại ta chia thành bài.",
         "name": "Tên",
         "namePlaceholder": "Tên bạn thực sự dùng",
+        "gender": "Nó sẽ xuất hiện thế nào?",
+        "languages": "Ngôn ngữ họ dùng để viết",
+        "languagesHint": "Ngôn ngữ đầu tiên là ngôn ngữ chính.",
+        "languagesMain": "chính",
         "style": "Giọng mở đầu",
         "styleHint": "Tuỳ chọn. Chọn một giọng mở đầu, hoặc bỏ qua — ta sẽ tìm ra khi huấn luyện.",
         "styleSkip": "Quyết sau",
         "styleSkipHint": "Giọng sẽ được học từ cách bạn trả lời.",
         "styleSurprise": "Làm tôi bất ngờ",
         "styleSurpriseHint": "Rút ba giọng sau khi twin này đã có.",
-        "subtitle": "Một cái tên là đủ để bắt đầu. Phần còn lại ta chia thành bài.",
-        "title": "Twin này nên là ai?",
         "styleChoose": "Chọn một giọng…",
-        "styleChooseHint": "Mười giọng mở đầu để chọn."
-      },
-      "slots": {
-        "channels": {
-          "hint": "Bạn nói ở đâu, với ai, và chỗ đó để làm gì.",
-          "label": "Kênh"
-        },
-        "identity": {
-          "hint": "Bạn là ai, được biết đến vì điều gì, điều bạn không nhượng bộ.",
-          "label": "Danh tính"
-        },
-        "memories": {
-          "hint": "Sự thật, quan điểm và câu chuyện đáng giữ.",
-          "label": "Ký ức"
-        },
-        "tone": {
-          "hint": "Cách bạn thực sự viết — độ dài, nhiệt, điều bạn không bao giờ nói.",
-          "label": "Giọng"
-        }
+        "styleChooseHint": "Mười giọng mở đầu để chọn.",
+        "create": "Chia tay bài đầu",
+        "creating": "Đang tạo…",
+        "hint": "Không gì được lưu cho đến khi bạn đánh một lá."
       },
       "table": {
-        "composerPlaceholder": "Hoặc viết bằng lời của bạn",
-        "earlier": "{count} trước đó",
-        "earlierHide": "Ẩn phần trước",
-        "greeting": "Ta sẽ đi {items} như một tay bài. Chọn một lá, tự viết, hoặc bỏ qua.",
-        "legendAccept": "Enter đánh",
-        "legendEdit": "E sửa",
-        "legendPick": "1–3 chọn",
-        "legendSkip": "S bỏ qua",
-        "noQuestion": "Bàn trống. Mọi ô đã sẵn sàng.",
-        "openFields": "Tất cả trường",
-        "openGuide": "Bàn",
-        "pickCard": "Chọn câu trả lời này",
-        "score": "Sẵn sàng",
-        "send": "Đánh",
-        "skip": "Bỏ qua lá này",
-        "skipped": "Đã bỏ qua",
         "stageLabel": "Giai đoạn",
         "stageSetup": "Thiết lập",
         "stageTraining": "Huấn luyện",
+        "doors": "Mở",
+        "score": "Sẵn sàng",
         "thinking": "Đang chia lá tiếp theo",
-        "trailLabel": "Đã đánh đến nay",
-        "viewLabel": "Góc nhìn thiết lập"
-      },
-      "title": "Dựng twin của bạn",
-      "trainTitle": "Huấn luyện {name}",
-      "voice": {
-        "dictate": "Đọc chính tả",
-        "stop": "Ngừng nghe"
-      }
-    },
-    "experience_mirror": {
-      "answers": {
-        "keyEdit": "sửa",
-        "keyPick": "chọn",
-        "keyPlay": "chơi",
-        "keySkip": "bỏ qua",
-        "label": "Các câu trả lời để chọn",
-        "placeholder": "…hoặc tự viết",
-        "playHint": "Nhấn lại để chơi",
-        "skip": "Không phải cái này",
-        "writePlaceholder": "Viết câu trả lời của bạn"
-      },
-      "ask": {
+        "noQuestion": "Bàn trống. Mọi ô đã sẵn sàng.",
+        "greeting": "Ta sẽ đi {items} như một tay bài. Chọn một lá, tự viết, hoặc bỏ qua.",
+        "training": "Huấn luyện",
         "everywhere": "Mọi nơi",
-        "greeting": "Vẫn còn mở: {items}.",
-        "greetingFresh": "{name} đã tồn tại. Vẫn còn mở: {items}.",
         "incoming": "Họ đã viết",
         "incomingFrom": "Trên {channel}, họ đã viết",
-        "training": "Huấn luyện",
-        "writeHint": "Trả lời đúng như cách bạn thực sự sẽ trả lời — nó được giữ nguyên từng chữ."
+        "writeHint": "Trả lời đúng như cách bạn thực sự sẽ trả lời — nó được giữ nguyên từng chữ.",
+        "handLabel": "Các câu trả lời để chọn",
+        "pickCard": "Chọn câu trả lời này",
+        "composerPlaceholder": "Hoặc viết bằng lời của bạn",
+        "writePlaceholder": "Viết câu trả lời của bạn",
+        "send": "Đánh",
+        "skip": "Bỏ qua lá này",
+        "legendPick": "1–3 chọn",
+        "legendAccept": "Enter đánh",
+        "legendEdit": "E sửa",
+        "legendSkip": "S bỏ qua",
+        "trailLabel": "Đã đánh đến nay",
+        "earlier": "{count} trước đó",
+        "earlierHide": "Ẩn phần trước",
+        "skipped": "Đã bỏ qua"
       },
-      "create": {
-        "ask": "Bạn đang tạo ra ai?",
-        "begin": "Bắt đầu",
-        "creating": "Đang tạo…",
-        "door": "Ngôn ngữ và giọng mở đầu",
-        "hint": "Chỉ cần một cái tên là đủ để bắt đầu. Mọi thứ khác sẽ được học từ bạn.",
-        "languages": "Ngôn ngữ họ dùng để viết",
-        "languagesHint": "Ngôn ngữ đầu tiên là ngôn ngữ chính.",
-        "languagesMain": "chính",
-        "namePlaceholder": "Tên của họ",
-        "optionsHint": "Cả hai đều tùy chọn, và đều có thể đổi sau.",
-        "optionsTitle": "Trước khi bắt đầu",
-        "sigil": "Cách xưng hô với họ",
-        "style": "Giọng mở đầu",
-        "styleHint": "Một bản nháp để phản hồi, thay vì một trang trắng.",
-        "styleNone": "Học từ tôi",
-        "styleNoneHint": "Không giả định điều gì cả. Giọng sẽ đến từ những gì bạn viết.",
-        "styleRoll": "Làm tôi bất ngờ",
-        "styleRollHint": "Ba giọng đã soạn sẵn để chọn."
-      },
-      "deck": {
-        "coverage": "{tier} · {count} ký ức",
-        "hint": "Chọn chủ đề cho các câu hỏi tiếp theo.",
-        "rounds": "{count} ván cho đến nay",
-        "tiers": {
-          "covered": "Đầy đủ",
-          "some": "Một phần",
-          "thin": "Ít"
+      "slots": {
+        "identity": {
+          "label": "Danh tính",
+          "hint": "Bạn là ai, được biết đến vì điều gì, điều bạn không nhượng bộ."
         },
-        "title": "Nội dung để huấn luyện"
+        "tone": {
+          "label": "Giọng",
+          "hint": "Cách bạn thực sự viết — độ dài, nhiệt, điều bạn không bao giờ nói."
+        },
+        "channels": {
+          "label": "Kênh",
+          "hint": "Bạn nói ở đâu, với ai, và chỗ đó để làm gì."
+        },
+        "memories": {
+          "label": "Ký ức",
+          "hint": "Sự thật, quan điểm và câu chuyện đáng giữ."
+        }
       },
-      "launch": {
-        "resume": "Tiếp tục thiết lập",
-        "title": "{name} đang chờ",
-        "titleNoTwin": "Chưa có twin nào",
-        "train": "Bắt đầu một ván huấn luyện"
+      "dictation": {
+        "dictate": "Đọc chính tả",
+        "stop": "Ngừng nghe"
       },
-      "notices": {
-        "completeBody": "Mọi mục thiết lập đã được điền. Huấn luyện sẽ tiếp tục khiến nó nghe giống bạn hơn.",
-        "completeClose": "Tạm xong",
-        "completeTitle": "{name} đã sẵn sàng",
-        "completeTrain": "Huấn luyện nó",
-        "inviteBody": "Thiết lập không thể điền mục này. Một ván huấn luyện sẽ hỏi về công việc, những câu nói quen thuộc và cách bạn trả lời — và mỗi câu trả lời sẽ trở thành một ký ức.",
-        "inviteStart": "Bắt đầu huấn luyện",
-        "inviteTitle": "Ký ức đến từ huấn luyện",
-        "retry": "Thử lại"
-      },
-      "offer": {
-        "hint": "Không gì được lưu cho đến khi bạn giữ lại.",
-        "title": "Hướng dẫn viên muốn ghi lại điều này"
-      },
-      "rail": {
-        "doors": "Mở",
-        "unnamed": "Twin của bạn"
+      "offers": {
+        "title": "Hướng dẫn viên muốn ghi lại điều này",
+        "hint": "Không gì được lưu cho đến khi bạn giữ lại."
       },
       "sheet": {
-        "everywhere": "Mọi nơi",
-        "hint": "Mọi thứ đã lưu cho đến nay. Không có gì được viết mà không có bạn.",
-        "memories": "Ký ức · {detail}",
-        "noBio": "Chưa có tiểu sử",
-        "noRole": "Chưa có vai trò",
-        "noVoice": "chưa có giọng",
-        "openFields": "Chỉnh sửa mọi trường",
-        "samplesAndRules": "{samples} mẫu, {rules} quy tắc",
         "title": "Những gì nó biết",
-        "voices": "Giọng nói"
+        "hint": "Mọi thứ đã lưu cho đến nay. Không có gì được viết mà không có bạn.",
+        "noRole": "Chưa có vai trò",
+        "noBio": "Chưa có tiểu sử",
+        "noVoice": "chưa có giọng",
+        "voices": "Giọng nói",
+        "everywhere": "Mọi nơi",
+        "samplesAndRules": "{samples} mẫu, {rules} quy tắc",
+        "memories": "Ký ức · {detail}",
+        "openFields": "Chỉnh sửa mọi trường"
       },
-      "voice": {
-        "candidates": "Ba giọng để chọn",
+      "deck": {
+        "title": "Nội dung để huấn luyện",
+        "hint": "Chọn chủ đề cho các câu hỏi tiếp theo.",
+        "rounds": "{count} ván cho đến nay",
+        "coverage": "{tier} · {count} ký ức",
+        "tiers": {
+          "thin": "Ít",
+          "some": "Một phần",
+          "covered": "Đầy đủ"
+        }
+      },
+      "studio": {
+        "title": "Giọng nói",
         "drafting": "Đang soạn {name}",
-        "idle": "Chưa có bản nháp giọng nào",
-        "ready": "{name} đã sẵn sàng để xem lại",
         "rolling": "Đang tạo ba giọng",
+        "candidates": "Ba giọng để chọn",
+        "ready": "{name} đã sẵn sàng để xem lại",
         "saving": "Đang lưu",
-        "title": "Giọng nói"
+        "idle": "Chưa có bản nháp giọng nào"
       },
-      "whisper": {
-        "kept": "Đã giữ · {field}"
+      "notices": {
+        "retry": "Thử lại",
+        "inviteTitle": "Ký ức đến từ huấn luyện",
+        "inviteBody": "Thiết lập không thể điền mục này. Một ván huấn luyện sẽ hỏi về công việc, những câu nói quen thuộc và cách bạn trả lời — và mỗi câu trả lời sẽ trở thành một ký ức.",
+        "inviteStart": "Bắt đầu huấn luyện",
+        "completeTitle": "{name} đã sẵn sàng",
+        "completeBody": "Mọi mục thiết lập đã được điền. Huấn luyện sẽ tiếp tục khiến nó nghe giống bạn hơn.",
+        "completeTrain": "Huấn luyện nó",
+        "completeClose": "Tạm xong"
+      },
+      "launch": {
+        "title": "{name} đang chờ",
+        "titleNoTwin": "Chưa có twin nào",
+        "resume": "Tiếp tục thiết lập",
+        "train": "Bắt đầu một ván huấn luyện"
       }
     }
   },

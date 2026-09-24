@@ -3961,13 +3961,6 @@
   "*:monitor.usage_provider_grok",
   "*:notepad.thread_author_athena",
   "de:monitor.stream_speaker_system",
-  "cs:twin.experience_opus.loot.kind.role",
-  "de:twin.experience_opus.create.name",
-  "de:twin.experience_opus.table.training",
-  "fr:twin.experience_opus.mode.table",
-  "fr:twin.experience_opus.style.title",
-  "id:twin.experience_opus.create.sigil",
-  "id:twin.experience_opus.mode.studio",
   "de:notepad.desk_layout_journal",
   "fr:notepad.desk_layout_journal",
   "cs:kpis.overview.altitude_portfolio",
@@ -3976,5 +3969,5 @@
   "de:studio.guide.layout_guide",
   "fr:studio.guide.layout_guide",
   "id:studio.guide.layout_guide",
-  "de:twin.experience_mirror.ask.training"
+  "de:twin.experience.table.training"
 ]
