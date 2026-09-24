@@ -31,6 +31,7 @@
   "*:mastermind.view_strata",
   "*:monitor.autopilot",
   "*:monitor.queue_origin_athena",
+  "*:monitor.queue_origin_curator",
   "*:monitor.queue_origin_autopilot",
   "*:monitor.queue_origin_dev_runner",
   "*:monitor.usage_provider_claude",

@@ -7273,6 +7273,7 @@
     "queue_origin_dev_runner": "开发执行器",
     "queue_origin_dispatch_ideas": "想法",
     "queue_origin_athena": "Athena",
+    "queue_origin_curator": "Curator",
     "queue_origin_autopilot": "自动驾驶",
     "queue_origin_night_shift": "夜班",
     "queue_origin_feed_impact": "动态",
