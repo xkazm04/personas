@@ -20,13 +20,14 @@
  *
  *   node scripts/census/self-test.mjs
  */
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertRule, isCommentOnlyLine, patternToRegExp, scanRule, validateRule } from './lib/engine.mjs';
 import { runCensus } from './run-census.mjs';
+import { RULE_ID as ALLOWLIST_RULE_ID, allowListFromPattern, compareAllowList } from '../style/typo-allowlist.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, '__fixtures__');
@@ -525,6 +526,119 @@ test('zero-width patterns cannot hang the scanner', () => {
   });
   const result = scanRule(rule, { root: FIXTURES }); // must terminate
   ok(result.walked === 4, 'scan completed');
+});
+
+// ------------------------- 6. style-unification rules, on seeded fixtures ---
+// The seven rules added 2026-09-24 (spark style-unification, WP2) are loaded
+// from the REAL rules.json, never copied: a fixture registry holding a twin
+// pattern proves the twin works, not the gate. Each is pointed at a temp tree
+// with a hand-counted seed file and a near-miss file, and asserted exactly;
+// then its baseline is set one below the seed count to prove the gate goes red.
+// Temp trees rather than __fixtures__/: rules such as pinned-harness-endpoint
+// walk scripts/ for .tsx, so committed seeds would leak into real counts.
+const REAL_RULES = JSON.parse(readFileSync(resolve(HERE, 'rules.json'), 'utf8')).rules;
+const STYLE_SEEDS = {
+  'raw-arbitrary-text-size': {
+    ext: '.tsx',
+    red: '<p className="text-[11px] x" /><p className="text-[0.8rem]" /><p className="sm:text-[13px]" />',
+    near: '<p className="text-[color:var(--x)] leading-[11px] max-w-[11px]" />\n// text-[11px] in a comment\n',
+    count: 3,
+  },
+  'raw-palette-text-colour': {
+    ext: '.tsx',
+    red: '<i className="text-emerald-400" /><i className="hover:text-red-500/70" />',
+    near: '<i className="text-status-success bg-emerald-500 text-emerald text-foreground" />',
+    count: 2,
+  },
+  'bare-rounded': {
+    ext: '.tsx',
+    red: '<i className="p-1 rounded text-x" />\nconst ghost = \'rounded\';\n',
+    near: '<i className="rounded-card rounded-full" />\nconst rounded = Math.round(x);\n',
+    count: 2,
+  },
+  'opacity-dimmed-text': {
+    ext: '.tsx',
+    red: '<i className="text-foreground opacity-60" /><i className="opacity-40 typo-caption text-foreground" />',
+    near: '<i className="text-foreground disabled:opacity-50 hover:opacity-80" /><i className="text-foreground opacity-100 text-foreground/60" />',
+    count: 2,
+  },
+  'phantom-typo-token': {
+    ext: '.tsx',
+    red: '<i className="typo-body-sm" /><div className="[&_h1]:typo-h3" />',
+    near: '<i className="typo-body typo-body-lg typo-caption typo-section-title" />',
+    count: 2,
+  },
+  'raw-button-element': {
+    ext: '.tsx',
+    red: '<button className="x">a</button>\n<button\n  type="button"\n  onClick={() => a > b}\n  className="y"\n>b</button>\n',
+    near: '<button type="button">t</button><span className="z" />\n<Button className="x" />\n',
+    count: 2,
+  },
+  'feature-css-type-literal': {
+    ext: '.css',
+    red: '.a { font-size: 12px; }\n.b { font-family: "Inter", sans-serif; }\n.c { color: #fff; }\n.d { background: rgba(0, 0, 0, 0.4); }\n',
+    near: '.a { font-family: var(--font-mono); font-size: 1em; }\n.b { font-family: inherit; color: var(--foreground); }\n/* color: #fff */\n',
+    count: 4,
+  },
+};
+
+test('every style-unification rule is registered and has a seed', () => {
+  for (const id of Object.keys(STYLE_SEEDS)) ok(REAL_RULES.some((r) => r.id === id), `${id} is in rules.json`);
+});
+
+for (const [id, seed] of Object.entries(STYLE_SEEDS)) {
+  test(`style rule ${id}: exact count on its seed, zero on the near-miss, red over baseline`, () => {
+    const real = REAL_RULES.find((r) => r.id === id);
+    ok(real, `${id} in rules.json`);
+    const dir = mkdtempSync(join(tmpdir(), `census-style-${id}-`));
+    try {
+      mkdirSync(join(dir, 'tree'), { recursive: true });
+      writeFileSync(join(dir, 'tree', `seed${seed.ext}`), seed.red, 'utf8');
+      writeFileSync(join(dir, 'tree', `near${seed.ext}`), seed.near, 'utf8');
+      const rule = { ...real, roots: ['tree'], exclude: [], floor: 2, baseline: { files: 1, matches: seed.count } };
+      const result = scanRule(rule, { root: dir });
+      eq(result.walked, 2, `${id} walked`);
+      eq(result.matches, seed.count, `${id} matches on the seed`);
+      eq(result.hits.map((h) => h.file), [`tree/seed${seed.ext}`], `${id} fires only on the seed, never on the near-miss`);
+      eq(assertRule(rule, result).length, 0, `${id} green at its own count`);
+      const red = { ...rule, baseline: { files: 1, matches: seed.count - 1 } };
+      expectProblem(assertRule(red, result), 'rose', 'drift');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('typo allow-list check fails in BOTH directions and passes when they agree', () => {
+  const pattern = REAL_RULES.find((r) => r.id === ALLOWLIST_RULE_ID).signal.pattern;
+  eq(allowListFromPattern(pattern) instanceof Set, true, 'the real pattern carries a parseable allow-list');
+  const dir = mkdtempSync(join(tmpdir(), 'census-typo-allow-'));
+  try {
+    mkdirSync(join(dir, 'scripts', 'census'), { recursive: true });
+    mkdirSync(join(dir, 'src', 'styles'), { recursive: true });
+    const writeRule = (names) =>
+      writeFileSync(
+        join(dir, 'scripts', 'census', 'rules.json'),
+        JSON.stringify({ rules: [{ id: ALLOWLIST_RULE_ID, signal: { pattern: `typo-(?!(?:${names.join('|')})(?![\\w-]))` } }] }),
+      );
+    writeFileSync(join(dir, 'src', 'styles', 't.css'), '.typo-body { } /* .typo-ghost */ .typo-title { }', 'utf8');
+    writeFileSync(join(dir, 'src', 'styles', 't.proposed.css'), '.typo-eyebrow { }', 'utf8');
+
+    writeRule(['body', 'title']);
+    eq(compareAllowList(dir).ok, true, 'agreeing sets pass; a commented selector and a proposal define nothing');
+
+    writeRule(['body']);
+    ok(compareAllowList(dir).problems.some((p) => /typo-title is defined in CSS but absent/.test(p)), 'defined-but-not-allowed fails');
+
+    writeRule(['body', 'title', 'gone']);
+    ok(compareAllowList(dir).problems.some((p) => /typo-gone is allowed .* no stylesheet defines it/.test(p)), 'allowed-but-deleted fails');
+
+    rmSync(join(dir, 'src'), { recursive: true, force: true });
+    writeRule(['body', 'title']);
+    ok(compareAllowList(dir).problems.some((p) => /reader is broken/.test(p)), 'reading zero stylesheets fails loudly');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ------------------------------------------------------------------- run ---

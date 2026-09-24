@@ -29,6 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { compareAllowList } from '../style/typo-allowlist.mjs';
 
 // Derived from this file's own location, NOT hardcoded.
 //
@@ -198,6 +199,14 @@ for (const r of rules) {
     fail(`census rule "${r.id}" cites goldenPath "${r.goldenPath}", which does not exist`);
   }
 }
+
+// ------------- 3.1 a census allow-list agrees with the source it was copied from
+// phantom-typo-token (added 2026-09-24) spells the typo-* names the stylesheets
+// define inside a static regex, because the engine takes no computed pattern. A
+// token deleted from CSS but still allowed there would make its call sites
+// phantoms nobody counts, and no census run can see an absence. This is the
+// inventory in both directions; scripts/style/typo-allowlist.mjs has the detail.
+for (const p of compareAllowList(ROOT).problems) fail(`census rule "phantom-typo-token": ${p}`);
 
 // --------------------- 3.5 subject hierarchy (docs/concepts/paths/) — GRAPH.md
 // Enforces the v2 layer contract, section by section of docs/concepts/paths/GRAPH.md
