@@ -273,6 +273,10 @@ pub fn spawn_ticker(app: AppHandle) {
             // auto-forget pass can't sweep a rehydrated session that was still
             // working when the app restarted. One-shot; no-ops thereafter.
             super::persist::recover_after_restart(&app);
+            // Contest seats the rehydrate just restored (or promoted) get
+            // their watcher back now, not when the Contest page is opened.
+            // Once per boot; spawned, so the ticker never waits on it.
+            crate::commands::contest::driver::kick_reattach(&app);
             tick_once(&app);
             // A queued row gated by `not_before_ms` has no state emit to ride
             // once its time comes; this tick is what promotes it. It is also

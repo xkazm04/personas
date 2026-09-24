@@ -11,8 +11,10 @@
 //! - **Chain.** When every participant seat has a record: collect → visual pass
 //!   (when Playwright resolves) → judges (when enabled) → aggregate → ready.
 //!   Every step is idempotent (the instrument's steps are) and retryable.
-//! - **Durability.** On the first `contest_list` / `contest_get` of a boot, the
-//!   driver re-attaches: a seat whose session is still queued or running gets a
+//! - **Durability.** Once per boot, right after the fleet rehydrates its rows
+//!   (the fleet ticker kicks [`kick_reattach`]; the first `contest_list` /
+//!   `contest_get` is the fallback), the driver re-attaches: a seat whose
+//!   session is still queued or running gets a
 //!   watcher again; a seat whose session ended while the app was down gets its
 //!   record from what the fleet still knows (the in-memory capture is gone), or
 //!   an `errored` record with the reason stated. `app.json` `recordedSessions`
@@ -874,11 +876,31 @@ fn identity_for(c: &ContestFile, key: &str) -> Option<SeatIdentity> {
         .and_then(|p| from_spec(&p.spec, p.id.clone()))
 }
 
+/// Set once the boot re-attach has started (it runs once per process).
+static REATTACHED: AtomicBool = AtomicBool::new(false);
+
+/// Start the boot re-attach in the background, once. Called by the fleet's
+/// ticker right after it rehydrates (and may promote) the restored rows, so
+/// a restored seat gets its watcher — its ceiling, its record, the chain —
+/// without anyone opening the Contest page. A no-op until the app state is
+/// managed and after the re-attach has started.
+pub fn kick_reattach(app: &AppHandle) {
+    if REATTACHED.load(Ordering::SeqCst) || db_of(app).is_err() {
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let run = std::panic::AssertUnwindSafe(ensure_reattached(&app)).catch_unwind();
+        if run.await.is_err() {
+            tracing::error!("contest: the boot re-attach panicked");
+        }
+    });
+}
+
 /// Once per boot: bring every contest's seats back under the driver.
 pub async fn ensure_reattached(app: &AppHandle) {
-    static DONE: AtomicBool = AtomicBool::new(false);
     let Ok(db) = db_of(app) else { return };
-    if DONE.swap(true, Ordering::SeqCst) {
+    if REATTACHED.swap(true, Ordering::SeqCst) {
         return;
     }
     // The fleet restores its rows from the DB on its own ticker; make sure it
@@ -1029,5 +1051,20 @@ mod tests {
             .await
             .unwrap());
         assert_eq!(arena::read_sidecar(&paths).chain.step, C::Ready);
+    }
+
+    /// Seats restored by the fleet at boot must get a watcher without anyone
+    /// opening the Contest page: the fleet's ticker, which rehydrates and
+    /// promotes queued rows, kicks the contest re-attach right after.
+    #[test]
+    fn the_fleet_ticker_kicks_the_contest_reattach_after_rehydrate() {
+        let ticker = include_str!("../fleet/stale.rs");
+        let rehydrate = ticker
+            .find("super::persist::rehydrate(&app);")
+            .expect("the ticker rehydrates");
+        let kick = ticker
+            .find("crate::commands::contest::driver::kick_reattach(&app);")
+            .expect("the ticker kicks the contest re-attach");
+        assert!(kick > rehydrate, "the kick runs after the rehydrate");
     }
 }
