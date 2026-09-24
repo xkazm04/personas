@@ -1,6 +1,6 @@
 //! The conditional tails — the blocks appended only when something about this
-//! turn asks for them: the daily-goals ritual, language, autonomy, tools,
-//! delegation, progress narration, onboarding.
+//! turn asks for them: language, autonomy, tools, delegation, progress
+//! narration, onboarding.
 //!
 //! The voice-only register (the dual-language display addendum and the
 //! `# VOICE PLAYBACK` TTS-emission block) was retired by the layered-voice
@@ -11,17 +11,6 @@
 
 use crate::companion::brain::episodic;
 use crate::db::DbPool;
-
-/// Daily-goals ritual awareness (dev builds only — the feature's UI is
-/// gated on `dev_mode_available`). A few lines: active set + streak, and
-/// the hard rule that evaluation is the operator's alone. Empty outside
-/// debug builds and when there is nothing to say.
-pub(super) fn daily_goals_addendum(user_db: &crate::db::UserDbPool) -> String {
-    if !cfg!(debug_assertions) {
-        return String::new();
-    }
-    crate::companion::brain::daily_goals::prompt_addendum(user_db)
-}
 
 /// Reply-language directive, emitted for EVERY UI language — English
 /// included.

@@ -17277,6 +17277,14 @@ export type Translations = {
       read_aloud_failed: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
+      autonomy_options: string;
+      autonomy_on: string;
+      autonomy_off: string;
+      autonomy_status_on: string;
+      autonomy_status_off: string;
+      autonomy_power: string;
+      autonomy_cadence: string;
+      autonomy_needs_power: string;
       composer_placeholder: string;
       slash_palette_heading: string;
       slash_palette_empty: string;
@@ -17934,21 +17942,6 @@ export type Translations = {
       sleep_cycle_pressure_tip: string;
       sleep_cycle_confirm: string;
       sleep_cycle_confirm_run: string;
-      daily_goals_label: string;
-      daily_goals_streak_hint: string;
-      daily_goals_set_button: string;
-      daily_goals_discard: string;
-      daily_goals_modal_title: string;
-      daily_goals_modal_hint: string;
-      daily_goals_goal_placeholder: string;
-      daily_goals_create: string;
-      daily_goals_completed_celebrate: string;
-      daily_goals_done_today: string;
-      daily_goals_edit: string;
-      daily_goals_edit_title: string;
-      daily_goals_edit_hint: string;
-      daily_goals_mark_done: string;
-      daily_goals_mark_open: string;
       setup_dev_mode_label: string;
       setup_dev_mode_on: string;
       setup_dev_mode_off: string;
@@ -21524,192 +21517,10 @@ export type Translations = {
         };
       };
     };
-    experience_opus: {
-      create: {
-        title: string;
-        subtitle: string;
-        name: string;
-        namePlaceholder: string;
-        nameNeeded: string;
-        sigil: string;
-        languages: string;
-        languagesHint: string;
-        languagesMain: string;
-        styleTitle: string;
-        styleHint: string;
-        styleNone: string;
-        styleNoneHint: string;
-        styleRoll: string;
-        styleRollHint: string;
-        styleFlipHint: string;
-        styleNever: string;
-        footnote: string;
-        cancel: string;
-        submit: string;
-        creating: string;
-      };
-      suits: {
-        label: string;
-        identity: string;
-        tone: string;
-        channels: string;
-        memories: string;
-        statusLine: string;
-        openHub: string;
-      };
-      stage: {
-        label: string;
-        setup: string;
-        training: string;
-      };
-      mode: {
-        label: string;
-        table: string;
-        fields: string;
-        studio: string;
-      };
-      table: {
-        training: string;
-        noQuestion: string;
-        dealing: string;
-        greeting: string;
-        greetingFresh: string;
-        incoming: string;
-        incomingFrom: string;
-        writeHint: string;
-        handLabel: string;
-        playHint: string;
-        composerPick: string;
-        composerWrite: string;
-        send: string;
-        yourReply: string;
-        yourReplyOn: string;
-        ready: string;
-      };
-      loot: {
-        kind: {
-          bio: string;
-          role: string;
-          voice: string;
-          examples: string;
-          constraints: string;
-        };
-        onChannel: string;
-        sampleReason: string;
-        keep: string;
-        edit: string;
-        pass: string;
-        stamp: {
-          accepted: string;
-          edited: string;
-          dismissed: string;
-        };
-      };
-      pile: {
-        label: string;
-        you: string;
-        skipped: string;
-        tally: string;
-        empty: string;
-        earlier: string;
-        hideEarlier: string;
-      };
-      twinCard: {
-        label: string;
-        unnamed: string;
-        noRole: string;
-        noBio: string;
-        voices: string;
-        everywhere: string;
-        noVoice: string;
-        samplesAndRules: string;
-        memories: string;
-      };
-      style: {
-        title: string;
-        hint: string;
-        backToTable: string;
-        idle: string;
-        rolling: string;
-        drafting: string;
-        candidatesReady: string;
-        draftsReady: string;
-        saving: string;
-        open: string;
-        review: string;
-      };
-      topics: {
-        label: string;
-        sessions: string;
-        coverage: string;
-        tiers: {
-          thin: string;
-          some: string;
-          covered: string;
-        };
-        drills: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-        stories: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-        takes: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-        asks: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-        lines: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-        offClock: {
-          label: string;
-          blurb: string;
-          prompt: string;
-        };
-      };
-      notices: {
-        guideDown: string;
-        retry: string;
-        fields: string;
-        inviteTitle: string;
-        inviteBody: string;
-        inviteStart: string;
-        completeTitle: string;
-        completeBody: string;
-        completeTrain: string;
-        completeClose: string;
-      };
-      keys: {
-        pick: string;
-        move: string;
-        play: string;
-        edit: string;
-        skip: string;
-        close: string;
-      };
-      launch: {
-        title: string;
-        titleNoTwin: string;
-        body: string;
-        resume: string;
-        train: string;
-      };
-    };
-    experience_grok: {
+    experience: {
       title: string;
       trainTitle: string;
-      close: string;
+      unnamed: string;
       forge: {
         eyebrow: string;
         title: string;
@@ -21717,41 +21528,49 @@ export type Translations = {
         name: string;
         namePlaceholder: string;
         gender: string;
+        languages: string;
+        languagesHint: string;
+        languagesMain: string;
         style: string;
         styleHint: string;
         styleSkip: string;
         styleSkipHint: string;
         styleSurprise: string;
         styleSurpriseHint: string;
+        styleChoose: string;
+        styleChooseHint: string;
         create: string;
         creating: string;
         hint: string;
-        styleChoose: string;
-        styleChooseHint: string;
       };
       table: {
-        greeting: string;
-        noQuestion: string;
-        composerPlaceholder: string;
-        send: string;
+        stageLabel: string;
+        stageSetup: string;
+        stageTraining: string;
+        doors: string;
+        score: string;
         thinking: string;
+        noQuestion: string;
+        greeting: string;
+        training: string;
+        everywhere: string;
+        incoming: string;
+        incomingFrom: string;
+        writeHint: string;
+        handLabel: string;
+        pickCard: string;
+        composerPlaceholder: string;
+        writePlaceholder: string;
+        send: string;
+        skip: string;
         legendPick: string;
         legendAccept: string;
         legendEdit: string;
         legendSkip: string;
-        skip: string;
-        pickCard: string;
-        score: string;
-        openFields: string;
-        openGuide: string;
-        viewLabel: string;
         trailLabel: string;
         earlier: string;
         earlierHide: string;
         skipped: string;
-        stageLabel: string;
-        stageSetup: string;
-        stageTraining: string;
       };
       slots: {
         identity: {
@@ -21771,62 +21590,13 @@ export type Translations = {
           hint: string;
         };
       };
-      voice: {
+      dictation: {
         dictate: string;
         stop: string;
       };
-    };
-    experience_mirror: {
-      create: {
-        ask: string;
-        hint: string;
-        namePlaceholder: string;
-        sigil: string;
-        begin: string;
-        creating: string;
-        door: string;
-        optionsTitle: string;
-        optionsHint: string;
-        languages: string;
-        languagesHint: string;
-        languagesMain: string;
-        style: string;
-        styleHint: string;
-        styleNone: string;
-        styleNoneHint: string;
-        styleRoll: string;
-        styleRollHint: string;
-      };
-      rail: {
-        unnamed: string;
-        doors: string;
-      };
-      ask: {
-        training: string;
-        everywhere: string;
-        incoming: string;
-        incomingFrom: string;
-        writeHint: string;
-        greeting: string;
-        greetingFresh: string;
-      };
-      answers: {
-        label: string;
-        playHint: string;
-        placeholder: string;
-        writePlaceholder: string;
-        skip: string;
-        keyPick: string;
-        keyPlay: string;
-        keyEdit: string;
-        keySkip: string;
-      };
-      offer: {
+      offers: {
         title: string;
         hint: string;
-      };
-      whisper: {
-        kept: string;
       };
       sheet: {
         title: string;
@@ -21851,7 +21621,7 @@ export type Translations = {
           covered: string;
         };
       };
-      voice: {
+      studio: {
         title: string;
         drafting: string;
         rolling: string;

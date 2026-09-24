@@ -148,13 +148,13 @@ byte-consistent with each other and 127 behind the tree**, which is D5's whole
 point, re-measured on a different day at the same number.
 
 **And the manifest is also four entries *ahead*.** Two testids
-(`daily-goals-create`, `studio-chat-input`) and two prefixes (`companion-strip-`,
+(`daily-goals-create` (its feature was deleted 2026-09-24), `studio-chat-input`) and two prefixes (`companion-strip-`,
 `mm-category-`) are in the committed allow-list and are **no longer derivable**,
 because the code moved to a form the generator cannot read:
 
 | Anchor | How it is written now | Which regex fails |
 | --- | --- | --- |
-| `daily-goals-create` | `data-testid={editing ? 'daily-goals-save' : 'daily-goals-create'}` (`DailyGoalsModal.tsx:140`) | `data-testid=\{'(…)'\}` requires the closing brace after the quote |
+| a ternary arm (`scrape-status`, standing in for the deleted `daily-goals-create`, same form) | `data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}` (`ScraperControlRoom.tsx:318`) | `data-testid=\{'(…)'\}` requires the closing brace after the quote |
 | `studio-chat-input` | `inputTestId="studio-chat-input"` (`StudioChatInput.tsx:172`) | `testId="…"` is not a substring — the alias capitalises the `T` |
 | the six Obsidian panels | `OBSIDIAN_PANEL_TESTID` const map at `ObsidianBrainPage.tsx:33-38`, consumed at `:58` as `data-testid={MAP[tab]}` | no regex matches a computed member expression |
 

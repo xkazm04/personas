@@ -143,11 +143,6 @@ pub(super) fn shard(
         commands::companion::feedback::companion_record_ux_signal,
         #[cfg(debug_assertions)]
         commands::companion::debug_export::companion_export_conversation_log,
-        commands::companion::daily_goals::companion_daily_goals_state,
-        commands::companion::daily_goals::companion_daily_goals_create,
-        commands::companion::daily_goals::companion_daily_goals_update,
-        commands::companion::daily_goals::companion_daily_goals_toggle,
-        commands::companion::daily_goals::companion_daily_goals_discard,
         commands::companion::chat::companion_list_messages_before,
         commands::companion::chat_cards::companion_list_chat_cards,
         commands::companion::chat_cards::companion_resolve_chat_card,

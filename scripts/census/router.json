@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 708
+  "entries": 707
  },
  "routes": [
   {
@@ -6350,18 +6350,6 @@
   },
   {
    "glob": "src-tauri/src/engine/kpi_derivation.rs",
-   "subject": "scoring-rubrics",
-   "laws": [
-    "identity-survives-reuse",
-    "count-carries-predicate",
-    "gate-sees-target",
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/twin/shared/readinessGaps.ts",
    "subject": "scoring-rubrics",
    "laws": [
     "identity-survives-reuse",

@@ -1,31 +1,22 @@
 /**
  * FrameKeys — the top edge's icon-only mode keys, the same set the Current
- * header carries (autonomy, cadence, boldness, daily goals, dev mode, save log,
- * sleep cycle, reset, close) plus expand. Every key names itself through the
- * shared Tooltip and aria-label; the look decides its shape.
+ * header carries (the autonomy option, dev mode, sleep cycle, reset, close)
+ * plus expand. Every key names itself through the shared Tooltip and
+ * aria-label; the look decides its shape. Autonomy, cadence and boldness sit
+ * behind the one option key; reset and the sleep cycle confirm through the
+ * shared anchored `ConfirmPopover`; saving the log lives in the dev ledger row.
  */
 
-import { useState, type ComponentType } from 'react';
-import {
-  Flame,
-  Gauge,
-  Infinity as InfinityIcon,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
-  Timer,
-  Wrench,
-  X,
-} from 'lucide-react';
+import type { ComponentType } from 'react';
+import { Maximize2, Minimize2, Wrench, X } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { DevConversationLogButton } from '../../../DevConversationLogButton';
 import { useCompanionStore } from '../../../companionStore';
+import { AthenaAutonomyOption, type HeaderKeyLook } from '../../AthenaAutonomyOption';
+import { AthenaChatResetKey } from '../../AthenaChatResetKey';
 import { AthenaChatSleepButton } from '../../AthenaChatSleepButton';
-import type { ToolStrip } from '../../AthenaChatHeader';
-import { resetConversation, setAutonomousMode, setDevMode } from '../../athenaChatActions';
+import { setDevMode } from '../../athenaChatActions';
 import { NEXT_COPY as C } from '../nextCopy';
 import type { FrameLook } from './frameLook';
 
@@ -62,44 +53,30 @@ function Key({
 
 export function FrameKeys({
   look,
-  strip,
-  onStrip,
   expanded,
   onExpand,
 }: {
   look: FrameLook;
-  strip: ToolStrip | null;
-  onStrip: (s: ToolStrip) => void;
   expanded: boolean;
   onExpand: () => void;
 }) {
   const { t } = useTranslation();
   const c = t.plugins.companion;
-  const autonomous = useSystemStore((s) => s.companionAutonomousMode);
   const devMode = useSystemStore((s) => s.companionDevMode);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const devAvailable = useCompanionStore((s) => s.devModeAvailable);
-  const [resetOpen, setResetOpen] = useState(false);
+  const keyLook: HeaderKeyLook = {
+    button: look.icon.button,
+    active: look.icon.active,
+    icon: look.icon.size,
+    stroke: look.icon.stroke,
+  };
 
   return (
     <div className="flex items-center gap-1.5">
-      <Key
-        look={look}
-        icon={InfinityIcon}
-        label={autonomous ? c.autonomous_toggle_off : c.autonomous_toggle_on}
-        active={autonomous}
-        onClick={() => setAutonomousMode(!autonomous)}
-        testId="companion-toggle-autonomous"
-      />
-      {autonomous && (
-        <>
-          <Key look={look} icon={Timer} label={c.wake_cadence_label} active={strip === 'cadence'} onClick={() => onStrip('cadence')} />
-          <Key look={look} icon={Gauge} label={c.boldness_label} active={strip === 'boldness'} onClick={() => onStrip('boldness')} />
-        </>
-      )}
+      <AthenaAutonomyOption look={keyLook} />
       {devAvailable && (
         <>
-          <Key look={look} icon={Flame} label={c.daily_goals_label} active={strip === 'goals'} onClick={() => onStrip('goals')} />
           <Key
             look={look}
             icon={Wrench}
@@ -108,11 +85,10 @@ export function FrameKeys({
             onClick={() => setDevMode(!devMode)}
             testId="companion-toggle-dev-mode"
           />
-          <DevConversationLogButton />
-          <AthenaChatSleepButton />
+          <AthenaChatSleepButton className={look.icon.button} activeClassName={look.icon.active} iconClassName={look.icon.size} />
         </>
       )}
-      <Key look={look} icon={RotateCcw} label={c.reset} onClick={() => setResetOpen(true)} testId="companion-reset" />
+      <AthenaChatResetKey look={keyLook} />
       <Key
         look={look}
         icon={expanded ? Minimize2 : Maximize2}
@@ -127,19 +103,6 @@ export function FrameKeys({
         onClick={() => useCompanionStore.getState().setState(orbEnabled ? 'minimized' : 'collapsed')}
         testId="companion-close"
       />
-      {resetOpen && (
-        <ConfirmDialog
-          title={c.reset_confirm_title}
-          body={c.reset_confirm_body}
-          danger
-          confirmLabel={c.reset_confirm_action}
-          onConfirm={async () => {
-            await resetConversation();
-            setResetOpen(false);
-          }}
-          onCancel={() => setResetOpen(false)}
-        />
-      )}
     </div>
   );
 }

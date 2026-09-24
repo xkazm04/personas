@@ -34,6 +34,7 @@
     ".d.ts": {"count":1,"sections":[9],"contexts":["false-positive family this repo does not have (an adopting repo should `exclude` its generated `.d.ts`"],"resolved":false},
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["`ci.yml` is red on 10 pre-existing failures, so a gate that only runs in CI runs nowhere. This one"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "BrainAtelier.tsx": {"count":1,"sections":[7],"lines":["324"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
+    "CapabilityChip.tsx": {"count":1,"sections":[9],"lines":["5"],"contexts":["(rate-limit **window options**), and `CapabilityChip.tsx:5` (which *can* express absence, via"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["389"],"contexts":["`ResearchProjectListCartograph.tsx:216`, `BrainAtelier.tsx:324`, `ChannelsAtelier.tsx:389`,"],"resolved":false},
     "CostAnalyticsPanel.tsx": {
       "count": 1,
@@ -361,14 +362,6 @@
       "contexts": ["`agents/sub_model_config/components/compare/CompareMetrics.tsx`, `lib/utils/formatters.ts`,"],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_model_config/components/compare/CompareMetrics.tsx"
-    },
-    "src/features/agents/sub_new_persona/capabilityView/CapabilityChip.tsx": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["5"],
-      "contexts": ["(rate-limit **window options**), and `CapabilityChip.tsx:5` (which *can* express absence, via"],
-      "resolvedFrom": "basename",
-      "verbatim": "CapabilityChip.tsx"
     },
     "src/features/home/sub_cockpit/widgets/ExecutionFactsWidget.tsx": {
       "count": 1,

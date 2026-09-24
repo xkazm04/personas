@@ -15,7 +15,6 @@ pub mod chat_cards;
 pub mod connectors;
 pub mod consolidate;
 pub mod conversation;
-pub mod daily_goals;
 #[cfg(debug_assertions)]
 pub mod debug_export;
 pub mod decisions;

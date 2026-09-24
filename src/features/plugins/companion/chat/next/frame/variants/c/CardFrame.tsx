@@ -1,43 +1,21 @@
 /**
- * The collectible card of Halo · Spread: `CardFace` (the ornate front that
- * frames the REAL `WorkItemBody`) and `CardBack` (the woven back the deck, the
- * discard pile and the flip show). `useCardTilt` gives the face its
- * pointer-driven 3D tilt, flat again on leave.
+ * The collectible card of Halo · Spread: `CardFace` (the ornate front) and
+ * `CardBack` (the woven back the deck, the discard pile and the flip show).
+ *
+ * R4 (owner, 2026-09-24): no hover tilt or any hover movement, no header band
+ * (kind / number / title), and no card inside the card: the face frames a
+ * card-native `CardBody` (Oracle / Ledger / Runes) that expresses the content
+ * directly; only kinds without a native body still show `WorkItemBody`.
  *
  * TODO(prototype, 2026-09-23): consolidate the Athena chat switcher.
  */
 
-import { motion, useMotionValue, useSpring, type MotionStyle } from 'framer-motion';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { motion } from 'framer-motion';
 import { KIND_VAR } from '../../../tones';
-import { NEXT_COPY as C } from '../../../nextCopy';
-import { WorkItemBody } from '../../../WorkItemBody';
 import type { WorkItem } from '../../../useWorkforce';
+import { CardBody } from './bodies/CardBody';
 import { CORNERS, KIND_GLYPH, filigreeStyle, mix, monogram, projectHue, ringGradient, weaveStyle } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
-
-const TILT_MAX = 5;
-
-export function useCardTilt(enabled: boolean) {
-  const rx = useMotionValue(0);
-  const ry = useMotionValue(0);
-  const rotateX = useSpring(rx, { stiffness: 220, damping: 20 });
-  const rotateY = useSpring(ry, { stiffness: 220, damping: 20 });
-  const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
-    if (!enabled) return;
-    const b = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - b.left) / b.width - 0.5;
-    const py = (e.clientY - b.top) / b.height - 0.5;
-    ry.set(px * TILT_MAX * 2);
-    rx.set(-py * TILT_MAX * 2);
-  };
-  const onPointerLeave = () => {
-    rx.set(0);
-    ry.set(0);
-  };
-  const style: MotionStyle = { rotateX, rotateY, transformPerspective: 1400 };
-  return { style, onPointerMove, onPointerLeave };
-}
 
 function Filigree({ color, size }: { color: string; size: number }) {
   return (
@@ -75,7 +53,7 @@ function ArtWindow({ item, color, height }: { item: WorkItem; color: string; hei
   const hue = item.project ? projectHue(item.project) : 'var(--primary)';
   return (
     <div
-      className="relative mx-4 mt-2 shrink-0 rounded-card overflow-hidden border"
+      className="relative mx-4 mt-4 shrink-0 rounded-card overflow-hidden border"
       style={{
         height,
         borderColor: mix(color, 55),
@@ -125,19 +103,19 @@ function ArtWindow({ item, color, height }: { item: WorkItem; color: string; hei
   );
 }
 
-/** The ornate front of one decision card, framing the product's own card. */
+/** The ornate front of one card: frame, filigree, art and a card-native body. */
 export function CardFace({
   item,
-  index,
-  total,
+  waiting,
   compact,
   sheen,
   onSend,
   onSetAside,
 }: {
   item: WorkItem;
-  index: number;
-  total: number;
+  /** Which card-native treatment renders the content. */
+  /** Cards still in the deck behind this one. */
+  waiting: number;
   /** A short stage: a slimmer art window. */
   compact: boolean;
   /** Play the one-time foil sweep. */
@@ -146,49 +124,26 @@ export function CardFace({
   onSetAside: () => void;
 }) {
   const color = KIND_VAR[item.kind];
+  const art = <ArtWindow item={item} color={color} height={compact ? 56 : 96} />;
   return (
     <div className="relative w-full h-full rounded-modal p-[3px] shadow-elevation-4" style={{ background: ringGradient(color), boxShadow: `0 24px 60px -18px ${mix(color, 55)}` }}>
       <div className="relative w-full h-full rounded-modal bg-background overflow-hidden flex flex-col">
         <div className="absolute inset-[5px] rounded-card border pointer-events-none" style={{ borderColor: mix(color, 45) }} aria-hidden />
         <Filigree color={color} size={30} />
 
-        {/* Title band */}
-        <div
-          className="relative mx-4 mt-4 shrink-0 rounded-interactive border px-4 py-2.5 flex items-start gap-3"
-          style={{ borderColor: mix(color, 70), background: `linear-gradient(90deg, ${mix(color, 42, 'var(--background)')}, ${mix(color, 14, 'var(--background)')})` }}
-        >
-          <div className="min-w-0 flex-1">
-            <p className="typo-label uppercase tracking-wider text-foreground">{C.kind[item.kind]}</p>
-            <h2 className="typo-heading text-foreground leading-snug line-clamp-2">{item.title}</h2>
-          </div>
-          <span
-            className="shrink-0 grid place-items-center w-9 h-9 rotate-45 rounded-interactive border typo-data text-foreground"
-            style={{ borderColor: color, background: mix(color, 25, 'var(--background)') }}
-            aria-label={S.cardOf(index + 1, total)}
-          >
-            <span className="-rotate-45">{index + 1}</span>
-          </span>
-        </div>
+        <CardBody item={item} color={color} art={art} deckWaiting={waiting} onSend={onSend} />
 
-        <ArtWindow item={item} color={color} height={compact ? 64 : 104} />
-
-        {/* Text panel: the real card */}
-        <div
-          className="relative mx-4 mt-2 flex-1 min-h-0 overflow-y-auto scrollbar-thin rounded-card border p-4 bg-secondary/40"
-          style={{ borderColor: mix(color, 30) }}
-        >
-          <WorkItemBody item={item} onSend={onSend} />
-        </div>
-
-        <div className="relative mx-4 my-3 shrink-0 flex items-center justify-between gap-3">
+        <div className="relative mx-5 mb-3 mt-1 shrink-0 flex items-center">
           <button
             type="button"
             onClick={onSetAside}
-            className="rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
+            className="inline-flex items-center gap-2 rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
           >
             {S.setAside}
+            <kbd className="rounded border border-foreground/20 bg-foreground/[0.06] px-1.5 typo-caption font-mono text-foreground/90">
+              {S.keySpace}
+            </kbd>
           </button>
-          <span className="typo-caption text-foreground/85">{S.keysHint}</span>
         </div>
 
         {sheen && (

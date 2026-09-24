@@ -39,10 +39,17 @@
       "contexts": ["handler, a focus capture, or a restore effect. All four exist at `BaseModal.tsx:183-233`,"],
       "resolved": false
     },
+    "CapabilityRowHeader.tsx": {"count":1,"sections":[7],"lines":["32,39"],"contexts":["`CapabilityRowHeader.tsx:32,39` · `PersonaSelector.tsx:103` ·"],"resolved":false},
+    "CapabilityRowTabs.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["`CapabilityRowTabs.tsx:63` · `HealingIssuesPanel.tsx:186` ·"],"resolved":false},
     "CapabilityTagBar.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["- No arrows, no roving: `CapabilityTagBar.tsx:29` · `CapabilityTagSwitcher.tsx:67` ·"],"resolved":false},
+    "CommandPanelComposeStep.tsx": {"count":1,"sections":[7],"lines":["95,105"],"contexts":["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],"resolved":false},
+    "CommandPanelMessagingRow.tsx": {"count":1,"sections":[7],"lines":["158"],"contexts":["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],"resolved":false},
+    "CommandPanelToolsRow.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
+    "CommandPanelWhenRow.tsx": {"count":1,"sections":[7],"lines":["98"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
     "Composer.tsx": {"count":2,"sections":[7],"lines":["233","310"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
+    "DialogueComposePanel.tsx": {"count":1,"sections":[7],"lines":["155"],"contexts":["`PersonaSelectorModal.tsx:96` · `DialogueComposePanel.tsx:155` ·"],"resolved":false},
     "DriveImageLightbox.tsx": {"count":1,"sections":[7],"lines":["178"],"contexts":["`DriveImageLightbox.tsx:178` · `useTimelineKeyboard.ts:122` · `Gallery3D.tsx:90` ·"],"resolved":false},
     "DriveToolbar.tsx": {"count":1,"sections":[7],"lines":["144"],"contexts":["`DriveToolbar.tsx:144`, `TwinPicker.tsx:146`, `CommandPalette.tsx:74`,"],"resolved":false},
     "EventRenameModal.tsx": {"count":1,"sections":[7],"lines":["176"],"contexts":["`EventRenameModal.tsx:176`, `ApiKeyAuditDrawer.tsx:68` — open with focus still behind"],"resolved":false},
@@ -121,25 +128,6 @@
       "verbatim": "ReplaySandbox.tsx"
     },
     "src/features/agents/sub_executions/replay/TimelineScrubber.tsx": {"count":1,"sections":[7],"lines":["129"],"contexts":["`TeamCertCard.tsx:74` · `TimelinePanel.tsx:447` · `TimelineScrubber.tsx:129` ·"],"resolvedFrom":"basename","verbatim":"TimelineScrubber.tsx"},
-    "src/features/agents/sub_glyph/DialogueComposePanel.tsx": {"count":1,"sections":[7],"lines":["155"],"contexts":["`PersonaSelectorModal.tsx:96` · `DialogueComposePanel.tsx:155` ·"],"resolvedFrom":"basename","verbatim":"DialogueComposePanel.tsx"},
-    "src/features/agents/sub_glyph/commandPanel/CommandPanelComposeStep.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["95,105"],
-      "contexts": ["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "CommandPanelComposeStep.tsx"
-    },
-    "src/features/agents/sub_glyph/commandPanel/CommandPanelMessagingRow.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["158"],
-      "contexts": ["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "CommandPanelMessagingRow.tsx"
-    },
-    "src/features/agents/sub_glyph/commandPanel/CommandPanelToolsRow.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolvedFrom":"basename","verbatim":"CommandPanelToolsRow.tsx"},
-    "src/features/agents/sub_glyph/commandPanel/CommandPanelWhenRow.tsx": {"count":1,"sections":[7],"lines":["98"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolvedFrom":"basename","verbatim":"CommandPanelWhenRow.tsx"},
     "src/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -180,8 +168,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LabHistoryTable.tsx"
     },
-    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowHeader.tsx": {"count":1,"sections":[7],"lines":["32,39"],"contexts":["`CapabilityRowHeader.tsx:32,39` · `PersonaSelector.tsx:103` ·"],"resolvedFrom":"basename","verbatim":"CapabilityRowHeader.tsx"},
-    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowTabs.tsx": {"count":1,"sections":[7],"lines":["63"],"contexts":["`CapabilityRowTabs.tsx:63` · `HealingIssuesPanel.tsx:186` ·"],"resolvedFrom":"basename","verbatim":"CapabilityRowTabs.tsx"},
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {"count":1,"sections":[7],"lines":["242"],"contexts":["`N8nUploadStep.tsx:203` · `ChannelMap.tsx:242`."],"resolvedFrom":"basename","verbatim":"ChannelMap.tsx"},
     "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx": {
       "count": 1,

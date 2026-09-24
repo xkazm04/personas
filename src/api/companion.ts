@@ -2,7 +2,6 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
 import { EventName } from '@/lib/eventRegistry';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
-import type { DailyGoalsState } from '@/lib/bindings/DailyGoalsState';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
@@ -2234,41 +2233,6 @@ export async function companionRunSleepCycle(force?: boolean): Promise<SleepCycl
  */
 export async function companionGetSleepPressure(): Promise<SleepPressure> {
   return invoke<SleepPressure>('companion_get_sleep_pressure');
-}
-
-// ── Daily goals (dev-only gamification ritual) ─────────────────────────
-
-export type { DailyGoalsState };
-export type { DailyGoal } from '@/lib/bindings/DailyGoal';
-
-export async function companionDailyGoalsState(): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_state');
-}
-
-export async function companionDailyGoalsCreate(titles: string[]): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_create', { titles });
-}
-
-/**
- * Rewrite the active set's goal texts. An entry with `id: null` and a
- * non-empty title appends a goal to the set; an existing goal may not be
- * emptied (mark it done or discard the set instead).
- */
-export async function companionDailyGoalsUpdate(
-  edits: { id: string | null; title: string }[],
-): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_update', { edits });
-}
-
-export async function companionDailyGoalsToggle(
-  id: string,
-  done: boolean,
-): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_toggle', { id, done });
-}
-
-export async function companionDailyGoalsDiscard(): Promise<DailyGoalsState> {
-  return invoke<DailyGoalsState>('companion_daily_goals_discard');
 }
 
 /** Tauri event channel for streaming Claude CLI lines into the panel. */

@@ -4,14 +4,19 @@
  * On open the waiting cards fly in from the binder (each from its own
  * project's tile) and form a deck at the lower right. The top card lifts,
  * flips face up and travels to the centre, where it presents large in an
- * ornate collectible frame around the REAL `WorkItemBody`. When the operator
+ * ornate collectible frame around the card-native Oracle body (see
+ * `bodies/CardBody.tsx`). No hover tilt, no hover movement
+ * (owner, 2026-09-24): only the deal, the draw, the flip and the discard move.
+ * When the operator
  * acts (the item leaves `items`) or sets it aside, the card flips face down
  * and flies to the discard pile at the lower left, and the next card is drawn.
  * With the deck empty the pile sweeps away and the stage closes.
  *
- * Keys: Space/Enter draw the next card (the current one goes under the deck),
- * 1-9 draw that card from the deck, Esc (or Alt+W) returns the spread to the
- * binder. Reduced motion: every flight becomes a fade.
+ * Keys: Space draws the next card (the current one goes under the deck), Esc
+ * (or Alt+W) returns the spread to the binder. On a card with a native body,
+ * 1-9 / 0 / Enter belong to the card (pick, ask Athena, confirm); elsewhere
+ * Enter draws the next card and 1-9 draw that card from the deck. Reduced
+ * motion: every flight becomes a fade.
  *
  * TODO(prototype, 2026-09-23): consolidate the Athena chat switcher.
  */
@@ -25,7 +30,7 @@ import type { WorkItem, WorkItemKind } from '../../../useWorkforce';
 import { ATHENA_COLUMN } from '../../../useProcessColumns';
 import type { DecisionStageProps } from '../../slots';
 import { BINDER_ATTR, TILE_ATTR } from './BinderPanel';
-import { CardBack, CardFace, useCardTilt } from './CardFrame';
+import { CardBack, CardFace } from './CardFrame';
 import { mix } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
 
@@ -46,8 +51,10 @@ interface Pt {
   y: number;
 }
 
+export type SpreadStageProps = DecisionStageProps;
+
 /** The stage: nothing when closed, the spread when open. */
-export function SpreadStage(props: DecisionStageProps) {
+export function SpreadStage(props: SpreadStageProps) {
   return props.open ? <Spread {...props} /> : null;
 }
 
@@ -88,7 +95,7 @@ function useStageGeometry() {
   return { ref, size, originOf };
 }
 
-function Spread({ items, focusId, onFocus, onClose, onSend }: DecisionStageProps) {
+function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) {
   const { shouldAnimate } = useMotion();
   const { ref, size, originOf } = useStageGeometry();
 
@@ -296,6 +303,7 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: DecisionStageProps
                 <ActiveCard
                   key={active.id}
                   item={active}
+                  waiting={deck.length}
                   index={index}
                   total={total}
                   w={cardW}
@@ -376,7 +384,7 @@ function Deck({
           type="button"
           onClick={onDraw}
           aria-label={S.drawNext}
-          className="absolute inset-0 z-20 rounded-card focus-ring hover:-translate-y-1 transition-transform"
+          className="absolute inset-0 z-20 rounded-card focus-ring hover:ring-2 hover:ring-primary/40"
         />
       )}
       {deck.length > 0 && !leaving && (
@@ -438,6 +446,7 @@ function DiscardPile({ played, at, phase, width, animate }: { played: Played[]; 
 
 function ActiveCard({
   item,
+  waiting,
   index,
   total,
   w,
@@ -452,6 +461,7 @@ function ActiveCard({
   onSetAside,
 }: {
   item: WorkItem;
+  waiting: number;
   index: number;
   total: number;
   w: number;
@@ -465,7 +475,6 @@ function ActiveCard({
   onSend: (text: string) => void;
   onSetAside: () => void;
 }) {
-  const tilt = useCardTilt(animate);
   const [landed, setLanded] = useState(!animate);
   const small = DECK_W / w;
   const fromDeck = { x: deckPt.x - at.x, y: deckPt.y - at.y, scale: small, rotate: 10, rotateY: 180 };
@@ -504,23 +513,17 @@ function ActiveCard({
       role="group"
       aria-label={S.cardOf(index + 1, total)}
     >
-      <motion.div
-        className="absolute inset-0"
-        style={{ ...tilt.style, backfaceVisibility: 'hidden' }}
-        onPointerMove={tilt.onPointerMove}
-        onPointerLeave={tilt.onPointerLeave}
-      >
+      <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden' }}>
         <CardFace
           key={arrival}
           item={item}
-          index={index}
-          total={total}
+          waiting={waiting}
           compact={compact}
           sheen={animate && landed}
           onSend={onSend}
           onSetAside={onSetAside}
         />
-      </motion.div>
+      </div>
       <div className="absolute inset-0" style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }} aria-hidden>
         <CardBack color={KIND_VAR[item.kind]} />
       </div>

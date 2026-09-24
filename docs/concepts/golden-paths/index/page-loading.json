@@ -36,6 +36,13 @@
         "8. **Zero automated enforcement.** No ESLint rule, no check script, no test asserts any of the five laws; `UnifiedTable` has no test file. Contrast `custom/enforce-base-modal`, which does gate the mo…"
       ]
     },
+    "agents/sub_glyph/GlyphCinemaLayout.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["414-425"],
+      "contexts": ["| ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:414-425`~~ (deleted 2026-09-23 with the legacy build layouts) | Infinite framer-motion shimmer sweep. |"],
+      "resolved": false
+    },
     "overview/sub_health/components/PersonaHealthDashboard.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["| `overview/sub_health/components/PersonaHealthDashboard.tsx:149` | Centred `py-16` text block. |"],"resolved":false},
     "plugins/research-lab/sub_experiments/ExperimentRunsDrawer.tsx": {
       "count": 1,
@@ -176,14 +183,6 @@
       "contexts": ["| `agents/sub_executions/replay/ReplaySandbox.tsx:123` | Fixed `h-64` centred `Loader2`; drops transport controls. |"],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_executions/replay/ReplaySandbox.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["414-425"],
-      "contexts": ["| ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:414-425`~~ (deleted 2026-09-23 with the legacy build layouts) | Infinite framer-motion shimmer sweep. |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/GlyphCinemaLayout.tsx"
     },
     "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
       "count": 1,

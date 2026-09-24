@@ -3,10 +3,17 @@
  *
  * Typography carries provenance (the strategy the owner picked from the
  * Switchboard prototype): her words at `typo-body-lg` in full foreground on a
- * 68ch measure, yours at the same size but medium weight and muted, labels as
- * tracked uppercase kickers, everything machine-made reduced to a strip of
- * coloured ticks with no text at all. Clicking the strip, or the "set aside"
- * line, hands the turn to the nested layer, where there is room to read it.
+ * 68ch measure, yours at the same size but muted, labels as tracked uppercase
+ * kickers, everything machine-made reduced to a strip of coloured ticks with no
+ * text at all. Clicking the strip, or the "set aside" line, hands the turn to
+ * the nested layer, where there is room to read it.
+ *
+ * Layout rules (R4 polish): every part of a turn shares ONE measure, so the
+ * time lines up with the reply's right edge; the ask sits in its own grid
+ * column and wraps under itself, never pushing the time away, and in a narrow
+ * column (container query) it drops onto its own line under the kicker. The
+ * prose rhythm inside replies (`.athena-exchange` in globals.css) is set for
+ * `typo-body-lg`, not the smaller bubble size `.athena-chat-md` was tuned for.
  */
 
 import { memo, useMemo, useState } from 'react';
@@ -58,9 +65,13 @@ export const ExchangeTranscript = memo(function ExchangeTranscript({
   }, [turns]);
 
   return (
-    <div className={`mx-auto w-full ${measure === 'reading' ? 'max-w-[74ch]' : 'max-w-[96ch]'} space-y-7`}>
+    <div
+      className={`athena-exchange @container mx-auto w-full ${
+        measure === 'reading' ? 'max-w-[68ch]' : 'max-w-[92ch]'
+      } flex flex-col gap-9`}
+    >
       {hidden > 0 && (
-        <div className="flex justify-center">
+        <div className="flex justify-center -mb-2">
           <button
             type="button"
             onClick={() => setShown((n) => n + PAGE)}
@@ -120,48 +131,54 @@ function TurnBlock({
   // A quiet autonomous wake (machine rows, no words) collapses to its strip.
   if (!turn.ask && turn.replies.length === 0 && turn.asides.length === 0 && turn.machine.length === 0) return null;
 
+  // Narrow column (container query): the ask drops under the kicker.
   return (
     <section className="animate-fade-slide-in" data-testid="athena-next-turn">
-      <div className="flex items-baseline gap-3">
+      <div
+        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 @max-[34rem]:grid-cols-[minmax(0,1fr)_auto]`}
+      >
         <span
-          className={`typo-label uppercase tracking-wider shrink-0 ${
+          className={`typo-label uppercase tracking-wider ${
             turn.trigger === 'user' ? 'text-accent' : turn.trigger === 'proactive' ? 'text-brand-purple' : 'text-primary'
           }`}
         >
           {TRIGGER_LABEL[turn.trigger]}
         </span>
         {turn.ask && (
-          <p className="typo-body-lg text-muted-foreground whitespace-pre-wrap break-words min-w-0">
+          <p
+            className={`min-w-0 typo-body-lg text-muted-foreground whitespace-pre-wrap [overflow-wrap:anywhere] @max-[34rem]:order-last @max-[34rem]:col-span-2`}
+          >
             {turn.ask.content}
           </p>
         )}
         <RelativeTime
           timestamp={turn.createdAt}
-          className="ml-auto typo-caption text-muted tabular-nums shrink-0"
+          className={`col-start-3 @max-[34rem]:col-start-2 justify-self-end whitespace-nowrap typo-caption text-muted tabular-nums`}
         />
       </div>
 
       {turn.asides.map((a, i) => (
-        <p key={i} className="mt-2 pl-3 border-l-2 border-foreground/15 typo-body italic text-foreground/70 max-w-[68ch]">
+        <p key={i} className="mt-3 pl-3 border-l-2 border-foreground/15 typo-body italic text-foreground/70 [overflow-wrap:anywhere]">
           {a}
         </p>
       ))}
 
-      {turn.replies.map((r) => (
-        <div key={r.id} className="mt-3 typo-body-lg text-foreground max-w-[68ch] break-words athena-chat-md">
+      {turn.replies.map((r, i) => (
+        <div key={r.id} className={`${i === 0 ? 'mt-3.5' : 'mt-5'} typo-body-lg text-foreground min-w-0`}>
           <AssistantProse content={stripModelDirectives(r.content)} codeBlockActions />
         </div>
       ))}
 
       {(turn.machine.length > 0 || memories > 0 || summary) && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5">
           {turn.machine.length > 0 && <TickStrip turn={turn} onOpen={() => onOpenTurn(turn)} />}
           {memories > 0 && (
             <Tooltip content={C.memories(memories)}>
               <button
                 type="button"
                 onClick={() => onOpenTurn(turn)}
-                className="inline-flex items-center gap-1 typo-caption text-muted hover:text-foreground focus-ring rounded-interactive"
+                aria-label={C.memories(memories)}
+                className="inline-flex items-center gap-1 py-1 typo-caption text-muted tabular-nums hover:text-foreground focus-ring rounded-interactive"
               >
                 <Brain className="w-3.5 h-3.5" aria-hidden />
                 {memories}
@@ -172,24 +189,26 @@ function TurnBlock({
             <button
               type="button"
               onClick={onOpenWaiting}
-              className="inline-flex items-center gap-1.5 typo-caption text-accent hover:underline focus-ring rounded-interactive"
+              className="inline-flex items-start gap-1.5 py-1 text-left typo-caption text-accent hover:underline underline-offset-2 focus-ring rounded-interactive"
             >
-              <CornerDownRight className="w-3.5 h-3.5" aria-hidden />
-              {C.movedAside}:{' '}
-              {[
-                summary.approvals > 0 && C.approvalsN(summary.approvals),
-                summary.chatCards > 0 && C.cardsN(summary.chatCards),
-                summary.continuation && C.continues,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              <CornerDownRight className="w-3.5 h-3.5 shrink-0 translate-y-px" aria-hidden />
+              <span>
+                {C.movedAside}:{' '}
+                {[
+                  summary.approvals > 0 && C.approvalsN(summary.approvals),
+                  summary.chatCards > 0 && C.cardsN(summary.chatCards),
+                  summary.continuation && C.continues,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
             </button>
           )}
         </div>
       )}
 
       {lastReply && lastReply.id === lastReplyId && !streaming && (
-        <div className="mt-3">
+        <div className="mt-3.5">
           <AthenaChatTurnActions
             content={lastReply.content}
             priorUserMessage={turn.ask?.content ?? ''}
@@ -212,12 +231,12 @@ function TickStrip({ turn, onOpen }: { turn: Turn; onOpen: () => void }) {
         type="button"
         onClick={onOpen}
         aria-label={C.machineTicks(turn.machine.length)}
-        className="group inline-flex items-center gap-1 py-1.5 px-1 -mx-1 rounded-interactive hover:bg-foreground/[0.05] focus-ring"
+        className="group inline-flex flex-wrap items-center gap-1 py-1.5 px-1 -mx-1 rounded-interactive hover:bg-foreground/[0.05] focus-ring"
       >
         {shown.map((m) => (
           <span
             key={m.id}
-            className="block w-3 h-[5px] rounded-sm transition-transform group-hover:scale-y-150"
+            className="block w-3 h-[5px] rounded-sm transition-opacity opacity-85 group-hover:opacity-100"
             style={{ background: MACHINE_TONE[m.kind] }}
             aria-hidden
           />

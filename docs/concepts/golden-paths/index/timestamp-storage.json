@@ -10,7 +10,7 @@
   "ruleIds": [],
   "ruleIdsFrom": "none",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 144,
+  "citationCount": 143,
   "triggers": [
     "\"Add a `created_at` / `updated_at` / `expires_at` / `last_seen_at` column\"",
     "\"Prune rows older than N days\" / \"count executions in the last 24 hours\" / \"spend this month\"",
@@ -63,14 +63,6 @@
       "sections": [8],
       "contexts": [
         "1. **No Rust clock primitive exists.** This is upstream of ~800 write-side deviations. There is no `time.rs`/`clock.rs` anywhere in the Rust tree; the five `now`-shaped functions are module-private a…"
-      ],
-      "resolved": false
-    },
-    "daily_goals.rs": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
       ],
       "resolved": false
     },
@@ -423,7 +415,7 @@
       "sections": [5,7,9],
       "lines": ["304"],
       "contexts": [
-        "- **`Local::now()` anywhere near persistence** — 22 real calls. Quiet-hours / night-shift / daily-goal uses are legitimate (they model the user's wall clock); four are not: `src/logging.rs:109`, `src…"
+        "- **`Local::now()` anywhere near persistence** — 22 real calls. Quiet-hours / night-shift / daily-rollup uses are legitimate (they model the user's wall clock); four are not: `src/logging.rs:109`, `s…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "src/commands/credentials/auto_cred_browser.rs"
@@ -442,7 +434,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
+        "- `Local::now()` for quiet-hours / night-shift / daily rollup (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and are correct. `logg…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "overnight.rs"
@@ -491,7 +483,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
+        "- `Local::now()` for quiet-hours / night-shift / daily rollup (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and are correct. `logg…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "night_shift/mod.rs"
@@ -500,7 +492,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
+        "- `Local::now()` for quiet-hours / night-shift / daily rollup (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and are correct. `logg…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "quiet.rs"
@@ -509,7 +501,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
+        "- `Local::now()` for quiet-hours / night-shift / daily rollup (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and are correct. `logg…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "rollup.rs"
@@ -559,7 +551,7 @@
       "sections": [5,7,9],
       "lines": ["109","256","109,256"],
       "contexts": [
-        "- **`Local::now()` anywhere near persistence** — 22 real calls. Quiet-hours / night-shift / daily-goal uses are legitimate (they model the user's wall clock); four are not: `src/logging.rs:109`, `src…"
+        "- **`Local::now()` anywhere near persistence** — 22 real calls. Quiet-hours / night-shift / daily-rollup uses are legitimate (they model the user's wall clock); four are not: `src/logging.rs:109`, `s…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "src/logging.rs"
@@ -754,7 +746,7 @@
       "count": 1,
       "sections": [9],
       "contexts": [
-        "- `Local::now()` for quiet-hours / night-shift / daily-goals (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `daily_goals.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and a…"
+        "- `Local::now()` for quiet-hours / night-shift / daily rollup (`quiet.rs`, `night_shift/mod.rs`, `triggers.rs`, `rollup.rs`, `overnight.rs`) — these model the user's wall clock and are correct. `logg…"
       ],
       "resolved": false
     },

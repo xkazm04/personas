@@ -3,6 +3,8 @@
 // verdict, plus the aggregate scoreboard that tells whether dev mode is
 // earning its keep (dispatch→commit rate, merges, rescues, thumbs ratio).
 // The verdict is the experiment signal accumulated over days of use.
+// The row also carries the dev save-conversation-log key, so that dev-only
+// affordance shows exactly when the dev row does.
 import { useCallback, useEffect, useState } from 'react';
 import {
   ChevronDown,
@@ -17,6 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { DevConversationLogButton } from './DevConversationLogButton';
 import { useCompanionStore } from './companionStore';
 import {
   companionDevOpLedger,
@@ -150,6 +153,7 @@ export function DevOpLedger() {
           <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" aria-hidden />
         )}
       </button>
+        <DevConversationLogButton />
         <Tooltip content={c.dev_self_review_hint}>
           <button
             type="button"

@@ -7,8 +7,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { TWIN_SLOTS, type TwinSlotId } from '../shared/twinStatus';
-// TEMPORARY /contest scaffold — see experience/twinExperienceVariant.tsx.
-import { startCreateTwin } from '../experience/twinExperienceVariant';
+import { openTwinExperience } from '../experience';
 import { TwinCard } from './TwinCard';
 import { TwinHero } from './TwinHero';
 
@@ -61,7 +60,7 @@ export default function ProfilesAtelier() {
 
   // First run: no roster to show, so the explainer IS the page.
   if (!twinProfilesLoading && sorted.length === 0) {
-    return <TwinHero onCreate={startCreateTwin} />;
+    return <TwinHero onCreate={() => openTwinExperience({ mode: 'create' })} />;
   }
 
   return (
@@ -73,7 +72,7 @@ export default function ProfilesAtelier() {
           <h1 className="typo-heading-lg truncate">{twin.profiles.title}</h1>
           <p className="typo-caption">{twin.profiles.subtitle}</p>
         </div>
-        <Button onClick={startCreateTwin} variant="accent" accentColor="violet" className="shrink-0">
+        <Button onClick={() => openTwinExperience({ mode: 'create' })} variant="accent" accentColor="violet" className="shrink-0">
           <Plus className="w-4 h-4 mr-1.5" />
           {twin.profiles.newTwin}
         </Button>

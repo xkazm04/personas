@@ -1,7 +1,8 @@
 /**
  * ChatVariantHost — renders the chat prototype picked in the switcher: the
  * Frame · Halo layout with the Spread slots (right panel + decision stage, see
- * `frame/slots.ts`). Owner kept Spread and Current on 2026-09-23.
+ * `frame/slots.ts`). Owner kept Spread and Current on 2026-09-23 and picked the
+ * Oracle card body on 2026-09-24.
  * TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
  */
 
@@ -11,6 +12,7 @@ import { VariantFrame } from './frame/VariantFrame';
 import type { HaloSlots } from './frame/slots';
 import { HALO_C_SLOTS } from './frame/variants/c';
 
+// The Spread layout with the Oracle card body (owner's pick, 2026-09-24).
 const SLOTS: Record<Exclude<ChatVariant, 'current'>, HaloSlots> = {
   spread: HALO_C_SLOTS,
 };

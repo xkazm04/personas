@@ -4,6 +4,8 @@
  * spread: dealt from the binder to a deck, drawn one at a time into an ornate
  * collectible frame, discarded when resolved (contract: `../../slots.ts`).
  *
+ * The card body is Oracle (owner's pick 2026-09-24 over Ledger and Runes).
+ *
  * TODO(prototype, 2026-09-23): consolidate the Athena chat switcher.
  */
 
@@ -14,7 +16,7 @@ import { SpreadStage } from './SpreadStage';
 
 export const HALO_C_SLOTS: HaloSlots = {
   id: 'c',
-  label: SPREAD_COPY.label,
+  label: SPREAD_COPY.tab,
   RightPanel: BinderPanel,
   DecisionStage: SpreadStage,
 };

@@ -41,9 +41,13 @@ export const FRAME_LOOKS: Record<FrameLookId, FrameLook> = {
     // Placement inside `VariantFrame`'s full-app grid, never from the viewport
     // width: top and bottom are capped and centred in the centre column, the
     // centre piece fills the column's middle cell, the rails size to content.
+    // The top (her words) is a reading column: 736px, 20% under the 920px it
+    // shipped at, so a reply sits on a comfortable measure; the input keeps
+    // its old relation to it (about 0.87 of the top). The centre piece (Brain,
+    // report reader) keeps 920px: it holds documents, not a chat line.
     place: {
-      top: 'relative w-full max-w-[920px] mx-auto',
-      bottom: 'relative w-full max-w-[780px] mx-auto',
+      top: 'relative w-full max-w-[736px] mx-auto',
+      bottom: 'relative w-full max-w-[640px] mx-auto',
       left: 'relative self-center max-h-full',
       right: 'relative h-full min-h-0',
       center: 'absolute inset-0 mx-auto w-full max-w-[920px]',

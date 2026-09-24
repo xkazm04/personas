@@ -712,33 +712,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "close-informal": {}
       }
     },
-    "experience_opus": {
-      "create": {},
-      "suits": {},
-      "stage": {},
-      "mode": {},
-      "table": {},
-      "loot": {
-        "kind": {},
-        "stamp": {}
-      },
-      "pile": {},
-      "twinCard": {},
-      "style": {},
-      "topics": {
-        "tiers": {},
-        "drills": {},
-        "stories": {},
-        "takes": {},
-        "asks": {},
-        "lines": {},
-        "offClock": {}
-      },
-      "notices": {},
-      "keys": {},
-      "launch": {}
-    },
-    "experience_grok": {
+    "experience": {
       "forge": {},
       "table": {},
       "slots": {
@@ -747,20 +721,13 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "channels": {},
         "memories": {}
       },
-      "voice": {}
-    },
-    "experience_mirror": {
-      "create": {},
-      "rail": {},
-      "ask": {},
-      "answers": {},
-      "offer": {},
-      "whisper": {},
+      "dictation": {},
+      "offers": {},
       "sheet": {},
       "deck": {
         "tiers": {}
       },
-      "voice": {},
+      "studio": {},
       "notices": {},
       "launch": {}
     }

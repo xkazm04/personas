@@ -9,8 +9,8 @@ use std::fs;
 use std::sync::Arc;
 
 use super::addenda::{
-    autonomous_addendum_if_enabled, daily_goals_addendum, language_addendum,
-    onboarding_addendum_if_needed, progress_addendum,
+    autonomous_addendum_if_enabled, language_addendum, onboarding_addendum_if_needed,
+    progress_addendum,
 };
 use super::budget::PromptBlockSizes;
 use super::capabilities::{
@@ -201,10 +201,9 @@ pub async fn build_system_prompt_for_class(
     // the same opaque slot (non-English UI → explicit instruction; see
     // `language_addendum`).
     let autonomous_md = format!(
-        "{}{}{}{}",
+        "{}{}{}",
         autonomous_addendum_if_enabled(autonomous_mode),
         crate::companion::dev_mode::addendum_if_enabled(sys_db),
-        daily_goals_addendum(user_db),
         language_addendum(sys_db),
     );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();

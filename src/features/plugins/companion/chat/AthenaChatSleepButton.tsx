@@ -1,22 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { MoonStar } from 'lucide-react';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
-import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
-import Button from '@/features/shared/components/buttons/Button';
-import { useAnchoredPortalPosition } from '@/features/shared/components/forms/useAnchoredPortalPosition';
+import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import {
   companionGetSleepPressure,
   companionRunSleepCycle,
   type SleepPressure,
 } from '@/api/companion';
-
-const PANEL_WIDTH = 288;
 
 /**
  * Dev-only header button: force a sleep cycle now, and show what the
@@ -29,27 +22,33 @@ const PANEL_WIDTH = 288;
  * and staleness, and cannot bypass the single-flight guard, so pressing it
  * while a cycle runs answers `skipped` rather than starting a second pass.
  *
- * A click no longer fires the cycle: it opens a small anchored confirmation
- * (the question, the current pressure / last-cycle line, Run + Cancel). Esc or
- * a press outside closes it. The panel is portalled so a clipping header or a
- * floating frame piece cannot cut it off.
+ * A click no longer fires the cycle: it opens the shared `ConfirmPopover`
+ * (the question, the current pressure / last-cycle line, Run + Cancel), the
+ * same confirmation the Reset key uses. Esc or a press outside closes it.
  *
  * The component carries no environment gate itself — the call site in
  * `AthenaChatHeader` renders it behind `devModeAvailable`, the same debug-build
  * flag `DevConversationLogButton` sits behind.
  */
-export function AthenaChatSleepButton() {
+export function AthenaChatSleepButton({
+  className,
+  activeClassName = '',
+  iconClassName = 'w-4 h-4',
+}: {
+  /** The host header's key shape. Defaults to the Current header's amber dev key. */
+  className?: string;
+  activeClassName?: string;
+  iconClassName?: string;
+} = {}) {
   const { t, tx } = useTranslation();
   const c = t.plugins.companion;
   const addToast = useToastStore((s) => s.addToast);
   const [open, setOpen] = useState(false);
   const [pressure, setPressure] = useState<SleepPressure | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   // One in-flight gauge read at a time. The tooltip fires on hover AND focus,
   // and a mouse crossing the button raises both.
   const fetching = useRef(false);
-  const pos = useAnchoredPortalPosition(triggerRef, open, { flip: true, maxMenuHeight: 160, gap: 6 });
 
   /**
    * Read the gauge lazily, on intent. Never awaited by the render path: the
@@ -68,16 +67,6 @@ export function AthenaChatSleepButton() {
   }, []);
 
   const close = useCallback(() => setOpen(false), []);
-  useClickOutside([triggerRef, panelRef], open, close);
-  useAppKeyboard(
-    (e) => {
-      if (e.key !== 'Escape') return false;
-      e.preventDefault();
-      close();
-      return true;
-    },
-    { enabled: open, priority: OVERLAY_DISMISS_PRIORITY },
-  );
 
   const onRun = useCallback(async () => {
     try {
@@ -114,8 +103,6 @@ export function AthenaChatSleepButton() {
       })
     : null;
 
-  const left = pos ? Math.max(8, Math.min(pos.left + pos.width - PANEL_WIDTH, window.innerWidth - PANEL_WIDTH - 8)) : 0;
-
   return (
     <>
       {/* While the confirmation is open it owns the space below the key, so
@@ -133,49 +120,28 @@ export function AthenaChatSleepButton() {
           data-testid="companion-force-sleep-cycle"
           aria-haspopup="dialog"
           aria-expanded={open}
-          className={`p-1.5 rounded-interactive text-foreground hover:text-amber-400 hover:bg-amber-500/10 transition-colors focus-ring ${open ? 'text-amber-400 bg-amber-500/10' : ''}`}
+          className={
+            className
+              ? `grid place-items-center shrink-0 transition-colors focus-ring ${className} ${open ? activeClassName : ''}`
+              : `p-1.5 rounded-interactive text-foreground hover:text-amber-400 hover:bg-amber-500/10 transition-colors focus-ring ${open ? 'text-amber-400 bg-amber-500/10' : ''}`
+          }
           aria-label={label}
         >
-          <MoonStar className="w-4 h-4" />
+          <MoonStar className={iconClassName} />
         </button>
       </Tooltip>
-      {open &&
-        pos &&
-        createPortal(
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-label={label}
-            data-testid="companion-sleep-confirm"
-            style={{
-              top: pos.flipUp ? undefined : pos.top,
-              bottom: pos.flipUp ? window.innerHeight - pos.top : undefined,
-              left,
-              width: PANEL_WIDTH,
-            }}
-            className="fixed z-[9995] rounded-card border border-primary/15 bg-background shadow-elevation-4 p-3 space-y-3"
-          >
-            <div>
-              <p className="typo-body text-foreground">{c.sleep_cycle_confirm}</p>
-              {detail && <p className="typo-caption text-foreground/75 mt-1">{detail}</p>}
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={close}>
-                {t.common.cancel}
-              </Button>
-              <AsyncButton
-                variant="primary"
-                size="sm"
-                icon={<MoonStar className="w-3.5 h-3.5" />}
-                onClick={onRun}
-                data-testid="companion-sleep-confirm-run"
-              >
-                {c.sleep_cycle_confirm_run}
-              </AsyncButton>
-            </div>
-          </div>,
-          document.body,
-        )}
+      <ConfirmPopover
+        open={open}
+        anchorRef={triggerRef}
+        title={c.sleep_cycle_confirm}
+        detail={detail}
+        confirmLabel={c.sleep_cycle_confirm_run}
+        confirmIcon={<MoonStar className="w-3.5 h-3.5" />}
+        onConfirm={onRun}
+        onCancel={close}
+        testId="companion-sleep-confirm"
+        confirmTestId="companion-sleep-confirm-run"
+      />
     </>
   );
 }

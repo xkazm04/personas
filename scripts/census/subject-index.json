@@ -6187,7 +6187,6 @@
     "src/features/overview/sub_health/libs/compositeHealthScore.ts",
     "src/features/teams/sub_kpis/kpiMath.ts",
     "src-tauri/src/engine/kpi_derivation.rs",
-    "src/features/plugins/twin/shared/readinessGaps.ts",
     "src/features/plugins/dev-tools/sub_lifecycle/competitions/qualityScore.ts"
    ],
    "counter_evidence": [

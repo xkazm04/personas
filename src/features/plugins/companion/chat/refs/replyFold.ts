@@ -16,6 +16,8 @@ import { maskCode } from './codeMask';
 export const BASE_REPLY_SENTENCES = 3;
 
 const LIST_RE = /^\s*(?:[-*]\s+|\d+\.\s+)/;
+/** A markdown table row (header, divider or body). */
+const TABLE_RE = /^\s*\|/;
 const END_RE = /[.!?](?=\s|$)/g;
 
 interface Line {
@@ -102,8 +104,44 @@ export function foldAfterSentences(text: string, cap: number): { head: string; r
     i++;
   }
   if (cut < 0) return null;
+  cut = dropDanglingIntro(lines, keepTablesWhole(lines, cut));
+  if (cut < 0) return null;
   const head = text.slice(0, cut).trimEnd();
   const rest = text.slice(cut).trim();
   if (!head || !rest) return null;
   return { head, rest };
+}
+
+/**
+ * A cut must never land inside a markdown table: the head would render a table
+ * of just its header row (or header and divider) above "Read the rest". Such a
+ * cut moves back to just before the table, so the whole table folds away; a
+ * table that opens the reply means there is nothing sensible to fold (-1).
+ * Counting is untouched, so the fold still trips on exactly the replies the
+ * bench calls too long.
+ */
+function keepTablesWhole(lines: Line[], cut: number): number {
+  const at = lines.findIndex((l) => cut >= l.start && cut <= l.end);
+  if (at < 0 || !TABLE_RE.test(lines[at]!.masked)) return cut;
+  const next = lines[at + 1];
+  if (!next || !TABLE_RE.test(next.masked)) return cut; // the cut closes the table
+  let first = at;
+  while (first > 0 && TABLE_RE.test(lines[first - 1]!.masked)) first--;
+  return first > 0 ? lines[first - 1]!.end : -1;
+}
+
+/**
+ * A head that ends on a line introducing what follows ("Two options:") reads
+ * as a sentence cut in half above "Read the rest". Such a line folds away with
+ * what it introduces; if it is the only line, there is nothing to fold (-1).
+ */
+function dropDanglingIntro(lines: Line[], cut: number): number {
+  if (cut < 0) return cut;
+  const at = lines.findIndex((l) => cut >= l.start && cut <= l.end);
+  if (at < 0) return cut;
+  const line = lines[at]!;
+  if (cut !== line.end || !/:\s*$/.test(line.masked)) return cut;
+  let prev = at - 1;
+  while (prev >= 0 && !lines[prev]!.masked.trim()) prev--;
+  return prev >= 0 ? lines[prev]!.end : -1;
 }

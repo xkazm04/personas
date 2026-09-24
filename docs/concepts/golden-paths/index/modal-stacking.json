@@ -34,6 +34,15 @@
     "TagEditorModal.tsx": {"count":1,"sections":[7],"lines":["73"],"contexts":["`TagEditorModal.tsx:73`, `TextLane.tsx:51`, `ScanOverlay.tsx:31`,"],"resolved":false},
     "TextLane.tsx": {"count":1,"sections":[7],"lines":["51"],"contexts":["`TagEditorModal.tsx:73`, `TextLane.tsx:51`, `ScanOverlay.tsx:31`,"],"resolved":false},
     "UniversalModal.tsx": {"count":1,"sections":[10],"lines":["136"],"contexts":["`UniversalModal.tsx:136` registers its Escape handler with `{ capture: true }`"],"resolved":false},
+    "agents/sub_glyph/GlyphFullLayout.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["335"],
+      "contexts": [
+        "| ~~`agents/sub_glyph/GlyphFullLayout.tsx:335`~~ (deleted 2026-09-23 with the legacy build layouts) | `fixed inset-0 z-40 …` | **below** `Z_INDEX_BASE` (50) — any default modal paints over it |"
+      ],
+      "resolved": false
+    },
     "ascent/src/components/ui/Modal.tsx": {"count":1,"sections":[7],"lines":["85"],"contexts":["`ascent/src/components/ui/Modal.tsx:85`). This is the one clause on which"],"resolved":false},
     "eslint-rules/enforce-base-modal.cjs": {"count":2,"sections":[7],"lines":["63-73"],"contexts":["`eslint-rules/enforce-base-modal.cjs` and its `RuleTester` fixtures,"]},
     "eslint.config.js": {"count":3,"sections":[0,7,12],"lines":["95"],"contexts":["`custom/enforce-base-modal` is `\"warn\"` (`eslint.config.js:95`), fires **8**"]},
@@ -49,16 +58,6 @@
       "contexts": ["- `agents/quick-answer/triage/deck/useDeckDialog.tsx` — **the sanctioned"],
       "resolvedFrom": "suffix",
       "verbatim": "agents/quick-answer/triage/deck/useDeckDialog.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphFullLayout.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["335"],
-      "contexts": [
-        "| ~~`agents/sub_glyph/GlyphFullLayout.tsx:335`~~ (deleted 2026-09-23 with the legacy build layouts) | `fixed inset-0 z-40 …` | **below** `Z_INDEX_BASE` (50) — any default modal paints over it |"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/GlyphFullLayout.tsx"
     },
     "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx": {
       "count": 4,

@@ -4,27 +4,25 @@
  * whole conversation; a turn's tick strip opens that turn's detail in place.
  * The header row stays fixed in both states; only the words scroll.
  *
- * The dev row (the op ledger) and the one-at-a-time tool strips ride under the
- * keys exactly as they do under the Current header.
+ * The dev row (the op ledger, with the save-log key) rides under the keys
+ * exactly as it does under the Current header. The expanded conversation opens
+ * at the latest turn and follows new turns while you are at the bottom.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Square } from 'lucide-react';
 import type { CompanionMessage } from '@/api/companion';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { ConversationSwitcher } from '../../../ConversationSwitcher';
-import { DailyGoalsBar } from '../../../DailyGoalsBar';
 import { DevOpLedger } from '../../../DevOpLedger';
-import { FleetBoldnessDial } from '../../../FleetBoldnessDial';
 import { QueuedMessages } from '../../../QueuedMessages';
 import { QuickReplies } from '../../../QuickReplies';
 import { TypingDots } from '../../../TypingDots';
-import { WakeCadence } from '../../../WakeCadence';
 import { stripModelDirectives } from '../../../athenaLabels';
+import { useChatScroll } from '../../../useChatScroll';
 import { useCompanionStore } from '../../../companionStore';
-import type { ToolStrip } from '../../AthenaChatHeader';
 import type { AthenaChatEngine } from '../../athenaChatEngine';
 import { ExchangeTranscript } from '../ExchangeTranscript';
 import { TurnPane } from '../NextPanes';
@@ -62,9 +60,26 @@ export function FrameTop({
   const autonomous = useSystemStore((s) => s.companionAutonomousMode);
   const devMode = useSystemStore((s) => s.companionDevMode);
   const devAvailable = useCompanionStore((s) => s.devModeAvailable);
-  const [strip, setStrip] = useState<ToolStrip | null>(null);
   const [turn, setTurn] = useState<Turn | null>(null);
   const last = useMemo(() => latestReply(engine.messages), [engine.messages]);
+  const reading = expanded && !turn;
+  // The same bottom-aware pin the Current transcript uses: new turns follow
+  // the reader only while they are at the bottom.
+  const { scrollRef, scrollToBottom, maybeAutoScroll } = useChatScroll(reading);
+  // Where the reader was before opening a turn's detail, so "back" returns there.
+  const savedScroll = useRef<number | null>(null);
+
+  // Expanding lands at the latest turn, coming back from a turn's detail at the
+  // saved position. Before paint, so the jump is never seen.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!reading || !el) return;
+    const saved = savedScroll.current;
+    savedScroll.current = null;
+    if (saved === null) scrollToBottom('auto');
+    else el.scrollTop = saved;
+  }, [reading, scrollRef, scrollToBottom]);
+  useEffect(maybeAutoScroll, [engine.messages, engine.streaming, maybeAutoScroll]);
 
   return (
     <div className="h-full flex flex-col min-h-0">
@@ -78,21 +93,15 @@ export function FrameTop({
         />
         <ConversationSwitcher />
         <span className="flex-1" />
-        <FrameKeys
-          look={look}
-          strip={strip}
-          onStrip={(s) => setStrip((cur) => (cur === s ? null : s))}
-          expanded={expanded}
-          onExpand={onExpand}
-        />
+        <FrameKeys look={look} expanded={expanded} onExpand={onExpand} />
       </div>
-      <Collapse open={autonomous && strip === 'cadence'} unmountWhenClosed className="shrink-0"><WakeCadence /></Collapse>
-      <Collapse open={autonomous && strip === 'boldness'} unmountWhenClosed className="shrink-0"><FleetBoldnessDial /></Collapse>
-      <Collapse open={devAvailable && strip === 'goals'} unmountWhenClosed className="shrink-0"><DailyGoalsBar /></Collapse>
       <Collapse open={devAvailable && devMode} unmountWhenClosed className="shrink-0"><DevOpLedger /></Collapse>
 
       {expanded ? (
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-8 py-6 border-t border-foreground/10">
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-6 sm:px-9 pt-7 pb-8 border-t border-foreground/10"
+        >
           {turn ? (
             <>
               <button
@@ -111,7 +120,10 @@ export function FrameTop({
               streaming={engine.streaming}
               interactive={engine.initialized}
               onSend={engine.send}
-              onOpenTurn={setTurn}
+              onOpenTurn={(next) => {
+                savedScroll.current = scrollRef.current?.scrollTop ?? null;
+                setTurn(next);
+              }}
               onOpenWaiting={onOpenWaiting}
             />
           )}
