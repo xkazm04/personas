@@ -18,7 +18,7 @@
  *     user-facing list — it isn't theirs to manage.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3, History, CalendarClock, Globe, Unplug } from 'lucide-react';
+import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3, History, CalendarClock } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -40,37 +40,12 @@ import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-
-// A key is considered "stale" — i.e. probably forgotten — when it's older than
-// the grace window AND either never used or unused for the inactivity window.
-// Pulled out so the threshold is one obvious knob to tune later.
-const STALE_GRACE_DAYS = 7;
-const STALE_INACTIVE_DAYS = 30;
-const DAY_MS = 86_400_000;
-
-function isStaleKey(key: ExternalApiKey): boolean {
-  if (key.revoked_at !== null || !key.enabled) return false;
-  const now = Date.now();
-  const created = new Date(key.created_at).getTime();
-  if (isNaN(created) || now - created < STALE_GRACE_DAYS * DAY_MS) return false;
-  if (key.last_used_at === null) return true;
-  const lastUsed = new Date(key.last_used_at).getTime();
-  if (isNaN(lastUsed)) return false;
-  return now - lastUsed >= STALE_INACTIVE_DAYS * DAY_MS;
-}
-
-// Expiry display for a key. `null` = never expires; otherwise the whole-days
-// delta (negative once expired).
-function expiryInfo(key: ExternalApiKey): { expired: boolean; days: number } | null {
-  if (!key.expires_at) return null;
-  const exp = new Date(key.expires_at).getTime();
-  if (isNaN(exp)) return null;
-  return { expired: exp <= Date.now(), days: Math.ceil((exp - Date.now()) / DAY_MS) };
-}
 import { McpServerInfoPanel } from './McpServerInfoPanel';
 import { CreateApiKeyDialog } from './CreateApiKeyDialog';
 import { CreatedKeyDialog } from './CreatedKeyDialog';
 import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
+import { ConnectedAppsSection } from './ConnectedAppsSection';
+import { expiryInfo, isStaleKey, keyState, liveCount } from '../libs/keyLifecycle';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -89,7 +64,7 @@ const GHOST_BAR = 'rounded bg-primary/[0.06]';
 const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-52', 'w-32'];
 
 export default function ApiKeysSettings() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
 
   const [keys, setKeys] = useState<ExternalApiKey[] | null>(() => keysCache);
@@ -167,8 +142,10 @@ export default function ApiKeysSettings() {
   // Paired cloud-app keys (origin-bound) get their own "Connected apps" section;
   // everything else is a regular key.
   const regularKeys = visibleKeys.filter((k) => !k.bound_origin);
-  const pairedKeys = visibleKeys.filter((k) => !!k.bound_origin && !k.revoked_at);
-  const activeCount = visibleKeys.filter((k) => k.enabled && !k.revoked_at).length;
+  // "Live" means the server would accept the key right now (keyLifecycle mirrors
+  // find_by_token): an expired key is not counted, even though it is not revoked.
+  const unrevokedCount = visibleKeys.filter((k) => keyState(k) !== 'revoked').length;
+  const liveKeys = liveCount(visibleKeys);
 
   const handleDisconnect = useCallback(
     async (id: string) => {
@@ -190,7 +167,7 @@ export default function ApiKeysSettings() {
       <ContentHeader
         icon={<Key className="w-5 h-5 text-fuchsia-400" />}
         title={s.title}
-        subtitle={keys === null ? s.loading : `${activeCount} ${s.active_keys}`}
+        subtitle={keys === null ? s.loading : tx(s.live_of_total, { live: liveKeys, total: unrevokedCount })}
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="api_keys" />
@@ -261,28 +238,13 @@ export default function ApiKeysSettings() {
           </SectionCard>
         </div>
 
-        {pairedKeys.length > 0 && (
-          <div className="mt-6">
-            <SectionCard
-              title={s.connected_apps_title}
-              icon={<Globe className="w-4 h-4 text-sky-400" />}
-              titleClassName="text-primary"
-            >
-              <p className="typo-caption text-foreground mb-2">{s.connected_apps_desc}</p>
-              <div className="space-y-2">
-                {pairedKeys.map((key) => (
-                  <PairedAppRow
-                    key={key.id}
-                    apiKey={key}
-                    actioning={actioning === key.id}
-                    onDisconnect={() => handleDisconnect(key.id)}
-                    onAudit={() => setAuditTarget(key)}
-                  />
-                ))}
-              </div>
-            </SectionCard>
-          </div>
-        )}
+        <ConnectedAppsSection
+          keys={visibleKeys}
+          actioningId={actioning}
+          onDisconnect={(id) => void handleDisconnect(id)}
+          onAudit={setAuditTarget}
+          onRetired={() => void load()}
+        />
       </ContentBody>
 
       {showCreate && (
@@ -442,91 +404,6 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
             <>
               <Trash2 size={12} />
               {s.delete}
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-interface PairedAppRowProps {
-  apiKey: ExternalApiKey;
-  actioning: boolean;
-  onDisconnect: () => void;
-  onAudit: () => void;
-}
-
-/** A cloud app the user paired (origin-bound key) — shown in "Connected apps". */
-function PairedAppRow({ apiKey, actioning, onDisconnect, onAudit }: PairedAppRowProps) {
-  const { t, tx } = useTranslation();
-  const s = t.settings.api_keys;
-  const { armed: confirm, trigger: triggerDisconnect } = useConfirmClick(onDisconnect);
-  const expiry = expiryInfo(apiKey);
-  const lastUsed = formatRelativeTime(apiKey.last_used_at, s.never_used, { dateFallbackDays: 30 });
-
-  return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-secondary/20">
-      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">{apiKey.name}</span>
-          {expiry && (
-            <span
-              className={`typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
-                expiry.expired
-                  ? 'text-red-400 bg-red-400/10 border border-red-400/30'
-                  : 'text-foreground bg-secondary/40'
-              }`}
-            >
-              <CalendarClock size={10} />
-              {expiry.expired ? s.expired_chip : tx(s.expires_in, { days: expiry.days })}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3 mt-1">
-          <code
-            className="typo-code text-foreground truncate max-w-[16rem]"
-            title={apiKey.bound_origin ?? undefined}
-          >
-            {apiKey.bound_origin}
-          </code>
-          <span className="typo-caption text-foreground">·</span>
-          <span className="typo-caption text-foreground">
-            {s.last_used}: {lastUsed}
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={onAudit}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-          title={s.audit_tooltip}
-        >
-          <History size={12} />
-          {s.audit}
-        </button>
-        <button
-          type="button"
-          onClick={triggerDisconnect}
-          disabled={actioning}
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
-            confirm
-              ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
-              : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
-          }`}
-          title={s.connected_apps_revoke_tooltip}
-        >
-          {confirm ? (
-            <>
-              <Check size={12} />
-              {s.confirm_delete}
-            </>
-          ) : (
-            <>
-              <Unplug size={12} />
-              {s.connected_apps_revoke}
             </>
           )}
         </button>
