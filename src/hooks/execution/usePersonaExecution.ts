@@ -18,6 +18,7 @@ import { validatePayload, ExecutionStatusSchema, type ExecutionStatusPayload } f
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 import { getExecutionLogLines } from '@/api/agents/executions';
 import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
+import { BACKGROUND_FADE_MS, shouldAutoFade } from '@/features/agents/executionPlayer/backgroundRuns';
 
 /**
  * Page size for the reload recovery replay.
@@ -415,8 +416,8 @@ export function usePersonaExecution() {
         );
         if (isTerminalState(status)) {
           // `incomplete` (abandoned by a dead process) collapses to 'failed'
-          // here DELIBERATELY: this drives a transient badge that fades after
-          // 10 s, and the badge union has three arms. That is a display choice.
+          // here DELIBERATELY: this drives the mini player's background lane,
+          // whose union has three terminal arms. That is a display choice.
           //
           // It is not the same as the collapse in the reliability queries, where
           // `incomplete` is omitted from 14 of 22 terminal-set tests and the
@@ -424,9 +425,17 @@ export function usePersonaExecution() {
           // the spend predicate counts them. Do not cite this line as precedent
           // for that one.
           const mapped = status === 'completed' ? 'completed' : status === 'cancelled' ? 'cancelled' : 'failed';
+          // Stamps terminalAt on the first terminal status.
           store.updateBackgroundExecution(execId, mapped);
-          // Auto-remove after 10 seconds so the badge fades
-          setTimeout(() => { useAgentStore.getState().removeBackgroundExecution(execId); }, 10_000);
+          // Completed and cancelled lanes fade after the window; a failed lane
+          // stays until the user dismisses it. shouldAutoFade is read when the
+          // timer fires, against the lane as it is then.
+          setTimeout(() => {
+            const latest = useAgentStore.getState();
+            const lane = latest.backgroundExecutions.find((b) => b.executionId === execId);
+            if (lane && shouldAutoFade(lane, Date.now())) latest.removeBackgroundExecution(execId);
+            // Small margin: timer and wall clock can disagree by a few ms.
+          }, BACKGROUND_FADE_MS + 100);
           // Refresh execution list for the persona
           const personaId = store.selectedPersona?.id;
           if (personaId) store.fetchExecutions(personaId);
