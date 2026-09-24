@@ -20160,7 +20160,15 @@
       "tab_compose": "कंपोज़",
       "tab_routes": "रूट",
       "targets_subtitle": "कौन सा persona चलता है",
-      "targets_title": "लक्ष्य"
+      "targets_title": "लक्ष्य",
+      "last_fired": "अंतिम बार चला",
+      "never_fired": "कभी नहीं चला",
+      "pause_route": "रूट रोकें",
+      "proto_paused": "रुका हुआ",
+      "resume_dry_run_failed": "ड्राई-रन विफल, इसलिए रूट रुका रहेगा। {error}",
+      "resume_route": "रूट फिर से शुरू करें",
+      "route_paused": "रुका हुआ",
+      "route_toggle_failed": "यह रूट बदला नहीं जा सका"
     },
     "subscription_list": {
       "active": "सक्रिय",

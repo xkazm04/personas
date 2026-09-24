@@ -20160,7 +20160,15 @@
       "tab_compose": "Composer",
       "tab_routes": "Routes",
       "targets_subtitle": "Quel persona s’exécute",
-      "targets_title": "Cibles"
+      "targets_title": "Cibles",
+      "last_fired": "Dernier déclenchement",
+      "never_fired": "Jamais déclenchée",
+      "pause_route": "Mettre la route en pause",
+      "proto_paused": "en pause",
+      "resume_dry_run_failed": "Le test à blanc a échoué, la route reste en pause. {error}",
+      "resume_route": "Reprendre la route",
+      "route_paused": "En pause",
+      "route_toggle_failed": "Impossible de modifier cette route"
     },
     "subscription_list": {
       "active": "Actif",

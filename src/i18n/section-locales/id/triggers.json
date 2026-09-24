@@ -731,7 +731,15 @@
     "tab_compose": "Kompos",
     "tab_routes": "Rute",
     "targets_subtitle": "Persona mana yang berjalan",
-    "targets_title": "Target"
+    "targets_title": "Target",
+    "last_fired": "Terakhir dipicu",
+    "never_fired": "Belum pernah dipicu",
+    "pause_route": "Jeda rute",
+    "proto_paused": "dijeda",
+    "resume_dry_run_failed": "Uji coba gagal, jadi rute tetap dijeda. {error}",
+    "resume_route": "Lanjutkan rute",
+    "route_paused": "Dijeda",
+    "route_toggle_failed": "Gagal mengubah rute ini"
   },
   "subscription_list": {
     "active": "Aktif",

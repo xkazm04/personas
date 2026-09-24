@@ -20160,7 +20160,15 @@
       "tab_compose": "Skládat",
       "tab_routes": "Trasy",
       "targets_subtitle": "Která persona se spustí",
-      "targets_title": "Cíle"
+      "targets_title": "Cíle",
+      "last_fired": "Naposledy spuštěno",
+      "never_fired": "Nikdy nespuštěno",
+      "pause_route": "Pozastavit trasu",
+      "proto_paused": "pozastaveno",
+      "resume_dry_run_failed": "Zkušební běh selhal, trasa zůstává pozastavená. {error}",
+      "resume_route": "Obnovit trasu",
+      "route_paused": "Pozastaveno",
+      "route_toggle_failed": "Trasu se nepodařilo změnit"
     },
     "subscription_list": {
       "active": "Aktivní",

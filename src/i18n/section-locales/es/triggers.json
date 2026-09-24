@@ -731,7 +731,15 @@
     "tab_compose": "Componer",
     "tab_routes": "Rutas",
     "targets_subtitle": "Qué persona se ejecuta",
-    "targets_title": "Destinos"
+    "targets_title": "Destinos",
+    "last_fired": "Última activación",
+    "never_fired": "Nunca activada",
+    "pause_route": "Pausar ruta",
+    "proto_paused": "en pausa",
+    "resume_dry_run_failed": "La prueba falló, así que la ruta sigue en pausa. {error}",
+    "resume_route": "Reanudar ruta",
+    "route_paused": "En pausa",
+    "route_toggle_failed": "No se pudo cambiar esta ruta"
   },
   "subscription_list": {
     "active": "Activo",

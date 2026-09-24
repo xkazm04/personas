@@ -11850,6 +11850,14 @@ export type Translations = {
       ghost_dry_run_failed: string;
       ghost_not_enough_signal: string;
       ghost_miner_off: string;
+      proto_paused: string;
+      route_paused: string;
+      pause_route: string;
+      resume_route: string;
+      last_fired: string;
+      never_fired: string;
+      route_toggle_failed: string;
+      resume_dry_run_failed: string;
     };
     subscription_list: {
       active: string;

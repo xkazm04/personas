@@ -731,7 +731,15 @@
     "tab_compose": "작성",
     "tab_routes": "경로",
     "targets_subtitle": "실행할 페르소나",
-    "targets_title": "대상"
+    "targets_title": "대상",
+    "last_fired": "마지막 실행",
+    "never_fired": "실행된 적 없음",
+    "pause_route": "경로 일시 중지",
+    "proto_paused": "일시 중지됨",
+    "resume_dry_run_failed": "드라이 런에 실패하여 경로가 일시 중지 상태로 유지됩니다. {error}",
+    "resume_route": "경로 재개",
+    "route_paused": "일시 중지됨",
+    "route_toggle_failed": "이 경로를 변경할 수 없습니다"
   },
   "subscription_list": {
     "active": "활성",

@@ -20160,7 +20160,15 @@
       "tab_compose": "Компоновка",
       "tab_routes": "Маршруты",
       "targets_subtitle": "Какая персона запускается",
-      "targets_title": "Цели"
+      "targets_title": "Цели",
+      "last_fired": "Последний запуск",
+      "never_fired": "Ни разу не запускался",
+      "pause_route": "Приостановить маршрут",
+      "proto_paused": "на паузе",
+      "resume_dry_run_failed": "Пробный запуск не прошёл, маршрут остаётся на паузе. {error}",
+      "resume_route": "Возобновить маршрут",
+      "route_paused": "На паузе",
+      "route_toggle_failed": "Не удалось изменить маршрут"
     },
     "subscription_list": {
       "active": "Активные",

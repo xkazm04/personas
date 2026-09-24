@@ -20160,7 +20160,15 @@
       "tab_compose": "Komponieren",
       "tab_routes": "Routen",
       "targets_subtitle": "Welche Persona ausgeführt wird",
-      "targets_title": "Ziele"
+      "targets_title": "Ziele",
+      "last_fired": "Zuletzt ausgelöst",
+      "never_fired": "Nie ausgelöst",
+      "pause_route": "Route pausieren",
+      "proto_paused": "pausiert",
+      "resume_dry_run_failed": "Testlauf fehlgeschlagen, die Route bleibt pausiert. {error}",
+      "resume_route": "Route fortsetzen",
+      "route_paused": "Pausiert",
+      "route_toggle_failed": "Route konnte nicht geändert werden"
     },
     "subscription_list": {
       "active": "Aktiv",

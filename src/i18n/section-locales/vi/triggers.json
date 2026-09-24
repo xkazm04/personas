@@ -731,7 +731,15 @@
     "tab_compose": "Soạn",
     "tab_routes": "Tuyến",
     "targets_subtitle": "Persona nào chạy",
-    "targets_title": "Mục tiêu"
+    "targets_title": "Mục tiêu",
+    "last_fired": "Lần kích hoạt gần nhất",
+    "never_fired": "Chưa từng kích hoạt",
+    "pause_route": "Tạm dừng tuyến",
+    "proto_paused": "tạm dừng",
+    "resume_dry_run_failed": "Chạy thử thất bại nên tuyến vẫn tạm dừng. {error}",
+    "resume_route": "Tiếp tục tuyến",
+    "route_paused": "Đã tạm dừng",
+    "route_toggle_failed": "Không thể thay đổi tuyến này"
   },
   "subscription_list": {
     "active": "Đang hoạt động",
