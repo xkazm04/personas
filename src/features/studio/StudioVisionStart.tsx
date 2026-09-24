@@ -75,6 +75,11 @@ export default function StudioVisionStart({
   }, [probe]);
   const bunMissing = bunState === 'missing';
   const bunUnknown = bunState === 'unknown';
+  // The backend's verdict on the name (the scaffold's own rule); submit waits
+  // for it, so a taken or unusable name can never be sent. Called above the
+  // `busy` return: Classic keeps this form mounted while it creates, and a hook
+  // after an early return changes the hook count and crashes the form.
+  const { problem, checking } = useNameCheck(name);
 
   if (busy) {
     return (
@@ -97,9 +102,6 @@ export default function StudioVisionStart({
     if (!name.trim()) void freeName(s.name).then(setName);
   };
 
-  // The backend's verdict on the name (the scaffold's own rule); submit waits
-  // for it, so a taken or unusable name can never be sent.
-  const { problem, checking } = useNameCheck(name);
   const canSubmit = name.trim().length > 0 && vision.trim().length > 0 && !problem && !checking;
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto px-6 py-8">

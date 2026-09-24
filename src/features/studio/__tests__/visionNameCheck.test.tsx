@@ -50,6 +50,17 @@ describe('the new-project form', () => {
     await waitFor(() => expect((screen.getByTestId('studio-vision-name') as HTMLInputElement).value).toBe('portfolio-2'));
   });
 
+  it('survives busy flipping on and off (the name check must not sit after the early return)', () => {
+    // Classic keeps the form mounted while it creates: busy flips on the same
+    // instance, and a hook placed after `if (busy) return` changes the hook
+    // count and throws "Rendered fewer hooks than expected".
+    const r = render(<StudioVisionStart onSubmit={vi.fn()} busy={false} error={null} />);
+    expect(() => r.rerender(<StudioVisionStart onSubmit={vi.fn()} busy error={null} />)).not.toThrow();
+    expect(screen.getByText('setting_up')).toBeTruthy();
+    expect(() => r.rerender(<StudioVisionStart onSubmit={vi.fn()} busy={false} error={null} />)).not.toThrow();
+    expect(screen.getByTestId('studio-vision-name')).toBeTruthy();
+  });
+
   it('shows a create failure inside the form', () => {
     render(<StudioVisionStart onSubmit={vi.fn()} busy={false} error="project directory already exists" />);
     expect(screen.getByTestId('studio-vision-error').textContent).toContain('project directory already exists');
