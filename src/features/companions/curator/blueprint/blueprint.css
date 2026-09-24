@@ -76,7 +76,7 @@
   /* top, verdict, the operator console, the stage, the foot. The console
      row is always present (its slot element is always rendered) so the
      placement below it never depends on whether a host passed one. */
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, max-content) auto minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr);
   position: relative;
   overflow: hidden;
@@ -92,7 +92,7 @@
    in every PHASE" rule is untouched: a layer is not a phase, and the deep
    layer is a transient the operator dismisses. */
 .cb-root[data-layer='deep'] {
-  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto;
+  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto 0fr;
 }
 .cb-root[data-layer='deep'] .cb-verdict,
 .cb-root[data-layer='deep'] .cb-console-slot {
@@ -1672,6 +1672,17 @@
   .cb-root .cb-grp {
     padding-top: 3px;
     padding-bottom: 2px;
+  }
+}
+/* Tall viewports: the one region that can honestly use the room does.
+   The lane's 148px cap is a scroll at five requests whatever the window is; a
+   tall window has the space to show the queue whole, and the queue is the one
+   thing on this page whose length is the operator's own doing. Nothing else
+   grows - a 16-row plan is 16 rows, and filling 2,000px with invented height
+   would be this page telling a different kind of lie. */
+@media (min-height: 1200px) {
+  .cb-root .cb-lane-rows {
+    max-height: 340px;
   }
 }
 @media (max-height: 700px) {
