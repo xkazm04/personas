@@ -327,8 +327,13 @@
   --blur-modal: 12px;
   --blur-popover: 8px;
   --blur-tooltip: 4px;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* Fonts name what ships. 'Inter' and 'JetBrains Mono' stood first here and
+     were never loaded (no @font-face, no bundled file), so every machine without
+     them installed rendered system-ui (Segoe UI on Windows) and the browser's
+     monospace (Consolas). Sans keeps that face; mono moves to Cascadia Mono,
+     which ships with Windows 11 (Gate 0, 2026-09-24). */
+  --font-sans: system-ui, 'Segoe UI Variable Text', 'Segoe UI', -apple-system, sans-serif;
+  --font-mono: 'Cascadia Mono', Consolas, 'Fira Code', ui-monospace, monospace;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
