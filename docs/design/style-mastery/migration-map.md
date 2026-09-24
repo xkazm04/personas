@@ -1,4 +1,35 @@
-# Style migration map (WP4 worklist) - DRAFT for Gate 0
+# Style migration map (WP4 worklist)
+
+## Status after Gate 0 and WP4a (2026-09-24)
+
+Gate 0 decided the scope (doctrine.md section 0). WP4a applied the foundation in
+the D6 order, one commit per step:
+
+| step | what | commit | status |
+|---|---|---|---|
+| 1 | Delete dead overrides (7a), `scripts/style/codemod-dead-overrides.mjs` | `937854f7d` | DONE: 2,777 in 977 files; 51 sites in 28 dirty files skipped |
+| 2 | typography.css tokens into `@layer components` | `266c05551` | DONE: 633 of 638 probed cases identical in 33 contexts |
+| 3 | One text-scale factor; section title 1.25rem; label/code 0.875rem | `af9f8d33a` | DONE |
+| 4 | Fonts: Segoe UI named, mono Cascadia Mono | `175bd169d` | DONE |
+| 5 | Phantoms (section 2) mapped, 14 inert variants deleted, `typo-eyebrow` defined | `5e5cd9ca5` | DONE: 105 in 46 files |
+| 6 | Accent roles bound in every theme, `@theme` bridge, check:themes grades them | `6528f44d3` | DONE: roles unused yet |
+| - | Recolour (section 1 "tint removed", 198 sites) | - | REJECTED at Gate 0 |
+| - | Retire `typo-submodule-header` / `typo-card-label`, drop the glow | - | REJECTED at Gate 0 |
+| - | Muting (section 3) | - | NOT DONE by decision (module gates) |
+| - | Eyebrow composites -> `typo-eyebrow`, palette steps, `accentColor`, ContentTone | - | WP4b / module gates |
+
+Corrections the codemod's multi-context probe made to section 7 (which was
+measured in dark-midnight at Standard only): 5 of the "dead" colour cases are
+live in light or dark-matrix themes because an unlayered repair rule
+(`[data-theme^="light"] .text-x`) beats the token there; 2 of WP1's dead pairs
+were `placeholder:` / `[&_p]:` variants that target another element. And 7c's
+three hue-intent sites are `PocketVoicePanel.tsx:292 text-amber-300`,
+`DriveSignaturesPanel.tsx:220 hover:text-cyan-200` and
+`GraphPanel.tsx:333 group-hover:text-violet-300`, deleted to keep the look in the
+themes where they were dead; the module gates choose their role.
+
+The sections below are the WP1 measurement as it was made, kept for the module
+gates.
 
 Spark `style-unification`, WP1. Old -> new for every type token, every phantom,
 every muting form, `Button accentColor`, `ContentTone` and the top 20 raw palette
@@ -227,15 +258,17 @@ overrides are `text-foreground(/N)` or `text-primary`, which recolour makes true
 
 ## 8. The D6 order, and where it matters
 
-1. **Delete dead overrides** (7a). Visible change: none, by construction.
+1. **Delete dead overrides** (7a). Visible change: none, by construction. DONE `937854f7d`.
 2. **Move typography.css into `@layer components`.** Visible change: none IF step 1
-   ran; otherwise the 2,137 order-sensitive sites below all change at once.
+   ran; otherwise the 2,137 order-sensitive sites below all change at once. DONE `266c05551`.
 3. **Recolour** (tokens decline colour; caption keeps its default). Visible: the 198
-   sites in section 1, nothing else.
+   sites in section 1, nothing else. REJECTED at Gate 0.
 4. **Map phantoms and retired tokens.** AFTER step 2: mapped onto a still-unlayered
    token, every utility beside a phantom (live today, because the phantom sets
-   nothing) would go dead. After the layer move they stay live.
+   nothing) would go dead. After the layer move they stay live. Phantoms DONE
+   `5e5cd9ca5`; retiring tokens REJECTED at Gate 0.
 5. **Accent roles** (bridge, then palette / accentColor / ContentTone rewrites).
+   Tokens and bridge DONE `6528f44d3`; rewrites are WP4b and the module gates.
 
 **Order-sensitive sites: 2,137** (dead today AND a different value once alive:
 weight 1,532, leading 403, tracking 103, colour 92, size 7). All are listed per pair

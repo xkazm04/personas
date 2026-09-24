@@ -35,56 +35,80 @@
 ## 2. Typography
 
 Defined in **`src/styles/typography.css`**. Use semantic `.typo-*` classes, not
-raw Tailwind text-size combos (`custom/no-raw-text-classes` warns).
+raw Tailwind text-size combos (`custom/no-raw-text-classes` warns). Gate 0
+(2026-09-24) decided the current system; doctrine and history:
+`docs/design/style-mastery/doctrine.md`.
 
-> **Weight is a signal, not decoration.** Body and secondary prose — `typo-body`,
-> `typo-caption`, `typo-code` — sit at **400**, because they are what most of the
+> **Weight is a signal, not decoration.** Body and secondary prose (`typo-body`,
+> `typo-caption`, `typo-code`) sit at **400**, because they are what most of the
 > app is made of. Weight climbs only when something earns it: 600 for titles and
-> section headers, 700 for headings, hero, and labels. If a description renders
-> as heavy as the title above it, the hierarchy is gone and both stop reading as
-> emphasis. When a caption needs to stand out, promote it to `typo-title` — do
-> not add a `font-*` utility, which silently loses to these unlayered rules (§2
-> gotcha below).
+> section headers, 700 for headings, hero, labels and eyebrows. If a description
+> renders as heavy as the title above it, the hierarchy is gone. When a caption
+> needs to stand out, promote it to `typo-title` rather than adding a `font-*`
+> utility: the utility now applies (§2 cascade below), but it is a second voice
+> where a token already exists.
 
-| Class | Size (default scale) | Weight | Line-height | Notes |
+Sizes are `calc(step * --type-f)`: a seven-step ramp times ONE factor per text
+scale. The sizes below are at the default **Standard** scale (`larger`, 16.5px
+root, factor 1).
+
+| Class | Size (Standard) | Weight | Line-height | Notes |
 |---|---|---|---|---|
-| `typo-hero` | 2.25rem (text-4xl) | 700 | 1.15 | Page greeting; `-0.015em` tracking |
-| `typo-heading-lg` | 1.25rem (text-xl) | 700 | 1.3 | Page-level headings |
-| `typo-heading` | 0.875rem (text-sm) | 700 | 1.4 | Section titles, card headers |
-| `typo-submodule-header` | 1.25rem | 600 | 1.3 | Agent submodule dividers; primary-tinted |
-| `typo-section-title` | 1.125rem | 600 | 1.3 | Section dividers; primary-tinted (dark) / neutral (light) |
-| `typo-title` | 0.875rem | 600 | 1.4 | Form-element labels, list-item headlines; primary-tinted |
-| `typo-title-lg` | 1rem | 600 | 1.45 | Content headlines |
-| `typo-body` | 0.875rem (text-sm) | 400 | 1.65 | Paragraphs, descriptions |
-| `typo-body-lg` | 1rem (text-base) | 400 | 1.7 | Prominent descriptions |
-| `typo-caption` | 0.875rem | 400 | 1.5 | Secondary text; **normal weight on purpose** — same size as `typo-title`, so weight must not compete with it (2026-08-06, was 500). Color = 70% foreground via `@layer base` so explicit `text-*` utilities still win |
-| `typo-label` | 0.75rem (text-xs) | 600 | 1.4 | Sentence case, `0.01em` tracking; the small strong tier — badges, chips, dividers, column headers. **Not for sentences** (2026-08-07, was 700/UPPERCASE/`0.15em`/lh 1): anything ~6+ words or that wraps is secondary prose and belongs on `typo-caption`. `uppercase` works as an opt-in utility again now that the token sets no `text-transform`, but house style is sentence case |
-| `typo-data` | 0.875rem | 500 | 1.4 | Numbers/metrics; tabular + lining nums |
-| `typo-data-lg` | 1.5rem (text-2xl) | 700 | 1.2 | Hero metrics, big counters |
-| `typo-code` | 0.75rem | 400 | 1.5 | `--font-mono`; slashed zero, ligatures off |
-| `typo-card-label` | 0.875rem | 600 | 1.3 | Theme-adaptive card label with primary text-shadow glow (dark) / subtle shadow (light) |
+| `typo-hero` | 2.75rem (step 6) | 700 | 1.15 | Page greeting; `-0.015em` tracking |
+| `typo-heading-lg` | 1.5rem (step 4) | 700 | 1.3 | Page or modal title |
+| `typo-submodule-header` | 1.25rem (step 3) | 600 | 1.3 | Agent submodule dividers; primary-tinted |
+| `typo-section-title` | 1.25rem (step 3) | 600 | 1.3 | Section dividers; primary-tinted (dark) / 80% foreground (light). Was 1.125rem until Gate 0 |
+| `typo-title-lg` | 1.125rem (step 2) | 600 | 1.45 | Content headline; primary-tinted |
+| `typo-body-lg` | 1.125rem (step 2) | 400 | 1.7 | Lead prose |
+| `typo-heading` | 1rem (step 1) | 700 | 1.4 | Card and panel heads |
+| `typo-title` | 1rem (step 1) | 600 | 1.4 | Name of a thing in a row or field; primary-tinted |
+| `typo-body` | 1rem (step 1) | 400 | 1.65 | Paragraphs, descriptions |
+| `typo-caption` | 1rem (step 1) | 400 | 1.5 | Secondary text; **normal weight on purpose**. Color = 70% foreground via `@layer base`, so a `text-*` beside it wins |
+| `typo-data` | 1rem (step 1) | 500 | 1.4 | Numbers/metrics; tabular + lining nums |
+| `typo-data-lg` | 1.75rem (step 5) | 700 | 1.2 | Lead metric |
+| `typo-label` | 0.875rem (step 0) | 600 | 1.4 | Sentence case, `0.01em`; badges, chips, column heads. **Not for sentences**: ~6+ words or wrapping text is `typo-caption` |
+| `typo-eyebrow` | 0.875rem (step 0) | 700 | 1.4 | NEW (Gate 0): tracked (`0.06em`) uppercase head of a section inside a surface. Colourless. Replaces hand-composed `typo-* uppercase tracking-*` as modules migrate |
+| `typo-code` | 0.875rem (step 0) | 400 | 1.5 | `--font-mono` (Cascadia Mono); slashed zero, ligatures off |
+| `typo-card-label` | 0.875rem (step 0) | 600 | 1.3 | Theme-adaptive card label with primary text-shadow glow (dark) / subtle shadow (light) |
+
+Nothing sits below step 0 (0.875rem) at Standard. The tinted tokens
+(`typo-title`, `typo-title-lg`, `typo-section-title`, `typo-submodule-header`,
+`typo-card-label`) keep their colour: removing it was considered and rejected at
+Gate 0.
 
 Composable feature presets: `.font-data` (tabular+lining nums), `.font-code`
-(slashed zero), `.font-display` (kern+liga+calt), `.font-smallcaps`.
+(slashed zero), `.font-display` (kern+liga+calt), `.font-smallcaps`. Modifier:
+`.typo-weight-light` (unlayered, beats the token weight and any `font-*`).
 
-**Text scale & density.** All `typo-*` sizes re-map under
-`[data-text-scale="compact|default|large|larger|xl"]` (root font-size 13 / 14 /
-15 / 16.5 / 18 px — set by the Appearance setting; overrides in both
-typography.css and globals.css). `[data-density="compact|cozy"]` also adjusts
-`typo-body`/`typo-body-lg` line-height. Never assume a fixed pixel size.
+**Text scale & density.** `[data-text-scale]` sets the root font-size (large 15,
+larger 16.5, xl 18 px; the retired compact 13 and default 14 keep their rules)
+AND one factor `--type-f` (0.9375 / 1 / 1.0625; 0.8125 / 0.875). Body-sized
+tokens render 14.06 / 16.5 / 19.13 px, and a caption is never smaller than body.
+`[data-density="compact|cozy"]` also adjusts `typo-body`/`typo-body-lg`
+line-height. Never assume a fixed pixel size.
+
+**Fonts.** `--font-sans` = `system-ui, 'Segoe UI Variable Text', 'Segoe UI',
+-apple-system, sans-serif` (renders Segoe UI on Windows); `--font-mono` =
+`'Cascadia Mono', Consolas, 'Fira Code', ui-monospace, monospace`. No web font is
+bundled: 'Inter' and 'JetBrains Mono' were named here and never loaded, so they
+were removed at Gate 0.
 
 **Language awareness.** `[data-lang]` on `<html>` selects the font stack
-(`Noto Sans SC/JP/KR/Arabic/Devanagari/Bengali` fall back to `--font-sans` =
-Inter). CJK/Devanagari/Arabic get taller line-heights; Arabic and CJK
-`typo-label` drop letter-spacing entirely. Don't fight these overrides in
-components.
+(`Noto Sans SC/JP/KR/Arabic/Devanagari/Bengali` fall back to `--font-sans`).
+CJK/Devanagari/Arabic get taller line-heights; Arabic and CJK `typo-label` and
+`typo-eyebrow` drop letter-spacing (and the eyebrow its uppercase). Don't fight
+these overrides in components.
 
-> **⚠ Unlayered-tokens gotcha:** most `.typo-*` rules are *unlayered* CSS, which
-> beats Tailwind's layered utilities in the cascade. A utility patch like
-> `text-lg` on an element that already has `typo-heading` **silently fails**.
-> To change a token's look, restyle it in `typography.css` itself (or add a new
-> token) — never patch over it with utilities. (Exception: `typo-caption`'s
-> *color* intentionally lives in `@layer base` so `text-*` utilities can win.)
+> **Cascade (since 2026-09-24):** the `.typo-*` tokens live in
+> `@layer components`, below Tailwind's `utilities`. A utility beside a token
+> **wins**: `typo-heading text-lg` renders the larger size, `typo-caption
+> font-semibold` renders 600, and a `text-*` beside a tinted token replaces its
+> tint. That is why a patch is now a real choice, not a no-op: prefer the token
+> that already says it, and never add a `text-*` colour to a tinted title just to
+> repeat what it is. Still unlayered (they beat utilities): the text-scale rules
+> for `.text-xs` / `.text-sm` / `.text-[Npx]` in globals.css, `.typo-weight-light`,
+> `.fleet-typescale` overrides. `[&_x]:typo-*` arbitrary variants generate no CSS
+> at all: a token cannot be delivered to a child that way.
 
 ---
 

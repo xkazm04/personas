@@ -7,8 +7,8 @@ paths:
 # UI and style
 
 Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/components/CATALOG.md`**
-(`@/features/shared/components/<category>/<Name>`). Doctrine: `docs/design/style-mastery/doctrine.md`,
-DRAFT until Gate 0 (Design.md wins where they differ).
+(`@/features/shared/components/<category>/<Name>`). Doctrine: `docs/design/style-mastery/doctrine.md`
+(Gate 0 decided 2026-09-24; Design.md wins where they differ).
 
 ## What actually fails (verified 2026-09-24)
 
@@ -43,15 +43,15 @@ rendered rows; a lazy view keeps a module cache, `createModuleCache` when it hol
 
 ## Type and colour gotchas
 
-- `typography.css` is unlayered: a `typo-*` rule beats any Tailwind utility on the same property.
-  `typo-caption font-semibold` is a silent no-op. Move to another token; do not patch it.
-- Tokens that paint colour and beat a sibling `text-*`: `typo-title`, `typo-title-lg`,
-  `typo-section-title`, `typo-submodule-header` (primary-tinted), `typo-card-label`. Pick them for
-  that colour or use a colourless tier (`typo-body`, `typo-body-lg`, `typo-heading`) plus `text-*`.
-  `typo-caption` is muted through `@layer base`, so a `text-*` next to it wins.
-- Only names `typography.css` defines exist; `typo-body-sm`, `typo-overline`, `typo-h3` render unstyled.
-- Colour by meaning: `text-status-*` / `STATUS_PALETTE`, `text-primary`, `text-foreground`. Hierarchy
-  comes from the type scale, never from `opacity-*` or `text-foreground/60`.
+- Tokens live in `@layer components` (2026-09-24): a utility beside one WINS (`typo-caption
+  font-semibold` renders 600). Prefer the token that says it; a common pair is a missing token.
+- Tinted tokens keep their colour (Gate 0): `typo-title`, `typo-title-lg`, `typo-section-title`,
+  `typo-submodule-header` (primary), `typo-card-label` (glow). A `text-*` beside one now REPLACES
+  the tint, so write it only when you mean to lose the tint; otherwise use a colourless tier
+  (`typo-body`, `typo-body-lg`, `typo-heading`) plus `text-*`. `typo-caption` mutes via `@layer base`.
+- Only names `typography.css` defines exist (`typo-eyebrow` is new); `[&_h1]:typo-*` makes no CSS.
+- Colour by meaning: `text-status-*` / `STATUS_PALETTE`, roles `text-role-agent|human|external|highlight`,
+  `text-primary`, `text-foreground`. Hierarchy comes from the type scale, never `opacity-*`.
 
 ## Bespoke CSS
 
