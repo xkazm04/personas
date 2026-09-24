@@ -133,6 +133,34 @@ body geometry the incoming surface won't have. `fallback={null}` is acceptable
 for small widgets; a *sized* delayed ghost is better when the widget's absence
 would shift layout.
 
+### E. Shell prefetch and warm return
+
+Section primaries never suspend into `null`: `renderSectionRoute` defaults to
+`RouteChunkSkeleton`, and so does every persona sub-surface in `PersonasPage`
+(editor, build, create, cloud). A warm chunk resolves inside the 150ms delay and
+paints nothing; a cold one shows the header ghost, never a collapsed blank area.
+
+Chunks are warmed on three signals, all through one deduped map,
+`shared/chrome/navPrefetch.ts` (`SECTION_CHUNKS`, which `sectionRouter` also
+builds its lazy primaries from, so the two cannot drift):
+
+- **Expressed intent**: the main rail calls `prefetchSectionOnIntent` on hover
+  and focus. It fires after a 100ms rest and is cancelled on leave/blur, so a
+  sweep across the rail fetches only where the pointer stops. Home's cards call
+  `prefetchSection` directly.
+- **Idle warm-up**: `PersonasPage` drains the primaries through `idlePrefetch`
+  after the first data wave, ordered by predicted use; dev-only surfaces are
+  skipped in production.
+- **Dedupe**: the first call per section keeps its import promise; later calls
+  return it. A failed prefetch drops its entry and logs, so the next intent retries.
+
+Warm return: a `UnifiedTable` with `tableId` or `scrollRestoreKey` keeps its
+entrance seen-set in a module cache (`useRevealTracker(resetKey, surfaceKey)`),
+so coming back plays no cascade and only genuinely new rows enter. A table with
+neither key keeps the per-mount set and replays on remount; give it a key.
+Rows are memoized (`UnifiedTableRow`): pass memoized `columns` and keep clocks
+and store reads inside cell components, or an unchanged row will not refresh.
+
 ## Per-surface recipes
 
 ### Lists & tables (activity, events, messages, reviews, memories, incidents, ledgers)
