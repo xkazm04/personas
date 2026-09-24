@@ -4,8 +4,17 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { GlyphCapabilityPreview } from "./GlyphCapabilityPreview";
+import { GlyphPromotePreview } from "./GlyphPromotePreview";
+import { usePromotePreview } from "./usePromotePreview";
+import { toPromoteView } from "./promotePreviewModel";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
+import { useAgentStore } from "@/stores/agentStore";
+import { useShallow } from "zustand/react/shallow";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
+
+/** Stable empty list so the store selector does not re-render on every read. */
+const EMPTY_IDS: readonly string[] = [];
 
 interface GlyphTestCompleteCoreProps {
   testPassed?: boolean | null;
@@ -33,7 +42,33 @@ export function GlyphTestCompleteCore({
   onPromote, onPromoteForce, onRefine, onRejectTest,
   setRefining, onShowSimulate, onShowReport, onRequestSplit,
 }: GlyphTestCompleteCoreProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  // Before the click: what promote will arm, repair and refuse, computed by
+  // the same preparation promote runs. Only a refusal disables Promote.
+  const previewArgs = useAgentStore(
+    useShallow((s) => {
+      const sess = s.activeBuildSessionId ? s.buildSessions[s.activeBuildSessionId] : null;
+      return {
+        sessionId: sess?.sessionId ?? null,
+        personaId: sess?.personaId ?? null,
+        phase: sess?.phase ?? null,
+        excludedIds: sess?.excludedCapabilityIds ?? EMPTY_IDS,
+      };
+    }),
+  );
+  const promoteView = toPromoteView(usePromotePreview(previewArgs));
+  const promoteButton = (
+    <button
+      type="button"
+      data-testid="glyph-promote-button"
+      onClick={testPassed ? onPromote : () => onPromoteForce?.()}
+      disabled={!promoteView.canPromote}
+      className="px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 disabled:is-disabled border border-primary/40 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
+    >
+      <Rocket className="w-3.5 h-3.5" />
+      {testPassed ? "Promote" : "Promote Anyway"}
+    </button>
+  );
   return (
     <motion.div
       key="test-complete"
@@ -69,15 +104,18 @@ export function GlyphTestCompleteCore({
          *  affordances per capability. Renders nothing when no
          *  capabilities have landed. */}
         <GlyphCapabilityPreview onRequestSplit={onRequestSplit} />
+        <GlyphPromotePreview view={promoteView} />
         <div className="mt-1 flex items-center gap-1.5 flex-wrap justify-center">
-          <button
-            type="button"
-            onClick={testPassed ? onPromote : () => onPromoteForce?.()}
-            className="px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
-          >
-            <Rocket className="w-3.5 h-3.5" />
-            {testPassed ? "Promote" : "Promote Anyway"}
-          </button>
+          {promoteView.canPromote ? (
+            promoteButton
+          ) : (
+            <Tooltip
+              triggerFocusable
+              content={tx(t.agents.promote_preview.blocked_tooltip, { reason: promoteView.reason ?? "" })}
+            >
+              {promoteButton}
+            </Tooltip>
+          )}
           {onShowReport && (
             <button
               type="button"
