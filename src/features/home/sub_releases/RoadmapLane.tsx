@@ -4,7 +4,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import type { ReleaseItemPriority } from '@/data/releases';
 import type { ReleasesTranslation } from './i18n/useReleasesTranslation';
 import type { DisplayItem } from './roadmapItems';
-import { ITEM_STATUS_TONE, PRIORITY_TONE, TONE_CHIP, TONE_FILL, TONE_TEXT, type RevealTracker } from './releaseTones';
+import { ITEM_STATUS_RAIL, PRIORITY_TONE, TONE_CHIP, TONE_TEXT, type RevealTracker } from './releaseTones';
 
 // The module's own art (a traced waypoint on the roadmap trail), not a generic
 // empty state: a lane with nothing in it sits beside two full ones, so it stays
@@ -33,7 +33,7 @@ export function RoadmapLane({ priority, items, enter, t }: { priority: ReleaseIt
         <span className={`rounded-full border px-2.5 typo-data ${TONE_CHIP[tone]}`}>{items.length}</span>
       </header>
       {items.length === 0 ? (
-        <div className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-card border border-dashed border-primary/10 p-3">
+        <div className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-modal border border-dashed border-primary/10 p-3">
           <Suspense fallback={<div className="h-12 w-12" />}>
             <RoadmapLaneEmptyGlyph />
           </Suspense>
@@ -41,19 +41,15 @@ export function RoadmapLane({ priority, items, enter, t }: { priority: ReleaseIt
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item, index) => {
-            const status = ITEM_STATUS_TONE[item.status];
-            return (
-              <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
-                <div className="relative overflow-hidden rounded-card border border-card-border bg-card-bg p-4 pl-6">
-                  <div aria-hidden className={`absolute inset-y-3 left-2 w-1 rounded-full ${TONE_FILL[status]}`} />
-                  <h3 className="typo-title">{item.title}</h3>
-                  <div className={`typo-label mt-1 ${TONE_TEXT[status]}`}>{t.itemStatus[item.status]}</div>
-                  {item.description && <p className="typo-body mt-2 text-foreground">{item.description}</p>}
-                </div>
-              </RevealItem>
-            );
-          })}
+          {items.map((item, index) => (
+            <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
+              <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/3 to-transparent p-4 pl-5">
+                <div aria-hidden className={`absolute inset-y-3 left-1.5 w-0.75 rounded-full ${ITEM_STATUS_RAIL[item.status]}`} />
+                <h3 className="typo-title">{item.title}</h3>
+                {item.description && <p className="typo-body mt-2 text-foreground">{item.description}</p>}
+              </div>
+            </RevealItem>
+          ))}
         </div>
       )}
     </div>

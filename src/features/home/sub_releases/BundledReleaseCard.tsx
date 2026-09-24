@@ -9,7 +9,7 @@ export function BundledReleaseCard({ release, t }: { release: Release; t: Releas
   const i18n = t.releases[release.version];
   const items = i18n?.items;
   return (
-    <section className="rounded-card border border-card-border bg-card-bg p-5">
+    <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/2 to-transparent p-5">
       <div className="flex flex-wrap items-baseline gap-3">
         <h3 className="typo-title-lg">{i18n?.label ?? release.version}</h3>
         <span className="typo-code text-foreground">{release.version}</span>

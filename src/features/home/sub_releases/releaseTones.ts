@@ -1,10 +1,11 @@
 /**
  * The module's colour vocabulary, by meaning (doctrine section 4): a release or
- * roadmap item is coloured for what it IS, never for a hue. One chip recipe per
- * tone (`bg-x/10 text-x border-x/30`), one fill per tone for dots and rails.
+ * roadmap item is coloured for what it IS, never for a hue. One chip recipe and
+ * one text class per tone (`bg-x/10 text-x border-x/30`).
  *
  * Tones: `highlight` = look here (the theme's own hue); the four statuses say
- * how something went; `neutral` says nothing.
+ * how something went; `neutral` says nothing. Item status is the exception
+ * (Gate 1): it keeps the theme glow on its rail, see ITEM_STATUS_RAIL.
  */
 import { Bug, FileText, Sparkles, ShieldCheck, TriangleAlert, Wrench, type LucideIcon } from 'lucide-react';
 import type { ReleaseItemPriority, ReleaseItemStatus, ReleaseItemType, ReleaseStatus } from '@/data/releases';
@@ -26,15 +27,6 @@ export const TONE_TEXT: Record<ReleaseTone, string> = {
   neutral: 'text-foreground',
 };
 
-export const TONE_FILL: Record<ReleaseTone, string> = {
-  highlight: 'bg-role-highlight',
-  info: 'bg-status-info',
-  success: 'bg-status-success',
-  warning: 'bg-status-warning',
-  error: 'bg-status-error',
-  neutral: 'bg-foreground/30',
-};
-
 export const TONE_CHIP: Record<ReleaseTone, string> = {
   highlight: 'border-role-highlight/30 bg-role-highlight/10 text-role-highlight',
   info: 'border-status-info/30 bg-status-info/10 text-status-info',
@@ -44,11 +36,24 @@ export const TONE_CHIP: Record<ReleaseTone, string> = {
   neutral: 'border-primary/10 bg-secondary/40 text-foreground',
 };
 
-/** How a roadmap item is going. In progress is the one moving state (info). */
-export const ITEM_STATUS_TONE: Record<ReleaseItemStatus, ReleaseTone> = {
-  in_progress: 'info',
-  completed: 'success',
-  planned: 'neutral',
+/**
+ * A roadmap item's status as the card's left rail and the hero's dot (Gate 1):
+ * in progress glows in the theme's own primary, done glows in success,
+ * planned is a quiet foreground rail. The column and the rail carry status, so
+ * no card repeats it as a text label.
+ */
+// style-deviation: the rail glow is the theme glow the operator asked back at Gate 1; no shadow token draws a coloured glow, so it is color-mix over the theme variable.
+export const ITEM_STATUS_RAIL: Record<ReleaseItemStatus, string> = {
+  in_progress: 'bg-primary shadow-[0_0_10px_color-mix(in_oklab,var(--primary)_60%,transparent)]',
+  completed: 'bg-status-success shadow-[0_0_10px_color-mix(in_oklab,var(--status-success)_60%,transparent)]',
+  planned: 'bg-foreground/30',
+};
+
+/** The hero's status head: in progress speaks in the theme's primary. */
+export const ITEM_STATUS_HEAD: Record<ReleaseItemStatus, string> = {
+  in_progress: 'text-primary',
+  completed: 'text-status-success',
+  planned: 'text-foreground',
 };
 
 /** The current horizon is where to look; later horizons say nothing more. */
