@@ -17,7 +17,8 @@ import { AlertTriangle, Radar } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { originMeta, useOriginLabel } from './FindingBadge';
+import { originMeta, useOriginLabel } from './findingOrigins';
+import { TONE_TEXT } from '../triageTones';
 import { SkippedSensorChips } from './SkippedSensorChips';
 import { useLastSweep } from './lastSweep';
 import {
@@ -32,11 +33,12 @@ function ratePct(s: SensorStats): string {
   return `${Math.round(s.verifyRate * 100)}%`;
 }
 
-function rateColor(s: SensorStats): string {
-  if (s.verifyRate === null) return 'text-foreground/40';
-  if (isNoisySensor(s)) return 'text-red-300';
-  if (s.verifyRate >= 0.67) return 'text-emerald-300';
-  return 'text-amber-300';
+/** The rate is a status: good, middling, noise. Unknown is a caption, never a colour. */
+function rateClass(s: SensorStats): string {
+  if (s.verifyRate === null) return 'typo-caption';
+  if (isNoisySensor(s)) return `typo-caption ${TONE_TEXT.error}`;
+  if (s.verifyRate >= 0.67) return `typo-caption ${TONE_TEXT.success}`;
+  return `typo-caption ${TONE_TEXT.warning}`;
 }
 
 export function SensorScoreboard({ projectId = null }: { projectId?: string | null }) {
@@ -58,18 +60,19 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
         <Radar className="w-3.5 h-3.5 text-primary/70" />
         <span className="typo-caption text-foreground">Sensors — did the number move?</span>
         <Tooltip content={`Of the findings that shipped and were judged, how many cleared or improved. "—" = nothing judged yet. Needs ${MIN_VERDICTS_FOR_CREDIBILITY} verdicts before the rate is worth believing.`}>
-          <span className="ml-auto typo-label text-foreground/40 cursor-help">verify rate</span>
+          <span className="ml-auto typo-caption cursor-help">verify rate</span>
         </Tooltip>
       </div>
 
       <SkippedSensorChips skipped={skipped} />
 
+      {/* style-deviation: a raw <table>, not UnifiedTable. Eight fixed columns derived from the store, never loading, never sorted or paged: the shared table's ghost, virtual rows and entrance cascade have nothing to do here. */}
       {stats.length > 0 && (
       <table className="w-full">
         <thead>
           <tr className="text-left">
             {['Sensor', 'Raised', 'Shipped', 'Cleared', 'Moved', 'Unchanged', 'Regressed', 'Verify'].map((h) => (
-              <th key={h} className="px-3 py-1.5 typo-label text-foreground/45">
+              <th key={h} className="px-3 py-1.5 typo-label text-foreground">
                 {h}
               </th>
             ))}
@@ -81,14 +84,14 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
             const Icon = meta?.icon;
             const noisy = isNoisySensor(s);
             return (
-              <tr key={s.origin} className="hover:bg-primary/[0.02]">
+              <tr key={s.origin} className="hover:bg-primary/2">
                 <td className="px-3 py-1.5">
                   <span className="inline-flex items-center gap-1.5">
-                    {Icon && <Icon className="w-3 h-3 text-foreground/60" aria-hidden />}
+                    {Icon && <Icon className="w-3 h-3 text-foreground" aria-hidden />}
                     <span className="typo-caption text-foreground">{originLabel(s.origin)}</span>
                     {noisy && (
                       <Tooltip content="This sensor's findings ship and the number doesn't move — its threshold is probably wrong, or it's pointing at work that doesn't pay.">
-                        <span className="inline-flex items-center gap-0.5 text-red-300 typo-label cursor-help">
+                        <span className={`inline-flex items-center gap-0.5 typo-label cursor-help ${TONE_TEXT.error}`}>
                           <AlertTriangle className="w-3 h-3" aria-hidden />
                           noisy
                         </span>
@@ -96,16 +99,16 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
                     )}
                   </span>
                 </td>
-                <td className="px-3 py-1.5 typo-caption text-foreground/70 tabular-nums">{s.raised}</td>
-                <td className="px-3 py-1.5 typo-caption text-foreground/70 tabular-nums">{s.verdicted}</td>
-                <td className="px-3 py-1.5 typo-caption text-emerald-300 tabular-nums">{s.cleared || '·'}</td>
-                <td className="px-3 py-1.5 typo-caption text-sky-300 tabular-nums">{s.moved || '·'}</td>
-                <td className="px-3 py-1.5 typo-caption text-amber-300 tabular-nums">{s.unchanged || '·'}</td>
-                <td className="px-3 py-1.5 typo-caption text-red-300 tabular-nums">{s.regressed || '·'}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums ${rateColor(s)}`}>
+                <td className="px-3 py-1.5 typo-caption tabular-nums">{s.raised}</td>
+                <td className="px-3 py-1.5 typo-caption tabular-nums">{s.verdicted}</td>
+                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.success}`}>{s.cleared || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.info}`}>{s.moved || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.warning}`}>{s.unchanged || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.error}`}>{s.regressed || '·'}</td>
+                <td className={`px-3 py-1.5 tabular-nums ${rateClass(s)}`}>
                   {ratePct(s)}
                   {!s.hasEnoughSignal && s.verifyRate !== null && (
-                    <span className="ml-1 text-foreground/35 typo-label">(low n)</span>
+                    <span className="ml-1 typo-caption">(low n)</span>
                   )}
                 </td>
               </tr>

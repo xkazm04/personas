@@ -19,6 +19,8 @@ import { Plug } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevToolsTab } from '@/lib/types/types';
+import Button from '@/features/shared/components/buttons/Button';
+import { TONE_TEXT } from '../triageTones';
 
 /**
  * Where to go to wire each sensor, or `null` when this surface cannot name a
@@ -65,29 +67,31 @@ export function SkippedSensorChips({ skipped }: { skipped: string[] }) {
       className="px-4 py-2 flex flex-wrap items-center gap-1.5 border-b border-primary/10"
       data-testid="skipped-sensor-chips"
     >
-      <Plug className="w-3 h-3 text-amber-300 shrink-0" aria-hidden />
+      <Plug className={`w-3 h-3 shrink-0 ${TONE_TEXT.warning}`} aria-hidden />
       <span className="typo-caption text-foreground mr-1">{dtri.sensors_skipped_heading}</span>
       {skipped.map((key) => {
         const labelKey = SENSOR_LABEL_KEY[key];
         const name = labelKey ? dtri[labelKey] : key;
         const tab = SKIPPED_SENSOR_TABS[key] ?? null;
-        const base =
-          'inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption';
+        // A sensor that did not run is a warning (the sweep is thinner than it
+        // looks); one this surface can wire is an action in that same tone.
         return tab ? (
-          <button
+          <Button
             key={key}
-            type="button"
+            variant="accent"
+            tone="warning"
+            size="xs"
             onClick={() => setDevToolsTab(tab)}
             data-testid={`skipped-sensor-wire-${key}`}
-            className={`${base} border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 focus-ring`}
+            className="typo-caption"
           >
             {tx(dtri.sensors_skipped_wire, { sensor: name })}
-          </button>
+          </Button>
         ) : (
           <span
             key={key}
             data-testid={`skipped-sensor-${key}`}
-            className={`${base} border-primary/15 bg-secondary/20 text-foreground`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption border-primary/15 bg-secondary/20 text-foreground"
           >
             {name}
           </span>
