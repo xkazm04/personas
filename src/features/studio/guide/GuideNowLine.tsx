@@ -22,6 +22,7 @@ export default function GuideNowLine({
   estimate,
   onOrb,
   onShowQuestion,
+  toolsOpen,
 }: {
   name: string;
   settingUp: boolean;
@@ -38,6 +39,8 @@ export default function GuideNowLine({
   estimate: string;
   onOrb: () => void;
   onShowQuestion: () => void;
+  /** The tool arc the orb opens is showing. */
+  toolsOpen: boolean;
 }) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
@@ -67,6 +70,8 @@ export default function GuideNowLine({
         type="button"
         onClick={onOrb}
         aria-label={g.tools_open}
+        aria-haspopup="menu"
+        aria-expanded={toolsOpen}
         className="group relative h-9 w-9 shrink-0 rounded-full"
         style={{
           background:

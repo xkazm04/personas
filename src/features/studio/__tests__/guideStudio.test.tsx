@@ -204,6 +204,31 @@ describe('Guide layout', () => {
     expect(useStudioStore.getState().runtimes.p1!.busy).toBe(true);
   });
 
+  it('the tool arc is a real menu: focus moves into it, unavailable tools say why, Esc returns focus', () => {
+    seed({});
+    mount();
+    const orb = screen.getByLabelText('tools_open');
+    expect(orb.getAttribute('aria-haspopup')).toBe('menu');
+    orb.focus();
+    fireEvent.keyDown(window, { key: 'o' });
+    const menu = screen.getByRole('menu');
+    expect(orb.getAttribute('aria-expanded')).toBe('true');
+    // Only menu items live inside the menu (the backdrop is outside it).
+    expect(menu.querySelectorAll('button:not([role="menuitem"])')).toHaveLength(0);
+    const items = screen.getAllByRole('menuitem');
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(items[1]);
+    // An unavailable tool stays focusable and names its reason.
+    const tweak = items.find((b) => b.textContent?.includes('tool_tweak'))!;
+    expect(tweak.getAttribute('aria-disabled')).toBe('true');
+    const why = document.getElementById(tweak.getAttribute('aria-describedby')!);
+    expect(why?.textContent).toBe('tool_soon');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(orb);
+  });
+
   it('deals next moves after a finished step and opens the tool arc on O', () => {
     const phases = [
       { id: 'v', title: 'Vision', status: 'done', note: null },

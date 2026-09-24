@@ -268,6 +268,7 @@ export default function GuideStudio({
             estimate={estimate}
             onOrb={() => setArcOpen(true)}
             onShowQuestion={() => setQuestionHidden(false)}
+            toolsOpen={arcOpen}
           />
         )}
         {rt && !showVision && !drafting && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
