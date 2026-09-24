@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { AUTO_MAX_TURNS } from '../studioStore';
 import type { StudioActivity } from '../studioActivity';
-import { activityText } from './guideCopy';
+import { activityText, guideStrings } from './guideCopy';
 import { clock, useElapsed } from './useGuideRuntime';
 
 // One plain line under the frame: what Athena is doing now, with honest elapsed
@@ -40,7 +40,7 @@ export default function GuideNowLine({
   onShowQuestion: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const elapsed = useElapsed(busy ? turnStartedAt : null);
   const last = activity[activity.length - 1];
 

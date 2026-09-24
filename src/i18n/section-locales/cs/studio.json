@@ -182,6 +182,8 @@
     "why_research": "Jak to řeší nejlepší weby tohoto druhu, než to postaví.",
     "why_tour": "Srozumitelný průchod každou částí a tím, které tvé rozhodnutí ji utvořilo.",
     "yes": "Ano",
-    "your_call": "Rozhodnutí je na tobě"
+    "your_call": "Rozhodnutí je na tobě",
+    "goals_none": "Zatím žádný plán. Požádejte Athenu, ať ho připraví, nebo jí řekněte, co změnit.",
+    "preview_loading": "Načítání vašeho webu"
   }
 }

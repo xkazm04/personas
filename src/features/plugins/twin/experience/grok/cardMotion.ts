@@ -20,17 +20,9 @@ export const DEALER_VARIANTS: Variants = {
   exitNone: { opacity: 0, transition: { duration: 0.16 } },
 };
 
-export const CARD_HOVER = {
-  rest: { y: 0, scale: 1 },
-  hover: { y: -14, scale: 1.04 },
-  picked: { y: -18, scale: 1.06 },
-};
-
-export const REWARD_VARIANTS: Variants = {
-  hidden: { opacity: 0, scale: 0.86 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
-  gone: { opacity: 0, scale: 1.08, transition: { duration: 0.2 } },
-};
+/** Hover lift for a suggestion card. The picked card's lift lives in its own
+ *  `animate` object, so there is no second variant here to drift from it. */
+export const CARD_HOVER = { y: -14, scale: 1.04 };
 
 export const FORGE_STAGGER: Variants = {
   hidden: { opacity: 0 },

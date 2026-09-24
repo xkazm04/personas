@@ -1,6 +1,11 @@
 /**
  * The question as a dealer card: suit pip, slot name, the spoken line.
  * A calm ghost while the next turn is in flight — never a spinner.
+ *
+ * The rank letter is a corner mark, not a headline: it sits at `typo-data-lg`
+ * and tinted back, so the QUESTION is the loudest thing on the card. It was
+ * `typo-hero` (2.25rem, the page-greeting tier) until 2026-09-24, which made
+ * a decorative pip shout over the one line the user is meant to read.
  */
 
 import { motion } from 'framer-motion';
@@ -57,14 +62,14 @@ export function DealerCard({ focus, greeting, question, busy }: DealerCardProps)
               <p className={`typo-label text-primary ${greeting ? 'mt-3' : ''}`}>
                 {xg.slots[focus].label}
               </p>
-              <p className="typo-caption text-primary mt-0.5">{xg.slots[focus].hint}</p>
+              <p className="typo-caption mt-0.5">{xg.slots[focus].hint}</p>
               <h2 className="mt-2 typo-heading-lg text-foreground" data-testid="setup-desk-question">
                 {question}
               </h2>
             </>
           )}
         </div>
-        <span aria-hidden className={`self-start typo-hero ${suit.pip} leading-none`}>
+        <span aria-hidden className="self-start typo-data-lg text-primary/40 leading-none">
           {suit.rank}
         </span>
       </div>

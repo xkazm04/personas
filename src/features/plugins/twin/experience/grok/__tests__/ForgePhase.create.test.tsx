@@ -31,6 +31,7 @@ const T = {
       ),
     },
     experience_grok: {
+      close: 'Close',
       forge: {
         eyebrow: 'New twin',
         title: 'Who should this twin be?',
@@ -44,6 +45,8 @@ const T = {
         styleSkipHint: 'later',
         styleSurprise: 'Surprise',
         styleSurpriseHint: 'roll',
+        styleChoose: 'Choose a voice',
+        styleChooseHint: 'ten voices',
         create: 'Deal',
         creating: 'Creating',
         hint: 'hint',
@@ -79,12 +82,19 @@ describe('ForgePhase create contract', () => {
     expect(takePendingStyleStart('twin-1')).toBeNull();
   });
 
-  it('records a pending style start when a preset is chosen', async () => {
+  it('records a pending style start when a preset is chosen one layer down', async () => {
     const onCreated = vi.fn();
     render(<ForgePhase onClose={vi.fn()} onCreated={onCreated} />);
 
     fireEvent.change(screen.getByTestId('twin-experience-name'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByTestId('create-twin-style-executive-brief'));
+    // The ten presets are NOT in the main sight — they live behind the third tile.
+    expect(screen.queryByTestId('create-twin-style-executive-brief')).toBeNull();
+    fireEvent.click(screen.getByTestId('create-twin-style-choose'));
+    fireEvent.click(await screen.findByTestId('create-twin-style-executive-brief'));
+    // Picking closes the picker and lifts the choice into the main sight.
+    await waitFor(() =>
+      expect(screen.queryByTestId('create-twin-style-executive-brief')).toBeNull(),
+    );
     fireEvent.click(screen.getByTestId('twin-experience-create'));
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith({ withStyle: true }));

@@ -2,8 +2,13 @@
  * The twin's own card, filling in as the person plays. It reads only what is
  * STORED (`session.values`, readiness), so every number on it moved because
  * something was kept — a kept offer lands here, and the stat it changed pops.
+ *
+ * It is the ONE permanent panel beside the table: the reward loop. What used
+ * to be two more panels below it (style, played pile) now come in as `footer`
+ * rows of this same card — see `SideRows`.
  */
 
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquareQuote, ShieldCheck, Sparkles } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -38,7 +43,7 @@ function Stat({ value }: { value: number }) {
   );
 }
 
-export function TwinCardPanel({ session }: { session: SetupSessionApi }) {
+export function TwinCardPanel({ session, footer }: { session: SetupSessionApi; footer?: ReactNode }) {
   const { t, tx } = useTranslation();
   const xo = t.twin.experience_opus.twinCard;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -100,6 +105,8 @@ export function TwinCardPanel({ session }: { session: SetupSessionApi }) {
         <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden />
         <span className="flex-1">{tx(xo.memories, { detail: memories })}</span>
       </div>
+
+      {footer}
     </section>
   );
 }

@@ -21556,7 +21556,6 @@
         "studio": "Batch"
       },
       "table": {
-        "subtitle": "One question at a time. Nothing is saved until you keep it.",
         "training": "Training",
         "noQuestion": "Nothing left to ask right now.",
         "dealing": "Dealing the next question",
@@ -21713,7 +21712,9 @@
         "styleSurpriseHint": "Roll three voices after this twin exists.",
         "create": "Deal the first hand",
         "creating": "Creating…",
-        "hint": "Nothing is stored until you play a card."
+        "hint": "Nothing is stored until you play a card.",
+        "styleChoose": "Choose a voice…",
+        "styleChooseHint": "Ten starting voices to pick from."
       },
       "table": {
         "greeting": "We'll walk {items} as a hand of cards. Pick one, write your own, or skip.",
@@ -21760,6 +21761,107 @@
       "voice": {
         "dictate": "Dictate",
         "stop": "Stop listening"
+      }
+    },
+    "experience_mirror": {
+      "create": {
+        "ask": "Who are you making?",
+        "hint": "A name is enough to begin. Everything else is learned from you.",
+        "namePlaceholder": "Their name",
+        "sigil": "How they are addressed",
+        "begin": "Begin",
+        "creating": "Making them",
+        "door": "Languages and a starting voice",
+        "optionsTitle": "Before we begin",
+        "optionsHint": "Both are optional, and both can change later.",
+        "languages": "Languages they write in",
+        "languagesHint": "The first one is their main language.",
+        "languagesMain": "main",
+        "style": "Starting voice",
+        "styleHint": "A draft to react to, rather than a blank page.",
+        "styleNone": "Learn it from me",
+        "styleNoneHint": "Nothing is assumed. The voice comes from what you write.",
+        "styleRoll": "Surprise me",
+        "styleRollHint": "Three drafted voices to choose between."
+      },
+      "rail": {
+        "unnamed": "Your twin",
+        "doors": "Open"
+      },
+      "ask": {
+        "training": "Training",
+        "everywhere": "Everywhere",
+        "incoming": "They wrote",
+        "incomingFrom": "On {channel} they wrote",
+        "writeHint": "Reply the way you actually would — it is kept word for word.",
+        "greeting": "Still open: {items}.",
+        "greetingFresh": "{name} exists. Still open: {items}."
+      },
+      "answers": {
+        "label": "Answers to choose from",
+        "playHint": "Press again to play",
+        "placeholder": "…or write your own",
+        "writePlaceholder": "Write your reply",
+        "skip": "Not this one",
+        "keyPick": "pick",
+        "keyPlay": "play",
+        "keyEdit": "edit",
+        "keySkip": "skip"
+      },
+      "offer": {
+        "title": "It wants to write this down",
+        "hint": "Nothing is saved until you keep it."
+      },
+      "whisper": {
+        "kept": "Kept · {field}"
+      },
+      "sheet": {
+        "title": "What it knows",
+        "hint": "Everything stored so far. None of it was written without you.",
+        "noRole": "No role yet",
+        "noBio": "No biography yet",
+        "noVoice": "no voice yet",
+        "voices": "Voices",
+        "everywhere": "Everywhere",
+        "samplesAndRules": "{samples} samples, {rules} rules",
+        "memories": "Memories · {detail}",
+        "openFields": "Edit every field"
+      },
+      "deck": {
+        "title": "What to train on",
+        "hint": "Pick what the next questions are about.",
+        "rounds": "{count} rounds so far",
+        "coverage": "{tier} · {count} memories",
+        "tiers": {
+          "thin": "Thin",
+          "some": "Some",
+          "covered": "Covered"
+        }
+      },
+      "voice": {
+        "title": "Voice",
+        "drafting": "Drafting {name}",
+        "rolling": "Rolling three voices",
+        "candidates": "Three voices to choose between",
+        "ready": "{name} is ready to review",
+        "saving": "Saving",
+        "idle": "No voice drafted yet"
+      },
+      "notices": {
+        "retry": "Try again",
+        "inviteTitle": "Memories come from training",
+        "inviteBody": "Setup cannot fill this one. A training round asks about your work, your lines and the way you reply — and every answer becomes a memory.",
+        "inviteStart": "Start training",
+        "completeTitle": "{name} is ready",
+        "completeBody": "Every setup slot is filled. Training keeps making them sound more like you.",
+        "completeTrain": "Train them",
+        "completeClose": "Done for now"
+      },
+      "launch": {
+        "title": "{name} is waiting",
+        "titleNoTwin": "No twin yet",
+        "resume": "Carry on setting up",
+        "train": "Start a training round"
       }
     }
   },
@@ -23372,7 +23474,9 @@
       "act_check": "Checking the code for mistakes",
       "act_browser": "Checking the page in a real browser",
       "act_command": "Running a setup step",
-      "act_other": "Working"
+      "act_other": "Working",
+      "goals_none": "No plan yet. Ask Athena to plan it, or tell her what to change.",
+      "preview_loading": "Loading your site"
     }
   },
   "notepad": {

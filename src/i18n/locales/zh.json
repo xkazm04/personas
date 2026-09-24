@@ -18144,7 +18144,9 @@
       "why_research": "在动手之前，看看同类最佳网站是如何解决这个问题的。",
       "why_tour": "对每个部分的清楚说明，以及你的哪些决定塑造了它。",
       "yes": "好",
-      "your_call": "由你决定"
+      "your_call": "由你决定",
+      "goals_none": "还没有计划。请 Athena 制定计划，或告诉她要修改什么。",
+      "preview_loading": "正在加载你的网站"
     }
   },
   "system_health": {
@@ -21224,7 +21226,6 @@
         "playHint": "再按一次即可出牌",
         "ready": "{score}% 就绪",
         "send": "发送",
-        "subtitle": "一次一题。在您留下之前，不会保存任何内容。",
         "training": "训练",
         "writeHint": "按您平时真正会发的样子回复，错别字也一并保留。这条回复也可以留作您写作风格的样本。",
         "yourReply": "您的回复",
@@ -21299,7 +21300,9 @@
         "styleSurprise": "给我惊喜",
         "styleSurpriseHint": "分身创建后再抽三套语气。",
         "subtitle": "有个名字就够开始。其余的我们当牌来发。",
-        "title": "这个分身该是谁？"
+        "title": "这个分身该是谁？",
+        "styleChoose": "选择一种语气…",
+        "styleChooseHint": "十种起始语气可供选择。"
       },
       "slots": {
         "channels": {
@@ -21348,6 +21351,107 @@
       "voice": {
         "dictate": "口述",
         "stop": "停止聆听"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "编辑",
+        "keyPick": "选择",
+        "keyPlay": "出牌",
+        "keySkip": "跳过",
+        "label": "可选回答",
+        "placeholder": "……或者自己写",
+        "playHint": "再次按下即可出牌",
+        "skip": "都不是",
+        "writePlaceholder": "写下你的回复"
+      },
+      "ask": {
+        "everywhere": "全渠道",
+        "greeting": "仍未完成：{items}。",
+        "greetingFresh": "「{name}」已存在。仍未完成：{items}。",
+        "incoming": "对方写道",
+        "incomingFrom": "对方在 {channel} 写道",
+        "training": "训练",
+        "writeHint": "按你真实会说的方式回复——会被逐字保留。"
+      },
+      "create": {
+        "ask": "你要创造谁？",
+        "begin": "开始",
+        "creating": "正在创造…",
+        "door": "语言与起始语气",
+        "hint": "有个名字就够开始了，其余的都会从你身上学到。",
+        "languages": "它使用的语言",
+        "languagesHint": "第一个是主要语言。",
+        "languagesMain": "主要",
+        "namePlaceholder": "它的名字",
+        "optionsHint": "两项都是可选的，之后都能修改。",
+        "optionsTitle": "开始之前",
+        "sigil": "如何称呼它",
+        "style": "起始语气",
+        "styleHint": "有个草稿可以回应，而不是一张白纸。",
+        "styleNone": "从我身上学",
+        "styleNoneHint": "不预设任何东西，语气会从你写的内容中形成。",
+        "styleRoll": "给我惊喜",
+        "styleRollHint": "三种起草的语气可供选择。"
+      },
+      "deck": {
+        "coverage": "{tier} · {count} 条记忆",
+        "hint": "选择接下来的问题主题。",
+        "rounds": "已进行 {count} 轮",
+        "tiers": {
+          "covered": "充分",
+          "some": "一般",
+          "thin": "较少"
+        },
+        "title": "训练内容"
+      },
+      "launch": {
+        "resume": "继续设置",
+        "title": "「{name}」正在等待",
+        "titleNoTwin": "还没有分身",
+        "train": "开始新一轮训练"
+      },
+      "notices": {
+        "completeBody": "所有设置项都已填写。训练会持续让它的语气更像你。",
+        "completeClose": "暂时完成",
+        "completeTitle": "「{name}」已就绪",
+        "completeTrain": "训练它",
+        "inviteBody": "设置无法填写这一项。一轮训练会问起你的工作、你的口头禅和回复方式——每个答案都会变成一条记忆。",
+        "inviteStart": "开始训练",
+        "inviteTitle": "记忆来自训练",
+        "retry": "重试"
+      },
+      "offer": {
+        "hint": "在你保留之前，什么都不会被保存。",
+        "title": "引导助手想记下这个"
+      },
+      "rail": {
+        "doors": "打开",
+        "unnamed": "你的分身"
+      },
+      "sheet": {
+        "everywhere": "全渠道",
+        "hint": "目前保存的一切内容。没有一条是背着你写下的。",
+        "memories": "记忆 · {detail}",
+        "noBio": "还没有简介",
+        "noRole": "还没有角色设定",
+        "noVoice": "还没有语气",
+        "openFields": "编辑所有字段",
+        "samplesAndRules": "{samples} 个示例，{rules} 条规则",
+        "title": "它所知道的",
+        "voices": "语气"
+      },
+      "voice": {
+        "candidates": "三种语气可供选择",
+        "drafting": "正在起草 {name}",
+        "idle": "还没有起草语气",
+        "ready": "「{name}」已可供查看",
+        "rolling": "正在生成三种语气",
+        "saving": "保存中",
+        "title": "语气"
+      },
+      "whisper": {
+        "kept": "已保留 · {field}"
       }
     }
   },

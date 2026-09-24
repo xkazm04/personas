@@ -1,6 +1,10 @@
 /**
  * One flying suggestion card. Rank in both corners, suit pip, foil-ish
  * double border. Hover lifts; the picked card sits higher still.
+ *
+ * The corner ranks are marks at `typo-label`, tinted back — the ANSWER is the
+ * loudest thing on the card. They were `typo-heading` (the section-title tier,
+ * bold) in both corners until 2026-09-24.
  */
 
 import { motion } from 'framer-motion';
@@ -62,7 +66,7 @@ export function DecisionCard({
         delay: motionCfg.shouldAnimate ? index * 0.08 : 0,
         ease: [0.22, 1, 0.36, 1],
       }}
-      whileHover={motionCfg.shouldAnimate ? CARD_HOVER.hover : undefined}
+      whileHover={motionCfg.shouldAnimate ? CARD_HOVER : undefined}
       onClick={onPick}
       onDoubleClick={onCommit}
       disabled={busy}
@@ -77,21 +81,21 @@ export function DecisionCard({
         aria-hidden
         className="pointer-events-none absolute inset-1 rounded-card border border-primary/10"
       />
-      <span className={`absolute top-3 left-3 flex flex-col items-center ${suit.pip}`}>
-        <span className="typo-heading tabular-nums leading-none">{rank}</span>
-        <Icon className="w-3.5 h-3.5 mt-0.5" />
+      <span aria-hidden className="absolute top-3 left-3 flex flex-col items-center text-primary/60">
+        <span className="typo-label tabular-nums leading-none">{rank}</span>
+        <Icon className="w-3 h-3 mt-0.5" />
       </span>
       <span
         aria-hidden
-        className={`absolute bottom-3 right-3 flex flex-col items-center rotate-180 ${suit.pip}`}
+        className="absolute bottom-3 right-3 flex flex-col items-center rotate-180 text-primary/60"
       >
-        <span className="typo-heading tabular-nums leading-none">{rank}</span>
-        <Icon className="w-3.5 h-3.5 mt-0.5" />
+        <span className="typo-label tabular-nums leading-none">{rank}</span>
+        <Icon className="w-3 h-3 mt-0.5" />
       </span>
 
       <span className="flex-1 flex flex-col justify-center px-8 py-8 gap-3">
         <span className="typo-body-lg text-foreground leading-relaxed">{card.text}</span>
-        <span className="typo-caption text-primary leading-relaxed">{card.reason}</span>
+        <span className="typo-caption leading-relaxed">{card.reason}</span>
       </span>
     </motion.button>
   );

@@ -41,7 +41,7 @@ export function TableTrail({ history, question }: TableTrailProps) {
             className="pl-3 border-l-2 border-primary/20 space-y-0.5"
             data-testid="setup-desk-trail-exchange"
           >
-            <p className="typo-caption text-primary">{ex.question}</p>
+            <p className="typo-caption">{ex.question}</p>
             <p className="typo-body text-foreground">
               {ex.answer === null ? xg.table.skipped : ex.answer}
             </p>

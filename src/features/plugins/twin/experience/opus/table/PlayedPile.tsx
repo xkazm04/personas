@@ -3,6 +3,9 @@
  * two exchanges show in full, older ones fold behind one row — a thread, not
  * a transcript (the fold is `deriveDeskTrail`, shared with the Setup desk).
  * A skipped question lies here face down; a kept offer shows its stamp.
+ *
+ * It is a BODY, not a panel: its label and tally live on the row that opens
+ * it (`SideRows`), which is also where `pileTally` is read.
  */
 
 import { useState } from 'react';
@@ -44,22 +47,24 @@ function Played({ exchange }: { exchange: DeskExchange }) {
   );
 }
 
+/** What the row that opens the pile says about it. */
+export function pileTally(trail: DeskTrail): { played: number; kept: number } {
+  return {
+    played: trail.exchanges.filter((e) => e.answer !== null).length,
+    kept: trail.exchanges.reduce(
+      (n, e) => n + e.verdicts.filter((v) => v.resolution === 'accepted').length,
+      0,
+    ),
+  };
+}
+
 export function PlayedPile({ trail }: { trail: DeskTrail }) {
   const { t, tx } = useTranslation();
   const xo = t.twin.experience_opus.pile;
   const [open, setOpen] = useState(false);
-  const kept = trail.exchanges.reduce(
-    (n, e) => n + e.verdicts.filter((v) => v.resolution === 'accepted').length,
-    0,
-  );
-  const played = trail.exchanges.filter((e) => e.answer !== null).length;
 
   return (
     <section aria-label={xo.label} className="space-y-2" data-testid="xo-pile">
-      <p className="flex items-baseline justify-between px-1">
-        <span className="typo-label uppercase tracking-[0.18em]">{xo.label}</span>
-        <span className="typo-caption tabular-nums">{tx(xo.tally, { played, kept })}</span>
-      </p>
       {trail.exchanges.length === 0 ? (
         <p className="px-1 typo-caption">{xo.empty}</p>
       ) : (

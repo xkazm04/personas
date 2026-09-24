@@ -182,6 +182,8 @@
     "why_research": "Comment les meilleurs sites de ce genre le résolvent, avant qu'elle ne le construise.",
     "why_tour": "Un tour simple de chaque partie et quelles décisions de votre part l'ont façonnée.",
     "yes": "Oui",
-    "your_call": "À vous de décider"
+    "your_call": "À vous de décider",
+    "goals_none": "Pas encore de plan. Demandez à Athena de le préparer, ou dites-lui quoi changer.",
+    "preview_loading": "Chargement de votre site"
   }
 }

@@ -30,7 +30,7 @@ export function TopicRail({ topicPreset, coverage, sessions, lastTrainedAt, onPi
   return (
     <nav aria-label={xo.topics.label} className="space-y-2.5" data-testid="xo-topics">
       <div className="px-1 space-y-0.5">
-        <p className="typo-label uppercase tracking-[0.18em]">{xo.topics.label}</p>
+        <p className="typo-label">{xo.topics.label}</p>
         <p className="typo-caption flex items-center gap-1.5">
           <GraduationCap className="w-3.5 h-3.5 text-primary" aria-hidden />
           {tx(xo.topics.sessions, { count: sessions })}

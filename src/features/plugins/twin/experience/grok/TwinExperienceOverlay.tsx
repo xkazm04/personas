@@ -1,6 +1,11 @@
 /**
- * Full-app overlay for twin create + training. A BaseModal popover that fills
- * the viewport — not a tab panel and not an `md` dialog.
+ * Full-app overlay for twin create + training. A BaseModal popover — not a tab
+ * panel and not an `md` dialog.
+ *
+ * The width is CAPPED, not bled: `min(96vw, 110rem)` keeps it a deliberate
+ * centred surface on a wide screen instead of a near-full-bleed box with a
+ * hairline of page showing at the edges. Header and composer are pinned by the
+ * children; only the table body scrolls.
  */
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -30,7 +35,7 @@ export function TwinExperienceOverlay({
       titleId="twin-experience-title"
       portal
       staggerChildren={false}
-      maxWidthClass="max-w-[96vw]"
+      maxWidthClass="max-w-[min(96vw,110rem)]"
       panelClassName="h-[92vh] max-h-[92vh] w-full flex flex-col overflow-hidden rounded-modal glass-lg shadow-elevation-4 border border-primary/20 bg-background"
     >
       <TwinExperienceHost

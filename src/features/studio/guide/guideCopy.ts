@@ -2,7 +2,7 @@ import type { Translations } from '@/i18n/generated/types';
 import type { StudioActivity } from '../studioActivity';
 import { typicalTurnSeconds } from '../studioActivity';
 
-type GuideT = Translations['studio']['guide'];
+export type GuideT = Translations['studio']['guide'];
 
 /** One activity in plain words: "Building: Site nav", "Checking the code for mistakes". */
 export function activityText(g: GuideT, a: StudioActivity): string {
@@ -24,4 +24,13 @@ export function estimateText(g: GuideT, tx: (s: string, v: Record<string, string
   const typical = typicalTurnSeconds(durations);
   if (typical === null) return g.estimate_unknown;
   return tx(g.estimate_about, { minutes: Math.max(1, Math.round(typical / 60)) });
+}
+
+// The English `studio` section can be resident WITHOUT its `guide` group: a
+// window that loaded the section before the group existed keeps that object
+// across a hot update, and `t.studio.guide.x` then threw and took Studio down.
+// The generated section shape only covers a section that has not loaded at
+// all. An empty group renders blank until the next load instead of crashing.
+export function guideStrings(t: Translations): GuideT {
+  return t.studio.guide ?? ({} as GuideT);
 }

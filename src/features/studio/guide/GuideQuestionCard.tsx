@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDecisionKeys } from '../useDecisionKeys';
 
@@ -27,7 +28,7 @@ export default function GuideQuestionCard({
   onHide: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
   useDecisionKeys(options, onAnswer);
 

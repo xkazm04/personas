@@ -1,5 +1,6 @@
 /**
  * The hand at the bottom of the table: typed answer, voice, skip.
+ * Pinned by `CardTable` under the scrolling body — it owns no outer margin.
  */
 
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
@@ -29,7 +30,7 @@ export function TableComposer({
   const shown = voice.listening && voice.interim ? voice.interim : draft;
 
   return (
-    <div className={`mt-4 w-full max-w-[52rem] mx-auto ${busy ? 'is-disabled' : ''}`}>
+    <div className={`w-full max-w-[52rem] mx-auto ${busy ? 'is-disabled' : ''}`}>
       <ChatInputBar
         value={shown}
         onChange={onDraft}
@@ -50,7 +51,7 @@ export function TableComposer({
         }}
       />
       <div className="flex items-center justify-between mt-2 px-1">
-        <p className="typo-caption text-primary">
+        <p className="typo-caption">
           {xg.table.legendPick} · {xg.table.legendAccept} · {xg.table.legendEdit} · {xg.table.legendSkip}
         </p>
         <Button variant="ghost" size="sm" onClick={onSkip} disabled={busy} data-testid="twin-experience-skip">

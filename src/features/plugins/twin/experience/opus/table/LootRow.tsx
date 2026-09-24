@@ -28,8 +28,8 @@ export function LootRow({ proposals }: LootRowProps) {
 
   return (
     <div
-      className="grid gap-3 [perspective:1200px]"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(18rem, 1fr))' }}
+      className="grid gap-2.5 [perspective:1200px]"
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(17rem, 1fr))' }}
       data-testid="xo-loot"
     >
       <AnimatePresence initial={false}>

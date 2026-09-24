@@ -80,3 +80,12 @@ describe('guide deck', () => {
     expect(deck.length).toBeLessThanOrEqual(3);
   });
 });
+
+describe('guide strings', () => {
+  it('survives a resident studio section that predates the guide group', async () => {
+    const { guideStrings } = await import('../guide/guideCopy');
+    // A window that loaded `studio` before `guide` existed keeps that object across a hot update.
+    const stale = { studio: { build_plan: 'Build plan' } } as unknown as Parameters<typeof guideStrings>[0];
+    expect(guideStrings(stale).layout_guide).toBeUndefined();
+  });
+});

@@ -18144,7 +18144,9 @@
       "why_research": "Jak to řeší nejlepší weby tohoto druhu, než to postaví.",
       "why_tour": "Srozumitelný průchod každou částí a tím, které tvé rozhodnutí ji utvořilo.",
       "yes": "Ano",
-      "your_call": "Rozhodnutí je na tobě"
+      "your_call": "Rozhodnutí je na tobě",
+      "goals_none": "Zatím žádný plán. Požádejte Athenu, ať ho připraví, nebo jí řekněte, co změnit.",
+      "preview_loading": "Načítání vašeho webu"
     }
   },
   "system_health": {
@@ -21224,7 +21226,6 @@
         "playHint": "Dalším stiskem ji zahrajete",
         "ready": "{score} % připraveno",
         "send": "Odeslat",
-        "subtitle": "Otázka po otázce. Nic se neuloží, dokud si to nenecháte.",
         "training": "Trénink",
         "writeHint": "Odpovězte tak, jak byste to opravdu poslali, klidně i s překlepy. Odpověď si můžete nechat jako ukázku svého psaní.",
         "yourReply": "Vaše odpověď",
@@ -21299,7 +21300,9 @@
         "styleSurprise": "Překvap mě",
         "styleSurpriseHint": "Vylosovat tři hlasy, až dvojník existuje.",
         "subtitle": "Jméno stačí k začátku. Zbytek rozdáme jako karty.",
-        "title": "Kým má tenhle dvojník být?"
+        "title": "Kým má tenhle dvojník být?",
+        "styleChoose": "Vyber hlas…",
+        "styleChooseHint": "Deset výchozích hlasů na výběr."
       },
       "slots": {
         "channels": {
@@ -21348,6 +21351,107 @@
       "voice": {
         "dictate": "Diktovat",
         "stop": "Přestat poslouchat"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "upravit",
+        "keyPick": "vybrat",
+        "keyPlay": "přehrát",
+        "keySkip": "přeskočit",
+        "label": "Odpovědi na výběr",
+        "placeholder": "…nebo napiš vlastní",
+        "playHint": "Stiskni znovu pro přehrání",
+        "skip": "Tahle ne",
+        "writePlaceholder": "Napiš svou odpověď"
+      },
+      "ask": {
+        "everywhere": "Všude",
+        "greeting": "Stále otevřené: {items}.",
+        "greetingFresh": "{name} existuje. Stále otevřené: {items}.",
+        "incoming": "Napsali",
+        "incomingFrom": "Na {channel} napsali",
+        "training": "Trénink",
+        "writeHint": "Odpověz tak, jak bys opravdu odpověděl(a) — uloží se doslova."
+      },
+      "create": {
+        "ask": "Koho vytváříš?",
+        "begin": "Začít",
+        "creating": "Vytváření…",
+        "door": "Jazyky a výchozí hlas",
+        "hint": "Stačí jméno, abys začal(a). Všechno ostatní se naučí od tebe.",
+        "languages": "Jazyky, ve kterých píše",
+        "languagesHint": "První je jeho hlavní jazyk.",
+        "languagesMain": "hlavní",
+        "namePlaceholder": "Jeho jméno",
+        "optionsHint": "Obojí je volitelné a obojí lze později změnit.",
+        "optionsTitle": "Než začneme",
+        "sigil": "Oslovení",
+        "style": "Výchozí hlas",
+        "styleHint": "Návrh, na který můžeš reagovat, místo prázdné stránky.",
+        "styleNone": "Nauč se to ode mě",
+        "styleNoneHint": "Nic se nepředpokládá. Hlas vzniká z toho, co píšeš.",
+        "styleRoll": "Překvap mě",
+        "styleRollHint": "Tři navržené hlasy na výběr."
+      },
+      "deck": {
+        "coverage": "{tier} · {count} vzpomínek",
+        "hint": "Vyber, o čem budou další otázky.",
+        "rounds": "Zatím {count} kol",
+        "tiers": {
+          "covered": "Pokryto",
+          "some": "Částečně",
+          "thin": "Málo"
+        },
+        "title": "Na čem trénovat"
+      },
+      "launch": {
+        "resume": "Pokračovat v nastavení",
+        "title": "{name} čeká",
+        "titleNoTwin": "Zatím žádný dvojník",
+        "train": "Začít tréninkové kolo"
+      },
+      "notices": {
+        "completeBody": "Nastavení je kompletně vyplněné. Trénink ho dál dělá víc podobným tobě.",
+        "completeClose": "Prozatím hotovo",
+        "completeTitle": "{name} je připraven",
+        "completeTrain": "Trénovat ho",
+        "inviteBody": "Tohle nastavení nevyplní. Tréninkové kolo se ptá na tvou práci, tvé hlášky a způsob, jakým odpovídáš — a z každé odpovědi se stane vzpomínka.",
+        "inviteStart": "Začít trénink",
+        "inviteTitle": "Vzpomínky vznikají tréninkem",
+        "retry": "Zkusit znovu"
+      },
+      "offer": {
+        "hint": "Nic se neuloží, dokud to nepotvrdíš.",
+        "title": "Chce si to zapsat"
+      },
+      "rail": {
+        "doors": "Otevřít",
+        "unnamed": "Tvůj dvojník"
+      },
+      "sheet": {
+        "everywhere": "Všude",
+        "hint": "Všechno, co je zatím uložené. Nic z toho nevzniklo bez tebe.",
+        "memories": "Vzpomínky · {detail}",
+        "noBio": "Zatím žádné bio",
+        "noRole": "Zatím žádná role",
+        "noVoice": "zatím žádný hlas",
+        "openFields": "Upravit všechna pole",
+        "samplesAndRules": "{samples} ukázek, {rules} pravidel",
+        "title": "Co ví",
+        "voices": "Hlasy"
+      },
+      "voice": {
+        "candidates": "Tři hlasy na výběr",
+        "drafting": "Navrhuje se {name}",
+        "idle": "Zatím žádný navržený hlas",
+        "ready": "{name} je připraven k posouzení",
+        "rolling": "Losujeme tři hlasy",
+        "saving": "Ukládání",
+        "title": "Hlas"
+      },
+      "whisper": {
+        "kept": "Uloženo · {field}"
       }
     }
   },

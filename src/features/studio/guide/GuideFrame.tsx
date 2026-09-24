@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import StudioVisionStart from '../StudioVisionStart';
 import StudioVersions from '../StudioVersions';
 import { useStudioStore } from '../studioStore';
@@ -31,7 +32,7 @@ export default function GuideFrame({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const { activeId, active, live, activePath, navRoutes, navigateTo, reloadActive } = preview;
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
   const startExisting = useStudioStore((s) => s.startExisting);

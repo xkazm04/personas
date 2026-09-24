@@ -41,7 +41,7 @@ export function Hand({ dealKey, cards, picked, verdict, busy, onPick, onPlay }: 
     <div
       role="group"
       aria-label={t.twin.experience_opus.table.handLabel}
-      className="relative flex justify-center items-start gap-4 pt-2 min-h-[11rem]"
+      className="relative flex justify-center items-start gap-4 pt-1 min-h-[8.5rem]"
       data-testid="xo-hand"
     >
       {/* The backs sit OVER the hand rather than replacing it, so the cards
@@ -53,7 +53,7 @@ export function Hand({ dealKey, cards, picked, verdict, busy, onPick, onPlay }: 
             key="backs"
             aria-hidden
             data-testid="xo-hand-backs"
-            className="absolute inset-0 pt-2 flex justify-center gap-4 pointer-events-none"
+            className="absolute inset-0 pt-1 flex justify-center gap-4 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: reduced ? 0 : 0.3, duration: 0.2 } }}
             exit={{ opacity: 0, transition: { duration: 0.12 } }}
@@ -63,7 +63,7 @@ export function Hand({ dealKey, cards, picked, verdict, busy, onPick, onPlay }: 
               return (
                 <span
                   key={i}
-                  className={`xo-back ${CARD_WIDTH} h-40`}
+                  className={`xo-back rounded-modal ${CARD_WIDTH} h-[7.5rem]`}
                   style={{ transform: `translateY(${pose.y}px) rotate(${pose.rotate}deg)` }}
                 />
               );

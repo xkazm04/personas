@@ -182,6 +182,8 @@
     "act_check": "Checking the code for mistakes",
     "act_browser": "Checking the page in a real browser",
     "act_command": "Running a setup step",
-    "act_other": "Working"
+    "act_other": "Working",
+    "goals_none": "No plan yet. Ask Athena to plan it, or tell her what to change.",
+    "preview_loading": "Loading your site"
   }
 }

@@ -14,6 +14,7 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guide/guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
@@ -198,7 +199,7 @@ export default function StudioChatInput({
             onSubmit={send}
             placeholder={
               guide && working
-                ? t.studio.guide.placeholder_queue
+                ? guideStrings(t).placeholder_queue
                 : question
                 ? tx(t.studio.answer_athena, { name })
                 : autonomous

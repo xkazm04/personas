@@ -18144,7 +18144,9 @@
       "why_research": "Wie die besten Websites dieser Art es lösen, bevor sie es baut.",
       "why_tour": "Ein einfacher Rundgang durch jeden Teil und welche deiner Entscheidungen ihn geprägt hat.",
       "yes": "Ja",
-      "your_call": "Deine Entscheidung"
+      "your_call": "Deine Entscheidung",
+      "goals_none": "Noch kein Plan. Bitte Athena, ihn zu erstellen, oder sag ihr, was sie ändern soll.",
+      "preview_loading": "Deine Website wird geladen"
     }
   },
   "system_health": {
@@ -21224,7 +21226,6 @@
         "playHint": "Erneut drücken, um zu spielen",
         "ready": "{score}% bereit",
         "send": "Senden",
-        "subtitle": "Eine Frage nach der anderen. Es wird nichts gespeichert, bis Sie sie behalten.",
         "training": "Training",
         "writeHint": "Antworten Sie so, wie Sie es wirklich abschicken würden, mit Tippfehlern und allem. Sie können Ihre Antwort als Beispiel dafür behalten, wie Sie schreiben.",
         "yourReply": "Ihre Antwort",
@@ -21299,7 +21300,9 @@
         "styleSurprise": "Überrasch mich",
         "styleSurpriseHint": "Drei Stimmen ziehen, sobald dieser Twin existiert.",
         "subtitle": "Ein Name reicht zum Start. Den Rest geben wir als Karten.",
-        "title": "Wer soll dieser Twin sein?"
+        "title": "Wer soll dieser Twin sein?",
+        "styleChoose": "Wähle eine Stimme…",
+        "styleChooseHint": "Zehn Startstimmen zur Auswahl."
       },
       "slots": {
         "channels": {
@@ -21348,6 +21351,107 @@
       "voice": {
         "dictate": "Diktieren",
         "stop": "Zuhören beenden"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "bearbeiten",
+        "keyPick": "wählen",
+        "keyPlay": "abspielen",
+        "keySkip": "überspringen",
+        "label": "Antworten zur Auswahl",
+        "placeholder": "…oder schreib deine eigene",
+        "playHint": "Nochmal drücken zum Abspielen",
+        "skip": "Diese nicht",
+        "writePlaceholder": "Schreib deine Antwort"
+      },
+      "ask": {
+        "everywhere": "Überall",
+        "greeting": "Noch offen: {items}.",
+        "greetingFresh": "{name} existiert. Noch offen: {items}.",
+        "incoming": "Sie schrieben",
+        "incomingFrom": "Auf {channel} schrieben sie",
+        "training": "Training",
+        "writeHint": "Antworte so, wie du es wirklich tun würdest — es wird wortwörtlich gespeichert."
+      },
+      "create": {
+        "ask": "Wen erschaffst du?",
+        "begin": "Beginnen",
+        "creating": "Wird erstellt …",
+        "door": "Sprachen und Startstimme",
+        "hint": "Ein Name reicht zum Anfangen. Alles andere lernt er von dir.",
+        "languages": "Sprachen, in denen er schreibt",
+        "languagesHint": "Die erste ist seine Hauptsprache.",
+        "languagesMain": "primär",
+        "namePlaceholder": "Sein Name",
+        "optionsHint": "Beides ist optional und beides lässt sich später ändern.",
+        "optionsTitle": "Bevor wir beginnen",
+        "sigil": "Anrede",
+        "style": "Startstimme",
+        "styleHint": "Ein Entwurf zum Reagieren statt einer leeren Seite.",
+        "styleNone": "Lern es von mir",
+        "styleNoneHint": "Nichts wird angenommen. Die Stimme entsteht aus dem, was du schreibst.",
+        "styleRoll": "Überrasch mich",
+        "styleRollHint": "Drei entworfene Stimmen zur Auswahl."
+      },
+      "deck": {
+        "coverage": "{tier} · {count} Erinnerungen",
+        "hint": "Wähle, worum es in den nächsten Fragen geht.",
+        "rounds": "Bisher {count} Runden",
+        "tiers": {
+          "covered": "Abgedeckt",
+          "some": "Teilweise",
+          "thin": "Wenig"
+        },
+        "title": "Worauf trainieren"
+      },
+      "launch": {
+        "resume": "Mit der Einrichtung fortfahren",
+        "title": "{name} wartet",
+        "titleNoTwin": "Noch kein Twin",
+        "train": "Eine Trainingsrunde beginnen"
+      },
+      "notices": {
+        "completeBody": "Die Einrichtung ist komplett ausgefüllt. Training lässt ihn weiter mehr nach dir klingen.",
+        "completeClose": "Für jetzt erledigt",
+        "completeTitle": "{name} ist bereit",
+        "completeTrain": "Ihn trainieren",
+        "inviteBody": "Das kann die Einrichtung nicht füllen. Eine Trainingsrunde fragt nach deiner Arbeit, deinen Sprüchen und der Art, wie du antwortest — und jede Antwort wird zu einer Erinnerung.",
+        "inviteStart": "Training beginnen",
+        "inviteTitle": "Erinnerungen kommen aus dem Training",
+        "retry": "Erneut versuchen"
+      },
+      "offer": {
+        "hint": "Nichts wird gespeichert, bis du es bestätigst.",
+        "title": "Es möchte das notieren"
+      },
+      "rail": {
+        "doors": "Öffnen",
+        "unnamed": "Dein Twin"
+      },
+      "sheet": {
+        "everywhere": "Überall",
+        "hint": "Alles, was bisher gespeichert ist. Nichts davon wurde ohne dich geschrieben.",
+        "memories": "Erinnerungen · {detail}",
+        "noBio": "Noch keine Bio",
+        "noRole": "Noch keine Rolle",
+        "noVoice": "noch keine Stimme",
+        "openFields": "Alle Felder bearbeiten",
+        "samplesAndRules": "{samples} Beispiele, {rules} Regeln",
+        "title": "Was er weiß",
+        "voices": "Stimmen"
+      },
+      "voice": {
+        "candidates": "Drei Stimmen zur Auswahl",
+        "drafting": "{name} wird entworfen",
+        "idle": "Noch keine Stimme entworfen",
+        "ready": "{name} ist bereit zur Überprüfung",
+        "rolling": "Drei Stimmen werden ausgelost",
+        "saving": "Wird gespeichert",
+        "title": "Stimme"
+      },
+      "whisper": {
+        "kept": "Gespeichert · {field}"
       }
     }
   },

@@ -30,7 +30,7 @@ export function TableChrome({ title, session, voice, view, onView, onClose }: Ta
         <h1 id="twin-experience-title" className="typo-section-title text-foreground truncate">
           {title}
         </h1>
-        <p className="typo-caption text-primary truncate">{xg.forge.hint}</p>
+        <p className="typo-caption truncate">{xg.forge.hint}</p>
       </div>
       <div className="flex-shrink-0 w-[13.5rem] hidden md:block">
         <SegmentedTabs<SetupStage>

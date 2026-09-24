@@ -49,7 +49,7 @@ export function DealerCard({
 
   return (
     <div
-      className={`${suit.hue} xo-card xo-card-raised xo-foil xo-glow rounded-modal px-6 py-5 md:px-8 md:py-6`}
+      className={`${suit.hue} xo-card xo-card-raised xo-foil xo-glow rounded-modal px-5 py-4 md:px-6 md:py-5`}
       data-testid="xo-dealer"
     >
       <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export function DealerCard({
           <Wand2 className={`w-4 h-4 ${SUIT_TEXT}`} />
         </span>
         <suit.Icon className={`w-4 h-4 ${SUIT_TEXT}`} aria-hidden />
-        <span className={`typo-label uppercase tracking-[0.18em] ${SUIT_TEXT}`}>{eyebrow}</span>
+        <span className={`typo-label ${SUIT_TEXT}`}>{eyebrow}</span>
         {toneChannel && (
           <span className="ml-auto px-2 py-0.5 rounded-pill border border-primary/20 typo-caption text-foreground">
             {channelName(toneChannel, xo.twinCard.everywhere)}
@@ -69,12 +69,12 @@ export function DealerCard({
       </div>
 
       {busy ? (
-        <div className="mt-4 space-y-3" aria-hidden>
-          <span className="block h-7 w-3/4 rounded-card bg-secondary/60" />
-          <span className="block h-7 w-1/2 rounded-card bg-secondary/40" />
+        <div className="mt-3 space-y-2.5" aria-hidden>
+          <span className="block h-6 w-3/4 rounded-card bg-secondary/60" />
+          <span className="block h-6 w-1/2 rounded-card bg-secondary/40" />
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-2.5">
           {greeting && (
             <p className="typo-body-lg text-foreground" data-testid="xo-dealer-greeting">
               {greeting}
