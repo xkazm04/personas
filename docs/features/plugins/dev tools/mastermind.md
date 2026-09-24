@@ -198,6 +198,39 @@ chunk) was deleted; it is in git history before this change. What the audition t
 holds: position must carry stable meaning (the planetary Orbit variant failed on it), levels beat
 one layer, and palette changes over an unchanged structure do not read as a new design.
 
+### 7c. Soundings (second view, 2026-09-24)
+
+The view switcher (`lib/ViewSwitcher.tsx`) offers **Baseline** and **Soundings**; the choice is
+session-local. Soundings (`soundings/`, its own lazy chunk) draws the portfolio as a nautical
+sounding chart where **depth means urgency**. Design, data mapping and phases:
+[`docs/design/mastermind-soundings.md`](../../../design/mastermind-soundings.md).
+
+- **L0 chart.** Stations sit at fixed positions (project name order, so a place always means the
+  same project). Each buoy floats at an urgency depth: `3 x alerts + risks + 2 late + 2 agent
+  waiting + 3 critical / 1 warning + 1 no monitoring bound + 0.25 per gap`; bands Surface (>= 6),
+  Shallows (>= 2), Mid-water (>= 1), Deep. Floats on the waterline name why (alert count, late
+  release, a lilac flag for an agent awaiting input). Relations are currents along the seabed.
+  A provisional island is a calm ghost until its scan lands.
+- **L1 station.** Enter widens the station into a water column; the others shrink to slivers
+  that keep their order and a status tick. The fifteen readings sit in four lanes (runtime,
+  delivery, agentic, product) at the band their status puts them in. A strip carries live work,
+  next ship, LLM spend, errors and blockers.
+- **L2.** Enter lifts a reading into a card: tooling, the real **Improve** action (the same
+  popovers the Baseline cell opens, via the page's `onDimOpen`), the progress ladder, its depth,
+  and the same reading across the portfolio at the chart's positions. `I` opens the project file:
+  sessions (open the Fleet preview), personas, the release plan (opens the notepad), readiness,
+  relations to follow, and Dispatch fleet / Open terminal / Open in Factory.
+- **Keys** (through the app keyboard ladder at route priority): arrows, Enter, Esc, `I`, `/`
+  (jump palette), `A` (next agent waiting), `R` (follow a current), `H`, `?` (help sheet).
+- **Athena.** Soundings answers the same `canvasActionStore` grammar as the Baseline:
+  `camera.focus` opens a station, `camera.fit` returns to the chart and marks the named projects,
+  `dim.open` lifts a reading and opens its Improve surface, `category.open` / `island.menu` /
+  `island.read` / `dim.read` as on the Baseline. Each move writes one line to the dock and pings
+  the target with a sonar ring.
+- **Theming.** `soundings/soundings.css` derives every colour from the theme tokens, so the sea
+  re-tints with all 11 themes; status is a hue AND a shape, so it still reads in the monochrome
+  themes.
+
 ## 8. Interaction model (Figma-like, edit-first)
 
 **Modes** (bottom toolbar, `CanvasToolbar`, keyboard `E`/`G`/`C`/`N`, `Esc` = universal cancel). Each mode's one-line hint — what the mouse does in it — rides on that mode's **own tooltip** rather than a second toolbar row, so the toolbar is a single row at every width and the orientation is readable *before* you commit to a mode instead of only for the active one:
