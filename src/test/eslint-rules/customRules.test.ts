@@ -212,15 +212,39 @@ ruleTester.run("custom/no-raw-text-classes", noRawTextClasses, {
       // Mono-context text sizes (font-mono nearby) get a pass
       code: `function C() { return <code className="font-mono text-sm">x</code>; }`,
     },
+    {
+      // A REAL token (read from typography.css at rule load) still exempts
+      // the class string, raw size included.
+      code: `function C() { return <p className="typo-caption text-sm">x</p>; }`,
+    },
   ],
   invalid: [
     {
       code: `function C() { return <p className="text-xs">x</p>; }`,
-      errors: 1,
+      errors: [{ messageId: "rawTextClass", data: { raw: "text-xs", token: "typo-caption" } }],
     },
     {
       code: `function C() { return <p className="text-2xl">x</p>; }`,
       errors: 1,
+    },
+    {
+      // Phantom: typo-body-sm is defined nowhere, so it no longer exempts the
+      // raw size beside it, and is reported itself.
+      code: `function C() { return <p className="typo-body-sm text-sm">x</p>; }`,
+      errors: [
+        { messageId: "phantomTypo", data: { raw: "typo-body-sm", token: "typo-caption" } },
+        { messageId: "rawTextClass", data: { raw: "text-sm", token: "typo-body" } },
+      ],
+    },
+    {
+      // A lone phantom is reported even with no raw size next to it.
+      code: `function C() { return <h3 className="typo-overline text-foreground">x</h3>; }`,
+      errors: [{ messageId: "phantomTypo", data: { raw: "typo-overline", token: "typo-label" } }],
+    },
+    {
+      // Arbitrary px size, with the equivalent token named.
+      code: `function C() { return <span className="text-[11px] text-foreground">x</span>; }`,
+      errors: [{ messageId: "rawTextClass", data: { raw: "text-[11px]", token: "typo-caption" } }],
     },
   ],
 });
