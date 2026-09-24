@@ -4,11 +4,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import StudioChatInput from '../StudioChatInput';
 import StudioPreviewFrames from '../StudioPreviewFrames';
 import { useStudioStore } from '../studioStore';
+import { useStudioHistory } from '../studioHistory';
 import { useStudioPreview } from '../useStudioPreview';
 import { isPlaceholderPlan } from '../studioBuildModel';
 import GuideGoalsRail, { type GuideGoalsRailHandle } from './GuideGoalsRail';
 import GuideBlueprint from './GuideBlueprint';
 import GuideSketchSheet from './GuideSketchSheet';
+import GuideDraftingSheet from './drafting/GuideDraftingSheet';
 import GuideFrame from './GuideFrame';
 import GuideNowLine, { YourCallButton } from './GuideNowLine';
 import GuideQuestionCard from './GuideQuestionCard';
@@ -159,6 +161,9 @@ export default function GuideStudio({
   });
 
   const reason = rt && question ? (rt.messages[rt.messages.length - 1]?.text ?? null) : null;
+  // The drafting sheet stands in for both the setup sheet and the plan cards.
+  const drafted = useStudioHistory((s) => s.sheetStyle) === 'drafting';
+  const sheetShown = !showVision && (sketchMode ? !!(sketchSrc || rt) : !!rt && !drafting && showBlueprint);
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1">
@@ -184,7 +189,24 @@ export default function GuideStudio({
           onCreate={onCreate}
           onCancelCreate={onCancelCreate}
         >
-          {sketchMode && !showVision && (sketchSrc || rt) && (
+          {drafted && sheetShown && (
+            <GuideDraftingSheet
+              name={sketchSrc?.name ?? rt?.name ?? ''}
+              sketch={sketchSrc?.sketch ?? null}
+              sketchState={sketchSrc?.state ?? null}
+              steps={steps}
+              startedAt={sketchSrc?.startedAt ?? null}
+              phases={drafting ? [] : (rt?.phases ?? [])}
+              placeholder={drafting || placeholder}
+              activity={drafting ? [] : (rt?.activity ?? [])}
+              working={working}
+              notes={drafting ? null : lastReply}
+              awaitingApproval={awaitingApproval}
+              proofUrl={live && id ? (preview.previewUrls[id] ?? null) : null}
+              booting={!drafting && !!rt && rt.phase !== 'live'}
+            />
+          )}
+          {!drafted && sketchMode && !showVision && (sketchSrc || rt) && (
             <GuideSketchSheet
               name={sketchSrc?.name ?? rt?.name ?? ''}
               sketch={sketchSrc?.sketch ?? null}
@@ -218,7 +240,7 @@ export default function GuideStudio({
           {rt && !showVision && !drafting && (
             <>
               {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} />}
-              {showBlueprint && !sketchMode && (
+              {!drafted && showBlueprint && !sketchMode && (
                 <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} messages={rt.messages} />
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">

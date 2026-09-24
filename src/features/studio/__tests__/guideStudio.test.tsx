@@ -32,6 +32,10 @@ const { useStudioStore } = await import('../studioStore');
 const { MOCK_PHASES } = await import('../studioBuildModel');
 const { GUIDE_TOOLS } = await import('../guide/guideModel');
 const GuideStudio = (await import('../guide/GuideStudio')).default;
+const { useStudioHistory } = await import('../studioHistory');
+// These cases pin the plan-cards sheet; the drafting sheet (the default) has
+// its own tests (draftingSheet.test) and one wiring case at the end.
+useStudioHistory.setState({ sheetStyle: 'plan' });
 
 type RT = ReturnType<typeof useStudioStore.getState>['runtimes'][string];
 function seed(p: Partial<RT>) {
@@ -266,5 +270,19 @@ describe('Guide layout', () => {
     fireEvent.keyDown(window, { key: 'o' });
     expect(screen.getByRole('menu')).toBeTruthy();
     expect(screen.getAllByRole('menuitem')).toHaveLength(GUIDE_TOOLS.length);
+  });
+
+  it('draws the drafting sheet when that sheet style is chosen, and the frame can switch back', () => {
+    useStudioHistory.setState({ sheetStyle: 'drafting' });
+    try {
+      seed({ phase: 'starting', status: null });
+      mount();
+      expect(screen.getByTestId('drafting-sheet')).toBeTruthy();
+      fireEvent.click(screen.getByText('sheet_style_plan'));
+      expect(useStudioHistory.getState().sheetStyle).toBe('plan');
+      expect(screen.queryByTestId('drafting-sheet')).toBeNull();
+    } finally {
+      useStudioHistory.setState({ sheetStyle: 'plan' });
+    }
   });
 });
