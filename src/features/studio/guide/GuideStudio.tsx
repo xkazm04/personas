@@ -132,13 +132,15 @@ export default function GuideStudio({
     if (!live) unavailable[tool] = g.tool_needs_live;
     else if (working) unavailable[tool] = g.tool_busy;
   }
-  unavailable.tweak = g.tool_soon;
+  if (!live) unavailable.tweak = g.tool_needs_live;
   if (!readAloud.configured) unavailable.read = g.tool_read_setup;
   else if (!lastReply) unavailable.read = g.tool_read_nothing;
   const pickTool = (tool: GuideTool) => {
     setArcOpen(false);
     if (tool.id === 'read') {
       if (lastReply) readAloud.speak(lastReply);
+    } else if (tool.id === 'tweak') {
+      preview.startPickMode();
     } else if (tool.prompt) run(tool.prompt, tool.mcp);
   };
 

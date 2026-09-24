@@ -512,6 +512,10 @@
         {
           "path": "src/features/shared/components/feedback/AriaLiveProvider.tsx",
           "reason": "false positive: ++keyRef.current allocates a React key to re-announce a live-region message, it never guards an async commit"
+        },
+        {
+          "path": "src/features/teams/sub_mastermind/soundings/SoundingsView.tsx",
+          "reason": "false positive: ++seq allocates React keys for sonar pings and dock log lines, it never guards an async commit"
         }
       ],
       "baseline": {
@@ -5419,8 +5423,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 112
+        "files": 55,
+        "matches": 108
       },
       "floor": 900
     },
@@ -5515,8 +5519,8 @@
         }
       ],
       "baseline": {
-        "files": 49,
-        "matches": 105
+        "files": 48,
+        "matches": 104
       },
       "floor": 900
     }

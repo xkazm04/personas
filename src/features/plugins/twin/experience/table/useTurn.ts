@@ -3,18 +3,21 @@
  * that keep a turn honest.
  *
  * RULE ONE — one verdict per question. `session.busy` cannot be the guard: in
- * the training stage the answer is recorded BEFORE the next turn is requested,
- * so a second press (or a press landing on a card that is already leaving,
- * whose props are frozen) would still read "not busy" and send the same answer
- * twice. The claim is keyed on the question itself; `undefined` means nothing
- * has been answered yet. A failed turn keeps the same question on the table, so
- * the guide being down must not also lock the person out of answering it.
+ * the persisted session the next question is already queued, so answering
+ * never makes the table busy, and a second press (or a press landing on a card
+ * that is already leaving, whose props are frozen) would send the same answer
+ * twice. The server also accepts an answer only for the live step id — this is
+ * defence in depth, not the only guard. The claim is keyed on the question
+ * itself; `undefined` means nothing has been answered yet. A failed turn keeps
+ * the same question on the table, so the guide being down must not also lock
+ * the person out of answering it.
  *
- * RULE TWO — a redeal is PARKED, never fired inline. `setStage` and `setTopic`
- * only change what the next question is about, and `redeal` reads the session
- * after the render that carries the change; a redeal fired mid-turn is dropped
- * and the answer to the old turn lands on the new stage. So the request waits
- * here until nothing is in flight.
+ * RULE TWO — changing what the table is about is ONE instruction. The server
+ * owns the queue and re-targets it on a stage or topic change, so there is no
+ * parked redeal any more (the old one existed because `setStage`/`setTopic`
+ * only changed what the NEXT question would be about). Whether the stage
+ * actually differs is decided by the session against the STORED stage, which
+ * this hook cannot see before the first snapshot lands.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -75,37 +78,11 @@ export function useTurn(session: SetupSessionApi): Turn {
     session.skip().catch(toastCatch(`${SCOPE}:skip`));
   }, [session, claim]);
 
-  // Rule two: park the request, fire it once the session is idle.
-  const wantsDeal = useRef(false);
-  const { stage, topic, busy, redeal, setStage, setTopic } = session;
-  useEffect(() => {
-    if (!wantsDeal.current || busy) return;
-    wantsDeal.current = false;
-    redeal();
-  }, [stage, topic, busy, redeal]);
-
-  const chooseStage = useCallback(
-    (next: SetupStage) => {
-      if (next === stage) return;
-      wantsDeal.current = true;
-      setStage(next);
-    },
-    [stage, setStage],
-  );
-
+  const { setStage, setTopic } = session;
+  const chooseStage = useCallback((next: SetupStage) => setStage(next), [setStage]);
   const chooseTopic = useCallback(
-    (prompt: string, presetId: string) => {
-      // The same topic again changes nothing the effect watches, so a parked
-      // request would wait for the NEXT turn to settle and replace it. The
-      // session already holds this topic: deal now.
-      if (topic === prompt) {
-        redeal();
-        return;
-      }
-      wantsDeal.current = true;
-      setTopic(prompt, presetId);
-    },
-    [topic, redeal, setTopic],
+    (prompt: string, presetId: string) => setTopic(prompt, presetId),
+    [setTopic],
   );
 
   return { picked, setPicked, draft, setDraft, verdict, play, skip, chooseStage, chooseTopic };

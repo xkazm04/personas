@@ -3,7 +3,8 @@
  * were missing on the surfaces this variant learned from:
  *
  *  - one verdict per question, even while `busy` is still false;
- *  - a redeal is parked until the session is idle, never fired inline.
+ *  - a stage or topic change is ONE instruction to the session, which owns
+ *    the queue now — no parked redeal, no second request.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
@@ -38,6 +39,14 @@ function fakeSession(over: Partial<SetupSessionApi> = {}): SetupSessionApi {
     topic: null,
     topicPreset: null,
     setTopic: vi.fn(),
+    plan: null,
+    planning: false,
+    reconciling: false,
+    lastAnswerOfferIds: [],
+    offerRecord: [],
+    editOffer: vi.fn(async () => {}),
+    steer: vi.fn(async () => {}),
+    rebuild: vi.fn(async () => {}),
     ...over,
   };
 }
@@ -91,35 +100,32 @@ describe('one verdict per question', () => {
   });
 });
 
-describe('a parked redeal', () => {
-  it('waits for the session to go idle rather than firing mid-turn', () => {
-    const busy = fakeSession({ busy: true });
-    const { rerender, result } = renderHook((s: SetupSessionApi) => useTurn(s), {
-      initialProps: busy,
-    });
+describe('stage and topic are one instruction each', () => {
+  it('choosing a stage hands it to the session once and never redeals', () => {
+    const session = fakeSession({ busy: true });
+    const { result } = renderHook(() => useTurn(session));
 
     act(() => result.current.chooseStage('training'));
-    expect(busy.redeal).not.toHaveBeenCalled();
-
-    // The session settles on the new stage; only now is a fresh question asked.
-    const idle = fakeSession({ busy: false, stage: 'training', redeal: busy.redeal });
-    rerender(idle);
-    expect(busy.redeal).toHaveBeenCalledTimes(1);
-  });
-
-  it('choosing the stage already live changes nothing', () => {
-    const session = fakeSession({ stage: 'setup' });
-    const { result } = renderHook(() => useTurn(session));
-    act(() => result.current.chooseStage('setup'));
-    expect(session.setStage).not.toHaveBeenCalled();
+    expect(session.setStage).toHaveBeenCalledTimes(1);
+    expect(session.setStage).toHaveBeenCalledWith('training');
     expect(session.redeal).not.toHaveBeenCalled();
   });
 
-  it('picking the topic already live deals at once — nothing the effect watches would change', () => {
-    const session = fakeSession({ topic: 'Ask me about my work.' });
+  it('the same stage is still handed over — the session compares it with the STORED stage', () => {
+    // Before the first snapshot the rendered stage is only a default, so the
+    // turn cannot know whether "setup" is where the session already is.
+    const session = fakeSession({ stage: 'setup' });
+    const { result } = renderHook(() => useTurn(session));
+    act(() => result.current.chooseStage('setup'));
+    expect(session.setStage).toHaveBeenCalledWith('setup');
+    expect(session.redeal).not.toHaveBeenCalled();
+  });
+
+  it('picking a topic sets it with its preset and deals nothing itself', () => {
+    const session = fakeSession({ stage: 'training' });
     const { result } = renderHook(() => useTurn(session));
     act(() => result.current.chooseTopic('Ask me about my work.', 'background'));
-    expect(session.setTopic).not.toHaveBeenCalled();
-    expect(session.redeal).toHaveBeenCalledTimes(1);
+    expect(session.setTopic).toHaveBeenCalledWith('Ask me about my work.', 'background');
+    expect(session.redeal).not.toHaveBeenCalled();
   });
 });

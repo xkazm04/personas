@@ -737,7 +737,9 @@
       "trailLabel": "Bisher ausgespielt",
       "earlier": "{count} früher",
       "earlierHide": "Frühere ausblenden",
-      "skipped": "Übersprungen"
+      "skipped": "Übersprungen",
+      "fromLastAnswer": "Aus deiner letzten Antwort",
+      "reconciling": "Deine Antwort wird gelesen"
     },
     "slots": {
       "identity": {
@@ -812,6 +814,35 @@
       "titleNoTwin": "Noch kein Twin",
       "resume": "Mit der Einrichtung fortfahren",
       "train": "Eine Trainingsrunde beginnen"
+    },
+    "openers": {
+      "channels": "Wo schreibst du am meisten: E-Mail, Chat oder woanders?",
+      "identity": "Wofür kommen die Leute zu dir?",
+      "memories": "Welche Geschichte erzählst du immer wieder?",
+      "tone": "Wie würde ein Freund deinen Schreibstil beschreiben?"
+    },
+    "plan": {
+      "askNext": "Das als Nächstes fragen",
+      "changeNote": "Was sich geändert hat",
+      "coverage": "Abgedeckt",
+      "drop": "Dieses Ziel verwerfen",
+      "empty": "Noch keine Ziele. Sie erscheinen hier, sobald der Plan steht.",
+      "hint": "Was er über dich lernen will und was er als Nächstes fragt.",
+      "noticed": "Was mir aufgefallen ist",
+      "noticedEmpty": "Noch nichts. Nach ein paar Antworten zeigen sich erste Muster.",
+      "phaseSetup": "Einrichtung",
+      "phaseTraining": "Training",
+      "pin": "Dieses Ziel anheften",
+      "rebuild": "Plan neu aufstellen",
+      "rebuilding": "Wird neu aufgestellt",
+      "restore": "Zurückholen",
+      "retry": "Erneut versuchen",
+      "statusBuilding": "Plan wird aus dem Vorhandenen erstellt",
+      "statusFailed": "Der Plan konnte nicht erstellt werden.",
+      "statusReady": "Plan bereit",
+      "title": "Der Plan",
+      "unpin": "Dieses Ziel loslösen",
+      "upNext": "Als Nächstes"
     }
   }
 }

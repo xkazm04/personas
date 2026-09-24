@@ -69,6 +69,7 @@ mod e43_council;
 mod e44_backlog_contract;
 mod e45_one_idea_scale;
 mod e46_webbuild_plans;
+mod e47_twin_setup_plan;
 mod e48_retire_competitions;
 
 mod c01_plugin_tables;
@@ -135,6 +136,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     e44_backlog_contract::run(conn)?;
     e45_one_idea_scale::run(conn)?;
     e46_webbuild_plans::run(conn)?;
+    e47_twin_setup_plan::run(conn)?;
     e48_retire_competitions::run(conn)?;
 
     Ok(())

@@ -17,6 +17,8 @@ import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
+import { createTtlValueCache } from '@/lib/async/createTtlValueCache';
+
 import { mapWithConcurrency } from './passport/usePassportData';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -224,12 +226,33 @@ export function useFactoryData(): FactoryData {
   return useContext(FactoryDataContext);
 }
 
+/** Stale-while-revalidate across mounts. The provider is mounted by every
+ *  surface that shows KPI state (Factory, Mastermind), and each mount used to
+ *  refetch the whole tree: 4 IPC per project plus a measurement bulk call, ~130
+ *  calls for 20 projects, on every visit (measured 2026-09-24). Two TTL caches
+ *  with distinct jobs: `factoryPaint` is what a mount may paint immediately
+ *  (30 min), `factoryFresh` says whether that value is young enough to skip the
+ *  refetch (60 s, the passport cache's window). A painted-but-stale tree
+ *  revalidates in the background and swaps in as ONE commit instead of one per
+ *  project. `reload()` always refetches. */
+const FACTORY_KEY = 'tree';
+const factoryPaint = createTtlValueCache<MockProject[]>(30 * 60_000);
+const factoryFresh = createTtlValueCache<true>(60_000);
+
 export function FactoryDataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<{ projects: MockProject[]; loading: boolean; error: string | null }>({ projects: [], loading: true, error: null });
+  const [data, setData] = useState<{ projects: MockProject[]; loading: boolean; error: string | null }>(() => {
+    const painted = factoryPaint.get(FACTORY_KEY);
+    return painted ? { projects: painted, loading: false, error: null } : { projects: [], loading: true, error: null };
+  });
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
+    if (nonce === 0 && factoryFresh.get(FACTORY_KEY) && factoryPaint.get(FACTORY_KEY)) return;
+    // Revalidating behind cached data: keep what is on screen and publish once
+    // at the end. With nothing cached, publish per project as before so the
+    // Factory's L2 for the opened project does not wait on all N.
+    const revalidating = factoryPaint.get(FACTORY_KEY) !== undefined;
     let cancelled = false;
     (async () => {
       try {
@@ -244,7 +267,8 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
           stack: p.tech_stack ?? '',
           groups: [],
         }));
-        setData({ projects: skeletons, loading: true, error: null });
+        const assembledById = new Map<string, MockProject>();
+        if (!revalidating) setData({ projects: skeletons, loading: true, error: null });
 
         // Bounded fan-out: this was a bare Promise.all over every project — 3N
         // IPC calls issued simultaneously (groups + contexts + use cases). On
@@ -272,7 +296,8 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
             for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
             for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first → oldest→newest
             const assembled = assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
-            if (cancelled) return;
+            assembledById.set(assembled.id, assembled);
+            if (cancelled || revalidating) return;
             setData((prev) => ({
               ...prev,
               projects: prev.projects.map((row) => (row.id === assembled.id ? assembled : row)),
@@ -281,9 +306,16 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
             silentCatch('useFactoryData:project')(err);
           }
         });
-        if (!cancelled) setData((prev) => ({ ...prev, loading: false }));
+        if (cancelled) return;
+        // A project whose tree failed to assemble keeps its skeleton row.
+        const final = skeletons.map((row) => assembledById.get(row.id) ?? row);
+        factoryPaint.set(FACTORY_KEY, final);
+        factoryFresh.set(FACTORY_KEY, true);
+        setData({ projects: final, loading: false, error: null });
       } catch (err) {
-        if (!cancelled) setData({ projects: [], loading: false, error: err instanceof Error ? err.message : String(err) });
+        // A failed revalidation keeps the cached rows on screen; only a cold
+        // load with nothing to show reports an empty tree.
+        if (!cancelled) setData((prev) => ({ projects: revalidating ? prev.projects : [], loading: false, error: err instanceof Error ? err.message : String(err) }));
       }
     })();
     return () => { cancelled = true; };

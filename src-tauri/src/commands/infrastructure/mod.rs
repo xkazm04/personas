@@ -66,6 +66,8 @@ pub mod system_ops;
 pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;
+/// The twin setup plan: a durable, planned guided setup (spark twin-setup-plan).
+pub mod twin_setup;
 pub mod twin_style;
 pub mod twin_voice;
 pub mod use_case_scan;

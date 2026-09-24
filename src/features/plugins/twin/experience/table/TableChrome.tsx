@@ -15,7 +15,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { BookOpenText, Layers, Palette, SlidersHorizontal, X } from 'lucide-react';
+import { BookOpenText, Layers, Palette, Route, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,8 +23,12 @@ import { SetupVoiceControls } from '../../setup/SetupVoiceControls';
 import type { SetupStage, SetupVoiceApi } from '../../setup/setupContract';
 import { EXPERIENCE_TITLE_ID } from '../experienceIds';
 
-/** The layers reachable from the chrome. `fields` is the widest of them. */
-export type ExperienceDoor = 'sheet' | 'deck' | 'studio' | 'fields';
+/**
+ * The layers reachable from the chrome. `fields` is the widest of them;
+ * `plan` is the persisted plan behind the questions, and comes first because
+ * it answers "why this question" for everything else on the table.
+ */
+export type ExperienceDoor = 'plan' | 'sheet' | 'deck' | 'studio' | 'fields';
 
 interface TableChromeProps {
   title: string;
@@ -96,6 +100,7 @@ export function TableChrome({
       <div className="flex-shrink-0 w-[13.5rem] hidden md:block">{stageTabs}</div>
 
       <div className="flex-shrink-0 flex items-center gap-1" role="group" aria-label={tx.table.doors}>
+        <Door id="plan" label={tx.plan.title} icon={<Route className="w-4 h-4" />} open={openDoor === 'plan'} onOpen={onDoor} />
         <Door id="sheet" label={tx.sheet.title} icon={<BookOpenText className="w-4 h-4" />} open={openDoor === 'sheet'} onOpen={onDoor} />
         {stage === 'training' && (
           <Door id="deck" label={tx.deck.title} icon={<Layers className="w-4 h-4" />} open={openDoor === 'deck'} onOpen={onDoor} />

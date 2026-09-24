@@ -243,10 +243,11 @@ describe('Guide layout', () => {
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(items[1]);
     // An unavailable tool stays focusable and names its reason.
-    const tweak = items.find((b) => b.textContent?.includes('tool_tweak'))!;
-    expect(tweak.getAttribute('aria-disabled')).toBe('true');
-    const why = document.getElementById(tweak.getAttribute('aria-describedby')!);
-    expect(why?.textContent).toBe('tool_soon');
+    // (Read aloud, with no voice set up in this test.)
+    const read = items.find((b) => b.textContent?.includes('tool_read'))!;
+    expect(read.getAttribute('aria-disabled')).toBe('true');
+    const why = document.getElementById(read.getAttribute('aria-describedby')!);
+    expect(why?.textContent).toBe('tool_read_setup');
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(orb);

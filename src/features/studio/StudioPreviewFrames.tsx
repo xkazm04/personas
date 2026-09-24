@@ -4,6 +4,7 @@ import { Bot } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
 import type { StudioPreviewState } from './useStudioPreview';
+import StudioPickComposer from './StudioPickComposer';
 
 // Warm previews (every live tab stays mounted; only the active one is shown)
 // plus the A3 orb pointer over the element a question is about. Shared by both
@@ -93,6 +94,7 @@ export default function StudioPreviewFrames({
           </span>
         </div>
       ) : null}
+      <StudioPickComposer preview={preview} />
     </>
   );
 }

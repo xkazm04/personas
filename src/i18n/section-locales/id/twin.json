@@ -737,7 +737,9 @@
       "trailLabel": "Yang sudah dimainkan",
       "earlier": "{count} sebelumnya",
       "earlierHide": "Sembunyikan sebelumnya",
-      "skipped": "Dilewati"
+      "skipped": "Dilewati",
+      "fromLastAnswer": "Dari jawaban terakhir Anda",
+      "reconciling": "Membaca jawaban Anda"
     },
     "slots": {
       "identity": {
@@ -812,6 +814,35 @@
       "titleNoTwin": "Belum ada twin",
       "resume": "Lanjutkan penyiapan",
       "train": "Mulai putaran pelatihan"
+    },
+    "openers": {
+      "channels": "Di mana Anda paling sering menulis: email, chat, atau tempat lain?",
+      "identity": "Orang datang kepada Anda untuk apa?",
+      "memories": "Cerita apa yang selalu Anda ceritakan berulang kali?",
+      "tone": "Bagaimana seorang teman menggambarkan cara Anda menulis?"
+    },
+    "plan": {
+      "askNext": "Tanyakan ini berikutnya",
+      "changeNote": "Apa yang berubah",
+      "coverage": "Tercakup",
+      "drop": "Singkirkan sasaran ini",
+      "empty": "Belum ada sasaran. Sasaran akan muncul di sini setelah rencana dibuat.",
+      "hint": "Apa yang sedang coba dipelajari tentang Anda, dan apa yang akan ditanyakan berikutnya.",
+      "noticed": "Apa yang saya perhatikan",
+      "noticedEmpty": "Belum ada apa-apa. Setelah beberapa jawaban, pola mulai terlihat.",
+      "phaseSetup": "Penyiapan",
+      "phaseTraining": "Pelatihan",
+      "pin": "Sematkan sasaran ini",
+      "rebuild": "Bangun ulang rencana",
+      "rebuilding": "Membangun ulang",
+      "restore": "Kembalikan",
+      "retry": "Coba lagi",
+      "statusBuilding": "Menyusun rencana dari apa yang tercatat",
+      "statusFailed": "Rencana tidak dapat disusun.",
+      "statusReady": "Rencana siap",
+      "title": "Rencana",
+      "unpin": "Lepas sematan sasaran ini",
+      "upNext": "Berikutnya"
     }
   }
 }

@@ -123,6 +123,8 @@ pub mod team_assignment_orchestrator;
 pub mod team_preset_adopter;
 pub mod team_slack_relay;
 pub mod tool_runner;
+/// The twin setup plan: persisted interview, background plan + reconcile.
+pub mod twin_setup;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.
 #[allow(dead_code)]
 pub mod webhook;

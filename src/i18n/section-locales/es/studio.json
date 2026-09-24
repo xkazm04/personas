@@ -147,11 +147,9 @@
     "tool_read_what": "Athena lee en voz alta su último mensaje.",
     "tool_research": "Investigar",
     "tool_research_what": "Lo busca en la web con ayudantes y trae lo que debería cambiar el plan.",
-    "tool_soon": "Próximamente: elegir una parte de la página necesita la próxima actualización de la vista previa.",
     "tool_tour": "Explícamelo",
     "tool_tour_what": "Una explicación sencilla de cada parte y qué decisiones tuyas la moldearon.",
     "tool_tweak": "Ajustar este elemento",
-    "tool_tweak_what": "Señala cualquier parte de la página y ajusta solo esa parte.",
     "tools": "Herramientas de Athena",
     "tools_open": "Abrir las herramientas de Athena",
     "why_continue": "La siguiente parte del plan. Solo pregunta si necesita una decisión real tuya.",
@@ -194,7 +192,8 @@
     "create_failed_hint": "No llegaron detalles. Vuelve a intentarlo o prueba con otro nombre.",
     "frame_blueprint": "El plan, meta por meta",
     "suggests_keys": "Intro elige la primera. El número de una tarjeta la elige. X la descarta.",
-    "tool_looks_what": "Dos o tres direcciones visuales para esta página, detrás de un pequeño selector arriba. Tú eliges cuál conservar."
+    "tool_looks_what": "Dos o tres direcciones visuales para esta página, detrás de un pequeño selector arriba. Tú eliges cuál conservar.",
+    "tool_tweak_what": "Señala cualquier parte de la página y di qué debe cambiar ahí. También puedes hacer clic derecho sobre ella en la vista previa."
   },
   "bun_missing": "Bun no está instalado y Studio lo necesita para crear y ejecutar proyectos. Instálalo desde bun.sh (o define PERSONAS_BUN_BIN) y reinicia la app.",
   "bun_unknown": "No se pudo comprobar si Bun está instalado. Studio lo necesita para crear y ejecutar proyectos. Vuelve a intentarlo, o instálalo desde bun.sh y reinicia la app.",
@@ -222,5 +221,8 @@
   "vision_dashboard": "Un panel de datos para [lo que rastrea]: métricas clave arriba, un gráfico principal y una tabla filtrable debajo. Limpio, denso, y recuerda los datos entre visitas.",
   "vision_intro": "Describe lo que quieres en una o dos frases. Athena lo planifica, lo construye en vivo en la vista previa y te pide indicaciones en cada paso. ¿No sabes por dónde empezar? Elige una opción:",
   "vision_landing": "Una landing page para [producto]: un hero llamativo con una propuesta de valor clara y una CTA principal, una sección de funciones, prueba social y una CTA final.",
-  "vision_portfolio": "Un sitio de portafolio para [tu nombre], [tu rol]: oscuro y moderno, con un hero, varias muestras de trabajo con casos de estudio breves, una sección de presentación y un formulario de contacto."
+  "vision_portfolio": "Un sitio de portafolio para [tu nombre], [tu rol]: oscuro y moderno, con un hero, varias muestras de trabajo con casos de estudio breves, una sección de presentación y un formulario de contacto.",
+  "pick_mode_hint": "Haz clic en cualquier cosa de la vista previa para cambiarla. Esc cancela.",
+  "pick_prompt": "¿Qué debería cambiar aquí?",
+  "pick_queued": "Guardado para su siguiente paso."
 }

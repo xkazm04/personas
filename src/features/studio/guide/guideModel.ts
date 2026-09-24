@@ -14,8 +14,6 @@ export interface GuideTool {
   prompt: string | null;
   /** Connectors the turn needs switched on (e.g. the real browser). */
   mcp?: string[];
-  /** Phase 2 capability that is not wired yet: shown, but disabled. */
-  soon?: boolean;
 }
 
 export const GUIDE_TOOLS: GuideTool[] = [
@@ -40,7 +38,7 @@ export const GUIDE_TOOLS: GuideTool[] = [
     prompt:
       'Walk me through what you have built so far, section by section from the top of the page. For each part say in one or two plain sentences what it does and which of my decisions shaped it. No code, no file names. Do not edit files this turn.',
   },
-  { id: 'tweak', prompt: null, soon: true },
+  { id: 'tweak', prompt: null },
   {
     id: 'data',
     prompt:

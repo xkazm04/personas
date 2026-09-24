@@ -729,7 +729,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       },
       "studio": {},
       "notices": {},
-      "launch": {}
+      "launch": {},
+      "plan": {},
+      "openers": {}
     }
   },
   "radio": {},

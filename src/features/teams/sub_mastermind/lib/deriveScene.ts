@@ -136,10 +136,14 @@ export function deriveScene(
   families: FamilyHealth = {},
   llmSpendByProject?: Map<string, number | null>,
   goalsOngoingByProject?: Map<string, number>,
+  /** False until every verdict-bearing family has answered (useSceneSettle):
+   *  islands keep their identity and position but render provisional, so no
+   *  verdict paints that a later arrival would retract. */
+  settled = true,
 ): Scene {
   if (passports.length > 0) {
     const islands = passports.map((p, i) => toIsland(
-      p, i,
+      settled || p.provisional ? p : { ...p, provisional: true }, i,
       kpiByProject?.get(p.identity.slug),
       ideaScanAt?.get(p.identity.slug),
       monitoringByProject?.get(p.identity.slug),

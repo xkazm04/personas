@@ -737,7 +737,9 @@
       "trailLabel": "Jugado hasta ahora",
       "earlier": "{count} anteriores",
       "earlierHide": "Ocultar anteriores",
-      "skipped": "Saltada"
+      "skipped": "Saltada",
+      "fromLastAnswer": "De tu última respuesta",
+      "reconciling": "Leyendo tu respuesta"
     },
     "slots": {
       "identity": {
@@ -812,6 +814,35 @@
       "titleNoTwin": "Aún no hay gemelo",
       "resume": "Seguir con la configuración",
       "train": "Empezar una ronda de entrenamiento"
+    },
+    "openers": {
+      "channels": "¿Dónde escribes la mayor parte del tiempo: correo, chat, o en otro sitio?",
+      "identity": "¿Para qué acude la gente a ti?",
+      "memories": "¿Qué historia te encuentras contando una y otra vez?",
+      "tone": "¿Cómo describiría un amigo tu forma de escribir?"
+    },
+    "plan": {
+      "askNext": "Preguntar esto a continuación",
+      "changeNote": "Qué ha cambiado",
+      "coverage": "Cubierto",
+      "drop": "Descartar este objetivo",
+      "empty": "Aún no hay objetivos. Aparecerán aquí en cuanto se elabore el plan.",
+      "hint": "Qué está intentando aprender sobre ti, y qué preguntará a continuación.",
+      "noticed": "Lo que he notado",
+      "noticedEmpty": "Nada aún. Tras algunas respuestas, empiezan a verse patrones.",
+      "phaseSetup": "Configuración",
+      "phaseTraining": "Entrenamiento",
+      "pin": "Fijar este objetivo",
+      "rebuild": "Reconstruir el plan",
+      "rebuilding": "Reconstruyendo",
+      "restore": "Recuperarlo",
+      "retry": "Inténtalo de nuevo",
+      "statusBuilding": "Elaborando un plan a partir de lo registrado",
+      "statusFailed": "No se pudo elaborar el plan.",
+      "statusReady": "Plan listo",
+      "title": "El plan",
+      "unpin": "Desfijar este objetivo",
+      "upNext": "A continuación"
     }
   }
 }

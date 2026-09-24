@@ -25,7 +25,7 @@ import { isPlaceholderPlan, MOCK_PHASES, type BuildPhase } from './studioBuildMo
 import { useStudioHistory } from './studioHistory';
 import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
-import { answerNote, buildSeed, QUEUED_NOTES_TURN } from './studioSeed';
+import { aimedNote, answerNote, buildSeed, QUEUED_NOTES_TURN, type AimedTarget } from './studioSeed';
 
 export type SketchState = 'loading' | 'ready' | 'failed';
 
@@ -126,8 +126,9 @@ export const QUEUED_NOTES_MAX = 10;
 export const POLL_INTERVAL_MS = 1500;
 export const POLL_MAX_ATTEMPTS = 160;
 
-// C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
-// before editing any files. "Build it" (an A1 decision option) resumes the build.
+// C2 — plan-first gate: wrap a new request (the seed vision included) so Athena
+// plans + asks approval before editing any files. "Build it" (an A1 decision
+// option) resumes the build.
 const planFirstSeed = (vision: string) =>
   `${vision}\n\n[Plan first — before editing ANY files this turn: reply with your proposed build plan and a 1-2 sentence approach, emit the BUILD_PLAN line, and end with NEEDS_INPUT {"question":"Approve this plan and start building?","options":["Build it","Let me adjust"]}. Do not edit files yet.]`;
 const AUTO_INSTRUCTION =
@@ -229,6 +230,11 @@ interface StudioStore {
   /** Keep a note for the next turn instead of refusing input mid-turn. */
   /** False when the note was not queued (empty, no project, or the queue is full). */
   queueNote: (id: string, text: string) => boolean;
+  /**
+   * Send a change aimed at one element: a turn now when she is idle, else a
+   * note for her next step. 'full' when the note queue refused it.
+   */
+  sendAimed: (id: string, target: AimedTarget, text: string) => 'sent' | 'queued' | 'full';
   removeQueuedNote: (id: string, index: number) => void;
 }
 
@@ -314,7 +320,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         options: h?.options ?? [],
         decisionArea: null,
         decisionSelector: null,
-        gatePlan: false,
+        gatePlan: useStudioHistory.getState().gatePlanDefault ?? false,
         mcp: [],
         stopNoop: false,
         activity: [],
@@ -758,7 +764,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       })();
     },
 
-    setBuildSettings: (id, p) => patch(id, p),
+    setBuildSettings: (id, p) => {
+      if (p.gatePlan !== undefined) useStudioHistory.getState().setGatePlanDefault(p.gatePlan);
+      patch(id, p);
+    },
 
     closeTab: (id) => {
       stopPoll(id);
@@ -871,7 +880,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       void runTurn(project.id, rt?.gatePlan ? planFirstSeed(seed) : seed);
     },
 
-    sendTurn: (id, text) => runTurn(id, text),
+    // Plan first gates every new request: she proposes the plan change and asks
+    // for approval before editing. Answering her pending question (the approval
+    // itself included) goes through as the answer.
+    sendTurn: (id, text) => {
+      const rt = get().runtimes[id];
+      const gated = !!rt?.gatePlan && !rt.question && !rt.autonomous;
+      return runTurn(id, gated ? planFirstSeed(text) : text);
+    },
 
     startAutonomous: (id) => {
       const rt = get().runtimes[id];
@@ -917,6 +933,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (!rt || !note || queued.length >= QUEUED_NOTES_MAX) return false;
       patch(id, { queuedNotes: [...queued, note] });
       return true;
+    },
+
+    sendAimed: (id, target, text) => {
+      const rt = get().runtimes[id];
+      const note = aimedNote(target, text);
+      if (rt && (rt.busy || rt.autonomous)) return get().queueNote(id, note) ? 'queued' : 'full';
+      void get().sendTurn(id, note);
+      return 'sent';
     },
 
     removeQueuedNote: (id, index) => {

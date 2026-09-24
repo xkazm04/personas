@@ -91,6 +91,9 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
     skip: turn.skip,
   });
 
+  // Reading an answer, or drawing up the plan, behind a question already here.
+  const working = session.reconciling || session.planning;
+
   const exitKey =
     turn.verdict === 'played' ? 'exitAccept' : turn.verdict === 'skipped' ? 'exitSkip' : 'exitNone';
 
@@ -104,6 +107,13 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
     >
       <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-5">
         <TableTrail history={session.history} question={session.question} />
+        {/* The table's one status region. It lives OUTSIDE the keyed deal so it
+            exists before its text does — a region remounted with each card is
+            born with its message and never announces it (census
+            `live-region-born-with-its-message`). */}
+        <span className="sr-only" role="status" data-testid="setup-desk-status">
+          {session.busy ? tx.table.thinking : working ? tx.table.reconciling : ''}
+        </span>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={session.question ?? 'idle'} variants={exitVariants} initial="hidden" animate="show" exit={exitKey}>
             <DealerCard
@@ -116,6 +126,7 @@ export function CardTable({ session, voice, turn, topicLabel }: CardTableProps) 
               answerMode={session.answerMode}
               incoming={session.incoming}
               busy={session.busy}
+              working={working}
             />
             <DecisionFan
               cards={cards}

@@ -1,13 +1,13 @@
 /**
  * What the Setup tab shows: the way into the table.
  *
- * Arriving on the tab opens the overlay straight away — the tab IS the way in,
- * from the sidebar and from every readiness jump that lands here. Close the
- * overlay and this card stays behind it: where the twin stands, and the two
- * ways back in.
+ * Arriving on the tab NEVER opens the overlay — not from the sidebar, not from
+ * a readiness jump, not from a restart that restores the Setup tab. The card is
+ * the whole tab: where the twin stands, and the two ways in. Only its two CTAs
+ * (and the Profiles roster's "New twin") open the table; the session behind it
+ * is persisted, so "Carry on setting up" resumes exactly where it stopped.
  */
 
-import { useEffect } from 'react';
 import { GraduationCap, Play } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -24,10 +24,6 @@ export default function ExperienceSetupPage() {
   const readiness = useTwinReadiness();
   const profile = useSystemStore((s) => s.twinProfiles.find((p) => p.id === s.activeTwinId) ?? null);
   const sigil = genderDefFromPronouns(profile?.pronouns ?? null);
-
-  useEffect(() => {
-    openTwinExperience({ mode: 'train' });
-  }, []);
 
   return (
     <div className="tx-felt h-full w-full flex items-center justify-center p-8" data-testid="twin-experience-launch">

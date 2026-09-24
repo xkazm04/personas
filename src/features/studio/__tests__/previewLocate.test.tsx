@@ -67,3 +67,37 @@ describe('locate ping', () => {
     expect(result.current.pointerRect).toBe(first);
   });
 });
+
+describe('right-click targeting', () => {
+  const pickedMsg = (source: Window | null) =>
+    new MessageEvent('message', {
+      data: { source: 'athena-agent', type: 'picked', selector: '.pricing > div:nth-of-type(2) > h3', label: 'Pro $19', tag: 'h3', rect: { x: 40, y: 300, width: 200, height: 30 }, path: '/pricing' },
+      source,
+    });
+
+  it('keeps the element the active preview reports, and nothing another frame claims', () => {
+    const { result } = renderHook(() => useStudioPreview());
+    const stranger = document.createElement('iframe');
+    document.body.appendChild(stranger);
+    act(() => {
+      window.dispatchEvent(pickedMsg(stranger.contentWindow));
+    });
+    expect(result.current.pick).toBeNull();
+    stranger.remove();
+    act(() => {
+      window.dispatchEvent(pickedMsg(frame.contentWindow));
+    });
+    expect(result.current.pick).toMatchObject({ projectId: 'p1', label: 'Pro $19', path: '/pricing' });
+    act(() => result.current.clearPick());
+    expect(result.current.pick).toBeNull();
+  });
+
+  it('the Tweak tool asks the active preview to pick the next click', () => {
+    const post = vi.spyOn(frame.contentWindow!, 'postMessage').mockImplementation(() => {});
+    const { result } = renderHook(() => useStudioPreview());
+    act(() => result.current.startPickMode());
+    expect(result.current.picking).toBe(true);
+    expect(post).toHaveBeenCalledWith({ source: 'athena', type: 'pickmode', on: true }, 'http://localhost:5000');
+  });
+});
+
