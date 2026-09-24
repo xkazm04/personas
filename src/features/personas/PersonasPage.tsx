@@ -20,6 +20,7 @@ import { useCanvasPanelBridge } from '@/features/teams/sub_mastermind/lib/useCan
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -29,11 +30,10 @@ import { silentCatch } from '@/lib/silentCatch';
 // Only the sub-tab / editor / build surfaces that compose AROUND those
 // primaries are declared below.
 //
-// lazyRetry (NOT raw React.lazy): raw lazy caches a rejected import promise
-// forever, so one failed chunk fetch (dev-server restart, post-deploy stale
-// chunk) bricked the section until a full page reload — the 2026-06-07
-// "infinite rendering" incident. lazyRetry swaps in a fresh lazy instance
-// after failure, so the next error-boundary reset / remount re-imports.
+// lazyRetry (NOT raw React.lazy): it retries a failed chunk fetch once
+// (dev-server restart, post-deploy stale chunk), then keeps ONE stable lazy
+// instance so a permanent failure reaches the ErrorBoundary's "Reload app"
+// cure instead of re-suspending forever. See the lazyRetry docstring.
 const PersonaEditor = lazyRetry(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const CreatePersonaEntry = lazyRetry(() => import('@/features/personas/sub_foundry').then(m => ({ default: m.CreatePersonaEntry })));
 // Mid-build resume renders the build progress surface directly (not the
@@ -58,8 +58,11 @@ const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const ScraperPage = lazyRetry(() => import('@/features/scraper/ScraperPage'));
 
-// Shared Suspense fallback — null (content fades in via motion.div wrapper)
-const SectionFallback = null;
+// Every Suspense boundary below falls back to `RouteChunkSkeleton`: invisible
+// for 150ms (CSS delay), so a warm or prefetched chunk paints nothing, and a
+// slow one shows the calm header ghost. A `null` fallback here used to rely on
+// a motion wrapper to fade content in, but that wrapper is disabled (see the
+// content area below), so a cold chunk showed a blank, collapsed area.
 
 // Dev-only startup-phase attribution for the freeze watchdog. Mirrors the
 // markPhase helper in App.tsx: the data waves below are the prime suspects for
@@ -179,22 +182,34 @@ export default function PersonasPage() {
   // Prefetch likely next routes after initial load settles.
   // Speculative -- drained one chunk per idle slice (see idlePrefetch) so the
   // route chunks don't evaluate in a burst alongside the overlay prefetch and
-  // first-load work. Ordered most-frequently-visited first; failures ignored.
+  // first-load work. Section primaries go through `prefetchSection`, the same
+  // deduped entry the rail's hover prefetch uses, so a chunk warmed by either
+  // path is fetched once. Ordered by predicted use: the agent loop first (the
+  // Agents list, then the editor it opens), then the dashboards and the daily
+  // sections, then the rarer primaries, then the Projects sub-tabs with
+  // FactoryPage last (broadest module graph). Failures are logged, not shown.
   useEffect(() => {
     if (!personasFetched) return;
     const cancelPrefetch = idlePrefetch([
-      () => import('@/features/overview/components/dashboard/OverviewPage'),
-      () => import('@/features/vault/sub_credentials/manager/CredentialManager'),
-      () => import('@/features/settings/components/SettingsPage'),
-      () => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'),
-      () => import('@/features/templates/components/DesignReviewsPage'),
-      () => import('@/features/triggers/TriggersPage'),
+      () => prefetchSection('personas') ?? Promise.resolve(),
+      () => import('@/features/agents/sub_editor'),
+      () => prefetchSection('overview') ?? Promise.resolve(),
+      () => prefetchSection('home') ?? Promise.resolve(),
+      () => prefetchSection('events') ?? Promise.resolve(),
+      () => prefetchSection('credentials') ?? Promise.resolve(),
+      () => prefetchSection('teams') ?? Promise.resolve(),
+      () => prefetchSection('companions') ?? Promise.resolve(),
+      () => prefetchSection('design-reviews') ?? Promise.resolve(),
+      () => prefetchSection('settings') ?? Promise.resolve(),
+      () => prefetchSection('plugins') ?? Promise.resolve(),
+      () => prefetchSection('studio') ?? Promise.resolve(),
+      // Cloud is dev-only (gated in AgentsSidebarNav), so, like Competition
+      // below, its chunk is not worth a production user's bandwidth.
+      ...(import.meta.env.DEV
+        ? [() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel')]
+        : []),
       // Projects (teams) submodule primaries — previously un-prefetched, so a
       // cold first-open paid full chunk fetch+eval behind the route skeleton.
-      // Warming them here brings the Projects tabs to Overview-level cold-load
-      // parity (Overview's chunk has always led this list). Ordered by visit
-      // frequency; FactoryPage last (broadest module graph).
-      () => import('@/features/teams/sub_teamWorkspace/TeamCanvas'),
       () => import('@/features/teams/sub_goals/GoalsPage'),
       () => import('@/features/teams/sub_kpis/KPIsPage'),
       () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
@@ -254,7 +269,7 @@ export default function PersonasPage() {
       if (agentTab === 'cloud') {
         return (
           <ErrorBoundary onGoHome={goHome} name="Cloud">
-            <Suspense fallback={SectionFallback}>
+            <Suspense fallback={<RouteChunkSkeleton />}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={cloudTab}
@@ -284,19 +299,16 @@ export default function PersonasPage() {
       // describe-it chat, or jump to templates) — the two-layer
       // architecture made visible at the front door.
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={SectionFallback}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={<RouteChunkSkeleton />}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={SectionFallback}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={<RouteChunkSkeleton />}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
     }
 
     if (sidebarSection === 'teams') {
       // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
-      // These primaries are NOT idle-prefetched at the same priority as Overview,
-      // so a cold first-open would flash a blank content area under a `null`
-      // fallback. A delayed header-only `RouteChunkSkeleton` shows calm chrome
-      // instead — invisible (150ms CSS delay) once the chunk is warm/prefetched.
+      // Each tab is its own lazy chunk behind the shared delayed header ghost.
       if (teamsTab === 'factory') {
         return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={<RouteChunkSkeleton />}><FactoryPage /></Suspense></ErrorBoundary>;
       }
@@ -335,14 +347,11 @@ export default function PersonasPage() {
       if (teamsTab === 'webview') {
         return <ErrorBoundary onGoHome={goHome} name="Webview"><Suspense fallback={<RouteChunkSkeleton />}><WebviewPage /></Suspense></ErrorBoundary>;
       }
-      return renderSectionRoute('teams', goHome, <RouteChunkSkeleton />);
+      return renderSectionRoute('teams', goHome);
     }
     if (sidebarSection === 'plugins') {
-      // Each plugin primary is a separate lazy chunk that was NOT idle-prefetched
-      // and rendered under a `null` fallback — a cold first-open flashed a blank
-      // content area during chunk fetch+eval. The delayed header-only
-      // `RouteChunkSkeleton` shows calm chrome instead (invisible via its 150ms
-      // CSS delay once the chunk is warm), matching Overview/Projects cold-load.
+      // Each plugin primary is a separate lazy chunk (not idle-prefetched) behind
+      // the shared delayed header ghost, so a cold first-open never flashes blank.
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={<RouteChunkSkeleton />}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
@@ -364,9 +373,9 @@ export default function PersonasPage() {
     if (sidebarSection === 'companions') {
       // Companions routes on ONE persisted page field, so its primary is a
       // switch rather than a tab ladder here (see `CompanionsPage`). The
-      // skeleton is for THIS chunk's cold fetch; each destination inside it
-      // carries its own.
-      return renderSectionRoute('companions', goHome, <RouteChunkSkeleton />);
+      // router's default skeleton covers THIS chunk's cold fetch; each
+      // destination inside it carries its own.
+      return renderSectionRoute('companions', goHome);
     }
     // Leaf sections — registry-driven primary surface. Gates were already
     // checked above; personas/teams/plugins are handled by their bespoke
@@ -378,9 +387,9 @@ export default function PersonasPage() {
       return renderSectionRoute(sidebarSection, goHome);
     }
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
-      return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={<RouteChunkSkeleton />}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
     }
-    if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
+    if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={<RouteChunkSkeleton />}><PersonaEditor /></Suspense></ErrorBoundary>;
     // Default: All Agents table view (registry primary for the personas section)
     return renderSectionRoute('personas', goHome);
   };

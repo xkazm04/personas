@@ -19,28 +19,28 @@
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { SECTION_CHUNKS } from '@/features/shared/chrome/navPrefetch';
 import type { SidebarSection } from '@/lib/types/types';
 import { navSection, passesGates, type GateContext } from '@/lib/navigation/registry';
 
-// Shared Suspense fallback — null (content fades in via the motion wrapper).
-const SectionFallback = null;
-
-// Lazy-loaded section primaries. lazyRetry (NOT raw React.lazy): raw lazy caches
-// a rejected import promise forever, so one failed chunk fetch bricked the
-// section until a full reload — the 2026-06-07 "infinite rendering" incident.
-// lazyRetry swaps in a fresh lazy instance after failure so the next
-// error-boundary reset / remount re-imports.
-export const HomePage = lazyRetry(() => import('@/features/home/components/HomePage'));
-export const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
-export const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
-export const PersonaOverviewPage = lazyRetry(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
-export const TriggersPage = lazyRetry(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
-export const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
-export const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
-export const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
-export const CompanionsPage = lazyRetry(() => import('@/features/companions/CompanionsPage'));
-export const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
-export const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
+// Lazy-loaded section primaries, built from the same import thunks the shell
+// prefetches (`navPrefetch.ts`), so a warmed chunk is exactly the chunk mounted.
+// lazyRetry (NOT raw React.lazy): it retries a failed import once, then keeps
+// ONE stable lazy instance so a permanent failure reaches the nearest
+// ErrorBoundary and its "Reload app" cure instead of re-suspending forever
+// (see the lazyRetry docstring for why swapping in a fresh instance looped).
+export const HomePage = lazyRetry(SECTION_CHUNKS.home);
+export const OverviewPage = lazyRetry(SECTION_CHUNKS.overview);
+export const TeamCanvas = lazyRetry(SECTION_CHUNKS.teams);
+export const PersonaOverviewPage = lazyRetry(SECTION_CHUNKS.personas);
+export const TriggersPage = lazyRetry(() => SECTION_CHUNKS.events().then(m => ({ default: m.TriggersPage })));
+export const CredentialManager = lazyRetry(() => SECTION_CHUNKS.credentials().then(m => ({ default: m.CredentialManager })));
+export const DesignReviewsPage = lazyRetry(SECTION_CHUNKS['design-reviews']);
+export const PluginBrowsePage = lazyRetry(SECTION_CHUNKS.plugins);
+export const CompanionsPage = lazyRetry(SECTION_CHUNKS.companions);
+export const StudioPage = lazyRetry(SECTION_CHUNKS.studio);
+export const SettingsPage = lazyRetry(SECTION_CHUNKS.settings);
 
 /** A content-routable section id (everything except the overlay-only Schedules). */
 export type RoutableSection = Exclude<SidebarSection, 'schedules'>;
@@ -80,16 +80,17 @@ export function isRoutableSection(id: SidebarSection): id is RoutableSection {
  * Mount a section's primary surface, wrapped exactly as the pre-registry ladder
  * did: `ErrorBoundary(name) → Suspense → <Component />`.
  *
- * `fallback` overrides the default `null` Suspense fallback. Pass a delayed
- * route skeleton (`RouteChunkSkeleton`) for a heavy, un-prefetched primary whose
- * cold chunk-load would otherwise flash a blank content area (e.g. the Teams
- * canvas); the default `null` stays right for chunks that are idle-prefetched
- * and warm by first navigation.
+ * The Suspense fallback defaults to `RouteChunkSkeleton`: invisible for the
+ * first 150ms (pure CSS delay), so a warm or prefetched chunk never paints it,
+ * and a genuinely slow chunk shows the calm header ghost instead of a blank,
+ * collapsed content area. It used to default to `null` on the claim that a
+ * motion wrapper faded content in; that wrapper is disabled in `PersonasPage`,
+ * so a cold chunk showed nothing at all. `fallback` still overrides it.
  */
 export function renderSectionRoute(
   section: RoutableSection,
   onGoHome: () => void,
-  fallback: ReactNode = SectionFallback,
+  fallback: ReactNode = <RouteChunkSkeleton />,
 ): ReactNode {
   const { Component, boundaryName } = SECTION_ROUTES[section];
   return (
