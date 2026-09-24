@@ -120,3 +120,31 @@ describe('closing a tab whose dev server refuses to stop', () => {
     expect(useStudioStore.getState().tabOrder).toEqual([]);
   });
 });
+
+describe('closing a tab while its dev server is still starting', () => {
+  beforeEach(() => {
+    webbuildDevStop.mockReset();
+    webbuildDevStop.mockResolvedValue(undefined);
+    webbuildSessionStop.mockResolvedValue(true);
+    useStudioHistory.setState({ byProject: {}, openTabIds: [], activeTabId: null });
+  });
+
+  it('stops the server the late start brought up, and does not poll a closed tab', async () => {
+    vi.useFakeTimers();
+    const api = await import('@/api/webbuild');
+    let resolveStart!: (v: unknown) => void;
+    vi.mocked(api.webbuildDevStart).mockImplementationOnce(() => new Promise((r) => { resolveStart = r; }) as never);
+    const opening = useStudioStore.getState().startExisting(ID, 'Demo');
+    useStudioStore.getState().closeTab(ID);
+    expect(webbuildDevStop).toHaveBeenCalledTimes(1);
+    // The backend finishes starting after the tab is gone.
+    resolveStart({ projectId: ID, port: 5000, url: 'http://localhost:5000', healthy: false, uptimeSecs: 0 });
+    await opening;
+    expect(webbuildDevStop).toHaveBeenCalledTimes(2);
+    expect(useStudioStore.getState().runtimes[ID]).toBeUndefined();
+    vi.mocked(api.webbuildStatus).mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(api.webbuildStatus).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+});

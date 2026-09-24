@@ -167,6 +167,8 @@ export function splitReply(text: string): string[] {
 
 // Non-serializable per-project handles kept outside store state.
 const pollTimers = new Map<string, number>();
+/** Per project: which `start` call is the latest (see `start`). */
+const startSeq = new Map<string, number>();
 const autoTimers = new Map<string, number>();
 let streamUnlisten: (() => void) | null = null;
 
@@ -436,6 +438,11 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       patch(id, { phase: 'error' });
     };
     const timer = window.setInterval(() => {
+      // A closed tab stops its own poll.
+      if (!get().runtimes[id]) {
+        stopPoll(id);
+        return;
+      }
       attempts += 1;
       const exhausted = attempts >= POLL_MAX_ATTEMPTS;
       webbuildStatus(id)
@@ -475,7 +482,11 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     stopLiveness(id);
     const timer = window.setInterval(() => {
       const rt = get().runtimes[id];
-      if (!rt || rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
+      if (!rt) {
+        stopLiveness(id); // a closed tab stops its own watch
+        return;
+      }
+      if (rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
       webbuildStatus(id)
         .then((status) => {
           if (status?.healthy) {
@@ -498,11 +509,28 @@ export const useStudioStore = create<StudioStore>((set, get) => {
   const start = async (id: string) => {
     stopLiveness(id);
     patch(id, { phase: 'starting', status: null });
+    // The latest start owns the tab: an older one that resolves late (the
+    // liveness self-heal racing a manual retry) must not overwrite it. The
+    // backend already replaced and killed the older server.
+    const seq = (startSeq.get(id) ?? 0) + 1;
+    startSeq.set(id, seq);
     try {
       const status = await webbuildDevStart(id);
+      if (!get().runtimes[id]) {
+        // The tab closed while the server was starting. closeTab's stop ran
+        // before this server existed, so stop it now or it holds its port
+        // with nothing in Studio pointing at it.
+        void webbuildDevStop(id).catch(toastCatch('studioStore:start:closed'));
+        return;
+      }
+      if (startSeq.get(id) !== seq) return;
       patch(id, { status });
       beginPoll(id);
     } catch (e) {
+      if (!get().runtimes[id] || startSeq.get(id) !== seq) {
+        silentCatch('studioStore:start:superseded')(e);
+        return;
+      }
       patch(id, { phase: 'error' });
       toastCatch('start dev server')(e);
     }
