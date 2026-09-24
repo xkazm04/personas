@@ -34,7 +34,7 @@ export function CapabilityRowHeader({ capability, expanded, onToggleExpand }: Pr
           value={capability.title}
           aria-label={t.matrix_v3.capability_title_label}
           onChange={(e) => patchCapability(id, { title: e.target.value })}
-          className="w-full border-none bg-transparent typo-heading-xs text-foreground focus:outline-none"
+          className="w-full border-none bg-transparent typo-title text-foreground focus:outline-none"
           data-testid={`capability-title-${id}`}
         />
         <input
@@ -42,7 +42,7 @@ export function CapabilityRowHeader({ capability, expanded, onToggleExpand }: Pr
           value={capability.capability_summary}
           aria-label={t.matrix_v3.capability_summary_label}
           onChange={(e) => patchCapability(id, { capability_summary: e.target.value })}
-          className="mt-0.5 w-full border-none bg-transparent typo-body-sm text-foreground focus:outline-none"
+          className="mt-0.5 w-full border-none bg-transparent typo-body text-foreground focus:outline-none"
           data-testid={`capability-summary-${id}`}
         />
       </div>

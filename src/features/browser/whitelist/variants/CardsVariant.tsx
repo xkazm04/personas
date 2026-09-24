@@ -75,7 +75,7 @@ export default function CardsVariant({
               <button
                 type="button"
                 onClick={() => onEdit(site)}
-                className="typo-heading-sm text-foreground truncate block text-left hover:underline focus-ring rounded-interactive"
+                className="typo-heading text-foreground truncate block text-left hover:underline focus-ring rounded-interactive"
               >
                 {site.label || site.origin}
               </button>

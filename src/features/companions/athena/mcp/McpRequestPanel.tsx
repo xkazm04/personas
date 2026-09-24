@@ -174,7 +174,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
           type="button"
           onClick={onSubmit}
           disabled={!text.trim() || sending}
-          className="rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-button disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          className="rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-title disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
         >
           <Send className="size-3.5" />
           {t.athena.orchestration.guidance_send}
@@ -238,7 +238,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
           type="button"
           onClick={onApprove}
           disabled={sending !== null}
-          className="flex-1 rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-button disabled:opacity-50 inline-flex items-center justify-center gap-1"
+          className="flex-1 rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-title disabled:opacity-50 inline-flex items-center justify-center gap-1"
         >
           <Check className="size-3.5" />
           {t.athena.orchestration.approval_approve}
@@ -247,7 +247,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
           type="button"
           onClick={onDeny}
           disabled={sending !== null}
-          className="flex-1 rounded-interactive border border-border bg-background text-foreground px-3 py-1.5 typo-button disabled:opacity-50 inline-flex items-center justify-center gap-1"
+          className="flex-1 rounded-interactive border border-border bg-background text-foreground px-3 py-1.5 typo-title disabled:opacity-50 inline-flex items-center justify-center gap-1"
         >
           <X className="size-3.5" />
           {t.athena.orchestration.approval_deny}

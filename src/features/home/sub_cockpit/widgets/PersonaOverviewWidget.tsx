@@ -128,7 +128,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
             <p className={`text-[10px] uppercase tracking-[0.22em] ${heroTier.textClass} font-medium opacity-80`}>
               {title ?? t.athena.persona_overview_eyebrow_default}
             </p>
-            <h1 className="typo-heading-sm text-foreground/95 truncate font-semibold">
+            <h1 className="typo-heading text-foreground/95 truncate font-semibold">
               {hero.name}
             </h1>
           </div>
@@ -330,7 +330,7 @@ function KpiPanel({
           ? 'text-rose-300'
           : 'text-foreground/95';
   const valueNode = (
-    <span className={`typo-data-md font-semibold ${valueClass}`}>
+    <span className={`typo-data font-semibold ${valueClass}`}>
       {value}
       {hint != null && <span aria-hidden className="ml-0.5 opacity-70">*</span>}
     </span>

@@ -19,20 +19,20 @@ export function GlyphEditFace({ onAddCapability }: GlyphEditFaceProps) {
       <section className="flex flex-col gap-3 rounded-2xl border border-border/30 bg-secondary/10 p-5">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="typo-heading-sm text-foreground">Capabilities</h3>
-            <p className="typo-body-sm text-foreground"><DebtText k="auto_tune_each_capability_s_dimensions_manually_6fb50a3a" /></p>
+            <h3 className="typo-heading text-foreground">Capabilities</h3>
+            <p className="typo-body text-foreground"><DebtText k="auto_tune_each_capability_s_dimensions_manually_6fb50a3a" /></p>
           </div>
           <button
             type="button"
             onClick={onAddCapability}
-            className="rounded-modal bg-primary/20 px-3 py-1.5 typo-body-sm font-medium text-primary hover:bg-primary/30 flex items-center gap-1.5"
+            className="rounded-modal bg-primary/20 px-3 py-1.5 typo-body font-medium text-primary hover:bg-primary/30 flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             Add
           </button>
         </header>
         {capabilityOrder.length === 0 ? (
-          <p className="typo-body-sm text-foreground py-4">
+          <p className="typo-body text-foreground py-4">
             <DebtText k="auto_no_capabilities_yet_start_a_build_via_the__32ba6dac" />
           </p>
         ) : (

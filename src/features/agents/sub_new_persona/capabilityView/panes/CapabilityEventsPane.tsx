@@ -24,7 +24,7 @@ export function CapabilityEventsPane({ capability }: Props) {
           </h4>
         </header>
         {events.length === 0 ? (
-          <p className="typo-body-sm text-foreground">
+          <p className="typo-body text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </p>
         ) : (
@@ -37,7 +37,7 @@ export function CapabilityEventsPane({ capability }: Props) {
                 <span className="typo-caption uppercase text-foreground">
                   {ev.direction}
                 </span>
-                <span className="typo-body-sm text-foreground truncate">
+                <span className="typo-body text-foreground truncate">
                   {ev.event_type}
                 </span>
                 {ev.description ? (
@@ -59,7 +59,7 @@ export function CapabilityEventsPane({ capability }: Props) {
           </h4>
         </header>
         {channels.length === 0 ? (
-          <p className="typo-body-sm text-foreground">
+          <p className="typo-body text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </p>
         ) : (
@@ -72,7 +72,7 @@ export function CapabilityEventsPane({ capability }: Props) {
                 <span className="typo-caption uppercase text-foreground">
                   {ch.channel}
                 </span>
-                <span className="typo-body-sm text-foreground truncate">
+                <span className="typo-body text-foreground truncate">
                   {ch.target}
                 </span>
                 {ch.format ? (

@@ -1,5 +1,5 @@
 // Connect-source wizard (P6) — binds a KPI to a METRIC TYPE, never a tool.
-// Golden-standard modal anatomy (header band / typo-overline sections /
+// Golden-standard modal anatomy (header band / typo-eyebrow sections /
 // footer band). Flow: pick metric type (if the KPI lacks one) → pick a
 // compatible vault connection (or quick-add one) → compose the retrieval
 // procedure (built-in recipe, else AI composes ONCE) → live test against the
@@ -36,7 +36,7 @@ const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, '');
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground mb-1.5">{title}</h3>
+      <h3 className="typo-eyebrow text-foreground mb-1.5">{title}</h3>
       {children}
     </div>
   );

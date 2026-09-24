@@ -353,7 +353,7 @@ export default function BrowsePanel() {
                     </div>
                   </div>
                 )}
-                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
+                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed ? parsed.body : noteContent}</ReactMarkdown>
                 </div>
               </>

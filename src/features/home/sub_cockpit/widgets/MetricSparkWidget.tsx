@@ -43,7 +43,7 @@ export function MetricSparkWidget({ config, title }: CockpitWidgetProps) {
         {label}
       </div>
       <div className="flex-1 flex flex-col items-start justify-center gap-1">
-        <div className={`typo-display ${intentClass} tabular-nums`}>
+        <div className={`typo-data-lg ${intentClass} tabular-nums`}>
           {displayValue}
           {unit ? (
             <span className="typo-body text-foreground ml-1">{unit}</span>

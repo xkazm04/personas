@@ -52,7 +52,7 @@ export default function DecisionsPanel() {
   return (
     <div className="flex flex-col gap-4 p-6 max-w-5xl mx-auto w-full">
       <header className="space-y-2">
-        <h1 className="typo-h3 text-foreground/95 inline-flex items-center gap-2">
+        <h1 className="typo-heading-lg text-foreground/95 inline-flex items-center gap-2">
           <ScrollText className="w-5 h-5 text-fuchsia-400" />
           {t.athena.decisions_panel_title}
         </h1>

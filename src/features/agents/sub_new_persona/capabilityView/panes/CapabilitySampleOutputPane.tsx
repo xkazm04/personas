@@ -31,13 +31,13 @@ export function CapabilitySampleOutputPane({ capability }: Props) {
 
       {sample?.format ? (
         <span
-          className="w-fit rounded-card bg-secondary/25 px-2 py-1 typo-body-sm text-foreground"
+          className="w-fit rounded-card bg-secondary/25 px-2 py-1 typo-body text-foreground"
           data-testid={`capability-sample-output-format-${capability.id}`}
         >
           {sample.format}
         </span>
       ) : (
-        <p className="typo-body-sm text-foreground">
+        <p className="typo-body text-foreground">
           {t.matrix_v3.capability_row_field_pending}
         </p>
       )}

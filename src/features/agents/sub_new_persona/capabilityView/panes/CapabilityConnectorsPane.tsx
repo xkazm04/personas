@@ -39,14 +39,14 @@ export function CapabilityConnectorsPane({ capability }: Props) {
       </label>
       <div className="flex flex-wrap gap-2">
         {value.length === 0 ? (
-          <span className="typo-body-sm text-foreground">
+          <span className="typo-body text-foreground">
             {t.matrix_v3.capability_row_field_pending}
           </span>
         ) : null}
         {value.map((c, i) => (
           <span
             key={`${c}-${i}`}
-            className="inline-flex items-center gap-1 rounded-full bg-secondary/40 px-3 py-1 typo-body-sm text-foreground"
+            className="inline-flex items-center gap-1 rounded-full bg-secondary/40 px-3 py-1 typo-body text-foreground"
           >
             {c}
             <button
@@ -72,7 +72,7 @@ export function CapabilityConnectorsPane({ capability }: Props) {
           }}
           onBlur={add}
           placeholder={t.matrix_v3.capability_connector_add_placeholder}
-          className="min-w-[140px] flex-1 rounded-full border border-border/40 bg-transparent px-3 py-1 typo-body-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          className="min-w-[140px] flex-1 rounded-full border border-border/40 bg-transparent px-3 py-1 typo-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
       </div>
     </div>

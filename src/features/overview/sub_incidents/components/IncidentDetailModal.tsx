@@ -216,7 +216,7 @@ export function IncidentDetailModal({
         <div className="flex items-start gap-2.5 rounded-card border border-primary/15 bg-primary/5 px-3.5 py-3">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
           <div className="min-w-0">
-            <span className="typo-overline text-foreground mb-0.5 block">
+            <span className="typo-eyebrow text-foreground mb-0.5 block">
               {t.overview.incidents.guidance_label}
             </span>
             <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
@@ -257,7 +257,7 @@ export function IncidentDetailModal({
 
         {personaId && (
           <div>
-            <h3 className="typo-overline text-foreground mb-1.5">
+            <h3 className="typo-eyebrow text-foreground mb-1.5">
               {t.overview.incidents.siblings_label}
             </h3>
             {siblings.length === 0 ? (
@@ -298,7 +298,7 @@ export function IncidentDetailModal({
         )}
 
         <div>
-          <h3 className="typo-overline text-foreground mb-1.5">
+          <h3 className="typo-eyebrow text-foreground mb-1.5">
             {t.overview.incidents.detail_label_detail}
           </h3>
           <IncidentDetailBreakdown detail={incident.detail} />
@@ -306,7 +306,7 @@ export function IncidentDetailModal({
 
         {incident.resolutionNote && (
           <div>
-            <h3 className="typo-overline text-foreground mb-1.5">
+            <h3 className="typo-eyebrow text-foreground mb-1.5">
               {t.overview.incidents.detail_label_resolution_note}
             </h3>
             <p className="typo-body text-foreground whitespace-pre-wrap break-words">
@@ -319,7 +319,7 @@ export function IncidentDetailModal({
           <div>
             <label
               htmlFor="incident-resolution-note"
-              className="typo-overline text-foreground mb-1.5 block"
+              className="typo-eyebrow text-foreground mb-1.5 block"
             >
               {t.overview.incidents.detail_note_label}
             </label>
@@ -353,7 +353,7 @@ export function IncidentDetailModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground mb-1.5">{label}</h3>
+      <h3 className="typo-eyebrow text-foreground mb-1.5">{label}</h3>
       <span className="typo-body text-foreground">{children}</span>
     </div>
   );

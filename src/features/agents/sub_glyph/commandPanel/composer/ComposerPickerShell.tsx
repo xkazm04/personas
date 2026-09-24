@@ -123,7 +123,7 @@ export function ComposerPickerShell({
                     {eyebrow}
                   </span>
                 )}
-                <h2 className="typo-heading-sm text-foreground font-semibold truncate">{title}</h2>
+                <h2 className="typo-heading text-foreground font-semibold truncate">{title}</h2>
                 {subtitle && (
                   <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>
                 )}

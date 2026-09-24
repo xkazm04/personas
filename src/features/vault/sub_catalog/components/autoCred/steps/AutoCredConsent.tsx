@@ -94,7 +94,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           <p className="typo-body text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
-            className="[&_p]:typo-body [&_p]:text-foreground [&_p]:mb-1.5 [&_ul]:typo-body [&_ol]:typo-body [&_li]:text-foreground [&_code]:typo-body"
+            className="[&_p]:text-foreground [&_p]:mb-1.5 [&_li]:text-foreground"
           />
         </div>
       )}

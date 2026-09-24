@@ -59,7 +59,7 @@ export function WelcomeHero({
       </div>
 
       <div className="space-y-1.5 max-w-sm">
-        <h2 className="typo-heading-sm font-semibold text-foreground">
+        <h2 className="typo-heading font-semibold text-foreground">
           {c.welcome_title}
         </h2>
         <p className="typo-body text-foreground">

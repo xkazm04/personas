@@ -65,7 +65,7 @@ export function PressureTile({ pressure }: { pressure: PressureGauge }) {
         </p>
 
         <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
-          <span className="typo-overline text-foreground/85">{b.pressure_last_cycle}</span>
+          <span className="typo-eyebrow text-foreground/85">{b.pressure_last_cycle}</span>
           {lastCycleAt ? (
             <RelativeTime timestamp={lastCycleAt} className="typo-caption text-foreground" />
           ) : (

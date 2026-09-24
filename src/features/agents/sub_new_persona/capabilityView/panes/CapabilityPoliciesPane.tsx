@@ -31,7 +31,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
         : t.matrix_v3.review_mode_never;
 
   const inputClass =
-    "rounded-xl border border-border/40 bg-background/60 px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40";
+    "rounded-xl border border-border/40 bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/40";
 
   return (
     <div
@@ -57,7 +57,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
               key={m}
               aria-pressed={review.mode === m}
               onClick={() => onReview({ ...review, mode: m })}
-              className={`rounded-full px-3 py-1 typo-body-sm transition ${
+              className={`rounded-full px-3 py-1 typo-body transition ${
                 review.mode === m
                   ? "bg-primary/25 text-primary"
                   : "text-foreground hover:text-foreground"
@@ -92,7 +92,7 @@ export function CapabilityPoliciesPane({ capability }: Props) {
             size="sm"
             data-testid={`capability-memory-toggle-${capability.id}`}
           />
-          <span className="typo-body-sm text-foreground">
+          <span className="typo-body text-foreground">
             {memory.enabled
               ? t.matrix_v3.memory_enabled_true
               : t.matrix_v3.memory_enabled_false}

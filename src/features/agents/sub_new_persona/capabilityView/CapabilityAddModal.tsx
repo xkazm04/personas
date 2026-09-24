@@ -118,10 +118,10 @@ export function CapabilityAddModal({ open, onClose }: Props) {
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <h2 id={TITLE_ID} className="typo-heading-sm text-foreground">
+              <h2 id={TITLE_ID} className="typo-heading text-foreground">
                 {t.matrix_v3.add_capability_modal_title}
               </h2>
-              <p className="mt-1 typo-body-sm text-foreground">
+              <p className="mt-1 typo-body text-foreground">
                 {t.matrix_v3.add_capability_modal_subtitle}
               </p>
             </div>
@@ -170,7 +170,7 @@ export function CapabilityAddModal({ open, onClose }: Props) {
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-modal px-4 py-2 typo-body-sm text-foreground hover:bg-secondary/40"
+            className="rounded-modal px-4 py-2 typo-body text-foreground hover:bg-secondary/40"
           >
             {t.common.cancel}
           </button>
@@ -178,7 +178,7 @@ export function CapabilityAddModal({ open, onClose }: Props) {
             type="button"
             onClick={handleSubmit}
             disabled={!title.trim()}
-            className="rounded-modal bg-primary px-4 py-2 typo-body-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+            className="rounded-modal bg-primary px-4 py-2 typo-body font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             data-testid="capability-add-modal-submit"
           >
             {t.matrix_v3.add_capability_modal_cta}

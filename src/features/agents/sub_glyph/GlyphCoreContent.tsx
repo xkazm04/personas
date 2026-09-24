@@ -231,7 +231,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </motion.div>
         </div>
-        <span className="typo-heading-sm text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
+        <span className="typo-heading text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
         <span className="typo-caption text-foreground">{t.agents.glyph_promoted_ready}</span>
         <button
           type="button"
@@ -252,7 +252,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
         <span className="typo-label text-foreground"><DebtText k="auto_draft_ready_96b5a4f6" /></span>
-        <span className="typo-heading-sm text-foreground">{completenessPct}<DebtText k="auto_complete_dfdcd775" /></span>
+        <span className="typo-heading text-foreground">{completenessPct}<DebtText k="auto_complete_dfdcd775" /></span>
         <div className="flex items-center gap-1.5 flex-wrap justify-center">
           <button
             type="button"

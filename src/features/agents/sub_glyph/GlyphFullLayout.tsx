@@ -270,7 +270,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
         {face === "glyph" && !isCompose && glyphRows.length > 0 && (
           <div className="min-h-[1.75rem] flex items-center justify-center">
             <span
-              className="typo-heading-sm font-semibold text-center text-foreground"
+              className="typo-heading font-semibold text-center text-foreground"
               key={
                 hoveredRowIndex !== null && hoveredRowIndex !== activeRowIndex
                   ? `${glyphRows[hoveredRowIndex]?.id}-preview`

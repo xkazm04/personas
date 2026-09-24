@@ -92,7 +92,7 @@ export const TalkBubble = memo(function TalkBubble({ item, onOpen }: { item: Tea
             modal keeps the full document layout. */}
         <MarkdownRenderer
           content={item.body ?? ''}
-          className="typo-body text-foreground break-words [&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 [&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5"
+          className="typo-body text-foreground break-words [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 [&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5"
         />
       </div>
     </div>

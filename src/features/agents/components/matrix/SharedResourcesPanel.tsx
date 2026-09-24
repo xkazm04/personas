@@ -30,17 +30,17 @@ export function SharedResourcesPanel() {
       data-testid="shared-resources-panel"
     >
       <header className="flex flex-col gap-1">
-        <h3 className="typo-heading-sm text-foreground">
+        <h3 className="typo-heading text-foreground">
           {t.matrix_v3.shared_resources_section_title}
         </h3>
-        <p className="typo-body-sm text-foreground">
+        <p className="typo-body text-foreground">
           {t.matrix_v3.shared_resources_section_subtitle}
         </p>
       </header>
 
       {!hasAnything ? (
         <p
-          className="typo-body-sm text-foreground"
+          className="typo-body text-foreground"
           data-testid="shared-resources-empty"
         >
           {t.matrix_v3.shared_resources_empty}
@@ -127,7 +127,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_operating_instructions_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
+              <p className="typo-body text-foreground whitespace-pre-wrap">
                 {res.operating_instructions}
               </p>
             </div>
@@ -142,7 +142,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_tool_guidance_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
+              <p className="typo-body text-foreground whitespace-pre-wrap">
                 {res.tool_guidance}
               </p>
             </div>
@@ -157,7 +157,7 @@ export function SharedResourcesPanel() {
                   {t.matrix_v3.shared_resources_error_handling_label}
                 </span>
               </div>
-              <p className="typo-body-sm text-foreground whitespace-pre-wrap">
+              <p className="typo-body text-foreground whitespace-pre-wrap">
                 {res.error_handling}
               </p>
             </div>

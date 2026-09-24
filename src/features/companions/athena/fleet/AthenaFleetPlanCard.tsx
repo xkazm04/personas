@@ -172,7 +172,7 @@ export function AthenaFleetPlanCard({
       <header className="flex items-baseline gap-2">
         <Terminal className="w-3.5 h-3.5 text-primary shrink-0 translate-y-0.5" />
         <div className="min-w-0">
-          <p className="typo-body-strong text-foreground break-words">{title || intent}</p>
+          <p className="typo-title text-foreground break-words">{title || intent}</p>
           <p className="typo-caption text-foreground">
             {tx(
               rows.length === 1

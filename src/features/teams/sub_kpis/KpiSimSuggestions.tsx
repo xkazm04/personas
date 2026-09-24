@@ -142,7 +142,7 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
 
   return (
     <div className="rounded-card border border-violet-400/25 bg-violet-500/[0.06] px-4 py-3" data-testid="kpi-sim-suggestions">
-      <h3 className="flex items-center gap-1.5 typo-overline text-foreground mb-2">
+      <h3 className="flex items-center gap-1.5 typo-eyebrow text-foreground mb-2">
         <Sparkles className="w-3.5 h-3.5 text-violet-300" aria-hidden />
         {tx(t.kpis.suggest_title, { count: suggestions.length })}
       </h3>

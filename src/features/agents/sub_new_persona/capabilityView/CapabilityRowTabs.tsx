@@ -83,7 +83,7 @@ export function CapabilityRowTabs({ capability }: Props) {
               role="tab"
               aria-selected={selected}
               onClick={() => setActive(tab.key)}
-              className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 typo-body-sm transition ${
+              className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 typo-body transition ${
                 selected
                   ? "border-primary text-foreground"
                   : "border-transparent text-foreground hover:text-foreground"

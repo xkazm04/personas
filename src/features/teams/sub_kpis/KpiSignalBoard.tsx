@@ -58,7 +58,7 @@ export function KpiSignalBoard({
           >
             <div className="flex items-center gap-1.5 mb-3">
               <FolderKanban className="w-3.5 h-3.5 text-primary" aria-hidden />
-              <h3 className="typo-overline text-foreground flex-1 truncate">{g.label}</h3>
+              <h3 className="typo-eyebrow text-foreground flex-1 truncate">{g.label}</h3>
               <HeadlineCount n={g.rows.filter(isHeadline).length} />
               <OffCount n={off.length} />
               <span className="typo-caption text-foreground/70 tabular-nums">{g.rows.length}</span>
@@ -74,7 +74,7 @@ export function KpiSignalBoard({
             {off.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap rounded-card border border-status-error/30 bg-status-error/5 px-2.5 py-2 mb-3">
                 <ShieldAlert className="w-4 h-4 text-status-error flex-shrink-0" aria-hidden />
-                <span className="typo-overline text-status-error mr-1">{t.kpis.attention_label}</span>
+                <span className="typo-eyebrow text-status-error mr-1">{t.kpis.attention_label}</span>
                 {off.map((row) => (
                   <IncidentChip key={row.id} row={row} onOpen={onOpen} />
                 ))}
@@ -143,7 +143,7 @@ function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) 
         {row.current ?? '—'}/{row.target ?? '—'} {row.unit}
       </span>
       {reason && (
-        <span className="typo-overline text-status-error border-l border-status-error/30 pl-1.5">{reason}</span>
+        <span className="typo-eyebrow text-status-error border-l border-status-error/30 pl-1.5">{reason}</span>
       )}
     </button>
   );

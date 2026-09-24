@@ -78,7 +78,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
   const cronPreview = trig?.trigger_type === "schedule" && cron ? humanizeCron(t, cron) : "";
 
   const inputClass =
-    "rounded-xl border border-border/40 bg-background/60 px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40";
+    "rounded-xl border border-border/40 bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40";
 
   return (
     <div
@@ -104,7 +104,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
               aria-pressed={trig?.trigger_type === type}
               onClick={() => setType(type)}
               data-testid={`capability-trigger-type-${type}-${capability.id}`}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 typo-body-sm transition ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 typo-body transition ${
                 trig?.trigger_type === type
                   ? "bg-primary/15 text-primary"
                   : "text-foreground hover:bg-secondary/50"
@@ -117,7 +117,7 @@ export function CapabilityTriggerPane({ capability }: Props) {
         </div>
         {!trig && (
           <p
-            className="typo-body-sm text-foreground"
+            className="typo-body text-foreground"
             data-testid={`capability-trigger-empty-${capability.id}`}
           >
             {t.matrix_v3.capability_trigger_none}

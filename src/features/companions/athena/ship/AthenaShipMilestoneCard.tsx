@@ -126,7 +126,7 @@ export function AthenaShipMilestoneCard({
       <header className="flex items-baseline gap-2">
         <Flag className="w-3.5 h-3.5 text-primary shrink-0 translate-y-0.5" />
         <div className="min-w-0 flex-1">
-          <p className="typo-body-strong text-foreground break-words">
+          <p className="typo-title text-foreground break-words">
             {title || c.ship_milestone_heading}
           </p>
           <p className="typo-caption text-foreground">
@@ -147,7 +147,7 @@ export function AthenaShipMilestoneCard({
         disabled={busy}
         aria-label={c.ship_milestone_name_label}
         placeholder={c.ship_milestone_name_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body-strong text-foreground disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-title text-foreground disabled:opacity-60"
         data-testid="athena-ship-name"
       />
       {/* An INPUT, capped — not the 2-row textarea this used to be. The control

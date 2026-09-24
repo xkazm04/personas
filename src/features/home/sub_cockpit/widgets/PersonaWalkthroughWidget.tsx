@@ -47,7 +47,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
           </span>
         )}
       </header>
-      <div className="typo-body text-foreground/90 [&_h1]:typo-h3 [&_h2]:typo-h4 [&_h3]:typo-h5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_p]:my-2 [&_code]:rounded-sm [&_code]:bg-foreground/10 [&_code]:px-1 [&_code]:typo-caption">
+      <div className="typo-body text-foreground/90 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_p]:my-2 [&_code]:rounded-sm [&_code]:bg-foreground/10 [&_code]:px-1">
         <MarkdownRenderer content={content} />
       </div>
       {intent && (

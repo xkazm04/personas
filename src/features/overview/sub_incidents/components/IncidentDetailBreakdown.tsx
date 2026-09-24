@@ -69,7 +69,7 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
             <div className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover/fact:opacity-100">
               <CopyButton text={fact.value} iconSize="w-3 h-3" />
             </div>
-            <dt className="typo-overline text-foreground mb-0.5">{fact.label}</dt>
+            <dt className="typo-eyebrow text-foreground mb-0.5">{fact.label}</dt>
             <dd className="typo-body text-foreground break-words pr-5">
               <FactValue value={fact.value} />
             </dd>

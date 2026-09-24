@@ -119,7 +119,7 @@ export function AthenaShipGoalsCard({
       <header className="flex items-baseline gap-2">
         <ListChecks className="w-3.5 h-3.5 text-primary shrink-0 translate-y-0.5" />
         <div className="min-w-0 flex-1">
-          <p className="typo-body-strong text-foreground break-words">
+          <p className="typo-title text-foreground break-words">
             {title || c.ship_goals_heading}
           </p>
           <p className="typo-caption text-foreground">

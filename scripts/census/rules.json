@@ -5699,7 +5699,7 @@
         ".tsx"
       ],
       "signal": {
-        "pattern": "(?<![\\w-])typo-(?!(?:body|body-lg|caption|card-label|code|data|data-lg|heading|heading-lg|hero|hero-shine|label|rtl|section-title|submodule-header|title|title-lg|weight-light)(?![\\w-]))[a-z0-9]+(?:-[a-z0-9]+)*(?![\\w-])",
+        "pattern": "(?<![\\w-])typo-(?!(?:body|body-lg|caption|card-label|code|data|data-lg|eyebrow|heading|heading-lg|hero|hero-shine|label|rtl|section-title|submodule-header|title|title-lg|weight-light)(?![\\w-]))[a-z0-9]+(?:-[a-z0-9]+)*(?![\\w-])",
         "flags": "g",
         "ignoreCommentLines": true,
         "description": "a typo-* class name that is NOT one of the names a stylesheet under src/ defines (typo-body-sm, typo-overline, typo-heading-sm, typo-h3, typo-button, ...). PROXY FOR the stack-free condition: a call site names a type token that does not exist, so the element silently renders in inherited type while reading as if it were tokenised, and the gap is invisible in review. Implemented as an ALLOW-LIST in a static regex (a negative lookahead over the defined names), so a NEW phantom rises the count with no list to maintain. The allow-list itself is kept honest by scripts/style/typo-allowlist.mjs, which check-corpus-integrity.mjs runs inside npm run check: it fails when this list and the .typo-* selectors in src/**/*.css (style proposals in *.proposed.css skipped until promoted) disagree in either direction, which is the one drift a static list could otherwise hide (a token deleted from CSS but still allowed here). Recall limit, stated: a name built at runtime (typo-${size}) is invisible.",

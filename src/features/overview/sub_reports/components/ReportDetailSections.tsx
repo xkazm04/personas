@@ -73,28 +73,25 @@ type Tx = ReturnType<typeof useTranslation>['tx'];
  * serif drop cap, the wide reading measure, and the two spacing values this
  * surface tunes past the variant's defaults.
  *
- * The `[&_h1]:typo-heading-lg` / `[&_h2]:typo-heading` entries are kept
- * verbatim and are deliberately inert: a `typo-*` token cannot be delivered
- * through an arbitrary variant at all (see markdownVariants.ts), and the
- * `font-semibold` beside each is a no-op the census counts
- * (`typo-token-overpainted`). Deleting them is a real fix that DROPS two
- * counted violations, and a drop has to be ratcheted with
- * `npm run census -- --update` rather than smuggled in. The `document` variant
- * now delivers what these two lines were asking for, on the element itself.
+ * The heading entries once also carried `[&_h1]:typo-heading-lg` /
+ * `[&_h2]:typo-heading` (inert: a `typo-*` token cannot be delivered through an
+ * arbitrary variant, see markdownVariants.ts) and a `font-semibold` that the
+ * element's own token overrode. Both were deleted on 2026-09-24 when the tokens
+ * moved into `@layer components`, where that `font-semibold` would have started
+ * to render. The `document` variant delivers the heading scale on the element.
  */
 const REPORT_CONTENT_MD_CLASS = [
   'typo-body-lg text-foreground',
   '[&_p]:mb-5 [&_p:last-child]:mb-0',
   '[&_p:first-of-type:first-letter]:float-left',
-  '[&_p:first-of-type:first-letter]:typo-heading-lg',
   '[&_p:first-of-type:first-letter]:leading-[0.9]',
   '[&_p:first-of-type:first-letter]:font-semibold',
   '[&_p:first-of-type:first-letter]:text-foreground/45',
   '[&_p:first-of-type:first-letter]:pr-2',
   '[&_p:first-of-type:first-letter]:pt-1',
   '[&_p:first-of-type:first-letter]:font-serif',
-  '[&_h1]:mt-0 [&_h1]:typo-heading-lg [&_h1]:font-semibold [&_h1]:text-foreground',
-  '[&_h2]:mt-7 [&_h2]:typo-heading [&_h2]:font-semibold [&_h2]:text-foreground',
+  '[&_h1]:mt-0 [&_h1]:text-foreground',
+  '[&_h2]:mt-7 [&_h2]:text-foreground',
   '[&_pre]:my-5 [&_pre]:rounded-2xl',
 ].join(' ');
 

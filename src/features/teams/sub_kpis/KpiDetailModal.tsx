@@ -155,7 +155,7 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <span
-          className="typo-overline px-2 py-1 rounded-interactive"
+          className="typo-eyebrow px-2 py-1 rounded-interactive"
           style={{
             color: TRACK_COLOR[d.track],
             background: `color-mix(in srgb, ${TRACK_COLOR[d.track]} 14%, transparent)`,

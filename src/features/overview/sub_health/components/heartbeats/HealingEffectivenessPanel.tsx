@@ -80,7 +80,7 @@ export function HealingEffectivenessPanel() {
           {/* Overall */}
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
-              <span className={`typo-h3 font-semibold ${rateColor(report.success_rate)}`}>
+              <span className={`typo-heading-lg font-semibold ${rateColor(report.success_rate)}`}>
                 {pct(report.success_rate)}
               </span>
               <span className="typo-caption text-foreground">{te.success_rate}</span>

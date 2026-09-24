@@ -78,7 +78,7 @@ export function AthenaShipGoalsRow({ row, index, disabled, onChange, onRemove }:
         disabled={disabled}
         aria-label={c.ship_goals_title_label}
         placeholder={c.ship_goals_title_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body-strong text-foreground disabled:is-disabled"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-title text-foreground disabled:is-disabled"
         data-testid={`athena-ship-goal-title-${index}`}
       />
       <textarea

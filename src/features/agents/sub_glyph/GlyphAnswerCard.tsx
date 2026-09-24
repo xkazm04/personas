@@ -85,7 +85,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
           <X className="w-4 h-4" />
         </button>
       </div>
-      <p className={dlg ? "typo-title-sm text-foreground text-left leading-relaxed" : "typo-body-lg text-foreground"}>{question.question}</p>
+      <p className={dlg ? "typo-title text-foreground text-left leading-relaxed" : "typo-body-lg text-foreground"}>{question.question}</p>
       {category ? (
         <VaultConnectorPicker
           category={category}

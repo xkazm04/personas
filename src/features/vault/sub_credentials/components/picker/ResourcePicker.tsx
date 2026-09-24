@@ -191,10 +191,10 @@ export function ResourcePicker({
       <div data-testid="resource-picker" className="contents" />
       <header className="shrink-0 px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
         <div>
-          <h2 id="resource-picker-title" className="typo-heading-md text-foreground">
+          <h2 id="resource-picker-title" className="typo-title-lg text-foreground">
             Scope {connectorLabel}
           </h2>
-          <p className="typo-body-sm text-foreground mt-1">
+          <p className="typo-body text-foreground mt-1">
             <DebtText k="auto_narrow_this_credential_to_specific_resourc_5f20fe8a" />
           </p>
         </div>
@@ -323,7 +323,7 @@ export function ResourcePicker({
                         setSearch((s) => ({ ...s, [spec.id]: e.target.value }))
                       }
                       placeholder={`Search ${spec.label.toLowerCase()}…`}
-                      className="w-full pl-8 pr-3 py-1.5 typo-body-sm bg-secondary/50 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+                      className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/50 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
                     />
                   </div>
                   <div className="max-h-48 overflow-y-auto border border-border rounded-input bg-secondary/20 divide-y divide-border">
@@ -359,7 +359,7 @@ export function ResourcePicker({
                             {sel && <Check className="w-3 h-3 text-background" />}
                           </span>
                           <span className="flex-1 min-w-0">
-                            <span className="typo-body-sm text-foreground truncate block">
+                            <span className="typo-body text-foreground truncate block">
                               {item.label}
                             </span>
                             {item.sublabel && (
@@ -385,7 +385,7 @@ export function ResourcePicker({
           onClick={handleSkip}
           disabled={saving}
           data-testid="resource-picker-skip"
-          className="typo-body-sm text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          className="typo-body text-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
           <DebtText k="auto_skip_use_broad_scope_c91bd0ae" />
         </button>
@@ -395,7 +395,7 @@ export function ResourcePicker({
             onClick={onClose}
             disabled={saving}
             data-testid="resource-picker-cancel"
-            className="px-4 py-1.5 rounded-interactive border border-border hover:bg-foreground/5 typo-body-sm text-foreground transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 rounded-interactive border border-border hover:bg-foreground/5 typo-body text-foreground transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -404,7 +404,7 @@ export function ResourcePicker({
             onClick={handleSave}
             disabled={saving || requiredMissing}
             data-testid="resource-picker-save"
-            className="px-4 py-1.5 rounded-interactive bg-primary hover:bg-primary/90 typo-body-sm text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 rounded-interactive bg-primary hover:bg-primary/90 typo-body text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving…' : 'Save scope'}
           </button>

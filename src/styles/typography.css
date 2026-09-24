@@ -237,6 +237,28 @@ body {
     font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
   }
 
+  /* Eyebrow -- the tracked uppercase head of a section inside a surface.
+     Defined 2026-09-24 (Gate 0) so a module can adopt ONE class where it now
+     composes `typo-* uppercase tracking-*` by hand (361 such strings; each
+     module gate migrates its own). The phantom typo-overline maps here.
+     Colourless: the surface decides its ink. */
+  .typo-eyebrow {
+    font-size: calc(var(--type-0) * var(--type-f));
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  [data-lang="ar"] .typo-eyebrow,
+  [data-lang="zh"] .typo-eyebrow,
+  [data-lang="ja"] .typo-eyebrow,
+  [data-lang="ko"] .typo-eyebrow {
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
   /* -- Theme-Adaptive Card Label -----------------------------------------------
      Bright and shiny in dark themes, darker/shadowy in light themes.
      Tokenized for reuse across card grids, nav cards, language cards, etc. */

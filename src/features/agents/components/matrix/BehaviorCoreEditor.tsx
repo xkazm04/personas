@@ -79,7 +79,7 @@ function ChipListEditor({
         {values.map((v, i) => (
           <span
             key={`${v}-${i}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-3 py-1 typo-body-sm text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-3 py-1 typo-body text-foreground"
           >
             {v}
             <button
@@ -104,7 +104,7 @@ function ChipListEditor({
           }}
           onBlur={addChip}
           placeholder={placeholder}
-          className="min-w-[160px] flex-1 rounded-full border border-border/40 bg-transparent px-3 py-1 typo-body-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          className="min-w-[160px] flex-1 rounded-full border border-border/40 bg-transparent px-3 py-1 typo-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 focus:ring-primary/50"
           data-testid={`${testId}-input`}
         />
       </div>
@@ -153,10 +153,10 @@ export function BehaviorCoreEditor() {
       data-testid="behavior-core-editor"
     >
       <header className="flex flex-col gap-1">
-        <h3 className="typo-heading-sm text-foreground">
+        <h3 className="typo-heading text-foreground">
           {t.matrix_v3.behavior_core_section_title}
         </h3>
-        <p className="typo-body-sm text-foreground">
+        <p className="typo-body text-foreground">
           {t.matrix_v3.behavior_core_section_subtitle}
         </p>
       </header>
@@ -194,7 +194,7 @@ export function BehaviorCoreEditor() {
               patchBehaviorCore({ identity: { ...coreSafe.identity, role: e.target.value } })
             }
             placeholder={t.matrix_v3.identity_role_placeholder}
-            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-2" data-testid="behavior-core-identity-description">
@@ -214,7 +214,7 @@ export function BehaviorCoreEditor() {
               })
             }
             placeholder={t.matrix_v3.identity_description_placeholder}
-            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>
@@ -233,7 +233,7 @@ export function BehaviorCoreEditor() {
               patchBehaviorCore({ voice: { ...coreSafe.voice, style: e.target.value } })
             }
             placeholder={t.matrix_v3.voice_style_placeholder}
-            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-2" data-testid="behavior-core-voice-output-format">
@@ -250,7 +250,7 @@ export function BehaviorCoreEditor() {
               })
             }
             placeholder={t.matrix_v3.voice_output_format_placeholder}
-            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="rounded-modal border border-border/40 bg-foreground/[0.06] px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
       </div>

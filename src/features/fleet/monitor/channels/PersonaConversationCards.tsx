@@ -31,7 +31,7 @@ import { parseItemExtra, reviewStatusOf } from './personaConversationModel';
  * rhythm belongs to the detail modal, never to a bubble.
  */
 const MD_CHAT_RHYTHM =
-  '[&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 ' +
+  '[&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 ' +
   '[&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5';
 
 /* ── CHAT ──────────────────────────────────────────────────────────────────── */

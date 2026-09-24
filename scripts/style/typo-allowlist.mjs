@@ -33,8 +33,9 @@ const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'target', 'coverage']
 // A `*.proposed.css` stylesheet is a style-unification PROPOSAL, scoped under
 // [data-style-proposal] for the Gate 0 specimen. It defines no app token until
 // it is promoted into typography.css, and promotion is the moment this check
-// should demand the allow-list change (2026-09-24: typography.proposed.css
-// proposes typo-eyebrow; counting it would call real phantoms real).
+// should demand the allow-list change. It did once: typo-eyebrow was proposed
+// here, then promoted into typography.css at Gate 0 (2026-09-24), and the rule
+// pattern gained `eyebrow` in the same commit.
 export const PROPOSAL_SUFFIX = '.proposed.css';
 
 function walkCss(dir, out = []) {
