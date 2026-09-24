@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 142,
-        "matches": 195
+        "files": 141,
+        "matches": 194
       },
       "floor": 2500
     },
@@ -560,7 +560,7 @@
       },
       "baseline": {
         "files": 731,
-        "matches": 1755
+        "matches": 1754
       },
       "floor": 2000
     },
@@ -589,7 +589,7 @@
       ],
       "baseline": {
         "files": 292,
-        "matches": 643
+        "matches": 642
       },
       "floor": 4000
     },
@@ -3931,6 +3931,14 @@
         {
           "path": "src/features/teams/sub_goals/GoalTaskTable.tsx",
           "reason": "the comment describes what the BACKEND does ('goal_advance.rs mirrors a decomposed goal's steps into dev_goal_items by exact title') rather than declaring a client-side copy of a server rule; the client here consumes the backend's output, it does not re-derive it"
+        },
+        {
+          "path": "src/features/settings/sub_notifications/libs/webhookMatch.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: patternMatches is gated by libs/__tests__/webhookPatternParity.test.ts, which parses every assert!(!?pattern_matches(..)) line out of src-tauri/src/engine/webhook_notifier.rs at run time and fails when TS disagrees or the parse finds fewer than 8 (the chainStopReasons.parity precedent). The condition this leaf counts - two implementations with no mechanism asserting they agree - is absent"
+        },
+        {
+          "path": "src/features/settings/sub_notifications/libs/__tests__/webhookPatternParity.test.ts",
+          "reason": "this file IS the agreement mechanism for webhookMatch.ts (see that exclude); its comment names the Rust matcher because it reads it"
         }
       ],
       "baseline": {
