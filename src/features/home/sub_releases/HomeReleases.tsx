@@ -97,7 +97,7 @@ export default function HomeReleases() {
 
           {shipped.length > 0 && (
             <div className="w-full space-y-4">
-              <span className="typo-section-title">{t.navRailLabel}</span>
+              <h2 className="typo-section-title border-b border-primary/10 pb-2">{t.navRailLabel}</h2>
               {shipped.map((release) => (
                 <BundledReleaseCard key={release.version} release={release} t={t} />
               ))}
