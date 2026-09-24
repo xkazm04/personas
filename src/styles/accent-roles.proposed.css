@@ -29,9 +29,12 @@
    BRIGHTNESS. Dark themes brighten the whole page with an html filter and
    pre-darken status colours to match (globals.css [data-brightness=...]).
    Roles follow the same -raw pattern, and every theme sets the -raw value,
-   so the compensation always applies. (It does not for status colours in the
-   themes that override --status-x directly instead of --status-x-raw: bronze,
-   purple, pink, red, matrix and the light themes. Recorded in doctrine.md.)
+   so the compensation always applies. It does NOT for status colours in the
+   themes that override --status-x directly instead of --status-x-raw (bronze,
+   purple, pink, red, matrix, cyan's info, and all three light themes): the
+   theme block comes later in globals.css and beats the [data-brightness] mix.
+   Verified in the browser: dark-bronze --status-success computes #66b06e under
+   brightness(1.25); the default theme computes the 80%-black mix.
    ============================================================================== */
 
 /* theme: dark-midnight */
@@ -157,7 +160,8 @@
   --role-highlight-raw: #1a1a1a;
 }
 
-/* Brightness compensation, the same factors globals.css uses for status. */
+/* Brightness compensation, the same factors globals.css uses for status.
+   Dark themes brighten the page (1.25 / 1.38 / 1.50) and pre-darken colours. */
 [data-brightness="dark-low"] [data-style-proposal],
 [data-brightness="dark-low"][data-style-proposal] {
   --role-agent: color-mix(in srgb, var(--role-agent-raw) 80%, black);
@@ -178,6 +182,22 @@
   --role-human: color-mix(in srgb, var(--role-human-raw) 67%, black);
   --role-external: color-mix(in srgb, var(--role-external-raw) 67%, black);
   --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 67%, black);
+}
+/* Light themes dim the page (0.82 / 0.91) and lift colours with white to match;
+   light-high is 1.0 and needs nothing. */
+[data-brightness="light-low"] [data-style-proposal],
+[data-brightness="light-low"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 82%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 82%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 82%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 82%, white);
+}
+[data-brightness="light-mid"] [data-style-proposal],
+[data-brightness="light-mid"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 91%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 91%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 91%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 91%, white);
 }
 
 /* ------------------------------------------------------------------------------
