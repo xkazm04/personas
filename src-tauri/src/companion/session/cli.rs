@@ -316,6 +316,7 @@ pub(super) async fn run_cli_turn(
         new_claude_session_id,
         mut result_usage,
         first_text_ms,
+        result_error,
         ..
     } = acc;
     // A research leg's session is a one-shot: its id must never become a
@@ -416,9 +417,7 @@ pub(super) async fn run_cli_turn(
     }
 
     if assistant_text.is_empty() {
-        return Err(AppError::Internal(format!(
-            "{name} produced no assistant text"
-        )));
+        return Err(empty_reply_error(name, result_error.as_deref()));
     }
 
     Ok((assistant_text, segments, result_usage))
@@ -556,6 +555,13 @@ pub(super) struct StreamAccumulator {
     /// start is the spawn on the cold path and the user-line write on the warm
     /// path — in both cases the moment the user's message left this process.
     pub first_text_ms: Option<i64>,
+    /// What an `is_error` `result` event said went wrong — its `errors`
+    /// array, else its `result` string. A `--resume` of a transcript the CLI
+    /// no longer has ends in exactly such a line (`error_during_execution`,
+    /// zero usage, `errors: ["No conversation found with session ID: …"]`)
+    /// before any text; without this the cause was dropped and the warm
+    /// path's stale-session self-heal could never match it.
+    pub result_error: Option<String>,
     started_at: Instant,
 }
 
@@ -579,6 +585,7 @@ impl StreamAccumulator {
             new_claude_session_id: None,
             result_usage: None,
             first_text_ms: None,
+            result_error: None,
             started_at,
         }
     }
@@ -642,6 +649,9 @@ impl StreamAccumulator {
             // First text always precedes the result line, so the measurement
             // rides the same struct.
             u.first_text_ms = self.first_text_ms;
+            if u.is_error {
+                self.result_error = result_event_error(&value);
+            }
             // Publish before storing locally: if this turn goes on to fail (or
             // the timeout drops this whole future), the sink is the only copy
             // the caller will still have.
@@ -673,6 +683,43 @@ pub(super) fn is_stale_session_error(e: &AppError) -> bool {
             && (msg.contains("not found") || msg.contains("does not exist"))
         || msg.contains("failed to restore session")
         || msg.contains("not found locally")
+}
+
+/// The cause an `is_error` `result` event carries: its `errors` strings
+/// joined, else a non-empty `result` string. `None` when it names none.
+fn result_event_error(value: &serde_json::Value) -> Option<String> {
+    let joined = value
+        .get("errors")
+        .and_then(|v| v.as_array())
+        .map(|errs| {
+            errs.iter()
+                .filter_map(|e| e.as_str())
+                .map(str::trim)
+                .filter(|e| !e.is_empty())
+                .collect::<Vec<_>>()
+                .join("; ")
+        })
+        .filter(|s| !s.is_empty());
+    joined.or_else(|| {
+        value
+            .get("result")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    })
+}
+
+/// The error for a turn that ended without any assistant text. The `result`
+/// event's own cause rides along, so a stale `--resume` reads as one to
+/// `is_stale_session_error` (and the self-heal retries) instead of as a bare
+/// empty reply; the "produced no assistant text" stem keeps every other
+/// cause classified `empty_reply`.
+pub(super) fn empty_reply_error(name: &str, result_error: Option<&str>) -> AppError {
+    AppError::Internal(match result_error {
+        Some(cause) => format!("{name} produced no assistant text: {cause}"),
+        None => format!("{name} produced no assistant text"),
+    })
 }
 
 /// A `stream_event` carrying a `content_block_delta` of type `text_delta` —

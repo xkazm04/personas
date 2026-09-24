@@ -67,7 +67,8 @@ use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinHandle;
 
 use super::cli::{
-    drain_stderr, prepare_command, stderr_tail, CliTurn, IngestCtx, StreamAccumulator,
+    drain_stderr, empty_reply_error, prepare_command, stderr_tail, CliTurn, IngestCtx,
+    StreamAccumulator,
 };
 use super::events::{emit, StreamEvent, StreamEventKind};
 use super::interrupts::{clear_interrupt, was_interrupted};
@@ -775,6 +776,7 @@ pub(super) async fn run_warm_turn(
         new_claude_session_id,
         mut result_usage,
         first_text_ms,
+        result_error,
         ..
     } = acc;
     // The init line echoes the pinned session id; persist it exactly as the
@@ -792,9 +794,13 @@ pub(super) async fn run_warm_turn(
     match end {
         TurnEnd::Result => {
             if assistant_text.is_empty() {
-                return Err(AppError::Internal(
-                    "claude produced no assistant text".into(),
-                ));
+                // Drop the process: an errored `result` (a stale `--resume`
+                // is the measured case) is followed by the CLI exiting, and
+                // the self-heal retry must spawn fresh rather than be handed
+                // this one — with no resume id `acquire` would still reuse it
+                // while it reads alive.
+                kill_conversation(turn.session_id);
+                return Err(empty_reply_error("claude", result_error.as_deref()));
             }
             Ok((assistant_text, segments, result_usage))
         }

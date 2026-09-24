@@ -208,3 +208,50 @@ fn disarm_prevents_a_second_row_for_the_same_turn() {
     ctx.record(&pool, &AppError::Internal("late failure".into()), None);
     assert!(rows(&pool).is_empty());
 }
+
+/// The `result` line the CLI emits for a `--resume` of a transcript it no
+/// longer has, captured verbatim (usage trimmed) on 2026-09-24 against
+/// claude-opus-5. It arrives before any text, so the warm path used to report
+/// a bare "produced no assistant text" and the stale-session self-heal never
+/// ran: three chat turns in a row failed on the same deleted session.
+#[test]
+fn a_stale_resume_result_reads_as_stale_not_empty() {
+    use super::cli::{empty_reply_error, is_stale_session_error, IngestCtx, StreamAccumulator};
+
+    let pool = test_pool("stale_resume_result");
+    let line = r#"{"type":"result","subtype":"error_during_execution","duration_ms":0,"is_error":true,"num_turns":0,"session_id":"de7e9d45-345a-4fab-9415-880ff712543d","total_cost_usd":0,"usage":{"input_tokens":0,"output_tokens":0},"errors":["No conversation found with session ID: de7e9d45-345a-4fab-9415-880ff712543d"]}"#;
+    let mut acc = StreamAccumulator::new(std::time::Instant::now());
+    let ended = acc.ingest(
+        line,
+        &IngestCtx {
+            pool: &pool,
+            session_id: "default",
+            persist_progress: false,
+            usage_sink: None,
+        },
+    );
+    assert!(ended, "a result line ends the turn");
+    assert!(acc.assistant_text.is_empty());
+
+    let e = empty_reply_error("claude", acc.result_error.as_deref());
+    assert!(is_stale_session_error(&e), "self-heal must match: {e}");
+    assert_eq!(classify_failure(&e), "stale_resume");
+
+    // A cause-less empty reply keeps its own class.
+    assert_eq!(
+        classify_failure(&empty_reply_error("claude", None)),
+        "empty_reply"
+    );
+    // A successful result carries no error even if it has a `result` string.
+    let mut ok = StreamAccumulator::new(std::time::Instant::now());
+    ok.ingest(
+        r#"{"type":"result","subtype":"success","is_error":false,"result":"hi"}"#,
+        &IngestCtx {
+            pool: &pool,
+            session_id: "default",
+            persist_progress: false,
+            usage_sink: None,
+        },
+    );
+    assert_eq!(ok.result_error, None);
+}
