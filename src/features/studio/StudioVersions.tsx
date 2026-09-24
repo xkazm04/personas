@@ -69,7 +69,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
         aria-label={t.studio.version_history}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
       >
         <History className="h-4 w-4" />
       </button>
@@ -103,12 +103,12 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
                 onClick={() => setPending(v)}
                 className="group flex w-full items-start gap-2 rounded-interactive px-2 py-1.5 text-left transition-colors hover:bg-secondary/60"
               >
-                <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/40 group-hover:text-primary" />
+                <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/90 group-hover:text-primary" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs text-foreground">
+                  <span className="block truncate typo-label text-foreground">
                     {v.message.replace(/^athena:\s*/, '') || (i === 0 ? t.studio.latest : v.sha)}
                   </span>
-                  <span className="block text-[10px] text-foreground/40">{v.when}</span>
+                  <span className="block text-[10px] text-foreground/90">{v.when}</span>
                 </span>
               </button>
             ))

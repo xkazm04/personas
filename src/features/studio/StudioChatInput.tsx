@@ -174,7 +174,7 @@ export default function StudioChatInput({
               >
                 <header className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1.5">
                   <MessageSquare className="h-3.5 w-3.5 text-primary/70" />
-                  <span className="text-xs font-medium text-foreground/80">
+                  <span className="typo-label text-foreground/90">
                     {t.studio.conversation}
                   </span>
                   <div className="flex-1" />
@@ -182,7 +182,7 @@ export default function StudioChatInput({
                     type="button"
                     onClick={() => setChatOpen(false)}
                     aria-label={t.studio.collapse}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -251,7 +251,7 @@ export default function StudioChatInput({
                   chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
                 }
                 aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
               >
                 {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
@@ -263,7 +263,7 @@ export default function StudioChatInput({
                   onClick={() => void pickReference()}
                   disabled={working}
                   aria-label={t.studio.add_reference_image}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
                 >
                   <ImageIcon className="h-4 w-4" />
                 </button>
@@ -311,7 +311,7 @@ export default function StudioChatInput({
                     onClick={() => stopTurn(activeId)}
                     data-testid="studio-stop"
                     aria-label={t.studio.stop_athena}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
                   >
                     <CircleStop className="h-4 w-4" />
                     {t.studio.stop}

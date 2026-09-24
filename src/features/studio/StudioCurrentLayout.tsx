@@ -51,7 +51,7 @@ export default function StudioCurrentLayout({
                   type="button"
                   onClick={reloadActive}
                   aria-label={t.studio.reload_preview}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -98,7 +98,7 @@ export default function StudioCurrentLayout({
             <div className="absolute inset-0 flex items-center justify-center px-6">
               <div className="flex items-center gap-3 rounded-card border border-border bg-background/80 px-5 py-4 shadow-elevation-2">
                 <Bot className="h-5 w-5 text-primary" />
-                <span className="text-md text-foreground/80">
+                <span className="text-md text-foreground/90">
                   {active.phase === 'scaffolding'
                     ? t.studio.scaffolding
                     : active.phase === 'starting'

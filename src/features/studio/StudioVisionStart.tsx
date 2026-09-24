@@ -86,7 +86,7 @@ export default function StudioVisionStart({
       <div className="flex h-full items-center justify-center px-6">
         <div className="flex items-center gap-3 rounded-card border border-border bg-background/80 px-5 py-4 shadow-elevation-2">
           <Bot className="h-5 w-5 text-primary" />
-          <span className="text-md text-foreground/80">{t.studio.setting_up}</span>
+          <span className="text-md text-foreground/90">{t.studio.setting_up}</span>
           <span className="flex gap-0.5">
             <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
             <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
@@ -112,7 +112,7 @@ export default function StudioVisionStart({
           </span>
           <div>
             <h2 className="typo-title leading-tight">{t.studio.build_with_athena}</h2>
-            <p className="typo-caption text-foreground/55">{t.studio.vision_tagline}</p>
+            <p className="typo-caption text-foreground/90">{t.studio.vision_tagline}</p>
           </div>
         </div>
         <p className="typo-caption mb-4 leading-relaxed">{t.studio.vision_intro}</p>
@@ -124,7 +124,7 @@ export default function StudioVisionStart({
               type="button"
               data-testid="studio-vision-starter"
               onClick={() => applyStarter(s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-3 py-1.5 text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-3 py-1.5 typo-label text-foreground/90 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
             >
               <span aria-hidden>{s.emoji}</span>
               {t.studio[s.labelKey]}
@@ -132,7 +132,7 @@ export default function StudioVisionStart({
           ))}
         </div>
 
-        <label className="mb-1 block typo-caption text-foreground/70">
+        <label className="mb-1 block typo-caption text-foreground/90">
           {t.studio.project_name}
         </label>
         <input
@@ -172,7 +172,7 @@ export default function StudioVisionStart({
           </div>
         )}
 
-        <label className="mb-1 block typo-caption text-foreground/70">
+        <label className="mb-1 block typo-caption text-foreground/90">
           {t.studio.what_to_build}
         </label>
         <textarea
