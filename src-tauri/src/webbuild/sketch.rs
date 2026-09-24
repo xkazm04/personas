@@ -126,20 +126,37 @@ fn head(text: &str) -> String {
     clip(&text.replace('\n', " "), 160)
 }
 
-/// Parse the model's answer: the first `{` to the last `}` as JSON (a stray
-/// sentence or a code fence around it is tolerated), then clean and cap every
-/// list. The error says why and carries the head of the reply, so a failed
-/// (paid) sketch can be logged and diagnosed instead of vanishing.
+/// Parse the model's answer: the first complete JSON object that reads as a
+/// sketch, wherever it starts. The CLI's text can carry a status line before
+/// it (`[System] Claude stream initialized.`) and more lines after it, so the
+/// object is read by a streaming deserializer that stops at its end, tried at
+/// each `{` in turn. Then every list is cleaned and capped. The error says
+/// why and carries the head of the reply, so a failed (paid) sketch can be
+/// logged and diagnosed instead of vanishing.
 pub fn parse_sketch(text: &str) -> Result<SiteSketch, AppError> {
     let fail = |why: String| AppError::Internal(format!("studio sketch: {why}"));
-    let (Some(start), Some(end)) = (text.find('{'), text.rfind('}')) else {
-        return Err(fail(format!("no JSON object in the reply: {}", head(text))));
-    };
-    if end <= start {
-        return Err(fail(format!("no JSON object in the reply: {}", head(text))));
+    let mut last_err: Option<String> = None;
+    let mut found: Option<SiteSketch> = None;
+    for (i, _) in text.match_indices('{') {
+        match serde_json::Deserializer::from_str(&text[i..])
+            .into_iter::<SiteSketch>()
+            .next()
+        {
+            Some(Ok(candidate)) if !candidate.pages.is_empty() => {
+                found = Some(candidate);
+                break;
+            }
+            Some(Ok(_)) => last_err = Some("the sketch has no pages".into()),
+            Some(Err(e)) if last_err.is_none() => {
+                last_err = Some(format!("reply is not a sketch ({e})"));
+            }
+            Some(Err(_)) | None => {}
+        }
     }
-    let raw: SiteSketch = serde_json::from_str(&text[start..=end])
-        .map_err(|e| fail(format!("reply is not a sketch ({e}): {}", head(text))))?;
+    let Some(raw) = found else {
+        let why = last_err.unwrap_or_else(|| "no JSON object in the reply".into());
+        return Err(fail(format!("{why}: {}", head(text))));
+    };
     let pages: Vec<SketchPage> = raw
         .pages
         .into_iter()
@@ -211,6 +228,17 @@ mod tests {
         assert_eq!(s.pages.len(), 2);
         assert_eq!(s.pages[0].regions[1].title, "Today's bake");
         assert_eq!(s.questions[0].options, vec!["Yes", "Delivery too"]);
+    }
+
+    #[test]
+    fn reads_the_sketch_between_cli_status_lines() {
+        // The shape seen live on 2026-09-24: a status line before the object
+        // and another JSON-bearing line after it.
+        let text = "[System] Claude stream initialized. {\"summary\":\"Bike repair shop.\",\"pages\":[{\"title\":\"Home\",\"regions\":[{\"title\":\"Hours\"}]}]}
+[System] done {\"ok\":true}";
+        let s = parse_sketch(text).expect("sketch");
+        assert_eq!(s.summary, "Bike repair shop.");
+        assert_eq!(s.pages[0].regions[0].title, "Hours");
     }
 
     #[test]
