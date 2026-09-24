@@ -27,9 +27,19 @@ pub fn free_contest_id(arena_root: &Path, title: &str) -> String {
         return base;
     }
     (2..)
-        .map(|n| format!("{base}-{n}"))
+        .map(|n| suffixed_id(&base, n))
         .find(|id| !taken(id))
         .unwrap_or(base)
+}
+
+/// `<base>-<n>`, cut so it stays a fixed point of the instrument's `slugify`
+/// (at most 60 chars, no `--`): `init` re-slugifies `--id`, and a longer id
+/// would be cut back onto the taken base.
+fn suffixed_id(base: &str, n: u32) -> String {
+    let suffix = format!("-{n}");
+    let keep = 60usize.saturating_sub(suffix.len());
+    let head: String = base.chars().take(keep).collect();
+    format!("{}{suffix}", head.trim_end_matches('-'))
 }
 
 /// The `init` arguments for a validated request.
@@ -216,5 +226,22 @@ mod tests {
         std::fs::create_dir_all(tmp.path().join("home-page-2")).unwrap();
         assert_eq!(free_contest_id(tmp.path(), "Home Page!"), "home-page-3");
         assert_eq!(free_contest_id(tmp.path(), "!!!"), "contest");
+    }
+
+    /// `init` re-slugifies `--id` (at most 60 chars), so the id must be a
+    /// fixed point of `slugify` or init lands on a different (taken) dir.
+    #[test]
+    fn a_suffixed_id_is_a_fixed_point_of_the_instruments_slugify() {
+        let tmp = tempfile::tempdir().unwrap();
+        // A 60-char base, and one whose cut would end on a dash.
+        for title in ["a".repeat(80), format!("{}-bcdef", "a".repeat(57))] {
+            let base = slugify(&title);
+            std::fs::create_dir_all(tmp.path().join(&base)).unwrap();
+            let id = free_contest_id(tmp.path(), &title);
+            assert_ne!(id, base, "the base is taken");
+            assert!(id.len() <= 60, "{id} is {} chars", id.len());
+            assert_eq!(slugify(&id), id, "init would re-slugify {id}");
+            assert!(!tmp.path().join(&id).exists());
+        }
     }
 }
