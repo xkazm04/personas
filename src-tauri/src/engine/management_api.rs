@@ -329,7 +329,10 @@ const SCOPE_TEST: &str = personas_engine::headless::TEST_SCOPE;
 /// Resource-scoped grant prefixes. A key holding `personas:execute:persona:<id>`
 /// may execute only persona `<id>`; `proxy:credential:<id>` scopes the proxy to
 /// one credential. See docs/architecture/cloud-integration-bridge.md §3.2.
-const SCOPE_EXECUTE_PERSONA_PREFIX: &str = "personas:execute:persona:";
+/// The execute prefix is the one `kp_execute_grant` writes when a kp hire is
+/// approved (§10.8), so the grant and this check share a single spelling.
+const SCOPE_EXECUTE_PERSONA_PREFIX: &str =
+    personas_engine::kp_execute_grant::EXECUTE_PERSONA_SCOPE_PREFIX;
 const SCOPE_PROXY_CREDENTIAL_PREFIX: &str = "proxy:credential:";
 
 /// Per-key rate limit: max requests per window, keyed by the API key's id.
@@ -3175,11 +3178,18 @@ fn kp_hire_rationale(body: &KpPersonaRequestBody) -> String {
 /// exactly (`{action, params, rationale}` under kind `op_execute`), so
 /// `companion_list_pending_approvals` and `companion_approve_action` read it
 /// without a special case. Takes the pool directly so tests need no AppHandle.
+///
+/// `requested_by_key_id` is the `external_api_keys.id` the auth middleware
+/// resolved for this request — recorded in its own column, never in the
+/// caller-written `params`, so approval can grant that key (and only that key)
+/// execute rights on the persona the hire creates (§10.8,
+/// `personas_engine::kp_execute_grant`).
 pub(crate) fn insert_kp_hire_approval(
     user_db: &crate::db::UserDbPool,
     request_id: &str,
     params: &serde_json::Value,
     rationale: &str,
+    requested_by_key_id: Option<&str>,
 ) -> Result<(), AppError> {
     let payload = serde_json::json!({
         "action": "kp_hire_request",
@@ -3189,12 +3199,14 @@ pub(crate) fn insert_kp_hire_approval(
     .to_string();
     let conn = user_db.get()?;
     conn.execute(
-        "INSERT INTO companion_approval (id, session_id, kind, payload, status, human_review_id, created_at)
-         VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, datetime('now'))",
+        "INSERT INTO companion_approval
+             (id, session_id, kind, payload, status, human_review_id, requested_by_key_id, created_at)
+         VALUES (?1, ?2, 'op_execute', ?3, 'pending', NULL, ?4, datetime('now'))",
         rusqlite::params![
             request_id,
             crate::companion::session::DEFAULT_SESSION_ID,
-            payload
+            payload,
+            requested_by_key_id
         ],
     )?;
     Ok(())
@@ -3203,6 +3215,7 @@ pub(crate) fn insert_kp_hire_approval(
 /// `POST /api/kp/persona-requests` — queue a hire request for human approval.
 async fn kp_create_persona_request(
     AxumState(state): AxumState<Arc<ManagementState>>,
+    Extension(submitter): Extension<AuthedApiKey>,
     Json(raw_body): Json<serde_json::Value>,
 ) -> Response {
     // Deserialize the TYPED body from the raw JSON instead of letting axum do
@@ -3237,11 +3250,14 @@ async fn kp_create_persona_request(
     // The RAW body (see above) — every field kp sent, modeled here or not.
     let mut params = raw_body;
     params["requestId"] = serde_json::Value::String(request_id.clone());
+    // The submitting key is recorded so approval can grant it
+    // `personas:execute:persona:<new id>` — that key and no other (§10.8).
     if let Err(e) = insert_kp_hire_approval(
         &app_state.user_db,
         &request_id,
         &params,
         &kp_hire_rationale(&body),
+        Some(&submitter.id),
     ) {
         return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response();
     }
@@ -4241,6 +4257,25 @@ async fn kp_test_retire(
         }
     };
 
+    // The access half: the kp key that hired this persona loses its
+    // `personas:execute:persona:<id>` grant (§10.8). Idempotent, so a repeat
+    // retire — or the carry-out below doing the same — removes nothing more.
+    let execute_grant_revoked_from = match state.app.try_state::<Arc<crate::AppState>>() {
+        Some(app_state) => personas_engine::kp_execute_grant::revoke_on_retire(
+            &pool,
+            &app_state.user_db,
+            &persona.id,
+        ),
+        None => {
+            tracing::warn!(
+                persona_id = %persona.id,
+                "persona retired over the bridge but App state is unavailable; the kp key's \
+                 execute grant (if any) was NOT removed"
+            );
+            Vec::new()
+        }
+    };
+
     // The mandate half, through the one carry-out every retirement goes through.
     let mut mandate_carried_out = false;
     if plan.carry_out_mandate {
@@ -4294,6 +4329,9 @@ async fn kp_test_retire(
             // be able to tell "ended just now" from "was already ended".
             "carriedOut": mandate_carried_out,
         })),
+        // How many kp keys lost their per-persona execute grant just now.
+        // 0 on a repeat retire, or for a persona no kp key was granted.
+        "executeGrantsRevoked": execute_grant_revoked_from.len(),
         "note": "the persona is archived (no cascade — executions, memories and the violation ledger stay readable) and any linked App master mandate is ended through the same carry-out a probation `retire` reaches",
     }))
     .into_response()
@@ -4843,30 +4881,11 @@ mod tests {
         assert!(am.contains("suggest"), "{am}");
     }
 
-    /// In-memory user-db pool with just the `companion_approval` table (schema
-    /// copied from db/src/lib.rs), mirroring the rollup.rs test pattern.
+    /// The production user-db schema (COMPANION_SCHEMA + the incremental
+    /// ALTERs, including `companion_approval.requested_by_key_id`). A
+    /// hand-copied `CREATE TABLE` here would drift from the real table.
     fn kp_test_user_pool() -> crate::db::UserDbPool {
-        let manager = r2d2_sqlite::SqliteConnectionManager::memory();
-        let pool = r2d2::Pool::builder()
-            .max_size(1)
-            .build(manager)
-            .expect("user pool");
-        pool.get()
-            .unwrap()
-            .execute_batch(
-                "CREATE TABLE companion_approval (
-                    id               TEXT PRIMARY KEY,
-                    session_id       TEXT NOT NULL,
-                    kind             TEXT NOT NULL,
-                    payload          TEXT NOT NULL,
-                    status           TEXT NOT NULL DEFAULT 'pending',
-                    human_review_id  TEXT,
-                    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
-                    resolved_at      TEXT
-                );",
-            )
-            .unwrap();
-        pool
+        crate::db::init_test_user_db().expect("user pool")
     }
 
     #[test]
@@ -4875,19 +4894,36 @@ mod tests {
         let body = kp_body();
         let mut params = serde_json::to_value(&body).unwrap();
         params["requestId"] = serde_json::Value::String("appr_test1".into());
-        insert_kp_hire_approval(&pool, "appr_test1", &params, &kp_hire_rationale(&body))
-            .expect("insert");
+        insert_kp_hire_approval(
+            &pool,
+            "appr_test1",
+            &params,
+            &kp_hire_rationale(&body),
+            Some("key_kp_1"),
+        )
+        .expect("insert");
 
         let conn = pool.get().unwrap();
-        let (kind, status, payload): (String, String, String) = conn
+        let (kind, status, payload, submitter): (String, String, String, Option<String>) = conn
             .query_row(
-                "SELECT kind, status, payload FROM companion_approval WHERE id = 'appr_test1'",
+                "SELECT kind, status, payload, requested_by_key_id
+                 FROM companion_approval WHERE id = 'appr_test1'",
                 [],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
             )
             .expect("row");
         assert_eq!(kind, "op_execute");
         assert_eq!(status, "pending");
+        // The submitting key lands in its own column (what approval grants
+        // execute rights to), and NOT inside the caller-written params.
+        assert_eq!(submitter.as_deref(), Some("key_kp_1"));
+        assert_eq!(
+            personas_engine::kp_execute_grant::submitting_key_id(&pool, "appr_test1")
+                .expect("read submitter")
+                .as_deref(),
+            Some("key_kp_1")
+        );
+        assert!(!payload.contains("key_kp_1"));
         // Payload carries the {action, params, rationale} shape the approvals
         // lifecycle reads without a special case.
         let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
@@ -4943,6 +4979,26 @@ mod tests {
             &scopes(&["personas:read"])
         )
         .is_err());
+    }
+
+    /// The exact scope set a kp key holds after one approved hire (§10.8):
+    /// its paired `read` + `build`, plus the one grant `kp_execute_grant`
+    /// writes. It may execute the persona it hired and nothing else — no other
+    /// persona, no mutating generic route, no credential proxy.
+    #[test]
+    fn authorize_a_kp_key_after_a_hire_executes_only_the_hired_persona() {
+        let kp = vec![
+            "personas:read".to_string(),
+            "personas:build".to_string(),
+            personas_engine::kp_execute_grant::execute_scope_for("p1"),
+        ];
+        assert!(authorize(&Method::POST, "/api/execute/p1", &kp).is_ok());
+        assert!(authorize(&Method::POST, "/api/execute/p2", &kp).is_err());
+        assert!(authorize(&Method::POST, "/api/versions/v1/rollback", &kp).is_err());
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &kp).is_err());
+        // Before the grant (and after retirement removes it) execute is refused.
+        let paired_only = scopes(&["personas:read", "personas:build"]);
+        assert!(authorize(&Method::POST, "/api/execute/p1", &paired_only).is_err());
     }
 
     #[test]

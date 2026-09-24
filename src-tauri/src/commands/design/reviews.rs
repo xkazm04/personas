@@ -1674,6 +1674,14 @@ pub(crate) fn apply_app_master_probation_decision(
     }
     if decision == "retired" {
         disable_app_master_triggers(state, &record.persona_id);
+        // A retired hire is not one kp may keep dispatching work to: the key
+        // that hired it loses `personas:execute:persona:<id>` (bridge doc
+        // §10.8). Best-effort and idempotent — it logs its own failures.
+        personas_engine::kp_execute_grant::revoke_on_retire(
+            &state.db,
+            &state.user_db,
+            &record.persona_id,
+        );
     }
 
     match decision {

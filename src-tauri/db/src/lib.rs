@@ -843,6 +843,17 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // nothing already in the store ever declared a boundary, so "no
             // stated expiry" is the true value for every one of them.
             "ALTER TABLE companion_fact ADD COLUMN expires_at TEXT;",
+            // KP bridge: the `external_api_keys.id` that authenticated the
+            // `POST /api/kp/persona-requests` which inserted this row. Approving
+            // the hire grants THAT key `personas:execute:persona:<new id>`, and
+            // retiring the persona removes it again
+            // (`personas_engine::kp_execute_grant`). A column, not a payload
+            // field, because the payload's `params` is the raw request body the
+            // caller wrote — the submitter's identity must not live beside
+            // fields the submitter controls. NULL on every other approval kind
+            // and on hire rows written before the column existed, which the
+            // grant reads as "no submitter recorded" and skips.
+            "ALTER TABLE companion_approval ADD COLUMN requested_by_key_id TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -2478,6 +2489,8 @@ pub fn init_test_user_db() -> Result<UserDbPool, AppError> {
             "ALTER TABLE companion_turn ADD COLUMN tier_class TEXT;",
             "ALTER TABLE companion_turn ADD COLUMN first_text_ms INTEGER;",
             "ALTER TABLE companion_turn ADD COLUMN fallback_reason TEXT;",
+            // The KP hire's submitting key (see `init_user_db`).
+            "ALTER TABLE companion_approval ADD COLUMN requested_by_key_id TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }

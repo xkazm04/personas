@@ -964,9 +964,15 @@ pub(crate) async fn execute_build_oneshot(
 ///
 /// Deliberately NOT on `AUTOAPPROVE_ALLOWLIST` (approval_autopilot.rs) — like
 /// every build action, a KP hire always requires the human click.
+///
+/// `approval_id` is the `companion_approval` row being executed. Once the
+/// persona exists, the key recorded on that row as the submitter is granted
+/// `personas:execute:persona:<new id>` — exactly that one scope, best-effort,
+/// never failing the hire (`personas_engine::kp_execute_grant`).
 pub(crate) async fn execute_kp_hire_request(
     state: &State<'_, Arc<AppState>>,
     app: &tauri::AppHandle,
+    approval_id: &str,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     fn str_field<'a>(
@@ -1261,6 +1267,25 @@ pub(crate) async fn execute_kp_hire_request(
         }
     }
 
+    // 2c. Execute rights for the key that asked for this hire — on THIS persona
+    //     only. After the spawn (a spawn failure deletes the persona, and a
+    //     grant for a deleted id is litter) and BEFORE the kp push below, so
+    //     by the time kp hears "approved" its execute call is already allowed.
+    //     A revoked/deleted key or a row with no recorded submitter is logged
+    //     and skipped; the hire stands either way.
+    let execute_grant = personas_engine::kp_execute_grant::grant_on_hire_approval(
+        &state.db,
+        &state.user_db,
+        approval_id,
+        &persona.id,
+    );
+    let execute_grant_summary = match &execute_grant {
+        personas_engine::kp_execute_grant::HireGrant::Skipped { reason } => {
+            format!(" kp was NOT granted execute rights on it ({reason}).")
+        }
+        _ => String::new(),
+    };
+
     // 3. Stamp the created persona + build session onto the approval row so
     //    `GET /api/kp/persona-requests/{id}` can report them. Best-effort —
     //    a failure only degrades the KP poll, never the hire itself.
@@ -1282,7 +1307,7 @@ pub(crate) async fn execute_kp_hire_request(
     );
 
     Ok(ExecuteResult::message(format!(
-        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}",
+        "Hired '{persona_name}' for KP job '{job_title}' — created a draft persona and started an autonomous build.{app_master_summary}{execute_grant_summary}",
         persona_name = persona.name,
     )))
 }

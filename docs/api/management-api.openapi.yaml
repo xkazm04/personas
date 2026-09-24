@@ -176,6 +176,12 @@ paths:
         approves or rejects it in the desktop app; either way KP is notified at
         `kp.baseUrl` with `reportToken` and can also poll the status route below.
 
+        **Execute rights (§10.8).** On approval the key that made THIS call is
+        granted `personas:execute:persona:<new persona id>` — that one scope, so
+        it may `POST /api/execute/{persona_id}` for the hired persona and no
+        other. Retiring the persona removes it. A key revoked in between is
+        skipped (logged); the hire still succeeds.
+
         **Headless bridge (§13).** With `PERSONAS_HEADLESS_BRIDGE=1` the request
         is executed on the spot, through the same executor a human click reaches,
         and the response reports the real outcome instead of `pending_approval`:
@@ -576,6 +582,7 @@ paths:
                   personaId: { type: string }
                   alreadyRetired: { type: boolean, description: "True ⇒ both records were already terminal and nothing was written" }
                   lifecycle: { type: string, const: archived }
+                  executeGrantsRevoked: { type: integer, description: "How many kp keys lost their personas:execute:persona:<id> grant on this call (0 on a repeat, or when none was granted). See cloud-integration-bridge.md §10.8" }
                   note: { type: string }
                   mandate:
                     type: [object, "null"]

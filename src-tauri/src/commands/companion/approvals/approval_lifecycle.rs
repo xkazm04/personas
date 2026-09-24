@@ -174,7 +174,9 @@ pub(crate) async fn execute_approval_action(
         // KP bridge (WP3) — an external hiring app's persona hire request,
         // inserted by `POST /api/kp/persona-requests` (management_api), not by
         // Athena's grammar. Modeled on build_oneshot; NOT autopilot-eligible.
-        "kp_hire_request" => execute_kp_hire_request(&state, &app, params).await,
+        // The approval id is passed so the executor reads the submitting key
+        // off THIS row (not off a params field) when it grants execute rights.
+        "kp_hire_request" => execute_kp_hire_request(&state, &app, approval_id, params).await,
         "run_arena" => execute_run_arena(&state, &app, params).await,
         "companion_breed_personas" => execute_companion_breed_personas(&state, &app, params).await,
         "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, params).await,

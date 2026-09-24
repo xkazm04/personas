@@ -390,7 +390,7 @@ back to kp.
 
 | Route | Scope | What it does |
 | --- | --- | --- |
-| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox, returns `{requestId, status: "pending_approval"}`. Builds nothing. |
+| `POST /api/kp/persona-requests` | `personas:build` | Validates the body, inserts a `kp_hire_request` row in the companion approval inbox — recording the authenticating key's id in `companion_approval.requested_by_key_id` (§10.8) — and returns `{requestId, status: "pending_approval"}`. Builds nothing. |
 | `GET /api/kp/persona-requests/{id}` | any valid key | Derived status: `pending` \| `approved` \| `rejected` \| `failed` \| `expired`, plus `personaId` / `personaName` / `buildPhase` once the executor has stamped them, and `buildFailureReason` when the build session ended `failed` (§10.7). 404s for any approval row that is not a KP hire request, so it cannot enumerate the inbox. |
 | `GET /api/kp/connector-catalog` | any valid key | `{key, name, description}` per compiled-in builtin connector — the picker payload for kp's hire form. No DB read. |
 
@@ -778,6 +778,55 @@ same reasoning as §10.5.
   or a dead CLI without opening the desktop app's log.
 - Tested in `personas-engine` (13 checks in `build_stall`) — the predicate is
   pure (`stalled(history, k)`), same reasoning as §10.5 and §10.6.
+
+### 10.8 Execute rights follow the hire — one persona, one key (2026-09-24)
+
+kp's paired key holds `personas:read` + `personas:build` (kp:
+`app/_lib/agent-hire/pairing.ts`, `PAIRING_SCOPES`), so before this change a hired
+persona could not be handed work: `POST /api/execute/{persona_id}` answered 403. The
+fix is the least-privilege grant §3.2 already defines, written automatically and
+removed automatically — `personas_engine::kp_execute_grant`.
+
+| Moment | What happens | Where |
+| --- | --- | --- |
+| Intake | the `external_api_keys.id` the auth middleware resolved (`AuthedApiKey`) is stored in `companion_approval.requested_by_key_id` — its own column, never inside `params`, which is the caller-written body | `management_api::kp_create_persona_request` → `insert_kp_hire_approval` |
+| Approval | after the persona exists and its build has spawned, and **before** the `approved` push to kp, the submitting key gains `personas:execute:persona:<new id>` — exactly that scope | `execute_kp_hire_request` → `kp_execute_grant::grant_on_hire_approval` → `external_api_keys::grant_scope` |
+| Retirement | the grant is removed from the key(s) that submitted a hire whose stamped `result.personaId` is this persona — and from no other key, so a per-persona grant an operator minted by hand in the API-keys UI survives | `kp_test_retire`, the probation carry-out on `retired` (`reviews::apply_app_master_probation_decision`, human click and headless sweep alike), and `delete_persona` (the path that pushes `retired` to kp) → `kp_execute_grant::revoke_on_retire` → `external_api_keys::revoke_scope` |
+
+Rules the code holds:
+
+- **Nothing widens.** Never the broad `personas:execute`, never `proxy`, never a
+  persona kp did not request. `grant_scope` / `revoke_scope` add or remove one exact
+  string under an IMMEDIATE transaction, and refuse to rewrite a scopes column that is
+  not a JSON string array (fail-closed `parsed_scopes` reads it as empty, and writing
+  `[scope]` over it would turn a key that authorizes nothing into one that authorizes
+  something).
+- **The hire never fails on the grant.** A submitting key that is revoked, disabled,
+  expired or deleted — or a hire row written before the column existed (NULL) — is
+  skipped with a `warn` naming the reason, and the approval message says kp was not
+  granted execute rights. Recovery is an operator grant in the API-keys UI.
+- **Idempotent both ways.** A repeat approval reports `AlreadyHeld`; a repeat retire
+  removes nothing. `POST /api/kp/test/retire` reports `executeGrantsRevoked` (0 on a
+  repeat).
+- **Known limits.** The human `archive_persona` / `bulk_delete_personas` commands do
+  not revoke (a grant naming a deleted id is inert — `execute_persona` 404s — but an
+  archived persona is still `enabled`, so the key can still execute it until it is
+  retired through one of the paths above or deleted). The grant lands while the
+  persona is still a `draft` building its design; `execute_persona` checks `enabled`,
+  not lifecycle, so kp should dispatch only after the status poll reads `active`.
+  Retirement finds the key through the approval row's `result` stamp, which is
+  best-effort; a hire whose stamp failed keeps its grant until an operator removes it.
+- **Reading results back.** `GET /api/executions/{id}` is a generic `/api/*` read
+  and needs only a valid key — it does **not** check the per-persona grant, and
+  `GET /api/executions` lists every persona's executions. kp's key can therefore
+  read any execution it can name, not only its hires'. Recorded, not changed here.
+
+Tested in `personas-engine` (`kp_execute_grant::tests`, 6: one exact grant, a second
+hire adds a second grant and touches no other key, retire removes only that persona's
+grant, an operator grant on another key survives, revoked / deleted / unrecorded
+submitters are skipped), `personas-db` (`external_api_keys::tests`, 4 more), and
+`management_api::tests` (the submitter lands in its column and not in the payload;
+`authorize_a_kp_key_after_a_hire_executes_only_the_hired_persona`).
 
 ---
 
@@ -2154,6 +2203,7 @@ to be as reachable as its start. A tenure that cannot end is not a tenure.
   "mandate": { "projectId": "…",    // null when the persona holds no App master mandate
                "decision": "retired",
                "carriedOut": true }, // false => it was already decided
+  "executeGrantsRevoked": 1,        // kp keys that just lost personas:execute:persona:<id> (§10.8)
   "note": "…" }
 ```
 

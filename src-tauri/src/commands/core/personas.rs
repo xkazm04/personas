@@ -804,6 +804,9 @@ async fn delete_persona_inner(
         // captured in Phase 1a before the row was removed.
         if let Some((link, name)) = &kp_link {
             crate::engine::kp_reporter::push_lifecycle_event(link, "retired", id, name);
+            // …and the kp key that hired it loses its per-persona execute
+            // grant (bridge doc §10.8). Best-effort; logs its own failures.
+            personas_engine::kp_execute_grant::revoke_on_retire(&state.db, &state.user_db, id);
         }
     }
 

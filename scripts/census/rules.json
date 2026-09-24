@@ -909,8 +909,8 @@
         }
       ],
       "baseline": {
-        "files": 39,
-        "matches": 94
+        "files": 38,
+        "matches": 93
       },
       "floor": 900
     },
@@ -1033,8 +1033,8 @@
         "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
       },
       "baseline": {
-        "files": 45,
-        "matches": 294
+        "files": 44,
+        "matches": 293
       },
       "floor": 900
     },
@@ -4729,8 +4729,8 @@
         "note": "Disclosed imprecision: 6 of 130 sites are DDL inside test fixtures, which the runner cannot exclude. Site-level overlap against all 87 registered src-tauri/.rs rules: unresumable-migration-step 3 lines (2.3%), default-contradicted-by-backfill 2 lines (1.5%); no merge warranted."
       },
       "baseline": {
-        "files": 25,
-        "matches": 118
+        "files": 24,
+        "matches": 117
       },
       "floor": 900,
       "exclude": [
@@ -4781,8 +4781,8 @@
         "note": "THIS RULE CAN REACH ZERO - every site should be calling init_test_db()/init_test_user_db(), which go through SqlitePragmaCustomizer. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero). Site-level overlap against all 87 registered src-tauri/.rs rules: untimed-repo-query 6 lines (0.1% of theirs); optional-store-handle, the nearest conceptual neighbour, shares 0 sites."
       },
       "baseline": {
-        "files": 47,
-        "matches": 50
+        "files": 46,
+        "matches": 49
       },
       "floor": 900
     },
