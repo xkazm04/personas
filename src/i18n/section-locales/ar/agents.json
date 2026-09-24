@@ -3282,5 +3282,16 @@
     "parse": "تحليل",
     "paste_json": "أو الصق JSON مباشرة",
     "paste_placeholder": "الصق JSON الخاص بالسير هنا…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "سيرفض الترقية: {reason}",
+    "heading": "ما الذي ستفعله الترقية",
+    "needs_setup": "يحتاج إلى إعداد أولًا: {connectors}",
+    "refused": "سترفض الترقية هذه المسودة",
+    "refused_hint": "حسّن المسودة لإصلاحها، ثم قم بالترقية.",
+    "repaired": "عدّله البناء",
+    "runs_manual": "يعمل عندما تبدؤه",
+    "runs_next": "مشغّل {type}، التشغيل التالي {time}",
+    "runs_on_event": "مشغّل {type}، يعمل عند إطلاقه"
   }
 }

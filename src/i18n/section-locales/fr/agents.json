@@ -3282,5 +3282,16 @@
     "parse": "Analyser",
     "paste_json": "Ou collez du JSON directement",
     "paste_placeholder": "Collez votre JSON de workflow ici…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "La promotion serait refusée : {reason}",
+    "heading": "Ce que fera la promotion",
+    "needs_setup": "Configuration requise d'abord : {connectors}",
+    "refused": "La promotion refusera ce brouillon",
+    "refused_hint": "Affinez le brouillon pour corriger cela, puis promouvez-le.",
+    "repaired": "Ajusté par la construction",
+    "runs_manual": "S'exécute quand vous le lancez",
+    "runs_next": "Déclencheur {type}, prochaine exécution {time}",
+    "runs_on_event": "Déclencheur {type}, s'exécute quand il se déclenche"
   }
 }

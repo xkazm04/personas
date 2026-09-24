@@ -3288,6 +3288,17 @@
       "parse": "पार्स",
       "paste_json": "या JSON सीधे पेस्ट करें",
       "paste_placeholder": "अपना वर्कफ़्लो JSON यहाँ पेस्ट करें…"
+    },
+    "promote_preview": {
+      "blocked_tooltip": "प्रमोट अस्वीकार करेगा: {reason}",
+      "heading": "प्रमोट क्या करेगा",
+      "needs_setup": "पहले सेटअप चाहिए: {connectors}",
+      "refused": "प्रमोट इस ड्राफ़्ट को अस्वीकार करेगा",
+      "refused_hint": "इसे ठीक करने के लिए ड्राफ़्ट को परिष्कृत करें, फिर प्रमोट करें।",
+      "repaired": "बिल्ड द्वारा समायोजित",
+      "runs_manual": "जब आप शुरू करें तब चलता है",
+      "runs_next": "{type} ट्रिगर, अगला रन {time}",
+      "runs_on_event": "{type} ट्रिगर, सक्रिय होने पर चलता है"
     }
   },
   "alerts": {

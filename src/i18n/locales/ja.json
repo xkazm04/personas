@@ -3288,6 +3288,17 @@
       "parse": "解析",
       "paste_json": "またはJSONを直接貼り付け",
       "paste_placeholder": "ワークフローJSONをここに貼り付け…"
+    },
+    "promote_preview": {
+      "blocked_tooltip": "昇格は拒否されます: {reason}",
+      "heading": "昇格で行われること",
+      "needs_setup": "先にセットアップが必要: {connectors}",
+      "refused": "昇格はこのドラフトを拒否します",
+      "refused_hint": "ドラフトを調整して修正してから昇格してください。",
+      "repaired": "ビルドにより調整済み",
+      "runs_manual": "開始したときに実行",
+      "runs_next": "{type} トリガー、次回実行 {time}",
+      "runs_on_event": "{type} トリガー、発火時に実行"
     }
   },
   "alerts": {

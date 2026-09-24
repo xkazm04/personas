@@ -161,7 +161,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "assertions": {},
     "brain": {},
-    "responsibilities": {}
+    "responsibilities": {},
+    "promote_preview": {}
   },
   "director": {},
   "vault": {

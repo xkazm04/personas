@@ -3288,6 +3288,17 @@
       "parse": "파싱",
       "paste_json": "또는 JSON 직접 붙여넣기",
       "paste_placeholder": "워크플로 JSON을 여기에 붙여넣기…"
+    },
+    "promote_preview": {
+      "blocked_tooltip": "승격이 거부됩니다: {reason}",
+      "heading": "승격 시 수행되는 작업",
+      "needs_setup": "먼저 설정 필요: {connectors}",
+      "refused": "승격이 이 초안을 거부합니다",
+      "refused_hint": "초안을 다듬어 수정한 뒤 승격하세요.",
+      "repaired": "빌드에서 조정됨",
+      "runs_manual": "직접 시작할 때 실행",
+      "runs_next": "{type} 트리거, 다음 실행 {time}",
+      "runs_on_event": "{type} 트리거, 발동 시 실행"
     }
   },
   "alerts": {

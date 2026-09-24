@@ -5496,6 +5496,17 @@ export type Translations = {
       activity_kind_act: string;
       activity_kind_deliver: string;
     };
+    promote_preview: {
+      heading: string;
+      runs_next: string;
+      runs_on_event: string;
+      runs_manual: string;
+      needs_setup: string;
+      repaired: string;
+      refused: string;
+      refused_hint: string;
+      blocked_tooltip: string;
+    };
   };
   director: {
     panel_title: string;

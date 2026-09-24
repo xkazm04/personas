@@ -3282,5 +3282,16 @@
     "parse": "解析",
     "paste_json": "或直接粘贴 JSON",
     "paste_placeholder": "在此粘贴工作流 JSON…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "提升将被拒绝：{reason}",
+    "heading": "提升将执行的操作",
+    "needs_setup": "需要先设置：{connectors}",
+    "refused": "提升将拒绝此草稿",
+    "refused_hint": "请优化草稿以修复此问题，然后再提升。",
+    "repaired": "已由构建调整",
+    "runs_manual": "在你启动时运行",
+    "runs_next": "{type} 触发器，下次运行 {time}",
+    "runs_on_event": "{type} 触发器，触发时运行"
   }
 }

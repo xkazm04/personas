@@ -3282,5 +3282,16 @@
     "parse": "Urai",
     "paste_json": "Atau tempel JSON langsung",
     "paste_placeholder": "Tempel JSON alur kerja Anda di sini…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "Promosi akan ditolak: {reason}",
+    "heading": "Apa yang akan dilakukan promosi",
+    "needs_setup": "Perlu penyiapan dulu: {connectors}",
+    "refused": "Promosi akan menolak draf ini",
+    "refused_hint": "Perbaiki draf untuk mengatasinya, lalu promosikan.",
+    "repaired": "Disesuaikan oleh build",
+    "runs_manual": "Berjalan saat Anda memulainya",
+    "runs_next": "Pemicu {type}, jalankan berikutnya {time}",
+    "runs_on_event": "Pemicu {type}, berjalan saat terpicu"
   }
 }

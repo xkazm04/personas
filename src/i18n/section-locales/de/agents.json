@@ -3282,5 +3282,16 @@
     "parse": "Parsen",
     "paste_json": "Oder JSON direkt einfügen",
     "paste_placeholder": "Workflow-JSON hier einfügen…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "Die Übernahme würde abgelehnt: {reason}",
+    "heading": "Was die Übernahme bewirkt",
+    "needs_setup": "Zuerst einrichten: {connectors}",
+    "refused": "Die Übernahme wird diesen Entwurf ablehnen",
+    "refused_hint": "Überarbeite den Entwurf, um das zu beheben, und übernimm ihn dann.",
+    "repaired": "Vom Build angepasst",
+    "runs_manual": "Läuft, wenn du es startest",
+    "runs_next": "{type}-Auslöser, nächster Lauf {time}",
+    "runs_on_event": "{type}-Auslöser, läuft, wenn er auslöst"
   }
 }

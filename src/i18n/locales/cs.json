@@ -3288,6 +3288,17 @@
       "parse": "Zpracovat",
       "paste_json": "Nebo vložte JSON přímo",
       "paste_placeholder": "Zde vložte JSON vašeho workflow…"
+    },
+    "promote_preview": {
+      "blocked_tooltip": "Povýšení by bylo odmítnuto: {reason}",
+      "heading": "Co povýšení udělá",
+      "needs_setup": "Nejprve je potřeba nastavit: {connectors}",
+      "refused": "Povýšení tento koncept odmítne",
+      "refused_hint": "Upravte koncept, aby se to opravilo, a pak ho povyšte.",
+      "repaired": "Upraveno sestavením",
+      "runs_manual": "Spustí se, když ho spustíte vy",
+      "runs_next": "Spouštěč {type}, další spuštění {time}",
+      "runs_on_event": "Spouštěč {type}, spustí se při aktivaci"
     }
   },
   "alerts": {

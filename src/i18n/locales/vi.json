@@ -3288,6 +3288,17 @@
       "parse": "Phân tích",
       "paste_json": "Hoặc dán JSON trực tiếp",
       "paste_placeholder": "Dán JSON quy trình của bạn vào đây…"
+    },
+    "promote_preview": {
+      "blocked_tooltip": "Thăng cấp sẽ bị từ chối: {reason}",
+      "heading": "Thăng cấp sẽ làm gì",
+      "needs_setup": "Cần thiết lập trước: {connectors}",
+      "refused": "Thăng cấp sẽ từ chối bản nháp này",
+      "refused_hint": "Tinh chỉnh bản nháp để sửa, rồi thăng cấp.",
+      "repaired": "Đã được bản dựng điều chỉnh",
+      "runs_manual": "Chạy khi bạn bắt đầu",
+      "runs_next": "Trình kích hoạt {type}, lần chạy tiếp theo {time}",
+      "runs_on_event": "Trình kích hoạt {type}, chạy khi được kích hoạt"
     }
   },
   "alerts": {

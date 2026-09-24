@@ -3282,5 +3282,16 @@
     "parse": "Analizar",
     "paste_json": "O pega el JSON directamente",
     "paste_placeholder": "Pegue su JSON de flujo de trabajo aquí…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "La promoción se rechazaría: {reason}",
+    "heading": "Qué hará la promoción",
+    "needs_setup": "Necesita configuración primero: {connectors}",
+    "refused": "La promoción rechazará este borrador",
+    "refused_hint": "Refina el borrador para corregirlo y luego promuévelo.",
+    "repaired": "Ajustado por la compilación",
+    "runs_manual": "Se ejecuta cuando lo inicias",
+    "runs_next": "Disparador {type}, próxima ejecución {time}",
+    "runs_on_event": "Disparador {type}, se ejecuta cuando se activa"
   }
 }

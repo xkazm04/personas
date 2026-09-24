@@ -5489,6 +5489,17 @@
       "activity_kind_decide": "Decide",
       "activity_kind_act": "Act",
       "activity_kind_deliver": "Deliver"
+    },
+    "promote_preview": {
+      "heading": "What promote will do",
+      "runs_next": "{type} trigger, next run {time}",
+      "runs_on_event": "{type} trigger, runs when it fires",
+      "runs_manual": "Runs when you start it",
+      "needs_setup": "Needs setup first: {connectors}",
+      "repaired": "Adjusted by the build",
+      "refused": "Promote will refuse this draft",
+      "refused_hint": "Refine the draft to fix it, then promote.",
+      "blocked_tooltip": "Promote would refuse: {reason}"
     }
   },
   "director": {
