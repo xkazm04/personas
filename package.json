@@ -124,6 +124,7 @@
     "perf:load": "node scripts/perf/load-harness.mjs",
     "perf:eager": "node scripts/perf/eager-bytes.mjs",
     "style:divergence": "node scripts/style/style-divergence.mjs --repo . --out tmp/style-divergence",
+    "style:shoot": "node scripts/style/shoot.mjs",
     "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
     "check:recipe-index": "node scripts/templates/generate-recipe-index.mjs --check",
     "check:evidence": "node scripts/registry/evidence-check.mjs",
