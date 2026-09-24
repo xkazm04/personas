@@ -169,6 +169,9 @@ describe('Guide layout', () => {
     expect(screen.getByText('act_search: bakeries')).toBeTruthy();
     expect(screen.getByText('goals_drafting')).toBeTruthy();
     expect(screen.getByTestId('dock')).toBeTruthy();
+    // The live region carries what she is doing, never the ticking clock, so a
+    // screen reader is not re-read the line every second.
+    expect(screen.getByRole('status').textContent).toBe('act_search: bakeries');
   });
 
   it('asks the question on a large card with keyed options', () => {

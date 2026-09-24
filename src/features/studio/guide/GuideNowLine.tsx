@@ -79,8 +79,12 @@ export default function GuideNowLine({
           O
         </kbd>
       </button>
-      <p className="min-w-0 flex-1 truncate typo-body text-foreground/90" role="status">
-        <span className={`font-semibold ${questionWaiting && !busy ? 'text-status-warning' : 'text-foreground'}`}>{lead}</span>
+      {/* Only the lead is a live region: the rest carries a clock that ticks
+          every second and would be re-announced each time. */}
+      <p className="min-w-0 flex-1 truncate typo-body text-foreground/90">
+        <span role="status" className={`font-semibold ${questionWaiting && !busy ? 'text-status-warning' : 'text-foreground'}`}>
+          {lead}
+        </span>
         {rest && <span> {rest}</span>}
       </p>
       {autonomous && (
