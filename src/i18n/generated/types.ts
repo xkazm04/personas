@@ -23262,6 +23262,9 @@ export type Translations = {
     pick_prompt: string;
     pick_queued: string;
     pick_mode_hint: string;
+    pick_wider: string;
+    pick_narrower: string;
+    pick_frames: string;
     knob_spacing: string;
     knob_tighter: string;
     knob_airier: string;

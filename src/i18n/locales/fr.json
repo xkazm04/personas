@@ -18258,7 +18258,6 @@
       "tool_research_what": "Elle se renseigne sur le web avec des assistants et rapporte ce qui devrait changer le plan.",
       "tool_tour": "Explique-moi tout",
       "tool_tour_what": "Une explication simple de chaque partie et quelles décisions de votre part l'ont façonnée.",
-      "tool_tweak": "Ajuster cet élément",
       "tools": "Outils d'Athena",
       "tools_open": "Ouvrir les outils d'Athena",
       "why_continue": "La prochaine partie du plan. Elle ne demande que si elle a besoin d'une vraie décision de votre part.",
@@ -18302,7 +18301,8 @@
       "frame_blueprint": "Le plan, objectif par objectif",
       "suggests_keys": "Entrée sélectionne le premier. Le numéro d'une carte la sélectionne. X passe.",
       "tool_looks_what": "Deux ou trois directions visuelles pour cette page, derrière un petit sélecteur en haut. Vous choisissez celle à garder.",
-      "tool_tweak_what": "Désignez n'importe quelle partie de la page et dites ce qui doit y changer. Vous pouvez aussi faire un clic droit dessus dans l'aperçu."
+      "tool_tweak": "Inspecter et modifier",
+      "tool_tweak_what": "Voyez les cadres autour de chaque partie de la page, choisissez-en un et dites ce qui doit y changer. Raccourci I, ou clic droit dans l'aperçu."
     },
     "bun_missing": "Bun n'est pas installé, et Studio en a besoin pour créer et exécuter des projets. Installez le depuis bun.sh (ou définissez PERSONAS_BUN_BIN), puis redémarrez l'application.",
     "bun_unknown": "Impossible de vérifier si Bun est installé. Studio en a besoin pour créer et exécuter des projets. Réessayez, ou installez le depuis bun.sh et redémarrez l'application.",
@@ -18331,9 +18331,12 @@
     "vision_intro": "Décrivez ce que vous voulez en une ou deux phrases. Athena le planifie, le construit en direct dans l'aperçu, et vous demande de guider à chaque étape. Vous ne savez pas par où commencer ? Choisissez une option :",
     "vision_landing": "Une page d'atterrissage pour [product] : un hero percutant avec une proposition de valeur claire et un appel à l'action principal, une section fonctionnalités, des preuves sociales, et un CTA final.",
     "vision_portfolio": "Un site portfolio pour [your name], un [your role] : sombre et moderne, avec un hero, quelques travaux avec de courtes études de cas, une section à propos, et un formulaire de contact.",
-    "pick_mode_hint": "Cliquez sur un élément de l'aperçu pour le modifier. Échap annule.",
     "pick_prompt": "Qu'est-ce qui doit changer ici ?",
-    "pick_queued": "Enregistré pour sa prochaine étape."
+    "pick_queued": "Enregistré pour sa prochaine étape.",
+    "pick_frames": "Les cadres qui l'entourent",
+    "pick_mode_hint": "Inspecter : survolez pour voir les cadres, cliquez sur ce qui doit changer. [ et ] sortent et entrent. Échap quitte.",
+    "pick_narrower": "Plus étroit (Alt+↓)",
+    "pick_wider": "Plus large (Alt+↑)"
   },
   "system_health": {
     "bridge_error": "Le pont applicatif ne répond pas. Essayez de redémarrer l’application. Vous pouvez toujours continuer à explorer l’interface.",

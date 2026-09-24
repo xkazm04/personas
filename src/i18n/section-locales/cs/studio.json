@@ -149,7 +149,6 @@
     "tool_research_what": "Prohledá web s pomocníky a přinese, co by mělo změnit plán.",
     "tool_tour": "Proveď mě tím",
     "tool_tour_what": "Srozumitelné vysvětlení každé části a toho, které tvé rozhodnutí ji utvořilo.",
-    "tool_tweak": "Upravit tento prvek",
     "tools": "Nástroje Atheny",
     "tools_open": "Otevřít nástroje Atheny",
     "why_continue": "Další část plánu. Zeptá se jen tehdy, když potřebuje tvé skutečné rozhodnutí.",
@@ -193,7 +192,8 @@
     "frame_blueprint": "Plán, cíl po cíli",
     "suggests_keys": "Enter vybere první. Číslo karty ji vybere. X ji přeskočí.",
     "tool_looks_what": "Dva až tři vizuální směry pro tuto stránku, za malým přepínačem nahoře. Ty vybereš, který zůstane.",
-    "tool_tweak_what": "Ukažte na libovolnou část stránky a řekněte, co se tam má změnit. V náhledu na ni můžete také kliknout pravým tlačítkem."
+    "tool_tweak": "Prozkoumat a změnit",
+    "tool_tweak_what": "Podívejte se na rámce kolem každé části stránky, vyberte jednu a řekněte, co se tam má změnit. Zkratka I, nebo pravé kliknutí v náhledu."
   },
   "bun_missing": "Bun není nainstalovaný a Studio ho potřebuje k vytváření a spouštění projektů. Nainstaluj ho z bun.sh (nebo nastav PERSONAS_BUN_BIN) a restartuj aplikaci.",
   "bun_unknown": "Nepodařilo se zjistit, jestli je Bun nainstalovaný. Studio ho potřebuje k vytváření a spouštění projektů. Zkus to znovu, nebo ho nainstaluj z bun.sh a restartuj aplikaci.",
@@ -222,7 +222,10 @@
   "vision_intro": "Popiš ve větě nebo dvou, co chceš. Athena to naplánuje, sestaví to živě v náhledu a v každém kroku se tě zeptá na směr. Nevíš, kde začít? Vyber si jednu z možností:",
   "vision_landing": "Vstupní stránka pro [produkt]: výrazný hero blok s jasným hodnotovým sdělením a jedním hlavním CTA, sekce funkcí, sociální důkaz a závěrečné CTA.",
   "vision_portfolio": "Portfolio web pro [tvé jméno], [tvá role]: tmavý a moderní, s hero blokem, několika ukázkami práce s krátkými případovými studiemi, sekcí o mně a kontaktním formulářem.",
-  "pick_mode_hint": "Klikněte na cokoli v náhledu, co chcete změnit. Esc zruší.",
   "pick_prompt": "Co se tu má změnit?",
-  "pick_queued": "Uloženo pro její další krok."
+  "pick_queued": "Uloženo pro její další krok.",
+  "pick_frames": "Rámce kolem něj",
+  "pick_mode_hint": "Prozkoumání: najetím uvidíte rámce, klikněte na to, co se má změnit. [ a ] jdou ven a dovnitř. Esc ukončí.",
+  "pick_narrower": "Užší (Alt+↓)",
+  "pick_wider": "Širší (Alt+↑)"
 }

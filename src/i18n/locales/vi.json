@@ -18258,7 +18258,6 @@
       "tool_research_what": "Cô ấy tra cứu trên web cùng các trợ lý và mang về những gì cần thay đổi trong kế hoạch.",
       "tool_tour": "Giới thiệu cho tôi",
       "tool_tour_what": "Giải thích rõ ràng từng phần và quyết định nào của bạn đã định hình nó.",
-      "tool_tweak": "Chỉnh phần tử này",
       "tools": "Công cụ của Athena",
       "tools_open": "Mở công cụ của Athena",
       "why_continue": "Phần tiếp theo của kế hoạch. Cô ấy chỉ hỏi khi cần một quyết định thật từ bạn.",
@@ -18302,7 +18301,8 @@
       "frame_blueprint": "Kế hoạch, từng mục tiêu một",
       "suggests_keys": "Enter chọn mục đầu tiên. Số của thẻ sẽ chọn thẻ đó. X bỏ qua.",
       "tool_looks_what": "Hai hoặc ba hướng hình ảnh cho trang này, nằm sau một bộ chuyển nhỏ ở trên cùng. Bạn chọn phương án muốn giữ lại.",
-      "tool_tweak_what": "Chỉ vào bất kỳ phần nào của trang và nói cần thay đổi gì ở đó. Bạn cũng có thể nhấp chuột phải vào nó trong bản xem trước."
+      "tool_tweak": "Kiểm tra và thay đổi",
+      "tool_tweak_what": "Xem các khung quanh từng phần của trang, chọn một khung và nói cần thay đổi gì ở đó. Phím tắt I, hoặc nhấp chuột phải trong bản xem trước."
     },
     "bun_missing": "Bun chưa được cài đặt, và Studio cần nó để tạo khung và chạy dự án. Cài đặt từ bun.sh (hoặc thiết lập PERSONAS_BUN_BIN), sau đó khởi động lại ứng dụng.",
     "bun_unknown": "Không thể kiểm tra xem Bun đã được cài đặt hay chưa. Studio cần nó để tạo khung và chạy dự án. Thử lại, hoặc cài đặt từ bun.sh rồi khởi động lại ứng dụng.",
@@ -18331,9 +18331,12 @@
     "vision_intro": "Mô tả điều bạn muốn trong một hoặc hai câu. Athena sẽ lập kế hoạch, xây dựng trực tiếp trong bản xem trước, và hỏi ý kiến bạn ở từng bước. Chưa biết bắt đầu từ đâu? Hãy chọn một trong các gợi ý:",
     "vision_landing": "Một trang đích cho [product]: một hero nổi bật với đề xuất giá trị rõ ràng và một CTA chính, phần tính năng, bằng chứng xã hội, và một CTA cuối cùng.",
     "vision_portfolio": "Một trang portfolio cho [your name], một [your role]: tối màu và hiện đại, với một hero, vài mẫu công việc kèm nghiên cứu tình huống ngắn, phần giới thiệu, và một biểu mẫu liên hệ.",
-    "pick_mode_hint": "Nhấp vào bất cứ thứ gì trong bản xem trước để thay đổi. Esc để hủy.",
     "pick_prompt": "Chỗ này cần thay đổi gì?",
-    "pick_queued": "Đã lưu cho bước tiếp theo của cô ấy."
+    "pick_queued": "Đã lưu cho bước tiếp theo của cô ấy.",
+    "pick_frames": "Các khung bao quanh nó",
+    "pick_mode_hint": "Kiểm tra: rê chuột để thấy các khung, nhấp vào thứ cần thay đổi. [ và ] để ra ngoài và vào trong. Esc để thoát.",
+    "pick_narrower": "Hẹp hơn (Alt+↓)",
+    "pick_wider": "Rộng hơn (Alt+↑)"
   },
   "system_health": {
     "bridge_error": "Cầu nối ứng dụng không phản hồi. Thử khởi động lại ứng dụng. Bạn vẫn có thể tiếp tục khám phá giao diện.",

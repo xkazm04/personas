@@ -18258,7 +18258,6 @@
       "tool_research_what": "她会带着助手在网上查资料，并带回应该改变计划的内容。",
       "tool_tour": "带我了解一下",
       "tool_tour_what": "对每个部分的清楚说明，以及你的哪些决定塑造了它。",
-      "tool_tweak": "微调这个元素",
       "tools": "Athena 的工具",
       "tools_open": "打开 Athena 的工具",
       "why_continue": "计划的下一部分。只有在需要你做出真正决定时，她才会问。",
@@ -18302,7 +18301,8 @@
       "frame_blueprint": "计划，按目标逐条列出",
       "suggests_keys": "回车键选择第一项。卡片编号可直接选择对应项。X 跳过。",
       "tool_looks_what": "为该页面提供两到三种视觉方向，位于顶部一个小切换器后面。由你选择保留哪一个。",
-      "tool_tweak_what": "指向页面的任意部分，说出那里要改什么。也可以在预览中右键点击它。"
+      "tool_tweak": "检查并修改",
+      "tool_tweak_what": "查看页面每个部分周围的框，选一个并说出那里要改什么。快捷键 I，或在预览中右键点击。"
     },
     "bun_missing": "未安装 Bun，而 Studio 需要它来搭建和运行项目。请从 bun.sh 安装（或设置 PERSONAS_BUN_BIN），然后重启应用。",
     "bun_unknown": "无法检查是否已安装 Bun。Studio 需要它来搭建和运行项目。请重试，或从 bun.sh 安装后重启应用。",
@@ -18331,9 +18331,12 @@
     "vision_intro": "用一两句话描述你想要的内容。Athena 会规划它，在预览中实时构建，并在每一步征求你的意见。不确定从哪里开始？选一个：",
     "vision_landing": "一个用于[product]的落地页：醒目的主视觉区搭配明确的价值主张和一个主要行动号召（CTA），一个功能介绍区，社会认同元素，以及最后的一个 CTA。",
     "vision_portfolio": "一个为[your name]（一名[your role]）打造的作品集网站：深色现代风格，包含主视觉区、几个附有简短案例研究的作品样例、一个关于我区域，以及一个联系表单。",
-    "pick_mode_hint": "点击预览中的任意内容来修改它。按 Esc 取消。",
     "pick_prompt": "这里要改什么？",
-    "pick_queued": "已保存，留给她的下一步。"
+    "pick_queued": "已保存，留给她的下一步。",
+    "pick_frames": "它周围的框",
+    "pick_mode_hint": "检查：悬停查看框，点击要修改的内容。[ 和 ] 向外和向内移动。按 Esc 退出。",
+    "pick_narrower": "更窄 (Alt+↓)",
+    "pick_wider": "更宽 (Alt+↑)"
   },
   "system_health": {
     "bridge_error": "应用桥接未响应。请尝试重启应用。您仍可继续浏览界面。",

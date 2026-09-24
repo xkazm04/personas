@@ -150,6 +150,7 @@ export default function GuideStudio({
     onTools: () => setArcOpen(true),
     onAddGoal: () => railRef.current?.startAdding(),
     onToggleBlueprint: () => setBlueprintPinned((p) => !(p ?? showBlueprint)),
+    onInspect: () => live && preview.startPickMode(),
     onEscape: () => {
       if (!questionShown || questionHidden) return false;
       setQuestionHidden(true);

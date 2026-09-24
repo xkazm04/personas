@@ -18258,7 +18258,6 @@
       "tool_research_what": "Sie recherchiert im Web mit Helfern und bringt mit, was den Plan ändern sollte.",
       "tool_tour": "Zeig mir, wie es funktioniert",
       "tool_tour_what": "Eine einfache Erklärung jedes Teils und welche deiner Entscheidungen ihn geprägt hat.",
-      "tool_tweak": "Dieses Element anpassen",
       "tools": "Athenas Werkzeuge",
       "tools_open": "Athenas Werkzeuge öffnen",
       "why_continue": "Der nächste Teil des Plans. Sie fragt nur, wenn sie eine echte Entscheidung von dir braucht.",
@@ -18302,7 +18301,8 @@
       "frame_blueprint": "Der Plan, Ziel für Ziel",
       "suggests_keys": "Enter wählt das erste. Die Zahl einer Karte wählt sie. X überspringt.",
       "tool_looks_what": "Zwei oder drei visuelle Richtungen für diese Seite, hinter einem kleinen Umschalter oben. Du wählst die, die bleiben soll.",
-      "tool_tweak_what": "Zeig auf einen beliebigen Teil der Seite und sag, was sich dort ändern soll. Du kannst ihn auch in der Vorschau mit der rechten Maustaste anklicken."
+      "tool_tweak": "Untersuchen und ändern",
+      "tool_tweak_what": "Sieh die Rahmen um jeden Teil der Seite, wähle einen aus und sag, was sich dort ändern soll. Kürzel I oder Rechtsklick in der Vorschau."
     },
     "bun_missing": "Bun ist nicht installiert, aber Studio braucht es, um Projekte zu erstellen und auszuführen. Installiere es von bun.sh (oder setze PERSONAS_BUN_BIN) und starte die App neu.",
     "bun_unknown": "Konnte nicht geprüft werden, ob Bun installiert ist. Studio braucht es, um Projekte zu erstellen und auszuführen. Versuch es erneut oder installiere es von bun.sh und starte die App neu.",
@@ -18331,9 +18331,12 @@
     "vision_intro": "Beschreib in ein, zwei Sätzen, was du willst. Athena plant es, baut es live in der Vorschau und fragt dich bei jedem Schritt nach deiner Richtung. Nicht sicher, wo du anfangen sollst? Wähl eins:",
     "vision_landing": "Eine Landingpage für [Produkt]: ein starker Hero-Bereich mit klarem Nutzenversprechen und einer Haupt-CTA, ein Funktionsbereich, Social Proof und ein abschließender CTA.",
     "vision_portfolio": "Eine Portfolio-Seite für [dein Name], [deine Rolle]: dunkel und modern, mit einem Hero, ein paar Arbeitsproben mit kurzen Fallstudien, einem Info-Bereich und einem Kontaktformular.",
-    "pick_mode_hint": "Klicke in der Vorschau auf etwas, um es zu ändern. Esc bricht ab.",
     "pick_prompt": "Was soll sich hier ändern?",
-    "pick_queued": "Für ihren nächsten Schritt gespeichert."
+    "pick_queued": "Für ihren nächsten Schritt gespeichert.",
+    "pick_frames": "Die Rahmen darum",
+    "pick_mode_hint": "Untersuchen: Zeig mit der Maus auf etwas, um die Rahmen zu sehen, und klicke, was sich ändern soll. [ und ] gehen nach außen und innen. Esc beendet.",
+    "pick_narrower": "Enger (Alt+↓)",
+    "pick_wider": "Weiter (Alt+↑)"
   },
   "system_health": {
     "bridge_error": "Die Anwendungsbrücke antwortet nicht. Versuchen Sie, die App neu zu starten. Sie können die Oberfläche weiterhin erkunden.",

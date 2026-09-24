@@ -18258,7 +18258,6 @@
       "tool_research_what": "Ia mencarinya di web dengan bantuan dan membawa pulang hal yang perlu mengubah rencana.",
       "tool_tour": "Jelaskan ke saya",
       "tool_tour_what": "Penjelasan sederhana tentang setiap bagian dan keputusanmu mana yang membentuknya.",
-      "tool_tweak": "Sesuaikan elemen ini",
       "tools": "Alat Athena",
       "tools_open": "Buka alat Athena",
       "why_continue": "Bagian berikutnya dari rencana. Ia bertanya hanya jika butuh keputusan sungguhan darimu.",
@@ -18302,7 +18301,8 @@
       "frame_blueprint": "Rencananya, tujuan demi tujuan",
       "suggests_keys": "Enter memilih yang pertama. Nomor kartu memilihnya. X melewati.",
       "tool_looks_what": "Dua atau tiga arah visual untuk halaman ini, di balik pengalih kecil di bagian atas. Anda memilih yang mana yang akan dipertahankan.",
-      "tool_tweak_what": "Tunjuk bagian mana pun dari halaman dan katakan apa yang harus diubah di sana. Anda juga bisa mengklik kanan bagian itu di pratinjau."
+      "tool_tweak": "Periksa dan ubah",
+      "tool_tweak_what": "Lihat bingkai di sekitar setiap bagian halaman, pilih satu dan katakan apa yang harus diubah di sana. Pintasan I, atau klik kanan di pratinjau."
     },
     "bun_missing": "Bun belum terinstal, padahal Studio membutuhkannya untuk membuat kerangka dan menjalankan proyek. Instal dari bun.sh (atau atur PERSONAS_BUN_BIN), lalu mulai ulang aplikasi.",
     "bun_unknown": "Tidak dapat memeriksa apakah Bun terinstal. Studio membutuhkannya untuk membuat kerangka dan menjalankan proyek. Coba lagi, atau instal dari bun.sh dan mulai ulang aplikasi.",
@@ -18331,9 +18331,12 @@
     "vision_intro": "Jelaskan apa yang Anda inginkan dalam satu atau dua kalimat. Athena merencanakannya, membangunnya secara langsung di pratinjau, dan meminta Anda mengarahkan di setiap langkah. Belum tahu harus mulai dari mana? Pilih salah satu:",
     "vision_landing": "Landing page untuk [product]: hero yang berani dengan proposisi nilai yang jelas dan satu ajakan bertindak utama, bagian fitur, bukti sosial, dan CTA terakhir.",
     "vision_portfolio": "Situs portofolio untuk [your name], seorang [your role]: gelap dan modern, dengan hero, beberapa contoh karya dengan studi kasus singkat, bagian tentang, dan formulir kontak.",
-    "pick_mode_hint": "Klik apa saja di pratinjau untuk mengubahnya. Esc untuk membatalkan.",
     "pick_prompt": "Apa yang harus diubah di sini?",
-    "pick_queued": "Disimpan untuk langkah berikutnya."
+    "pick_queued": "Disimpan untuk langkah berikutnya.",
+    "pick_frames": "Bingkai di sekitarnya",
+    "pick_mode_hint": "Periksa: arahkan kursor untuk melihat bingkai, klik yang harus diubah. [ dan ] keluar dan masuk. Esc untuk keluar.",
+    "pick_narrower": "Lebih sempit (Alt+↓)",
+    "pick_wider": "Lebih lebar (Alt+↑)"
   },
   "system_health": {
     "bridge_error": "Bridge aplikasi tidak merespons. Coba mulai ulang aplikasi. Anda masih dapat melanjutkan menjelajahi antarmuka.",
