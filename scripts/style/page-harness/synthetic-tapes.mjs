@@ -8,6 +8,7 @@
 // personal data and live under tmp/ only.
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fleetTapes } from './fleetTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -255,6 +256,8 @@ const BUILDERS = {
     id, () => ({ ...subEvents(), module: id, note: 'Synthetic: the sub_events personas and events, for a shared DataGrid surface.' }),
   ])),
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
+  // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
+  ...fleetTapes({ RECORDED_AT }).builders,
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
     id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),
