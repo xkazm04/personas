@@ -139,7 +139,7 @@ export function BacklogTable({
       toolbar={toolbar}
       emptyIcon={ScanSearch}
       pageSize={25}
-      fit="content"
+      fit="page"
       density="compact"
       formatSegment={(segment, path) =>
         isOriginSegment(path) ? originLabel(segment) : categoryLabel(segment)
