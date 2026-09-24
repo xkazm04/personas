@@ -492,7 +492,9 @@ export function LiveStreamTab() {
           emptyIcon={Radio}
           emptyTitle={t.triggers.no_events_title}
           emptyDescription={t.triggers.no_events_desc}
-          className="flex-1"
+          // Operator, Gate 2b: the pager sits under the last event, not at the
+          // bottom of the tab; past the tab's height the body scrolls.
+          fit="content"
         />
       </ContentBody>
 
