@@ -2658,6 +2658,11 @@ pub(crate) fn newest_coverage_note_for(charters: &[PersonaResponsibility]) -> Op
 /// [`DISPATCH_UNKNOWN`] — never `running` — because "I could not find the
 /// record" and "it is still working" are different facts and only one of them
 /// justifies deferring a charter.
+/// What a persona reads for a dispatch whose worker died with an earlier app
+/// process (G54): ended, not running, and nothing was written back.
+const DEAD_WORKER_SUMMARY: &str = "worker gone: its process ended with an earlier app run \
+     before it wrote anything back; check the branch, then re-dispatch or re-scope";
+
 fn resolve_last_dispatch(
     pool: &DbPool,
     row: &personas_db::models::AttentionLedgerEntry,
@@ -2701,7 +2706,18 @@ fn resolve_last_dispatch(
         Handle::Fleet(session_id) => match crate::db::repos::fleet_sessions::get(pool, &session_id)
         {
             Ok(Some(s)) => {
+                // G54: a `stale` row whose session is in no live registry
+                // belongs to a worker that died with an earlier app process.
+                // Nothing will ever move it. Read as running, it held
+                // bank-core and bank-invest deferring for 2.5 h on
+                // 2026-09-24. A quiet worker that is still alive (a long cargo
+                // run inside codex) is in the registry and stays running.
+                let gone = s.state == "stale"
+                    && crate::commands::fleet::registry::registry()
+                        .session_state(&session_id)
+                        .is_none();
                 let state = match s.state.as_str() {
+                    _ if gone => DISPATCH_FAILED,
                     // …unless the reason says the run was ENDED rather than
                     // completed. The registry's `finished` means "stopped and
                     // parked", and a session killed by a usage limit or a
@@ -2730,11 +2746,15 @@ fn resolve_last_dispatch(
                     // has reported no outcome, so it is not finished.
                     _ => DISPATCH_RUNNING,
                 };
-                let summary = crate::commands::fleet::run::summary_from_reason(
-                    &s.state,
-                    s.state_reason.as_deref(),
-                )
-                .or_else(|| s.state_reason.clone());
+                let summary = if gone {
+                    Some(DEAD_WORKER_SUMMARY.to_string())
+                } else {
+                    crate::commands::fleet::run::summary_from_reason(
+                        &s.state,
+                        s.state_reason.as_deref(),
+                    )
+                    .or_else(|| s.state_reason.clone())
+                };
                 ("fleet", state, summary)
             }
             Ok(None) => ("fleet", DISPATCH_UNKNOWN, None),
@@ -11025,6 +11045,34 @@ mod attention_tests {
         )?;
         let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
         assert_eq!(d.state, attention_decide::DISPATCH_RUNNING);
+        Ok(())
+    }
+
+    #[test]
+    fn a_stale_row_with_no_live_session_reads_as_a_dead_worker() -> Result<(), AppError> {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Charter", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "dead-sess", "worker": "fleet" }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("dead-sess", "stale", Some("No log growth for 6 min")),
+        )?;
+        // The test process has no live fleet registry entry for the id, which
+        // is exactly the shape a worker killed with an earlier app run leaves.
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert!(d
+            .summary
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("worker gone:"));
         Ok(())
     }
 
