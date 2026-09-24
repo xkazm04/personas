@@ -53,7 +53,7 @@ export default function HomeReleases() {
 
   return (
     <ContentBox>
-      <ContentHeader icon={<Rocket className="w-5 h-5 text-cyan-400" />} iconColor="cyan" title={t.title} subtitle={t.subtitle.roadmap} />
+      <ContentHeader icon={<Rocket className="w-5 h-5 text-primary" />} iconColor="primary" title={t.title} subtitle={t.subtitle.roadmap} />
       <ContentBody>
         <div className="relative z-10 mx-auto w-full max-w-6xl space-y-10">
           {hero && (
@@ -82,8 +82,8 @@ export default function HomeReleases() {
             <EmptyState
               icon={Rocket}
               title={t.empty}
-              iconColor="text-cyan-400/80"
-              iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
+              iconColor="text-primary"
+              iconContainerClassName="bg-primary/10 border-primary/20"
             />
           )}
 
