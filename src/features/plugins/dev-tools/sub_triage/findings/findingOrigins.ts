@@ -9,6 +9,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 
 // style-deviation: each sensor keeps its own hue. This is categorical identity (eleven sensors, read at a glance in the Backlog table and rail), not a status or a role: no status/role token says "which sensor", and mapping them onto the four statuses would make a KPI finding read as success and a cost finding read as a warning verdict. The raw steps get light-theme parity from globals.css' [data-theme^="light"] repair selectors. A categorical palette token set is the missing primitive (Gate 2 retro).
+// Distinctness (CIEDE2000; Tailwind 4 palette in dark, the light repair colours in
+// light; measured at Gate 3): every sensor is at least 10.9 from every other sensor
+// in both themes (nearest pair: standards sky / workspace cyan). Against the status
+// colours two sit closer, both for their meaning: Errors' red is 6.8 from
+// status-error in light (it IS an error signal), LLM cost's amber is 5.8 from
+// status-warning in dark (a cost over threshold is a warning).
 const ORIGIN_META: Record<
   FindingOrigin,
   { labelKey: keyof Translations['plugins']['dev_triage']; icon: typeof Activity; tw: string }
@@ -34,19 +40,20 @@ const ORIGIN_META: Record<
     tw: 'bg-red-500/10 text-red-300 border-red-500/25',
   },
   // Pink, not emerald (operator, Gate 2): an off-track KPI is bad news and must not
-  // wear the success hue. Pink clears CIEDE2000 10 against the other ten sensor
-  // hues in dark (nearest rose, 10.5) and light (rose, 12.4) and sits 21.5 from
-  // every status. A raw step like its ten siblings, not role-human: the role
-  // would claim "a person did this", which a KPI finding does not mean.
+  // wear the success hue. A raw step like its ten siblings, not role-human: the
+  // role would claim "a person did this", which a KPI finding does not mean.
+  // Distances for the whole set are in the header note.
   kpi_offtrack: {
     labelKey: 'origin_kpi_offtrack',
     icon: Activity,
     tw: 'bg-pink-500/10 text-pink-300 border-pink-500/25',
   },
+  // Zinc, not indigo (operator, Gate 3): light rendered indigo 6.5 from
+  // Readiness's violet. A dormant skill reads as the quiet grey it is.
   skill_dormant: {
     labelKey: 'origin_skill_dormant',
     icon: MoonStar,
-    tw: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
+    tw: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/25',
   },
   doc_rot: {
     labelKey: 'origin_doc_rot',
@@ -58,10 +65,13 @@ const ORIGIN_META: Record<
     icon: FlaskConical,
     tw: 'bg-teal-500/10 text-teal-300 border-teal-500/25',
   },
+  // Fuchsia, not rose (operator, Gate 3): rose sat 4.0 from Errors' red in
+  // dark. The 400 step in dark (300 would be 9.8 from KPI pink); light's repair
+  // selector renders both steps as the same fuchsia.
   memory_disputed: {
     labelKey: 'origin_memory_disputed',
     icon: BrainCircuit,
-    tw: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
+    tw: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/25',
   },
   // Not a measurement sensor: the Workspace Knowledge Center materializing an
   // adopted practice (or a pitfall to fix) as one backlog item per member repo.
@@ -75,9 +85,7 @@ const ORIGIN_META: Record<
   // The scan-sweep skill's findings + deep-scan escalations, arriving through
   // the memory-outbox door rather than an in-app sensor.
   // Lime, not purple (operator, Gate 2b): light's repair rendered purple and
-  // violet (Readiness) as the same hex. CIEDE2000 against the other ten sensor
-  // hues: 21.1 dark (amber), 27.5 light (teal); against every status: 21.5 dark,
-  // 25.4 light (success both times).
+  // violet (Readiness) as the same hex.
   scan_sweep: {
     labelKey: 'origin_scan_sweep',
     icon: Compass,
