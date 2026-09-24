@@ -11,6 +11,8 @@
  * - The theme switch. The app owns the theme, and a page that re-set it would
  *   be a second place the operator's choice lives.
  */
+import Button from '@/features/shared/components/buttons/Button';
+
 import type { BlueprintModel } from '../model/types';
 import { utcStamp } from '../format';
 import { useWords } from '../words';
@@ -39,7 +41,7 @@ export function TopBar({
     <header className="cb-top">
       <div className="cb-mark">
         <b className="typo-title-lg">{w.title}</b>
-        <i className="typo-label cb-up cb-dim">{w.subtitle}</i>
+        <i className="typo-eyebrow cb-dim">{w.subtitle}</i>
       </div>
       {/* With no projection there is no run id, no scan clock and no commit
           the plan was made against - so the meta row carries the one true
@@ -73,9 +75,15 @@ export function TopBar({
           onQuery(e.target.value);
         }}
       />
-      <button
-        type="button"
-        className="cb-tbtn typo-caption"
+      {/* The app's Button, wearing `cb-keep` so the page's element reset leaves
+          it alone: the focus ring, the press response, the hover surface and
+          the coarse-pointer target are the app's, not two more hand-rolled
+          copies of them. `aria-pressed` is what the drawer toggle needs and
+          what the bespoke pair only mimicked with a background colour. */}
+      <Button
+        variant={docketOpen ? 'secondary' : 'ghost'}
+        size="sm"
+        className="cb-keep cb-tbtn"
         aria-pressed={docketOpen}
         data-role="cb-docket-toggle"
         data-cb-tip={w.docket_button_tip}
@@ -84,16 +92,17 @@ export function TopBar({
         <kbd>D</kbd>
         {w.docket_button}
         <span className={`cb-pill typo-label${waiting ? '' : ' cb-zero'}`}>{waiting}</span>
-      </button>
-      <button
-        type="button"
-        className="cb-tbtn typo-caption"
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="cb-keep cb-tbtn"
         aria-label={w.help_button_label}
         data-cb-tip={w.help_button_tip}
         onClick={onHelp}
       >
         <kbd>?</kbd>
-      </button>
+      </Button>
     </header>
   );
 }

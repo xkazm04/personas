@@ -22,7 +22,7 @@ export function ProposalDrawing({ drawing }: { drawing: DocketDrawing }) {
           <p className="typo-caption">
             <b style={{ color: 'var(--foreground)' }}>{w.fig_measured_gap}</b> {d.measuredGap}
           </p>
-          <h4 className="typo-label cb-up">{w.fig_forge_cost}</h4>
+          <h4 className="typo-eyebrow">{w.fig_forge_cost}</h4>
           <RangeAxis lo={d.lo} hi={d.hi} max={Math.ceil(d.hi * 1.3)} loLabel={String(d.lo)} hiLabel={String(d.hi)} />
           <div className="cb-chain typo-caption">
             <span className="cb-dim">{w.fig_workers}</span>
@@ -95,12 +95,12 @@ export function ProposalDrawing({ drawing }: { drawing: DocketDrawing }) {
         <div className="cb-fig">
           <div className="cb-gapd">
             <div className="cb-bx">
-              <span className="typo-label cb-up cb-dim">{w.fig_the_gap}</span>
+              <span className="typo-eyebrow cb-dim">{w.fig_the_gap}</span>
               <b className="typo-title-lg">{d.gap}</b>
             </div>
             <div className="cb-ar">{'→'}</div>
             <div className="cb-bx cb-solid">
-              <span className="typo-label cb-up cb-dim">{w.fig_nearest_stand_in}</span>
+              <span className="typo-eyebrow cb-dim">{w.fig_nearest_stand_in}</span>
               <b className="typo-title-lg">{d.nearestStandIn}</b>
             </div>
           </div>

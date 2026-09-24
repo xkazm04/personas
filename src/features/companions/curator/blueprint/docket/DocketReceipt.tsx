@@ -33,7 +33,7 @@ export function DocketReceipt({ entry, selected, expanded, onSelect, onAnswer }:
         onSelect(entry.id);
       }}
     >
-      <span className="cb-stamp typo-label cb-up">{w.docket_recorded}</span>
+      <span className="cb-stamp typo-eyebrow">{w.docket_recorded}</span>
       <div className="typo-title-lg cb-rtitle">{entry.title}</div>
       <div className="cb-rl typo-code">
         {w.docket_answered_by} <b>{entry.answeredBy}</b>

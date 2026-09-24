@@ -5,6 +5,8 @@
  * cannot be answered without a reason, because a decision nobody can read back
  * is not a record. The prompt is part of the answer, not a dialog on top of it.
  */
+import Button from '@/features/shared/components/buttons/Button';
+
 import type { DocketEntry } from '../model/docket';
 import { needsReason } from '../model/docket';
 import { useWords } from '../words';
@@ -18,10 +20,11 @@ export function DocketOptions({ entry, onAnswer }: OptionsProps) {
   return (
     <div className="cb-opts">
       {entry.options.map((option, i) => (
-        <button
+        <Button
           key={option}
-          type="button"
-          className="cb-opt typo-caption"
+          variant="secondary"
+          size="sm"
+          className="cb-keep cb-opt typo-caption"
           data-role="cb-docket-option"
           onClick={(e) => {
             e.stopPropagation();
@@ -31,7 +34,7 @@ export function DocketOptions({ entry, onAnswer }: OptionsProps) {
           <kbd>{i + 1}</kbd>
           {option}
           {needsReason(option) && <span className="cb-dim">{'✎'}</span>}
-        </button>
+        </Button>
       ))}
     </div>
   );

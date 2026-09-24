@@ -15,12 +15,17 @@ import { useWords } from '../words';
 /** How far Curator may reach into a checkout. `unknown` is not `refused`. */
 type Reach = 'granted' | 'refused' | 'never_asked' | 'off' | 'unknown';
 
-const REACH_GLYPH: Record<Reach, string> = {
+/**
+ * Four marks in one family. The fifth, `unknown`, was a literal `?` that read
+ * as a stray character beside a project name ("personas ?"); it wears the
+ * ledger's own see-through UNKNOWN ink instead - the mark the nine columns
+ * already taught the reader.
+ */
+const REACH_GLYPH: Record<Exclude<Reach, 'unknown'>, string> = {
   granted: '●',
   refused: '⊘',
   never_asked: '○',
   off: '◌',
-  unknown: '?',
 };
 
 function reachMark(reach: ConsumerProject['reach']): Reach {
@@ -31,6 +36,7 @@ function reachMark(reach: ConsumerProject['reach']): Reach {
 
 function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
   const { w, tx } = useWords();
+  const mark = reachMark(p.reach);
   const scale = p.pairs / maxPairs;
   const part = (n: number) => widthPct((n / Math.max(1, p.pairs)) * 100 * scale, 100);
   return (
@@ -43,11 +49,13 @@ function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
         pct: share(p.evaluated, p.pairs) ?? w.not_measured,
         stale: p.staleVerdicts,
         state: p.state,
-      })} ${w.side_reach}: ${w.reach[reachMark(p.reach)]}`}
+      })} ${w.side_reach}: ${w.reach[mark]}`}
     >
       <span className="cb-pn typo-caption">
         {p.slug}
-        <i className={`cb-reach cb-reach-${reachMark(p.reach)}`}>{REACH_GLYPH[reachMark(p.reach)]}</i>
+        <i className={`cb-reach cb-reach-${mark}`}>
+          {mark === 'unknown' ? <span className="cb-unkbox" /> : REACH_GLYPH[mark]}
+        </i>
       </span>
       <span className="cb-bar" style={{ height: '9px' }}>
         <i
@@ -89,7 +97,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
 
   return (
     <aside className="cb-dside">
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_crossing}
         <span className="cb-ln" />
       </div>
@@ -105,7 +113,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
           <ProjectBar key={p.slug} p={p} maxPairs={maxPairs} />
         ))}
 
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_scan_holds}
         <span className="cb-ln" />
       </div>
@@ -162,7 +170,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
         <dd>{tx(w.side_plan_position, { n: row.order + 1, total: model.rows?.length ?? w.not_measured })}</dd>
       </dl>
 
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_bundle}
         <span className="cb-ln" />
       </div>

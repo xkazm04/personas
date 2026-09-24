@@ -8,6 +8,7 @@
  * this is that rule applied to itself: the drawer says nothing is waiting
  * rather than rendering a queue of zeros or a fabricated demo.
  */
+import Button from '@/features/shared/components/buttons/Button';
 import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 import type { DocketEntry, DocketFeed } from '../model/docket';
@@ -40,7 +41,7 @@ interface DocketProps {
 
 function Section({ label, count }: { label: string; count: number }) {
   return (
-    <div className="cb-sect typo-label cb-up">
+    <div className="cb-sect typo-eyebrow">
       {label} <b>{count}</b>
       <span className="cb-ln" />
     </div>
@@ -76,19 +77,20 @@ export function Docket(props: DocketProps) {
           </span>
         </div>
         <span className="cb-sp" />
-        <button
-          type="button"
-          className="cb-tbtn typo-caption"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="cb-keep cb-tbtn typo-caption"
           data-role="cb-docket-full"
           onClick={onToggleFull}
         >
           <kbd>F</kbd>
           {state.full ? w.docket_lane : w.docket_full}
-        </button>
-        <button type="button" className="cb-tbtn typo-caption" onClick={onClose}>
+        </Button>
+        <Button variant="ghost" size="sm" className="cb-keep cb-tbtn typo-caption" onClick={onClose}>
           <kbd>Esc</kbd>
           {w.docket_close}
-        </button>
+        </Button>
       </div>
       <div className="cb-dk-body">
         <div className="cb-dk-list">

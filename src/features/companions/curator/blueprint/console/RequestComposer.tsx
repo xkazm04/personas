@@ -73,7 +73,7 @@ export function RequestComposer({ skills, onFile }: ComposerProps) {
     <div className="cb-compose typo-caption" data-role="cb-composer" data-need={need ?? 'none'}>
       <div className="cb-compose-row">
       <div className="cb-compose-skill">
-        <label className="cb-clab typo-label cb-up" htmlFor="cb-skill-field">
+        <label className="cb-clab typo-eyebrow" htmlFor="cb-skill-field">
           {w.console.skill_label}
         </label>
         <input
@@ -107,7 +107,7 @@ export function RequestComposer({ skills, onFile }: ComposerProps) {
       </div>
 
       <div className="cb-compose-arg">
-        <label className="cb-clab typo-label cb-up" htmlFor="cb-argument-field">
+        <label className="cb-clab typo-eyebrow" htmlFor="cb-argument-field">
           {argumentLabel}
         </label>
         <input
@@ -128,7 +128,7 @@ export function RequestComposer({ skills, onFile }: ComposerProps) {
       </div>
 
       <div className="cb-compose-note">
-        <label className="cb-clab typo-label cb-up" htmlFor="cb-note-field">
+        <label className="cb-clab typo-eyebrow" htmlFor="cb-note-field">
           {w.console.note_label}
         </label>
         <input
@@ -145,6 +145,19 @@ export function RequestComposer({ skills, onFile }: ComposerProps) {
         />
       </div>
 
+      {/* The picked skill's lane and what it needs. The slot is ALWAYS
+          reserved, because a badge that appeared only once a skill was picked
+          would move the ledger under it on every pick - but it rides at the
+          end of this row rather than on a line of its own. */}
+      <div className="cb-need-line" data-role="cb-skill-line">
+        {selected && (
+          <>
+            <i className="cb-lane-tag">{w.console.lane_tag[selected.lane]}</i>
+            <SkillNeed skill={selected} />
+          </>
+        )}
+      </div>
+
       <AsyncButton
         variant="primary"
         size="sm"
@@ -155,19 +168,6 @@ export function RequestComposer({ skills, onFile }: ComposerProps) {
       >
         {w.console.file_request}
       </AsyncButton>
-      </div>
-
-      {/* The picked skill's lane and what it needs, on a line of its own that
-          is ALWAYS reserved. The unknown badge is a sentence, not a word, and
-          it needs the width; a line that appeared only once a skill was picked
-          would also move the whole ledger below it on every pick. */}
-      <div className="cb-need-line" data-role="cb-skill-line">
-        {selected && (
-          <>
-            <i className="cb-lane-tag">{w.console.lane_tag[selected.lane]}</i>
-            <SkillNeed skill={selected} />
-          </>
-        )}
       </div>
     </div>
   );
