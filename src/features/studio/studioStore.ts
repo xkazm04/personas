@@ -25,7 +25,7 @@ import { isPlaceholderPlan, MOCK_PHASES, type BuildPhase } from './studioBuildMo
 import { useStudioHistory } from './studioHistory';
 import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
-import { answerNote, buildSeed, QUEUED_NOTES_TURN } from './studioSeed';
+import { aimedNote, answerNote, buildSeed, QUEUED_NOTES_TURN, type AimedTarget } from './studioSeed';
 
 export type SketchState = 'loading' | 'ready' | 'failed';
 
@@ -71,8 +71,6 @@ export interface ProjectRuntime {
   messages: StudioMessage[];
   question: string | null;
   autonomous: boolean;
-  /** Vision text to auto-send as the first turn once the server is live. */
-  seedPending: string | null;
   autoTurns: number;
   resumeAuto: boolean;
   /** Per-turn build controls (C1 effort, C4 voice/style). */
@@ -111,6 +109,8 @@ export interface ProjectRuntime {
 // that miscounts here burns real CLI turns against a real project, which is the
 // one failure in this file whose cost is not paid in pixels.
 export const AUTO_MAX_TURNS = 12;
+/** Notes that may wait for the next step; one more is refused, never dropped. */
+export const QUEUED_NOTES_MAX = 10;
 
 // Boot poll bounds. A poll whose ONLY exit is success is not a poll, it is a
 // hang: a dev server that never binds — a port already in use, Turbopack dying
@@ -126,8 +126,9 @@ export const AUTO_MAX_TURNS = 12;
 export const POLL_INTERVAL_MS = 1500;
 export const POLL_MAX_ATTEMPTS = 160;
 
-// C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
-// before editing any files. "Build it" (an A1 decision option) resumes the build.
+// C2 — plan-first gate: wrap a new request (the seed vision included) so Athena
+// plans + asks approval before editing any files. "Build it" (an A1 decision
+// option) resumes the build.
 const planFirstSeed = (vision: string) =>
   `${vision}\n\n[Plan first — before editing ANY files this turn: reply with your proposed build plan and a 1-2 sentence approach, emit the BUILD_PLAN line, and end with NEEDS_INPUT {"question":"Approve this plan and start building?","options":["Build it","Let me adjust"]}. Do not edit files yet.]`;
 const AUTO_INSTRUCTION =
@@ -167,6 +168,8 @@ export function splitReply(text: string): string[] {
 
 // Non-serializable per-project handles kept outside store state.
 const pollTimers = new Map<string, number>();
+/** Per project: which `start` call is the latest (see `start`). */
+const startSeq = new Map<string, number>();
 const autoTimers = new Map<string, number>();
 let streamUnlisten: (() => void) | null = null;
 
@@ -177,6 +180,11 @@ let streamUnlisten: (() => void) | null = null;
 // clear the new turn's `busy` flag and chain off its state. A turn only owns
 // the runtime while its sequence number is still the current one.
 const turnSeq = new Map<string, number>();
+
+// Projects whose running turn the user stopped. The queue pump must not treat
+// a Stop as "the turn finished": it used to start a fresh (paid) turn with the
+// waiting notes 900 ms after the user pressed Stop. Cleared by the next turn.
+const haltedByUser = new Set<string>();
 
 // Stream deltas arrive many times per second during a build turn; committing a
 // store `set` per chunk re-renders every `stream` subscriber per chunk. Buffer
@@ -215,9 +223,18 @@ interface StudioStore {
   ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
-  stopTurn: (id: string) => void;
+  /** Interrupt the running turn. `pumpNotes`: the interrupt carries a note the
+   *  queue pump should deliver right after (a mid-turn redirect); a plain Stop
+   *  leaves waiting notes for the user's next send. */
+  stopTurn: (id: string, opts?: { pumpNotes?: boolean }) => void;
   /** Keep a note for the next turn instead of refusing input mid-turn. */
-  queueNote: (id: string, text: string) => void;
+  /** False when the note was not queued (empty, no project, or the queue is full). */
+  queueNote: (id: string, text: string) => boolean;
+  /**
+   * Send a change aimed at one element: a turn now when she is idle, else a
+   * note for her next step. 'full' when the note queue refused it.
+   */
+  sendAimed: (id: string, target: AimedTarget, text: string) => 'sent' | 'queued' | 'full';
   removeQueuedNote: (id: string, index: number) => void;
 }
 
@@ -296,7 +313,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         messages: h?.messages ?? [],
         question: h?.question ?? null,
         autonomous: false,
-        seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
         effort: 'xhigh',
@@ -304,7 +320,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         options: h?.options ?? [],
         decisionArea: null,
         decisionSelector: null,
-        gatePlan: false,
+        gatePlan: useStudioHistory.getState().gatePlanDefault ?? false,
         mcp: [],
         stopNoop: false,
         activity: [],
@@ -428,6 +444,11 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       patch(id, { phase: 'error' });
     };
     const timer = window.setInterval(() => {
+      // A closed tab stops its own poll.
+      if (!get().runtimes[id]) {
+        stopPoll(id);
+        return;
+      }
       attempts += 1;
       const exhausted = attempts >= POLL_MAX_ATTEMPTS;
       webbuildStatus(id)
@@ -437,13 +458,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             patch(id, { phase: 'live' });
             stopPoll(id);
             beginLivenessWatch(id);
-            // Auto-send the vision seed once the preview is live.
-            const rt = get().runtimes[id];
-            if (rt?.seedPending) {
-              const seed = rt.gatePlan ? planFirstSeed(rt.seedPending) : rt.seedPending;
-              patch(id, { seedPending: null });
-              void get().sendTurn(id, seed);
-            }
             return;
           }
           if (exhausted) giveUp();
@@ -474,7 +488,11 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     stopLiveness(id);
     const timer = window.setInterval(() => {
       const rt = get().runtimes[id];
-      if (!rt || rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
+      if (!rt) {
+        stopLiveness(id); // a closed tab stops its own watch
+        return;
+      }
+      if (rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
       webbuildStatus(id)
         .then((status) => {
           if (status?.healthy) {
@@ -497,11 +515,28 @@ export const useStudioStore = create<StudioStore>((set, get) => {
   const start = async (id: string) => {
     stopLiveness(id);
     patch(id, { phase: 'starting', status: null });
+    // The latest start owns the tab: an older one that resolves late (the
+    // liveness self-heal racing a manual retry) must not overwrite it. The
+    // backend already replaced and killed the older server.
+    const seq = (startSeq.get(id) ?? 0) + 1;
+    startSeq.set(id, seq);
     try {
       const status = await webbuildDevStart(id);
+      if (!get().runtimes[id]) {
+        // The tab closed while the server was starting. closeTab's stop ran
+        // before this server existed, so stop it now or it holds its port
+        // with nothing in Studio pointing at it.
+        void webbuildDevStop(id).catch(toastCatch('studioStore:start:closed'));
+        return;
+      }
+      if (startSeq.get(id) !== seq) return;
       patch(id, { status });
       beginPoll(id);
     } catch (e) {
+      if (!get().runtimes[id] || startSeq.get(id) !== seq) {
+        silentCatch('studioStore:start:superseded')(e);
+        return;
+      }
       patch(id, { phase: 'error' });
       toastCatch('start dev server')(e);
     }
@@ -526,6 +561,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       ? [typed, '', 'Notes I left while you were working:', ...queued.map((n) => `- ${n}`)].join('\n')
       : typed;
     const startedAt = Date.now();
+    haltedByUser.delete(id);
     const seq = (turnSeq.get(id) ?? 0) + 1;
     turnSeq.set(id, seq);
     pendingStream.delete(id); // fresh turn — drop any unflushed tail
@@ -604,7 +640,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         // Queue pump (Athena's pattern): notes that waited out this turn go
         // with the next one on their own, instead of sitting until the user
         // happens to send something. One pumped turn per finished turn.
-        if (cur && !cur.autonomous && !cur.question && (cur.queuedNotes?.length ?? 0) > 0) {
+        if (cur && !cur.autonomous && !cur.question && !haltedByUser.has(id) && (cur.queuedNotes?.length ?? 0) > 0) {
           const timer = window.setTimeout(() => {
             const r = get().runtimes[id];
             if (r && !r.busy && !r.autonomous && (r.queuedNotes?.length ?? 0) > 0) void runTurn(id, QUEUED_NOTES_TURN);
@@ -728,7 +764,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       })();
     },
 
-    setBuildSettings: (id, p) => patch(id, p),
+    setBuildSettings: (id, p) => {
+      if (p.gatePlan !== undefined) useStudioHistory.getState().setGatePlanDefault(p.gatePlan);
+      patch(id, p);
+    },
 
     closeTab: (id) => {
       stopPoll(id);
@@ -815,7 +854,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       } catch (e) {
         // H9: keep WHY the scaffold failed on the vision screen (e.g. missing Bun).
         // The form shows why, inline, and stays open; no toast on top of it.
-        set({ draft: null, lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
+        // An empty string still means "failed": the form words it (the store has no i18n).
+        set({ draft: null, lastCreateError: readErr(e) ?? '' });
         silentCatch('studioStore:scaffold')(e);
         return;
       }
@@ -828,7 +868,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         sketchState: d?.sketchState ?? null,
         sketchAnswers: d?.answers ?? {},
         setupStartedAt: startedAt,
-        seedPending: null,
       });
       set({ draft: null });
       if (d?.sketch) savePlan(project.id, [], d.sketch);
@@ -841,7 +880,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       void runTurn(project.id, rt?.gatePlan ? planFirstSeed(seed) : seed);
     },
 
-    sendTurn: (id, text) => runTurn(id, text),
+    // Plan first gates every new request: she proposes the plan change and asks
+    // for approval before editing. Answering her pending question (the approval
+    // itself included) goes through as the answer.
+    sendTurn: (id, text) => {
+      const rt = get().runtimes[id];
+      const gated = !!rt?.gatePlan && !rt.question && !rt.autonomous;
+      return runTurn(id, gated ? planFirstSeed(text) : text);
+    },
 
     startAutonomous: (id) => {
       const rt = get().runtimes[id];
@@ -855,7 +901,9 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       patch(id, { autonomous: false, resumeAuto: false });
     },
 
-    stopTurn: (id) => {
+    stopTurn: (id, opts) => {
+      if (opts?.pumpNotes) haltedByUser.delete(id);
+      else haltedByUser.add(id);
       // Interrupt the running CLI turn now + halt any autonomous loop. The
       // pending runTurn resolves with whatever partial reply streamed and clears
       // `busy`; autonomous is already off so it won't chain another turn.
@@ -881,8 +929,18 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     queueNote: (id, text) => {
       const note = text.trim();
       const rt = get().runtimes[id];
-      if (!rt || !note) return;
-      patch(id, { queuedNotes: [...(rt.queuedNotes ?? []), note].slice(-10) });
+      const queued = rt?.queuedNotes ?? [];
+      if (!rt || !note || queued.length >= QUEUED_NOTES_MAX) return false;
+      patch(id, { queuedNotes: [...queued, note] });
+      return true;
+    },
+
+    sendAimed: (id, target, text) => {
+      const rt = get().runtimes[id];
+      const note = aimedNote(target, text);
+      if (rt && (rt.busy || rt.autonomous)) return get().queueNote(id, note) ? 'queued' : 'full';
+      void get().sendTurn(id, note);
+      return 'sent';
     },
 
     removeQueuedNote: (id, index) => {

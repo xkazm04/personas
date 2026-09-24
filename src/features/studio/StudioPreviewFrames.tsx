@@ -4,6 +4,7 @@ import { Bot } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
 import type { StudioPreviewState } from './useStudioPreview';
+import StudioPickComposer from './StudioPickComposer';
 
 // Warm previews (every live tab stays mounted; only the active one is shown)
 // plus the A3 orb pointer over the element a question is about. Shared by both
@@ -36,7 +37,8 @@ export default function StudioPreviewFrames({
             data-tab={id}
             onLoad={() => setLoaded((m) => (m[`${id}-${nonce}`] ? m : { ...m, [`${id}-${nonce}`]: true }))}
             src={`${previewUrls[id]}${route === '/' ? '' : route}`}
-            title={isActive ? 'preview' : `preview-${id}`}
+            data-testid={isActive ? 'studio-preview' : undefined}
+            title={t.studio.preview_frame_title}
             aria-hidden={!isActive}
             // `inert` removes a hidden warm preview from focus AND the a11y tree;
             // opacity/pointer-events alone left it reachable by the Tab key.
@@ -92,6 +94,7 @@ export default function StudioPreviewFrames({
           </span>
         </div>
       ) : null}
+      <StudioPickComposer preview={preview} />
     </>
   );
 }

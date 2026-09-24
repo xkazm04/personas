@@ -61,7 +61,7 @@ export default function StudioPage() {
       setCreating(false);
       try {
         await createWithVision(name, vision);
-        if (useStudioStore.getState().lastCreateError) setCreating(true);
+        if (useStudioStore.getState().lastCreateError !== null) setCreating(true);
         else await refreshProjects();
       } finally {
         setSubmitting(false);

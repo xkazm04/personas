@@ -10,11 +10,11 @@ import GuideGoalsRail, { type GuideGoalsRailHandle } from './GuideGoalsRail';
 import GuideBlueprint from './GuideBlueprint';
 import GuideSketchSheet from './GuideSketchSheet';
 import GuideFrame from './GuideFrame';
-import GuideNowLine from './GuideNowLine';
+import GuideNowLine, { YourCallButton } from './GuideNowLine';
 import GuideQuestionCard from './GuideQuestionCard';
 import GuideDeck from './GuideDeck';
 import GuideToolArc from './GuideToolArc';
-import { addGoalPrompt, deriveDeck, setupSteps, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
+import { addGoalNote, addGoalPrompt, deriveDeck, setupSteps, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
 import { estimateText, guideStrings } from './guideCopy';
 import { useGuideRuntime } from './useGuideRuntime';
 import { useGuideReadAloud } from './useGuideReadAloud';
@@ -74,8 +74,14 @@ export default function GuideStudio({
     : rt && (rt.sketch || rt.sketchState)
       ? { name: rt.name, sketch: rt.sketch, state: rt.sketchState, answers: rt.sketchAnswers, startedAt: rt.setupStartedAt }
       : null;
-  const sketchQuestions = sketchSrc?.sketch?.questions ?? [];
+  // Sketch questions belong to the moment a project is created. A project
+  // opened later replays its stored sketch but is never re-asked them.
+  const askSketch = drafting || !!rt?.setupStartedAt;
+  const sketchQuestions = askSketch ? (sketchSrc?.sketch?.questions ?? []) : [];
   const nextSketchQ = sketchQuestions.findIndex((_, i) => !sketchSrc?.answers[i]);
+  const sketchAsking = nextSketchQ >= 0 && !!sketchSrc?.sketch;
+  // What a question card would show right now; Esc and "your call" act on it.
+  const questionShown = drafting ? sketchAsking : (!!question && !rt?.busy) || sketchAsking;
   // Every no-plan setup state draws the sketch sheet: the sketch when there is
   // one, the Next.js page template until then (never an empty skeleton).
   const sketchMode = drafting || (showBlueprint && placeholder);
@@ -126,22 +132,29 @@ export default function GuideStudio({
     if (!live) unavailable[tool] = g.tool_needs_live;
     else if (working) unavailable[tool] = g.tool_busy;
   }
-  unavailable.tweak = g.tool_soon;
+  if (!live) unavailable.tweak = g.tool_needs_live;
   if (!readAloud.configured) unavailable.read = g.tool_read_setup;
   else if (!lastReply) unavailable.read = g.tool_read_nothing;
   const pickTool = (tool: GuideTool) => {
     setArcOpen(false);
     if (tool.id === 'read') {
       if (lastReply) readAloud.speak(lastReply);
+    } else if (tool.id === 'tweak') {
+      preview.startPickMode();
     } else if (tool.prompt) run(tool.prompt, tool.mcp);
   };
 
   useGuideKeys({
-    enabled: !!rt && !showVision && !arcOpen,
+    enabled: !!rt && !showVision && !drafting && !arcOpen,
+    escapeEnabled: !showVision && !arcOpen,
     onTools: () => setArcOpen(true),
     onAddGoal: () => railRef.current?.startAdding(),
     onToggleBlueprint: () => setBlueprintPinned((p) => !(p ?? showBlueprint)),
-    onEscape: () => question && setQuestionHidden(true),
+    onEscape: () => {
+      if (!questionShown || questionHidden) return false;
+      setQuestionHidden(true);
+      return true;
+    },
   });
 
   const reason = rt && question ? (rt.messages[rt.messages.length - 1]?.text ?? null) : null;
@@ -154,8 +167,11 @@ export default function GuideStudio({
         placeholder={placeholder || showVision || drafting}
         drafting={!showVision && !drafting && planning && !sketchSrc?.sketch}
         draftGoals={!showVision && (placeholder || drafting) ? sketchSrc?.sketch?.goals : undefined}
-        canAdd={!!rt && live && !showVision}
-        onAddGoal={(goal) => (working && id ? useStudioStore.getState().queueNote(id, goal) : run(addGoalPrompt(goal)))}
+        canAdd={!!rt && live && !showVision && !drafting}
+        onAddGoal={(goal) => {
+          if (!working || !id) return run(addGoalPrompt(goal));
+          return useStudioStore.getState().queueNote(id, addGoalNote(goal));
+        }}
       />
       <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[5.25rem]">
         <GuideFrame
@@ -176,7 +192,12 @@ export default function GuideStudio({
               startedAt={sketchSrc?.startedAt ?? null}
             />
           )}
-          {drafting && nextSketchQ >= 0 && !questionHidden && sketchSrc?.sketch && (
+          {drafting && sketchAsking && questionHidden && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
+              <YourCallButton label={g.your_call} onClick={() => setQuestionHidden(false)} />
+            </div>
+          )}
+          {drafting && sketchAsking && !questionHidden && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
               <GuideQuestionCard
                 key={`sq-${nextSketchQ}`}
@@ -197,7 +218,7 @@ export default function GuideStudio({
             <>
               {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} />}
               {showBlueprint && !sketchMode && (
-                <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} placeholder={placeholder} messages={rt.messages} />
+                <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} messages={rt.messages} />
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
                 <AnimatePresence mode="wait">
@@ -246,16 +267,18 @@ export default function GuideStudio({
             turnStartedAt={rt.turnStartedAt}
             lastTurnSecs={lastTurnSecs}
             activity={rt.activity}
-            questionWaiting={!!question}
+            questionWaiting={!!question || sketchAsking}
             questionHidden={questionHidden}
-            queued={rt.queuedNotes.length}
+            queuedNotes={rt.queuedNotes}
+            onRemoveNote={(i) => id && useStudioStore.getState().removeQueuedNote(id, i)}
             estimate={estimate}
             onOrb={() => setArcOpen(true)}
             onShowQuestion={() => setQuestionHidden(false)}
+            toolsOpen={arcOpen}
           />
         )}
         {rt && !showVision && !drafting && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
-        {arcOpen && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
+        {arcOpen && !drafting && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
       </div>
     </div>
   );

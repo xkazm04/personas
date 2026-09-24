@@ -26,6 +26,7 @@ export default function StudioCurrentLayout({
   const { activeId, active, live, activePath, navRoutes, navigateTo, reloadActive } = preview;
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
   const startExisting = useStudioStore((s) => s.startExisting);
+  const busy = useStudioStore((s) => (s.activeId ? !!s.runtimes[s.activeId]?.busy : false));
   const [urlDraft, setUrlDraft] = useState('/');
   const urlEditing = useRef(false);
 
@@ -50,7 +51,7 @@ export default function StudioCurrentLayout({
                   type="button"
                   onClick={reloadActive}
                   aria-label={t.studio.reload_preview}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -92,13 +93,12 @@ export default function StudioCurrentLayout({
                 <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
                 <StudioVersions id={activeId} onRestored={reloadActive} />
               </div>
-              <StudioChatInput />
             </>
           ) : active ? (
             <div className="absolute inset-0 flex items-center justify-center px-6">
               <div className="flex items-center gap-3 rounded-card border border-border bg-background/80 px-5 py-4 shadow-elevation-2">
                 <Bot className="h-5 w-5 text-primary" />
-                <span className="text-md text-foreground/80">
+                <span className="text-md text-foreground/90">
                   {active.phase === 'scaffolding'
                     ? t.studio.scaffolding
                     : active.phase === 'starting'
@@ -126,6 +126,9 @@ export default function StudioCurrentLayout({
               <p className="typo-caption max-w-sm">{t.studio.no_project_open}</p>
             </div>
           )}
+          {/* The first build turn starts while the preview still boots: the dock
+              (and its Stop) is there whenever a turn runs, not only once live. */}
+          {active && (live || busy) && <StudioChatInput />}
         </>
       )}
     </div>

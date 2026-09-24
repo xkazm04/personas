@@ -23,7 +23,8 @@ const GuideGoalsRail = forwardRef<
     /** The sketch lane's draft goals, shown until the real plan lands. */
     draftGoals?: { title: string; note: string }[];
     canAdd: boolean;
-    onAddGoal: (goal: string) => void;
+    /** False when the goal could not be taken (a full note queue). */
+    onAddGoal: (goal: string) => boolean | void;
   }
 >(function GuideGoalsRail({ phases, placeholder, drafting, draftGoals, canAdd, onAddGoal }, ref) {
   const { t, tx } = useTranslation();
@@ -35,17 +36,20 @@ const GuideGoalsRail = forwardRef<
 
   useImperativeHandle(ref, () => ({
     startAdding: () => {
+      if (!canAdd) return;
       setAdding(true);
       window.requestAnimationFrame(() => inputRef.current?.focus());
     },
-    focusActive: () => listRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.focus(),
+    // With no goal in progress (all done, or none yet) the list itself takes focus.
+    focusActive: () => (listRef.current?.querySelector<HTMLElement>('[data-active="true"]') ?? listRef.current)?.focus(),
   }));
 
   const done = phases.filter((p) => p.status === 'done').length;
   const submit = () => {
     const goal = draft.trim();
     if (!goal) return;
-    onAddGoal(goal);
+    // A full note queue refuses the goal: keep it in the box.
+    if (onAddGoal(goal) === false) return;
     setDraft('');
     setAdding(false);
   };
@@ -93,7 +97,7 @@ const GuideGoalsRail = forwardRef<
           )}
         </div>
       ) : (
-        <ol ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-3">
+        <ol ref={listRef} tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto px-4 pb-3 outline-none">
           {phases.map((p, i) => {
             const status = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
             return (

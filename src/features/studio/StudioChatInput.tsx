@@ -16,13 +16,14 @@ import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { useStudioStore } from './studioStore';
+import { QUEUED_NOTES_MAX, useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioMessages from './StudioMessages';
 import StudioPlanDrawer from './StudioPlanDrawer';
 import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
 import { classifyMidTurnIntent } from '@/features/plugins/companion/midTurnIntent';
+import { isStopOnly } from './studioSeed';
 
 // The Studio dock — Athena's conversation + input, docked bottom-center over the
 // immersive preview. Collapsed by default (latest message only) so the preview +
@@ -47,6 +48,9 @@ export default function StudioChatInput({
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
+  // The step (by its start time) whose queue refused a note; the notice is
+  // about that step only and is gone once the next one starts.
+  const [queueFullTurn, setQueueFullTurn] = useState<number | null>(null);
   const { shouldAnimate } = useMotion();
   const activeId = useStudioStore((s) => s.activeId);
   // Perf: select only the fields the dock renders (shallow-compared) instead of
@@ -64,6 +68,7 @@ export default function StudioChatInput({
         name: r.name,
         phases: r.phases,
         stopNoop: r.stopNoop,
+        turnStartedAt: r.turnStartedAt,
       };
     }),
   );
@@ -74,8 +79,9 @@ export default function StudioChatInput({
   const queueNote = useStudioStore((s) => s.queueNote);
 
   if (!activeId || !rt) return null;
-  const { busy, question, autonomous, name, phases, stopNoop } = rt;
+  const { busy, question, autonomous, name, phases, stopNoop, turnStartedAt } = rt;
   const working = busy || autonomous;
+  const queueFull = working && queueFullTurn !== null && queueFullTurn === (turnStartedAt ?? 0);
   const { done, total } = phaseProgress(phases ?? []);
   const hasPlan = total > 0;
 
@@ -92,12 +98,24 @@ export default function StudioChatInput({
     if (!text) return;
     if (working) {
       if (!guide) return;
+      // A bare stop word only stops: queued, it became the sole note of a new
+      // turn told to carry on.
+      if (isStopOnly(text)) {
+        setInput('');
+        if (busy) stopTurn(activeId);
+        return;
+      }
+      // A full queue refuses the note and says so; the text stays in the box.
+      if (!queueNote(activeId, text)) {
+        setQueueFullTurn(turnStartedAt ?? 0);
+        return;
+      }
       setInput('');
-      queueNote(activeId, text);
-      // Athena's mid-turn rule: a clear redirect ("stop", "actually,",
-      // "instead,") interrupts the running step; anything else waits for the
-      // next one. The note is sent by the queue pump when the step ends.
-      if (classifyMidTurnIntent(text) === 'interrupt' && busy) stopTurn(activeId);
+      setQueueFullTurn(null);
+      // Athena's mid-turn rule: a clear redirect ("actually,", "instead,")
+      // interrupts the running step and its note goes with the next one (the
+      // queue pump sends it); anything else waits for the step to end.
+      if (classifyMidTurnIntent(text) === 'interrupt' && busy) stopTurn(activeId, { pumpNotes: true });
       return;
     }
     setInput('');
@@ -156,7 +174,7 @@ export default function StudioChatInput({
               >
                 <header className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1.5">
                   <MessageSquare className="h-3.5 w-3.5 text-primary/70" />
-                  <span className="text-xs font-medium text-foreground/80">
+                  <span className="typo-label text-foreground/90">
                     {t.studio.conversation}
                   </span>
                   <div className="flex-1" />
@@ -164,7 +182,7 @@ export default function StudioChatInput({
                     type="button"
                     onClick={() => setChatOpen(false)}
                     aria-label={t.studio.collapse}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-foreground"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -193,6 +211,15 @@ export default function StudioChatInput({
               : 'sr-only'}
           >
             {stopNoop && !working ? t.studio.stop_nothing_running : null}
+          </p>
+          <p
+            role="status"
+            data-testid={queueFull ? 'studio-queue-full' : undefined}
+            className={queueFull
+              ? 'pointer-events-auto self-center rounded-full border border-status-warning/60 bg-background/80 px-3 py-1 typo-caption text-status-warning shadow-elevation-1'
+              : 'sr-only'}
+          >
+            {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
           {!guide && !working && !question && !chatOpen && <StudioQuickActions id={activeId} />}
@@ -224,7 +251,7 @@ export default function StudioChatInput({
                   chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation
                 }
                 aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary"
               >
                 {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
@@ -236,7 +263,7 @@ export default function StudioChatInput({
                   onClick={() => void pickReference()}
                   disabled={working}
                   aria-label={t.studio.add_reference_image}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
                 >
                   <ImageIcon className="h-4 w-4" />
                 </button>
@@ -246,10 +273,18 @@ export default function StudioChatInput({
                   type="button"
                   onClick={() => (onPlanClick ? onPlanClick() : setPlanOpen((v) => !v))}
                   data-testid="studio-plan-button"
+                  // Guide: the button moves focus to the goals rail; it opens
+                  // nothing, so it names the goals and claims no expanded state.
                   aria-label={
-                    hasPlan ? tx(t.studio.plan_progress, { done, total }) : t.studio.build_plan
+                    onPlanClick
+                      ? hasPlan
+                        ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
+                        : guideStrings(t).goals
+                      : hasPlan
+                        ? tx(t.studio.plan_progress, { done, total })
+                        : t.studio.build_plan
                   }
-                  aria-expanded={planOpen}
+                  aria-expanded={onPlanClick ? undefined : planOpen}
                   className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
                     planOpen
                       ? 'bg-secondary/70 text-primary'
@@ -276,7 +311,7 @@ export default function StudioChatInput({
                     onClick={() => stopTurn(activeId)}
                     data-testid="studio-stop"
                     aria-label={t.studio.stop_athena}
-                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
                   >
                     <CircleStop className="h-4 w-4" />
                     {t.studio.stop}

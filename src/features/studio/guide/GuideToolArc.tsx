@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Columns3, Database, Footprints, Monitor, Pencil, Search, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,7 +19,9 @@ const ICONS: Record<GuideToolId, typeof Search> = {
 
 // Athena's tools fan out in an arc above the orb (O, or a click on the orb).
 // 1-7 or the arrows + Enter pick; Esc closes. Each tool says what it does and
-// why it is unavailable when it is.
+// why it is unavailable when it is. Focus moves into the menu with the arrows
+// (an unavailable tool stays focusable and describes its reason) and returns
+// to wherever it was, usually the orb, when the arc closes.
 export default function GuideToolArc({
   unavailable,
   onPick,
@@ -34,6 +36,19 @@ export default function GuideToolArc({
   const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
   const [focus, setFocus] = useState(0);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const idBase = useId();
+  // Read during the first render, before the arc moves focus into itself.
+  const [opener] = useState(() => document.activeElement as HTMLElement | null);
+  useEffect(
+    () => () => {
+      if (opener && opener.isConnected) opener.focus();
+    },
+    [opener],
+  );
+  useEffect(() => {
+    itemRefs.current[focus]?.focus();
+  }, [focus]);
   const label: Record<GuideToolId, [string, string]> = {
     research: [g.tool_research, g.tool_research_what],
     looks: [g.tool_looks, g.tool_looks_what],
@@ -69,9 +84,10 @@ export default function GuideToolArc({
   const focused = GUIDE_TOOLS[focus]!;
   const n = GUIDE_TOOLS.length;
   return (
-    <div className="pointer-events-auto absolute inset-0 z-30" role="menu" aria-label={g.tools}>
-      <button type="button" aria-label={t.common.close} onClick={onClose} className="absolute inset-0 bg-background/70 backdrop-blur-[2px]" />
+    <div className="pointer-events-auto absolute inset-0 z-30">
+      <button type="button" tabIndex={-1} aria-label={t.common.close} onClick={onClose} className="absolute inset-0 bg-background/70 backdrop-blur-[2px]" />
       <div className="absolute bottom-6 left-1/2 h-0 w-0">
+        <div role="menu" aria-label={g.tools} className="absolute left-0 top-0 h-0 w-0">
         {GUIDE_TOOLS.map((tool, i) => {
           // Spread from 200deg to 340deg on a 250 px arc above the orb.
           const a = ((200 + (140 * i) / (n - 1)) * Math.PI) / 180;
@@ -82,9 +98,14 @@ export default function GuideToolArc({
           return (
             <motion.button
               key={tool.id}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
               type="button"
               role="menuitem"
-              disabled={!!why}
+              tabIndex={i === focus ? 0 : -1}
+              aria-disabled={why ? true : undefined}
+              aria-describedby={why ? `${idBase}-why-${tool.id}` : undefined}
               onClick={() => pick(i)}
               onMouseEnter={() => setFocus(i)}
               initial={shouldAnimate ? { opacity: 0, x: 0, y: 0, scale: 0.6 } : false}
@@ -100,6 +121,14 @@ export default function GuideToolArc({
             </motion.button>
           );
         })}
+        </div>
+        {GUIDE_TOOLS.map((tool) =>
+          unavailable[tool.id] ? (
+            <span key={tool.id} id={`${idBase}-why-${tool.id}`} className="sr-only">
+              {unavailable[tool.id]}
+            </span>
+          ) : null,
+        )}
         <div className="absolute left-0 top-0 w-80 -translate-x-1/2 -translate-y-[calc(100%+3.5rem)] text-center">
           <p className="typo-body text-foreground">
             <span className="font-semibold">{label[focused.id][0]}.</span> {label[focused.id][1]}

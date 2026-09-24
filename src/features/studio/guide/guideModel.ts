@@ -14,8 +14,6 @@ export interface GuideTool {
   prompt: string | null;
   /** Connectors the turn needs switched on (e.g. the real browser). */
   mcp?: string[];
-  /** Phase 2 capability that is not wired yet: shown, but disabled. */
-  soon?: boolean;
 }
 
 export const GUIDE_TOOLS: GuideTool[] = [
@@ -40,7 +38,7 @@ export const GUIDE_TOOLS: GuideTool[] = [
     prompt:
       'Walk me through what you have built so far, section by section from the top of the page. For each part say in one or two plain sentences what it does and which of my decisions shaped it. No code, no file names. Do not edit files this turn.',
   },
-  { id: 'tweak', prompt: null, soon: true },
+  { id: 'tweak', prompt: null },
   {
     id: 'data',
     prompt:
@@ -143,6 +141,15 @@ export function deriveDeck(input: {
 /** The turn that asks Athena to slot a user's new goal into the plan. */
 export function addGoalPrompt(goal: string): string {
   return `Add this goal to the plan: "${goal}". Decide where it belongs among the existing goals, say in one sentence where you placed it and why, and emit the updated BUILD_PLAN. Do not start building it yet.`;
+}
+
+/**
+ * The same goal added while she works: it waits as a note for her next step,
+ * and the note must still say what it is. A bare title read as a request to
+ * build that thing right away.
+ */
+export function addGoalNote(goal: string): string {
+  return `New goal for the plan: "${goal}". Place it among the existing goals and include it in the next BUILD_PLAN you emit; do not start building it in this step unless it is the current goal.`;
 }
 
 export type SetupStepKey = 'sketch' | 'create' | 'preview' | 'plan';

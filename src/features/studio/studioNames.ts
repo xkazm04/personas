@@ -20,10 +20,12 @@ export function problemOf(check: ProjectNameCheck | null): NameProblem | null {
 /**
  * The backend's verdict on `name`, debounced. `checking` is true while the
  * answer for the current text is still outstanding, so the form can hold its
- * submit until the verdict is in.
+ * submit until the verdict is in. A check that fails ends as `failed` (never
+ * as a `checking` that lasts forever); `retry` asks again.
  */
 export function useNameCheck(name: string, delayMs = 150) {
-  const [result, setResult] = useState<{ name: string; check: ProjectNameCheck } | null>(null);
+  const [result, setResult] = useState<{ name: string; check: ProjectNameCheck | null } | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const trimmed = name.trim();
   useEffect(() => {
     if (!trimmed) return;
@@ -31,17 +33,26 @@ export function useNameCheck(name: string, delayMs = 150) {
     const timer = window.setTimeout(() => {
       webbuildCheckName(trimmed)
         .then((check) => alive && setResult({ name: trimmed, check }))
-        .catch(silentCatch('studioNames:check'));
+        .catch((e) => {
+          silentCatch('studioNames:check')(e);
+          if (alive) setResult({ name: trimmed, check: null });
+        });
     }, delayMs);
     return () => {
       alive = false;
       window.clearTimeout(timer);
     };
-  }, [trimmed, delayMs]);
-  const current = result && result.name === trimmed ? result.check : null;
+  }, [trimmed, delayMs, attempt]);
+  const answered = !!result && result.name === trimmed;
+  const current = answered ? result.check : null;
   return {
     problem: trimmed ? problemOf(current) : null,
-    checking: !!trimmed && !current,
+    checking: !!trimmed && !answered,
+    failed: !!trimmed && answered && !current,
+    retry: () => {
+      setResult(null);
+      setAttempt((n) => n + 1);
+    },
   };
 }
 

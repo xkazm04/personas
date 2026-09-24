@@ -15,23 +15,20 @@ export default function GuideBlueprint({
   name,
   phase,
   phases,
-  placeholder,
   messages,
 }: {
   name: string;
   phase: StudioPhase;
   phases: BuildPhase[];
-  placeholder: boolean;
   messages: StudioMessage[];
 }) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
   const notes = messages.slice(-3);
-  // A project that already has a plan replays it while the preview boots;
-  // only a project with no plan yet shows the setup card.
-  const settingUp = phase !== 'live' && placeholder;
-  const booting = phase !== 'live' && !placeholder;
+  // Only a project with a plan reaches the blueprint (a project without one
+  // draws the setup sheet instead); it replays the plan while the preview boots.
+  const booting = phase !== 'live';
 
   const draw = (i: number) =>
     shouldAnimate
@@ -47,65 +44,35 @@ export default function GuideBlueprint({
       <div className="flex h-full gap-6 p-6">
         <section className="flex min-w-0 flex-1 flex-col">
           <p className="typo-label uppercase tracking-wider text-primary/80">{tx(g.sheet_title, { name })}</p>
-          {settingUp ? (
-            <motion.div
-              {...draw(0)}
-              className="mt-4 flex flex-1 flex-col rounded-card border border-dashed border-primary/50 p-5"
-            >
-              <p className="typo-heading text-foreground">
-                {phase === 'error' ? g.setup_failed : phase === 'starting' ? g.setup_starting : g.setup_creating}
-              </p>
-              <p className="mt-2 max-w-md typo-body text-foreground/90">{g.setup_hint}</p>
-              <div aria-hidden className="mt-6 grid flex-1 grid-rows-[2.5rem_1fr_1fr] gap-3 opacity-70">
-                <div className="rounded-interactive border border-primary/40" />
-                <div className="rounded-interactive border border-primary/30" />
-                <div className="grid grid-cols-3 gap-3">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="rounded-interactive border border-primary/25" />
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ) : placeholder ? (
-            <div className="mt-4 grid flex-1 auto-rows-min grid-cols-2 gap-4">
-              {[0, 1, 2, 3].map((i) => (
-                <motion.div key={i} {...draw(i)} className="h-24 rounded-card border border-dashed border-primary/35" />
-              ))}
-              <p className="col-span-2 typo-body text-foreground/90">{g.sheet_drafting}</p>
-            </div>
-          ) : (
-            <>
-              {booting && <p className="mt-2 typo-body text-foreground/90">{g.preview_booting_plan}</p>}
-              <ol className="mt-4 grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-4 overflow-y-auto pr-1">
-                {phases.map((p, i) => {
-                  const status = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
-                  return (
-                    <motion.li
-                      key={p.id}
-                      {...draw(i)}
-                      className={`relative rounded-card border p-4 ${
-                        status === 'done'
-                          ? 'border-status-success/60 bg-status-success/5'
-                          : status === 'active'
-                            ? 'border-primary bg-primary/10 shadow-elevation-2'
-                            : 'border-dashed border-primary/40 bg-background/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/50 font-mono text-xs text-primary">
-                          {status === 'done' ? <Check className="h-3.5 w-3.5" /> : i + 1}
-                        </span>
-                        <p className="typo-title text-foreground">{p.title}</p>
-                      </div>
-                      <p className="mt-2 typo-body text-foreground/90">
-                        {p.note || (status === 'active' ? g.goal_now : g.frame_pending)}
-                      </p>
-                    </motion.li>
-                  );
-                })}
-              </ol>
-            </>
-          )}
+          {booting && <p className="mt-2 typo-body text-foreground/90">{g.preview_booting_plan}</p>}
+          <ol className="mt-4 grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-4 overflow-y-auto pr-1">
+            {phases.map((p, i) => {
+              const status = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
+              return (
+                <motion.li
+                  key={p.id}
+                  {...draw(i)}
+                  className={`relative rounded-card border p-4 ${
+                    status === 'done'
+                      ? 'border-status-success/60 bg-status-success/5'
+                      : status === 'active'
+                        ? 'border-primary bg-primary/10 shadow-elevation-2'
+                        : 'border-dashed border-primary/40 bg-background/40'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/50 font-mono text-xs text-primary">
+                      {status === 'done' ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                    </span>
+                    <p className="typo-title text-foreground">{p.title}</p>
+                  </div>
+                  <p className="mt-2 typo-body text-foreground/90">
+                    {p.note || (status === 'active' ? g.goal_now : g.frame_pending)}
+                  </p>
+                </motion.li>
+              );
+            })}
+          </ol>
         </section>
         {notes.length > 0 && (
           <aside className="flex w-72 shrink-0 flex-col gap-3 overflow-hidden pt-7" aria-label={g.notes_label}>

@@ -3,6 +3,7 @@ import { AUTO_MAX_TURNS } from '../studioStore';
 import type { StudioActivity } from '../studioActivity';
 import { activityText, guideStrings } from './guideCopy';
 import { clock, useElapsed } from './useGuideRuntime';
+import GuideQueuedNotes from './GuideQueuedNotes';
 
 // One plain line under the frame: what Athena is doing now, with honest elapsed
 // time and never a percentage. The orb at its left opens her tools.
@@ -18,10 +19,12 @@ export default function GuideNowLine({
   activity,
   questionWaiting,
   questionHidden,
-  queued,
+  queuedNotes,
+  onRemoveNote,
   estimate,
   onOrb,
   onShowQuestion,
+  toolsOpen,
 }: {
   name: string;
   settingUp: boolean;
@@ -34,10 +37,13 @@ export default function GuideNowLine({
   activity: StudioActivity[];
   questionWaiting: boolean;
   questionHidden: boolean;
-  queued: number;
+  queuedNotes: string[];
+  onRemoveNote: (index: number) => void;
   estimate: string;
   onOrb: () => void;
   onShowQuestion: () => void;
+  /** The tool arc the orb opens is showing. */
+  toolsOpen: boolean;
 }) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
@@ -67,6 +73,8 @@ export default function GuideNowLine({
         type="button"
         onClick={onOrb}
         aria-label={g.tools_open}
+        aria-haspopup="menu"
+        aria-expanded={toolsOpen}
         className="group relative h-9 w-9 shrink-0 rounded-full"
         style={{
           background:
@@ -79,8 +87,12 @@ export default function GuideNowLine({
           O
         </kbd>
       </button>
-      <p className="min-w-0 flex-1 truncate typo-body text-foreground/90" role="status">
-        <span className={`font-semibold ${questionWaiting && !busy ? 'text-status-warning' : 'text-foreground'}`}>{lead}</span>
+      {/* Only the lead is a live region: the rest carries a clock that ticks
+          every second and would be re-announced each time. */}
+      <p className="min-w-0 flex-1 truncate typo-body text-foreground/90">
+        <span role="status" className={`font-semibold ${questionWaiting && !busy ? 'text-status-warning' : 'text-foreground'}`}>
+          {lead}
+        </span>
         {rest && <span> {rest}</span>}
       </p>
       {autonomous && (
@@ -88,20 +100,21 @@ export default function GuideNowLine({
           {tx(g.on_her_own, { n: autoTurns + 1, max: AUTO_MAX_TURNS })}
         </span>
       )}
-      {queued > 0 && (
-        <span className="shrink-0 rounded-full border border-border px-2.5 py-0.5 typo-caption text-foreground/90">
-          {tx(g.notes_waiting, { count: queued })}
-        </span>
-      )}
-      {questionWaiting && questionHidden && (
-        <button
-          type="button"
-          onClick={onShowQuestion}
-          className="shrink-0 rounded-full border border-status-warning/60 px-2.5 py-0.5 typo-caption text-status-warning hover:bg-status-warning/10"
-        >
-          {g.your_call}
-        </button>
-      )}
+      <GuideQueuedNotes notes={queuedNotes} onRemove={onRemoveNote} />
+      {questionWaiting && questionHidden && <YourCallButton label={g.your_call} onClick={onShowQuestion} />}
     </div>
+  );
+}
+
+/** Brings back a question the user tucked away (Esc or the card's hide). */
+export function YourCallButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="pointer-events-auto shrink-0 rounded-full border border-status-warning/60 bg-background/85 px-2.5 py-0.5 typo-caption text-status-warning hover:bg-status-warning/10"
+    >
+      {label}
+    </button>
   );
 }

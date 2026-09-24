@@ -50,12 +50,12 @@ const readOrb = async () => { await ev(PROBE_ORB); await sleep(700); return (awa
   let live = false;
   for (let i = 0; i < 72 && !live; i++) {
     await sleep(5000); await focus();
-    live = (await count('[data-testid="studio-tab"]')) >= 1 && (await count('iframe[title="preview"]')) >= 1;
+    live = (await count('[data-testid="studio-tab"]')) >= 1 && (await count('iframe[data-testid="studio-preview"]')) >= 1;
     if (i % 4 === 0) console.log(`  …mk live=${live} [t+${i * 5}s]`);
   }
   check('mk live', live);
   if (!live) process.exit(1);
-  await ev(`(()=>{const i=document.querySelector('iframe[title="preview"]');if(i)i.src=i.src;return 1})()`);
+  await ev(`(()=>{const i=document.querySelector('iframe[data-testid="studio-preview"]');if(i)i.src=i.src;return 1})()`);
   await sleep(15000); // warm the home route + agent
 
   await ev(`window.__studioStore.getState().sendTurn(window.__mkId, ${JSON.stringify(INSTRUCTION)})`);
