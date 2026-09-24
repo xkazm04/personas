@@ -14,7 +14,6 @@ import { motion } from 'framer-motion';
 import { KIND_VAR } from '../../../tones';
 import type { WorkItem } from '../../../useWorkforce';
 import { CardBody } from './bodies/CardBody';
-import { hasNativeBody, type BodyVariant } from './bodies/model';
 import { CORNERS, KIND_GLYPH, filigreeStyle, mix, monogram, projectHue, ringGradient, weaveStyle } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
 
@@ -107,7 +106,6 @@ function ArtWindow({ item, color, height }: { item: WorkItem; color: string; hei
 /** The ornate front of one card: frame, filigree, art and a card-native body. */
 export function CardFace({
   item,
-  body,
   waiting,
   compact,
   sheen,
@@ -116,7 +114,6 @@ export function CardFace({
 }: {
   item: WorkItem;
   /** Which card-native treatment renders the content. */
-  body: BodyVariant;
   /** Cards still in the deck behind this one. */
   waiting: number;
   /** A short stage: a slimmer art window. */
@@ -127,24 +124,26 @@ export function CardFace({
   onSetAside: () => void;
 }) {
   const color = KIND_VAR[item.kind];
-  const art = <ArtWindow item={item} color={color} height={compact ? 56 : body === 'runes' ? 72 : 96} />;
+  const art = <ArtWindow item={item} color={color} height={compact ? 56 : 96} />;
   return (
     <div className="relative w-full h-full rounded-modal p-[3px] shadow-elevation-4" style={{ background: ringGradient(color), boxShadow: `0 24px 60px -18px ${mix(color, 55)}` }}>
       <div className="relative w-full h-full rounded-modal bg-background overflow-hidden flex flex-col">
         <div className="absolute inset-[5px] rounded-card border pointer-events-none" style={{ borderColor: mix(color, 45) }} aria-hidden />
         <Filigree color={color} size={30} />
 
-        <CardBody variant={body} item={item} color={color} art={art} deckWaiting={waiting} onSend={onSend} />
+        <CardBody item={item} color={color} art={art} deckWaiting={waiting} onSend={onSend} />
 
-        <div className="relative mx-5 mb-3 mt-1 shrink-0 flex items-center justify-between gap-3">
+        <div className="relative mx-5 mb-3 mt-1 shrink-0 flex items-center">
           <button
             type="button"
             onClick={onSetAside}
-            className="rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
+            className="inline-flex items-center gap-2 rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
           >
             {S.setAside}
+            <kbd className="rounded border border-foreground/20 bg-foreground/[0.06] px-1.5 typo-caption font-mono text-foreground/90">
+              {S.keySpace}
+            </kbd>
           </button>
-          <span className="typo-body text-foreground/85">{hasNativeBody(item.kind) ? S.keysBody : S.keysHint}</span>
         </div>
 
         {sheen && (

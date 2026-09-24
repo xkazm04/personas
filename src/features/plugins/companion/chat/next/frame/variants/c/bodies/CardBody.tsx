@@ -1,8 +1,7 @@
 /**
  * CardBody — what the Spread card shows INSIDE its frame, with no inner card:
- * for a decision, an approval or a session request, one of the three
- * card-native treatments (Oracle / Ledger / Runes) over the shared
- * `CardModel`; for every other kind, the product's own `WorkItemBody` for now.
+ * for a decision, an approval or a session request, the Oracle treatment over
+ * the shared `CardModel`; for every other kind, the product's own `WorkItemBody` for now.
  *
  * Keys (one place for all three treatments, above the stage's own keys):
  * 1-9 pick that option, 0 asks Athena (reveals her recommendation), Enter
@@ -12,13 +11,12 @@
  * TODO(prototype, 2026-09-24): consolidate the Athena chat switcher.
  */
 
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import type { PendingApproval } from '@/api/companion';
 import type { McpPendingRequest } from '@/features/plugins/companion/mcp/mcpRequestStore';
 import { WorkItemBody } from '../../../../WorkItemBody';
 import type { WorkItem } from '../../../../useWorkforce';
-import { LedgerBody } from './LedgerBody';
 import {
   hasNativeBody,
   useApprovalItem,
@@ -26,11 +24,9 @@ import {
   useDecisionModel,
   useMcpItem,
   useMcpModel,
-  type BodyVariant,
   type CardModel,
 } from './model';
 import { OracleBody } from './OracleBody';
-import { RunesBody } from './RunesBody';
 
 export interface BodyProps {
   model: CardModel;
@@ -40,12 +36,6 @@ export interface BodyProps {
   /** The card's art window; a treatment places it (or leaves it out). */
   art: ReactNode;
 }
-
-const VIEWS: Record<BodyVariant, ComponentType<BodyProps>> = {
-  oracle: OracleBody,
-  ledger: LedgerBody,
-  runes: RunesBody,
-};
 
 function isTyping(el: Element | null): boolean {
   if (!el) return false;
@@ -92,14 +82,12 @@ function useCardKeys(model: CardModel) {
   );
 }
 
-function View({ variant, model, ...rest }: { variant: BodyVariant; model: CardModel; item: WorkItem; color: string; art: ReactNode }) {
+function View({ model, ...rest }: { model: CardModel; item: WorkItem; color: string; art: ReactNode }) {
   useCardKeys(model);
-  const V = VIEWS[variant];
-  return <V model={model} {...rest} />;
+  return <OracleBody model={model} {...rest} />;
 }
 
 interface Common {
-  variant: BodyVariant;
   item: WorkItem;
   color: string;
   art: ReactNode;

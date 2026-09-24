@@ -12,7 +12,7 @@ import { Sparkles } from 'lucide-react';
 import { mix } from '../cardArt';
 import { SPREAD_COPY as S } from '../copy';
 import type { BodyProps } from './CardBody';
-import { ChoiceButton, Deferrals, DetailsReveal, FieldInput, FieldSubmit, KeyCap, Problems, toneColor } from './parts';
+import { ChoiceButton, DetailsReveal, FieldInput, FieldSubmit, KeyCap, Problems, toneColor } from './parts';
 
 export function OracleBody({ model, color, art }: BodyProps) {
   const rec = model.recommendation;
@@ -106,10 +106,6 @@ export function OracleBody({ model, color, art }: BodyProps) {
         <Problems model={model} />
       </div>
 
-      <div className="shrink-0 px-6 pb-1 flex items-center justify-between gap-2 min-h-8">
-        <span className="typo-body text-foreground/85">{model.waiting > 0 ? S.moreWaiting(model.waiting) : ''}</span>
-        <Deferrals model={model} align="end" />
-      </div>
     </div>
   );
 }

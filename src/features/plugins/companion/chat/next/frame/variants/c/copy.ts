@@ -21,20 +21,14 @@ export const SPREAD_COPY = {
   setAside: 'Set aside',
   returnToDeck: 'Return the spread',
   cardOf: (i: number, n: number) => `Card ${i} of ${n}`,
-  keysHint: 'Space next · 1-9 pick · Esc return',
   athenaOwn: 'Athena',
   emptyTitle: 'The deck is empty.',
   emptySub: 'When she needs a call, it is dealt here as a card.',
   close: 'Back to the conversation',
   roundCleared: 'Round cleared',
 
-  // R4-X3: the card-native bodies (Oracle / Ledger / Runes).
-  bodies: {
-    oracle: 'Oracle',
-    ledger: 'Ledger',
-    runes: 'Runes',
-  },
-  tab: (name: string) => `Spread · ${name}`,
+  // The card body is Oracle (owner's pick 2026-09-24).
+  tab: 'Halo · Spread',
   eyebrowDecision: 'Athena asks',
   eyebrowApproval: (action: string) => `Proposed action · ${action}`,
   eyebrowGuidance: (session: string) => `Session ${session} asks`,
@@ -52,8 +46,6 @@ export const SPREAD_COPY = {
   details: 'Details',
   noteLabel: 'Note (optional)',
   answerLabel: 'Your answer',
-  moreWaiting: (n: number) => (n === 1 ? '1 more waiting' : `${n} more waiting`),
-  keysBody: 'Space next · 1-9 pick · Enter confirm · Esc return',
-  keysBodyNoPick: 'Space next · Esc return',
   keyAsk: '0',
+  keySpace: 'Space',
 } as const;

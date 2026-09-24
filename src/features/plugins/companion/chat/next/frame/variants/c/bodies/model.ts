@@ -22,7 +22,6 @@ import { useApprovalCard } from '@/features/plugins/companion/useApprovalCard';
 import type { WorkItem, WorkItemKind } from '../../../../useWorkforce';
 import { SPREAD_COPY as S } from '../copy';
 
-export type BodyVariant = 'oracle' | 'ledger' | 'runes';
 
 export interface CardChoice {
   key: string;

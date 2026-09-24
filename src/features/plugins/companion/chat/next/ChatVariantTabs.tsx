@@ -10,20 +10,17 @@
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { SPREAD_COPY } from './frame/variants/c/copy';
 
-export type ChatVariant = 'current' | 'spread-a' | 'spread-b' | 'spread-c';
+export type ChatVariant = 'current' | 'spread';
 
 export const useChatVariantStore = create<{ variant: ChatVariant; set: (v: ChatVariant) => void }>((set) => ({
-  variant: 'spread-a',
+  variant: 'spread',
   set: (variant) => set({ variant }),
 }));
 
 const TABS: { id: ChatVariant; label: string }[] = [
   { id: 'current', label: 'Current' },
-  { id: 'spread-a', label: SPREAD_COPY.tab(SPREAD_COPY.bodies.oracle) },
-  { id: 'spread-b', label: SPREAD_COPY.tab(SPREAD_COPY.bodies.ledger) },
-  { id: 'spread-c', label: SPREAD_COPY.tab(SPREAD_COPY.bodies.runes) },
+  { id: 'spread', label: 'Halo · Spread' },
 ];
 
 export function ChatVariantTabs({ lifted }: { lifted: boolean }) {

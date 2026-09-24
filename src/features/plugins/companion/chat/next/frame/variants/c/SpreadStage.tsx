@@ -4,8 +4,8 @@
  * On open the waiting cards fly in from the binder (each from its own
  * project's tile) and form a deck at the lower right. The top card lifts,
  * flips face up and travels to the centre, where it presents large in an
- * ornate collectible frame around a card-native body (`body`: Oracle, Ledger
- * or Runes; see `bodies/CardBody.tsx`). No hover tilt, no hover movement
+ * ornate collectible frame around the card-native Oracle body (see
+ * `bodies/CardBody.tsx`). No hover tilt, no hover movement
  * (owner, 2026-09-24): only the deal, the draw, the flip and the discard move.
  * When the operator
  * acts (the item leaves `items`) or sets it aside, the card flips face down
@@ -30,7 +30,6 @@ import type { WorkItem, WorkItemKind } from '../../../useWorkforce';
 import { ATHENA_COLUMN } from '../../../useProcessColumns';
 import type { DecisionStageProps } from '../../slots';
 import { BINDER_ATTR, TILE_ATTR } from './BinderPanel';
-import type { BodyVariant } from './bodies/model';
 import { CardBack, CardFace } from './CardFrame';
 import { mix } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
@@ -52,7 +51,7 @@ interface Pt {
   y: number;
 }
 
-export type SpreadStageProps = DecisionStageProps & { body: BodyVariant };
+export type SpreadStageProps = DecisionStageProps;
 
 /** The stage: nothing when closed, the spread when open. */
 export function SpreadStage(props: SpreadStageProps) {
@@ -96,7 +95,7 @@ function useStageGeometry() {
   return { ref, size, originOf };
 }
 
-function Spread({ items, focusId, onFocus, onClose, onSend, body }: SpreadStageProps) {
+function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) {
   const { shouldAnimate } = useMotion();
   const { ref, size, originOf } = useStageGeometry();
 
@@ -304,7 +303,6 @@ function Spread({ items, focusId, onFocus, onClose, onSend, body }: SpreadStageP
                 <ActiveCard
                   key={active.id}
                   item={active}
-                  body={body}
                   waiting={deck.length}
                   index={index}
                   total={total}
@@ -448,7 +446,6 @@ function DiscardPile({ played, at, phase, width, animate }: { played: Played[]; 
 
 function ActiveCard({
   item,
-  body,
   waiting,
   index,
   total,
@@ -464,7 +461,6 @@ function ActiveCard({
   onSetAside,
 }: {
   item: WorkItem;
-  body: BodyVariant;
   waiting: number;
   index: number;
   total: number;
@@ -521,7 +517,6 @@ function ActiveCard({
         <CardFace
           key={arrival}
           item={item}
-          body={body}
           waiting={waiting}
           compact={compact}
           sheen={animate && landed}

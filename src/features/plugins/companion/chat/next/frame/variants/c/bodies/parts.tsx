@@ -138,25 +138,6 @@ export function FieldSubmit({ field }: { field: CardField }) {
   );
 }
 
-export function Deferrals({ model, align = 'center' }: { model: CardModel; align?: 'center' | 'end' }) {
-  if (model.deferrals.length === 0) return null;
-  return (
-    <div className={`flex flex-wrap items-center gap-1 ${align === 'end' ? 'justify-end' : 'justify-center'}`}>
-      {model.deferrals.map((d) => (
-        <Tooltip key={d.key} content={d.hint} placement="top">
-          <button
-            type="button"
-            onClick={d.run}
-            className="rounded-interactive px-2.5 py-1 typo-body text-foreground/85 hover:text-foreground hover:bg-foreground/[0.06] focus-ring"
-          >
-            {d.label}
-          </button>
-        </Tooltip>
-      ))}
-    </div>
-  );
-}
-
 /** Machine detail (params JSON) behind a native disclosure. */
 export function DetailsReveal({ details }: { details: NonNullable<CardModel['details']> }) {
   return (
