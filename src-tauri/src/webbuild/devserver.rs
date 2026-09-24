@@ -87,7 +87,7 @@ impl DevServerRegistry {
             .id()
             .ok_or_else(|| AppError::Internal("dev server has no pid".into()))?;
 
-        {
+        let displaced = {
             let mut guard = self.servers.lock().unwrap_or_else(|p| p.into_inner());
             guard.insert(
                 project_id.to_string(),
@@ -97,7 +97,17 @@ impl DevServerRegistry {
                     child,
                     started: Instant::now(),
                 },
-            );
+            )
+        };
+        // Two starts for one project can both pass the `stop` above before
+        // either registers (a liveness self-heal racing a manual retry). The
+        // insert then replaces the first server's entry and it would run on,
+        // untracked, holding its port until the app exits. Kill it now.
+        if let Some(mut old) = displaced {
+            if let Err(e) = kill_tree(old.pid) {
+                tracing::warn!(project_id, error = %e, "could not stop a displaced dev server");
+            }
+            let _ = old.child.start_kill();
         }
 
         Ok(DevServerStatus {
