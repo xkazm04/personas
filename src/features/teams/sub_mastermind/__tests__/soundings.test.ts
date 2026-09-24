@@ -9,6 +9,7 @@ import {
   cardBox,
   chartGeometry,
   layoutColumn,
+  placeLabels,
   spatialMove,
   stationSpan,
   type ColumnReading,
@@ -188,5 +189,24 @@ describe('geometry', () => {
     const c = cardBox(g);
     expect(c.x + c.w).toBeLessThanOrEqual(g.W);
     expect(c.y + c.h).toBeLessThanOrEqual(g.H);
+  });
+});
+
+describe('placeLabels', () => {
+  it('keeps the most urgent name above, flips a colliding neighbour below, hides a third', () => {
+    // Three stations 50 px apart at the same depth, each name 120 px wide.
+    const items = [0, 1, 2].map((i) => ({ i, cx: 100 + i * 50, y: 200, w: 120 }));
+    const slots = placeLabels(items, [1, 0, 2]);
+    expect(slots[1]).toBe('above');
+    expect(slots[0]).toBe('below');
+    expect(slots[2]).toBe('hidden');
+  });
+  it('lets names that do not touch all sit above', () => {
+    const items = [0, 1, 2].map((i) => ({ i, cx: 100 + i * 300, y: 200, w: 120 }));
+    expect(Object.values(placeLabels(items, [0, 1, 2]))).toEqual(['above', 'above', 'above']);
+  });
+  it('lets two names share a column when their depths differ', () => {
+    const items = [{ i: 0, cx: 100, y: 120, w: 120 }, { i: 1, cx: 130, y: 300, w: 120 }];
+    expect(placeLabels(items, [0, 1])).toEqual({ 0: 'above', 1: 'above' });
   });
 });

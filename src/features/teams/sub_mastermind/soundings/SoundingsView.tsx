@@ -40,6 +40,7 @@ import {
   chartGeometry,
   currentArc,
   layoutColumn,
+  placeLabels,
   spatialMove,
   stationSpan,
   STRIP_BOTTOM,
@@ -47,6 +48,7 @@ import {
   type ArrowKey,
   type Box,
   type ColumnReading,
+  type LabelSlot,
   type Level,
 } from './soundingsGeometry';
 import {
@@ -511,6 +513,30 @@ export default function SoundingsView(props: SoundingsViewProps) {
     }
   };
 
+  // ── buoy names that do not collide (placeLabels) ────────────────────────
+  // Widths are the rendered names' own, measured after paint; a hidden name
+  // keeps its box (opacity, not display), so it stays measurable.
+  const [nameW, setNameW] = useState<Record<string, number>>({});
+  useLayoutEffect(() => {
+    const next: Record<string, number> = {};
+    for (const s of stations) {
+      const el = buoyRefs.current.get(s.island.slug)?.querySelector<HTMLElement>('.sd-nm');
+      next[s.island.slug] = el?.offsetWidth ?? 0;
+    }
+    setNameW((prev) => {
+      const keys = Object.keys(next);
+      return keys.length === Object.keys(prev).length && keys.every((k) => prev[k] === next[k]) ? prev : next;
+    });
+  }, [stations, size]);
+  const labelSlots = useMemo<Record<number, LabelSlot>>(() => {
+    if (!g || level !== 0) return {};
+    const items = stations.filter((s) => !s.ghost).map((s) => {
+      const r = stationSpan(g, s.index, 0, 0, n);
+      return { i: s.index, cx: r.l + r.w / 2, y: buoyDepth(g, s.metrics.urgency), w: nameW[s.island.slug] ?? 0 };
+    });
+    return placeLabels(items, rank);
+  }, [g, level, stations, n, nameW, rank]);
+
   // ── derived paint state ─────────────────────────────────────────────────
   const act = level === 0 ? hover ?? focus : cur ?? focus;
   const relatedToCur = useMemo(() => new Set(cur !== null ? relatedStations(cur, edges, indexOf) : []), [cur, edges, indexOf]);
@@ -680,6 +706,8 @@ export default function SoundingsView(props: SoundingsViewProps) {
                   sm.waiting ? 'sd-aw' : '',
                   level > 0 && relatedToCur.has(i) ? 'sd-rel' : '',
                   s.ghost ? 'sd-ghoststation' : '',
+                  labelSlots[i] === 'below' ? 'sd-lbl-below' : '',
+                  labelSlots[i] === 'hidden' ? 'sd-lbl-hidden' : '',
                 ].filter(Boolean).join(' ');
                 const rs = stationReasons(s);
                 const aria = s.ghost
