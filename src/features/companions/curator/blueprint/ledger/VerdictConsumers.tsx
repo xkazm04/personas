@@ -12,6 +12,9 @@ import { useWords } from '../words';
 
 import { Unmeasured } from './Unmeasured';
 
+/** The candle track's height in px; `.cb-candles` declares the same number. */
+const CANDLE_H = 18;
+
 export function JudgedBlock({ model }: { model: BlueprintModel }) {
   const { w, tx } = useWords();
   const c = model.consumers;
@@ -141,7 +144,17 @@ export function ProjectsBlock({ model }: { model: BlueprintModel }) {
       </div>
       <div className="cb-candles">
         {c.projects.map((p) => {
-          const filled = Math.max(2, Math.round(18 * (p.evaluated / Math.max(1, p.pairs)) * 9));
+          // The candle is the project's judged share, drawn to scale.
+          //
+          // It used to be `18 * share * 9` - a nine-fold amplification that
+          // saturates at any share above 11%, so personas (10.1%),
+          // personas-web (19.3%) and ai-registry (18.8%) all drew as a full
+          // column and three different readings looked identical. On the one
+          // page whose argument is that different facts must look different,
+          // the only drawing that compared consumers was lying about all of
+          // them. A 1px floor keeps a small share visible without claiming it
+          // is a large one.
+          const filled = Math.max(1, Math.round(CANDLE_H * (p.evaluated / Math.max(1, p.pairs))));
           return (
             <span
               key={p.slug}
@@ -155,8 +168,8 @@ export function ProjectsBlock({ model }: { model: BlueprintModel }) {
                 state: p.state,
               })}
             >
-              <i className="cb-hollow" style={{ height: `${String(18 - Math.min(18, filled))}px` }} />
-              <i className="cb-fill" style={{ height: `${String(Math.min(18, filled))}px` }} />
+              <i className="cb-hollow" style={{ height: `${String(CANDLE_H - Math.min(CANDLE_H, filled))}px` }} />
+              <i className="cb-fill" style={{ height: `${String(Math.min(CANDLE_H, filled))}px` }} />
             </span>
           );
         })}

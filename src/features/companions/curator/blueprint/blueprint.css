@@ -58,11 +58,12 @@
   --cb-cols: var(--cb-rkw) var(--cb-stw) minmax(var(--cb-subw), 1fr) var(--cb-bdw)
     repeat(6, var(--cb-thin)) 8px var(--cb-devw) var(--cb-stkw) var(--cb-clkw) var(--cb-totw);
 
-  /* [font-size 1 of 4] the app's base is .typo-body's 0.875rem; declaring it on
-     the root means text carrying no role token still lands on the scale
-     instead of the browser's 16px. It is a rem, so the Appearance text scale
-     still moves it. */
-  font-size: 0.875rem;
+  /* No font-size of its own. The root carries `data-type-density="compact"`
+     (typography.css, Gate 3) - the app's opt-in tier for a dense tool surface -
+     so text with no role token lands on step 1 of the compact ramp, and the
+     Appearance text scale still multiplies it. The ledger was the surface that
+     tier was written for and was not using it. */
+  font-size: calc(var(--type-1) * var(--type-f));
   line-height: 1.5;
   font-family: var(--font-sans);
   color: var(--foreground);
@@ -142,17 +143,15 @@
 .cb-root .cb-dimmer {
   color: var(--muted-dark);
 }
-/* Declared with the root's extra class so it beats `.typo-label`'s own
-   0.01em tracking, which is unlayered too and would otherwise win on order. */
-.cb-root .cb-up {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
+/* `.cb-up` retired: `typo-label cb-up` was the tracked-uppercase composite the
+   style campaign named as a phantom and retired into `typo-eyebrow`, and it
+   needed the root's extra class purely to out-specify `.typo-label`'s own
+   tracking. 28 sites now write the token. */
 .cb-root .cb-sp {
   flex: 1;
 }
-/* [font-size 4 of 4] a keycap is code, and .typo-code's 0.75rem is its size;
-   the rule is written out because kbd is styled by element here. */
+/* A keycap is code: step 0 of whatever ramp the surface is on. Written out
+   rather than as a class because kbd is styled by element here. */
 .cb-root kbd {
   display: inline-grid;
   place-items: center;
@@ -165,28 +164,31 @@
   background: var(--cb-panel-2);
   color: var(--muted-foreground);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: calc(var(--type-0) * var(--type-f));
   line-height: 1;
 }
 
-/* glyphs are marks, not text: they carry no type role. --------------------- */
-/* [font-size 2 of 4] the nine channel glyphs at ledger scale. */
+/* Glyphs are marks, not text: they carry no type role, and they are sized on
+   the ramp's steps rather than on private values so the Appearance text scale
+   and the compact tier both move them with everything else. */
 .cb-root .cb-gl {
-  font-size: 1rem;
+  font-size: calc(var(--type-2) * var(--type-f));
   line-height: 1;
   display: inline-block;
 }
-/* [font-size 3 of 4] the same glyphs at nested-layer scale. */
 .cb-root .cb-gl-lg {
-  font-size: 1.375rem;
+  font-size: calc(var(--type-4) * var(--type-f));
   line-height: 1;
   display: inline-block;
 }
 
 /* ---- verdict ------------------------------------------------------------- */
+/* The first block carries five figures on its foot line and the third carries
+   one, so the tracks are not equal: at 1:1.6:1 the first wrapped 4+1 at every
+   width tested, orphaning "1,825 applications" on a line of its own. */
 .cb-root .cb-verdict {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) minmax(0, 0.8fr);
   gap: 0 var(--density-gap);
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--cb-rule-2);
@@ -267,14 +269,20 @@
   display: inline-block;
   border: 1px solid var(--cb-rule);
 }
+/* One candle per consumer project, at the width a candle wants. They used to
+   be `flex: 1`, so three of them spread across the whole block and a 10% share
+   drew as a 300px-wide, 2px-tall slab that reads as a broken progress bar
+   rather than as a small measurement. Height is the reading; width is not. */
 .cb-root .cb-candles {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   align-items: flex-end;
   height: 18px;
+  border-bottom: 1px solid var(--cb-rule);
 }
 .cb-root .cb-candles .cb-cd {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 22px;
   min-width: 0;
   height: 100%;
   display: flex;
@@ -377,13 +385,6 @@
   grid-column: 15 / 16;
   justify-content: flex-end;
 }
-.cb-root .cb-grp .cb-gloss {
-  display: none;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--muted-dark);
-  white-space: nowrap;
-}
 /* `button.cb-chh`, not `.cb-chh`: the reset above is `.cb-root
    button:not(.cb-keep)` at specificity 0-2-1, and a column head IS a button,
    so a plain `.cb-root .cb-chh` at 0-2-0 loses to it and this rule's padding
@@ -417,13 +418,6 @@
 }
 .cb-root .cb-chh .cb-n.cb-z {
   color: var(--muted-dark);
-}
-.cb-root .cb-chh .cb-w {
-  color: var(--muted-dark);
-  white-space: nowrap;
-}
-.cb-root .cb-chh.cb-narrow .cb-w {
-  display: none;
 }
 .cb-root .cb-chh .cb-st {
   width: 100%;
@@ -531,11 +525,20 @@
   align-items: center;
   justify-content: center;
 }
-.cb-root .cb-row .cb-sl {
+/* The subject cell. `display:flex` is declared HERE and not on `.cb-row .cb-sl`,
+   which is where it lived until 2026-09-24: a band row is `.cb-lrow.cb-band`
+   and never `.cb-row`, so in both bands the cell fell back to a block and its
+   two inline children ran together with no separator - the page shipped
+   "subjects outside the plannothing counted, so nothing is outside anything
+   yet" and "46 more scoring subjectsmeasured, not carried by this plan". A
+   layout rule that never applied where it was most needed. */
+.cb-root .cb-sl {
   display: flex;
+  min-width: 0;
+}
+.cb-root .cb-row .cb-sl {
   align-items: center;
   gap: 7px;
-  min-width: 0;
   padding: 0 6px 0 2px;
 }
 .cb-root .cb-row .cb-sl .cb-s {
@@ -689,7 +692,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 0;
+  gap: 1px;
   padding: 6px 2px;
 }
 .cb-root .cb-band .cb-cell {
@@ -1198,12 +1201,6 @@
     --cb-gutter: 14px;
     --cb-rowh: 32px;
   }
-  .cb-root .cb-chh.cb-narrow .cb-w {
-    display: block;
-  }
-  .cb-root .cb-grp .cb-gloss {
-    display: inline;
-  }
   .cb-root .cb-strip.cb-empty .cb-w {
     display: inline;
   }
@@ -1213,13 +1210,29 @@
 }
 /* The taxonomy address only appears where the whole of it fits beside the
    longest slug in the corpus. The ledger never abbreviates: it either shows
-   the thing or it does not carry it. */
-@media (min-width: 1660px) {
+   the thing or it does not carry it.
+
+   The threshold was 1660px, and that was measured against the wrong thing. The
+   subject cell is the grid's only `1fr`, so it absorbs ALL the slack: at 1440
+   it is 634px wide carrying 116px of ink - 82% dead - and the address that
+   would fill it stayed hidden for another 220px of window. Measured at 1180
+   the cell is already 374px, which holds the longest address in the corpus
+   (`engineering-assessment/measurement-method`, 268px at the compact step)
+   beside a 36-character slug. */
+@media (min-width: 1180px) {
   .cb-root .cb-row .cb-sl .cb-path {
     display: block;
   }
 }
-@media (max-height: 700px) {
+/* Short viewports: the chrome yields, the ledger does not.
+   Measured before this block at 1000x640 - top 44 + verdict 145 + console 304
+   + head 116 + foot 34 = 643px of chrome against a 640px viewport, so ZERO of
+   sixteen rows were visible and Playwright could not click one at all (the
+   sticky head intercepted every attempt for thirty seconds). The page's whole
+   subject was unreachable on a laptop. Nothing is hidden here: the regions
+   keep every fact they carry and give up their padding, and the operator's
+   lane scrolls at two rows instead of five. */
+@media (max-height: 820px) {
   .cb-root {
     --cb-rowh: 27px;
   }
@@ -1441,37 +1454,73 @@
 }
 .cb-root .cb-compose-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
   min-width: 0;
 }
-/* Always reserved, empty or not: a line that appeared on pick would move the
-   ledger under it every time the operator chose a skill. */
+/* Always reserved, empty or not: a badge that appeared on pick would move the
+   ledger under it every time the operator chose a skill. It rides at the END
+   of the composer row rather than on a line of its own - the line cost 21px of
+   permanent height on a page whose measured defect is that the chrome takes
+   the whole viewport at 1000x640. */
 .cb-root .cb-need-line {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 7px;
-  min-height: 19px;
+  min-height: 24px;
+  min-width: 132px;
+  flex: none;
+}
+/* Label and field side by side. Stacked they cost 18px per composer, which is
+   the same 18px three times over across the three fields' shared row. */
+.cb-root .cb-compose-skill,
+.cb-root .cb-compose-arg,
+.cb-root .cb-compose-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 .cb-root .cb-compose-skill {
   position: relative;
-  flex: 1 1 200px;
-  min-width: 0;
+  flex: 1 1 210px;
 }
 .cb-root .cb-compose-arg {
-  flex: 2 1 260px;
-  min-width: 0;
+  flex: 2 1 240px;
 }
 .cb-root .cb-compose-note {
-  flex: 1 1 180px;
-  min-width: 0;
+  flex: 1 1 170px;
 }
+/* Narrow: the label is read out but not drawn. Three inline labels take 45% of
+   the composer row at 1000px and crush every field into an ellipsis ("a URL, a
+   bundle, a do", "carried i"). Each field's placeholder already names it - and
+   for the argument field the placeholder is the picked skill's own argument
+   line, verbatim - so the drawn label is the part that can go. `htmlFor` still
+   binds, so nothing is lost to a screen reader. */
 .cb-root .cb-clab {
-  display: block;
-  color: var(--muted);
-  padding-bottom: 2px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (min-width: 1180px) {
+  .cb-root .cb-clab {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    flex: none;
+    color: var(--muted);
+  }
 }
 .cb-root .cb-cfield {
   width: 100%;
@@ -1561,4 +1610,60 @@
 }
 .cb-root .cb-lempty .cb-noteline {
   align-items: center;
+}
+
+/* ---- short viewports: the chrome yields, the ledger does not -------------
+   Last in the file on purpose: every rule below overrides one declared
+   earlier at the same specificity, and order is what decides.
+
+   Measured before this block at 1000x640: top 44 + verdict 145 + console 304
+   + head 116 + foot 34 = 643px of chrome against a 640px viewport, so ZERO of
+   sixteen rows were visible and Playwright could not click one at all - the
+   sticky head intercepted every attempt for thirty seconds. The page's whole
+   subject was unreachable on a laptop.
+
+   Nothing is hidden here. Every region keeps every fact it carries and gives
+   up its padding; the operator's lane scrolls at two rows instead of five.
+   -------------------------------------------------------------------------- */
+@media (max-height: 820px) {
+  .cb-root .cb-top {
+    height: 38px;
+  }
+  .cb-root .cb-verdict {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .cb-root .cb-console {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    gap: 4px;
+  }
+  .cb-root .cb-lane-rows {
+    max-height: calc(var(--cb-rowh) * 2);
+  }
+  .cb-root .cb-req {
+    min-height: var(--cb-rowh);
+  }
+  .cb-root .cb-foot {
+    min-height: 28px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .cb-root button.cb-chh {
+    padding-top: 2px;
+    padding-bottom: 3px;
+    gap: 2px;
+  }
+  .cb-root .cb-grp {
+    padding-top: 3px;
+    padding-bottom: 2px;
+  }
+}
+@media (max-height: 700px) {
+  .cb-root .cb-verdict .cb-bar {
+    height: 7px;
+  }
+  .cb-root .cb-verdict .cb-bar.cb-tall {
+    height: 10px;
+  }
 }

@@ -30,7 +30,7 @@ export function HelpSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId={titleId} size="lg">
-      <div className="cb-root cb-help" style={{ display: 'block', height: 'auto', overflow: 'visible' }}>
+      <div className="cb-root cb-help" data-type-density="compact" style={{ display: 'block', height: 'auto', overflow: 'visible' }}>
         <h2 className="typo-heading-lg" id={titleId}>
           {w.help_title}
         </h2>

@@ -38,7 +38,7 @@ export function RequestLane({ requests, onCancel }: {
   return (
     <div className="cb-lane" data-role="cb-lane" data-state={requests.length ? 'filled' : 'empty'}>
       <div className="cb-lane-head typo-caption">
-        <b className="typo-label cb-up">{w.console.lane_title}</b>
+        <b className="typo-eyebrow">{w.console.lane_title}</b>
         <i>{w.console.lane_note}</i>
         <span className="cb-sp" />
         {requests.length > 0 && (

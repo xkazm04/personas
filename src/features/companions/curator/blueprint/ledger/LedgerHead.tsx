@@ -26,6 +26,21 @@ interface HeadProps {
   onSolo: (channel: ChannelId) => void;
 }
 
+/**
+ * The head is TWO rows, not three.
+ *
+ * It used to carry a third line of standing gloss - nine "6 each / 5 each / 4"
+ * weight captions under the column heads, and two sentences explaining the
+ * group names ("present, or measured absent", "each carries its own value").
+ * All of it was redundant with the tip each head already carries verbatim, the
+ * group sentences clipped mid-word at every width the group is narrower than
+ * its own prose ("each carries its own valu"), and the three lines cost 30 of
+ * the head's 116px on a page whose measured defect is that at 1000x640 the
+ * chrome takes 100.5% of the viewport and NOT ONE of sixteen rows is visible.
+ * The `group_*_gloss` and `weight_each` keys stay in the fourteen locales:
+ * removing a string is cheaper to reverse than re-translating one.
+ */
+
 function weightLabel(
   id: ChannelId,
   w: ReturnType<typeof useWords>['w'],
@@ -111,7 +126,6 @@ function ChannelHead({ model, id, solo, onSolo }: HeadProps & { id: ChannelId })
           </>
         )}
       </span>
-      <span className="cb-w typo-code">{weight}</span>
     </button>
   );
 }
@@ -125,7 +139,7 @@ function PlannedGroup({ model }: { model: BlueprintModel }) {
   const { w, tx } = useWords();
   if (model.rows === null) {
     return (
-      <div className="cb-grp cb-g1 typo-label cb-up">
+      <div className="cb-grp cb-g1 typo-eyebrow">
         <b data-role="cb-group-head">{w.group_planned_bare}</b>
         <span className="cb-dim">
           <Unmeasured /> {w.group_points_bare}
@@ -135,7 +149,7 @@ function PlannedGroup({ model }: { model: BlueprintModel }) {
     );
   }
   return (
-    <div className="cb-grp cb-g1 typo-label cb-up">
+    <div className="cb-grp cb-g1 typo-eyebrow">
       <b data-role="cb-group-head">{tx(w.group_planned, { n: model.rows.length })}</b>
       <span className="cb-dim">
         {tx(w.group_points, {
@@ -154,29 +168,29 @@ export function LedgerHead(props: HeadProps) {
   return (
     <div className="cb-lhead cb-lrow" data-role="cb-ledger-row">
       <PlannedGroup model={model} />
-      <div className="cb-grp cb-g2 typo-label cb-up">
+      <div className="cb-grp cb-g2 typo-eyebrow" data-cb-tip={w.group_marks_gloss}>
         {w.group_marks}
-        <span className="cb-gloss">{w.group_marks_gloss}</span>
         <span className="cb-ln" />
       </div>
-      <div className="cb-grp cb-g3 typo-label cb-up">
+      <div className="cb-grp cb-g3 typo-eyebrow" data-cb-tip={w.group_measures_gloss}>
         {w.group_measures}
-        <span className="cb-gloss">{w.group_measures_gloss}</span>
         <span className="cb-ln" />
       </div>
-      <div className="cb-grp cb-g4 typo-label cb-up cb-dim">{w.group_total}</div>
+      {/* No fourth group label. "points" sat directly above "total" and the
+          two named the same column twice. */}
+      <div className="cb-grp cb-g4" />
 
-      <div className="cb-hid cb-idb typo-label cb-up cb-rankhead">{w.head_rank}</div>
+      <div className="cb-hid cb-idb typo-eyebrow cb-rankhead">{w.head_rank}</div>
       <div className="cb-hid cb-idb" />
-      <div className="cb-hid cb-idb typo-label cb-up cb-subjecthead">{w.head_subject}</div>
-      <div className="cb-hid cb-idb typo-label cb-up cb-bundlehead">{w.head_bundle}</div>
+      <div className="cb-hid cb-idb typo-eyebrow cb-subjecthead">{w.head_subject}</div>
+      <div className="cb-hid cb-idb typo-eyebrow cb-bundlehead">{w.head_bundle}</div>
       {CHANNEL_ORDER.map((id) => (
         <Fragment key={id}>
           <ChannelHead {...props} id={id} />
           {id === 6 && <div className="cb-hid cb-hrule" />}
         </Fragment>
       ))}
-      <div className="cb-hid cb-tot typo-label cb-up" data-role="cb-ledger-total">
+      <div className="cb-hid cb-tot typo-eyebrow" data-role="cb-ledger-total">
         {w.head_total}
       </div>
     </div>

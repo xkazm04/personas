@@ -129,6 +129,12 @@ export function Blueprint({
     <BlueprintWordsProvider value={words}>
       <div
         className="cb-root"
+        // The app's own tier for a dense tool surface (typography.css, Gate 3):
+        // every token one step down the ramp, with weight, tracking, tint and
+        // the Appearance text scale unchanged. The ledger is the surface that
+        // tier was written for, and it carried a private `font-size: 0.875rem`
+        // on its root instead.
+        data-type-density="compact"
         data-role="cb-blueprint"
         data-layer={descent.layer}
         ref={rootRef}

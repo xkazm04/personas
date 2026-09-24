@@ -89,7 +89,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
 
   return (
     <aside className="cb-dside">
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_crossing}
         <span className="cb-ln" />
       </div>
@@ -105,7 +105,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
           <ProjectBar key={p.slug} p={p} maxPairs={maxPairs} />
         ))}
 
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_scan_holds}
         <span className="cb-ln" />
       </div>
@@ -162,7 +162,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
         <dd>{tx(w.side_plan_position, { n: row.order + 1, total: model.rows?.length ?? w.not_measured })}</dd>
       </dl>
 
-      <div className="cb-sect typo-label cb-up">
+      <div className="cb-sect typo-eyebrow">
         {w.side_bundle}
         <span className="cb-ln" />
       </div>

@@ -40,7 +40,7 @@ interface DocketProps {
 
 function Section({ label, count }: { label: string; count: number }) {
   return (
-    <div className="cb-sect typo-label cb-up">
+    <div className="cb-sect typo-eyebrow">
       {label} <b>{count}</b>
       <span className="cb-ln" />
     </div>

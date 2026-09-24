@@ -19,14 +19,14 @@ export function Drawing({ entry }: { entry: DocketEntry }) {
     case 'subject_delta':
       return (
         <div className="cb-fig">
-          <h4 className="typo-label cb-up">{w.fig_reason_moves}</h4>
+          <h4 className="typo-eyebrow">{w.fig_reason_moves}</h4>
           <MiniLedger
             rows={[
               { label: w.fig_before, reasons: d.before.reasons, points: d.before.points },
               { label: w.fig_after, reasons: d.after.reasons, points: d.after.points },
             ]}
           />
-          <h4 className="typo-label cb-up">{w.fig_every_measure}</h4>
+          <h4 className="typo-eyebrow">{w.fig_every_measure}</h4>
           <PairRows
             rows={[
               { label: w.side_techniques, before: d.before.techniques, after: d.after.techniques },
@@ -45,12 +45,12 @@ export function Drawing({ entry }: { entry: DocketEntry }) {
       const max = Math.max(d.before.pairs, d.after.pairs, 1);
       return (
         <div className="cb-fig">
-          <h4 className="typo-label cb-up">
+          <h4 className="typo-eyebrow">
             {tx(w.fig_project_pairs, { project: d.project, pairs: fmt(d.before.pairs) })}
           </h4>
           <CoverageBar label={w.fig_before} {...d.before} scaleTo={max} />
           <CoverageBar label={w.fig_after} {...d.after} scaleTo={max} />
-          <h4 className="typo-label cb-up">{w.fig_magnified}</h4>
+          <h4 className="typo-eyebrow">{w.fig_magnified}</h4>
           <CoverageBar label={w.fig_before} {...d.before} pairs={200} scaleTo={200} />
           <CoverageBar label={w.fig_after} {...d.after} pairs={200} scaleTo={200} />
           <PairRows
@@ -66,7 +66,7 @@ export function Drawing({ entry }: { entry: DocketEntry }) {
     case 'first_commit_consent':
       return (
         <div className="cb-fig cb-grant">
-          <div className="typo-label cb-up" style={{ color: 'var(--brand-purple)' }}>
+          <div className="typo-eyebrow" style={{ color: 'var(--brand-purple)' }}>
             {w.fig_a_grant}
           </div>
           <div className="cb-scope typo-caption">

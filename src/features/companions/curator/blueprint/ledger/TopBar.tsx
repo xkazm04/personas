@@ -39,7 +39,7 @@ export function TopBar({
     <header className="cb-top">
       <div className="cb-mark">
         <b className="typo-title-lg">{w.title}</b>
-        <i className="typo-label cb-up cb-dim">{w.subtitle}</i>
+        <i className="typo-eyebrow cb-dim">{w.subtitle}</i>
       </div>
       {/* With no projection there is no run id, no scan clock and no commit
           the plan was made against - so the meta row carries the one true

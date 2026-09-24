@@ -12,6 +12,7 @@ import en from '@/i18n/locales/en.json';
 import { interpolate } from '@/i18n/useTranslation';
 
 import { Bands } from '../ledger/Bands';
+import { LedgerCell } from '../ledger/LedgerCell';
 import { LedgerRow } from '../ledger/LedgerRow';
 import { buildModel } from '../model/buildModel';
 import type { BlueprintStrings, BlueprintWords } from '../words';
@@ -76,6 +77,49 @@ describe('a measured zero, an unknown and a real count are three different marks
       ['cb-track', 'cb-flat', 'cb-unkbox'].filter((c) => el.querySelector(`.${c}`)).join(),
     );
     expect(new Set(inks).size).toBe(3);
+  });
+
+  /**
+   * The FOURTH ink, held to the same bar as the other three.
+   *
+   * `unmeasurable` has no arm in `buildModel` yet - the clock figures the
+   * projection carries are corpus-wide, so the instrument cannot claim it per
+   * subject - which is exactly why it needs a test of its own: the ink exists
+   * for the day that claim becomes makeable, and an ink nothing renders is an
+   * ink nobody notices has collapsed into its neighbour.
+   */
+  it('gives the unmeasurable its own ink, distinct from all three', () => {
+    const model = buildModel(plan());
+    const row = model.rows![0];
+    const four = (['scored', 'measured-zero', 'unknown', 'unmeasurable'] as const).map((kind) => {
+      const cell =
+        kind === 'scored' ? row.cells[7] : ({ kind } as Extract<typeof row.cells[7], { kind: 'unknown' }>);
+      const { container } = render(
+        <BlueprintWordsProvider value={words}>
+          <LedgerCell
+            channel={7}
+            cell={cell}
+            row={row}
+            maxPoints={model.maxPoints}
+            maxCeiling={model.maxCeiling}
+            role="cb-ledger-cell"
+          />
+        </BlueprintWordsProvider>,
+      );
+      const el = container.querySelector('[data-role="cb-ledger-cell"]')!;
+      return {
+        ink: ['cb-track', 'cb-flat', 'cb-unkbox', 'cb-ink-unmeasurable']
+          .filter((c) => el.querySelector(`.${c}`))
+          .join(),
+        tip: el.getAttribute('data-cb-tip') ?? '',
+        digits: (el.textContent ?? '').replace(/\D/gu, ''),
+      };
+    });
+
+    // Four marks, four inks, four sentences - and only the count carries a digit.
+    expect(new Set(four.map((f) => f.ink)).size).toBe(4);
+    expect(new Set(four.map((f) => f.tip)).size).toBe(4);
+    expect(four.slice(1).every((f) => f.digits === '')).toBe(true);
   });
 });
 
@@ -157,5 +201,38 @@ describe('the quiet band renders from CuratorPlan.quiet', () => {
     expect(unlisted.textContent).toContain('4');
     expect(unlisted.querySelectorAll('.cb-unkbox')).toHaveLength(9);
     expect(unlisted.querySelectorAll('.cb-flat')).toHaveLength(0);
+  });
+
+  /**
+   * The band's title and its note are two sentences, and the reader must be
+   * able to tell where one ends.
+   *
+   * They ran together on screen for as long as the page has existed - "46 more
+   * scoring subjectsmeasured, not carried by this plan" - because `.cb-sl`'s
+   * `display:flex` was declared on `.cb-row .cb-sl` and a band row is
+   * `.cb-lrow.cb-band`, never `.cb-row`. jsdom computes no layout, so this
+   * asserts the STRUCTURE that makes the separation possible: the two strings
+   * are separate element children of the cell, which is what a flex or a block
+   * container both need and what a bare text-node concatenation does not give.
+   */
+  it('keeps a band title and its note as two separate elements', () => {
+    const p = plan();
+    p.run.corpus.subjects = 10;
+    const model = buildModel(p);
+    const { container } = render(
+      <BlueprintWordsProvider value={words}>
+        <Bands model={model} />
+      </BlueprintWordsProvider>,
+    );
+    const cell = container.querySelector('[data-role="cb-band-row"] .cb-sl')!;
+    const texts = [...cell.children].map((c) => (c.textContent ?? '').trim()).filter(Boolean);
+    expect(texts).toHaveLength(2);
+    expect(texts[0]).toBe(
+      interpolate(en.companions.blueprint.band_unlisted_title, { n: '4' }),
+    );
+    expect(texts[1]).toBe(en.companions.blueprint.band_unlisted_note);
+    // Nothing outside those two elements: a bare text node here is a string
+    // that would abut its neighbour with no element boundary to separate it.
+    expect([...cell.childNodes].filter((n) => n.nodeType === 3 && n.textContent?.trim())).toHaveLength(0);
   });
 });
