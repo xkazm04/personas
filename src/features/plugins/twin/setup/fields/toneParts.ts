@@ -50,3 +50,25 @@ export function wordCount(text: string): number {
   if (!trimmed) return 0;
   return trimmed.split(/\s+/).length;
 }
+
+/**
+ * Append one item to a stored JSON-array column, returning the new column.
+ *
+ * Used when a sample message or an Always/Never rule is ACCEPTED from the
+ * guided flow: it adds to the list rather than replacing it. A column that is
+ * not an array is kept as its first item (the same forgiveness as
+ * `blocksOfJson`), and an item already on the list is not added twice.
+ */
+export function appendJsonItem(raw: string | null | undefined, item: string): string {
+  const value = item.trim();
+  const stored = (raw ?? '').trim();
+  let items: string[] = [];
+  if (stored) {
+    const [parsed] = safeJsonParse(stored);
+    items = Array.isArray(parsed)
+      ? parsed.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).filter((x) => x.trim().length > 0)
+      : [stored];
+  }
+  if (value && !items.includes(value)) items.push(value);
+  return items.length === 0 ? '' : JSON.stringify(items);
+}

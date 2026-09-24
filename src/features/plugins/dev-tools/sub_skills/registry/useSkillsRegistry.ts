@@ -60,13 +60,15 @@ interface Fetched {
   installedByProject: Map<string, Set<string>>;
   covByKey: Map<string, SkillCoverageRow>;
   ctxByProject: Map<string, number>;
+  /** Contexts of the project that ANY skill has touched — the coverage numerator. */
+  coveredByProject: Map<string, number>;
   usageByKey: Map<string, number>;
   runningSet: Set<string>;
 }
 
 const EMPTY: Fetched = {
   loading: true, libraryNames: [], customCategory: new Map(), descByName: new Map(), installedByProject: new Map(),
-  covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
+  covByKey: new Map(), ctxByProject: new Map(), coveredByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
 };
 
 export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 0): RegistryModel {
@@ -142,7 +144,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
 
       const phase1: Fetched = {
         loading: false, libraryNames, customCategory, descByName, installedByProject,
-        covByKey: new Map(), ctxByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
+        covByKey: new Map(), ctxByProject: new Map(), coveredByProject: new Map(), usageByKey: new Map(), runningSet: new Set(),
       };
       setF(phase1);
 
@@ -155,17 +157,24 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
       const perCov = await mapWithConcurrency(wsProjects, 4, async (p) => {
         const [cov, mc] = await Promise.all([
           memorySkillCoverage(p.id).catch((e) => { silentCatch('registry coverage')(e); return [] as SkillCoverageRow[]; }),
-          memoryCoverage(p.id).catch((e) => { silentCatch('registry contexts')(e); return { contexts: 0 } as { contexts: number }; }),
+          // `dev_tools_memory_coverage` returns BOTH halves of the project's
+          // context coverage — `contexts` (the denominator) and `covered`
+          // (contexts holding at least one fresh memory node). Only the
+          // denominator used to be read, so the matrix could report a skill's
+          // coverage of a project but never the project's own.
+          memoryCoverage(p.id).catch((e) => { silentCatch('registry contexts')(e); return { contexts: 0, covered: 0 } as { contexts: number; covered: number }; }),
         ]);
-        return { pid: p.id, cov, contexts: mc.contexts };
+        return { pid: p.id, cov, contexts: mc.contexts, covered: mc.covered };
       });
       if (!alive) return;
 
       const covByKey = new Map<string, SkillCoverageRow>();
       const ctxByProject = new Map<string, number>();
+      const coveredByProject = new Map<string, number>();
       for (const r of perCov) {
         for (const c of r.cov) covByKey.set(cellKey(r.pid, c.skill), c);
         ctxByProject.set(r.pid, r.contexts);
+        coveredByProject.set(r.pid, r.covered);
       }
 
       const usageByKey = new Map<string, number>();
@@ -181,7 +190,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
         if (parsed && pid) runningSet.add(cellKey(parsed.skill, pid));
       }
 
-      setF({ ...phase1, covByKey, ctxByProject, usageByKey, runningSet });
+      setF({ ...phase1, covByKey, ctxByProject, coveredByProject, usageByKey, runningSet });
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,6 +202,7 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
       name: p.name,
       rootPath: p.root_path,
       units: f.ctxByProject.get(p.id) ?? 0,
+      coveredUnits: f.coveredByProject.get(p.id) ?? 0,
       presentCount: f.installedByProject.get(p.id)?.size ?? 0,
     })),
     [wsProjects, f],

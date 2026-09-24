@@ -47,6 +47,34 @@ fn backdate_idea(pool: &DbPool, idea_id: &str, days: i64) {
         .unwrap();
 }
 
+/// NULL out `origin`, reproducing a row filed before the backlog contract.
+///
+/// Kept after the reaper was repaired, because the legacy shape is still real:
+/// a database that has not run `e41` yet, and any row whose `scan_type` was
+/// empty, carries a NULL origin. `archive_stale_ideas` must reach those too,
+/// and the test at the bottom of this file is what says so.
+///
+/// The history is worth keeping in view. This helper was introduced when the
+/// reaper's exclusion was still spelled `origin IS NULL` — a predicate that
+/// meant "not a sensor finding" only for as long as sensors were the only
+/// writers of that column. The `e41` backfill made it match nothing, which
+/// turned a live queue's only aging policy off without a single test going
+/// red, because the tests were written against the predicate rather than
+/// against its purpose.
+fn clear_origin(pool: &DbPool, idea_id: &str) {
+    // The checkout propagates rather than panicking — see `pool-get-unwrapped`.
+    let write = || -> Result<(), AppError> {
+        pool.get()?
+            .execute(
+                "UPDATE dev_ideas SET origin = NULL WHERE id = ?1",
+                params![idea_id],
+            )
+            .map(|_| ())
+            .map_err(AppError::Database)
+    };
+    write().expect("fixture origin clear")
+}
+
 #[test]
 fn normalize_collapses_rewordings_and_keeps_verbs() {
     // Filler words differ, subject identical -> same token.
@@ -54,8 +82,20 @@ fn normalize_collapses_rewordings_and_keeps_verbs() {
         normalize_idea_title("Add retry to the fetch helper"),
         normalize_idea_title("Add retry for fetch helper"),
     );
-    // Punctuation / casing are not identity.
+    // Punctuation / casing / repeated whitespace are not identity.
     assert_eq!(
+        normalize_idea_title("Extract  DimTile!"),
+        normalize_idea_title("extract dimtile"),
+    );
+    // But word BOUNDARIES are. `normalize_idea_title` splits on non-alphanumeric
+    // characters only; it does not break camelCase apart, so "DimTile" and
+    // "dim tile" are two different subjects to it. This pair used to sit in the
+    // assert_eq above, which claimed camelCase splitting the function has never
+    // done — and `normalize_idea_title` is the dedup KEY, so teaching it to
+    // split would re-key every existing `dev_ideas` row (see the note on
+    // IDEA_SIMILARITY_STOPWORDS). The behaviour is pinned here instead of
+    // asserted away, so a future change to it fails loudly.
+    assert_ne!(
         normalize_idea_title("Extract  DimTile!"),
         normalize_idea_title("extract dim tile"),
     );
@@ -239,6 +279,20 @@ fn aging_archives_only_stale_untouched_pending_ideas() {
     backdate_idea(&pool, &stale.id, 60);
     backdate_idea(&pool, &stale_accepted.id, 60);
     backdate_idea(&pool, &stale_with_task.id, 60);
+
+    // Every row above was filed through the one door, so every one of them
+    // carries an `origin` — and the reaper must still reach them.
+    //
+    // This assertion was briefly the opposite. The `e41` backfill gave every
+    // row a source, and the reaper's exclusion was spelled `origin IS NULL`
+    // from back when only sensors stamped one; overnight it matched nothing and
+    // a live queue's only aging policy was silently off. The first version of
+    // this test pinned that as the contract, which is the trap a regression test
+    // written after the change always sets: it recorded what the code now did
+    // rather than what the code was for. The exclusion is asked of the
+    // vocabulary now — a sensor FINDING is exempt, a generated idea ages — and
+    // this test asserts the purpose instead of the symptom.
+
     update_idea(
         &pool,
         &stale_accepted.id,
@@ -307,6 +361,7 @@ fn archived_idea_keeps_its_key_so_it_cannot_be_re_proposed() {
     .unwrap()
     .unwrap();
     backdate_idea(&pool, &idea.id, 60);
+    clear_origin(&pool, &idea.id); // see `clear_origin` — the sweep needs a legacy row
 
     assert_eq!(archive_stale_ideas(&pool, Some(&pid), 30).unwrap(), 1);
     let again = create_idea_deduped(

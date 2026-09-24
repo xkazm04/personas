@@ -720,7 +720,19 @@ fn lookup_kinds(
     }
     let conn = pool.get()?;
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-    let sql = format!("SELECT id, kind FROM companion_node WHERE id IN ({placeholders})");
+    // `AND importance > 0` is the retirement predicate re-imposed on the vector
+    // lane, which cannot express it: `companion_embedding` has no `importance`
+    // column, and the vec0 MATCH in `embeddings::search_similar` joins nothing.
+    // The keyword lane gates on it in SQL (`keyword::search_conn`), so without
+    // this the union below re-admits exactly what supersedence, the decay floor
+    // and cap enforcement demoted -- the store's own retirements, arriving by
+    // the one lane that never asked. Dropping the row here rather than in each
+    // lane's query is deliberate: `rank_into_lanes` skips any id with no kind,
+    // so one predicate at this join covers the episode, fact and procedural
+    // lanes and every lane added after them.
+    let sql = format!(
+        "SELECT id, kind FROM companion_node WHERE id IN ({placeholders}) AND importance > 0"
+    );
     let mut stmt = conn.prepare(&sql)?;
     let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let rows = stmt
@@ -914,6 +926,52 @@ fn parse_role_and_body(full: &str) -> (String, String) {
         }
     }
     (role, body)
+}
+
+/// The retirement predicate, asserted from the READ side.
+///
+/// `consolidation`'s own suite already asserts that aging out, supersedence
+/// and cap enforcement set `importance = 0` -- one of its cases is even named
+/// "aged out means retrieval-ineligible" (`consolidation.rs:1472`). But that
+/// assertion reads the column, which is the write half: it passes identically
+/// on a build where no read path consults the column at all, which is what
+/// the `ml` build was until this test's sibling change. A guarantee about
+/// retrieval is only earned by a retrieval.
+#[cfg(all(test, feature = "ml"))]
+mod retirement_predicate_tests {
+    use super::lookup_kinds;
+
+    /// A demoted node must not survive the vector lane's kind lookup, and a
+    /// live one must. The live row is the known positive: without it a lookup
+    /// that returned nothing at all would pass the first assertion.
+    #[test]
+    fn lookup_kinds_drops_retired_nodes_and_keeps_live_ones() -> Result<(), crate::error::AppError>
+    {
+        let pool = crate::db::init_test_user_db()?;
+        {
+            let conn = pool.get()?;
+            for (id, imp) in [("live-fact", 2), ("retired-fact", 0)] {
+                conn.execute(
+                    "INSERT INTO companion_node (id, kind, importance) VALUES (?1, 'fact', ?2)",
+                    rusqlite::params![id, imp],
+                )?;
+            }
+        }
+        let kinds = lookup_kinds(
+            &pool,
+            &["live-fact".to_string(), "retired-fact".to_string()],
+        )?;
+        assert_eq!(
+            kinds.get("live-fact").map(String::as_str),
+            Some("fact"),
+            "a live node must still resolve, or this test proves nothing"
+        );
+        assert!(
+            !kinds.contains_key("retired-fact"),
+            "a demoted node resolved a kind, so it would be ranked into a lane:              the vector lane has re-admitted what the store retired"
+        );
+        Ok(())
+    }
 }
 
 #[cfg(test)]

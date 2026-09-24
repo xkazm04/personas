@@ -10,7 +10,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution } from '../libs/reviewHelpers';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -192,7 +192,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
             </div>
             <div className="rounded-modal bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
-              <MarkdownRenderer content={review.content} className="typo-body text-foreground leading-relaxed" />
+              <RichMarkdown content={review.content} className="typo-body text-foreground leading-relaxed" />
             </div>
             {contextData && (
               <div className="mt-2 rounded-card bg-secondary/30 border border-primary/10 px-3 py-2">

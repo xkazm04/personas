@@ -3,40 +3,48 @@ import { Ear, ExternalLink } from 'lucide-react';
 import { parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
 import { itemAccent, STEP_TONE } from '@/features/teams/sub_collab/collabRender';
+import { decisionTitle } from '@/features/teams/sub_collab/decisionTitle';
 import type { TaggedItem } from './types';
-import { itemKind, rowCallsign, rowFamily, rowToken } from './lensModel';
+import { itemKind, rowCallsign, rowFamily } from './lensModel';
+import { KIND_META, type StreamRowLabels } from './streamKinds';
 
 /* ----------------------------------------------------------------------------
- * STREAM ROW — one transmission. A dense 30px radio line, and only that.
+ * STREAM ROW — one decision. A dense 30px log line, and only that.
  *
- * The Stream is a LOG, so it commits to the log density: `hh:mm:ss · CALLSIGN ·
- * event_type · summary`, monospace, fixed height. A "comfortable" density was
- * prototyped and cut — a second row height bought nothing the detail modal
- * doesn't already do better, and it cost exact virtualizer math (fixed itemSize
- * beats measureElement) plus a control in a header we're trying to keep empty.
+ * `hh:mm:ss · [kind glyph] · CALLSIGN · verb · title`, fixed height. The kind is
+ * the SAME glyph the tuner rail filters by, tinted by what the row is (step
+ * lifecycle tone / event family / memory / deliberation) — so the eye reads
+ * "what kind of fact" before it reads a word. The raw machine token it used to
+ * print (`step_done`, `signal.raised`) is gone from the row: the step verb and
+ * the headline now say it in words, and the token still leads the detail modal.
  *
- * Carries the Red Room affordances the consolidation must not lose (§7.2): the
- * family colour rail, the persona-coloured callsign, the raw event_type, the
- * payload summary + artifact link, and "Heard by" — now a server-side
- * subscription join (`consumers`) rather than the old N-per-member client
- * fan-out.
+ * TWO LEVELS: the row shows `decisionTitle().title` — a short headline — and the
+ * long form (`detail`) lives in ChannelDetailModal. A deliberation turn no
+ * longer clips a 950-char paragraph into the row.
  *
  * COLOUR DISCIPLINE (plan §5.2), three systems, three jobs, never mixed:
  *   team colour    → the left inset rail (identity of the CHANNEL)
- *   family colour  → the event_type token only (identity of the EVENT CLASS)
+ *   kind tone      → the kind glyph + step verb (identity of the FACT CLASS)
  *   persona colour → the callsign (identity of the SPEAKER)
  * -------------------------------------------------------------------------- */
 
-/** The radio row is a fixed 30px — exact virtualizer math, no measurement. */
+/** The log row is a fixed 30px — exact virtualizer math, no measurement. */
 export const ROW_HEIGHT = 30;
 
 const KIND_TEXT: Record<string, string> = {
   step: 'text-sky-300',
   memory: 'text-amber-200/90',
-  message: 'text-foreground/70',
   deliberation: 'text-violet-300',
-  slack: 'text-teal-300',
 };
+
+/*
+ * TYPOGRAPHY (picked 2026-09-21 over an all-mono baseline and an all-Inter
+ * "editorial" variant): a small MONO gutter — time and callsign in `typo-code`,
+ * machine metadata that should look like metadata — beside a PROPORTIONAL
+ * headline in `typo-body`, prose that should read like prose. Token-only: a
+ * font-weight painted over a typo-* token is the census's
+ * `typo-token-overpainted`, so each span picks the token whose weight it wants.
+ */
 
 function hhmmss(at: string): string {
   const d = new Date(at);
@@ -59,75 +67,65 @@ function ImportanceDots({ value }: { value: number }) {
 }
 
 export const StreamRow = memo(function StreamRow({
-  row, persona, onOpen, onAssignment, assignmentTitle,
+  row, persona, onOpen, onAssignment, labels,
 }: {
   row: TaggedItem;
   persona: Persona | undefined;
   onOpen: (row: TaggedItem) => void;
   /** Click on the assignment chip — applies the id to the search lens. */
   onAssignment?: (assignmentId: string) => void;
-  /** Pre-resolved i18n title for the chip (the row is memoized; resolving
-   *  the hook here would defeat that). */
-  assignmentTitle?: string;
+  /** Pre-resolved i18n labels (the row is memoized; resolving the hook here
+   *  would defeat that). */
+  labels: StreamRowLabels;
 }) {
   const { item, team } = row;
   const kind = itemKind(item);
   const fam = rowFamily(item);
-  // WHO SPOKE and WHAT KIND OF FACT this is both come from the shared model, so
-  // the log signs a row exactly the way the Conversation surface and the lens
-  // filters do. A Slack row keeps its bridged human's name and accent (never a
-  // team member's identity); You / Athena / Director keep theirs instead of all
-  // collapsing into the "SYSTEM" fallback.
+  // WHO SPOKE comes from the shared model, so the log signs a row exactly the
+  // way the Conversation surface and the lens filters do.
   const sign = rowCallsign(item, persona?.name);
   const color = itemAccent(item, persona);
   const parsed = kind === 'event' ? parsePayload(item.extra) : null;
-  const summary = parsed?.summary ?? item.body ?? '';
+  const head = decisionTitle(item);
   const heard = item.consumers?.length ?? 0;
 
-  // Events and steps show their raw machine token (`event_type` / step kind) —
-  // a step's `step_running` and `step_done` carry the SAME body, so the token is
-  // the only thing that tells the two rows apart. Step tokens wear the step
-  // lifecycle tone (running/done/failed) rather than one flat kind colour.
-  const token = rowToken(item);
-  const tokenClass =
+  // The kind glyph wears what the row IS: a step its lifecycle tone
+  // (running/done/failed), an event its family colour, the rest a kind colour.
+  const tone =
     kind === 'event'
       ? (FAMILY_TEXT[fam ?? 'other'] ?? '')
       : item.kind === 'step'
         ? (STEP_TONE[item.label] ?? KIND_TEXT.step ?? '')
-        : (KIND_TEXT[kind] ?? '');
-
-  const railColor = team.teamColor;
+        : (KIND_TEXT[kind] ?? 'text-foreground/60');
+  const KindIcon = KIND_META[kind].icon;
+  const verb = head.verb ? labels.verb[head.verb] : null;
 
   return (
     <button
       type="button"
       onClick={() => onOpen(row)}
-      style={{ height: ROW_HEIGHT, boxShadow: `inset 2px 0 0 ${railColor}` }}
-      className="w-full text-left flex items-center gap-2 px-3 font-mono hover:bg-secondary/25 transition-colors"
+      style={{ height: ROW_HEIGHT, boxShadow: `inset 2px 0 0 ${team.teamColor}` }}
+      className="w-full text-left flex items-center gap-2 px-3 hover:bg-secondary/25 transition-colors"
     >
-      <span className="typo-caption text-foreground tabular-nums flex-shrink-0 opacity-70">{hhmmss(item.at)}</span>
-      <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>
+      <span className={`typo-code opacity-55 text-foreground tabular-nums flex-shrink-0`}>{hhmmss(item.at)}</span>
+      <span className={`flex-shrink-0 ${tone}`}>
+        <KindIcon className="w-3.5 h-3.5" role="img" aria-label={labels.kind[kind]} />
+      </span>
+      <span className={`typo-code w-24 flex-shrink-0 truncate`} style={{ color }} title={sign}>
         {sign}
       </span>
-      {/* The machine token wears its family colour as a bordered badge —
-          borrows currentColor so one class string covers all 8 families. */}
-      <span
-        className={`typo-caption flex-shrink-0 max-w-[13rem] truncate px-1.5 rounded-pill border border-current/25 bg-current/10 leading-snug ${tokenClass}`}
-        title={token}
-      >
-        {token}
-      </span>
+      {verb && <span className={`typo-label flex-shrink-0 ${tone}`}>{verb}</span>}
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-      <span className="typo-caption text-foreground truncate" title={summary}>
-        {summary}
+      <span className="typo-body leading-none text-foreground truncate" title={head.title}>
+        {head.title}
       </span>
       {heard > 0 && (
-        <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-60" title={`Heard by ${heard}`}>
+        <span className={`ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-60`} title={`Heard by ${heard}`}>
           <Ear className="w-3 h-3" /> {heard}
         </span>
       )}
       {parsed?.artifact && (
-        <span className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
+        <span className={`flex-shrink-0 inline-flex items-center gap-1 typo-code text-foreground opacity-70`}>
           <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
         </span>
       )}
@@ -139,7 +137,7 @@ export const StreamRow = memo(function StreamRow({
         <span
           role="button"
           tabIndex={-1}
-          title={assignmentTitle}
+          title={labels.assignment}
           onClick={(e) => {
             if (!onAssignment) return;
             e.stopPropagation();
@@ -151,7 +149,7 @@ export const StreamRow = memo(function StreamRow({
             e.stopPropagation();
             onAssignment(item.assignmentId!);
           }}
-          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-caption tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
+          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-code tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
         >
           #{item.assignmentId.slice(0, 4)}
         </span>

@@ -7,12 +7,12 @@ import { useIsDarkTheme } from '@/stores/themeStore';
 
 /** Illustration paths keyed by role */
 const ROLE_ILLUSTRATIONS: Record<string, { dark: string; light: string }> = {
-  software:   { dark: '/illustrations/explore/software-dark.png',   light: '/illustrations/explore/software-light.png' },
-  operations: { dark: '/illustrations/explore/operations-dark.png', light: '/illustrations/explore/operations-light.png' },
-  business:   { dark: '/illustrations/explore/business-dark.png',   light: '/illustrations/explore/business-light.png' },
-  content:    { dark: '/illustrations/explore/content-dark.png',    light: '/illustrations/explore/content-light.png' },
-  customer:   { dark: '/illustrations/explore/customer-dark.png',   light: '/illustrations/explore/customer-light.png' },
-  data:       { dark: '/illustrations/explore/data-dark.png',       light: '/illustrations/explore/data-light.png' },
+  software:   { dark: '/illustrations/explore/software-dark.webp',   light: '/illustrations/explore/software-light.webp' },
+  operations: { dark: '/illustrations/explore/operations-dark.webp', light: '/illustrations/explore/operations-light.webp' },
+  business:   { dark: '/illustrations/explore/business-dark.webp',   light: '/illustrations/explore/business-light.webp' },
+  content:    { dark: '/illustrations/explore/content-dark.webp',    light: '/illustrations/explore/content-light.webp' },
+  customer:   { dark: '/illustrations/explore/customer-dark.webp',   light: '/illustrations/explore/customer-light.webp' },
+  data:       { dark: '/illustrations/explore/data-dark.webp',       light: '/illustrations/explore/data-light.webp' },
 };
 
 interface RoleGroupCardProps {

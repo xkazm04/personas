@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, NotepadText, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, NotepadText } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
@@ -14,7 +14,6 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import type { DevNote } from '@/lib/bindings/DevNote';
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-import { NoteTabStrip } from './NoteTabStrip';
 // Both of these are MODALS — nothing renders them until a menu item is
 // picked, so nothing should have to load them to open the pad. `BaseModal`
 // and the confirm dialog stay out of the pad's first paint entirely.
@@ -29,6 +28,9 @@ const ConfirmDialog = lazyRetry(() =>
 import { NoteDispatchBar } from './parts/NoteDispatchBar';
 import { noteActionsFor } from './notepadActions';
 import { useNoteSuggestions } from './athena/noteSuggestions';
+import { loadThreadUnread } from './thread/noteThreadStore';
+import { NoteThreadButton } from './thread/NoteThreadButton';
+import { consumeThreadRequest, useThreadRequest } from './thread/threadDeepLink';
 import { markNotepadPhase } from './notepadTiming';
 import { prefetchMarkdownRenderer } from '@/features/shared/components/editors/DeferredMarkdown';
 import {
@@ -40,9 +42,7 @@ import {
   flush,
   forkNote,
   load,
-  archiveNote,
   patchNote,
-  renameNote,
   restoreNote,
   setProject,
 } from './notepadStore';
@@ -144,6 +144,11 @@ export default function NotepadOverlayHost() {
   // `NotePlanProvider`, which is how the pane reads it.
   const [planTab, setPlanTab] = useState<PlanTab>('plan');
   const rootRef = useRef<HTMLDivElement>(null);
+  // The editor top row's thread popover, and the note a desk rail asked to
+  // certify (the plan provider honours it once the milestone has loaded).
+  const [editorThreadOpen, setEditorThreadOpen] = useState(false);
+  const [certifyNoteId, setCertifyNoteId] = useState<string | null>(null);
+  const clearCertify = useCallback(() => setCertifyNoteId(null), []);
 
   // First open fetches; later opens paint the notes already in memory and
   // refresh underneath them — a re-open must never re-ghost (loading law 1).
@@ -160,6 +165,9 @@ export default function NotepadOverlayHost() {
       prefetchMarkdownRenderer();
     });
     void load().finally(() => markNotepadPhase('notes'));
+    // The desk's unread badges. Beside the notes read, never in its failure
+    // path: a pad whose notes loaded must open even when the thread read fails.
+    void loadThreadUnread();
     listProjects()
       .then(setProjects)
       .catch(silentCatch('notepad projects'))
@@ -296,16 +304,6 @@ export default function NotepadOverlayHost() {
   // live and refresh-proof whether or not her panel is open.
   const suggestions = useNoteSuggestions(active?.id ?? null);
 
-  const selectNote = useCallback(
-    (id: string) => {
-      // Flush the outgoing note before switching — the debounce timer belongs
-      // to a note, not to the surface, and leaving one armed across a switch is
-      // how an edit lands on the wrong row in the user's mental model.
-      void flush(activeId ?? undefined);
-      setActiveNote(id);
-    },
-    [activeId, setActiveNote],
-  );
 
   const handleCreate = useCallback(async () => {
     const created = await createNote(t.notepad.new_note_title);
@@ -334,6 +332,33 @@ export default function NotepadOverlayHost() {
     [t.notepad.new_note_title],
   );
 
+  // THE STACK'S DOOR (`openNotepadThread`): a LiveCommsStack entry opens the
+  // pad on its note's editor with the thread popover up. Read on mount (the
+  // request raised the pad) and on every later request while it is open. The
+  // editor rather than the desk card because the card may be filtered out; the
+  // editor's top row always carries the thread.
+  const threadRequest = useThreadRequest();
+  // The note a request just opened: the close-on-navigate effect below must not
+  // shut the popover the request itself asked for.
+  const requestedThread = useRef<string | null>(null);
+  useEffect(() => {
+    if (!threadRequest || !loaded) return;
+    consumeThreadRequest();
+    if (!notes.some((n) => n.id === threadRequest)) return;
+    requestedThread.current = threadRequest;
+    openNote(threadRequest);
+    setEditorThreadOpen(true);
+  }, [threadRequest, loaded, notes, openNote]);
+
+  // A different note, or back to the desk, closes the editor's thread.
+  useEffect(() => {
+    if (view === 'editor' && requestedThread.current === active?.id) {
+      requestedThread.current = null;
+      return;
+    }
+    setEditorThreadOpen(false);
+  }, [active?.id, view]);
+
   // A note deleted or archived out from under the editor has nothing to show.
   useEffect(() => {
     if (view === 'editor' && loaded && !active) setView('overview');
@@ -361,6 +386,8 @@ export default function NotepadOverlayHost() {
         project={planNote.project}
         tab={planTab}
         onTabChange={setPlanTab}
+        certifyOnOpen={certifyNoteId === planNote.noteId}
+        onCertifyConsumed={clearCertify}
       >
         {children}
       </NotePlanProvider>
@@ -387,6 +414,19 @@ export default function NotepadOverlayHost() {
     >
       <div className="flex items-center justify-between gap-3 px-4 h-10 border-b border-primary/10">
         <div className="flex items-center gap-3 min-w-0">
+          {/* The overlay's OWN exit, at the far left. In editor view it sits
+              outside the breadcrumb on purpose: the two arrows then read as two
+              distances — this one leaves the pad, the crumb inside it goes back
+              to the desk. */}
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t.notepad.close}
+            data-testid="notepad-close"
+            className="w-7 h-7 -ml-1 shrink-0 rounded-input flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+          >
+            <ArrowLeft className="w-4 h-4" aria-hidden />
+          </button>
           {view === 'editor' && (
             // ONE control, two readings. On an ordinary note it is the back
             // button it has always been; on a PLAN note it is the first crumb of
@@ -427,15 +467,17 @@ export default function NotepadOverlayHost() {
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={close}
-          aria-label={t.notepad.close}
-          data-testid="notepad-close"
-          className="w-7 h-7 rounded-input flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
-        >
-          <X className="w-4 h-4" aria-hidden />
-        </button>
+        <div className="flex items-center gap-2">
+        {view === 'editor' && active && (
+          <NoteThreadButton
+            noteId={active.id}
+            noteTitle={active.title}
+            open={editorThreadOpen}
+            onOpenChange={setEditorThreadOpen}
+            testId="notepad-editor-thread"
+          />
+        )}
+        </div>
       </div>
 
       {withPlan(
@@ -462,28 +504,19 @@ export default function NotepadOverlayHost() {
             onOpen={openNote}
             onPatch={patchNote}
             onCreate={(seed) => void handleOverviewCreate(seed)}
+            onDelete={(note) => handleDelete(note, true)}
+            onCertify={(id) => {
+              setCertifyNoteId(id);
+              openNote(id);
+            }}
           />
         )
       ) : showGhost ? (
         <TabStripGhost />
       ) : (
-        <NoteTabStrip
-          notes={notes}
-          activeId={active?.id ?? null}
-          saveStates={saveStates}
-          atCap={atCap}
-          onSelect={selectNote}
-          onRename={renameNote}
-          onCreate={() => void handleCreate()}
-          onFork={(id) => void forkNote(id)}
-          onArchive={(id) => void archiveNote(id)}
-          onDelete={(id) => {
-            const note = notes.find((n) => n.id === id);
-            if (note) handleDelete(note, false);
-          }}
-          onOpenArchive={() => setArchiveOpen(true)}
-          panel={
-            active ? (
+        // The strip is gone: switching between open notes is what the desk and
+        // its project interlayer are for now, so the editor renders directly.
+        active ? (
               // Keyed on the note, so switching notes crosses a fade rather
               // than snapping. Never keyed on the note's TEXT — that would
               // re-mount the editor on every keystroke.
@@ -509,9 +542,7 @@ export default function NotepadOverlayHost() {
                   />
                 </motion.div>
               </AnimatePresence>
-            ) : undefined
-          }
-        />
+        ) : null
       )}
 
       {view === 'overview' ? null : showEmpty ? (

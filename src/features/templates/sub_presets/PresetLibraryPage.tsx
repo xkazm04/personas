@@ -17,7 +17,7 @@ const PRESET_ART = new Set([
 ]);
 function presetArt(id: string, isDark: boolean): string | null {
   if (!PRESET_ART.has(id)) return null;
-  return `/illustrations/presets/preset-${id}-${isDark ? 'dark' : 'light'}.png`;
+  return `/illustrations/presets/preset-${id}-${isDark ? 'dark' : 'light'}.webp`;
 }
 
 /** Data-weighted bento spans by rank (largest team = hero tile). */

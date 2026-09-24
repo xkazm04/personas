@@ -22,7 +22,7 @@ foundation selection (the mentality archetype), folded into the Describe surface
 as a **persona-core configurator**, so creation is one flow:
 
 1. **Describe it (default)** — the intent build (`UnifiedBuildEntry` →
-   Dialogue+Cinema). Type what you want; the LLM resolves the spec with
+   Sheet · Cinema). Type what you want; the LLM resolves the spec with
    clarifying questions. Under the intent sits the **persona-core badge**
    (`sub_glyph/personaCore/`): the slot that replaced the redundant "What" leaf
    (the intent already IS the "what"). It opens the persona-core configurator
@@ -216,10 +216,11 @@ persona with a completed build stays `active`.
 The **Describe** path (the intent build above) runs a live LLM **build
 session**. `start_build_session` spawns a long-lived backend task that drives
 the persona spec to completion; the surface is `UnifiedBuildEntry`, rendered as
-`GlyphCinemaLayout` / `GlyphDialogueCinemaLayout` (the older `GlyphFullLayout` /
-`GlyphPrototypeLayout` matrix surfaces were retired — `GlyphPrototypeLayout` is
-gone and `GlyphFullLayout` survives only as GlyphCinemaLayout's internal compose
-delegate). The session resolves the persona through the **v3 capability
+**Sheet · Cinema** (`ContactSheetCinemaLayout`, `sub_glyph/contactSheet/cinema/`)
+— the one build layout. The earlier Cinema and Dialogue+Cinema layouts (and the
+`GlyphFullLayout` compose step they shared) plus the layout switcher were
+**removed 2026-09-23**; their capability review, Simulate, test report and
+recipe starters live on inside the sheet. The session resolves the persona through the **v3 capability
 chronology** — `behavior_core → capability_enumeration → per-capability
 resolution → agent_ir` — asking **clarifying questions** when a gated dimension
 needs your input. (The legacy "8 dimensions / 3×3 matrix" is now only a

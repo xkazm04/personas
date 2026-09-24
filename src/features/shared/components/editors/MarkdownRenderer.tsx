@@ -8,7 +8,11 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import type { Components } from 'react-markdown';
+import type { Components, Options as ReactMarkdownOptions } from 'react-markdown';
+
+/** remark plugin list, typed through react-markdown so this file never names
+ *  `unified` - a transitive dependency, not a declared one. */
+type PluggableList = NonNullable<ReactMarkdownOptions['remarkPlugins']>;
 import { WrapText, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
@@ -54,6 +58,20 @@ interface MarkdownRendererProps {
    * working link that does nothing.
    */
   onLinkClick?: (href: string) => boolean;
+  /**
+   * Extension point: extra remark plugins, run AFTER remark-gfm. Omitted, the
+   * pipeline is exactly what it always was. `RichMarkdown` uses this to add
+   * its tag layer without this renderer knowing the tags exist - which is what
+   * keeps SurfaceRenderer (which renders plain markdown through this file) and
+   * RichMarkdown (which renders surface blocks) from importing each other.
+   */
+  remarkPlugins?: PluggableList;
+  /**
+   * Extension point: element renderers merged OVER the built-in ones. Pass a
+   * stable object (memoised, or module-level): a new component identity on
+   * every render would remount every element it covers.
+   */
+  components?: Components;
 }
 
 /**
@@ -337,12 +355,18 @@ export function MarkdownRenderer({
   codeBlockActions = false,
   variant,
   onLinkClick,
+  remarkPlugins: extraRemark,
+  components: extraComponents,
 }: MarkdownRendererProps) {
   const filtered = useMemo(() => filterMetaContent(content), [content]);
   const density = useMemo(() => markdownDensity(variant), [variant]);
   const components = useMemo(
-    () => buildComponents(codeBlockActions, density, onLinkClick),
-    [codeBlockActions, density, onLinkClick],
+    () => ({ ...buildComponents(codeBlockActions, density, onLinkClick), ...extraComponents }),
+    [codeBlockActions, density, onLinkClick, extraComponents],
+  );
+  const remarkPlugins = useMemo<PluggableList>(
+    () => (extraRemark ? [remarkGfm, ...extraRemark] : [remarkGfm]),
+    [extraRemark],
   );
 
   // `|| undefined` keeps the no-variant, no-className case emitting a bare
@@ -352,7 +376,7 @@ export function MarkdownRenderer({
   return (
     <div className={rootClass}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={remarkPlugins}
         rehypePlugins={[rehypeHighlight]}
         components={components}
       >

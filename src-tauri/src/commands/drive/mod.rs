@@ -1509,8 +1509,34 @@ mod tests {
         // `/etc/passwd` legitimately resolves to `root/etc/passwd`. The only
         // form that still parses as `Path::is_absolute()` after that strip
         // is a Windows drive-letter path, which this test exercises instead.
+        //
+        // And "Windows drive-letter path" is literal: `Path::is_absolute()` is
+        // platform-defined. On Unix `C:\Windows\System32\config` contains no
+        // separator at all — it is ONE ordinary file name — so the drive-letter
+        // rejection cannot fire and this assertion failed every Linux CI run.
+        // The sandbox is not wrong there; the escape simply does not exist.
+        // Both halves below are assertions, one per platform: rejection where
+        // the path is absolute, containment where it is a file name.
         let root = temp_root();
-        assert!(resolve_safe(&root, "C:\\Windows\\System32\\config").is_err());
+        let drive_letter = "C:\\Windows\\System32\\config";
+
+        #[cfg(windows)]
+        assert!(
+            resolve_safe(&root, drive_letter).is_err(),
+            "a drive-letter path is absolute on Windows and must be refused",
+        );
+
+        #[cfg(not(windows))]
+        {
+            let resolved = resolve_safe(&root, drive_letter)
+                .expect("on Unix this is a single ordinary file name, not an escape");
+            assert!(
+                resolved.starts_with(&root),
+                "{} escaped the managed root {}",
+                resolved.display(),
+                root.display(),
+            );
+        }
     }
 
     #[test]

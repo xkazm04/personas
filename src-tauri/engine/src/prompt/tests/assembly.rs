@@ -742,9 +742,20 @@ fn propose_backlog_documents_risk_as_required_and_names_the_scale() {
         prompt.contains("An unrated idea is NEVER accepted automatically"),
         "the consequence of omitting it must be stated"
     );
+    // The model must know that a bar EXISTS and that the protocol does not set
+    // it. This assertion used to pin the sentence "accepts risk 1-2 without a
+    // human" — a promise the protocol was in no position to make: six of the
+    // eleven live `dev_triage_rules` rows are named `sim: accept risk below 4`
+    // and accept risk 3 too. Telling every filer in the fleet a bar that its
+    // own project does not hold is worse than telling it the bar is the
+    // project's to declare.
     assert!(
-        prompt.contains("accepts risk 1-2 without a human"),
-        "the model must know which scores clear triage mechanically"
+        prompt.contains("mechanical triage rules decide which risk band"),
+        "the model must know a mechanical bar exists"
+    );
+    assert!(
+        !prompt.contains("accepts risk 1-2 without a human"),
+        "the protocol must not promise a bar it does not set"
     );
     // Every rung of the scale, so a score is a judgement and not a guess.
     for rung in [

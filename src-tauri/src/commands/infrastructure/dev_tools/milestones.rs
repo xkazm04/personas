@@ -3,7 +3,7 @@
 //! footprint, exit criteria) happen client-side from members + existing
 //! signals, so the surface here is deliberately just decisions.
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::models::{DevMilestone, DevMilestoneItem, DevProjectWallSummary};
 use crate::db::repos::dev_tools as repo;
@@ -48,6 +48,7 @@ pub fn dev_tools_create_milestone(
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn dev_tools_update_milestone(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     id: String,
     name: Option<String>,
@@ -58,7 +59,9 @@ pub fn dev_tools_update_milestone(
     order_index: Option<i32>,
 ) -> Result<DevMilestone, AppError> {
     require_auth_sync(&state)?;
-    repo::update_milestone(
+    // Tracked, so a cut / ship that walks the milestone's brief note along
+    // (`milestones::mirror_to_brief`) reaches the pad as the events it owes.
+    let (milestone, moves) = repo::update_milestone_tracked(
         &state.db,
         &id,
         name.as_deref(),
@@ -67,7 +70,9 @@ pub fn dev_tools_update_milestone(
         status.as_deref(),
         target_date.as_deref(),
         order_index,
-    )
+    )?;
+    super::notepad::emit_brief_moves(&app, &moves);
+    Ok(milestone)
 }
 
 #[tauri::command]

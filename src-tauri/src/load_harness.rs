@@ -397,6 +397,7 @@ fn synthetic_inner(i: u64, cwd: std::path::PathBuf) -> FleetSessionInner {
         persona_id: None,
         goal_id: None,
         cycle_index: None,
+        admission: Default::default(),
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),

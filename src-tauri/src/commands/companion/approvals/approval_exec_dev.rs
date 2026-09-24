@@ -963,6 +963,7 @@ pub(crate) fn execute_dev_improve(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .map_err(|e| AppError::ProcessSpawn(format!("dev_improve: admission failed: {e}")))?;

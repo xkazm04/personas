@@ -292,6 +292,8 @@ fn fresh_schema_contains_latest_migration_artifacts() {
         "dev_notes",
         // e30 — the note/milestone link's run ledger.
         "dev_note_runs",
+        // e40 — the per-note thread.
+        "dev_note_comments",
     ] {
         assert!(
             has_table(&conn, table).unwrap(),

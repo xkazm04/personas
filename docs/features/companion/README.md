@@ -73,7 +73,7 @@ and a `started` whose terminal phase never arrives is swept by a TTL just past
 the companion's own turn ceiling rather than pinning the chip forever.
 
 There is deliberately **no third dimension**. Athena raises no toasts, no footer
-notice popovers, and no corner pop-ups. Surfaces that used to do so, and where
+notice popovers, and no live pop-ups. Surfaces that used to do so, and where
 their content went:
 
 | Removed surface | Where it went |
@@ -81,7 +81,7 @@ their content went:
 | Footer notice popover ("Analysis completed" / proactive subject) | ORB state — the orb's one-shot message reaction on a finished turn, its `speaking` posture while an unread spoken reply waits, the footer Play button, and the thread-attention badge. The words are in chat. |
 | "Athena auto-decided" fleet toast | ORB pulse + a durable in-chat ledger (`AthenaActionsStrip`, backed by `companionStore.athenaActions`). Backend `fleet_decisions` remains the audit trail. |
 | Orb-decision failure toast | Rendered in place on the surface the user clicked — `decisionError` in `OrbDecisionBubble` and `ChatDecisionCard`. The decision stays pending, so the same chips are a retry. |
-| Athena rows in the Channels live corner pop-ups | Filtered out at the `LiveChannelOverlay` sink; they still render in the Channels → Timeline. Other authors are unaffected. |
+| Athena rows in the Channels live pop-ups (the title-bar Signal Island) | Filtered out at the `LiveChannelOverlay` sink; they still render in the Channels → Timeline. Other authors are unaffected. |
 
 Because the orb is now a real dimension, the decision queue (`useDecisionQueue`)
 is **always on** — it is no longer gated behind `companionHandsFreeDecisions` /

@@ -5,6 +5,7 @@ import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/b
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { StreamRow, ROW_HEIGHT } from './StreamRow';
+import { resolveRowLabels } from './streamKinds';
 import type { TaggedItem } from './types';
 
 /**
@@ -38,6 +39,7 @@ export function LensStream({
   useEffect(() => { fetching.current = false; }, [data.length]);
 
   const labels = useMemo(() => timeGroupLabels(t), [t]);
+  const rowLabels = useMemo(() => resolveRowLabels(t), [t]);
   const { rows, headerIndexes } = useMemo(
     () => buildGroupRows(data, (tagged) => { const key = timeGroupKey(tagged.item.at); return { key, label: labels[key] }; }),
     [data, labels],
@@ -138,7 +140,7 @@ export function LensStream({
                   persona={persona}
                   onOpen={onOpen}
                   onAssignment={onAssignment}
-                  assignmentTitle={t.monitor.stream_assignment_filter}
+                  labels={rowLabels}
                 />
               </div>
             );

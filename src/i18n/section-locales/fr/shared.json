@@ -403,5 +403,9 @@
     "dropped": "Déplacée vers {column}. {count} dans cette colonne.",
     "picked_up": "Carte prise. Utilisez les flèches pour choisir une colonne, Entrée pour déposer, Échap pour annuler.",
     "targeting": "Colonne : {column}"
+  },
+  "rich_markdown": {
+    "invalid_block": "Le bloc {name} n'a pas pu être affiché ({reason}). Il est conservé ci-dessous tel qu'écrit.",
+    "unknown_block": "« {name} » n'est pas une balise reconnue, elle est donc affichée telle qu'écrite."
   }
 }

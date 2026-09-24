@@ -8,7 +8,7 @@ import { KPI_VARIANTS, type KpiVariant } from './kpiVariant';
 /** Shared by the switcher (tabs) and the dispatcher (the one tabpanel). */
 export const KPI_VARIANT_TAB_PREFIX = 'kpi-variant';
 
-/** The six-way pill above every KPI overview renderer, and the ONE tabpanel
+/** The three-way pill above every KPI overview renderer, and the ONE tabpanel
  *  it selects (`children`) — strip and panel live together so the tablist's
  *  aria-controls resolves. Persisted by the dispatcher (`kpi-variant`). */
 export function KpiVariantSwitcher({

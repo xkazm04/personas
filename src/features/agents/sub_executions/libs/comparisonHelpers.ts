@@ -1,6 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatCost } from '@/lib/utils/formatters';
-import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
 export type { ToolCallStep };
@@ -49,57 +48,18 @@ export function deltaColor(pct: number, lowerIsBetter = true): string {
 }
 
 /**
- * Simple membership-based diff for terminal output lines.
+ * `diffLines` and `jsonDiff` USED TO LIVE HERE and now live in
+ * [`comparisonDiffCore.ts`](./comparisonDiffCore.ts). They are not re-exported
+ * from this file on purpose.
  *
- * NOTE: this is a Set-membership diff, not a sequence (LCS) diff — it is
- * intentionally cheap for large terminal logs. Known limitations: a line
- * repeated a different number of times in A vs B still reads as fully
- * "same"; a line present in both but reordered is not flagged as moved;
- * and all "added" lines are appended after A's lines rather than shown
- * in their real position. Good enough for a quick "did anything change"
- * signal — do not rely on it for exact positional diffing.
+ * This module imports `formatCost`, and therefore the i18n store, the
+ * translation loader and lucide. The comparison Web Worker needs only
+ * `jsonDiff` — but Vite builds workers as IIFE, which inlines dynamic imports,
+ * so that one import pulled all 14 locale catalogs into the worker chunk:
+ * 23.3 MB, 39.8% of dist's JS, in every installer (measured 2026-09-20 at
+ * `bb8e2ecdf`). A convenience re-export here would let the next caller walk
+ * straight back into it, so the import has to name the pure module.
  */
-export function diffLines(linesA: string[], linesB: string[]): Array<{ type: 'same' | 'added' | 'removed'; text: string }> {
-  const result: Array<{ type: 'same' | 'added' | 'removed'; text: string }> = [];
-  const setA = new Set(linesA);
-  const setB = new Set(linesB);
-
-  for (const line of linesA) {
-    if (setB.has(line)) {
-      result.push({ type: 'same', text: line });
-    } else {
-      result.push({ type: 'removed', text: line });
-    }
-  }
-  for (const line of linesB) {
-    if (!setA.has(line)) {
-      result.push({ type: 'added', text: line });
-    }
-  }
-  return result;
-}
-
-/** Structural diff of two JSON strings. */
-export function jsonDiff(a: string | null, b: string | null): Array<{ path: string; left: string; right: string }> {
-  const diffs: Array<{ path: string; left: string; right: string }> = [];
-  const objA = parseJsonOrDefault<Record<string, unknown>>(a, {});
-  const objB = parseJsonOrDefault<Record<string, unknown>>(b, {});
-  const keysA = typeof objA === 'object' && objA !== null ? Object.keys(objA) : [];
-  const keysB = typeof objB === 'object' && objB !== null ? Object.keys(objB) : [];
-  if (keysA.length === 0 && keysB.length === 0 && a !== b) {
-    diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
-  } else {
-    const allKeys = new Set([...keysA, ...keysB]);
-    for (const key of allKeys) {
-      const valA = JSON.stringify(objA[key] ?? null);
-      const valB = JSON.stringify(objB[key] ?? null);
-      if (valA !== valB) {
-        diffs.push({ path: key, left: valA, right: valB });
-      }
-    }
-  }
-  return diffs;
-}
 
 /** Generate "what changed" summary between two executions. */
 export function generateWhatChanged(left: PersonaExecution, right: PersonaExecution): string[] {

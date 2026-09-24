@@ -569,6 +569,7 @@ fn spawn_headless_launch(
         persona_id: None,
         goal_id: None,
         cycle_index: None,
+        admission: Default::default(),
         master: Mutex::new(None),
         writer: Mutex::new(writer),
         hibernating: std::sync::atomic::AtomicBool::new(false),

@@ -683,5 +683,256 @@
       "title": "随机生成的风格",
       "use": "使用此风格"
     }
+  },
+  "experience_opus": {
+    "create": {
+      "cancel": "暂不",
+      "creating": "正在创建您的分身",
+      "footnote": "眼下只会保存姓名、徽记和语言，其余的都要等您留下才会保存。",
+      "languages": "写作语言",
+      "languagesHint": "按顺序点选。除非某条消息需要用到别的语言，否则您的分身会用第一种来写作。",
+      "languagesMain": "主要",
+      "name": "姓名",
+      "nameNeeded": "请先给您的分身起个名字。",
+      "namePlaceholder": "您的姓名，或者分身应该使用的称呼",
+      "sigil": "徽记",
+      "styleFlipHint": "悬停查看这种风格的效果",
+      "styleHint": "选一个，分身会为您的每个渠道起草回复，供您过目。也可以跳过：您自己的回答，比任何预设都更能教会它您的语气。",
+      "styleNever": "绝不：",
+      "styleNone": "不设起始风格",
+      "styleNoneHint": "改由您的回答慢慢建立。速度较慢，但更贴近您真实的写作方式。",
+      "styleRoll": "发三张",
+      "styleRollHint": "三种临场生成的风格。选一个，或者再要三种。",
+      "styleTitle": "起始风格（可选）",
+      "submit": "创建并开始",
+      "subtitle": "开始只需要一个名字。其余的，它会从您的回答里一张一张学会。",
+      "title": "创建您的分身"
+    },
+    "keys": {
+      "close": "关闭",
+      "edit": "编辑",
+      "move": "移动",
+      "pick": "选择",
+      "play": "出牌",
+      "skip": "跳过"
+    },
+    "launch": {
+      "body": "{score}% 就绪。接着上次的进度继续，或者开始新一轮训练。",
+      "resume": "继续设置",
+      "title": "「{name}」的牌桌",
+      "titleNoTwin": "您分身的牌桌",
+      "train": "开始新一轮训练"
+    },
+    "loot": {
+      "edit": "编辑",
+      "keep": "留下",
+      "kind": {
+        "bio": "简介",
+        "constraints": "规则",
+        "examples": "示例",
+        "role": "角色",
+        "voice": "语气"
+      },
+      "onChannel": "{kind} · {channel}",
+      "pass": "放弃",
+      "sampleReason": "您自己的原话，会原封不动地保留下来。",
+      "stamp": {
+        "accepted": "已留下",
+        "dismissed": "已放弃",
+        "edited": "已编辑"
+      }
+    },
+    "mode": {
+      "fields": "字段",
+      "label": "视图",
+      "studio": "批量",
+      "table": "牌桌"
+    },
+    "notices": {
+      "completeBody": "所有花色都已设置好。分身现在可以用您的语气起草内容了，每一轮训练都会让它更像您。",
+      "completeClose": "暂时完成",
+      "completeTitle": "「{name}」已就绪",
+      "completeTrain": "继续训练",
+      "fields": "自行填写",
+      "guideDown": "引导助手没能发下这张牌。没有保存任何内容，该花色仍未完成。",
+      "inviteBody": "设置涵盖您是谁、怎么写作。记得什么、怎么想，来自训练里的回答，每一条都会保存下来，等您审核。",
+      "inviteStart": "开始新一轮训练",
+      "inviteTitle": "记忆来自训练",
+      "retry": "重新发牌"
+    },
+    "pile": {
+      "earlier": "更早的 {count} 条",
+      "empty": "您的回答会出现在这里。",
+      "hideEarlier": "隐藏更早的",
+      "label": "出牌记录",
+      "skipped": "已跳过",
+      "tally": "已出 {played} 张 · 已留 {kept} 张",
+      "you": "你"
+    },
+    "stage": {
+      "label": "阶段",
+      "setup": "设置",
+      "training": "训练"
+    },
+    "style": {
+      "backToTable": "返回牌桌",
+      "candidatesReady": "三种风格已备好，等您查看。",
+      "drafting": "正在以「{name}」风格拟写回复…",
+      "draftsReady": "「{name}」风格的草稿已备好，可供查看。",
+      "hint": "从预设开始，或随机生成三种风格。在您留下草稿之前，不会保存任何内容。",
+      "idle": "选择一种起始风格，或随机生成三种。",
+      "open": "打开风格牌堆",
+      "review": "查看草稿",
+      "rolling": "正在生成三种风格…",
+      "saving": "正在保存您留下的草稿",
+      "title": "风格"
+    },
+    "suits": {
+      "channels": "渠道",
+      "identity": "身份",
+      "label": "待设置",
+      "memories": "记忆",
+      "openHub": "在大脑中审核记忆",
+      "statusLine": "{status} · {detail}",
+      "tone": "语气"
+    },
+    "table": {
+      "composerPick": "或者用自己的方式说",
+      "composerWrite": "输入回复",
+      "dealing": "正在发下一题",
+      "greeting": "从上次的地方接着来。还剩：{items}。",
+      "greetingFresh": "「{name}」已经上桌。我们会一题接一题，聊完 {items}。",
+      "handLabel": "可选回答",
+      "incoming": "对方写道",
+      "incomingFrom": "在{channel}上，对方写道",
+      "noQuestion": "没有更多要询问的内容。",
+      "playHint": "再按一次即可出牌",
+      "ready": "{score}% 就绪",
+      "send": "发送",
+      "subtitle": "一次一题。在您留下之前，不会保存任何内容。",
+      "training": "训练",
+      "writeHint": "按您平时真正会发的样子回复，错别字也一并保留。这条回复也可以留作您写作风格的样本。",
+      "yourReply": "您的回复",
+      "yourReplyOn": "您在{channel}上的回复"
+    },
+    "topics": {
+      "asks": {
+        "blurb": "工作里人们常问的问题，按自己的方式回答。",
+        "label": "他人提问",
+        "prompt": "问问我工作中人们通常会问我的问题，让我像回答同事那样来回答。"
+      },
+      "coverage": "{tier}。记忆：{count}",
+      "drills": {
+        "blurb": "贴近真实的消息，按自己的方式回答。",
+        "label": "回复演练",
+        "prompt": "把人们常发给我的真实消息一条条给我，让我完全按自己的方式回复：拒绝一个请求、回应一个含糊的要求、应付催促、说一句感谢。渠道也换着来。"
+      },
+      "label": "训练牌堆",
+      "lines": {
+        "blurb": "不会做的事，以及分身绝不能替您说出口的话。",
+        "label": "个人底线",
+        "prompt": "问问我不会做的事，我会一口答应的事，以及我的分身绝不能替我说出口、承诺或答应的事。"
+      },
+      "offClock": {
+        "blurb": "工作之外的生活：平时做什么，聊起来能说上几个小时的话题。",
+        "label": "下班之后",
+        "prompt": "问问我工作之外的生活：平时都做些什么，能聊上几个小时的话题是什么，还有哪些事我做得不好却仍然喜欢。"
+      },
+      "sessions": "已完成 {count} 轮",
+      "stories": {
+        "blurb": "一次一个场景：搞砸的一天，做对的一个决定。",
+        "label": "工作故事",
+        "prompt": "问问我工作中的具体故事，一次一个场景：搞砸的一天，做对的一个决定，我是怎么入行的。多问发生了什么，别问我学到了什么。"
+      },
+      "takes": {
+        "blurb": "专业领域内外，愿意据理力争的看法。",
+        "label": "敢言的观点",
+        "prompt": "问问我对专业领域内外各种事情的看法，饭桌上我愿意据理力争的那些观点。如果我含糊其辞，就追问一次。"
+      },
+      "tiers": {
+        "covered": "覆盖充分",
+        "some": "部分覆盖",
+        "thin": "覆盖较少"
+      }
+    },
+    "twinCard": {
+      "everywhere": "通用",
+      "label": "您目前的分身",
+      "memories": "记忆：{detail}",
+      "noBio": "随着您的回答，简介会逐步完善。",
+      "noRole": "尚无角色",
+      "noVoice": "（暂无语气）",
+      "samplesAndRules": "示例：{samples}。规则：{rules}。",
+      "unnamed": "您的分身",
+      "voices": "各渠道的语气"
+    }
+  },
+  "experience_grok": {
+    "close": "关闭",
+    "forge": {
+      "create": "发出第一手牌",
+      "creating": "正在创建…",
+      "eyebrow": "新分身",
+      "gender": "它该如何现身？",
+      "hint": "在你打出一张牌之前，什么都不会被保存。",
+      "name": "名字",
+      "namePlaceholder": "你真正使用的名字",
+      "style": "起始语气",
+      "styleHint": "可选。选一个起始语气，或跳过，我们会在训练中找出来。",
+      "styleSkip": "稍后再说",
+      "styleSkipHint": "我们会从你的回答里学会语气。",
+      "styleSurprise": "给我惊喜",
+      "styleSurpriseHint": "分身创建后再抽三套语气。",
+      "subtitle": "有个名字就够开始。其余的我们当牌来发。",
+      "title": "这个分身该是谁？"
+    },
+    "slots": {
+      "channels": {
+        "hint": "你在哪里说话、对谁说、那个地方是干什么的。",
+        "label": "渠道"
+      },
+      "identity": {
+        "hint": "你是谁、别人怎么记得你、你绝不退让的那件事。",
+        "label": "身份"
+      },
+      "memories": {
+        "hint": "值得留下的事实、看法和故事。",
+        "label": "记忆"
+      },
+      "tone": {
+        "hint": "你真正怎么写——长短、热度、你绝不会说的话。",
+        "label": "语气"
+      }
+    },
+    "table": {
+      "composerPlaceholder": "或者用你自己的话写",
+      "earlier": "更早的 {count} 条",
+      "earlierHide": "收起更早的",
+      "greeting": "我们会把 {items} 当成一手牌来走。选一张、自己写，或跳过。",
+      "legendAccept": "Enter 打出",
+      "legendEdit": "E 编辑",
+      "legendPick": "1–3 选择",
+      "legendSkip": "S 跳过",
+      "noQuestion": "桌上已清空。每个栏位都已就绪。",
+      "openFields": "全部字段",
+      "openGuide": "牌桌",
+      "pickCard": "选择这个回答",
+      "score": "就绪",
+      "send": "打出",
+      "skip": "跳过这张牌",
+      "skipped": "已跳过",
+      "stageLabel": "阶段",
+      "stageSetup": "设置",
+      "stageTraining": "训练",
+      "thinking": "正在发下一张牌",
+      "trailLabel": "已打出",
+      "viewLabel": "设置视图"
+    },
+    "title": "打造你的分身",
+    "trainTitle": "训练 {name}",
+    "voice": {
+      "dictate": "口述",
+      "stop": "停止聆听"
+    }
   }
 }

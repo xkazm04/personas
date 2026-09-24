@@ -20,8 +20,9 @@ use super::read_ops::{
 };
 use super::research;
 use super::types::{
-    CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched, PointAt,
-    CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS, CANVAS_PANEL_SPEC_VERSION,
+    CanvasControlDispatch, CanvasPanelCompose, ChatCard, ComposedWalkthrough, Dispatched,
+    MintedReport, NoteStatusChange, PointAt, CANVAS_CONTROL_MAX_PER_TURN, CANVAS_PANEL_MAX_BLOCKS,
+    CANVAS_PANEL_SPEC_VERSION,
 };
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -34,19 +35,22 @@ use crate::error::AppError;
 /// not `published` is left alone — `draft` means he never pressed the pad's
 /// "turn into goals" button (she reached for the note herself, which is
 /// allowed), and `in_progress` means a card is already out there.
-fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) {
+///
+/// Returns whether the note actually moved, so the caller can report the move
+/// in [`Dispatched::notepad_status_changes`] and the pad is told.
+fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) -> bool {
     use crate::db::models::NoteStatus;
     let current = match crate::db::repos::dev_tools::get_note(db, note_id) {
         Ok(n) => n,
         Err(e) => {
             tracing::warn!(note_id, error = %e, "notepad: could not read note for goals dispatch");
-            return;
+            return false;
         }
     };
     if current.status != NoteStatus::Published {
-        return;
+        return false;
     }
-    if let Err(e) = crate::db::repos::dev_tools::set_status(
+    match crate::db::repos::dev_tools::set_status(
         db,
         note_id,
         NoteStatus::InProgress,
@@ -55,7 +59,11 @@ fn mark_note_in_flight(db: &crate::db::DbPool, note_id: &str) {
         None,
         None,
     ) {
-        tracing::warn!(note_id, error = %e, "notepad: goals dispatch status stamp failed");
+        Ok(_) => true,
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "notepad: goals dispatch status stamp failed");
+            false
+        }
     }
 }
 
@@ -1734,7 +1742,12 @@ pub fn dispatch_with_sys(
                         // stop offering "turn into goals" the moment a card is
                         // on screen, or a second card duplicates the first.
                         if let Some(nid) = note_id.as_deref() {
-                            mark_note_in_flight(db, nid);
+                            if mark_note_in_flight(db, nid) {
+                                out.notepad_status_changes.push(NoteStatusChange {
+                                    note_id: nid.to_string(),
+                                    status: crate::db::models::NoteStatus::InProgress,
+                                });
+                            }
                         }
                     }
                     Err(reason) => {
@@ -1800,6 +1813,57 @@ pub fn dispatch_with_sys(
                             .push(format!("rejected show_note_suggestions: {reason}"));
                         cleaned_lines.push(line);
                         continue;
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // `comment_on_note` (note-overview-cycle): Athena posts a reply
+            // on a note's thread. Auto-fire and deliberately so — the thread
+            // IS a conversation, the operator asked her into it (the pad's
+            // Comment action is a pointer turn telling her to answer with this
+            // op), and a comment changes no note, no status, no body. The
+            // result lands as a System episode like a read op's, so a refused
+            // comment (unknown note, empty body) is an ANSWER she reads next
+            // turn rather than a silent drop.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "comment_on_note" => {
+                let note_id = env
+                    .params
+                    .get("note_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let body_md = env
+                    .params
+                    .get("body_md")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let Some(db) = sys_db else {
+                    note_read_op_result(
+                        pool,
+                        session_id,
+                        "comment_on_note",
+                        note_id,
+                        "The comment was not posted: the notepad is not reachable from this \
+                         turn. Tell the operator rather than retrying.",
+                    );
+                    out.warnings
+                        .push("comment_on_note: the notepad is not reachable".into());
+                    continue;
+                };
+                match crate::companion::note_ops::comment_on_note(db, note_id, body_md) {
+                    crate::companion::note_ops::CommentOnNote::Posted(comment) => {
+                        note_read_op_result(
+                            pool,
+                            session_id,
+                            "comment_on_note",
+                            &comment.note_id,
+                            "Posted on the note's thread. The operator sees it on the pad.",
+                        );
+                        out.note_comments.push(comment);
+                    }
+                    crate::companion::note_ops::CommentOnNote::Refused(why) => {
+                        note_read_op_result(pool, session_id, "comment_on_note", note_id, &why);
+                        out.warnings.push(format!("comment_on_note refused: {why}"));
                     }
                 }
             }
@@ -2023,6 +2087,84 @@ pub fn dispatch_with_sys(
                         cleaned_lines.push(line);
                         continue;
                     }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Layered voice: `show_report` (auto-fire). The detail that does
+            // not belong in the layer-one reply goes into a report the reply
+            // links to as `[phrase](ref:report/new)`. The row is written HERE,
+            // before any event goes out, so the card and the rewritten link
+            // both point at something that exists (the durable-first rule the
+            // actionable cards follow). Its status is `unread`, never
+            // `pending`: a report is not waiting on him.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "show_report"
+                    || (env.op == "propose_action" && env.action == "show_report") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let report = match super::refs::parse_show_report(&fields) {
+                    Ok(r) => r,
+                    Err(reason) => {
+                        out.warnings.push(format!("rejected show_report: {reason}"));
+                        continue;
+                    }
+                };
+                match crate::companion::reports::insert_report(
+                    pool,
+                    session_id,
+                    None,
+                    &report.title,
+                    report.summary.as_deref(),
+                    &report.body,
+                ) {
+                    Ok(id) => {
+                        out.chat_cards.push(ChatCard {
+                            kind: crate::companion::reports::REPORT_KIND.to_string(),
+                            title: Some(report.title),
+                            config: serde_json::json!({
+                                "reportId": id,
+                                "summary": report.summary,
+                            }),
+                        });
+                        out.reports.push(MintedReport { id });
+                    }
+                    Err(e) => {
+                        out.warnings
+                            .push(format!("show_report could not be saved: {e}"));
+                    }
+                }
+            }
+            // ─────────────────────────────────────────────────────────────
+            // Layered voice: `adjust_register` (auto-fire from chat). He asked
+            // for longer or shorter replies, so the register moves now, source
+            // `operator`. The same action name is also in `ALLOWED_ACTIONS`
+            // for the OTHER door: a reflection-originated proposal the sleep
+            // cycle files as an approval row directly (never through this
+            // text path), executed by `execute_adjust_register` with source
+            // `reflection`. This arm sits ahead of the generic approval arm,
+            // so a chat op never becomes a card.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env)
+                if env.op == "adjust_register"
+                    || (env.op == "propose_action" && env.action == "adjust_register") =>
+            {
+                let fields = super::refs::op_fields(&env.op, &env.params, payload);
+                let applied = super::refs::parse_adjust_register(&fields).and_then(
+                    |(scope, sentences, reason)| {
+                        crate::companion::register::apply_op(
+                            pool,
+                            &scope,
+                            sentences,
+                            reason.as_deref(),
+                            "operator",
+                        )
+                        .map_err(|e| e.to_string())
+                    },
+                );
+                if let Err(reason) = applied {
+                    out.warnings
+                        .push(format!("rejected adjust_register: {reason}"));
                 }
             }
             // ─────────────────────────────────────────────────────────────
@@ -2413,6 +2555,29 @@ pub fn dispatch_with_sys(
     // Trim the trailing whitespace introduced by stripped lines.
     while out.cleaned_text.ends_with(['\n', ' ']) {
         out.cleaned_text.pop();
+    }
+
+    // Layered voice: resolve the reply's reference links. Runs on the CLEANED
+    // text, after every op line is gone, so `report/new` can resolve to the
+    // report this reply just minted (the first one, when there are several).
+    // A link that does not resolve becomes its plain phrase, so the prose
+    // still reads. One indexed lookup per link; a reply without `(ref:` skips
+    // the walk entirely.
+    if out.cleaned_text.contains("(ref:") {
+        let minted = out.reports.first().map(|r| r.id.clone());
+        let (text, scan) = super::refs::rewrite_refs(&out.cleaned_text, |kind, handle| {
+            // The user-DB check first; only what it cannot answer reaches the
+            // app database, and absence of that store is decided HERE, where
+            // the Option is, never inside the resolver.
+            super::refs::validate_ref(pool, kind, handle, minted.as_deref()).unwrap_or_else(|| {
+                match sys_db {
+                    Some(db) => super::refs::validate_system_ref(db, kind, handle),
+                    None => super::refs::validate_ref_without_system_store(kind, handle),
+                }
+            })
+        });
+        out.cleaned_text = text;
+        out.refs = scan;
     }
     Ok(out)
 }

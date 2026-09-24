@@ -1,6 +1,7 @@
 //! Proc-macros for personas-desktop.
 //!
-//! Currently exports one attribute: `#[requires(level)]` for Tauri commands.
+//! Exports the `#[requires(level)]` attribute for Tauri commands and the
+//! `ipc_shard!` wrapper used by `src/ipc_shards/`.
 //! See `ipc_auth.rs` in the main crate for the underlying guard functions
 //! and the `idea-7a4838c1` capability-audit deliverable for context on why
 //! this exists.
@@ -117,4 +118,91 @@ pub fn requires(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     output.into()
+}
+
+/// One entry of a handler list: `#[cfg(..)]* path::to::command`.
+struct ShardEntry {
+    attrs: Vec<syn::Attribute>,
+    path: syn::Path,
+}
+
+impl syn::parse::Parse for ShardEntry {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            attrs: input.call(syn::Attribute::parse_outer)?,
+            path: input.parse()?,
+        })
+    }
+}
+
+/// `ipc_shard!(tauri::generate_handler![ ... ])` — one shard of the IPC surface.
+///
+/// Expands to a tuple `(owns, run)`:
+///
+/// - `run` is the wrapped `tauri::generate_handler!` invocation, re-emitted
+///   token for token, so Tauri's own macro still builds the dispatch closure.
+/// - `owns` is a `fn(&str) -> bool` that is `true` for exactly the wire names in
+///   the list, each arm carrying the same `#[cfg(..)]` attributes as its entry.
+///
+/// Why this exists: Tauri accepts ONE invoke handler, and its macro expands to
+/// one closure with a `match` arm per command. rustc's cost for that body is
+/// super-linear in the arm count — with ~1,600 commands it was half of a cold
+/// `cargo check` of the app crate. Splitting the list into shards fixes the
+/// cost, but an `Invoke` is moved into whichever closure receives it, so shards
+/// cannot be tried in turn: the router must know who owns a name BEFORE it
+/// hands the invoke over. Deriving `owns` from the same token list means a
+/// command is registered by ONE edit and the router cannot drift from it.
+///
+/// The wire name is the path's last segment, which is how
+/// `tauri::generate_handler!` names a command too.
+#[proc_macro]
+pub fn ipc_shard(input: TokenStream) -> TokenStream {
+    let inner = parse_macro_input!(input as syn::Macro);
+    let is_generate_handler = inner
+        .path
+        .segments
+        .last()
+        .is_some_and(|s| s.ident == "generate_handler");
+    if !is_generate_handler {
+        return syn::Error::new_spanned(
+            &inner.path,
+            "ipc_shard! wraps exactly one `tauri::generate_handler![...]` invocation",
+        )
+        .to_compile_error()
+        .into();
+    }
+    let entries = match inner.parse_body_with(
+        syn::punctuated::Punctuated::<ShardEntry, syn::Token![,]>::parse_terminated,
+    ) {
+        Ok(entries) => entries,
+        Err(e) => return e.to_compile_error().into(),
+    };
+
+    let mut arms = Vec::with_capacity(entries.len());
+    for entry in &entries {
+        let Some(last) = entry.path.segments.last() else {
+            return syn::Error::new_spanned(&entry.path, "empty command path")
+                .to_compile_error()
+                .into();
+        };
+        let name = LitStr::new(&last.ident.to_string(), last.ident.span());
+        let attrs = &entry.attrs;
+        arms.push(quote! { #(#attrs)* #name => true, });
+    }
+
+    quote! {
+        (
+            {
+                fn owns(command: &str) -> bool {
+                    match command {
+                        #(#arms)*
+                        _ => false,
+                    }
+                }
+                owns as fn(&str) -> bool
+            },
+            #inner,
+        )
+    }
+    .into()
 }

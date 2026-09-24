@@ -29,6 +29,7 @@ import type { AuthStateResponse } from '@/lib/bindings/AuthStateResponse';
 import type { TestScenario } from '@/lib/bindings/TestScenario';
 import type { TestScores } from '@/lib/bindings/TestScores';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
+import type { NoteComment } from '@/lib/bindings/NoteComment';
 // Not a generated binding yet: `BrowserTab` is WP0's hand-written wire contract
 // (`src/features/browser/types.ts`), which WP4 re-points at `@/lib/bindings`
 // once the Rust side carries `#[derive(TS)] #[ts(export)]`.
@@ -168,6 +169,13 @@ export const EventName = {
    * ONE name for four tables: the unit of invalidation is the Ship slice.
    */
   DEV_TOOLS_SHIP_CHANGED: 'dev-tools-ship-changed',
+  /**
+   * The council store changed for a project: the ingest door absorbed a run,
+   * the decide command recorded a verdict, or the tier of a subject moved.
+   * ONE name for the whole council slice, like DEV_TOOLS_SHIP_CHANGED — the
+   * unit of invalidation is "this project's council states", not a table.
+   */
+  DEV_TOOLS_COUNCIL_CHANGED: 'dev-tools://council-changed',
   // Findings-loop SIGNAL events (docs/plans/dev-findings-loop.md) — published on
   // the persona-event bus from the repo layer (create_finding / verify-state
   // writes), so triggers and the dispatch ops can route off them.
@@ -318,10 +326,15 @@ export const EventName = {
   STANDARDS_SCAN_STATUS: 'dev_tools_standards_scan_status',
   RADIO_STATE: 'radio:state',
   KB_EXTRACTION_PROGRESS: 'kb-extraction-progress',
+  /** New pending approval rows (a turn, or a background pass that files one). */
+  COMPANION_APPROVALS: 'companion://approvals',
 
   // Notepad — emitted by the run-artifact sweeper after it flips a note's
   // status (published → in_progress → completed/failed).
   NOTEPAD_NOTE_CHANGED: 'notepad-note-changed',
+  // Notepad — one per-note thread entry written or answered (comment, review,
+  // verdict stamp, status milestone). Payload is the full row.
+  NOTEPAD_NOTE_COMMENT: 'notepad-note-comment',
 
   // Browser > Webview — the WHOLE tab list, every time any of it moves.
   // Emitted to the `main` webview only; page webviews never receive app events.
@@ -927,6 +940,13 @@ export interface EventPayloadMap {
     table: string;
     rowid: number;
   };
+  /**
+   * A pure invalidation signal. `projectId` scopes the refetch when the emitter
+   * knows it; listeners that do not recognise it refetch their own project,
+   * because a council state is always derived from a read, never from this
+   * payload.
+   */
+  [EventName.DEV_TOOLS_COUNCIL_CHANGED]: { projectId?: string | null };
   [EventName.SIGNAL_RAISED]: {
     idea_id: string;
     origin: string;
@@ -1186,10 +1206,13 @@ export interface EventPayloadMap {
   [EventName.STANDARDS_SCAN_STATUS]: { project_id?: string; status?: string };
   [EventName.RADIO_STATE]: RadioState;
   [EventName.KB_EXTRACTION_PROGRESS]: KbExtractionProgress;
+  [EventName.COMPANION_APPROVALS]: import('@/api/companion').CreatedApproval[];
 
   // Notepad sweeper flip. `status` is a NoteStatus token; typed as the binding
   // so a renamed variant breaks here rather than at a switch default.
   [EventName.NOTEPAD_NOTE_CHANGED]: { noteId: string; status: NoteStatus };
+  // The full `dev_note_comments` row (e40), so no refetch is needed.
+  [EventName.NOTEPAD_NOTE_COMMENT]: NoteComment;
 
   // The embedded browser's whole tab list. Rust is authoritative: nothing in
   // the tab strip is local state, every mutation is a command, and the list

@@ -130,9 +130,26 @@ pub fn get_milestone_by_id(pool: &DbPool, id: &str) -> Result<DevMilestone, AppE
     })
 }
 
+/// One lifecycle step the brief mirror took on the milestone's note: the note
+/// moved to `status`, and `comment` is the `system` thread row that records it
+/// (`None` when the row could not be written — the move itself still landed).
+///
+/// The db crate has no `AppHandle`, so it cannot emit `NOTEPAD_NOTE_CHANGED` /
+/// `NOTEPAD_NOTE_COMMENT` itself. It hands the moves back instead, and a
+/// caller that can emit — the Ship command, the Athena approval — does.
+#[derive(Debug, Clone)]
+pub struct BriefMove {
+    pub note_id: String,
+    pub status: crate::models::NoteStatus,
+    pub comment: Option<crate::models::NoteComment>,
+}
+
 /// Patch-style update. Status transitions stamp their timestamps: → 'active'
 /// stamps `cut_at` (first time only — the scope-creep baseline), → 'shipped'
 /// stamps `shipped_at`.
+///
+/// Discards the brief moves; a caller holding an `AppHandle` wants
+/// [`update_milestone_tracked`] so the pad hears about them.
 #[allow(clippy::too_many_arguments)]
 pub fn update_milestone(
     pool: &DbPool,
@@ -144,6 +161,32 @@ pub fn update_milestone(
     target_date: Option<&str>,
     order_index: Option<i32>,
 ) -> Result<DevMilestone, AppError> {
+    update_milestone_tracked(
+        pool,
+        id,
+        name,
+        goal,
+        description,
+        status,
+        target_date,
+        order_index,
+    )
+    .map(|(milestone, _moves)| milestone)
+}
+
+/// [`update_milestone`], plus the lifecycle steps the brief mirror took on the
+/// milestone's note (empty when nothing moved). See [`BriefMove`].
+#[allow(clippy::too_many_arguments)]
+pub fn update_milestone_tracked(
+    pool: &DbPool,
+    id: &str,
+    name: Option<&str>,
+    goal: Option<&str>,
+    description: Option<&str>,
+    status: Option<&str>,
+    target_date: Option<&str>,
+    order_index: Option<i32>,
+) -> Result<(DevMilestone, Vec<BriefMove>), AppError> {
     timed_query!("dev_milestones", "dev_milestones::update", {
         let now = chrono::Utc::now().to_rfc3339();
         // Set by the status branch; consumed by the brief mirror after the
@@ -233,8 +276,8 @@ pub fn update_milestone(
             )?;
         }
         drop(conn);
-        mirror_to_brief(pool, id, name, description, newly_cut, newly_shipped);
-        get_milestone_by_id(pool, id)
+        let moves = mirror_to_brief(pool, id, name, description, newly_cut, newly_shipped);
+        Ok((get_milestone_by_id(pool, id)?, moves))
     })
 }
 
@@ -248,6 +291,10 @@ pub fn update_milestone(
 /// It lives in the REPO rather than in the Ship command, so every door that
 /// moves a milestone — the management HTTP API, an Athena approval, a Fleet
 /// dispatch — gets the mirror without knowing it exists.
+///
+/// Each lifecycle step it takes also appends a `system` status row to the
+/// note's thread (`cut`, `shipped`) — here, for the same every-door reason —
+/// and is returned as a [`BriefMove`] so a caller with an `AppHandle` can emit.
 fn mirror_to_brief(
     pool: &DbPool,
     milestone_id: &str,
@@ -255,9 +302,12 @@ fn mirror_to_brief(
     description: Option<&str>,
     newly_cut: bool,
     newly_shipped: bool,
-) {
+) -> Vec<BriefMove> {
     use crate::models::NoteStatus;
+    use crate::repos::dev::note_comments::{insert_comment, NewNoteComment};
     use crate::repos::dev::notes;
+
+    let mut moves = Vec::new();
 
     if name.is_some() || description.is_some() {
         if let Err(e) = notes::set_brief_from_milestone(pool, milestone_id, name, description) {
@@ -265,13 +315,13 @@ fn mirror_to_brief(
         }
     }
     if !newly_cut && !newly_shipped {
-        return;
+        return moves;
     }
     let Some(note) = notes::brief_note_for_milestone(pool, milestone_id)
         .ok()
         .flatten()
     else {
-        return;
+        return moves;
     };
     // `cut` follows the cut, `shipped` follows the ship.
     //
@@ -298,7 +348,22 @@ fn mirror_to_brief(
             continue;
         }
         match notes::set_status(pool, &note.id, next, None, None, None, None) {
-            Ok(_) => from = next,
+            Ok(_) => {
+                from = next;
+                let comment = insert_comment(
+                    pool,
+                    &NewNoteComment::status_milestone(&note.id, next.as_str()),
+                )
+                .map_err(|e| {
+                    tracing::warn!(note = %note.id, status = next.as_str(), error = %e, "milestone: brief status milestone not recorded on the thread");
+                })
+                .ok();
+                moves.push(BriefMove {
+                    note_id: note.id.clone(),
+                    status: next,
+                    comment,
+                });
+            }
             Err(e) => {
                 tracing::warn!(
                     milestone = %milestone_id,
@@ -308,10 +373,11 @@ fn mirror_to_brief(
                     error = %e,
                     "milestone: brief lifecycle mirror refused",
                 );
-                return;
+                return moves;
             }
         }
     }
+    moves
 }
 
 /// Mirror the brief's `title` / `body_md` onto the milestone it describes.

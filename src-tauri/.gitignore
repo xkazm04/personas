@@ -9,6 +9,9 @@
 /.tauri-*.gen.conf.json
 # Alternate target dir used when the primary target/ is locked by tauri dev.
 /target-bindings/
+# Worktree-private cargo target (CARGO_TARGET_DIR) so parallel worktrees never
+# contend for one build lock.
+/target-wt/
 /gen/schemas
 # ts-rs default output dir. We redirect to repo-root `src/lib/bindings/` via
 # `build.rs` (cargo:rustc-env=TS_RS_EXPORT_DIR), but if a future ts-rs change

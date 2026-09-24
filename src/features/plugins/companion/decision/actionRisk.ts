@@ -58,6 +58,9 @@ const LOW_RISK: readonly string[] = [
   'register_project',
   'prefill_persona_create',
   'update_dev_goal',
+  // Layered voice: one `companion_reply_register` row (how many sentences
+  // layer one may run). Local, bounded 1..8, and the operator can reset it.
+  'adjust_register',
 ];
 
 /**

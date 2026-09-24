@@ -57,6 +57,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createTurnTimer } from './lib/stream-timing.mjs';
+import { replyShape as computeReplyShape } from './lib/reply-shape.mjs';
+import { selfTest as replyShapeSelfTest } from './lib/reply-shape-self-test.mjs';
 
 // A crashed run must say so in run.log, not die silently (bitten twice by
 // async EPIPE from killed children).
@@ -229,6 +231,41 @@ function spokenFriendly(report) {
   return !text.split('\n').some((l) => /^\s*(#{1,6}\s|[-*]\s|\|\s|```|\d+\.\s)/.test(l));
 }
 
+/** replyShape (WP4, spark athena-layered-voice): sentence cap, zero bare ids,
+ *  well-formed ref links — scored on the dispatcher's cleaned display text via
+ *  the SAME counters `scripts/companion/reply-stats.mjs` uses on the live
+ *  brain, so a bench number and a production number always mean the same
+ *  thing. SOFT by default (`expect.hardShape` unset or false): the check
+ *  always reports its numbers per scenario like the existing checks, but only
+ *  FAILS the scenario when the scenario declares `hardShape: true`. This is
+ *  deliberate — layer_one is a new prompt contract (WP1) that most of the
+ *  corpus's existing cells were never taught, so a hard gate here would fail
+ *  every pre-layer-one cell on a rule it doesn't know exists yet.
+ *
+ *  `bareIds` is `computeReplyShape`'s PRIMARY count (Director amendment,
+ *  2026-09-23: an id inside INLINE code counts; only a fenced code block or a
+ *  ref-link handle is exempt — `scripts/test/lib/reply-shape.mjs`'s
+ *  `countBareIds` doc comment has the full reasoning). `bareIdsStrict`
+ *  (all code spans exempt, the pre-amendment reading) rides along in the
+ *  detail line, clearly labeled, for comparison only — it is never what
+ *  `bareIdsOk`/`structurallyOk`/`hardShape` score against. */
+function replyShapeCheck(report, expect) {
+  const cap = expect.replyShape?.cap ?? 3;
+  const text = (report.cleanedText ?? '').trim();
+  const shape = computeReplyShape(text);
+  const sentencesOk = shape.sentences <= cap;
+  const bareIdsOk = shape.bareIds === 0;
+  const refsOk = shape.refsMalformed === 0;
+  const structurallyOk = sentencesOk && bareIdsOk && refsOk;
+  const detail =
+    `sentences=${shape.sentences}/${cap}${sentencesOk ? '' : ' OVER'} ` +
+    `bareIds=${shape.bareIds}${bareIdsOk ? '' : ' LEAK'} (strict/code-exempt, comparison only: ${shape.bareIdsStrict}) ` +
+    `refLinks=${shape.refLinkCount} (${shape.refsWellFormed} ok, ${shape.refsMalformed} malformed) ` +
+    `words=${shape.words} chars=${shape.chars}` +
+    (structurallyOk || expect.hardShape ? '' : ' [soft-fail — not scored against pass/fail]');
+  return { pass: expect.hardShape ? structurallyOk : true, detail };
+}
+
 function score(report, expect) {
   const checks = [];
   const add = (name, pass, detail = '') => checks.push({ name, pass, detail });
@@ -270,6 +307,17 @@ function score(report, expect) {
     add('ttsNotDuplicate', !tts || tts !== (report.cleanedText ?? '').trim(), 'TTS line repeats the prose verbatim');
   }
   if (expect.noLeak) add('noLeak', report.machineGrammarLeak === false);
+  // The dispatcher's chat_cards array is how a `show_report` op is visible in
+  // the validator report (a companion_chat_card row, kind "report"); there is
+  // no dedicated `reportEmitted` field on this bench's report shape yet (that
+  // lives in WP2's companion_turn.outcome_json, a production-only surface),
+  // so this checks the same evidence the production reader would.
+  if (expect.reportCard)
+    add('reportCard', (report.chatCards ?? []).some((c) => c.kind === 'report'), `chatCards=${JSON.stringify(report.chatCards ?? [])}`);
+  if (expect.replyShape) {
+    const shape = replyShapeCheck(report, expect);
+    add('replyShape', shape.pass, shape.detail);
+  }
   if (expect.noParseErrors)
     add('noParseErrors', !report.warnings.some((w) => /parse error|malformed/i.test(w)), report.warnings.join(' | '));
 
@@ -789,8 +837,28 @@ function report() {
   console.log(`written to ${REPORT}`);
 }
 
+// ── help / self-test (no model, no validator binary) ───────────────────────
+function printHelp() {
+  const classes = [...new Set(corpus.scenarios.map((s) => s.class))].sort();
+  console.log(`Athena model/effort/prompt-family bench — ${corpus.scenarios.length} scenarios across ${classes.length} classes:\n  ${classes.join(', ')}\n`);
+  console.log('Cells: ' + Object.keys(CELLS).join(', '));
+  console.log(`
+Usage:
+  --help                       this message (no model, no validator)
+  --self-test                  unit-check the replyShape counter on fixture strings (no model, no validator)
+  --dry-run                    validate corpus + round-trip sample texts (builds the validator, no model)
+  --cell <id> [--reps N]       run one matrix cell
+  --cells <id,id,...|all>      run several cells (add --parallel to run them concurrently)
+  --report [--baseline <id>]   aggregate results.jsonl into report.md
+See the file header for the full option list (--scenarios, --prompt-file, --fixture-prompt, --timeout, ...).`);
+}
+
 // ── main ─────────────────────────────────────────────────────────────────
-if (has('--dry-run')) {
+if (has('--help')) {
+  printHelp();
+} else if (has('--self-test')) {
+  process.exit(replyShapeSelfTest() ? 0 : 1);
+} else if (has('--dry-run')) {
   await dryRun();
 } else if (has('--report')) {
   report();

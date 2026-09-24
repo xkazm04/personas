@@ -1,0 +1,186 @@
+{
+  "id": "0bd3f5a1-7c42-4f8e-9a6d-2f1b84c7e530",
+  "slug": "council-review",
+  "title": "A major feature escorted to a person's decision by an evidence-first council",
+  "status": "draft",
+  "path": "software_engineering/delivery",
+  "domain": "software_engineering",
+  "description": {
+    "need": "An autonomous team reports a feature finished on its own word. The gates it ran answer whether the code does what its authors meant; none of them answers whether the thing was worth building, whether it holds up against what a competitor already ships, or whether it fails the first time something goes wrong. So a project accumulates finished features nobody chose, and the person who would have chosen differently finds out a month later. The two failures are opposite and both common: a team that admits its own work, and a review so expensive that it is run once and then never again.",
+    "input": "One feature the team believes is finished, the tier that says whether it is one a person is asked to sign off, the code it actually spans with the revision that span was read at, the evidence the members can gather for themselves, and every earlier round on the same feature with what it said had to be addressed.",
+    "coreAction": "Run the bounded members over the feature's own evidence, cheapest first, and stop early when a mechanical member finds a floor breach or a hard failure. Never admit the feature: a clean run is escorted to the person who decides, with what was measured, what could not be measured and why, and what the next round would have to address. Re-run only what the span's movement invalidates, and refuse a fourth round rather than paying for the same argument again.",
+    "output": "One verdict per member with its score, its confidence and the evidence behind it; an overall computed only over what was measured, with a coverage figure beside it saying how much of the rubric that number rests on; an outcome drawn from a closed set that contains no admitting value; the must-address list a next round would start from; and a receipt naming the revision and the files the verdict was read at, so a later reader can ask whether it still describes the tree."
+  },
+  "activities": [
+    {
+      "id": "read-the-tier",
+      "label": "Read whether this feature is one a person is asked to sign off, and stop here when it is not",
+      "kind": "decide"
+    },
+    {
+      "id": "take-the-receipt",
+      "label": "Pin the revision and the files this verdict is being read at",
+      "kind": "observe"
+    },
+    {
+      "id": "run-the-mechanical-members",
+      "label": "Run the members that measure rather than judge, and stop early on a floor breach or a hard failure",
+      "kind": "act"
+    },
+    {
+      "id": "run-the-judged-members",
+      "label": "Run the judged members over an evidence pack the council built, never the implementer's own report",
+      "kind": "act"
+    },
+    {
+      "id": "aggregate",
+      "label": "Compute the outcome by the stated rule, over the measured weight only",
+      "kind": "decide"
+    },
+    {
+      "id": "escort",
+      "label": "Hand the clean result to the person who decides, and file the must-address list for the next round",
+      "kind": "deliver"
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "the-council-never-admits",
+      "statement": "No outcome this work can produce means the feature is accepted; the best it can say is that the evidence is clean enough to put in front of a person.",
+      "successCriteria": [
+        "The outcome vocabulary contains no admitting value, so a run that wanted to approve something could not express it",
+        "A clean run names the person it is escorted to and what they are being asked to decide, rather than closing the feature",
+        "A run that a person never decided on is reported as awaiting a decision and never as done, however clean it was"
+      ]
+    },
+    {
+      "id": "an-unmeasured-member-is-not-a-zero",
+      "statement": "A member that could not be measured leaves the score entirely and lowers coverage instead, and the report says which.",
+      "successCriteria": [
+        "The overall is computed over the measured weight only and is renormalised, so a rubric with a member missing still reads on the same scale",
+        "Every unmeasured member carries the reason it could not be measured, because could-not-measure is a finding and not a blank",
+        "A coverage figure sits beside every overall, and a run below the declared coverage floor is reported as incomplete rather than as a number"
+      ]
+    },
+    {
+      "id": "a-floor-is-not-an-average",
+      "statement": "A member that measures something and finds it below its floor sinks the run whatever the other members said.",
+      "successCriteria": [
+        "Each floor breach is recorded per member with the value that breached it, not folded into the mean",
+        "A floor raised by a member that measures binds immediately; one raised by a member that judges is recorded and held inert until that member has been shown to repeat itself",
+        "A run reporting a high overall and a breached mechanical floor is a failure, and the report leads with the breach"
+      ]
+    },
+    {
+      "id": "the-verdict-names-what-it-read",
+      "statement": "Every verdict carries the revision and the files it was read at, so a later reader can ask whether it still describes the tree.",
+      "successCriteria": [
+        "The receipt names the revision and a content digest over the files the verdict spans",
+        "A verdict whose span has since changed is reported as needing a fresh look rather than being trusted or discarded",
+        "A span that names a path which is not there is reported rather than silently skipped, because a receipt over fewer files is a different receipt"
+      ]
+    },
+    {
+      "id": "the-members-do-not-read-each-other",
+      "statement": "Each member is given a bounded brief and the evidence for its own concern, never another member's verdict and never the implementer's account of the work.",
+      "successCriteria": [
+        "Each member's brief names its concern and the evidence it was given, and a member that asked for evidence it did not get says so",
+        "No member's input contains another member's score, so an agreement between two members is two readings rather than one echoed twice",
+        "The implementer's own report is absent from every member's input, because a party that authors the evidence has authored the verdict"
+      ]
+    },
+    {
+      "id": "rounds-are-budgeted-and-superseding",
+      "statement": "A feature gets a bounded number of rounds, each one a new record that supersedes rather than rewrites the last.",
+      "successCriteria": [
+        "Each round states which round it is and what the previous round said had to be addressed",
+        "An earlier round's verdict is kept exactly as it was, so what a decision was taken against stays readable",
+        "Past the declared budget the work refuses to run again and reports the feature as stalled, because a fourth argument is a question for a person"
+      ]
+    }
+  ],
+  "guidance": "Run the cheap mechanical members first and stop the moment one of them breaches a floor or raises a hard failure: paying judged members to discuss a feature that fails on a measurement is the most expensive way to learn nothing. Never let the party that built the thing author the evidence the members read. When a member cannot measure its concern, say so and let coverage fall rather than scoring it zero, because a confident low number is worse than an honest gap. And whatever the numbers say, hand the result to a person: the value of this work is that it prepares a decision, not that it takes one.",
+  "connectorTypes": [
+    "source_control",
+    "web_search",
+    "project_management"
+  ],
+  "connectorRoles": [
+    {
+      "role": "project_repository",
+      "type": "source_control",
+      "note": "the checkout the receipt is taken from and the code every member reads; without it there is no span and therefore no verdict that can be re-checked later"
+    },
+    {
+      "role": "prior_art",
+      "type": "web_search",
+      "note": "what a competitor already ships, for the member whose concern is rivalry; unbound where the project has no comparable market, and that member then reports unmeasured with its reason rather than guessing"
+    },
+    {
+      "role": "backlog",
+      "type": "project_management",
+      "note": "where the must-address list is filed so the next round starts from it rather than from memory"
+    }
+  ],
+  "recommendedTrigger": {
+    "kind": "manual",
+    "rationale": "The moment a council is worth paying for is a judgment the owner of the feature makes, not a clock or an event. Firing it on every merge would council work that is half done; firing it on a schedule would council whatever happened to be open that morning. The real trigger is a person or an App Master deciding that a major feature is finished, which is exactly the moment a manual dispatch expresses and no automatic one can. It is also the most expensive work in this roster, and expensive work that starts itself is how a budget disappears without anyone choosing."
+  },
+  "personalizationNeeds": [
+    "Which of this project's features are major, since a council on everything is a queue nobody reads and the tier is the adopter's call",
+    "What the members' floors and weights are here, because a rubric borrowed whole from another project scores this one against somebody else's priorities",
+    "Who the person escorting a clean result is addressed to, and where they answer, since the whole work is shaped around that handover",
+    "What counts as evidence in this project - a test run, a measured latency, a screenshot of the running thing - because a member given no evidence vocabulary will accept an assertion",
+    "Whether the judged members have been calibrated here yet, since an uncalibrated judge's floor is recorded and held inert rather than allowed to sink a run"
+  ],
+  "dependencies": [
+    "a named span of files per feature, without which the receipt covers nothing and the fourth outcome cannot be met",
+    "a human decision point that this work escorts to; where none exists the council produces verdicts nobody acts on, which is the failure the first outcome exists to prevent"
+  ],
+  "examples": [
+    {
+      "title": "The feature's own checkout, read for the receipt and by every member",
+      "connector": "codebase",
+      "connectorType": "source_control",
+      "notes": "The receipt is a revision plus a content digest over the spanned files, and it is what lets a verdict be re-checked months later instead of re-run. Taking it BEFORE the members run matters: a receipt taken afterwards describes a tree the verdict was not read at, which is the quiet way a stale verdict gets treated as current."
+    },
+    {
+      "title": "Prior art gathered for the rivalry member, capped and cited",
+      "connector": "brave-search",
+      "connectorType": "web_search",
+      "notes": "Bounded on purpose - a member that can search forever will, and the cost lands on a feature that may already have failed a mechanical floor. Where a project has no comparable market the role is left unbound and the member reports unmeasured with its reason, which lowers coverage honestly rather than inventing a rivalry score out of nothing."
+    },
+    {
+      "title": "The must-address list filed where the next round will look",
+      "connector": "codebase",
+      "connectorType": "project_management",
+      "notes": "A round that does not file what it found makes the next round pay to rediscover it. Filing it also makes the budget visible: three rounds against a list that never shrinks is the shape that should stop the work and ask a person, which is what the stalled outcome is for."
+    }
+  ],
+  "lessons": [],
+  "provenance": {
+    "fromRecipes": [],
+    "fromTemplates": [],
+    "authored": "2026-09-20 Council spark, WP3"
+  },
+  "inputSchema": [
+    {
+      "name": "project_id",
+      "type": "text",
+      "required": true,
+      "description": "The project the feature belongs to. The rubric, the tier and the escort all come from this project rather than from a shared default, because a council scored against another project's priorities certifies nothing about this one."
+    },
+    {
+      "name": "feature_slug",
+      "type": "text",
+      "required": true,
+      "description": "The one feature this council judges, by its stable slug. One subject per run is the whole shape: a council over two features produces a number that describes neither."
+    },
+    {
+      "name": "round_no",
+      "type": "text",
+      "required": false,
+      "description": "Which round this is. Empty means the next one after whatever the feature already has. Past the declared budget the work refuses rather than running, and reports the feature as stalled."
+    }
+  ]
+}

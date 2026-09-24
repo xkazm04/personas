@@ -19,7 +19,7 @@
 //! below are adapters over them.
 
 mod door;
-mod prompt;
+pub(crate) mod prompt;
 mod sampler;
 
 use std::sync::Arc;

@@ -5,6 +5,7 @@ use crate::db::models::{
 };
 
 use super::sampler::{dims_array, pins_array, AnchorDraw, DIM_NAMES, DIM_SCALES};
+use crate::commands::infrastructure::twin_voice::MACHINE_TELLS;
 
 /// English names of the ten curated presets (the TS catalog owns them). The
 /// roll prompt forbids them so a rolled style never masquerades as a preset.
@@ -200,6 +201,7 @@ pub(crate) fn build_style_roll_prompt(
          - Use the bio only where it gives a signal; never invent facts about the person.\n\
          - name: 2-4 evocative words, not any of: {presets}. summary: one sentence on how it sounds. avoid: one sentence on what it never does.\n\
          - sample: this style replying to \"Hi, could we move Thursday's meeting to next week?\" in {primary}, obeying its length dimension.\n\
+         - A person reads all four while choosing how they sound, so write them the way people talk, not the way products describe themselves. {tells}\n\
          \n\
          Return ONLY this JSON: {{\"candidates\":[{{\"name\":\"\",\"summary\":\"\",\"avoid\":\"\",\"dims\":{{\"formality\":0,\"warmth\":0,\"humor\":0,\"energy\":0,\"length\":0,\"directness\":0,\"expressiveness\":0,\"detail\":0}},\"sample\":\"\"}}]}}{repair}",
         name = person.name,
@@ -218,6 +220,7 @@ pub(crate) fn build_style_roll_prompt(
         pins = format_pins(pins),
         presets = PRESET_NAMES.join(", "),
         primary = person.primary_language(),
+        tells = MACHINE_TELLS,
         repair = repair_block(
             repair,
             "Return exactly 3 candidates, in the order of starting points A, B, C.",
@@ -253,6 +256,7 @@ pub(crate) fn build_style_materialize_prompt(
          - examples: exactly 3 messages this twin would send on that channel, replying to (1) a scheduling request, (2) a question they can answer, (3) a request they decline. Written in {primary}, each max 400 chars, obeying the channel's length dimension.\n\
          - constraints: 3-6 short \"Always...\"/\"Never...\" rules, max 160 chars each.\n\
          Same person across channels, register shifted. Write as the person, in first person. Never invent employers, clients, places or events absent from the bio; use [placeholders].\n\
+         The examples should read like messages a real person sent, in whatever register the style sets. {tells}\n\
          \n\
          Return ONLY this JSON: {{\"tones\":[{{\"channel\":\"\",\"voiceDirectives\":\"\",\"examples\":[\"\",\"\",\"\"],\"constraints\":[\"\"]}}]}}{repair}",
         name = person.name,
@@ -273,6 +277,7 @@ pub(crate) fn build_style_materialize_prompt(
             .unwrap_or_else(|| NOT_GIVEN.to_string()),
         scales = scale_lines(),
         primary = person.primary_language(),
+        tells = MACHINE_TELLS,
         repair = repair_block(
             repair,
             "Return exactly one entry per listed channel, using the channel names exactly as listed.",
@@ -325,6 +330,10 @@ mod tests {
         assert!(!p.contains("variety may be limited"));
         assert!(!p.contains(&"x".repeat(601)), "bio is capped at 600 chars");
         assert!(!p.contains("failed validation"));
+        assert!(
+            p.contains(MACHINE_TELLS),
+            "a person reads the candidates; they carry the tells list"
+        );
 
         let relaxed = build_style_roll_prompt(
             &person(),
@@ -372,6 +381,7 @@ mod tests {
         assert!(p.contains("standing directives not given"));
         assert!(p.contains("Written in Czech (cs)"));
         assert!(p.contains("tones: channel \"email\" missing"));
+        assert!(p.contains(MACHINE_TELLS));
     }
 
     #[test]

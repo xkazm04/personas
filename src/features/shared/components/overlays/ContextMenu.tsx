@@ -35,6 +35,11 @@ export interface ContextMenuItem {
   shortcut?: string;
   /** Draw a divider above this item. */
   separatorBefore?: boolean;
+  /** A second, wrapping caption line under the label — typically WHY a
+   *  disabled item is disabled, which a menu row has no tooltip to carry. */
+  hint?: string;
+  /** Test hook for the row's button. */
+  testId?: string;
   onSelect: () => void;
 }
 
@@ -178,6 +183,7 @@ export function ContextMenu({
             role="menuitem"
             tabIndex={-1}
             disabled={item.disabled}
+            data-testid={item.testId}
             onClick={() => {
               if (item.disabled) return;
               item.onSelect();
@@ -192,7 +198,14 @@ export function ContextMenu({
             }`}
           >
             {item.icon && <span className="w-3.5 h-3.5 flex-shrink-0 inline-flex">{item.icon}</span>}
-            <span className="flex-1 truncate">{item.label}</span>
+            {item.hint ? (
+              <span className="flex-1 min-w-0 flex flex-col">
+                <span className="truncate">{item.label}</span>
+                <span className="typo-caption whitespace-normal">{item.hint}</span>
+              </span>
+            ) : (
+              <span className="flex-1 truncate">{item.label}</span>
+            )}
             {item.shortcut && (
               <kbd className="ml-auto typo-caption text-foreground/70 font-mono tracking-tight">
                 {item.shortcut}

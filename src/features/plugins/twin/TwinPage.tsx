@@ -6,6 +6,9 @@ import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChu
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
 import { useReadinessCelebration } from './useReadinessCelebration';
+// TEMPORARY /contest scaffold — see experience/twinExperienceVariant.tsx.
+import { TwinExperienceHost } from './experience/opus';
+import { TwinExperienceVariantSwitch, VariantCreateHost, VariantSetupPage } from './experience/twinExperienceVariant';
 
 // Mirrors ContentBox's responsive ladder (see ContentLayout.tsx). Twin
 // Atelier pages render their own hero band instead of ContentHeader, so
@@ -16,7 +19,6 @@ const TWIN_PAGE_MIN_WIDTH = IS_MOBILE
   : 'min-w-[640px] md:min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]';
 
 const ProfilesPage = lazyRetry(() => import('./sub_profiles/ProfilesPage'));
-const SetupPage = lazyRetry(() => import('./setup/SetupPage'));
 const HubPage = lazyRetry(() => import('./hub/HubPage'));
 
 /** The three tabs this page renders. Anything else is redirected, never shown. */
@@ -90,6 +92,7 @@ export default function TwinPage() {
 
   return (
     <div className="h-full w-full flex flex-col">
+      <TwinExperienceVariantSwitch />
       <div
         data-testid="twin-page"
         key={twinTab}
@@ -97,10 +100,13 @@ export default function TwinPage() {
       >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
-          {twinTab === 'setup' && <SetupPage onOpenHub={() => setTwinTab('hub')} />}
+          {twinTab === 'setup' && <VariantSetupPage onOpenHub={() => setTwinTab('hub')} />}
           {twinTab === 'hub' && <HubPage />}
         </Suspense>
       </div>
+      {/* Outside the keyed tab wrapper: these layers outlive tab changes under them. */}
+      <TwinExperienceHost />
+      <VariantCreateHost />
     </div>
   );
 }

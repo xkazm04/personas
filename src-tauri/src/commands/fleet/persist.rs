@@ -37,7 +37,10 @@ use tauri::{AppHandle, Manager};
 use crate::db::repos::fleet_sessions::{self, FleetSessionRow};
 use crate::db::DbPool;
 
-use super::registry::{now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP};
+use super::budgets::{gpu_to_token, token_to_gpu};
+use super::registry::{
+    now_ms, registry, AdmissionFacts, FleetSessionInner, OutputRing, OUTPUT_RING_CAP,
+};
 use super::types::{
     mode_to_token, state_to_token, token_to_mode, token_to_state, FleetSessionState,
 };
@@ -143,6 +146,12 @@ pub fn row_from_inner(inner: &FleetSessionInner) -> Option<FleetSessionRow> {
         persona_id: inner.persona_id.clone(),
         goal_id: inner.goal_id.clone(),
         cycle_index: inner.cycle_index,
+        machine_units: inner.admission.machine_units,
+        plan_units: inner.admission.plan_units,
+        gpu_class: inner.admission.gpu.map(|g| gpu_to_token(g).to_string()),
+        // `0` skips is "never skipped", which the column spells as NULL.
+        skip_count: Some(inner.admission.skip_count).filter(|n| *n > 0),
+        first_unfit_at_ms: inner.admission.first_unfit_at_ms,
     })
 }
 
@@ -222,6 +231,13 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         persona_id: row.persona_id.clone(),
         goal_id: row.goal_id.clone(),
         cycle_index: row.cycle_index,
+        admission: AdmissionFacts {
+            machine_units: row.machine_units,
+            plan_units: row.plan_units,
+            gpu: row.gpu_class.as_deref().and_then(token_to_gpu),
+            skip_count: row.skip_count.unwrap_or(0),
+            first_unfit_at_ms: row.first_unfit_at_ms,
+        },
         master: Mutex::new(None),
         writer: Mutex::new(None),
         hibernating: AtomicBool::new(false),
@@ -625,6 +641,7 @@ mod tests {
             persona_id: None,
             goal_id: None,
             cycle_index: None,
+            admission: Default::default(),
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),

@@ -11,8 +11,12 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { kpiTrack, paceDescriptor } from './kpiMath';
 import { distancePct } from './kpiDistance';
 
-/** Cell/lane state. `unmeasured` = nothing measured, so nothing to say. */
-export type KpiBand = 'met' | 'healthy' | 'mixed' | 'strained' | 'unmeasured';
+/** Cell/lane state. `unmeasured` = nothing measured, so nothing to say;
+ *  `watched` = measured, but nothing here can carry a verdict yet. The two
+ *  were one value until the kpi-descent contest (2026-09-21): collapsing them
+ *  contradicted `kpiMath`'s own rule that `unpaced` and `unmeasured` are
+ *  different claims, and it painted a group somebody IS reading as a blank. */
+export type KpiBand = 'met' | 'healthy' | 'mixed' | 'strained' | 'watched' | 'unmeasured';
 
 /** Theme color per band — status hues carry status ONLY; `unmeasured` gets the
  *  muted tone and is drawn hatched (`HATCH_BG` in kpiChartTheme), never filled. */
@@ -21,12 +25,13 @@ export const BAND_COLOR: Record<KpiBand, string> = {
   healthy: 'var(--primary)',
   mixed: 'var(--status-warning)',
   strained: 'var(--status-error)',
+  watched: 'var(--status-info)',
   unmeasured: 'var(--muted-foreground)',
 };
 
 /** Worst first. `unmeasured` sorts LAST: it is not a verdict, and the map
  *  should read attention before absence. */
-export const BAND_ORDER: KpiBand[] = ['strained', 'mixed', 'healthy', 'met', 'unmeasured'];
+export const BAND_ORDER: KpiBand[] = ['strained', 'mixed', 'healthy', 'met', 'watched', 'unmeasured'];
 export function bandRank(b: KpiBand): number {
   return BAND_ORDER.indexOf(b);
 }
@@ -88,7 +93,7 @@ const MIXED_SHARE = 0.25;
 export function bandOf(c: Pick<Counts, 'measured' | 'met' | 'onTrack' | 'offTrack'>): KpiBand {
   if (c.measured === 0) return 'unmeasured';
   const verdicts = c.met + c.onTrack + c.offTrack;
-  if (verdicts === 0) return 'unmeasured';
+  if (verdicts === 0) return 'watched';
   const share = c.offTrack / verdicts;
   if (share >= STRAINED_SHARE) return 'strained';
   if (share >= MIXED_SHARE) return 'mixed';

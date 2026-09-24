@@ -98,7 +98,7 @@ export function RegistryTab({ activeProjectId, axis = 'workspace', onOpenInfo }:
   return (
     <div className="flex flex-col h-full min-h-0 gap-2.5" data-testid={`skills-registry-${axis}`}>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="typo-label text-foreground opacity-60 truncate">
+        <span className="typo-label text-foreground truncate">
           <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ backgroundColor: model.header?.color ?? 'var(--primary)' }} />
           {axis === 'project'
             ? tx(d.skills_registry_project_summary, { name: model.header?.name ?? '', groups: model.columns.length, skills: model.skills.length })

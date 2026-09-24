@@ -15,7 +15,7 @@ import { getExecution } from '@/api/agents/executions';
 import { toastCatch } from '@/lib/silentCatch';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { X } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { AnnotationEditor } from '../components/AnnotationEditor';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
 import { useDryRun } from '../libs/useDryRun';
@@ -123,7 +123,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
           {activeTab === 'director' && directorReviewMd ? (
             <div className="rounded-modal border border-violet-500/20 bg-violet-500/[0.03] p-5">
               <div className="max-w-3xl mx-auto">
-                <MarkdownRenderer content={directorReviewMd} />
+                <RichMarkdown content={directorReviewMd} />
               </div>
             </div>
           ) : activeTab === 'replay' ? (

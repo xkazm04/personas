@@ -166,6 +166,25 @@ describe('isVerifiable — never judge work that never shipped', () => {
     expect(isVerifiable(finding({ status: 'pending' }), [task({})])).toBe(false);
   });
 
+  // The regression this pins: `accepted` used to be where finished work stayed
+  // forever, so it was the only status a shipped finding could hold. The
+  // backlog contract gave that state its own name and moved 518 finished items
+  // into it in one migration — a clause naming only `accepted` would have taken
+  // every one of them out of the sweep, silently.
+  it('true for a delivered finding whose task completed', () => {
+    expect(isVerifiable(finding({ status: 'delivered' }), [task({})])).toBe(true);
+  });
+
+  it('false for a delivered finding with no completed task to re-measure', () => {
+    expect(isVerifiable(finding({ status: 'delivered' }), [task({ status: 'failed' })])).toBe(false);
+  });
+
+  // `expired` is the reaper's word, not a verdict anybody passed, and there is
+  // nothing shipped behind it to measure.
+  it('false for an expired finding', () => {
+    expect(isVerifiable(finding({ status: 'expired' }), [task({})])).toBe(false);
+  });
+
   it('false for a classic scanner idea (no origin)', () => {
     expect(isVerifiable(finding({ origin: null }), [task({})])).toBe(false);
   });

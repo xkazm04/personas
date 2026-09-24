@@ -24,7 +24,11 @@ use serde::Deserialize;
 use serde_json::json;
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::db::models::{NoteStatus, NotepadIngestReport};
+use crate::db::models::{
+    NoteComment, NoteCommentAuthor, NoteCommentKind, NoteCommentRef, NoteStatus,
+    NotepadIngestReport,
+};
+use crate::db::repos::dev::note_comments::{self as comments_repo, NewNoteComment};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::AppState;
@@ -58,6 +62,64 @@ struct NoteRunResult {
     /// `"completed"` | `"failed"`.
     #[serde(default)]
     status: Option<String>,
+    /// The run's summary for the operator (the skill caps it at 2000
+    /// characters). Becomes the body of the run's `review` thread entry.
+    #[serde(default)]
+    summary: Option<String>,
+    /// Optional `[{ "body_md": "..." }]` — anything the agent wants to say to
+    /// the operator beyond the summary. Additive: `schema_version` stays 1.
+    ///
+    /// Held as raw JSON and narrowed by [`agent_comments`] rather than typed
+    /// here, because this field is the one part of the file a result can get
+    /// wrong WITHOUT the run being wrong — a malformed `comments` must cost the
+    /// comments, never the completion.
+    #[serde(default)]
+    comments: Option<serde_json::Value>,
+}
+
+/// Comments one result may post. Past this the agent is writing a log into
+/// the operator's thread, not talking to him.
+const MAX_AGENT_COMMENTS: usize = 8;
+
+/// Longest thread entry an ingest writes, in bytes (clipped on a char
+/// boundary). Mirrors the 4 KiB the Athena ops use.
+const MAX_THREAD_BODY_BYTES: usize = 4096;
+
+/// Who a `/note-task` run's thread entries are signed by. The skill IS the
+/// author; the fleet session label is a UI convention this module cannot see.
+const NOTE_TASK_AUTHOR: &str = "note-task";
+
+/// Clip to at most `max` bytes without splitting a codepoint.
+pub(crate) fn clip_bytes(s: &str, max: usize) -> &str {
+    if s.len() <= max {
+        return s;
+    }
+    let mut end = max;
+    while !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
+/// The non-empty `body_md` strings of a result's `comments`, capped. Anything
+/// that is not an array of objects carrying a string `body_md` is skipped with
+/// a warning.
+fn agent_comments(note_id: &str, raw: Option<&serde_json::Value>) -> Vec<String> {
+    let Some(raw) = raw else {
+        return Vec::new();
+    };
+    let Some(items) = raw.as_array() else {
+        tracing::warn!(note = %note_id, "notepad ingest: result.json `comments` is not an array, ignored");
+        return Vec::new();
+    };
+    items
+        .iter()
+        .filter_map(|item| item.get("body_md").and_then(|b| b.as_str()))
+        .map(str::trim)
+        .filter(|b| !b.is_empty())
+        .take(MAX_AGENT_COMMENTS)
+        .map(|b| clip_bytes(b, MAX_THREAD_BODY_BYTES).to_string())
+        .collect()
 }
 
 #[derive(Debug, Deserialize)]
@@ -164,10 +226,12 @@ fn write_marker(dir: &Path, note_id: &str, outcome: &str) {
 /// testable without a `tauri::AppHandle`.
 ///
 /// `on_change` is called once per note whose row actually moved, with the note
-/// id and its status AFTER the write.
+/// id and its status AFTER the write. `on_comment` is called once per thread
+/// entry the sweep appended (see [`post_run_thread`]).
 pub fn sweep_notepad_runs_core(
     pool: &DbPool,
     on_change: &mut dyn FnMut(&str, NoteStatus),
+    on_comment: &mut dyn FnMut(&NoteComment),
 ) -> NotepadIngestReport {
     let mut report = NotepadIngestReport::default();
 
@@ -268,8 +332,16 @@ pub fn sweep_notepad_runs_core(
                 ) {
                     Ok(_) => {
                         report.completed += 1;
-                        close_note_task_run(pool, &note.id, "completed", &raw, &dir);
+                        let run_id = close_note_task_run(pool, &note.id, "completed", &raw, &dir);
                         on_change(&note.id, NoteStatus::Completed);
+                        post_run_thread(
+                            pool,
+                            &note.id,
+                            run_id.as_deref(),
+                            "completed",
+                            &parsed,
+                            on_comment,
+                        );
                         write_marker(&dir, &note.id, "completed");
                     }
                     Err(e) => {
@@ -283,8 +355,16 @@ pub fn sweep_notepad_runs_core(
             Some("failed") => match repo::set_result_json(pool, &note.id, &raw) {
                 Ok(_) => {
                     report.failed += 1;
-                    close_note_task_run(pool, &note.id, "failed", &raw, &dir);
+                    let run_id = close_note_task_run(pool, &note.id, "failed", &raw, &dir);
                     on_change(&note.id, status);
+                    post_run_thread(
+                        pool,
+                        &note.id,
+                        run_id.as_deref(),
+                        "failed",
+                        &parsed,
+                        on_comment,
+                    );
                     write_marker(&dir, &note.id, "failed");
                 }
                 Err(e) => {
@@ -300,17 +380,31 @@ pub fn sweep_notepad_runs_core(
     report
 }
 
-/// Close the note's open `note_task` run with the outcome the result reported.
+/// Close the note's open `note_task` run with the outcome the result reported,
+/// returning the run's id (`None` only when no row could be read or written).
 ///
 /// The pad opens a run row when it dispatches; a run the operator started by
 /// hand (`/note-task <id>` in a terminal, no dispatch) has none, and gets one
 /// recorded here so the note's history is the runs it actually had rather than
 /// the dispatches the pad remembers making.
 ///
+/// **Idempotent on a re-sweep.** A failed run's ingest can repeat (the note
+/// stays `in_progress`, so a marker that did not write lets the next tick
+/// re-read the same file). The newest closed `note_task` run already carrying
+/// this exact report IS that run, so it is returned as-is instead of a second
+/// row being minted for the same result — which is also what keys the thread
+/// writes in [`post_run_thread`] to one review per run.
+///
 /// Best-effort throughout: the note's own status and `result_json` already
 /// landed, and a missing ledger row must not turn a successful ingest into a
 /// failure.
-fn close_note_task_run(pool: &DbPool, note_id: &str, outcome: &str, raw: &str, dir: &Path) {
+fn close_note_task_run(
+    pool: &DbPool,
+    note_id: &str,
+    outcome: &str,
+    raw: &str,
+    dir: &Path,
+) -> Option<String> {
     let run_dir = dir.to_string_lossy().into_owned();
     let existing = repo::newest_running_run(pool, note_id, "note_task").unwrap_or_else(|e| {
         tracing::warn!(note = %note_id, error = %e, "notepad ingest: could not read the note's open run");
@@ -318,17 +412,183 @@ fn close_note_task_run(pool: &DbPool, note_id: &str, outcome: &str, raw: &str, d
     });
     let run_id = match existing {
         Some(run) => run.id,
-        None => match repo::record_run_start(pool, note_id, "note_task", None, None) {
-            Ok(run) => run.id,
-            Err(e) => {
-                tracing::warn!(note = %note_id, error = %e, "notepad ingest: could not open a run row for an undispatched run");
-                return;
+        None => {
+            let already = repo::list_runs(pool, note_id)
+                .unwrap_or_default()
+                .into_iter()
+                .find(|r| r.kind == "note_task");
+            if let Some(run) =
+                already.filter(|r| r.status != "running" && r.summary_json.as_deref() == Some(raw))
+            {
+                return Some(run.id);
             }
-        },
+            match repo::record_run_start(pool, note_id, "note_task", None, None) {
+                Ok(run) => run.id,
+                Err(e) => {
+                    tracing::warn!(note = %note_id, error = %e, "notepad ingest: could not open a run row for an undispatched run");
+                    return None;
+                }
+            }
+        }
     };
     if let Err(e) = repo::complete_run(pool, &run_id, outcome, Some(raw), Some(&run_dir)) {
         tracing::warn!(note = %note_id, run = %run_id, error = %e, "notepad ingest: run row left open");
     }
+    Some(run_id)
+}
+
+/// Append a run's entries to the note's thread and hand each to `on_comment`.
+///
+/// In thread order: each agent `comment` from `result.json`, then a `system` /
+/// `status` row whose `ref_id` is the run's outcome (`completed` | `failed`),
+/// then the `review` of the run LAST. The outcome row sits immediately before
+/// the review so the pad can label it; the review is last so the newest unread
+/// entry, the one the pad springs out of the card, carries Approve / Reject.
+///
+/// Keyed on the run id: a note that already carries this run's review gets
+/// nothing (a re-sweep of the same result). Without a run id there is nothing
+/// to key on, and the review's `ref_id` is what the rework path follows, so
+/// the thread writes are skipped with a warning rather than posted unkeyed.
+///
+/// Best-effort like the rest of the door: the note already moved.
+fn post_run_thread(
+    pool: &DbPool,
+    note_id: &str,
+    run_id: Option<&str>,
+    outcome: &'static str,
+    parsed: &NoteRunResult,
+    on_comment: &mut dyn FnMut(&NoteComment),
+) {
+    let Some(run_id) = run_id else {
+        tracing::warn!(note = %note_id, "notepad ingest: no run row, so the run's thread entries were not posted");
+        return;
+    };
+    match comments_repo::has_run_review(pool, note_id, run_id) {
+        Ok(true) => return,
+        Ok(false) => {}
+        Err(e) => {
+            tracing::warn!(note = %note_id, run = %run_id, error = %e, "notepad ingest: could not check for an existing run review");
+            return;
+        }
+    }
+
+    let summary = parsed
+        .summary
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| clip_bytes(s, MAX_THREAD_BODY_BYTES).to_string());
+    let comments = agent_comments(note_id, parsed.comments.as_ref());
+
+    let mut rows: Vec<NewNoteComment<'_>> = Vec::with_capacity(comments.len() + 2);
+    for body in &comments {
+        rows.push(NewNoteComment {
+            note_id,
+            author_kind: NoteCommentAuthor::Agent,
+            author_name: Some(NOTE_TASK_AUTHOR),
+            kind: NoteCommentKind::Comment,
+            body_md: body,
+            ref_kind: None,
+            ref_id: None,
+            verdict: None,
+        });
+    }
+    // The run's outcome, as a `system` / `status` row immediately BEFORE the
+    // review, so the pad can label the review ("run completed" / "run failed")
+    // from the row above it without the schema carrying an outcome column.
+    // `completed` is also the note's own milestone; `failed` moves no status
+    // and is purely the run's outcome.
+    rows.push(NewNoteComment::status_milestone(note_id, outcome));
+    rows.push(NewNoteComment {
+        note_id,
+        author_kind: NoteCommentAuthor::Agent,
+        author_name: Some(NOTE_TASK_AUTHOR),
+        kind: NoteCommentKind::Review,
+        // No summary: the outcome token. The pad labels the entry from
+        // `ref_kind = run`, so the body only has to be non-empty data.
+        body_md: summary.as_deref().unwrap_or(outcome),
+        ref_kind: Some(NoteCommentRef::Run),
+        ref_id: Some(run_id),
+        verdict: None,
+    });
+
+    for row in &rows {
+        match comments_repo::insert_comment(pool, row) {
+            Ok(comment) => on_comment(&comment),
+            Err(e) => {
+                tracing::warn!(note = %note_id, run = %run_id, kind = row.kind.as_str(), error = %e, "notepad ingest: thread entry not posted");
+            }
+        }
+    }
+}
+
+/// Move a finished attempt's artifacts out of the note's run dir, so the NEXT
+/// run of the same note can be ingested at all.
+///
+/// The sweeper's idempotency spine is `runs/<note_id>/ingested.json`, and the
+/// run dir is keyed by NOTE, not by run. A rejected run that is re-dispatched
+/// (`completed → published`, the rework move) would otherwise find the old
+/// marker still sitting there and be skipped forever. So the rework path calls
+/// this first: `started.json`, `result.json`, `report.md` and `ingested.json`
+/// move into `runs/<note_id>/attempts/<label>/`, where the next run can still
+/// read what was rejected (the `note-task` skill's Phase 0 points there).
+///
+/// A note with no project or no run dir has nothing to move — `Ok`. Any other
+/// I/O failure is an error, because a rework that could not clear the marker
+/// is a rework whose result will never land, and the caller must refuse the
+/// move rather than report success.
+pub(crate) fn archive_attempt(pool: &DbPool, note_id: &str, label: &str) -> Result<(), AppError> {
+    let note = repo::get_note(pool, note_id)?;
+    let Some(project_id) = note.project_id.as_deref() else {
+        return Ok(());
+    };
+    let project = repo::get_project_by_id(pool, project_id)?;
+    archive_attempt_in(&run_dir(&project.root_path, note_id), label)
+}
+
+/// The run artifacts [`archive_attempt`] moves aside.
+const ATTEMPT_ARTIFACTS: [&str; 4] = ["started.json", "result.json", "report.md", "ingested.json"];
+
+/// The filesystem half of [`archive_attempt`], over a known run dir.
+fn archive_attempt_in(dir: &Path, label: &str) -> Result<(), AppError> {
+    if !dir.is_dir() || !ATTEMPT_ARTIFACTS.iter().any(|a| dir.join(a).exists()) {
+        return Ok(());
+    }
+    // The label is a run id (a uuid); anything else is reduced to a path-safe
+    // token so it can never climb out of `attempts/`.
+    let mut safe: String = label
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if safe.is_empty() {
+        safe = "attempt".into();
+    }
+    let attempts = dir.join("attempts");
+    let mut dest = attempts.join(&safe);
+    if dest.exists() {
+        dest = attempts.join(format!(
+            "{safe}-{}",
+            chrono::Utc::now().format("%Y%m%dT%H%M%S%3f")
+        ));
+    }
+    std::fs::create_dir_all(&dest).map_err(|e| {
+        AppError::Internal(format!("notepad rework: create {}: {e}", dest.display()))
+    })?;
+    for name in ATTEMPT_ARTIFACTS {
+        let from = dir.join(name);
+        if from.exists() {
+            std::fs::rename(&from, dest.join(name)).map_err(|e| {
+                AppError::Internal(format!("notepad rework: move {}: {e}", from.display()))
+            })?;
+        }
+    }
+    Ok(())
 }
 
 /// `started.json` is ours when it names this note and carries a version we
@@ -357,7 +617,10 @@ pub fn sweep_pending_notepad_ingests(app: &AppHandle) {
             tracing::warn!(event = event_name::NOTEPAD_NOTE_CHANGED, error = %e, "notepad: note-changed emit failed");
         }
     };
-    let report = sweep_notepad_runs_core(&state.db, &mut emit);
+    let mut emit_comment = |comment: &NoteComment| {
+        crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, comment);
+    };
+    let report = sweep_notepad_runs_core(&state.db, &mut emit, &mut emit_comment);
     if report != NotepadIngestReport::default() {
         tracing::info!(
             started = report.started,

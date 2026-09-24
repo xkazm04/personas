@@ -9,6 +9,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import type { DevNote } from '@/lib/bindings/DevNote';
 
+import { __resetNoteAskStateForTests } from '../notepadAskState';
 import { NoteDispatchBar } from '../parts/NoteDispatchBar';
 
 const addToast = vi.fn();
@@ -54,6 +55,12 @@ const note = (over: Partial<DevNote> = {}): DevNote =>
   }) as DevNote;
 
 const project = { id: 'p1', name: 'personas', root_path: '/repo' } as never;
+
+// The "asking" wait is a module store keyed by note id (it outlives the bar by
+// design), so every case starts from no open wait.
+beforeEach(() => {
+  __resetNoteAskStateForTests();
+});
 
 function bar(over: Partial<Parameters<typeof NoteDispatchBar>[0]> = {}) {
   const actions = {

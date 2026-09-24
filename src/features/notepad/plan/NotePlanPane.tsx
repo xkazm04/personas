@@ -108,6 +108,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
           onChange={(bodyMd) => onPatch({ bodyMd })}
           readOnly={readOnly}
           toolbar={!readOnly}
+          spellCheckToggle
           preview="toggle"
           rows={18}
           ariaLabel={t.notepad.editor_label}

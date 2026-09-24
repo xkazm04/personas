@@ -44,4 +44,24 @@ verify_state: string | null, verify_checked_at: string | null,
  * The RE-MEASURED reading (same shape as `evidence`) — lets a verdict be
  * audited before-vs-after rather than taken on trust.
  */
-verify_evidence: string | null, created_at: string, updated_at: string, };
+verify_evidence: string | null, 
+/**
+ * The numbered execution plan, as the JSON of an [`IdeaPlan`].
+ *
+ * Carried as the raw string rather than the parsed struct because this row
+ * is read on every list and page and most readers only need to know
+ * WHETHER there is a plan; `IdeaPlan::from_json` is one call away for the
+ * ones that render it.
+ *
+ * It was write-only for two commits — `file_idea` serialised it and
+ * nothing could read it back, because the column reached neither
+ * `IDEA_COLUMNS` nor this struct. Two separate builders hit that wall from
+ * opposite directions in the same wave, which is what a field with a
+ * producer and no consumer always costs.
+ */
+plan: string | null, 
+/**
+ * `full` or `draft` — whether the item carries everything a dispatch
+ * needs. A `draft` is stored and visible; it simply cannot become a task.
+ */
+completeness: string | null, created_at: string, updated_at: string, };

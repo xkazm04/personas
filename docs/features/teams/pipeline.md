@@ -149,7 +149,7 @@ collapsed them into two surfaces under **Monitor → Channels**:
 
 | Was | Is now |
 | --- | --- |
-| `sub_redRoom/` — a read-only comm log, client-fused from four `list*` calls on a 10s timer pulling 500 unscoped `persona_events` | **Stream** (`fleet/monitor/channels/Stream.tsx`) — one virtualized log with composable lenses. Red Room's 8 event families, its callsign lens (personas ranked by traffic) and its "Heard by" chips all survive; "Heard by" is now a **server-side subscription join** (`consumers`) rather than an N-per-member client fan-out. |
+| `sub_redRoom/` — a read-only comm log, client-fused from four `list*` calls on a 10s timer pulling 500 unscoped `persona_events` | **Stream** (`fleet/monitor/channels/Stream.tsx`) — one virtualized log with composable lenses. Red Room's 8 event families, its callsign lens (personas ranked by traffic) and its "Heard by" chips all survive; "Heard by" is now a **server-side subscription join** (`consumers`) rather than an N-per-member client fan-out. Since 2026-09-21 it is a **decision log**: steps, events, memory and deliberation only (messages and Slack live in Conversations and are not fetched); each row leads with its kind glyph and a short headline (`decisionTitle`), with the long form in the detail modal. |
 | `sub_collab/CollabPane` + `CollabLiveCorrespondence` — the living chat, unvirtualized and paging upward forever | **Conversations** (`fleet/monitor/channels/ConversationBriefing.tsx`) — a virtualized messenger (`measureElement`) with a sidebar of projects-as-conversations, unread badges, and assignments/deliberations rendered as bands. |
 
 What survives from `sub_collab/`: `useTeamChannel.ts` (now a thin selector over the shared
@@ -242,6 +242,30 @@ Read surfaces (the Monitor's Conversations view) get bridges from the backend
 command `list_team_slack_bridges`, **not** from the persona roster —
 `list_personas` is a lean projection that returns `notification_channels` blank,
 so a frontend-derived index would always read "unbridged".
+
+## A team can be a workspace's cross-project group
+
+Alongside the kinds of team above, `persona_teams` carries `workspace_id`: set on
+exactly one project-less team per workspace (enforced by the partial unique index
+`idx_persona_teams_workspace_group`, not by convention), and null on every team that
+is a project's roster. That team is the workspace's **cross-project group** — where a
+persona is filed when it works across all of the workspace's projects rather than
+inside one of them. It is created with the workspace, renamed with it, and unbound
+rather than deleted if the workspace goes away.
+
+Two consequences for anything that reads teams:
+
+- **Membership is still `personas.home_team_id`.** `persona_team_members` is a
+  different fact ("works with the team"), and the surfaces that show a group's roster
+  — Fleet ▸ Activity among them — read the first, not the second.
+- **The ts-rs binding spells the column `workspace_id?: string`, not `string | null`.**
+  That is deliberate: a required nullable field breaks every TypeScript object literal
+  that builds a whole `PersonaTeam`, and those live in other features' files. Consumers
+  normalise it (`tm.workspace_id ?? null`) at the door and keep their own model
+  two-valued; do not "fix" the binding to a bare `Option`.
+
+Renaming a group is an ordinary `update_team` with `{ name }` — the same partial-update
+semantics as any other team.
 
 ## State and backend
 

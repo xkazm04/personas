@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% 7denního okna",
     "fleet_concurrency_label": "Relace flotily",
     "fleet_concurrency_aria": "Maximum souběžných relací flotily",
-    "fleet_concurrency_hint": "Kolik relací Claude Code smí běžet najednou, napříč všemi odesílateli. Nad touto hranicí je odeslání zařazeno do fronty a spustí se samo, jakmile se uvolní slot. Stejné nastavení zapisuje krokovač v hlavičce přehledu Aktivita."
+    "fleet_concurrency_hint": "Kolik relací Claude Code smí běžet najednou, napříč všemi odesílateli. Nad touto hranicí je odeslání zařazeno do fronty a spustí se samo, jakmile se uvolní slot. Stejné nastavení zapisuje krokovač v hlavičce přehledu Aktivita.",
+    "dynamic_budgets_hint": "Připouští běhy flotily podle živých rozpočtů stroje, GPU a plánu s využitím profilu zdrojů každého pověření. Vypněte pro návrat k pevnému limitu relace výše.",
+    "dynamic_budgets_label": "Dynamické rozpočty flotily"
   },
   "notifications": {
     "digest_description": "Týdenní notifikace shrnující zdravotní problémy napříč všemi agenty s celkovým skóre zdraví",

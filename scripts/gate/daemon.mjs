@@ -436,7 +436,7 @@ const server = http.createServer(async (req, res) => {
     send(res, 404, { error: 'not found' });
   } catch (e) {
     log(`request failed: ${(e && e.stack) || e}`);
-    if (!res.headersSent) send(res, 500, { error: String((e && e.message) || e) });
+    if (!res.headersSent) send(res, 500, { error: 'internal error' });
   }
 });
 

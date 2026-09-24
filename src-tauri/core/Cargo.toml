@@ -34,62 +34,55 @@ p2p = []
 desktop = ["dep:keyring"]
 
 [dependencies]
-regex = "1"
+regex = { workspace = true }
 # AppError's #[from] conversions pull these in. Note what is NOT here: no other
 # Personas crate. "Core" means no INTERNAL dependencies — external leaf crates
 # are fine and are shared with the desktop crate anyway (same versions/features,
 # so cargo unifies them and nothing is compiled twice).
 #
-# EVERY version/feature set below is copied verbatim from the desktop crate's
-# Cargo.toml. Keep them identical: if they drift, cargo stops unifying the
-# dependency and compiles it twice, which costs exactly the build time this
-# crate split exists to reclaim.
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# Versions and base feature sets come from [workspace.dependencies] in
+# ../Cargo.toml, so they cannot drift between the four crates.
+serde = { workspace = true }
+serde_json = { workspace = true }
 # Scope derivation walks a member repo to size its territories (harvest_scopes).
-walkdir = "2"
-thiserror = "2"
-rusqlite = { version = "0.38", features = ["bundled", "hooks", "preupdate_hook"] }
-r2d2 = "0.8"
+walkdir = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { workspace = true, features = ["preupdate_hook"] }
+r2d2 = { workspace = true }
 # error_taxonomy's UsageLimit carries a reset timestamp.
-chrono = { version = "0.4", features = ["serde"] }
-ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
+chrono = { workspace = true }
+ts-rs = { workspace = true }
 
 # --- crate-split step 3: models / validation / crypto / cron / url_safety ---
-tracing = "0.1"
-r2d2_sqlite = "0.32"                                    # pool::DbPool
-uuid = { version = "1", features = ["v4", "v5"] }
-chrono-tz = "0.10"                                      # cron: timezone-aware schedules
-url = "2"                                               # url_safety
-hex = "0.4"
-rand = "0.8"
+tracing = { workspace = true }
+r2d2_sqlite = { workspace = true }  # pool::DbPool
+uuid = { workspace = true }
+chrono-tz = { workspace = true }  # cron: timezone-aware schedules
+url = { workspace = true }  # url_safety
+hex = { workspace = true }
+rand = { workspace = true }
 # crypto: AES-256-GCM credential vault + RSA key exchange + HKDF derivation.
-aes-gcm = "0.10"
-base64 = "0.22"
-sha2 = "0.10"
-hkdf = "0.12"
-rsa = "0.9"
-zeroize = { version = "1", features = ["derive"] }
+aes-gcm = { workspace = true }
+base64 = { workspace = true }
+sha2 = { workspace = true }
+hkdf = { workspace = true }
+rsa = { workspace = true }
+zeroize = { workspace = true }
 # url_safety implements `reqwest::dns::Resolve` for the SSRF-safe client.
-reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
-tokio = { version = "1", features = [
-    "rt-multi-thread", "macros", "sync", "time",
-    "process", "io-util", "fs", "net", "signal",
-] }
-iana-time-zone = "0.1"                                  # models::trigger, local-tz default
-whoami = "1"                                            # crypto, machine-bound key derivation
-ammonia = "4"                                           # validation, HTML sanitization
-tempfile = "3"                                          # validation, atomic file writes
+reqwest = { workspace = true }
+tokio = { workspace = true }
+iana-time-zone = { workspace = true }  # models::trigger, local-tz default
+whoami = { workspace = true }  # crypto, machine-bound key derivation
+ammonia = { workspace = true }  # validation, HTML sanitization
+tempfile = { workspace = true }  # validation, atomic file writes
 # trace.rs emits Sentry breadcrumbs for engine spans.
-sentry = { version = "0.34", default-features = false, features = [
-    "backtrace", "contexts", "panic", "rustls", "reqwest"
-] }
+sentry = { workspace = true }
 
 # Backend features are required in keyring 3.x — without one of `apple-native`,
 # `windows-native`, or `sync-secret-service`, the crate ships its mock backend
-# which silently no-ops every write and reads back nothing. Spec copied verbatim
-# from the desktop crate.
-keyring = { version = "3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
+# which silently no-ops every write and reads back nothing. The three backends are set
+# once, in [workspace.dependencies].
+keyring = { workspace = true, optional = true }
 
 # crypto derives a machine-bound key from the real uid, and validation opens
 # files with O_NOFOLLOW — both behind #[cfg(unix)], so this is unix-only.
@@ -97,16 +90,14 @@ keyring = { version = "3", optional = true, features = ["apple-native", "windows
 # on Windows, where those cfg blocks compile out, so `libc` was never needed
 # locally and every Linux/macOS build failed with E0433.
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
+libc = { workspace = true }
 
 # crypto uses DPAPI (CryptProtectData) and validation opens files with explicit
-# share flags. Feature list is the desktop crate's, trimmed to what core uses.
+# share flags. Core needs Win32_Foundation, Win32_Security_Cryptography and
+# Win32_Storage_FileSystem, which is the workspace spec as-is; the desktop and
+# engine crates add three more on top.
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = [
-    "Win32_Foundation",
-    "Win32_Security_Cryptography",
-    "Win32_Storage_FileSystem",
-] }
+windows = { workspace = true }
 
 [lints]
 workspace = true

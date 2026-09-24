@@ -13,7 +13,20 @@ focus: "identity" | "tone" | "channels" | "memories",
 /**
  * Tone channel the question is about when `focus == "tone"`.
  */
-toneChannel: string | null, suggestions: Array<SetupSuggestion>, proposals: Array<SetupProposal>, 
+toneChannel: string | null, 
+/**
+ * How the question wants answering. `"pick"`: the suggestions are real
+ * alternatives to choose between. `"write"`: the answer IS a writing
+ * sample (a reply drill, a pasted message), so the person types it and
+ * `suggestions` is empty by contract — a sample the model wrote would
+ * teach the twin the model's voice instead of theirs.
+ */
+answerMode: "pick" | "write", 
+/**
+ * For a `"write"` turn, the message they are replying to, exactly as it
+ * would arrive. `None` for every other question.
+ */
+incoming: string | null, suggestions: Array<SetupSuggestion>, proposals: Array<SetupProposal>, 
 /**
  * ADVISORY ONLY. The model's guess that this slot now has enough. The
  * client derives completion from readiness and must not promote this to

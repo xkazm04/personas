@@ -7,3 +7,4 @@ export { SimulationToggle } from './SimulationToggle';
 export { simWorld, simQueueActions, useSimPlans, useSimQueue, type SimPlans, type SimWorld } from './useSimWorld';
 export { useSimulatedBoard, type BoardInputs } from './useSimulatedBoard';
 export { buildSimRail, type SimRailLabels, type SimRailRows } from './simRail';
+export { buildSimCliUsage } from './simPlans';

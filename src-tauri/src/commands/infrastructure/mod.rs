@@ -44,6 +44,9 @@ pub mod overnight;
 pub mod project_scaffold;
 pub mod qwen_engine;
 pub mod registry_coverage;
+/// The registry's topology as the Council page draws it - a reader, beside
+/// `registry_coverage`, sharing its probe and its cache shape.
+pub mod registry_galaxy;
 pub mod registry_sync;
 pub mod registry_usage;
 pub mod run_checkpoints;
@@ -64,6 +67,7 @@ pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;
 pub mod twin_style;
+pub mod twin_voice;
 pub mod use_case_scan;
 pub mod webbuild;
 pub mod workflows;

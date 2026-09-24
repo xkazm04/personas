@@ -125,7 +125,7 @@ Never gate a surface on a loading flag. Render the static chrome — header, fil
 | `agents/sub_lab/components/shared/LabResultsSkeleton.tsx:27` | The entire shared Lab skeleton is built on a pulse token (also `:41,63,70,85,122`); no delayed entrance. |
 | `vault/sub_credentials/components/features/CredentialRotationSection.tsx:24-26` | Three pulsing bars, no delay. |
 | `overview/sub_analytics/components/ExecutionHeatmap.tsx:311-317` | Pulsing block; charts want a calm reserved box. |
-| `agents/sub_glyph/GlyphCinemaLayout.tsx:414-425` | Infinite framer-motion shimmer sweep. |
+| ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:414-425`~~ (deleted 2026-09-23 with the legacy build layouts) | Infinite framer-motion shimmer sweep. |
 | `agents/sub_model_config/components/EffectiveConfigPanel.tsx:54-59` | `if (loading)` returns an `animate-pulse` card. |
 | `teams/sub_teamWorkspace/teamStudio/slackBridge/TeamSlackBridgePanel.tsx:89` | Gating **correct**, motion wrong (`animate-pulse`, no delay). |
 | `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/components/LazyChart.tsx:47` · `agents/sub_executions/components/CircuitBreakerIndicator.tsx:154` · `overview/sub_director/components/CampaignReportPanel.tsx:107` · `teams/sub_factory/passport/improve/QuickDispatchLedger.tsx:23` · `home/sub_cockpit/widgets/WalkthroughOfferWidget.tsx:100-102` · `studio/StudioMessages.tsx:103-104` · `shared/chrome/DesktopFooter.tsx:92` · `plugins/companion/sub_voice/voiceEngineShared.tsx:266` · `plugins/radio/components/RadioFooter.tsx:659` · `plugins/radio/components/NowPlayingCard.tsx:189` | Pulse used as a loading affordance. |

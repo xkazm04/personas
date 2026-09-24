@@ -11,7 +11,10 @@
 use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
-use crate::models::{AttentionLedgerEntry, AttentionLoopSummary, ConsolidationPoint};
+use crate::models::{
+    AttentionLedgerEntry, AttentionLoopSummary, ConsolidationPoint, EffortBand,
+    ResponsibilityMeasured,
+};
 use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use crate::PoolExt;
@@ -636,6 +639,112 @@ pub fn consolidation_series(
     )
 }
 
+/// How many of a charter's most recent passes [`measured_per_responsibility`]
+/// averages over.
+pub const MEASURED_PASS_WINDOW: u32 = 20;
+
+/// One aggregate row of [`measured_per_responsibility`], as SQL hands it over.
+struct MeasuredRow {
+    responsibility_id: String,
+    passes: i64,
+    avg_cost_usd: f64,
+    avg_tokens: Option<f64>,
+}
+
+row_mapper!(row_to_measured -> MeasuredRow {
+    responsibility_id, passes, avg_cost_usd, avg_tokens,
+});
+
+/// What runs of each of a persona's charters ACTUALLY cost, over each
+/// charter's last [`MEASURED_PASS_WINDOW`] passes (spark
+/// `resource-aware-orchestration`) - shown beside the declared
+/// `spec.resourceProfile` so a self-declaration can be checked.
+///
+/// A *pass* is a closed `kind = 'attention'` row that names a charter and was
+/// neither refused nor orphaned by a restart. The window is per charter
+/// (`ROW_NUMBER() OVER (PARTITION BY responsibility_id ...)`), newest first.
+///
+/// **What the ledger can and cannot measure - stated, not papered over:**
+///
+/// * The ledger has NO token columns. Tokens come from the one join that
+///   exists: a pass whose worker was a persona execution records
+///   `stats_json.executionId`, and `persona_executions` carries
+///   `input_tokens` / `output_tokens`. `avg_tokens` is the mean of
+///   input + output over the passes that joined an execution that has reported
+///   tokens; `measured_effort` is that mean through
+///   [`EffortBand::from_total_tokens`].
+/// * A pass whose worker was a FLEET session (`stats_json.sessionId`) has no
+///   persisted token or cost figure anywhere - `fleet_sessions` stores neither -
+///   so it counts toward `passes` and contributes nothing to the averages. A
+///   charter dispatched only to the fleet therefore reads `avg_tokens = 0`,
+///   `measured_effort = None`: "not measured", never "measured as small".
+/// * Cost is the ledger's own `cost_usd` when the pass recorded one, else the
+///   joined execution's.
+/// * `peak_rss_mb` is always `None`: no per-session or per-execution resident
+///   memory is persisted anywhere keyed to a pass (the monitor's process
+///   samples are in-memory only).
+///
+/// Not a [`crate::query_builder::QueryBuilder`] shape: this is one fixed
+/// windowed aggregate with no caller-driven filter, order or page.
+pub fn measured_per_responsibility(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<ResponsibilityMeasured>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::measured_per_responsibility",
+        {
+            let conn = pool.conn("attention_ledger::measured_per_responsibility")?;
+            let mut stmt = conn.prepare(
+                "WITH recent AS (
+                     SELECT responsibility_id, cost_usd, stats_json,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY responsibility_id
+                                ORDER BY started_at DESC, id DESC
+                            ) AS rn
+                     FROM persona_attention_ledger
+                     WHERE persona_id = ?1
+                       AND kind = 'attention'
+                       AND responsibility_id IS NOT NULL
+                       AND completed_at IS NOT NULL
+                       AND verdict NOT IN ('refused', 'crashed')
+                 )
+                 SELECT r.responsibility_id AS responsibility_id,
+                        COUNT(*) AS passes,
+                        COALESCE(AVG(COALESCE(r.cost_usd, e.cost_usd)), 0.0) AS avg_cost_usd,
+                        AVG(CASE WHEN e.input_tokens + e.output_tokens > 0
+                                 THEN e.input_tokens + e.output_tokens END) AS avg_tokens
+                 FROM recent r
+                 LEFT JOIN persona_executions e
+                        ON e.id = CASE WHEN json_valid(r.stats_json)
+                                       THEN json_extract(r.stats_json, '$.executionId') END
+                 WHERE r.rn <= ?2
+                 GROUP BY r.responsibility_id
+                 ORDER BY r.responsibility_id",
+            )?;
+            let rows =
+                stmt.query_map(params![persona_id, MEASURED_PASS_WINDOW], row_to_measured)?;
+            Ok(
+                collect_rows(rows, "attention_ledger::measured_per_responsibility")
+                    .into_iter()
+                    .map(|r| {
+                        let avg_tokens = r.avg_tokens.map(|t| t.round().max(0.0) as i64);
+                        ResponsibilityMeasured {
+                            responsibility_id: r.responsibility_id,
+                            passes: u32::try_from(r.passes).unwrap_or(u32::MAX),
+                            avg_cost_usd: r.avg_cost_usd,
+                            avg_tokens: avg_tokens.unwrap_or(0),
+                            peak_rss_mb: None,
+                            measured_effort: avg_tokens
+                                .map(|t| EffortBand::from_total_tokens(t.unsigned_abs())),
+                        }
+                    })
+                    .collect(),
+            )
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -975,5 +1084,124 @@ mod tests {
             row_to_entry,
         )
         .map_err(AppError::Database)
+    }
+
+    /// A persona execution with reported tokens, for the measured join.
+    fn insert_execution(
+        pool: &DbPool,
+        persona_id: &str,
+        input_tokens: i64,
+        output_tokens: i64,
+        cost_usd: f64,
+    ) -> Result<String, AppError> {
+        let exec =
+            crate::repos::execution::executions::create(pool, persona_id, None, None, None, None)?;
+        pool.get()?.execute(
+            "UPDATE persona_executions
+             SET input_tokens = ?1, output_tokens = ?2, cost_usd = ?3 WHERE id = ?4",
+            params![input_tokens, output_tokens, cost_usd, exec.id],
+        )?;
+        Ok(exec.id)
+    }
+
+    fn measured_pass(
+        pool: &DbPool,
+        charter: &str,
+        stats: Option<String>,
+        started_at: &str,
+    ) -> Result<(), AppError> {
+        let id = insert_started(pool, "p1", Some(charter), "attention", Some("advance"))?;
+        complete(pool, &id, "dispatched", "", None, stats.as_deref(), None)?;
+        pool.get()?.execute(
+            "UPDATE persona_attention_ledger SET started_at = ?1 WHERE id = ?2",
+            params![started_at, id],
+        )?;
+        Ok(())
+    }
+
+    #[test]
+    fn measured_aggregate_maps_tokens_to_effort_band() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        insert_persona(&pool, "p2")?;
+        assert!(measured_per_responsibility(&pool, "p1")?.is_empty());
+
+        // resp-a: two execution-backed passes, 100k and 500k total tokens.
+        let e1 = insert_execution(&pool, "p1", 80_000, 20_000, 0.10)?;
+        let e2 = insert_execution(&pool, "p1", 400_000, 100_000, 0.30)?;
+        for (i, e) in [e1, e2].iter().enumerate() {
+            measured_pass(
+                &pool,
+                "resp-a",
+                Some(format!(r#"{{"executionId":"{e}"}}"#)),
+                &format!("2026-01-01T00:0{i}:00Z"),
+            )?;
+        }
+        // resp-b: fleet-only passes - counted, but nothing to measure.
+        measured_pass(
+            &pool,
+            "resp-b",
+            Some(r#"{"sessionId":"sess-1"}"#.to_string()),
+            "2026-01-01T00:00:00Z",
+        )?;
+        measured_pass(&pool, "resp-b", None, "2026-01-01T00:01:00Z")?;
+        // Noise that must not count: a refusal, an open row, a charterless
+        // pass, a consolidation, and another persona's pass on the same id.
+        insert_refusal(
+            &pool,
+            "p1",
+            Some("resp-a"),
+            "attention",
+            Some("advance"),
+            "cap",
+        )?;
+        insert_started(&pool, "p1", Some("resp-a"), "attention", Some("advance"))?;
+        let none = insert_started(&pool, "p1", None, "attention", Some("improve"))?;
+        complete(&pool, &none, "dispatched", "", None, None, Some(9.0))?;
+        let cons = insert_started(&pool, "p1", Some("resp-a"), "consolidation", None)?;
+        complete(&pool, &cons, "acted", "", None, None, Some(9.0))?;
+        let other = insert_started(&pool, "p2", Some("resp-a"), "attention", Some("advance"))?;
+        complete(&pool, &other, "dispatched", "", None, None, Some(9.0))?;
+
+        let rows = measured_per_responsibility(&pool, "p1")?;
+        assert_eq!(rows.len(), 2);
+        let a = &rows[0];
+        assert_eq!(a.responsibility_id, "resp-a");
+        assert_eq!(a.passes, 2);
+        assert_eq!(a.avg_tokens, 300_000);
+        assert_eq!(a.measured_effort, Some(EffortBand::L));
+        assert!((a.avg_cost_usd - 0.20).abs() < 1e-9, "{}", a.avg_cost_usd);
+        assert_eq!(a.peak_rss_mb, None);
+        let b = &rows[1];
+        assert_eq!(b.responsibility_id, "resp-b");
+        assert_eq!(b.passes, 2);
+        assert_eq!(b.avg_tokens, 0);
+        assert_eq!(b.measured_effort, None, "unmeasured is not `s`");
+        assert_eq!(b.avg_cost_usd, 0.0);
+        Ok(())
+    }
+
+    #[test]
+    fn measured_aggregate_respects_the_20_pass_window() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert_persona(&pool, "p1")?;
+        // 5 OLD passes at 2M tokens (xl), then 20 newer ones at 10k (s). Only
+        // the newest 20 count, so the old xl runs must not move the average.
+        for i in 0..25u32 {
+            let tokens = if i < 5 { 2_000_000 } else { 10_000 };
+            let e = insert_execution(&pool, "p1", tokens, 0, 1.0)?;
+            measured_pass(
+                &pool,
+                "resp-a",
+                Some(format!(r#"{{"executionId":"{e}"}}"#)),
+                &format!("2026-01-01T00:{i:02}:00Z"),
+            )?;
+        }
+        let rows = measured_per_responsibility(&pool, "p1")?;
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].passes, MEASURED_PASS_WINDOW);
+        assert_eq!(rows[0].avg_tokens, 10_000);
+        assert_eq!(rows[0].measured_effort, Some(EffortBand::S));
+        Ok(())
     }
 }

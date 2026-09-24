@@ -125,6 +125,18 @@ pub fn score_measured_fitness(
             "assertions",
         )
     } else {
+        // A failed replay contributes a synthetic 0.0 to the eval average, but
+        // it must not CREATE the eval basis: with no eval composite anywhere,
+        // a batch of one success and one failure used to collect `[0.0]` — a
+        // non-empty `scored` built entirely out of the failure — and report
+        // `quality_basis = "eval"` with `quality = 0.0`, when the only signal
+        // present was the 0.5 success rate. The basis named the evidence it
+        // did not have and the number was wrong in the pessimistic direction.
+        // The eval basis therefore requires at least one SUCCESSFUL sample
+        // that actually carries a composite.
+        let has_eval = samples
+            .iter()
+            .any(|s| s.success && s.eval_composite.is_some());
         let scored: Vec<f64> = samples
             .iter()
             .filter_map(|s| {
@@ -135,7 +147,7 @@ pub fn score_measured_fitness(
                 }
             })
             .collect();
-        if !scored.is_empty() {
+        if has_eval && !scored.is_empty() {
             (scored.iter().sum::<f64>() / scored.len() as f64, "eval")
         } else {
             (

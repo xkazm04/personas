@@ -709,6 +709,7 @@ pub(super) fn spawn_session_with_identity(
         persona_id: None,
         goal_id: None,
         cycle_index: None,
+        admission: Default::default(),
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),

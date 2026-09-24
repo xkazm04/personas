@@ -224,6 +224,37 @@ pub fn outcome_already_recorded(
         && task.description.as_deref().unwrap_or("").contains(&marker))
 }
 
+/// Move a delivered item to its terminal status, carrying the worker's
+/// branch + commit as the evidence, and never fail the write-back if it cannot.
+///
+/// Returns the status the item ends up in: `delivered` on success, and the
+/// status it already had when the transition could not be made.
+///
+/// **A failed advance must not fail the outcome call.** By the time this runs,
+/// the task row and the outcome memory are already written and they are the
+/// durable record of what the worker did. If the row was deleted mid-flight, or
+/// a concurrent human verdict won the race, that is news about the backlog — not
+/// a reason to answer a worker reporting a real delivery with an error it cannot
+/// act on and will not retry.
+fn advance_idea_to_delivered(db: &DbPool, idea: &DevIdea, input: &IdeaOutcomeInput) -> String {
+    match repo::mark_idea_delivered(
+        db,
+        &idea.id,
+        trimmed(input.branch.as_ref()),
+        trimmed(input.commit.as_ref()),
+    ) {
+        Ok(moved) => moved.status,
+        Err(e) => {
+            tracing::warn!(idea_id = %idea.id, error = %e,
+                "app-master outcome: the item could not be moved to delivered; \
+                 the task row still carries the outcome");
+            repo::get_idea_by_id(db, &idea.id)
+                .map(|i| i.status)
+                .unwrap_or_else(|_| idea.status.clone())
+        }
+    }
+}
+
 /// Write a delivery run's outcome back onto the idea it was given.
 ///
 /// Blocking (rusqlite throughout) — call it on the blocking pool.
@@ -339,19 +370,32 @@ pub fn record_idea_outcome(
             None,
         )?
         .status
-    } else {
-        write_back_to_source_idea(db, &task.id, delivered);
-        // `delivered` deliberately leaves the idea `accepted`. The undispatched
-        // sensor keys on "accepted AND no task row", so a task in a done state
-        // is what silences it — and `dev_ideas` has no `implemented` status to
-        // move to (`schema.rs:1241` defaults `pending`; the vocabulary the
-        // verdict door writes is `accepted` / `rejected`).
+    } else if delivered {
+        // The exit the queue never had. Until `IdeaStatus::Delivered` existed
+        // this arm left the item `accepted` and leaned on the completed task to
+        // silence the undispatched sensor — which is why 518 accepted items
+        // held a COMPLETED task on 2026-09-21 and nothing could tell finished
+        // work from work nobody had started.
         //
-        // `already_delivered` lands here too, and that is the whole point: it
-        // silences the sensor through the completed task WITHOUT going through
-        // the reject door, so closing an item the repository already satisfies
-        // leaves no "do not re-surface" constraint behind.
-        repo::get_idea_by_id(db, &idea.id)?.status
+        // `already_delivered` lands here too, and still writes no verdict and
+        // no "do not re-surface" constraint: it is a delivery somebody else
+        // made, not a refusal. Its `commit` is required at the door above, so
+        // the close is auditable from `verify_evidence` alone.
+        //
+        // The branch and commit the worker reported ARE the evidence —
+        // `mark_idea_delivered` stores them structured. It is the SAME call
+        // `write_back_to_source_idea` now makes for an in-app run, so the two
+        // paths cannot disagree about what a completed task means; this arm
+        // calls it directly only because the worker's commit is richer
+        // evidence than anything the in-app runner can read back.
+        advance_idea_to_delivered(db, &idea, input)
+    } else {
+        // `blocked`. The work stopped short, the reason is on the task row, and
+        // the item stays `accepted` so the next wake can offer it again.
+        write_back_to_source_idea(db, &task.id, delivered);
+        repo::get_idea_by_id(db, &idea.id)
+            .map(|i| i.status)
+            .unwrap_or_else(|_| idea.status.clone())
     };
 
     Ok(IdeaOutcomeResult {
@@ -1492,7 +1536,10 @@ mod tests {
 
         assert!(out.task_created, "no dispatch had minted a task");
         assert_eq!(out.task_status, "completed");
-        assert_eq!(out.idea_status, "accepted", "delivery is not a verdict");
+        assert_eq!(
+            out.idea_status, "delivered",
+            "finished work leaves the queue"
+        );
         let desc = out.task.description.unwrap_or_default();
         assert!(desc.contains("App Master outcome: delivered"));
         assert!(desc.contains("branch: autopilot/retry"));
@@ -1500,6 +1547,23 @@ mod tests {
         assert!(out.task.error.is_none(), "a delivery writes no error");
         assert_eq!(out.task.progress_pct, 100);
         assert!(out.task.completed_at.is_some());
+
+        // The branch and the commit are ON the row, structured, so the claim is
+        // auditable against the repository rather than taken on trust — and the
+        // `verify_state = 'pending'` nothing in the tree ever cleared is gone.
+        let stored = repo::get_idea_by_id(&pool, &idea.id)?;
+        assert_eq!(stored.status, "delivered");
+        assert_eq!(stored.verify_state.as_deref(), Some("cleared"));
+        let evidence: serde_json::Value =
+            serde_json::from_str(stored.verify_evidence.as_deref().expect("evidence"))
+                .expect("evidence is JSON, not prose");
+        assert_eq!(evidence["branch"], "autopilot/retry");
+        assert_eq!(evidence["commit"], "abc1234");
+        assert_eq!(evidence["previous_status"], "accepted");
+        assert!(
+            stored.rejection_reason.is_none(),
+            "a delivery is not a refusal"
+        );
 
         // The sensor is quiet now: an accepted idea WITH a task row.
         assert!(repo::list_undispatched_ideas(&pool, Some(&pid), None)?.is_empty());
@@ -1563,6 +1627,49 @@ mod tests {
             out.task.error.as_deref(),
             Some("no credential for the vendor API")
         );
+        // Stopping short is not delivering: the item keeps its place in the
+        // queue and nothing was written onto it as evidence.
+        let stored = repo::get_idea_by_id(&pool, &idea.id)?;
+        assert_eq!(stored.status, "accepted");
+        assert!(stored.verify_evidence.is_none());
+        assert!(stored.rejection_reason.is_none());
+        let desc = out.task.description.clone().unwrap_or_default();
+        assert!(
+            desc.contains("note: no credential for the vendor API"),
+            "the reason is on the row"
+        );
+        Ok(())
+    }
+
+    /// The row moved under a worker that did real work. The task and the
+    /// outcome memory are the durable record; the backlog transition is a
+    /// projection. A worker reporting its result must never be refused because
+    /// the item it was given no longer exists — it will not retry, and the
+    /// delivery would be lost for the second time.
+    #[test]
+    fn an_item_deleted_mid_flight_does_not_fail_the_write_back() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let pid = project(&pool, "vanished-app");
+        let idea = accepted_idea(&pool, &pid, "Something a human deleted while it ran");
+
+        // The snapshot `record_idea_outcome` resolved before the row went away.
+        assert!(repo::delete_idea(&pool, &idea.id)?);
+
+        let status = advance_idea_to_delivered(
+            &pool,
+            &idea,
+            &IdeaOutcomeInput {
+                outcome: "delivered".into(),
+                note: None,
+                branch: Some("autopilot/gone".into()),
+                commit: Some("deadbee".into()),
+                pr_url: None,
+            },
+        );
+        assert_eq!(
+            status, "accepted",
+            "the last status we could observe, not an error"
+        );
         Ok(())
     }
 
@@ -1606,11 +1713,19 @@ mod tests {
         assert!(desc.contains("App Master outcome: already_delivered"));
         assert!(desc.contains("commit: 9f21ab0"), "the claim is auditable");
 
-        // No verdict was cast: the idea keeps its accepted status and, above
-        // all, carries no rejection reason.
-        assert_eq!(out.idea_status, "accepted");
+        // No verdict was cast: the item closes on the SAME terminal status a
+        // delivery reaches and, above all, carries no rejection reason.
+        assert_eq!(out.idea_status, "delivered");
         let stored = repo::get_idea_by_id(&pool, &idea.id)?;
-        assert_eq!(stored.status, "accepted");
+        assert_eq!(stored.status, "delivered");
+        assert_eq!(stored.verify_state.as_deref(), Some("cleared"));
+        let evidence: serde_json::Value =
+            serde_json::from_str(stored.verify_evidence.as_deref().expect("evidence"))
+                .expect("evidence is JSON");
+        assert_eq!(
+            evidence["commit"], "9f21ab0",
+            "the commit that makes the claim true is on the row"
+        );
         assert!(
             stored.rejection_reason.is_none(),
             "delivered work must not be recorded as a refusal"

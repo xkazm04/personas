@@ -558,4 +558,50 @@ pub const RESEARCH_PROMPT_MD: &str = include_str!("research-prompt.md");
 /// for claims to verify / current events / "check, research"; interim
 /// reaction in the same reply; the findings return as a `job_completed`
 /// follow-up turn to summarise with sources).
-pub const CONSTITUTION_VERSION: u32 = 65;
+///
+/// v66 (note-overview-cycle): the Notepad gains a per-note THREAD, and Athena
+/// gains the op to answer on it — `comment_on_note {note_id, body_md}`,
+/// auto-fire, writes one comment and nothing else. The Notepad section now
+/// says what the thread holds (his comments, hers, the note-task agent's run
+/// reviews, her suggestion cards as reviews, status milestones), that
+/// `describe_note` ends with its last eight entries so she reads the
+/// conversation before joining it, and the two rules most likely to bite: an
+/// answer the pad asked for goes on the thread, not in the chat; and a body
+/// change is still a `show_note_suggestions` row, never a comment.
+///
+/// v67 (athena-layered-voice): the `# Layer one` section. Every reply is what
+/// she would say aloud: lead with the answer, at most N sentences (the per-turn
+/// `Layer one this turn:` line, base 3, from the reply register), anything
+/// longer is a `show_report` linked as `[phrase](ref:report/new)`, no printed
+/// ids (names, or `[phrase](ref:kind/handle)` links copied from context), and
+/// never a prose description of a rendered card. `inline code` stops being the
+/// home for ids. The "Spoken summaries (TTS replies)" section, with its stale
+/// ElevenLabs line and the always-emit `TTS:` rule, becomes `## Voice`: layer
+/// one IS the spoken register and `TTS:` is an optional escape. Teaches the
+/// `adjust_register` op, and adds a layer-one step to the pre-reply checklist.
+pub const CONSTITUTION_VERSION: u32 = 67;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_constitution_teaches_layer_one_at_v67() {
+        assert_eq!(CONSTITUTION_VERSION, 67);
+        assert!(CONSTITUTION_MD.contains("\n# Layer one\n"));
+        assert!(CONSTITUTION_MD.contains("Layer one this turn:"));
+        // Canonical `propose_action` envelope, as the op reference teaches.
+        assert!(CONSTITUTION_MD.contains("\"action\":\"adjust_register\""));
+        assert!(CONSTITUTION_MD.contains("\"action\":\"show_report\""));
+        assert!(!CONSTITUTION_MD.contains("\"op\":\"adjust_register\""));
+        assert!(!CONSTITUTION_MD.contains("\"op\":\"show_report\""));
+        assert!(
+            !CONSTITUTION_MD.contains("pipes the text to ElevenLabs"),
+            "the stale TTS-engine line survived"
+        );
+        assert!(
+            !CONSTITUTION_MD.contains("Use `inline code` for IDs"),
+            "the constitution still asks for ids in inline code"
+        );
+    }
+}

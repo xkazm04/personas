@@ -340,12 +340,26 @@ pub struct SetupProposal {
     pub id: String,
     #[ts(type = "\"bio\" | \"role\" | \"tone\"")]
     pub kind: String,
+    /// Which column of the tone row a `kind == "tone"` proposal fills:
+    /// `"voice"` (the voice directives, and the reading when absent) or
+    /// `"constraints"` (one Always/Never rule appended to the list). The model
+    /// is never allowed `"examples"`: a sample message has to be the person's
+    /// own words, so the client offers those itself from what they typed.
+    #[serde(default)]
+    #[ts(type = "\"voice\" | \"constraints\" | null")]
+    pub part: Option<String>,
     /// Tone channel id for `kind == "tone"`; `None` otherwise.
     pub channel: Option<String>,
     pub value: String,
     /// Reply-length guidance, only meaningful for a tone proposal.
     pub length_hint: Option<String>,
     pub reason: String,
+}
+
+/// A turn the model sent without `answerMode` is a choice between answers,
+/// which is what every turn was before the field existed.
+fn default_answer_mode() -> String {
+    "pick".to_string()
 }
 
 /// One turn of the guided setup conversation.
@@ -359,6 +373,18 @@ pub struct SetupTurnResult {
     pub focus: String,
     /// Tone channel the question is about when `focus == "tone"`.
     pub tone_channel: Option<String>,
+    /// How the question wants answering. `"pick"`: the suggestions are real
+    /// alternatives to choose between. `"write"`: the answer IS a writing
+    /// sample (a reply drill, a pasted message), so the person types it and
+    /// `suggestions` is empty by contract — a sample the model wrote would
+    /// teach the twin the model's voice instead of theirs.
+    #[serde(default = "default_answer_mode")]
+    #[ts(type = "\"pick\" | \"write\"")]
+    pub answer_mode: String,
+    /// For a `"write"` turn, the message they are replying to, exactly as it
+    /// would arrive. `None` for every other question.
+    #[serde(default)]
+    pub incoming: Option<String>,
     pub suggestions: Vec<SetupSuggestion>,
     pub proposals: Vec<SetupProposal>,
     /// ADVISORY ONLY. The model's guess that this slot now has enough. The

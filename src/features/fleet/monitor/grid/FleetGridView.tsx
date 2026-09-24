@@ -74,7 +74,7 @@ import { useQueueModel } from './board/queue/useQueueModel';
 import { useQueueActions } from './board/queue/useQueueActions';
 import { useLocalOrder } from './board/queue/useLocalOrder';
 import { readBoardVariant, writeBoardVariant, type BoardVariant } from './board/queue/boardVariant';
-import { NodeContext, readNodeVariant, writeNodeVariant, type NodeContextValue, type NodeVariant } from './board/node/nodeVariant';
+import { NodeContext, type NodeContextValue } from './board/node/nodeContext';
 import { meanWaitMs } from './board/queue/queueVerbs';
 import { OrchestrationPanel } from './orchestration';
 
@@ -146,8 +146,6 @@ function FleetGridViewImpl({
 
   const [variant, setVariant] = useState<BoardVariant>(readBoardVariant);
   const changeVariant = useCallback((v: BoardVariant) => { setVariant(v); writeBoardVariant(v); }, []);
-  const [nodeVariant, setNodeVariant] = useState<NodeVariant>(readNodeVariant);
-  const changeNodeVariant = useCallback((v: NodeVariant) => { setNodeVariant(v); writeNodeVariant(v); }, []);
   const [orchestrationOpen, setOrchestrationOpen] = useState(false);
   const openOrchestration = useCallback(() => setOrchestrationOpen(true), []);
   const closeOrchestration = useCallback(() => setOrchestrationOpen(false), []);
@@ -160,10 +158,9 @@ function FleetGridViewImpl({
   // meter variant divides by — the mean duration the door's estimates imply
   // and the queue's length. Recomputed only when the queue model does.
   const nodeContext = useMemo<NodeContextValue>(() => ({
-    variant: nodeVariant,
     meanDurationMs: meanWaitMs(queueModel.queued, Date.now()),
     queueLength: queueModel.queued.length,
-  }), [nodeVariant, queueModel.queued]);
+  }), [queueModel.queued]);
 
   // Opening a persona is the operator looking at it: its unread mark clears.
   const { acknowledge } = liveBubbles;
@@ -207,8 +204,6 @@ function FleetGridViewImpl({
         onPickState={pickState}
         variant={variant}
         onVariantChange={changeVariant}
-        nodeVariant={nodeVariant}
-        onNodeVariantChange={changeNodeVariant}
         queueRunning={board.queue?.running ?? queueModel.running.length}
         queueOverAdmitted={board.queue?.overAdmitted ?? 0}
         simulated={simulating}

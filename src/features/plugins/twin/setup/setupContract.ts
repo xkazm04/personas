@@ -34,6 +34,20 @@ export interface SetupSuggestion {
 }
 
 /**
+ * Which column of a tone row a `kind: 'tone'` proposal fills. `'voice'` (the
+ * voice directives, and the reading when absent) replaces; `'examples'` and
+ * `'constraints'` APPEND one item to the stored list.
+ *
+ * `'examples'` never comes from the generator — the backend drops it. A
+ * sample message has to be the person's own words, so the session offers one
+ * itself, verbatim, when they answer a `write` turn. The research behind that
+ * rule is in `experience/RESEARCH.md`: a twin learns a voice from real
+ * samples far better than from descriptions, and a sample the model wrote
+ * would teach it the model's voice.
+ */
+export type SetupProposalPart = 'voice' | 'examples' | 'constraints';
+
+/**
  * A typed value the guide proposes for a real field. Nothing here is written
  * until the user accepts it, and an accepted value stays editable.
  */
@@ -41,6 +55,8 @@ export interface SetupProposal {
   /** Stable per-turn id. Two tone proposals for one channel must not collide. */
   id: string;
   kind: 'bio' | 'role' | 'tone';
+  /** Tone proposals only; absent or null reads as `'voice'`. */
+  part?: SetupProposalPart | null;
   /** Tone channel id for `kind: 'tone'`; null otherwise. */
   channel: string | null;
   value: string;
@@ -48,10 +64,20 @@ export interface SetupProposal {
   reason: string;
 }
 
+/**
+ * How the live question wants answering. `'pick'`: the suggestions are real
+ * alternatives. `'write'`: the answer is itself a writing sample (a reply
+ * drill, a pasted message), so it is typed, and the hand is empty by contract.
+ */
+export type SetupAnswerMode = 'pick' | 'write';
+
 export interface SetupTurnResult {
   question: string;
   focus: SetupFocus;
   toneChannel: string | null;
+  answerMode: SetupAnswerMode;
+  /** The message a `write` turn asks them to reply to; null otherwise. */
+  incoming: string | null;
   suggestions: SetupSuggestion[];
   proposals: SetupProposal[];
   /** ADVISORY. Never the completion authority — see the file header. */
@@ -121,6 +147,12 @@ export interface SetupSessionApi {
   /** 0–100, from `deriveReadiness`. The single completion authority. */
   score: number;
   question: string | null;
+  /** How the live question wants answering. `'pick'` whenever there is none. */
+  answerMode: SetupAnswerMode;
+  /** The message a `write` turn asks them to reply to, or null. */
+  incoming: string | null;
+  /** Tone channel the live question is about, or null. */
+  toneChannel: string | null;
   suggestions: SetupSuggestion[];
   proposals: SetupProposal[];
   history: SetupHistoryEntry[];
@@ -128,7 +160,11 @@ export interface SetupSessionApi {
   busy: boolean;
   /** Set when the generator failed. The slot stays OPEN; the form still works. */
   generatorError: string | null;
-  /** Tone slots the guide will cover: 'generic' + every bound channel type. */
+  /**
+   * Tone slots the guide will cover: 'generic' + every bound channel type +
+   * every channel that already has a tone row (a register the person named in
+   * conversation and accepted, with no bound channel behind it yet).
+   */
   toneChannels: string[];
   answer: (text: string) => Promise<void>;
   accept: (proposal: SetupProposal) => Promise<void>;
@@ -136,6 +172,12 @@ export interface SetupSessionApi {
   edit: (change: SetupFieldEdit) => Promise<void>;
   /** A skipped question is recorded as declined, never stored as a value. */
   skip: () => Promise<void>;
+  /**
+   * Ask a fresh question on the current slot or training topic, replacing the
+   * live one. For a topic just picked, a stage just switched, or a turn that
+   * failed. Nothing is recorded; a call while a turn is in flight is ignored.
+   */
+  redeal: () => void;
   focusOn: (focus: SetupFocus) => void;
   setStage: (stage: SetupStage) => void;
   /** Training topic when `stage === 'training'`. */

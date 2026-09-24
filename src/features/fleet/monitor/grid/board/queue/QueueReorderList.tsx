@@ -20,7 +20,7 @@ import type { QueueActions } from './useQueueActions';
 import type { LocalOrder } from './useLocalOrder';
 
 function Row({
-  item, index, count, order, actions, reducedMotion, focusKey, onOpen, onRecap, accentColor,
+  item, index, count, order, actions, reducedMotion, focusKey, onOpen, onRecap, accentColor, fill,
 }: {
   item: QueueItem;
   index: number;
@@ -32,6 +32,7 @@ function Row({
   onOpen: (s: FleetSession) => void;
   onRecap: (s: FleetSession) => void;
   accentColor?: string;
+  fill: boolean;
 }) {
   const controls = useDragControls();
   return (
@@ -57,6 +58,7 @@ function Row({
           last={index === count - 1}
           dragControls={controls}
           flash={focusKey === `s:${item.sessionId}`}
+          fill={fill}
         />
       </span>
     </Reorder.Item>
@@ -64,7 +66,7 @@ function Row({
 }
 
 export function QueueReorderList({
-  order, actions, axis, reducedMotion, focusKey, onOpen, onRecap, className, ariaLabel, accentFor,
+  order, actions, axis, reducedMotion, focusKey, onOpen, onRecap, className, ariaLabel, accentFor, fill = false,
 }: {
   order: LocalOrder;
   actions: QueueActions;
@@ -77,6 +79,12 @@ export function QueueReorderList({
   ariaLabel: string;
   /** A team colour for the leading accent, when the board knows one. */
   accentFor?: (item: QueueItem) => string | undefined;
+  /**
+   * Tiles span the row (beside the optional accent bar) instead of the fixed
+   * node width. Only the Lanes board opts in; every other board keeps
+   * fixed-width nodes.
+   */
+  fill?: boolean;
 }) {
   const ids = order.items.map((i) => i.sessionId);
   const byId = new Map(order.items.map((i) => [i.sessionId, i]));
@@ -105,6 +113,7 @@ export function QueueReorderList({
             onOpen={onOpen}
             onRecap={onRecap}
             accentColor={accentFor?.(item)}
+            fill={fill}
           />
         );
       })}

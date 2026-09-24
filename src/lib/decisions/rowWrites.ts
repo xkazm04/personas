@@ -42,11 +42,13 @@ import {
 } from '@/api/devTools/devTools';
 import { policyTuningApply, policyTuningDecline } from '@/api/system/policyTuning';
 import { resolvePromotionProposal } from '@/api/agents/evolution';
+import { decideCouncil, type CouncilDecisionKind } from '@/api/devTools/council';
 import { extractMessage } from '@/lib/silentCatch';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
+import type { CouncilDecision } from '@/lib/bindings/CouncilDecision';
 
 /**
  * Every phrase the backend uses for "you lost the swap", across five row types.
@@ -82,6 +84,12 @@ const CONFLICT_PATTERNS: readonly RegExp[] = [
   /\bproposal \S+ is (?:already \w+|not pending)/i,
   /\bproposal \S+ is '[^']*', not pending/i,
   /\bchanged after this proposal was filed\b/i,
+  // 4. **Council decisions** — `dev_tools_council_decide` compares the
+  //    `saw_digest` the gate hands back against the run's current digest AND
+  //    against "is this still the latest run", and refuses on either. One
+  //    message covers both, because to the person at the gate they are the
+  //    same fact: the round on screen is not the round that stands.
+  /\bcouncil moved since you looked\b/i,
 ];
 
 /**
@@ -352,4 +360,50 @@ export async function decideEvolutionProposalRow(
 ): Promise<EvolutionPromotionProposal> {
   assertProposalPending(id, options.seenStatus);
   return resolvePromotionProposal(id, verdict === 'approve', options.reason || undefined);
+}
+
+// ---------------------------------------------------------------------------
+// Council decisions
+// ---------------------------------------------------------------------------
+
+export interface CouncilVerdictOptions {
+  /** Mandatory and non-blank when the decision is `rejected`. */
+  reason?: string;
+}
+
+/**
+ * Decide a council - the ONE door for approve/reject on a council subject.
+ *
+ * This is the sixth decidable row type, and the only one whose
+ * compare-and-swap token is not a status but a DIGEST: the run's
+ * `saw_digest`, captured from the round the person was actually looking at.
+ * That is deliberate and it is stronger than a status. A council subject can
+ * move without changing state at all - a fourth round can supersede the
+ * third while the gate is open, with `ready` on both sides - and a status
+ * expectation would sail straight through it. The digest does not: the
+ * backend refuses on a mismatch AND on "this is no longer the latest run",
+ * and both come back as the same conflict to the person, who is told the
+ * council moved and handed the round that now stands.
+ *
+ * Approval is the only admitting act in the whole council chain. The skill
+ * never emits an admitting value, the ingest door only records what the
+ * skill measured, and `dev_council_decisions` has exactly one writer, which
+ * is the command this calls. Nothing here may grow a second path.
+ */
+export async function decideCouncilRow(
+  subjectId: string,
+  runId: string,
+  verdict: CouncilDecisionKind,
+  sawDigest: string,
+  options: CouncilVerdictOptions = {},
+): Promise<CouncilDecision> {
+  const reason = options.reason?.trim();
+  // `async` so this REJECTS rather than throwing synchronously, for the same
+  // reason `decidePolicyProposalRow` does: every caller's restore path is a
+  // `.catch`, and a door that sometimes throws before returning a promise is
+  // a door whose failure sometimes escapes it.
+  if (verdict === 'rejected' && !reason) {
+    throw new Error('A rejection needs a written reason');
+  }
+  return decideCouncil(subjectId, runId, verdict, sawDigest, reason);
 }

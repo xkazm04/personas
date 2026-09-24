@@ -68,8 +68,30 @@ pub fn create_scan(
     scan_type: &str,
     status: Option<&str>,
 ) -> Result<DevScan, AppError> {
+    create_scan_with_id(
+        pool,
+        &uuid::Uuid::new_v4().to_string(),
+        project_id,
+        scan_type,
+        status,
+    )
+}
+
+/// Open a scan row under an id the CALLER already holds.
+///
+/// Exists so a door can ask its admission gate BEFORE writing the durable
+/// `running` marker: the registry is keyed by the scan id, so the id has to be
+/// minted before either half. Writing the row first and admitting afterwards
+/// strands a `dev_scans` row in the one state nothing sweeps when admission
+/// refuses (census `start-marker-before-admission`).
+pub fn create_scan_with_id(
+    pool: &DbPool,
+    id: &str,
+    project_id: Option<&str>,
+    scan_type: &str,
+    status: Option<&str>,
+) -> Result<DevScan, AppError> {
     timed_query!("dev_scans", "dev_scans::create_scan", {
-        let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let status = status.unwrap_or("running");
 
@@ -80,7 +102,7 @@ pub fn create_scan(
             params![id, project_id, scan_type, status, now],
         )?;
 
-        get_scan_by_id(pool, &id)
+        get_scan_by_id(pool, id)
     })
 }
 

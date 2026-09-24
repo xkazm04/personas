@@ -58,15 +58,28 @@ pub struct FleetSessionRow {
     pub persona_id: Option<String>,
     pub goal_id: Option<String>,
     pub cycle_index: Option<i64>,
+    /// Budgeted admission's charge (`commands::fleet::budgets::Charge`),
+    /// stamped once at admission. `NULL` = the default charge (1 machine
+    /// unit, 2 plan units, no GPU) - every row written before migration e39.
+    pub machine_units: Option<u32>,
+    pub plan_units: Option<u32>,
+    /// `GpuClass` wire token (`none` | `shared` | `exclusive`).
+    pub gpu_class: Option<String>,
+    /// How many times promotion backfilled past this entry while it waited.
+    pub skip_count: Option<u32>,
+    /// When promotion first found this entry unfit; the aging bound's clock.
+    pub first_unfit_at_ms: Option<i64>,
 }
 
 /// The projection every read shares — named, so a mid-table `ADD COLUMN`
-/// cannot shift a field (the queue columns were added by migration e36).
+/// cannot shift a field (the queue columns were added by migration e36, the
+/// budget columns by e39).
 const COLUMNS: &str = "id, claude_session_id, cwd, project_label, name, title, args_json,
                     mode, state, state_reason, run_id, run_label,
                     created_at_ms, last_activity_ms,
                     queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
-                    cycle_index";
+                    cycle_index,
+                    machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms";
 
 /// Insert-or-replace a session row. Keyed on the registry id, so a state
 /// change is a single cheap UPSERT rather than a read-modify-write.
@@ -79,9 +92,10 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                  mode, state, state_reason, run_id, run_label,
                  created_at_ms, last_activity_ms, updated_at_ms,
                  queue_rank, queued_at_ms, not_before_ms, origin, persona_id, goal_id,
-                 cycle_index)
+                 cycle_index,
+                 machine_units, plan_units, gpu_class, skip_count, first_unfit_at_ms)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-                     ?16, ?17, ?18, ?19, ?20, ?21, ?22)
+                     ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27)
              ON CONFLICT(id) DO UPDATE SET
                 claude_session_id = excluded.claude_session_id,
                 cwd               = excluded.cwd,
@@ -108,7 +122,15 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 origin            = COALESCE(excluded.origin, fleet_sessions.origin),
                 persona_id        = COALESCE(excluded.persona_id, fleet_sessions.persona_id),
                 goal_id           = COALESCE(excluded.goal_id, fleet_sessions.goal_id),
-                cycle_index       = COALESCE(excluded.cycle_index, fleet_sessions.cycle_index)",
+                cycle_index       = COALESCE(excluded.cycle_index, fleet_sessions.cycle_index),
+                -- the charge is stamped once at admission; the skip memory only
+                -- ever grows. Neither is nulled by a later state write (a wake
+                -- or a restore that carries no charge keeps the stored one).
+                machine_units     = COALESCE(excluded.machine_units, fleet_sessions.machine_units),
+                plan_units        = COALESCE(excluded.plan_units, fleet_sessions.plan_units),
+                gpu_class         = COALESCE(excluded.gpu_class, fleet_sessions.gpu_class),
+                skip_count        = COALESCE(excluded.skip_count, fleet_sessions.skip_count),
+                first_unfit_at_ms = COALESCE(excluded.first_unfit_at_ms, fleet_sessions.first_unfit_at_ms)",
             params![
                 row.id,
                 row.claude_session_id,
@@ -132,6 +154,11 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 row.persona_id,
                 row.goal_id,
                 row.cycle_index,
+                row.machine_units,
+                row.plan_units,
+                row.gpu_class,
+                row.skip_count,
+                row.first_unfit_at_ms,
             ],
         )?;
         Ok(())
@@ -424,6 +451,35 @@ pub fn renumber_queue(pool: &DbPool, ranks: &[(String, u32)]) -> Result<usize, A
     })
 }
 
+/// Record that promotion found a queued entry unfit: its skip count and the
+/// instant it first did not fit (the aging bound's two inputs). Guarded on the
+/// row still being queued - a promoted row's skip memory is history, not
+/// state - and the verdict is returned rather than dropped.
+pub fn set_skip_state(
+    pool: &DbPool,
+    id: &str,
+    skip_count: u32,
+    first_unfit_at_ms: Option<i64>,
+) -> Result<bool, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::set_skip_state", {
+        let conn = pool.get()?;
+        let changed = conn.execute(
+            "UPDATE fleet_sessions
+             SET skip_count = ?2,
+                 first_unfit_at_ms = COALESCE(fleet_sessions.first_unfit_at_ms, ?3),
+                 updated_at_ms = ?4
+             WHERE id = ?1 AND state = 'queued'",
+            params![
+                id,
+                skip_count,
+                first_unfit_at_ms,
+                personas_core::utils::now_ms()
+            ],
+        )?;
+        Ok(changed == 1)
+    })
+}
+
 /// Wall-clock durations (`last_activity_ms - created_at_ms`) of the most
 /// recently ended sessions (`finished` or `exited`), newest first, capped at
 /// `limit`. The queue's start estimate is a mean over these; an empty history
@@ -494,7 +550,58 @@ mod tests {
             persona_id: None,
             goal_id: None,
             cycle_index: None,
+            machine_units: None,
+            plan_units: None,
+            gpu_class: None,
+            skip_count: None,
+            first_unfit_at_ms: None,
         }
+    }
+
+    /// The charge is stamped once and the skip memory only grows: a later
+    /// state write that carries neither must not null them, and the skip
+    /// setter only touches a row that is still queued.
+    #[test]
+    fn the_charge_and_the_skip_memory_survive_a_later_state_write() {
+        let pool = init_test_db().unwrap();
+        let mut queued = row("q", "run", "queued", 1_000);
+        queued.machine_units = Some(4);
+        queued.plan_units = Some(1);
+        queued.gpu_class = Some("exclusive".into());
+        upsert(&pool, &queued).unwrap();
+        assert!(set_skip_state(&pool, "q", 1, Some(5_000)).unwrap());
+        // A second skip keeps the FIRST unfit instant.
+        assert!(set_skip_state(&pool, "q", 2, Some(9_000)).unwrap());
+        let back = get(&pool, "q").unwrap().unwrap();
+        assert_eq!(
+            (
+                back.machine_units,
+                back.plan_units,
+                back.gpu_class.as_deref()
+            ),
+            (Some(4), Some(1), Some("exclusive"))
+        );
+        assert_eq!(
+            (back.skip_count, back.first_unfit_at_ms),
+            (Some(2), Some(5_000))
+        );
+
+        // Promotion: a state write with no charge on it.
+        upsert(&pool, &row("q", "run", "running", 2_000)).unwrap();
+        let back = get(&pool, "q").unwrap().unwrap();
+        assert_eq!((back.machine_units, back.plan_units), (Some(4), Some(1)));
+        assert_eq!(back.gpu_class.as_deref(), Some("exclusive"));
+        assert_eq!(
+            (back.skip_count, back.first_unfit_at_ms),
+            (Some(2), Some(5_000))
+        );
+        // No longer queued: the setter refuses and says so.
+        assert!(!set_skip_state(&pool, "q", 3, None).unwrap());
+        assert!(!set_skip_state(&pool, "ghost", 1, None).unwrap());
+        // A pre-e39 row reads NULL everywhere.
+        upsert(&pool, &row("old", "run", "running", 1)).unwrap();
+        let old = get(&pool, "old").unwrap().unwrap();
+        assert_eq!((old.machine_units, old.skip_count), (None, None));
     }
 
     #[test]
@@ -595,4 +702,9 @@ row_mapper!(map_row -> FleetSessionRow {
     persona_id,
     goal_id,
     cycle_index,
+    machine_units,
+    plan_units,
+    gpu_class,
+    skip_count,
+    first_unfit_at_ms,
 });

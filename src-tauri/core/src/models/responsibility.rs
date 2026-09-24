@@ -255,6 +255,149 @@ pub struct ResponsibilityPacing {
     pub next_wake_minutes: Option<u32>,
 }
 
+// ---- Resource profile (resource-aware orchestration) ----------------------
+//
+// A small, CLOSED vocabulary describing what a run of a charter costs: the
+// machine, the GPU, how hard the thinking is, and how many plan tokens it
+// burns. Every mapping from a tag to a number lives on the enum itself
+// (`units`, `from_total_tokens`) so admission, routing and the editor cannot
+// each grow their own table.
+
+/// How much of THIS MACHINE a run occupies. Charged against the fleet's
+/// machine budget in units (see [`MachineLoad::units`]).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum MachineLoad {
+    #[default]
+    Light,
+    Moderate,
+    Heavy,
+    Exclusive,
+}
+
+impl MachineLoad {
+    /// Machine units charged at admission: light 1, moderate 2, heavy 4,
+    /// exclusive 8.
+    pub fn units(&self) -> u32 {
+        match self {
+            Self::Light => 1,
+            Self::Moderate => 2,
+            Self::Heavy => 4,
+            Self::Exclusive => 8,
+        }
+    }
+}
+
+/// Whether a run needs the GPU. `Exclusive` takes the fleet's single GPU
+/// token; `Shared` is informational only.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum GpuClass {
+    #[default]
+    None,
+    Shared,
+    Exclusive,
+}
+
+/// How hard the reasoning is - the input to difficulty-based model routing.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum Difficulty {
+    Light,
+    #[default]
+    Standard,
+    Hard,
+}
+
+/// How many plan tokens a run burns, as a T-shirt size. Wire values are
+/// `"s" | "m" | "l" | "xl"`. Charged against the fleet's plan budget in units
+/// (see [`EffortBand::units`]).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum EffortBand {
+    S,
+    #[default]
+    M,
+    L,
+    Xl,
+}
+
+impl EffortBand {
+    /// Plan units charged at admission: s 1, m 2, l 4, xl 8.
+    pub fn units(&self) -> u32 {
+        match self {
+            Self::S => 1,
+            Self::M => 2,
+            Self::L => 4,
+            Self::Xl => 8,
+        }
+    }
+
+    /// The band a MEASURED run falls in, by total tokens (input + output) per
+    /// run: s < 50k, m < 250k, l < 1M, xl otherwise. The one place the token
+    /// ranges are written down.
+    pub fn from_total_tokens(n: u64) -> EffortBand {
+        if n < 50_000 {
+            Self::S
+        } else if n < 250_000 {
+            Self::M
+        } else if n < 1_000_000 {
+            Self::L
+        } else {
+            Self::Xl
+        }
+    }
+}
+
+/// Who put the profile there. Wire values `"default" | "self" | "operator"`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum ProfileSource {
+    /// Nobody declared anything; these are the fleet defaults.
+    #[default]
+    Default,
+    /// The persona declared it on a decide wake.
+    #[serde(rename = "self")]
+    SelfDeclared,
+    /// The operator edited it by hand (which also pins it).
+    Operator,
+}
+
+/// What a run of a charter costs - declared by the persona, pinnable by the
+/// operator. Lives at `spec.resourceProfile`; an absent profile reads as
+/// [`ResourceProfile::default`] (light / none / standard / m).
+///
+/// `pinned` is the operator's lock: a persona never overwrites a pinned
+/// profile (enforced at the responsibility write door, not here).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceProfile {
+    #[serde(default)]
+    pub machine: MachineLoad,
+    #[serde(default)]
+    pub gpu: GpuClass,
+    #[serde(default)]
+    pub difficulty: Difficulty,
+    #[serde(default)]
+    pub effort: EffortBand,
+    #[serde(default)]
+    pub source: ProfileSource,
+    #[serde(default)]
+    pub pinned: bool,
+    /// Why the declarer chose these tags - one line, shown in the editor.
+    #[serde(default)]
+    pub rationale: Option<String>,
+    /// RFC 3339 instant of the last self-declaration or operator edit.
+    #[serde(default)]
+    pub declared_at: Option<String>,
+}
+
 /// The runtime envelope a charter carries beyond its governance fields — the
 /// half of a legacy design-context use case that was never about *what the
 /// persona holds* but about *how a run of it is shaped* (input schema, engine
@@ -454,6 +597,13 @@ pub struct ResponsibilitySpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub can_hire: Option<bool>,
+    // ---- Resource-aware orchestration ------------------------------------
+    /// What a run of this charter costs (machine, GPU, difficulty, effort).
+    /// `None` reads as [`ResourceProfile::default`] everywhere it is consumed;
+    /// the field stays absent on the wire until someone declares it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub resource_profile: Option<ResourceProfile>,
 }
 
 /// One row of `persona_responsibilities` — a standing charter a persona holds.
@@ -602,6 +752,28 @@ pub struct UpdatePersonaResponsibilityInput {
     pub spec: Option<ResponsibilitySpec>,
 }
 
+/// What runs of one charter ACTUALLY cost, aggregated from the attention
+/// ledger - shown beside the declared [`ResourceProfile`] so a persona's
+/// self-declaration can be checked against measurement.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponsibilityMeasured {
+    pub responsibility_id: String,
+    /// How many passes the averages are over.
+    pub passes: u32,
+    pub avg_cost_usd: f64,
+    /// Average total tokens (input + output) per pass.
+    #[ts(type = "number")]
+    pub avg_tokens: i64,
+    /// Peak resident memory seen for a run, when the monitor sampled one.
+    #[ts(type = "number | null")]
+    pub peak_rss_mb: Option<i64>,
+    /// `avg_tokens` mapped through [`EffortBand::from_total_tokens`]; `None`
+    /// when there are no passes to measure.
+    pub measured_effort: Option<EffortBand>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -638,5 +810,103 @@ mod tests {
         let pacing: ResponsibilityPacing = serde_json::from_str(legacy).expect("parses");
         assert_eq!(pacing.next_wake_minutes, None);
         assert_eq!(pacing.coverage_note.as_deref(), Some("docs deferred twice"));
+    }
+
+    #[test]
+    fn resource_profile_default_is_light_none_standard_m() {
+        let p = ResourceProfile::default();
+        assert_eq!(p.machine, MachineLoad::Light);
+        assert_eq!(p.gpu, GpuClass::None);
+        assert_eq!(p.difficulty, Difficulty::Standard);
+        assert_eq!(p.effort, EffortBand::M);
+        assert_eq!(p.source, ProfileSource::Default);
+        assert!(!p.pinned);
+        assert_eq!(p.rationale, None);
+        assert_eq!(p.declared_at, None);
+    }
+
+    #[test]
+    fn resource_profile_wire_strings_are_the_closed_vocabulary() {
+        let p = ResourceProfile {
+            machine: MachineLoad::Exclusive,
+            gpu: GpuClass::Shared,
+            difficulty: Difficulty::Hard,
+            effort: EffortBand::Xl,
+            source: ProfileSource::SelfDeclared,
+            pinned: true,
+            rationale: Some("renders video".into()),
+            declared_at: Some("2026-09-18T00:00:00Z".into()),
+        };
+        let v = serde_json::to_value(&p).expect("serializes");
+        assert_eq!(v["machine"], "exclusive");
+        assert_eq!(v["gpu"], "shared");
+        assert_eq!(v["difficulty"], "hard");
+        assert_eq!(v["effort"], "xl");
+        assert_eq!(v["source"], "self");
+        assert_eq!(v["pinned"], true);
+        assert_eq!(v["declaredAt"], "2026-09-18T00:00:00Z");
+        let back: ResourceProfile = serde_json::from_value(v).expect("parses");
+        assert_eq!(back, p);
+
+        for (band, wire) in [
+            (EffortBand::S, "s"),
+            (EffortBand::M, "m"),
+            (EffortBand::L, "l"),
+            (EffortBand::Xl, "xl"),
+        ] {
+            assert_eq!(serde_json::to_value(band).expect("serializes"), wire);
+        }
+        assert_eq!(
+            serde_json::to_value(ProfileSource::Operator).expect("serializes"),
+            "operator"
+        );
+        assert_eq!(
+            serde_json::to_value(ProfileSource::Default).expect("serializes"),
+            "default"
+        );
+    }
+
+    #[test]
+    fn resource_profile_units_double_per_step() {
+        let machine = [
+            MachineLoad::Light,
+            MachineLoad::Moderate,
+            MachineLoad::Heavy,
+            MachineLoad::Exclusive,
+        ];
+        assert_eq!(machine.map(|m| m.units()), [1, 2, 4, 8]);
+        let effort = [EffortBand::S, EffortBand::M, EffortBand::L, EffortBand::Xl];
+        assert_eq!(effort.map(|e| e.units()), [1, 2, 4, 8]);
+    }
+
+    #[test]
+    fn resource_profile_effort_band_token_edges() {
+        assert_eq!(EffortBand::from_total_tokens(0), EffortBand::S);
+        assert_eq!(EffortBand::from_total_tokens(49_999), EffortBand::S);
+        assert_eq!(EffortBand::from_total_tokens(50_000), EffortBand::M);
+        assert_eq!(EffortBand::from_total_tokens(249_999), EffortBand::M);
+        assert_eq!(EffortBand::from_total_tokens(250_000), EffortBand::L);
+        assert_eq!(EffortBand::from_total_tokens(999_999), EffortBand::L);
+        assert_eq!(EffortBand::from_total_tokens(1_000_000), EffortBand::Xl);
+        assert_eq!(EffortBand::from_total_tokens(u64::MAX), EffortBand::Xl);
+    }
+
+    /// Every charter written before this field existed has no
+    /// `resourceProfile` key; it must still read, and must not grow one on
+    /// the way back out.
+    #[test]
+    fn resource_profile_absent_from_a_legacy_spec_still_parses() {
+        let spec: ResponsibilitySpec = serde_json::from_str(r#"{"priority":2}"#).expect("parses");
+        assert_eq!(spec.resource_profile, None);
+        assert_eq!(spec.priority, Some(2));
+        let out = serde_json::to_string(&spec).expect("serializes");
+        assert!(!out.contains("resourceProfile"));
+
+        // A partially-written profile fills the rest from the defaults.
+        let spec: ResponsibilitySpec =
+            serde_json::from_str(r#"{"resourceProfile":{"machine":"heavy"}}"#).expect("parses");
+        let p = spec.resource_profile.expect("present");
+        assert_eq!(p.machine, MachineLoad::Heavy);
+        assert_eq!(p.effort, EffortBand::M);
     }
 }

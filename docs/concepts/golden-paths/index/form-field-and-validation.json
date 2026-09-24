@@ -167,7 +167,7 @@
       "sections": [7],
       "lines": ["27"],
       "contexts": [
-        "| `agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27` · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModa…"
+        "| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9`…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx"
@@ -185,7 +185,7 @@
       "sections": [7],
       "lines": ["353"],
       "contexts": [
-        "| `agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27` · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModa…"
+        "| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9`…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_incidents/components/IncidentDetailModal.tsx"
@@ -379,7 +379,7 @@
       "sections": [7],
       "lines": ["9"],
       "contexts": [
-        "| `agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27` · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9` · `overview/sub_incidents/components/IncidentDetailModa…"
+        "| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9`…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx"

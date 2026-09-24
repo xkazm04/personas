@@ -84,6 +84,42 @@ pub fn dev_tools_workspace_assign_project(
     repo::assign_project(&state.db, &project_id, workspace_id.as_deref())
 }
 
+/// Record which workspace the operator is standing in, or clear it.
+///
+/// The selection itself is a per-device UI preference and lives in the
+/// client's `localStorage`; this is the one-way mirror of it that the BACKEND
+/// reads, because a door with no project in its payload has no other way to
+/// learn which organisation a new persona belongs to
+/// (`approval_exec_core::active_workspace_group` files Athena's context-free
+/// hires into the active workspace's cross-project group).
+///
+/// Deliberately a command rather than a client-side `setAppSetting`, for the
+/// reason `dev_tools_set_knowledge_root` gives: the settings KEY NAME then
+/// lives only in Rust, so there is no second spelling of it on the client to
+/// drift out of step with the registry that owns it.
+///
+/// `None` — or a blank id — DELETES the row rather than writing an empty
+/// string: "no workspace selected" is the absence of the row, and the doors
+/// that read it then file the persona nowhere instead of guessing. The id is
+/// deliberately not validated here, because a workspace can be deleted long
+/// after it was mirrored; the check that matters happens at read time.
+#[tauri::command]
+pub fn dev_tools_workspace_set_active(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let key = crate::db::settings_keys::DEVTOOLS_ACTIVE_WORKSPACE;
+    match workspace_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+    {
+        Some(id) => crate::db::repos::core::settings::set(&state.db, key, id),
+        None => crate::db::repos::core::settings::delete(&state.db, key).map(|_| ()),
+    }
+}
+
 #[tauri::command]
 pub fn dev_tools_workspace_import_local(
     state: State<'_, Arc<AppState>>,

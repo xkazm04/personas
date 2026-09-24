@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 70,
-        "matches": 172
+        "files": 69,
+        "matches": 170
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 143,
-        "matches": 196
+        "files": 140,
+        "matches": 192
       },
       "floor": 2500
     },
@@ -316,8 +316,8 @@
         }
       ],
       "baseline": {
-        "files": 53,
-        "matches": 53
+        "files": 52,
+        "matches": 52
       },
       "floor": 4000
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 734,
-        "matches": 1767
+        "files": 725,
+        "matches": 1750
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 294,
-        "matches": 647
+        "files": 288,
+        "matches": 637
       },
       "floor": 4000
     },
@@ -832,7 +832,7 @@
         "description": "a #[cfg(...)] attribute governing a single entry in tauri::generate_handler![] (the attribute line, then optional comment lines, then one commands::path, line). PROXY FOR the stack-free condition: an entry point's EXISTENCE is decided by a build switch, while every caller-side artefact still claims it always exists. In this repo the generated CommandName union (src/lib/commandNames.generated.ts) contains all 128 of these because scripts/generate-command-names.mjs:33 skips the #[cfg] line and keeps the entry, so 97 of them are invoked unconditionally from src/api/** with zero safeInvoke guards and reject with Command \"x\" not found under --features desktop. The comment-tolerant span is load-bearing: lib.rs:2395 is an ORPHANED gate (a #[cfg(all(desktop, ml))] separated from its intended command by a comment, now silently unregistering get_credential_recipe), and the existing generate_handler_has_no_orphaned_cfg_attributes test cannot see it. The legal destination is the pattern at src/commands/infrastructure/scraper.rs:17-40 — register unconditionally, gate the BODY, and return a typed capability error in the #[cfg(not(feature))] branch. PRECONDITION: this proxy keys on Cargo's #[cfg] attribute plus this repo's one-path-per-line registration list. A repo whose variance is a bundler define, an optional import, a DI container binding, or a router mount behind an if scores zero here while the same condition is present at full scale — re-derive the proxy against the local registration mechanism."
       },
       "baseline": {
-        "files": 1,
+        "files": 6,
         "matches": 129
       },
       "floor": 500
@@ -960,8 +960,8 @@
         }
       ],
       "baseline": {
-        "files": 21,
-        "matches": 24
+        "files": 19,
+        "matches": 20
       },
       "floor": 4000
     },
@@ -1055,8 +1055,8 @@
         "description": "a pub fn in the repository layer whose text reaches a rusqlite statement call (query_row / query_map / execute / execute_batch / prepare / prepare_cached) without passing through timed_query! first, and with no intervening pub fn. PROXY FOR the stack-free condition: a persistence operation executes with no record of how long it took, so its cost can never be observed, compared across releases, or attributed when a surface gets slow. Measured 2026-08-14 at HEAD: 245 matches across 36 of 116 files. Two independent implementations reconcile EXACTLY - a brace-matching Rust parser counts 234 pub fns that hold SQL in their own body with no timed_query!, and the 11-match difference is precisely the 11 spans where the SQL belongs to a private helper declared immediately after the matched pub fn (llm_spend.rs:30 pub fn record -> the untimed INSERT is in fn try_record at :40). So precision on the CONDITION is 245/245 and precision on the ATTRIBUTED FUNCTION NAME is 234/245; every match is a real untimed statement either way. Median matched span is 197 chars and only 1 of 245 approaches the 2500 cap, so the bound loses almost nothing and makes the count a floor rather than an estimate. Every match is a distinct (file, fn) pair - no function is double-counted. Zero matches sit inside a #[cfg(test)] module (a naive after-the-marker heuristic flags 8, and all 8 are production functions declared below a mid-file test mod). The gap is FILE-shaped, not function-shaped, which is why a per-function lint would read as noise: twin.rs is 38/39 uninstrumented, research_lab.rs 25/25, orchestration/team_assignments.rs 24/24, while executions.rs, events.rs and triggers.rs are near 100 percent covered - a module either adopted the macro or never heard of it. It does not correlate with age (the three oldest repo files, 2026-02-19, are covered; 2026-07-31 arrivals are not) and it does not correlate with hotness. PRECONDITION (must be re-derived per repo): this repo executes SQL through rusqlite method calls spelled query_row / query_map / execute / prepare inside functions declared pub fn, and its timing wrapper is a macro named timed_query! that must be written by hand. A repo whose driver is sqlx (.fetch_one(&pool).await), an ORM, or a query builder has the SAME condition wearing different markup and this pattern scores zero against it - brainiac is exactly that repo, and 0 of its 176 store functions are timed. A repo that times structurally at a chokepoint has the condition designed out and needs no rule at all: this repo's own frontend is that case, since src/lib/tauriInvoke.ts:513,:517 calls recordIpcCall on BOTH the success and the failure path of every IPC call, so its coverage is 100 percent by construction and cannot regress. LEGAL FIX, in order: (1) wrap the body in timed_query!(TABLE, TABLE::op, { ... }) - alert_rules.rs:35-59 is the shape to copy; (2) if the function is a thin wrapper over a private helper, wrap the helper, not the wrapper; (3) if the function genuinely runs no SQL of its own and only composes other repo functions, it needs no wrapper and the match is telling you a private sibling below it does - wrap that one. Do NOT silence a match by moving SQL out of the repo layer; that trades this condition for the one persistence-handle-in-command-tree counts."
       },
       "baseline": {
-        "files": 41,
-        "matches": 212
+        "files": 40,
+        "matches": 211
       },
       "floor": 100
     },
@@ -1331,8 +1331,8 @@
         "description": "RECALL FIX 2026-08-14: the original pattern required toLocale(Date|Time)String, so a bare `new Date(x).toLocaleString()` was invisible — including RelativeTime.tsx:38, which renders the tooltip behind ~100 <RelativeTime> tags and is the most-rendered date in the app. Found by the tooltip composer critiquing a rule another path had already shipped. The fix is a date-specific alternative, NOT a relaxed (?:Date|Time)? — measured: 26 bare .toLocaleString() sites, only 12 are dates; the rest are token counts and KPI numbers owned by the numeric rules, and relaxing would have imported 14 false positives into a date rule. STILL INVISIBLE, stated rather than hidden: a Date held in a variable (`date.toLocaleString()`) cannot be distinguished from a number by any regex — that residue needs type information. a date/time formatting call whose locale argument is absent, `undefined`, or `[]` — three spellings of \"use whatever locale the operating system is set to\". PROXY FOR the stack-free condition: a moment is projected into a calendar and a clock using the locale of the machine the code runs on rather than the language the user chose in the application, so a user who set this app to Japanese on an en-US laptop reads `5/24/26` and a user who set it to English on a German laptop reads `24.05.26`. Verified against the app's own machinery: useTranslation() (src/i18n/useTranslation.ts:325) returns `{ t, tx, language }` over 14 shipped locales and i18nStore.ts:94 even mirrors the chosen language into the Rust backend — so the correct value is available at every one of these call sites and reaches exactly ONE of them (LiveRoadmapStatusPill.tsx:38). Measured population: a balanced-paren census of every toLocale*String / Intl.DateTimeFormat / Intl.RelativeTimeFormat first argument in all 4,829 src .ts+.tsx found 84 date-locale decisions — 76 host-OS, 6 hardcoded 'en-US', 1 parameterised-but-never-passed, 1 correct. This pattern covers 55 of the 76: `.toLocaleString(` is deliberately EXCLUDED because it is ambiguous between a Date and a number and would collide with number-and-cost-formatting.md's territory, which costs ~20 date sites of recall and buys 100% precision. Precision 55/55 on a full read of every match: every one is a date or time formatted for a locale the app did not choose. Two matches are non-product destinations (LabVersionsTable.tsx:298,312 stamp an exported comparison report; run-harness.ts:56 prints a harness console line) and are carried in the baseline rather than excluded, because a directory-level exemption for two lines adds a stale-exclude failure mode worth more than it saves. PRECONDITION (measured, must be re-derived per repo): this repo owns an app-level language, exposes it through one hook, and spells a date render as a toLocale*String method or an Intl constructor. A repo with no i18n system has the condition and no fix — brainiac/console has 3 such calls, zero locale channel, and nothing to wire; a repo that pins a literal locale instead scores zero here while being equally locale-blind — personas-web spells 4 of its 12 date-locale calls as 'en-US' and this pattern declines all four. LEGAL FIX: <RelativeTime timestamp={x}/> for elapsed, <AbsoluteTime timestamp={x} variant=\"datetime|date|time|compact\"/> for a fixed moment, or — for a raw Intl call that must stay raw — the `language` from useTranslation(), as LiveRoadmapStatusPill.tsx:38 does. NOTE THE DESTINATION IS NOT YET CORRECT BY DEFAULT: both primitives resolve their own locale from the host OS today (AbsoluteTime.tsx:51, RelativeTime.tsx:38), so routing a call site there buys correctness of instant, cadence and style and defers the language until §8 Gap 1 lands. Sequence Gap 1 before burning this baseline."
       },
       "baseline": {
-        "files": 41,
-        "matches": 52
+        "files": 40,
+        "matches": 51
       },
       "floor": 4000
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 471,
-        "matches": 876
+        "files": 465,
+        "matches": 864
       },
       "floor": 2000
     },
@@ -1647,8 +1647,8 @@
         }
       ],
       "baseline": {
-        "files": 13,
-        "matches": 13
+        "files": 15,
+        "matches": 15
       },
       "floor": 2000
     },
@@ -2112,8 +2112,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 49,
-        "matches": 52
+        "files": 48,
+        "matches": 51
       },
       "floor": 2000
     },
@@ -2135,8 +2135,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 162,
-        "matches": 346
+        "files": 153,
+        "matches": 331
       },
       "floor": 4000
     },
@@ -3609,8 +3609,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 26,
-        "matches": 35
+        "files": 25,
+        "matches": 34
       },
       "floor": 3000
     },
@@ -3934,8 +3934,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 45
+        "files": 42,
+        "matches": 46
       },
       "floor": 2000
     },
@@ -4107,7 +4107,7 @@
       ],
       "baseline": {
         "files": 25,
-        "matches": 28
+        "matches": 29
       },
       "floor": 4000
     },
@@ -4182,8 +4182,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 33,
-        "matches": 37
+        "files": 32,
+        "matches": 36
       },
       "floor": 3000
     },
@@ -4477,7 +4477,7 @@
       ],
       "baseline": {
         "files": 22,
-        "matches": 131
+        "matches": 130
       },
       "floor": 900
     },
@@ -4819,8 +4819,8 @@
         "description": "A script that enumerates a directory and can exit non-zero, but never refuses an EMPTY enumeration — so 'found nothing' and 'looked at nothing' both exit 0. Proxy for the contract's fail-loud requirement; the earning case is check-coverage.mjs reporting 0 missing / 0 extra with 13 of 14 locales absent."
       },
       "baseline": {
-        "files": 19,
-        "matches": 19
+        "files": 18,
+        "matches": 18
       },
       "floor": 120,
       "exclude": [
@@ -4969,6 +4969,12 @@
     },
     {
       "id": "hand-painted-modal-backdrop",
+      "exclude": [
+        {
+          "path": "src/features/plugins/companion/chat/next/frame/variants/c/SpreadStage.tsx",
+          "reason": "a decorative, pointer-events-none dim layer behind the Halo · Spread card-game prototype stage, not a modal: no focus trap, no dismiss semantics, the app stays clickable around it. Prototype-only; it is deleted (and this entry goes stale and fails loud) when the Athena chat switcher is consolidated"
+        }
+      ],
       "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
       "roots": [
         "src"

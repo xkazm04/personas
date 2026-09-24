@@ -38,8 +38,8 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       {
         id: 'compose',
         narration: (t) => t.plugins.companion.guide_pc_compose,
-        // The sigil's click-to-summon center — where the user describes the persona.
-        highlightTestId: 'glyph-compose-summon',
+        // The intent textarea on the sheet's compose frame — where the user describes the persona.
+        highlightTestId: 'agent-intent-input',
         orbAnchor: 'auto',
       },
       {

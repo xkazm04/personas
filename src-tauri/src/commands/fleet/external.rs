@@ -42,6 +42,12 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
+// Only the Windows `spawn_console` below strips these markers; the
+// `#[cfg(not(windows))]` twin refuses the whole operation, so on Linux and
+// macOS this import has no user and `-D warnings` rejects it. The gate was
+// invisible until now because the Linux leg of `rust-tests` never reached
+// its clippy step: the test step failed first.
+#[cfg(windows)]
 use super::pty::CLAUDE_NESTING_ENV;
 
 /// Resolve `relative` against `root`, refusing anything that escapes it.

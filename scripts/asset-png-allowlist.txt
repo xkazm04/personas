@@ -1,0 +1,55 @@
+# asset-png-allowlist.txt — PNGs under public/ that are DELIBERATELY not converted to WebP.
+#
+# Read by scripts/optimize-assets.mjs. Format: one `public/...` path, whitespace, the reason.
+# An allowlisted PNG is never a conversion candidate and never fails `--check`.
+# An entry naming a file that no longer exists FAILS `--check` — delete the line with the file.
+#
+# Seeded 2026-09-18 (spark build-process-upgrade, WP6). Three kinds of entry:
+#   NAMED-BY-RUST   a .rs file / connector seed names the .png path; the string lives in user DBs
+#   QUALITY         WebP stayed under 35 dB PSNR even at quality 90; needs a human eye before converting
+#   UNREFERENCED    no reference found anywhere in the repo on 2026-09-18; kept because deleting a
+#                   product asset on a grep negative is an operator decision, and converting one
+#                   would only ship a second unreferenced file. Delete the file + this line, or
+#                   wire it up and convert it.
+
+# ── NAMED-BY-RUST ──
+public/illustrations/logo-v1-geometric-nobg.png   NAMED-BY-RUST src-tauri/db/src/builtin_connectors.rs + scripts/connectors/builtin/{local-drive,twin}.json icon_url; also TitleBar/Sidebar/HeroHeader/CredentialPickerCards
+
+# ── QUALITY ──
+public/illustrations/recipe-puzzle.png     QUALITY 31.55 dB @q80, 33.74 dB @q90 (alpha line art) — src/features/recipes/shared/PuzzlePieceIllustration.tsx
+public/illustrations/recipe-versions.png   QUALITY 32.29 dB @q80, 34.75 dB @q90 (alpha line art) — src/features/recipes/shared/VersionTimelineIllustration.tsx
+
+# ── UNREFERENCED ──
+public/illustrations/empty-template-gallery.png      UNREFERENCED
+public/illustrations/leo-empty-state.png             UNREFERENCED (byte-identical size to public/empty-states/leo-empty-state.png, also unreferenced)
+public/illustrations/logo-v1-geometric.png           UNREFERENCED (only the -nobg variant is used)
+public/illustrations/roadmap-empty-state.png         UNREFERENCED
+public/illustrations/roadmap-empty-state-nobg.png    UNREFERENCED
+public/illustrations/languages/lang-ar-light.png     UNREFERENCED LanguageSwitcher.tsx only builds the dark `lang-<code>` name
+public/illustrations/languages/lang-bn-light.png     UNREFERENCED same
+public/illustrations/languages/lang-cs-light.png     UNREFERENCED same
+public/illustrations/languages/lang-de-light.png     UNREFERENCED same
+public/illustrations/languages/lang-en-light.png     UNREFERENCED same
+public/illustrations/languages/lang-es-light.png     UNREFERENCED same
+public/illustrations/languages/lang-fr-light.png     UNREFERENCED same
+public/illustrations/languages/lang-hi-light.png     UNREFERENCED same
+public/illustrations/languages/lang-id-light.png     UNREFERENCED same
+public/illustrations/languages/lang-ja-light.png     UNREFERENCED same
+public/illustrations/languages/lang-ko-light.png     UNREFERENCED same
+public/illustrations/languages/lang-ru-light.png     UNREFERENCED same
+public/illustrations/languages/lang-vi-light.png     UNREFERENCED same
+public/illustrations/languages/lang-zh-light.png     UNREFERENCED same
+public/illustrations/matrix/connectors.png           UNREFERENCED
+public/illustrations/matrix/errors.png               UNREFERENCED
+public/illustrations/matrix/events.png               UNREFERENCED
+public/illustrations/matrix/human-review.png         UNREFERENCED
+public/illustrations/matrix/memory.png               UNREFERENCED
+public/illustrations/matrix/messages.png             UNREFERENCED
+public/illustrations/matrix/triggers.png             UNREFERENCED
+public/illustrations/matrix/use-cases.png            UNREFERENCED
+public/illustrations/presets/preset-daily-ops-dark.png                UNREFERENCED id not in PRESET_ART (PresetLibraryPage.tsx)
+public/illustrations/presets/preset-daily-ops-light.png               UNREFERENCED same
+public/illustrations/presets/preset-engineering-triage-dark.png       UNREFERENCED same
+public/illustrations/presets/preset-engineering-triage-light.png      UNREFERENCED same
+public/illustrations/presets/preset-reflective-journaling-dark.png    UNREFERENCED same
+public/illustrations/presets/preset-reflective-journaling-light.png   UNREFERENCED same

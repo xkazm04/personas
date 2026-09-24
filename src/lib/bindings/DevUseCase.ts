@@ -37,7 +37,11 @@ created_by: string,
 /**
  * Human-curated: a use-case scan must not re-propose or replace it.
  */
-pinned: boolean, rationale: string | null, created_at: string, updated_at: string, 
+pinned: boolean, 
+/**
+ * 'major' | 'standard' - only a major feature reaches the council's human gate.
+ */
+tier: string, rationale: string | null, created_at: string, updated_at: string, 
 /**
  * The slice: context ids this use case spans. Hydrated from
  * `dev_use_case_contexts`, not a column on this table.

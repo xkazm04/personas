@@ -23,7 +23,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 function ShieldSearchIllustration({ className = '' }: { className?: string }) {
   return (
     <img
-      src="/illustrations/empathetic-error.png"
+      src="/illustrations/empathetic-error.webp"
       alt=""
       aria-hidden="true"
       className={className}

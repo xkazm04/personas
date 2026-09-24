@@ -25,6 +25,11 @@
 // branch and its commits stay in the repo. Stale refs are always pruned.
 // Orphaned directories (on disk but absent from `git worktree list`) are only
 // removed with --include-orphans, because git can't vouch for their contents.
+//
+// The classification (`collectWorktreeRows`) and the removal (`removeWorktreeRows`)
+// are exported: the daily hygiene task (scripts/hygiene/run-daily.mjs) applies
+// this SAME predicate unattended rather than a copy of it. The CLI is unchanged
+// and still a dry run unless `--force` is passed.
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, statSync, rmSync } from "node:fs";
@@ -37,14 +42,7 @@ const C = {
   green: "\x1b[32m", dim: "\x1b[2m", cyan: "\x1b[36m",
 };
 
-const args = process.argv.slice(2);
-const FORCE = args.includes("--force");
-const JSON_OUT = args.includes("--json");
-const INCLUDE_ORPHANS = args.includes("--include-orphans");
-const DAYS = (() => {
-  const a = args.find((x) => x.startsWith("--days="));
-  return a ? Number(a.slice(7)) : 14;
-})();
+export const DEFAULT_DAYS = 14;
 
 function gb(bytes) {
   return `${(bytes / GIB).toFixed(2)} GB`;
@@ -56,11 +54,11 @@ function git(root, gitArgs, opts = {}) {
   });
 }
 
-function mainRepoRoot() {
+export function mainRepoRoot() {
   try {
     const common = execFileSync(
       "git", ["rev-parse", "--path-format=absolute", "--git-common-dir"],
-      { encoding: "utf8" },
+      { encoding: "utf8", cwd: dirname(fileURLToPath(import.meta.url)), stdio: ["ignore", "pipe", "ignore"] },
     ).trim();
     if (common) return dirname(common);
   } catch {
@@ -71,7 +69,7 @@ function mainRepoRoot() {
 
 // Windows paths are case-insensitive and git prints them with forward slashes;
 // normalise both so registered-worktree matching is reliable.
-function normPath(p) {
+export function normPath(p) {
   return p.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
 }
 
@@ -96,7 +94,7 @@ function measureDir(root) {
 }
 
 // Parse `git worktree list --porcelain` into { path, head, branch, locked }.
-function listRegisteredWorktrees(root) {
+export function listRegisteredWorktrees(root) {
   let out;
   try {
     out = git(root, ["worktree", "list", "--porcelain"]);
@@ -156,17 +154,24 @@ function dirtyCount(worktreePath) {
   }
 }
 
-function ageDays(path) {
+function ageDays(path, now = Date.now()) {
   try {
-    return (Date.now() - statSync(path).mtimeMs) / 86_400_000;
+    return (now - statSync(path).mtimeMs) / 86_400_000;
   } catch {
     return 0;
   }
 }
 
-// ---- main ------------------------------------------------------------------
+// ---- classification ----------------------------------------------------------
 
-const root = mainRepoRoot();
+/**
+ * Classify everything under `<root>/.claude/worktrees/`. Deletes nothing.
+ * `measure: false` skips the (slow) size walk — the daily task sizes only what
+ * it is about to remove.
+ */
+export function collectWorktreeRows({ root, days = DEFAULT_DAYS, includeOrphans = false, now = Date.now(), measure = true } = {}) {
+const DAYS = days;
+const INCLUDE_ORPHANS = includeOrphans;
 const wtBase = join(root, ".claude", "worktrees");
 const ref = defaultRef(root);
 const registered = listRegisteredWorktrees(root);
@@ -182,8 +187,8 @@ const rows = [];
 for (const name of onDisk) {
   const path = join(wtBase, name);
   const reg = registeredByPath.get(normPath(path));
-  const size = measureDir(path);
-  const age = ageDays(path);
+  const size = measure ? measureDir(path) : 0;
+  const age = ageDays(path, now);
 
   if (!reg) {
     rows.push({
@@ -221,6 +226,49 @@ for (const w of registered) {
     note: "directory missing — git ref will be pruned",
   });
 }
+
+return { root, wtBase, ref, days: DAYS, rows };
+}
+
+/** Remove the given rows (as classified above) and prune stale refs. */
+export function removeWorktreeRows(root, removable, { onRemoved = () => {}, onFailed = () => {} } = {}) {
+  let removed = 0;
+  for (const r of removable) {
+    try {
+      if (r.kind === "orphan") {
+        rmSync(r.path, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+      } else if (r.kind === "worktree") {
+        // --force: worktrees carry untracked build artifacts git would refuse
+        // to discard otherwise. Branch + commits survive; only the tree goes.
+        git(root, ["worktree", "remove", "--force", r.path], { stdio: ["ignore", "ignore", "pipe"] });
+      } // stale-ref: nothing on disk; `worktree prune` below clears it
+      removed += 1;
+      onRemoved(r);
+    } catch (e) {
+      onFailed(r, e);
+    }
+  }
+  try {
+    git(root, ["worktree", "prune"]);
+  } catch {
+    /* non-fatal */
+  }
+  return removed;
+}
+
+// ---- CLI ---------------------------------------------------------------------
+
+function main() {
+const args = process.argv.slice(2);
+const FORCE = args.includes("--force");
+const JSON_OUT = args.includes("--json");
+const INCLUDE_ORPHANS = args.includes("--include-orphans");
+const DAYS = (() => {
+  const a = args.find((x) => x.startsWith("--days="));
+  return a ? Number(a.slice(7)) : DEFAULT_DAYS;
+})();
+const root = mainRepoRoot();
+const { wtBase, ref, rows } = collectWorktreeRows({ root, days: DAYS, includeOrphans: INCLUDE_ORPHANS });
 
 if (JSON_OUT) {
   process.stdout.write(JSON.stringify({ root, ref, days: DAYS, rows }, null, 2) + "\n");
@@ -260,29 +308,16 @@ if (!FORCE) {
   process.exit(0);
 }
 
-// ---- removal ---------------------------------------------------------------
+// ---- removal ----------------------------------------------------------------
 
-let removed = 0;
-for (const r of removable) {
-  try {
-    if (r.kind === "orphan") {
-      rmSync(r.path, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
-    } else {
-      // --force: worktrees carry untracked build artifacts git would refuse
-      // to discard otherwise. Branch + commits survive; only the tree goes.
-      git(root, ["worktree", "remove", "--force", r.path], { stdio: "inherit" });
-    }
-    process.stdout.write(`  ${C.green}removed${C.reset} ${r.name}\n`);
-    removed += 1;
-  } catch (e) {
-    process.stderr.write(`  ${C.red}failed${C.reset} ${r.name}: ${e.message}\n`);
-  }
-}
-
-try {
-  git(root, ["worktree", "prune"]);
-} catch {
-  /* non-fatal */
-}
+const removed = removeWorktreeRows(root, removable, {
+  onRemoved: (r) => process.stdout.write(`  ${C.green}removed${C.reset} ${r.name}\n`),
+  onFailed: (r, e) => process.stderr.write(`  ${C.red}failed${C.reset} ${r.name}: ${e.message}\n`),
+});
 
 process.stdout.write(`\n${C.green}Removed ${removed}/${removable.length} item(s).${C.reset}\n\n`);
+}
+
+const SELF = fileURLToPath(import.meta.url);
+const samePath = (a, b) => (process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b);
+if (process.argv[1] && samePath(resolve(process.argv[1]), SELF)) main();

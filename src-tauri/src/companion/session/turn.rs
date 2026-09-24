@@ -34,6 +34,12 @@ use crate::db::{DbPool, UserDbPool};
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
+/// Appended to every proactive directive that reaches the chat (layered
+/// voice): the length and link rules themselves live in the static core's
+/// `# Layer one` section, so this only points at them.
+const PROACTIVE_LAYER_ONE_SUFFIX: &str =
+    "\n\nReply in layer one (see Layer one): link to the detail, do not restate it.";
+
 /// One attempt of the turn on the engine: the warm session when the caller
 /// resolved a split, the spawn-per-turn path otherwise. A named function
 /// rather than a closure so the retry can call it with a second `CliTurn`.
@@ -331,8 +337,12 @@ async fn send_turn_inner(
         ),
         // Proactive turns: the caller already built the full directive
         // (it has the execution details / trigger context), so the
-        // `user_message` IS the directive — pass it straight through.
-        TurnOrigin::Proactive { .. } => user_message.clone(),
+        // `user_message` IS the directive — pass it through, with the one
+        // shape rule every proactive reply shares (layered voice): a nudge,
+        // a completion, a research verdict all land as layer one. The
+        // suppressed fleet-orchestration turn has no chat output to shape.
+        TurnOrigin::Proactive { .. } if suppress_chat => user_message.clone(),
+        TurnOrigin::Proactive { .. } => format!("{user_message}{PROACTIVE_LAYER_ONE_SUFFIX}"),
         // External turns: the body is the directive, but prepend an explicit
         // provenance tag so the model treats it as an automated system request
         // (not the operator typing) — stdin carries no role of its own.
@@ -538,6 +548,10 @@ async fn send_turn_inner(
                 requests_continuation: false,
                 warnings: vec![format!("dispatcher error: {e}")],
                 progress_beats: Vec::new(),
+                notepad_status_changes: Vec::new(),
+                note_comments: Vec::new(),
+                reports: Vec::new(),
+                refs: Default::default(),
             }
         }
     };
@@ -692,7 +706,7 @@ async fn send_turn_inner(
     // Best-effort — never blocks the turn.
     {
         let (origin_str, trigger_kind) = ledger_origin_of(&origin);
-        let outcome_json = serde_json::to_string(&serde_json::json!({
+        let mut outcome = serde_json::json!({
             "approvals": dispatched.approvals.len(),
             "cards": dispatched.chat_cards.len(),
             "navigations": dispatched.navigations.len(),
@@ -700,8 +714,15 @@ async fn send_turn_inner(
             "dashboards": dispatched.dashboards.len(),
             "cockpits": dispatched.cockpits.len(),
             "continuation": dispatched.requests_continuation,
-        }))
-        .ok();
+        });
+        // Layered voice: the shape of the reply he actually saw. Only a
+        // displayed turn is measured; a suppressed one (fleet orchestration's
+        // per-session verdict lines) never reached him, and absent means
+        // "not measured", never 0.
+        if !suppress_chat {
+            crate::companion::dispatcher::stamp_reply_metrics(&mut outcome, &dispatched);
+        }
+        let outcome_json = serde_json::to_string(&outcome).ok();
         crate::companion::turn_ledger::record_turn(
             &user_db,
             &crate::companion::turn_ledger::TurnRecord {
@@ -936,6 +957,21 @@ async fn send_turn_inner(
         }
     }
 
+    // Notepad side effects of this turn's ops. The dispatcher wrote them to
+    // the app DB but has no AppHandle, so the pad hears about them here: a
+    // note an op moved (`show_ship_goals` stamping its note in flight) and
+    // each thread entry an op posted (`comment_on_note`).
+    for change in &dispatched.notepad_status_changes {
+        crate::commands::infrastructure::dev_tools::notepad::emit_note_status(
+            app,
+            &change.note_id,
+            change.status,
+        );
+    }
+    for comment in &dispatched.note_comments {
+        crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, comment);
+    }
+
     // Inline chat-cards. Emitted once per turn with the full list so the
     // frontend appends to the latest bubble.
     //
@@ -948,6 +984,11 @@ async fn send_turn_inner(
     // the row id rides in the payload, which is what lets the frontend resolve
     // (and re-hydrate) them. A persistence failure degrades to the old
     // transient behaviour rather than dropping the card.
+    // Reports were minted before the assistant episode existed; stamp it on.
+    if !dispatched.reports.is_empty() {
+        let ids: Vec<String> = dispatched.reports.iter().map(|r| r.id.clone()).collect();
+        crate::companion::reports::attach_episode(&user_db, &ids, &assistant_ep_id);
+    }
     if !dispatched.chat_cards.is_empty() {
         let cards: Vec<serde_json::Value> = dispatched
             .chat_cards
@@ -958,7 +999,14 @@ async fn send_turn_inner(
                     "title": card.title,
                     "config": card.config,
                 });
-                if crate::commands::companion::chat_cards::is_actionable_kind(&card.kind) {
+                // A report is already durable (the dispatcher wrote it before
+                // anything was emitted); its row id rides in the payload like
+                // an actionable card's, so the frontend can open and mark it.
+                if card.kind == crate::companion::reports::REPORT_KIND {
+                    if let Some(id) = card.config.get("reportId").and_then(|v| v.as_str()) {
+                        value["id"] = serde_json::Value::String(id.to_string());
+                    }
+                } else if crate::commands::companion::chat_cards::is_actionable_kind(&card.kind) {
                     let config_json = card.config.to_string();
                     match crate::commands::companion::chat_cards::insert_card(
                         &user_db,
@@ -969,6 +1017,19 @@ async fn send_turn_inner(
                         config_json,
                     ) {
                         Ok(id) => {
+                            // A suggestions card is also a REVIEW on the note's
+                            // thread, keyed on this card id — which exists only
+                            // from here on, so this is where it is written.
+                            if card.kind == "note_suggestions" {
+                                match crate::commands::infrastructure::dev_tools::note_suggestions::record_suggestions_review(
+                                    &sys_db,
+                                    &id,
+                                    &card.config,
+                                ) {
+                                    Ok(comment) => crate::commands::infrastructure::dev_tools::notepad::emit_note_comment(app, &comment),
+                                    Err(e) => tracing::warn!(card = %id, error = %e, "notepad: suggestions review not posted on the thread"),
+                                }
+                            }
                             value["id"] = serde_json::Value::String(id);
                         }
                         Err(e) => {

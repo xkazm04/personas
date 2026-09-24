@@ -203,6 +203,10 @@ fn build_map(
                 "contexts": slice,
                 "primary_context": u.primary_context_id.as_deref().and_then(context_name),
                 "pinned": u.pinned,
+                // 'major' | 'standard'. A published map says which features a
+                // person is asked to sign off, so a reader (or an App Master
+                // deciding what to council) does not have to ask the database.
+                "tier": u.tier,
             })
         })
         .collect();

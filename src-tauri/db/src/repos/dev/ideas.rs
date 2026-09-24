@@ -1,4 +1,4 @@
-use crate::models::DevIdea;
+use crate::models::{BacklogSource, DevIdea, IdeaDraft, IdeaStatus};
 use crate::query_builder::QueryBuilder;
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -33,6 +33,8 @@ pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         verify_state: row.get("verify_state").unwrap_or(None),
         verify_checked_at: row.get("verify_checked_at").unwrap_or(None),
         verify_evidence: row.get("verify_evidence").unwrap_or(None),
+        plan: row.get("plan").unwrap_or(None),
+        completeness: row.get("completeness").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -85,10 +87,14 @@ pub fn list_ideas(
 // the SQL is testable without a Tauri app handle.
 // ----------------------------------------------------------------------------
 
-/// Pseudo-origin the triage UI uses for classic Idea-Scanner ideas: only
-/// findings-spine sensors stamp a real `origin`, so "scanner" means
-/// `origin IS NULL`. Kept as a constant so the filter and the count bucket
-/// label can never drift apart.
+/// Pseudo-origin the triage UI uses for classic Idea-Scanner ideas.
+///
+/// It meant `origin IS NULL` back when only findings-spine sensors stamped an
+/// origin. The backlog contract made `origin` the source vocabulary and the
+/// `e41` backfill filled it on every row, so the pseudo-value now resolves to
+/// `BacklogSource::IdeaScanner` — the producer it always named — and keeps
+/// matching NULL for anything filed before the contract. Kept as a constant so
+/// the filter and the count bucket label can never drift apart.
 pub const TRIAGE_SCANNER_ORIGIN: &str = "scanner";
 
 /// Default / maximum page size for `triage_ideas`.
@@ -149,7 +155,15 @@ fn triage_scope_clauses(
         params.push(Box::new(pid.clone()));
     }
     match filter.origin.as_deref() {
-        Some(TRIAGE_SCANNER_ORIGIN) => clauses.push("origin IS NULL".to_string()),
+        // `scanner` predates the source vocabulary: it meant "no sensor
+        // stamped this", which before the `e41` backfill was spelled
+        // `origin IS NULL`. Post-backfill those rows carry their real producer,
+        // so the pseudo-value resolves to the producer it always meant — plus
+        // NULL, for any row filed before the contract.
+        Some(TRIAGE_SCANNER_ORIGIN) => clauses.push(format!(
+            "(origin IS NULL OR origin = '{}')",
+            BacklogSource::IdeaScanner.as_str()
+        )),
         Some(origin) => {
             clauses.push("origin = ?".to_string());
             params.push(Box::new(origin.to_string()));
@@ -331,7 +345,7 @@ pub fn find_idea_by_id_or_prefix(pool: &DbPool, id_ref: &str) -> Result<Option<D
 const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
      reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
      origin, use_case_id, evidence, dedup_key, goal_id, verify_state, verify_checked_at, \
-     verify_evidence, created_at, updated_at";
+     verify_evidence, plan, completeness, created_at, updated_at";
 
 /// Bind an idea to the goal it serves (G41). `None` clears the binding.
 /// Returns whether a row was touched; binding an idea that does not exist is
@@ -836,6 +850,303 @@ pub fn scan_dedup_key(scan_type: &str, scope: Option<&str>, title: &str) -> Stri
     )
 }
 
+// ---------------------------------------------------------------------------
+// The one door
+// ---------------------------------------------------------------------------
+//
+// Measured on the operator's live database 2026-09-21: `dev_ideas` held 2,093
+// rows filed through THREE write doors with three different column sets, and
+// the two carrying 96% of the traffic had no parameter for `origin` at all.
+// `file_idea` is the single door all three now go through, so a column can
+// never again be reachable from one producer and invisible to another.
+//
+// The three legacy signatures survive as thin shims immediately below. That is
+// deliberate and is the acceptance criterion of this change: NO call site
+// outside this file moves, so the collapse lands without touching the four
+// command modules other sessions are editing right now.
+
+/// The upper bound of the three scales, re-exported from the contract so this
+/// file and the door agree by construction.
+///
+/// It is 5, and the two producers that grade out of ten are converted on the
+/// way in rather than stored raw - see BacklogSource::native_scale_max and
+/// normalize_scale. An earlier revision of this door enforced 10 because the
+/// Idea Scanner prompt asks for 10 and a 1-5 door would have refused its
+/// output outright; the repair was to declare the exchange rate, not to widen
+/// the column every ranker reads.
+const SCALE_MAX: i32 = crate::models::IDEA_SCALE_MAX;
+
+/// The scales run 1-[`SCALE_MAX`]. `None` is absent and stays absent; a `0` is
+/// the shape the absent-value convention exists to refuse, because it reads as
+/// a score, ranks as a score, and is not one.
+///
+/// Named rather than positional so the message says WHICH scale was wrong —
+/// a caller handed three `Option<i32>` in a row has no other way to tell.
+fn check_scale(name: &str, value: Option<i32>) -> Result<(), AppError> {
+    match value {
+        Some(v) if !(1..=SCALE_MAX).contains(&v) => Err(AppError::Validation(format!(
+            "Idea {name} must be 1-{SCALE_MAX} (got {v}); omit it when there is no value"
+        ))),
+        _ => Ok(()),
+    }
+}
+
+/// True for the eleven measurement sensors of [`crate::models::FINDING_ORIGINS`],
+/// i.e. for a source whose filing is a FINDING and therefore owes the persona
+/// event bus a `signal.raised`.
+///
+/// [`BacklogSource`] is a strict superset of that list, so membership is asked
+/// of the vocabulary rather than re-listed here: adding a twentieth producer
+/// must not silently enrol it in the findings loop.
+fn source_is_sensor(source: BacklogSource) -> bool {
+    crate::models::FINDING_ORIGINS.contains(&source.as_str())
+}
+
+/// **The one write door into `dev_ideas`.**
+///
+/// Returns `Ok(None)` when the draft carries a `dedup_key` this project has
+/// already spent — in ANY status, `rejected` and `archived` included, so a
+/// human "no" and an aged-out item both stay durable and only DELETING the
+/// idea frees the key for re-emission. A draft with no `dedup_key` is the
+/// human-typed path: no dedup runs and the answer is always `Ok(Some(_))`.
+///
+/// Order of business, and every step of it is load-bearing:
+///
+/// 1. an empty title is refused (the message is pinned — see below);
+/// 2. a title carrying a status tag is refused. Not hypothetical: on
+///    2026-09-17 a scan-sweep run filed fifteen items titled `[ACCEPTED] …`
+///    while every one of them sat at `status = 'pending'`. Acceptance as
+///    characters is invisible to the state machine, and `archive_stale_ideas`
+///    could not reach them either;
+/// 3. a scale outside 1-5 is refused (see [`check_scale`]);
+/// 4. `scan_type` resolves to the draft's own sub-key, or to the producer;
+/// 5. **`origin` is written from the source, always.** This is the whole
+///    point of the change — `origin` already had the closed allowlist and the
+///    validator, it was merely unreachable from the doors carrying the traffic;
+/// 6. `completeness` is graded and stored (`draft` is STORED, never refused:
+///    the dominant producer files over loopback HTTP from a detached worktree
+///    and never retries, so a refusal at the door is lost work);
+/// 7. the plan is serialised to JSON TEXT.
+///
+/// A filing under a sensor source announces itself on the bus exactly as
+/// `create_finding` always did; a filing under a producer source does not.
+pub fn file_idea(pool: &DbPool, draft: IdeaDraft) -> Result<Option<DevIdea>, AppError> {
+    let emit_signal = source_is_sensor(draft.source);
+    file_draft(pool, draft, emit_signal)
+}
+
+/// [`file_idea`] with the bus decision made by the caller.
+///
+/// Split out for exactly one reason: the three legacy shims must stay
+/// BYTE-IDENTICAL in behaviour, and `create_idea` / `create_idea_deduped`
+/// never published `signal.raised` while `create_finding` always did. Deriving
+/// the flag from the source inside the shims would make a legacy call with a
+/// sensor-shaped `scan_type` start emitting an event it never emitted, which
+/// is a behaviour change smuggled in under a refactor.
+fn file_draft(
+    pool: &DbPool,
+    draft: IdeaDraft,
+    emit_signal: bool,
+) -> Result<Option<DevIdea>, AppError> {
+    // (1) An untitled item is not an item. The message is VERBATIM from the
+    // three doors this replaces — it is asserted on by existing tests.
+    if draft.title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+
+    // (2) A verdict spelled into the title instead of into the status column.
+    if let Some(tag) = crate::models::title_status_tag(&draft.title) {
+        return Err(AppError::Validation(format!(
+            "Idea title carries the status tag `{tag}` — pass `status` instead; \
+             a verdict written into the title is invisible to the state machine"
+        )));
+    }
+
+    // (3) The three scales, CONVERTED into the queue's own scale before they
+    // are checked against it.
+    //
+    // Two scales reached this column: `propose_backlog` documents 1-5 with a
+    // meaning per band, while the Idea Scanner's prompt and the scan-sweep
+    // skill grade out of ten (75 rows exceeded 5, measured 2026-09-21). Passing
+    // both through would leave a ranker comparing a scanner's mid-range 5
+    // against a persona's top-of-range 5. `native_scale_max` declares each
+    // producer's curve and `normalize_scale` applies the exchange rate here, at
+    // the one door, explicitly and reviewably — which is the only place it can
+    // be applied once.
+    let from_max = draft.source.native_scale_max();
+    let effort = crate::models::normalize_scale(draft.effort, from_max);
+    let impact = crate::models::normalize_scale(draft.impact, from_max);
+    let risk = crate::models::normalize_scale(draft.risk, from_max);
+    check_scale("effort", effort)?;
+    check_scale("impact", impact)?;
+    check_scale("risk", risk)?;
+
+    // The status vocabulary is closed as of this contract. The column carries
+    // no CHECK, so this door is the only place it can be held closed on write.
+    let status = match draft.status.as_deref() {
+        Some(token) => IdeaStatus::from_token(token).ok_or_else(|| {
+            AppError::Validation(format!(
+                "Unknown idea status '{token}' — expected one of pending, accepted, \
+                 rejected, archived, delivered, expired"
+            ))
+        })?,
+        None => IdeaStatus::Pending,
+    };
+
+    // (4) The producer's own sub-key (an Idea-Scanner lens, a static tool
+    // name); absent, the producer itself.
+    let scan_type = draft
+        .scan_type
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| draft.source.as_str())
+        .to_string();
+
+    // (5) The source, always.
+    let origin = draft.source.as_str();
+
+    // (6) / (7)
+    let completeness = draft.completeness().as_str();
+    let plan_json = match draft.plan.as_ref() {
+        Some(plan) => Some(
+            serde_json::to_string(plan)
+                .map_err(|e| AppError::Validation(format!("Idea plan is not serializable: {e}")))?,
+        ),
+        None => None,
+    };
+
+    // Normalize the incoming category through the canonical vocabulary (see
+    // `IdeaCategory`). Legacy values and LLM hallucinations collapse to the
+    // canonical default rather than poisoning the column with a third
+    // vocabulary. Unchanged from `insert_idea` / `create_finding`.
+    let category = draft
+        .category
+        .as_deref()
+        .and_then(crate::models::IdeaCategory::from_token)
+        .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY)
+        .as_str();
+
+    // The column is nullable and so is the draft field, so absence travels as
+    // absence the whole way down. An empty string is still trimmed to NULL: a
+    // caller that spells absence that way is the shape the convention refuses,
+    // and refusing it outright would break the human form that predates this
+    // door.
+    let project_id: Option<&str> = draft
+        .project_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|p| !p.is_empty());
+
+    // The repo's own emptiness vocabulary rather than a seventh open-coded
+    // copy. It produces the identical sentence the two legacy doors already
+    // say, so nothing downstream sees a new message.
+    //
+    // The five that remain open-coded in this file are legacy: converting them
+    // is its own change, for exactly the reason `IDEA_COLUMNS` gives twenty
+    // lines above about `SELECT *` — a wholesale conversion here would take the
+    // census count DOWN through its baseline, which the ratchet treats as a
+    // signal to investigate rather than as a free win.
+    let dedup_key = match draft.dedup_key.as_deref() {
+        Some(raw) => {
+            personas_core::validation::require_non_empty("Idea dedup_key", raw)?;
+            Some(raw.trim())
+        }
+        None => None,
+    };
+
+    timed_query!("dev_ideas", "dev_ideas::file_idea", {
+        let conn = pool.get()?;
+
+        // (8) The idempotency guard, in ANY status. A fast-path courtesy; the
+        // partial UNIQUE index below is the actual guarantee.
+        if let Some(key) = dedup_key {
+            let existing: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
+                params![project_id, key],
+                |r| r.get(0),
+            )?;
+            if existing > 0 {
+                return Ok(None);
+            }
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // (9) Every column the three old doors could write between them, plus
+        // the two this contract adds. Named columns, never positional — this
+        // table takes `ALTER TABLE ADD COLUMN` routinely.
+        let inserted = conn.execute(
+            "INSERT INTO dev_ideas (
+                 id, project_id, context_id, scan_type, category, title, description,
+                 reasoning, status, effort, impact, risk, provider, model, origin,
+                 use_case_id, evidence, dedup_key, goal_id, plan, completeness,
+                 created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
+                     ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?22)",
+            params![
+                id,
+                project_id,
+                draft.context_id,
+                scan_type,
+                category,
+                draft.title,
+                draft.description,
+                draft.reasoning,
+                status.as_str(),
+                effort,
+                impact,
+                risk,
+                draft.provider,
+                draft.model,
+                origin,
+                draft.use_case_id,
+                draft.evidence,
+                dedup_key,
+                draft.goal_id,
+                plan_json,
+                completeness,
+                now
+            ],
+        );
+        if let Err(e) = inserted {
+            let err = AppError::Database(e);
+            // Lost the dedup race to a concurrent writer — same contract as
+            // the COUNT guard above: the key exists, so this filing is a no-op.
+            // Only a DEDUPED filing may answer a constraint violation that
+            // way; an unguarded one has no key to have lost.
+            if dedup_key.is_some() && is_dedup_unique_violation(&err) {
+                return Ok(None);
+            }
+            return Err(err);
+        }
+
+        drop(conn);
+        let idea = get_idea_by_id(pool, &id)?;
+        if emit_signal {
+            publish_signal_event(
+                pool,
+                &idea,
+                personas_core::events::event_name::SIGNAL_RAISED,
+            );
+        }
+        Ok(Some(idea))
+    })
+}
+
+/// Legacy positional door, kept so no call site outside this file had to move.
+///
+/// **Build an [`IdeaDraft`] and call [`file_idea`] instead.** Not marked
+/// `#[deprecated]`: the workspace lints at `-D warnings`, and its six live
+/// callers sit in modules this package is forbidden to touch, so the attribute
+/// would fail the build rather than nudge anyone.
+///
+/// The ungated door: a human typing a duplicate on purpose is a decision, not
+/// a defect, so no `dedup_key` is minted here. An unrecognised `scan_type`
+/// resolves to [`BacklogSource::Manual`], which is what this door has always
+/// meant — `dev_tools_create_idea` is the backlog form.
+#[allow(clippy::too_many_arguments)]
 pub fn create_idea(
     pool: &DbPool,
     project_id: Option<&str>,
@@ -852,24 +1163,28 @@ pub fn create_idea(
     provider: Option<&str>,
     model: Option<&str>,
 ) -> Result<DevIdea, AppError> {
-    #[allow(clippy::too_many_arguments)]
-    insert_idea(
-        pool,
-        project_id,
-        context_id,
-        scan_type,
-        category,
-        title,
-        description,
-        reasoning,
-        status,
-        effort,
-        impact,
-        risk,
-        provider,
-        model,
-        None,
-    )
+    let source = BacklogSource::from_token(scan_type).unwrap_or(BacklogSource::Manual);
+    let mut draft = match project_id {
+        Some(pid) => IdeaDraft::new(pid, source, title),
+        None => IdeaDraft::unassigned(source, title),
+    };
+    draft.scan_type = Some(scan_type.to_string());
+    draft.context_id = context_id.map(str::to_string);
+    draft.category = category.map(str::to_string);
+    draft.description = description.map(str::to_string);
+    draft.reasoning = reasoning.map(str::to_string);
+    draft.status = status.map(str::to_string);
+    draft.effort = effort;
+    draft.impact = impact;
+    draft.risk = risk;
+    draft.provider = provider.map(str::to_string);
+    draft.model = model.map(str::to_string);
+
+    // An unguarded filing always produces a row, so `None` here is not "already
+    // filed" — it is impossible. Reported rather than unwrapped.
+    file_draft(pool, draft, false)?.ok_or_else(|| {
+        AppError::Internal("file_idea returned no row for an unguarded filing".into())
+    })
 }
 
 /// `create_idea` + the findings spine's idempotency guard. Returns `Ok(None)`
@@ -907,41 +1222,26 @@ pub fn create_idea_deduped(
         ));
     }
 
-    {
-        let conn = pool.get()?;
-        let existing: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
-            params![project_id, dedup_key],
-            |r| r.get(0),
-        )?;
-        if existing > 0 {
-            return Ok(None);
-        }
-    }
+    // An unrecognised `scan_type` resolves to `IdeaScanner` here rather than
+    // `Manual`: this is the GENERATED door — its own doc says so — and a
+    // generated item filed under `manual` would be indistinguishable from
+    // something a human typed.
+    let source = BacklogSource::from_token(scan_type).unwrap_or(BacklogSource::IdeaScanner);
+    let mut draft = IdeaDraft::new(project_id, source, title);
+    draft.scan_type = Some(scan_type.to_string());
+    draft.context_id = context_id.map(str::to_string);
+    draft.category = category.map(str::to_string);
+    draft.description = description.map(str::to_string);
+    draft.reasoning = reasoning.map(str::to_string);
+    draft.status = Some(IdeaStatus::Pending.as_str().to_string());
+    draft.effort = effort;
+    draft.impact = impact;
+    draft.risk = risk;
+    draft.provider = provider.map(str::to_string);
+    draft.model = model.map(str::to_string);
+    draft.dedup_key = Some(dedup_key.to_string());
 
-    match insert_idea(
-        pool,
-        Some(project_id),
-        context_id,
-        scan_type,
-        category,
-        title,
-        description,
-        reasoning,
-        Some("pending"),
-        effort,
-        impact,
-        risk,
-        provider,
-        model,
-        Some(dedup_key),
-    ) {
-        Ok(idea) => Ok(Some(idea)),
-        // Lost the race to a concurrent writer — same contract as the COUNT
-        // guard above: the key exists, so this creation is a no-op.
-        Err(e) if is_dedup_unique_violation(&e) => Ok(None),
-        Err(e) => Err(e),
-    }
+    file_draft(pool, draft, false)
 }
 
 /// Whether an error is the partial-unique `idx_dev_ideas_dedup_unique` firing —
@@ -955,65 +1255,27 @@ fn is_dedup_unique_violation(err: &AppError) -> bool {
     )
 }
 
-/// The single INSERT both `create_idea` and `create_idea_deduped` go through,
-/// so the column set can never drift between the guarded and unguarded doors.
-#[allow(clippy::too_many_arguments)]
-fn insert_idea(
-    pool: &DbPool,
-    project_id: Option<&str>,
-    context_id: Option<&str>,
-    scan_type: &str,
-    category: Option<&str>,
-    title: &str,
-    description: Option<&str>,
-    reasoning: Option<&str>,
-    status: Option<&str>,
-    effort: Option<i32>,
-    impact: Option<i32>,
-    risk: Option<i32>,
-    provider: Option<&str>,
-    model: Option<&str>,
-    dedup_key: Option<&str>,
-) -> Result<DevIdea, AppError> {
-    if title.trim().is_empty() {
-        return Err(AppError::Validation("Title cannot be empty".into()));
-    }
-
-    timed_query!("dev_ideas", "dev_ideas::create_idea", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        // Normalize the incoming category through the canonical vocabulary
-        // (see `IdeaCategory` for the mapping). Legacy values from older code
-        // paths or LLM hallucinations collapse to the canonical default
-        // rather than poisoning the column with a third vocabulary.
-        let canonical_category = category
-            .and_then(crate::models::IdeaCategory::from_token)
-            .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY);
-        let category = canonical_category.as_str();
-        let status = status.unwrap_or("pending");
-
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, dedup_key, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)",
-            params![id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, dedup_key, now],
-        )?;
-
-        get_idea_by_id(pool, &id)
-    })
-}
-
-/// Reversible aging for the backlog: pending SCANNER ideas older than
+/// Reversible aging for the backlog: pending GENERATED ideas older than
 /// `older_than_days` that never became work (no linked task) move to
 /// `archived`. Mirrors the memory engine's `run_decay_forgetting` — nothing is
 /// deleted, the row keeps its `dedup_key` (so archiving can never reopen the
 /// duplication door), and a human can restore it by setting the status back to
 /// `pending`.
 ///
-/// Sensor FINDINGS (`origin IS NOT NULL`) are excluded: their lifecycle
-/// belongs to the sensors — every sweep re-measures them — and because dedup
-/// blocks re-emission in ANY status, aging one out would silence that sensor
-/// signal permanently on a 30-day timer nobody chose.
+/// Sensor FINDINGS are excluded: their lifecycle belongs to the sensors —
+/// every sweep re-measures them — and because dedup blocks re-emission in ANY
+/// status, aging one out would silence that sensor signal permanently on a
+/// 30-day timer nobody chose.
+///
+/// **The exclusion used to be spelled `origin IS NULL`, and that spelling died
+/// the day `origin` became the source vocabulary.** Before the backlog
+/// contract, only the findings spine stamped an origin, so NULL meant "not a
+/// finding" and the filter read correctly by accident. The `e41` backfill gave
+/// EVERY row its producer, at which point `origin IS NULL` matched nothing and
+/// this reaper silently stopped reaping — a live queue's only aging policy,
+/// disabled by a migration that was repairing something else. The condition is
+/// now asked of the vocabulary directly: a source that is one of the eleven
+/// measurement sensors is exempt, and everything else ages.
 ///
 /// Returns the number of ideas archived.
 pub fn archive_stale_ideas(
@@ -1032,19 +1294,36 @@ pub fn archive_stale_ideas(
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
+        // Interpolated, not bound: every token comes from the compile-time
+        // `FINDING_ORIGINS` array and none of them contains a quote. The same
+        // technique the undispatched sensor and `backlog_flow` already use for
+        // their own compile-time constants.
+        let sensor_list = crate::models::FINDING_ORIGINS
+            .iter()
+            .map(|o| format!("'{o}'"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        // A row filed before the contract can still carry NULL; it is not a
+        // sensor finding, so it ages like the generated idea it is.
+        let not_a_finding = format!("(origin IS NULL OR origin NOT IN ({sensor_list}))");
+
         let affected = match project_id {
             Some(pid) => conn.execute(
-                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
-                 WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
-                   AND origin IS NULL
-                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                &format!(
+                    "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                     WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
+                       AND {not_a_finding}
+                       AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)"
+                ),
                 params![now, cutoff, pid],
             )?,
             None => conn.execute(
-                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
-                 WHERE status = 'pending' AND created_at < ?2
-                   AND origin IS NULL
-                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                &format!(
+                    "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                     WHERE status = 'pending' AND created_at < ?2
+                       AND {not_a_finding}
+                       AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)"
+                ),
                 params![now, cutoff],
             )?,
         };
@@ -1053,14 +1332,194 @@ pub fn archive_stale_ideas(
     })
 }
 
+/// The one phrasing for a token outside [`IdeaStatus`], naming the field it
+/// arrived in and the token itself.
+///
+/// Deliberately shares NO wording with `decide_idea_cas`'s lost-swap message:
+/// `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`) and the error
+/// registry both match `/already (decided|resolved) … by a concurrent action/`
+/// to decide whether an optimistic row write lost a race. A validation failure
+/// that read as a conflict would be retried forever.
+fn unknown_status_error(field: &str, token: &str) -> AppError {
+    AppError::Validation(format!(
+        "Unknown idea {field} '{token}' — expected one of pending, accepted, \
+         rejected, archived, delivered, expired"
+    ))
+}
+
+/// The verify verdict [`mark_idea_delivered`] lands.
+///
+/// `task_executor.rs` sets `verify_state = 'pending'` on every success and
+/// NOTHING ever clears it — 519 rows carried it on 2026-09-21. `pending` is
+/// explicitly not a verdict (see [`set_finding_verify_state`]); it ARMS a
+/// re-check. Delivery is the event that disarms it, and `cleared` is the
+/// member of [`crate::models::VERIFY_STATES`] that says the signal is gone.
+const DELIVERED_VERIFY_STATE: &str = "cleared";
+
+/// The work exists in the repository. `commit` is the evidence.
+///
+/// The exit the queue never had: before this, `accepted` was where items died.
+/// 518 of them held a COMPLETED task and were still `accepted` on 2026-09-21,
+/// because the status vocabulary had nowhere to move them to.
+///
+/// Writes three things at once, and they belong together:
+///
+/// * `status = 'delivered'` — the terminal state a HUMAN-visible verdict
+///   reaches, never written by a sweep (see [`expire_stale_accepted_ideas`]);
+/// * `verify_evidence` — the branch and commit as JSON, so the claim can be
+///   audited against the repository instead of taken on trust. Same role the
+///   findings spine's `verify_evidence` already plays;
+/// * `verify_state` — resolved to [`DELIVERED_VERIFY_STATE`] **only when a
+///   commit was reported**. A commit names the change in the repository's own
+///   history and is evidence; a branch alone is a pointer to where the work was
+///   supposed to happen. A branch-only close therefore leaves `verify_state`
+///   at `pending`, which is not an oversight but the request that the
+///   verification sweep re-measure this one — and `isVerifiable` admits
+///   `delivered` so that it can. Resolving both grades identically would book
+///   an unverified close as a verified one and quietly retire the only
+///   instrument that could catch it.
+///
+/// A missing row is `NotFound`, never a silent no-op: `execute` on a
+/// non-existent id returns `Ok(0)` and would otherwise read as success.
+pub fn mark_idea_delivered(
+    pool: &DbPool,
+    id: &str,
+    branch: Option<&str>,
+    commit: Option<&str>,
+) -> Result<DevIdea, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::mark_idea_delivered", {
+        let before = get_idea_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // Structured, not prose: the whole point of `verify_evidence` is that
+        // a later pass can re-read it rather than parse it.
+        let evidence = serde_json::json!({
+            "delivered_at": now,
+            "branch": branch,
+            "commit": commit,
+            "previous_status": before.status,
+        })
+        .to_string();
+
+        // The evidence grade, decided by what the caller could actually
+        // report. `VERIFY_STATES[0]` is `pending` — named through the
+        // vocabulary rather than quoted, so this door cannot drift from the
+        // one the sweep reads.
+        let verify_state = match commit {
+            Some(c) if !c.trim().is_empty() => DELIVERED_VERIFY_STATE,
+            _ => crate::models::VERIFY_STATES[0],
+        };
+
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_ideas
+                SET status = ?1, verify_state = ?2, verify_evidence = ?3,
+                    verify_checked_at = ?4, updated_at = ?4
+              WHERE id = ?5",
+            params![
+                IdeaStatus::Delivered.as_str(),
+                verify_state,
+                evidence,
+                now,
+                id
+            ],
+        )?;
+        drop(conn);
+
+        let idea = get_idea_by_id(pool, id)?;
+        // A verdict landed — same rule `set_finding_verify_state` follows, so
+        // no future caller can starve the B-side learning route by forgetting.
+        publish_signal_event(
+            pool,
+            &idea,
+            personas_core::events::event_name::SIGNAL_VERIFIED,
+        );
+        Ok(idea)
+    })
+}
+
+/// Accepted, never became work, aged out. Restorable. NEVER `delivered`.
+///
+/// Mirrors [`archive_stale_ideas`] — same shape, same reversibility, the row
+/// keeps its `dedup_key` so expiring can never reopen the duplication door —
+/// with exactly two differences, both deliberate:
+///
+/// 1. it acts on `accepted` rather than `pending`, which is the pile that had
+///    no exit at all;
+/// 2. it writes `expired`, a token no human verdict ever writes. An automated
+///    sweep sharing a human verdict's vocabulary destroys every downstream
+///    reading of who decided what, which is why [`IdeaStatus::Expired`] exists
+///    as a state of its own instead of reusing `archived` or `delivered`.
+///
+/// **It does NOT copy `archive_stale_ideas`'s `origin IS NULL` filter.** That
+/// filter dates from when `origin` meant "a sensor raised this"; migration e41
+/// backfilled an origin onto every row that carries a `scan_type`, and this
+/// package's door now stamps one on every new row, so the predicate matches
+/// nothing. Copying it would have shipped a reaper that provably never fires.
+///
+/// Ages on `created_at`, like its sibling. Noted rather than silently chosen:
+/// time-since-ACCEPTANCE would be the more honest clock, and `dev_ideas` has
+/// no `decided_at` column to read it from — `updated_at` moves on any edit, so
+/// a triaged-then-edited item would keep resetting its own timer. Until a
+/// `decided_at` exists, filing age is the stabler of the two available
+/// signals.
+///
+/// Returns the number of ideas expired.
+pub fn expire_stale_accepted_ideas(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    older_than_days: i64,
+) -> Result<i64, AppError> {
+    if older_than_days <= 0 {
+        return Err(AppError::Validation(
+            "expire_stale_accepted_ideas: older_than_days must be positive".into(),
+        ));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::expire_stale_accepted_ideas", {
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(older_than_days)).to_rfc3339();
+        let now = chrono::Utc::now().to_rfc3339();
+        let expired = IdeaStatus::Expired.as_str();
+        let accepted = IdeaStatus::Accepted.as_str();
+        let conn = pool.get()?;
+
+        let affected = match project_id {
+            Some(pid) => conn.execute(
+                "UPDATE dev_ideas SET status = ?1, updated_at = ?2
+                 WHERE status = ?3 AND created_at < ?4 AND project_id = ?5
+                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                params![expired, now, accepted, cutoff, pid],
+            )?,
+            None => conn.execute(
+                "UPDATE dev_ideas SET status = ?1, updated_at = ?2
+                 WHERE status = ?3 AND created_at < ?4
+                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                params![expired, now, accepted, cutoff],
+            )?,
+        };
+
+        Ok(affected as i64)
+    })
+}
+
 /// Create an idea raised by a SENSOR rather than the Idea Scanner — the findings
-/// spine (`docs/plans/dev-findings-loop.md`). Separate from `create_idea` so the
-/// scanner's 14-arg signature and every existing call site stay untouched.
+/// spine (`docs/plans/dev-findings-loop.md`).
 ///
 /// `dedup_key` is the idempotency guard: if a non-deleted idea already carries it
 /// for this project, nothing is inserted and `Ok(None)` comes back. That includes
 /// `rejected` ideas — a human "no" is durable, and only deleting the idea frees
 /// the key for re-emission.
+///
+/// **Build an [`IdeaDraft`] and call [`file_idea`] instead.** This signature's
+/// own doc used to justify the split it created — "separate from `create_idea`
+/// so the scanner's 14-arg signature and every existing call site stay
+/// untouched" — and the price of that was `origin` NULL on 96% of the table,
+/// because the doors carrying the traffic had no parameter for it. The split is
+/// gone; only the signature remains, so those call sites still do not move.
+///
+/// `origin` now resolves through [`BacklogSource::from_token`], a strict
+/// SUPERSET of `FINDING_ORIGINS`: every origin that validated before validates
+/// now and normalises to the same token.
 #[allow(clippy::too_many_arguments)]
 pub fn create_finding(
     pool: &DbPool,
@@ -1077,83 +1536,37 @@ pub fn create_finding(
     impact: Option<i32>,
     risk: Option<i32>,
 ) -> Result<Option<DevIdea>, AppError> {
+    // Validation ORDER is preserved exactly: title, then origin, then
+    // dedup_key. Two of the three messages are asserted on by existing tests.
     if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
     }
-    if !crate::models::FINDING_ORIGINS.contains(&origin) {
-        return Err(AppError::Validation(format!(
-            "Unknown finding origin: {origin}"
-        )));
-    }
+    let source = BacklogSource::from_token(origin)
+        .ok_or_else(|| AppError::Validation(format!("Unknown finding origin: {origin}")))?;
     if dedup_key.trim().is_empty() {
         return Err(AppError::Validation(
             "Finding dedup_key cannot be empty".into(),
         ));
     }
 
-    timed_query!("dev_ideas", "dev_ideas::create_finding", {
-        let conn = pool.get()?;
+    let mut draft = IdeaDraft::new(project_id, source, title);
+    // `scan_type` doubles as the sensor tag, so the Scoreboard groups findings
+    // too — unchanged, and now the normalised token rather than the raw one.
+    draft.scan_type = Some(source.as_str().to_string());
+    draft.context_id = context_id.map(str::to_string);
+    draft.category = category.map(str::to_string);
+    draft.description = description.map(str::to_string);
+    draft.use_case_id = use_case_id.map(str::to_string);
+    draft.evidence = evidence.map(str::to_string);
+    draft.effort = effort;
+    draft.impact = impact;
+    draft.risk = risk;
+    draft.dedup_key = Some(dedup_key.to_string());
 
-        let existing: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
-            params![project_id, dedup_key],
-            |r| r.get(0),
-        )?;
-        if existing > 0 {
-            return Ok(None);
-        }
-
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let canonical_category = category
-            .and_then(crate::models::IdeaCategory::from_token)
-            .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY);
-
-        let inserted = conn.execute(
-            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, origin, use_case_id, evidence, dedup_key, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
-            params![
-                id,
-                project_id,
-                context_id,
-                origin, // scan_type doubles as the sensor tag, so the Scoreboard groups findings too
-                canonical_category.as_str(),
-                title,
-                description,
-                effort,
-                impact,
-                risk,
-                origin,
-                use_case_id,
-                evidence,
-                dedup_key,
-                now
-            ],
-        );
-        match inserted {
-            Ok(_) => {}
-            // Lost the dedup race to a concurrent sweep — same contract as the
-            // COUNT guard above (the partial UNIQUE index is the real guarantee).
-            Err(e) => {
-                let err = AppError::Database(e);
-                if is_dedup_unique_violation(&err) {
-                    return Ok(None);
-                }
-                return Err(err);
-            }
-        }
-
-        drop(conn);
-        let idea = get_idea_by_id(pool, &id)?;
-        // A sensor raised something — tell the bus. `signal.raised` is what the
-        // dispatch ops (Task Runner vs Fleet) will route off.
-        publish_signal_event(
-            pool,
-            &idea,
-            personas_core::events::event_name::SIGNAL_RAISED,
-        );
-        Ok(Some(idea))
-    })
+    // A sensor raised something — tell the bus. `signal.raised` is what the
+    // dispatch ops (Task Runner vs Fleet) route off. Passed explicitly rather
+    // than derived, so this door's behaviour cannot drift with the vocabulary.
+    file_draft(pool, draft, true)
 }
 
 /// Publish a findings-loop SIGNAL onto the persona-event bus.
@@ -1377,6 +1790,22 @@ pub fn decide_idea_cas(
     new_status: &str,
     rejection_reason: Option<Option<&str>>,
 ) -> Result<DevIdea, AppError> {
+    // The vocabulary is closed as of the backlog contract, and this column
+    // carries no CHECK — so the verdict door is where it is held closed. Both
+    // tokens go through `IdeaStatus`, because an unrecognised `expected` is
+    // just as wrong as an unrecognised `new_status`: it can never match a
+    // stored value, so it degrades silently into the lost-swap branch and
+    // reports a conflict that never happened.
+    //
+    // Shadowed with the CANONICAL `&'static str`, so a caller's spelling can
+    // never reach the UPDATE.
+    let new_status = IdeaStatus::from_token(new_status)
+        .ok_or_else(|| unknown_status_error("new_status", new_status))?
+        .as_str();
+    let expected = IdeaStatus::from_token(expected)
+        .ok_or_else(|| unknown_status_error("expected", expected))?
+        .as_str();
+
     timed_query!("dev_ideas", "dev_ideas::decide_idea_cas", {
         // Existence check: a missing row must read as NotFound, never as a
         // conflict.
@@ -2104,6 +2533,950 @@ mod near_duplicate_tests {
             find_near_duplicate_idea(&pool, &other.id, REMOTE_A_TITLE, Some(REMOTE_A_BODY))
                 .unwrap()
                 .is_none()
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The backlog contract — the one door, the closed status vocabulary, the exit
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+    use crate::models::{IdeaCompleteness, IdeaPlan, PlanStep, VERIFY_STATES};
+    use crate::repos::dev::projects::create_project;
+    use crate::repos::dev::tasks::create_task;
+
+    fn pool() -> DbPool {
+        crate::init_test_db().expect("init_test_db")
+    }
+
+    fn project(pool: &DbPool) -> String {
+        create_project(pool, "Proj", "/tmp/proj", None, None, None, None, None)
+            .unwrap()
+            .id
+    }
+
+    /// Read one TEXT column straight from the row. `DevIdea` carries neither
+    /// `plan` nor `completeness` — both are e41 columns and the model lives in
+    /// `personas_core`, which this package may not widen — so the assertions
+    /// that matter most here cannot go through the mapper.
+    fn column(pool: &DbPool, id: &str, col: &str) -> Option<String> {
+        // The checkout PROPAGATES rather than panicking: `pool.get().unwrap()`
+        // is what `pool-get-unwrapped` counts, and it counts fixtures too,
+        // because a fixture that panics on acquire hides the same saturation
+        // the product would.
+        let read = || -> Result<Option<String>, AppError> {
+            let conn = pool.get()?;
+            Ok(conn.query_row(
+                &format!("SELECT {col} FROM dev_ideas WHERE id = ?1"),
+                params![id],
+                |r| r.get::<_, Option<String>>(0),
+            )?)
+        };
+        read().expect("fixture read")
+    }
+
+    /// Put a row into a status WITHOUT going through the verdict door.
+    ///
+    /// Deliberately not named `set_*_status`: it is not a lifecycle-transition
+    /// door and must not read as one. Used only where the test needs a row
+    /// already sitting in a state — everywhere a transition is what is under
+    /// test, `decide_idea_cas` is called for real.
+    fn force_row_status(pool: &DbPool, id: &str, status: &str) {
+        let write = || -> Result<(), AppError> {
+            pool.get()?
+                .execute(
+                    "UPDATE dev_ideas SET status = ?1 WHERE id = ?2",
+                    params![status, id],
+                )
+                .map(|_| ())
+                .map_err(AppError::Database)
+        };
+        write().expect("fixture status write")
+    }
+
+    fn backdate(pool: &DbPool, id: &str, days: i64) {
+        let when = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
+        let write = || -> Result<(), AppError> {
+            pool.get()?
+                .execute(
+                    "UPDATE dev_ideas SET created_at = ?1 WHERE id = ?2",
+                    params![when, id],
+                )
+                .map(|_| ())
+                .map_err(AppError::Database)
+        };
+        write().expect("fixture backdate")
+    }
+
+    fn actionable_plan() -> IdeaPlan {
+        IdeaPlan {
+            steps: vec![PlanStep {
+                n: 1,
+                action: "Close the door".into(),
+                files: vec!["src-tauri/db/src/repos/dev/ideas.rs".into()],
+                done_when: "cargo check is clean".into(),
+            }],
+        }
+    }
+
+    /// Every variant, with an exhaustiveness guard.
+    ///
+    /// The `match` below has no wildcard arm, so a twentieth `BacklogSource`
+    /// fails to COMPILE here rather than quietly escaping the coverage test —
+    /// which is the whole difference between a gate that found nothing and a
+    /// gate that looked at nothing.
+    fn all_sources() -> Vec<BacklogSource> {
+        let all = vec![
+            BacklogSource::StandardsFinding,
+            BacklogSource::PassportGap,
+            BacklogSource::LlmCost,
+            BacklogSource::SentrySpike,
+            BacklogSource::KpiOfftrack,
+            BacklogSource::SkillDormant,
+            BacklogSource::DocRot,
+            BacklogSource::KpiSim,
+            BacklogSource::MemoryDisputed,
+            BacklogSource::WorkspacePractice,
+            BacklogSource::ScanSweep,
+            BacklogSource::AppMaster,
+            BacklogSource::TeamProposed,
+            BacklogSource::PlatformEscalation,
+            BacklogSource::IdeaScanner,
+            BacklogSource::HeadlessBenchSeed,
+            BacklogSource::StaticScan,
+            BacklogSource::MemoryReflection,
+            BacklogSource::Manual,
+        ];
+        for source in &all {
+            match source {
+                BacklogSource::StandardsFinding
+                | BacklogSource::PassportGap
+                | BacklogSource::LlmCost
+                | BacklogSource::SentrySpike
+                | BacklogSource::KpiOfftrack
+                | BacklogSource::SkillDormant
+                | BacklogSource::DocRot
+                | BacklogSource::KpiSim
+                | BacklogSource::MemoryDisputed
+                | BacklogSource::WorkspacePractice
+                | BacklogSource::ScanSweep
+                | BacklogSource::AppMaster
+                | BacklogSource::TeamProposed
+                | BacklogSource::PlatformEscalation
+                | BacklogSource::IdeaScanner
+                | BacklogSource::HeadlessBenchSeed
+                | BacklogSource::StaticScan
+                | BacklogSource::MemoryReflection
+                | BacklogSource::Manual => {}
+            }
+        }
+        all
+    }
+
+    // --- 1. origin, on every source -----------------------------------------
+
+    #[test]
+    fn every_source_files_and_stamps_a_non_null_origin() {
+        let pool = pool();
+        let pid = project(&pool);
+        let sources = all_sources();
+        assert_eq!(sources.len(), 19, "the closed source vocabulary");
+
+        for source in sources {
+            let draft = IdeaDraft::new(&pid, source, format!("Item from {}", source.as_str()));
+            let idea = file_idea(&pool, draft)
+                .unwrap_or_else(|e| panic!("{} should file: {e}", source.as_str()))
+                .unwrap_or_else(|| panic!("{} produced no row", source.as_str()));
+
+            assert_eq!(
+                idea.origin.as_deref(),
+                Some(source.as_str()),
+                "origin is written from the source, always — that is the whole point"
+            );
+            // Absent `scan_type` falls back to the producer itself.
+            assert_eq!(idea.scan_type, source.as_str());
+            assert_eq!(idea.status, "pending");
+            assert_eq!(
+                column(&pool, &idea.id, "completeness").as_deref(),
+                Some(IdeaCompleteness::Draft.as_str()),
+                "a bare draft grades draft, and is STORED rather than refused"
+            );
+        }
+
+        let filed = list_ideas(&pool, Some(&pid), None, None, Some(100), None).unwrap();
+        assert_eq!(filed.len(), 19);
+        assert!(
+            filed.iter().all(|i| i.origin.is_some()),
+            "no row leaves this door without a source"
+        );
+    }
+
+    #[test]
+    fn scan_type_stays_the_producers_own_sub_key_when_given() {
+        let pool = pool();
+        let pid = project(&pool);
+        let mut draft = IdeaDraft::new(&pid, BacklogSource::IdeaScanner, "Lens finding");
+        draft.scan_type = Some("security-auditor".into());
+        let idea = file_idea(&pool, draft).unwrap().unwrap();
+        assert_eq!(idea.scan_type, "security-auditor");
+        assert_eq!(idea.origin.as_deref(), Some("idea_scanner"));
+    }
+
+    // --- 2. a verdict written into the title --------------------------------
+
+    #[test]
+    fn a_status_tag_in_the_title_is_refused_and_the_error_names_the_tag() {
+        let pool = pool();
+        let pid = project(&pool);
+        let draft = IdeaDraft::new(
+            &pid,
+            BacklogSource::ScanSweep,
+            "[ACCEPTED] Harden the retry path",
+        );
+        let err = file_idea(&pool, draft).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("[accepted]"),
+            "the error must name the tag it refused, got: {msg}"
+        );
+        assert!(msg.contains("status"), "and point at the column: {msg}");
+        assert!(matches!(err, AppError::Validation(_)));
+
+        // The fifteen items of 2026-09-17 never reach the table.
+        assert_eq!(
+            list_ideas(&pool, Some(&pid), None, None, Some(10), None)
+                .unwrap()
+                .len(),
+            0
+        );
+    }
+
+    #[test]
+    fn an_empty_title_keeps_its_original_message() {
+        let pool = pool();
+        let pid = project(&pool);
+        let err = file_idea(&pool, IdeaDraft::new(&pid, BacklogSource::Manual, "   ")).unwrap_err();
+        assert!(err.to_string().contains("Title cannot be empty"));
+    }
+
+    // --- 3. the 1-5 scales ---------------------------------------------------
+
+    #[test]
+    fn a_zero_scale_is_refused_and_an_absent_one_is_stored_null() {
+        let pool = pool();
+        let pid = project(&pool);
+
+        for (name, effort, impact, risk) in [
+            ("effort", Some(0), None, None),
+            ("impact", None, Some(0), None),
+            ("risk", None, None, Some(0)),
+            ("effort", Some(11), None, None),
+        ] {
+            let mut draft = IdeaDraft::new(&pid, BacklogSource::Manual, "Rate me");
+            draft.effort = effort;
+            draft.impact = impact;
+            draft.risk = risk;
+            let err = file_idea(&pool, draft).unwrap_err();
+            assert!(
+                err.to_string().contains(name),
+                "the message names the scale that was wrong: {err}"
+            );
+        }
+
+        // Absent stays absent — a producer OMITS what it has no value for.
+        let idea = file_idea(
+            &pool,
+            IdeaDraft::new(&pid, BacklogSource::Manual, "Unrated"),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(idea.effort, None);
+        assert_eq!(idea.impact, None);
+        assert_eq!(idea.risk, None);
+
+        let mut rated = IdeaDraft::new(&pid, BacklogSource::Manual, "Rated");
+        rated.effort = Some(1);
+        rated.impact = Some(5);
+        rated.risk = Some(3);
+        let idea = file_idea(&pool, rated).unwrap().unwrap();
+        assert_eq!(
+            (idea.effort, idea.impact, idea.risk),
+            (Some(1), Some(5), Some(3))
+        );
+
+        // A five-point producer may not reach past its own curve. This door
+        // enforced 1-10 for one commit, because the Idea Scanner's prompt asks
+        // for ten and refusing it outright would have been an outage of the
+        // dominant producer. The repair was to declare the exchange rate rather
+        // than to widen the column every ranker reads.
+        let mut over = IdeaDraft::new(&pid, BacklogSource::Manual, "Over the top");
+        over.impact = Some(7);
+        let err = file_idea(&pool, over).unwrap_err();
+        assert!(
+            err.to_string().contains("must be 1-5"),
+            "a five-point producer's 7 should be refused, got: {err}"
+        );
+    }
+
+    /// The exchange rate, asserted through the door rather than through the
+    /// helper, so a producer whose prompt asks for ten keeps filing and its
+    /// scores land on the scale the rankers read.
+    #[test]
+    fn a_ten_point_producers_score_is_converted_rather_than_refused() {
+        let pool = pool();
+        let pid = project(&pool);
+
+        for (native, want) in [(1, 1), (2, 1), (5, 3), (7, 4), (10, 5)] {
+            // `ScanSweep`, not `IdeaScanner`. The scanner's prompt now asks
+            // for 1-5 and its arm of `native_scale_max` was dropped in the same
+            // commit, because that function is read at WRITE time and there is
+            // no window in which a 1-5 prompt and a from-ten door are both
+            // right: a model answering `risk: 5` would have been stored as 3
+            // and cleared the live `accept risk below 4` rules. The scan-sweep
+            // skill's contract lives outside this repo's build, so it is the
+            // producer that still grades out of ten.
+            let mut draft = IdeaDraft::new(
+                &pid,
+                BacklogSource::ScanSweep,
+                format!("Sweep finding {native}"),
+            );
+            draft.effort = Some(native);
+            draft.impact = Some(native);
+            draft.risk = Some(native);
+            let idea = file_idea(&pool, draft).unwrap().unwrap();
+            assert_eq!(
+                (idea.effort, idea.impact, idea.risk),
+                (Some(want), Some(want), Some(want)),
+                "a 1-10 producer's {native} should land as {want}"
+            );
+        }
+
+        // Absent is still absent on the way through a conversion.
+        let mut unrated = IdeaDraft::new(&pid, BacklogSource::ScanSweep, "Another sweep finding");
+        unrated.impact = Some(9);
+        let idea = file_idea(&pool, unrated).unwrap().unwrap();
+        assert_eq!((idea.effort, idea.impact, idea.risk), (None, Some(5), None));
+    }
+
+    // --- 4. completeness -----------------------------------------------------
+
+    #[test]
+    fn completeness_needs_scales_a_description_and_an_actionable_plan() {
+        let pool = pool();
+        let pid = project(&pool);
+
+        let full = |title: &str| {
+            let mut d = IdeaDraft::new(&pid, BacklogSource::AppMaster, title);
+            d.description = Some("What is wrong and why it matters.".into());
+            d.effort = Some(2);
+            d.impact = Some(4);
+            d.risk = Some(1);
+            d.plan = Some(actionable_plan());
+            d
+        };
+
+        let idea = file_idea(&pool, full("Complete item")).unwrap().unwrap();
+        assert_eq!(
+            column(&pool, &idea.id, "completeness").as_deref(),
+            Some("full")
+        );
+        let plan = column(&pool, &idea.id, "plan").expect("the plan is stored as JSON TEXT");
+        let round_tripped: IdeaPlan = serde_json::from_str(&plan).unwrap();
+        assert_eq!(round_tripped.file_scope().len(), 1);
+
+        // Each single omission drops it to `draft` — and it is STORED, never
+        // refused: the dominant producer never retries.
+        let mut no_plan = full("No plan");
+        no_plan.plan = None;
+        let mut no_desc = full("No description");
+        no_desc.description = None;
+        let mut no_scale = full("No risk");
+        no_scale.risk = None;
+        let mut empty_plan = full("Plan touching nothing");
+        empty_plan.plan = Some(IdeaPlan {
+            steps: vec![PlanStep {
+                n: 1,
+                action: "Think about it".into(),
+                files: vec![],
+                done_when: "someone agrees".into(),
+            }],
+        });
+
+        for draft in [no_plan, no_desc, no_scale, empty_plan] {
+            let title = draft.title.clone();
+            let idea = file_idea(&pool, draft).unwrap().unwrap();
+            assert_eq!(
+                column(&pool, &idea.id, "completeness").as_deref(),
+                Some("draft"),
+                "{title} must grade draft"
+            );
+        }
+    }
+
+    #[test]
+    fn a_draft_carries_every_column_the_three_old_doors_could_write() {
+        let pool = pool();
+        let pid = project(&pool);
+        let mut draft = IdeaDraft::new(&pid, BacklogSource::SentrySpike, "Everything at once");
+        draft.scan_type = Some("sentry_spike".into());
+        draft.category = Some("technical".into());
+        draft.description = Some("desc".into());
+        draft.reasoning = Some("why".into());
+        draft.evidence = Some(r#"{"events":42}"#.into());
+        draft.effort = Some(2);
+        draft.impact = Some(3);
+        draft.risk = Some(4);
+        draft.use_case_id = Some("uc-1".into());
+        draft.goal_id = Some("goal-1".into());
+        draft.provider = Some("anthropic".into());
+        draft.model = Some("fixture-model".into());
+        draft.dedup_key = Some("sentry:ABC123".into());
+        draft.status = Some("accepted".into());
+
+        let idea = file_idea(&pool, draft).unwrap().unwrap();
+        assert_eq!(idea.description.as_deref(), Some("desc"));
+        assert_eq!(idea.reasoning.as_deref(), Some("why"));
+        assert_eq!(idea.evidence.as_deref(), Some(r#"{"events":42}"#));
+        assert_eq!(idea.use_case_id.as_deref(), Some("uc-1"));
+        assert_eq!(idea.goal_id.as_deref(), Some("goal-1"));
+        assert_eq!(idea.provider.as_deref(), Some("anthropic"));
+        assert_eq!(idea.model.as_deref(), Some("fixture-model"));
+        assert_eq!(idea.dedup_key.as_deref(), Some("sentry:ABC123"));
+        assert_eq!(idea.status, "accepted");
+        assert_eq!(idea.origin.as_deref(), Some("sentry_spike"));
+    }
+
+    #[test]
+    fn an_unknown_status_on_the_draft_is_refused() {
+        let pool = pool();
+        let pid = project(&pool);
+        let mut draft = IdeaDraft::new(&pid, BacklogSource::Manual, "Bad status");
+        draft.status = Some("in-progress".into());
+        let err = file_idea(&pool, draft).unwrap_err();
+        assert!(err.to_string().contains("in-progress"), "{err}");
+    }
+
+    // --- 5. the regression that matters: dedup, unchanged -------------------
+
+    const EVERY_STATUS: [&str; 6] = [
+        "pending",
+        "accepted",
+        "rejected",
+        "archived",
+        "delivered",
+        "expired",
+    ];
+
+    #[test]
+    fn create_idea_deduped_is_a_no_op_for_a_spent_key_in_every_status() {
+        for status in EVERY_STATUS {
+            let pool = pool();
+            let pid = project(&pool);
+            let key = scan_dedup_key("bug-hunter", None, "Guard the null path");
+
+            let first = create_idea_deduped(
+                &pool,
+                &pid,
+                None,
+                "bug-hunter",
+                Some("technical"),
+                "Guard the null path",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                &key,
+            )
+            .unwrap()
+            .expect("first filing writes");
+            force_row_status(&pool, &first.id, status);
+
+            let second = create_idea_deduped(
+                &pool,
+                &pid,
+                None,
+                "bug-hunter",
+                Some("technical"),
+                "Guard the null path",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                &key,
+            )
+            .unwrap();
+            assert!(
+                second.is_none(),
+                "a key spent by a `{status}` row stays spent — only DELETING the idea frees it"
+            );
+            assert_eq!(
+                list_ideas(&pool, Some(&pid), None, None, Some(10), None)
+                    .unwrap()
+                    .len(),
+                1
+            );
+        }
+    }
+
+    #[test]
+    fn create_finding_is_a_no_op_for_a_spent_key_in_every_status() {
+        for status in EVERY_STATUS {
+            let pool = pool();
+            let pid = project(&pool);
+            let key = "sentry:AB12CD";
+
+            let first = create_finding(
+                &pool,
+                &pid,
+                "sentry_spike",
+                "Errors spiking in the executor",
+                None,
+                None,
+                None,
+                None,
+                None,
+                key,
+                None,
+                None,
+                None,
+            )
+            .unwrap()
+            .expect("first filing writes");
+            assert_eq!(first.origin.as_deref(), Some("sentry_spike"));
+            assert_eq!(first.scan_type, "sentry_spike");
+            force_row_status(&pool, &first.id, status);
+
+            let second = create_finding(
+                &pool,
+                &pid,
+                "sentry_spike",
+                "Errors spiking in the executor",
+                None,
+                None,
+                None,
+                None,
+                None,
+                key,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            assert!(second.is_none(), "spent in `{status}` is still spent");
+        }
+    }
+
+    #[test]
+    fn the_three_legacy_doors_keep_their_own_validation_messages() {
+        let pool = pool();
+        let pid = project(&pool);
+
+        let deduped = create_idea_deduped(
+            &pool,
+            &pid,
+            None,
+            "bug-hunter",
+            None,
+            "Title",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "  ",
+        )
+        .unwrap_err();
+        assert!(deduped
+            .to_string()
+            .contains("Idea dedup_key cannot be empty"));
+
+        let finding = create_finding(
+            &pool,
+            &pid,
+            "sentry_spike",
+            "Title",
+            None,
+            None,
+            None,
+            None,
+            None,
+            "  ",
+            None,
+            None,
+            None,
+        )
+        .unwrap_err();
+        assert!(finding
+            .to_string()
+            .contains("Finding dedup_key cannot be empty"));
+
+        let unknown_origin = create_finding(
+            &pool,
+            &pid,
+            "not_a_sensor",
+            "Title",
+            None,
+            None,
+            None,
+            None,
+            None,
+            "k",
+            None,
+            None,
+            None,
+        )
+        .unwrap_err();
+        assert!(unknown_origin
+            .to_string()
+            .contains("Unknown finding origin: not_a_sensor"));
+    }
+
+    #[test]
+    fn the_ungated_door_still_allows_a_hand_written_duplicate_and_a_null_project() {
+        let pool = pool();
+        let pid = project(&pool);
+        for _ in 0..2 {
+            create_idea(
+                &pool,
+                Some(&pid),
+                None,
+                "manual",
+                Some("technical"),
+                "Same thing",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            list_ideas(&pool, Some(&pid), None, None, Some(50), None)
+                .unwrap()
+                .len(),
+            2
+        );
+
+        // `dev_tools_create_idea` still reaches this door with `project_id: None`.
+        let orphan = create_idea(
+            &pool,
+            None,
+            None,
+            "manual",
+            None,
+            "No project",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(orphan.project_id, None);
+        assert_eq!(orphan.origin.as_deref(), Some("manual"));
+    }
+
+    // --- 6. the verdict door -------------------------------------------------
+
+    #[test]
+    fn decide_idea_cas_refuses_a_token_outside_the_vocabulary() {
+        let pool = pool();
+        let pid = project(&pool);
+        let idea = file_idea(
+            &pool,
+            IdeaDraft::new(&pid, BacklogSource::Manual, "Decide me"),
+        )
+        .unwrap()
+        .unwrap();
+
+        let bad_new = decide_idea_cas(&pool, &idea.id, "pending", "in-progress", None).unwrap_err();
+        assert!(bad_new.to_string().contains("in-progress"), "{bad_new}");
+        assert!(matches!(bad_new, AppError::Validation(_)));
+
+        let bad_expected =
+            decide_idea_cas(&pool, &idea.id, "triaged", "accepted", None).unwrap_err();
+        assert!(
+            bad_expected.to_string().contains("triaged"),
+            "{bad_expected}"
+        );
+
+        // Neither refusal touched the row.
+        assert_eq!(get_idea_by_id(&pool, &idea.id).unwrap().status, "pending");
+
+        // The two new states are reachable through the same door.
+        let delivered = decide_idea_cas(&pool, &idea.id, "pending", "delivered", None).unwrap();
+        assert_eq!(delivered.status, "delivered");
+    }
+
+    #[test]
+    fn decide_idea_cas_still_produces_the_pinned_lost_swap_message() {
+        // `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`) and the error
+        // registry both match /already (decided|resolved) … by a concurrent
+        // action/. Reword this and every optimistic surface silently degrades.
+        let pool = pool();
+        let pid = project(&pool);
+        let idea = file_idea(
+            &pool,
+            IdeaDraft::new(&pid, BacklogSource::Manual, "Race me"),
+        )
+        .unwrap()
+        .unwrap();
+
+        decide_idea_cas(&pool, &idea.id, "pending", "accepted", None).unwrap();
+        let lost = decide_idea_cas(&pool, &idea.id, "pending", "rejected", None).unwrap_err();
+        let msg = lost.to_string();
+        assert!(
+            msg.contains("was already decided as 'accepted' by a concurrent action"),
+            "the pinned lost-swap phrasing, got: {msg}"
+        );
+    }
+
+    // --- 7. the exit ---------------------------------------------------------
+
+    #[test]
+    fn the_delivered_verify_state_is_in_the_vocabulary() {
+        assert!(
+            VERIFY_STATES.contains(&DELIVERED_VERIFY_STATE),
+            "a verdict outside VERIFY_STATES would be rejected by set_finding_verify_state \
+             and unreadable by every consumer of the column"
+        );
+        assert_ne!(
+            DELIVERED_VERIFY_STATE, "pending",
+            "`pending` ARMS a re-check; delivery disarms it"
+        );
+    }
+
+    #[test]
+    fn mark_idea_delivered_records_the_commit_and_resolves_the_armed_verify_state() {
+        let pool = pool();
+        let pid = project(&pool);
+        let idea = file_idea(
+            &pool,
+            IdeaDraft::new(&pid, BacklogSource::AppMaster, "Ship it"),
+        )
+        .unwrap()
+        .unwrap();
+        decide_idea_cas(&pool, &idea.id, "pending", "accepted", None).unwrap();
+
+        // What `task_executor.rs` arms on every success and nothing ever cleared.
+        //
+        // Taken from the vocabulary rather than spelled as a literal: the
+        // verify states are a bare `[&str; 5]` with no enum behind them, and a
+        // quoted state in a `set_*_state` call is exactly what
+        // `untyped-lifecycle-transition` counts.
+        let armed = VERIFY_STATES[0];
+        assert_eq!(armed, "pending", "the armed state leads the vocabulary");
+        set_finding_verify_state(&pool, &idea.id, armed, None).unwrap();
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id)
+                .unwrap()
+                .verify_state
+                .as_deref(),
+            Some("pending")
+        );
+
+        let delivered = mark_idea_delivered(
+            &pool,
+            &idea.id,
+            Some("worktree-wp1"),
+            Some("8ae6711beb76d68d542c4c3ae21be108a1e5addc"),
+        )
+        .unwrap();
+
+        assert_eq!(delivered.status, "delivered");
+        assert_ne!(
+            delivered.verify_state.as_deref(),
+            Some("pending"),
+            "delivery is what finally clears the armed re-check"
+        );
+        assert_eq!(delivered.verify_state.as_deref(), Some("cleared"));
+        assert!(delivered.verify_checked_at.is_some());
+
+        let evidence: serde_json::Value =
+            serde_json::from_str(delivered.verify_evidence.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            evidence["commit"],
+            "8ae6711beb76d68d542c4c3ae21be108a1e5addc"
+        );
+        assert_eq!(evidence["branch"], "worktree-wp1");
+        assert_eq!(evidence["previous_status"], "accepted");
+    }
+
+    #[test]
+    fn mark_idea_delivered_on_a_missing_row_is_not_found_not_a_silent_no_op() {
+        let pool = pool();
+        let err = mark_idea_delivered(&pool, "no-such-idea", None, None).unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err}");
+    }
+
+    #[test]
+    fn expiring_reaches_only_stale_accepted_task_less_ideas_and_writes_expired() {
+        let pool = pool();
+        let pid = project(&pool);
+        let mk = |title: &str| {
+            file_idea(
+                &pool,
+                IdeaDraft::new(&pid, BacklogSource::IdeaScanner, title),
+            )
+            .unwrap()
+            .unwrap()
+        };
+
+        let stale_accepted = mk("Accepted and forgotten");
+        let fresh_accepted = mk("Accepted yesterday");
+        let stale_pending = mk("Never decided");
+        let stale_with_task = mk("Accepted and became work");
+
+        for id in [&stale_accepted.id, &stale_pending.id, &stale_with_task.id] {
+            backdate(&pool, id, 90);
+        }
+        for id in [&stale_accepted.id, &fresh_accepted.id, &stale_with_task.id] {
+            force_row_status(&pool, id, "accepted");
+        }
+        create_task(
+            &pool,
+            Some(&pid),
+            "Do it",
+            None,
+            Some(&stale_with_task.id),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let expired = expire_stale_accepted_ideas(&pool, Some(&pid), 30).unwrap();
+        assert_eq!(
+            expired, 1,
+            "only the stale, accepted, task-less idea ages out"
+        );
+
+        assert_eq!(
+            get_idea_by_id(&pool, &stale_accepted.id).unwrap().status,
+            "expired",
+            "an automated sweep writes `expired` — NEVER a token a human verdict writes"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &fresh_accepted.id).unwrap().status,
+            "accepted"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &stale_pending.id).unwrap().status,
+            "pending",
+            "the pending pile belongs to archive_stale_ideas, not to this sweep"
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &stale_with_task.id).unwrap().status,
+            "accepted",
+            "it became work; it did not age out"
+        );
+    }
+
+    #[test]
+    fn expiring_keeps_the_dedup_key_so_it_cannot_reopen_the_duplication_door() {
+        let pool = pool();
+        let pid = project(&pool);
+        let key = scan_dedup_key("bug-hunter", None, "Guard the null path");
+        let idea = create_idea_deduped(
+            &pool,
+            &pid,
+            None,
+            "bug-hunter",
+            None,
+            "Guard the null path",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            &key,
+        )
+        .unwrap()
+        .unwrap();
+        backdate(&pool, &idea.id, 90);
+        force_row_status(&pool, &idea.id, "accepted");
+
+        assert_eq!(
+            expire_stale_accepted_ideas(&pool, Some(&pid), 30).unwrap(),
+            1
+        );
+        assert_eq!(
+            get_idea_by_id(&pool, &idea.id)
+                .unwrap()
+                .dedup_key
+                .as_deref(),
+            Some(key.as_str()),
+            "expiring is reversible and never frees the key"
+        );
+        let again = create_idea_deduped(
+            &pool,
+            &pid,
+            None,
+            "bug-hunter",
+            None,
+            "Guard the null path",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            &key,
+        )
+        .unwrap();
+        assert!(again.is_none());
+    }
+
+    #[test]
+    fn expiring_refuses_a_non_positive_window() {
+        let pool = pool();
+        assert!(matches!(
+            expire_stale_accepted_ideas(&pool, None, 0).unwrap_err(),
+            AppError::Validation(_)
+        ));
+    }
+
+    #[test]
+    fn expiring_does_not_copy_the_dead_origin_is_null_filter() {
+        // `archive_stale_ideas` requires `origin IS NULL`. Migration e41
+        // backfilled an origin onto every row carrying a `scan_type`, and this
+        // door now stamps one on every new row — so that predicate matches
+        // nothing. A reaper that inherited it would provably never fire.
+        let pool = pool();
+        let pid = project(&pool);
+        let idea = file_idea(
+            &pool,
+            IdeaDraft::new(&pid, BacklogSource::AppMaster, "Origin is set"),
+        )
+        .unwrap()
+        .unwrap();
+        assert!(idea.origin.is_some());
+        backdate(&pool, &idea.id, 90);
+        force_row_status(&pool, &idea.id, "accepted");
+
+        assert_eq!(
+            expire_stale_accepted_ideas(&pool, Some(&pid), 30).unwrap(),
+            1
         );
     }
 }

@@ -611,9 +611,11 @@ pub fn assemble_prompt_with_skills(
     prompt.push_str("### raise_incident\nEscalate a TECHNICAL BLOCKER you cannot resolve and the user must act on — a missing credential/dependency, a broken upstream service, work blocked on something un-merged, an ambiguous requirement. Goes to the Incidents inbox (open→in_progress→resolved); when the user resolves it, the blocked work is re-run. Use this — NOT request_review — for anything technical the user must unblock.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"detail\": \"string\", \"severity\": \"low|medium|high|critical\", \"kind\": \"missing_credential|upstream_down|ambiguous_requirement|blocked_dependency\"}`\n\n");
     prompt.push_str("### propose_backlog\nSurface a concrete, SMALL, independently-shippable FUTURE-WORK item into this project's backlog — a follow-up, refactor, test gap, or hardening worth doing but NOT part of the current increment. Each lands in the project's backlog for a human or a later PARALLEL run to pick up. Do NOT use it for the work you're doing now (do that), for vague wishes, or for one big unsplittable task.\n");
-    prompt.push_str("`risk`, `effort` and `impact` are ALL REQUIRED: the one who files an idea is the one who scores it, and a filing without the three scales is incomplete (it is kept, and logged as incomplete). An unrated idea is NEVER accepted automatically — it sits in the backlog until a human reads it, and reading backlogs by hand is the bottleneck this protocol exists to remove. `risk`: 1 = documentation or a reversible local change · 2 = code behind a test · 3 = touches a route, a contract or a schema · 4 = touches ledger, settlement or security semantics · 5 = irreversible or external. `effort`: 1 = under an hour · 2 = an hour or two · 3 = a day · 4 = several days · 5 = a wave of its own. `impact`: 1 = cosmetic · 2 = a local improvement · 3 = visible to the project's users or gates · 4 = moves a declared goal or KPI · 5 = unblocks a goal or a money path. The project's mechanical triage rule accepts risk 1-2 without a human, so an honest low score is what gets small work moving; anything 3 or above waits for a person on purpose. There is no priority key: the project's owner groups its accepted backlog by its own judgement of effort, impact and risk.\n");
+    prompt.push_str("`risk`, `effort` and `impact` are ALL REQUIRED: the one who files an idea is the one who scores it, and a filing without the three scales is incomplete (it is kept, and logged as incomplete). An unrated idea is NEVER accepted automatically — it sits in the backlog until a human reads it, and reading backlogs by hand is the bottleneck this protocol exists to remove. `risk`: 1 = documentation or a reversible local change · 2 = code behind a test · 3 = touches a route, a contract or a schema · 4 = touches ledger, settlement or security semantics · 5 = irreversible or external. `effort`: 1 = under an hour · 2 = an hour or two · 3 = a day · 4 = several days · 5 = a wave of its own. `impact`: 1 = cosmetic · 2 = a local improvement · 3 = visible to the project's users or gates · 4 = moves a declared goal or KPI · 5 = unblocks a goal or a money path. Each project's OWN mechanical triage rules decide which risk band it will accept without a human — the protocol does not promise a bar, and it differs per project. Score honestly: an inflated risk waits for a person who may never come, and a deflated one asks a machine to accept work nobody looked at. There is no priority key: the project's owner groups its accepted backlog by its own judgement of effort, impact and risk.\n");
     prompt.push_str("`goal` names the project goal this item serves, by the goal id printed in your brief (a prefix of eight or more characters is enough) or by its exact title. The task delivered from the item inherits the goal, and a goal's progress is read from the work attached to it — an item that serves no goal is still filed, and a goal that no item serves stays a document. Name it when it is true; never invent one.\n");
-    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"category\": \"refactor|test|perf|hardening|feature|docs\", \"impact\": 1-5 (REQUIRED), \"effort\": 1-5 (REQUIRED), \"risk\": 1-5 (REQUIRED), \"goal\": \"<goal id or title, optional>\"}`\n\n");
+    prompt.push_str("`plan` is the ordered list of 1-8 steps that turns this item into a commit, and YOU are the one who writes it. You are the analyst; whoever executes the item later is a cheaper model that will NOT re-derive your analysis — it will read the item and start typing. Everything you leave out, it invents. Each step is `{\"n\": 1, \"action\": \"one imperative line, at the altitude of a commit subject\", \"files\": [\"repo/relative/path.rs\"], \"done_when\": \"the observable condition that makes this step finished\"}`. `files` is not decoration: two accepted items may be executed in PARALLEL exactly when their plans' file sets do not intersect, so a step that names no file cannot be scheduled against anything and its item waits. `done_when` is something a person or a script can OBSERVE — a named test that passes, a command that exits clean, a value a specific surface shows. \"The code is correct\" is not a done_when; \"`cargo test parse_plan` passes\" is. Split what needs splitting: a step whose `action` needs the word \"and\" is usually two steps.\n");
+    prompt.push_str("A plan is NOT required for the filing to be kept. File the item either way — an item with no usable plan is stored and marked `draft`, and something else must plan it before it can become work. If you genuinely cannot plan it (you have no access to the repository, or the item is a question rather than a change), file it without `plan` rather than inventing paths you have not seen: a fabricated file list is worse than an absent one, because it schedules against files that do not exist.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"category\": \"refactor|test|perf|hardening|feature|docs\", \"impact\": 1-5 (REQUIRED), \"effort\": 1-5 (REQUIRED), \"risk\": 1-5 (REQUIRED), \"goal\": \"<goal id or title, optional>\", \"plan\": [{\"n\": 1, \"action\": \"string\", \"files\": [\"string\"], \"done_when\": \"string\"}]}`\n\n");
 
     // Platform and execution environment guidance
     prompt.push_str("## Execution Environment\n");
@@ -1256,5 +1258,81 @@ mod run_budget_tests {
         let s = run_budget_section(4 * 60 * 1000, at(9, 30, 0));
         assert!(s.contains("terminated at 09:34:00 UTC"), "{s}");
         assert!(s.contains("By 09:33:00 UTC"), "{s}");
+    }
+}
+
+/// The `propose_backlog` protocol contract, asserted as TEXT.
+///
+/// A prompt is a contract with a model and nothing else in the build can see
+/// it break: removing a clause from a `push_str` compiles, lints and ships.
+/// The plan instruction is the clause an executing model's whole job depends
+/// on — without it the filer stops analysing and the cheapest model in the
+/// chain is asked to do the analysis instead — so it is pinned here.
+#[cfg(test)]
+mod propose_backlog_contract_tests {
+    use super::*;
+
+    fn protocol_section() -> String {
+        let persona = crate::prompt::tests::test_persona();
+        assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        )
+    }
+
+    #[test]
+    fn the_verb_asks_the_filer_for_the_plan_and_says_why_each_field_exists() {
+        let prompt = protocol_section();
+        assert!(
+            prompt.contains("### propose_backlog"),
+            "the verb itself must be documented"
+        );
+        for clause in [
+            // the key, in the documented input shape
+            "\"plan\": [{\"n\": 1, \"action\": \"string\", \"files\": [\"string\"], \"done_when\": \"string\"}]",
+            // who plans, and why it cannot be deferred to the executor
+            "You are the analyst",
+            "Everything you leave out, it invents",
+            // why `files` is not decoration
+            "file sets do not intersect",
+            // what `done_when` has to be
+            "observable condition",
+            // an unplanned filing is kept, not dropped
+            "A plan is NOT required for the filing to be kept",
+            "marked `draft`",
+        ] {
+            assert!(
+                prompt.contains(clause),
+                "the propose_backlog plan contract lost its `{clause}` clause"
+            );
+        }
+    }
+
+    /// The scales keep their documented MEANINGS — they are the reason 1-5 won
+    /// as the one scale — and the prompt no longer promises a triage bar the
+    /// project may not be holding. Measured 2026-09-21: six of the eleven live
+    /// `dev_triage_rules` rows accept risk 3 as well, which the old sentence
+    /// ("anything 3 or above waits for a person on purpose") flatly denied.
+    #[test]
+    fn the_scales_keep_their_bands_and_stop_promising_a_bar_the_rules_do_not_hold() {
+        let prompt = protocol_section();
+        assert!(prompt.contains("`risk`: 1 = documentation or a reversible local change"));
+        assert!(prompt.contains("5 = irreversible or external"));
+        assert!(prompt.contains("`effort`: 1 = under an hour"));
+        assert!(prompt.contains("`impact`: 1 = cosmetic"));
+        assert!(
+            prompt.contains("OWN mechanical triage rules decide which risk band"),
+            "the bar belongs to the project's rules, not to the protocol"
+        );
+        assert!(
+            !prompt.contains("anything 3 or above waits for a person on purpose"),
+            "the prompt must not promise a bar six of eleven live rules do not hold"
+        );
     }
 }

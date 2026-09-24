@@ -9,15 +9,15 @@ use std::fs;
 use std::sync::Arc;
 
 use super::addenda::{
-    autonomous_addendum_if_enabled, daily_goals_addendum, display_addendum_if_voice_active,
-    language_addendum, onboarding_addendum_if_needed, progress_addendum, voice_addendum_if_needed,
+    autonomous_addendum_if_enabled, daily_goals_addendum, language_addendum,
+    onboarding_addendum_if_needed, progress_addendum,
 };
 use super::budget::PromptBlockSizes;
 use super::capabilities::{
     dev_tools_registry_for_prompt, format_browser_page, format_browser_whitelist,
     format_connectors, format_flagged_credentials, format_plugins,
 };
-use super::chat_family::{chat_static_core, chat_voice_flag, PromptClass};
+use super::chat_family::{chat_static_core, layer_one_flag_for, voice_flag, PromptClass};
 use super::compose::compose_for_class;
 use super::devices::format_paired_devices;
 use super::indexes::{format_context_index, format_persona_index, format_skill_index};
@@ -101,11 +101,12 @@ pub async fn build_system_prompt(
 ///
 /// [`PromptClass::Full`] reads the constitution from the brain root exactly
 /// as before. [`PromptClass::Chat`] builds on the chat family's static core
-/// instead, drops the two always-on static addenda the chat core already
-/// teaches, and replaces the voice addenda with a short per-turn flag (the
-/// voice contract itself lives in the chat core, so the cached prefix does
-/// not change between a spoken and a typed turn). Every dynamic block is
-/// gathered identically for both.
+/// instead and drops the two always-on static addenda the chat core already
+/// teaches. Both families carry the same two short per-turn flags (voice on,
+/// and the layer-one register); the rules behind them live in the static
+/// core, so the cached prefix does not change between a spoken and a typed
+/// turn or when the register moves. Every dynamic block is gathered
+/// identically for both.
 #[allow(clippy::too_many_arguments)]
 pub async fn build_system_prompt_for_class(
     user_db: &UserDbPool,
@@ -178,20 +179,21 @@ pub async fn build_system_prompt_for_class(
         synthesize_if_enabled(user_db, &recall, query, recall_synthesis_enabled).await;
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
-    // PROGRESS narration is always-on (visual timeline); the TTS grammar
-    // rides the same prompt slot but only when voice playback is active.
+    // The voice slot carries the per-turn voice flag in both families (the
+    // voice RULES live in the static core: chat core `# Voice`, constitution
+    // `## Voice`). The full family also carries the always-on PROGRESS
+    // grammar here; the chat core teaches PROGRESS itself.
+    //
+    // The display slot carries the per-turn layer-one register flag in both
+    // families (`Layer one this turn: at most N sentences.`, from the reply
+    // register). It used to hold the voice-only dual-language addendum,
+    // retired with the layered voice: layer one IS the spoken register.
     let (voice_md, display_md) = match class {
         PromptClass::Full => (
-            format!(
-                "{}{}",
-                voice_addendum_if_needed(voice_enabled),
-                progress_addendum()
-            ),
-            display_addendum_if_voice_active(voice_enabled),
+            format!("{}{}", voice_flag(voice_enabled), progress_addendum()),
+            layer_one_flag_for(user_db),
         ),
-        // The chat core carries the PROGRESS grammar, the voice contract and
-        // the listening-mode display rules; only the flag is per turn.
-        PromptClass::Chat => (chat_voice_flag(voice_enabled), String::new()),
+        PromptClass::Chat => (voice_flag(voice_enabled), layer_one_flag_for(user_db)),
     };
     // Dev-mode self-model rides the same "mode addenda" prompt slot as
     // autonomous mode — both are header-toggle-gated blocks and compose()

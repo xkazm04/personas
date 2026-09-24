@@ -11,7 +11,7 @@
  * consent surface); `execute_persona` actions open ConfirmDialog with the
  * prepared input visible. A surface can propose, only the operator disposes.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
 import type { DecisionAction } from '@/features/shared/components/decisions/decisionTypes';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
@@ -54,7 +54,19 @@ interface SurfaceRendererProps {
   className?: string;
 }
 
-export function SurfaceRenderer({ spec, dropped = 0, context, className }: SurfaceRendererProps) {
+/**
+ * The consent wiring every rendered block shares, as a hook: the mapping from
+ * a declared `SurfaceAction` to a button, and the two consent dialogs it can
+ * open. Extracted so a surface block rendered OUTSIDE a full SurfaceRenderer
+ * (a tag inside a markdown document, see `editors/RichMarkdown`) gets exactly
+ * the same rule: nothing auto-runs, a dispatch opens the chooser, a persona
+ * run opens a confirm with the prompt visible. Render `consent` once, anywhere
+ * in the host's tree.
+ */
+export function useSurfaceActions(context?: SurfaceRenderContext): {
+  toDecisionAction: (action: SurfaceAction, keyPrefix: string) => DecisionAction;
+  consent: ReactNode;
+} {
   const { t, tx } = useTranslation();
   const [pendingDispatch, setPendingDispatch] = useState<DispatchRequest | null>(null);
   const [pendingRun, setPendingRun] = useState<SurfaceAction | null>(null);
@@ -104,6 +116,34 @@ export function SurfaceRenderer({ spec, dropped = 0, context, className }: Surfa
     }
   };
 
+  const consent = (
+    <>
+      {/* Consent surfaces — the ONLY paths from a rendered button to work. */}
+      {pendingDispatch && (
+        <DispatchChooserModal request={pendingDispatch} onClose={() => setPendingDispatch(null)} />
+      )}
+      {pendingRun && (
+        <ConfirmDialog
+          title={t.shared.surface.confirm_run_title}
+          body={tx(t.shared.surface.confirm_run_body, {
+            label: pendingRun.label,
+            prompt: pendingRun.prompt.length > 400 ? `${pendingRun.prompt.slice(0, 400)}…` : pendingRun.prompt,
+          })}
+          confirmLabel={t.shared.surface.confirm_run_action}
+          onConfirm={() => confirmRun(pendingRun)}
+          onCancel={() => setPendingRun(null)}
+        />
+      )}
+    </>
+  );
+
+  return { toDecisionAction, consent };
+}
+
+export function SurfaceRenderer({ spec, dropped = 0, context, className }: SurfaceRendererProps) {
+  const { t, tx } = useTranslation();
+  const { toDecisionAction, consent } = useSurfaceActions(context);
+
   return (
     <div className={`space-y-4 ${className ?? ''}`.trim()} data-testid="surface-renderer">
       {/* Provenance header — an agent composed this, and it says so. */}
@@ -134,22 +174,7 @@ export function SurfaceRenderer({ spec, dropped = 0, context, className }: Surfa
         />
       ))}
 
-      {/* Consent surfaces — the ONLY paths from a rendered button to work. */}
-      {pendingDispatch && (
-        <DispatchChooserModal request={pendingDispatch} onClose={() => setPendingDispatch(null)} />
-      )}
-      {pendingRun && (
-        <ConfirmDialog
-          title={t.shared.surface.confirm_run_title}
-          body={tx(t.shared.surface.confirm_run_body, {
-            label: pendingRun.label,
-            prompt: pendingRun.prompt.length > 400 ? `${pendingRun.prompt.slice(0, 400)}…` : pendingRun.prompt,
-          })}
-          confirmLabel={t.shared.surface.confirm_run_action}
-          onConfirm={() => confirmRun(pendingRun)}
-          onCancel={() => setPendingRun(null)}
-        />
-      )}
+      {consent}
     </div>
   );
 }
@@ -162,7 +187,10 @@ const STAT_TONE = { neutral: 'neutral', success: 'success', warning: 'warning', 
 
 type SurfaceTableRow = Record<string, string | number | boolean | null> & { __surfaceKey: string };
 
-function SurfaceBlockView({
+/** One block of the vocabulary, on its own. Exported for hosts that render
+ *  blocks individually (`editors/RichMarkdown`); pair it with
+ *  `useSurfaceActions` so its buttons keep the consent rule. */
+export function SurfaceBlockView({
   block,
   index,
   toDecisionAction,

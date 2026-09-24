@@ -105,7 +105,7 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   data-weighted **Bento mosaic** of 7 balanced *domains* (Engineering, Research, Content,
   Sales & Marketing, Finance, Operations, Customer & People — `exploreDomains.ts`, derived from
   the real category distribution so nothing is orphaned) — tile size ∝ template count, with
-  theme-aware Leonardo illustrations (`public/illustrations/explore/domain-*-{dark,light}.png`).
+  theme-aware Leonardo illustrations (`public/illustrations/explore/domain-*-{dark,light}.webp`).
   **Level 2** (`level2/DomainTable.tsx`) is a sub-domain (category) pre-filter + a dense,
   sortable, type-to-filter table mixing that domain's templates and recipes, with an
   All / Templates / Recipes switcher. Real data via `useExploreCatalog` (templates from
@@ -253,7 +253,7 @@ byte-for-byte. It is threaded through `start_session` and all build entry points
 (the UI `start_build_session` command, the headless command, and the
 test-automation + management-api HTTP build endpoints); the companion one-shot
 path passes `None` for now. On the UI, an optional collapsed **"Add reference
-context"** field (`BuildContextField`, in the matrix build entry) collects a
+context"** layer on the build sheet (Sheet · Cinema's context editor) collects a
 writing sample / role / brand guide pre-launch. The context is **transient** —
 used to build the prompt, not persisted on the build session row.
 

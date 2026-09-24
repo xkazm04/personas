@@ -153,3 +153,33 @@ export function markRowResolvedLocally(
     }),
   });
 }
+
+/** The open-suggestion count for one note, read from the live companion store
+ *  — what `askAthena` records as the baseline of a wait. */
+export function openSuggestionCountFor(noteId: string): number {
+  return pendingSuggestionsFor(noteSuggestionCards(useCompanionStore.getState().chatCards), noteId).length;
+}
+
+/**
+ * Re-count open suggestions for every note Athena is being waited on, whenever
+ * the companion's cards change — so a wait started from the desk (the card
+ * menu, a thread comment) ends when her blocks land even with the editor, and
+ * the dispatch bar that used to watch the number, unmounted. Idempotent.
+ *
+ * The ask state is imported lazily through the argument pair rather than
+ * statically, so this module keeps no dependency on the thread store.
+ */
+let stopAskWatch: (() => void) | null = null;
+export function startNoteAskSuggestionWatch(
+  askingNoteIds: () => string[],
+  report: (noteId: string, count: number) => void,
+): void {
+  if (stopAskWatch) return;
+  stopAskWatch = useCompanionStore.subscribe((state, prev) => {
+    if (state.chatCards === prev.chatCards) return;
+    const ids = askingNoteIds();
+    if (ids.length === 0) return;
+    const cards = noteSuggestionCards(state.chatCards);
+    for (const id of ids) report(id, pendingSuggestionsFor(cards, id).length);
+  });
+}

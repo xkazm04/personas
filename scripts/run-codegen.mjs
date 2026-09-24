@@ -3,15 +3,27 @@
 // so independent codegen scripts run concurrently with a per-task timeout —
 // a network hang in one script no longer stalls `npm run dev` indefinitely.
 //
-// Usage: node scripts/run-codegen.mjs <preset>
+// Usage: node scripts/run-codegen.mjs <preset> [--force]
 //   preset = "predev" | "prebuild"
 //
 // Per-task default timeout: 60s. Override with CODEGEN_TIMEOUT_MS env var.
+//
+// INPUT CACHE (2026-09-18, scripts/codegen/cache.mjs). A task that declares its inputs and outputs in
+// scripts/codegen/inputs.mjs is SKIPPED when the content hash of those inputs + the
+// task's own script + the Node major is the one recorded after its last green run AND
+// its outputs still carry the size + mtime recorded then. Anything else runs: a task
+// with no declaration, a missing input, a deleted or touched output, `--force`,
+// CODEGEN_NO_CACHE=1. The preset is parallel, so its wall time is its slowest task;
+// only three tasks are declared because only the slow ones can buy anything (sprites
+// alone was 3.1 s of a 2.3-3.2 s preset). Pair: docs/development/build-ledger.jsonl,
+// scenario fe-codegen. The manifest lives under node_modules/.cache, keyed by a hash of
+// the checkout root, because worktrees reach one node_modules through a junction.
 
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
+import { createCodegenCache } from "./codegen/cache.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -91,6 +103,13 @@ const PRESETS = {
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;
 
+const cliArgs = process.argv.slice(2);
+const cache = createCodegenCache({
+  repoRoot,
+  tasks: TASKS,
+  off: cliArgs.includes("--force") || process.env.CODEGEN_NO_CACHE === "1",
+});
+
 function runTask(name) {
   const scriptPath = TASKS[name];
   if (!scriptPath) {
@@ -98,6 +117,11 @@ function runTask(name) {
   }
   const fullPath = join(repoRoot, scriptPath);
   const started = performance.now();
+
+  const { hit, key } = cache.lookup(name);
+  if (hit) {
+    return Promise.resolve({ name, ms: Math.round(performance.now() - started), stdout: "", stderr: "", cached: true });
+  }
 
   return new Promise((res, rej) => {
     const child = spawn(process.execPath, [fullPath], {
@@ -123,6 +147,7 @@ function runTask(name) {
       clearTimeout(timer);
       const ms = Math.round(performance.now() - started);
       if (code === 0) {
+        cache.record(name, key);
         res({ name, ms, stdout, stderr });
       } else {
         rej(Object.assign(new Error(`task "${name}" exited ${code}`), {
@@ -133,7 +158,7 @@ function runTask(name) {
   });
 }
 
-const preset = process.argv[2];
+const preset = cliArgs.find((a) => !a.startsWith("--"));
 if (!preset || !PRESETS[preset]) {
   console.error(`usage: node scripts/run-codegen.mjs <preset>`);
   console.error(`presets: ${Object.keys(PRESETS).join(", ")}`);
@@ -148,8 +173,8 @@ const results = await Promise.allSettled(tasks.map(runTask));
 let failed = 0;
 for (const r of results) {
   if (r.status === "fulfilled") {
-    const { name, ms, stdout } = r.value;
-    process.stdout.write(`\n— ${name} (${ms}ms) —\n`);
+    const { name, ms, stdout, cached } = r.value;
+    process.stdout.write(`\n— ${name} (${cached ? "inputs unchanged, skipped; " : ""}${ms}ms) —\n`);
     if (stdout.trim()) process.stdout.write(stdout);
   } else {
     failed += 1;
@@ -161,7 +186,10 @@ for (const r of results) {
   }
 }
 
+cache.save();
+
+const skipped = results.filter((r) => r.status === "fulfilled" && r.value.cached).length;
 const totalMs = Math.round(performance.now() - overall);
-process.stdout.write(`\n${preset}: ${tasks.length - failed}/${tasks.length} tasks ok (${totalMs}ms)\n`);
+process.stdout.write(`\n${preset}: ${tasks.length - failed}/${tasks.length} tasks ok (${totalMs}ms${skipped ? `, ${skipped} skipped on unchanged inputs` : ""})\n`);
 
 process.exit(failed === 0 ? 0 : 1);

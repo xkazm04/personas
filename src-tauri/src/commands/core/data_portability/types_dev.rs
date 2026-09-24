@@ -323,9 +323,18 @@ pub struct DevUseCaseExport {
     pub status: String,
     pub created_by: String,
     pub pinned: bool,
+    /// 'major' | 'standard'. `#[serde(default)]` so a bundle exported before
+    /// the council existed still imports - and lands as `standard`, which is
+    /// the honest reading: nobody in that bundle ever promoted anything.
+    #[serde(default = "default_export_tier")]
+    pub tier: String,
     pub rationale: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+fn default_export_tier() -> String {
+    "standard".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize)]

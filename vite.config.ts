@@ -90,7 +90,15 @@ export default defineConfig(async () => ({
   build: {
     // Target modern WebView2/WebKit — enables smaller output (no legacy polyfills)
     target: "es2022",
-    sourcemap: "hidden",
+    // Sourcemaps are for ONE consumer: Sentry symbolicating a crash report from
+    // a SHIPPED build. Nothing reads them locally — `hidden` means no
+    // `//# sourceMappingURL=` comment, so no devtool ever finds them either.
+    // Unconditionally they cost 1,510 files / 66 MB on every build a developer
+    // or a gate runs (measured 2026-09-20 after the worker fix; 91 MB before
+    // it), which is ~2x the JS they describe. `PERSONAS_RELEASE=1` is the
+    // switch: release.yml's frontend job sets it, and a developer wanting a
+    // symbolicable local installer sets it too.
+    sourcemap: process.env.PERSONAS_RELEASE === "1" ? "hidden" : false,
     chunkSizeWarningLimit: 500,
     // Inline SVGs and small images <16KB to reduce HTTP requests in WebView.
     // 16384 (vs 8192) keeps borderline CSS+icon assets stable across builds —

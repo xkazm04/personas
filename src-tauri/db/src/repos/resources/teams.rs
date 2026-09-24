@@ -15,6 +15,11 @@ row_mapper!(row_to_team -> PersonaTeam {
     id, project_id, parent_team_id, name, description,
     canvas_data, team_config, icon, color,
     enabled [bool],
+    // `[opt]` because the column arrives by ALTER TABLE (e39) and a mapper
+    // that hard-fails on a pending migration takes every team surface with it.
+    // It is NOT optional in meaning: a team with a workspace_id IS that
+    // workspace's cross-project group. See `crate::workspace_team`.
+    workspace_id [opt],
     shared_instructions [opt],
     default_model_profile [opt],
     default_max_budget_usd [opt],
@@ -31,6 +36,13 @@ row_mapper!(row_to_connection -> PersonaTeamConnection {
     id, team_id, source_member_id, target_member_id,
     connection_type, condition, label, created_at,
 });
+
+/// The projection `row_to_team` maps, spelled out beside the mapper so the two
+/// drift into a compile error instead of silently shifting when a migration
+/// adds a column (census `select-star-in-repo`). The macro-generated CRUD
+/// readers above still use `SELECT *`; this list serves the hand-written
+/// workspace-group reads below.
+const TEAM_COLUMNS: &str = "id, project_id, parent_team_id, name, description,      canvas_data, team_config, icon, color, enabled, workspace_id,      shared_instructions, default_model_profile, default_max_budget_usd,      default_max_turns, created_at, updated_at";
 
 row_mapper!(row_to_pipeline_run -> PipelineRun {
     id, team_id, status, node_statuses,
@@ -144,6 +156,131 @@ pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppE
     })
 }
 
+/// The workspace's cross-project group, or `None`.
+///
+/// A group is a team with a `workspace_id` and NO `project_id` — the same pair
+/// the partial unique index `idx_persona_teams_workspace_group` is built on, so
+/// this query can never return two rows. `crate::workspace_team` is the door;
+/// this is the read behind it.
+pub fn get_by_workspace_id(
+    pool: &DbPool,
+    workspace_id: &str,
+) -> Result<Option<PersonaTeam>, AppError> {
+    timed_query!("teams", "teams::get_by_workspace_id", {
+        use rusqlite::OptionalExtension;
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {TEAM_COLUMNS} FROM persona_teams
+             WHERE workspace_id = ?1 AND project_id IS NULL
+             ORDER BY created_at ASC, id ASC
+             LIMIT 1"
+        ))?;
+        stmt.query_row(params![workspace_id], row_to_team)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Mint a workspace's cross-project group in ONE insert.
+///
+/// A narrow creator rather than a `CreateTeamInput` field, on purpose: a team
+/// bound to a workspace IS that workspace's single group, and the only place
+/// allowed to decide that is `crate::workspace_team`, which owns the
+/// invariant. Routing it through the general `create` would put "make a second
+/// group" one struct field away from every other caller of that function —
+/// reachable, and stopped only by an index error at runtime.
+///
+/// Validation mirrors `create` so a group's name obeys the same rules as every
+/// other team's.
+pub fn create_workspace_group(
+    pool: &DbPool,
+    workspace_id: &str,
+    name: &str,
+    description: Option<&str>,
+) -> Result<PersonaTeam, AppError> {
+    let name = personas_core::validation::strip_html_tags(name.trim());
+    personas_core::validation::require_non_empty("Team name", &name)?;
+    if name.len() > MAX_TEAM_NAME_LEN {
+        return Err(AppError::Validation(format!(
+            "Team name exceeds maximum length of {MAX_TEAM_NAME_LEN} characters"
+        )));
+    }
+    let description = description.map(personas_core::validation::strip_html_tags);
+
+    timed_query!("teams", "teams::create_workspace_group", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_teams
+             (id, project_id, parent_team_id, name, description, canvas_data, team_config,
+              icon, color, enabled, workspace_id, created_at, updated_at)
+             VALUES (?1,NULL,NULL,?2,?3,NULL,NULL,NULL,'#6B7280',1,?4,?5,?5)",
+            params![id, name, description, workspace_id, now],
+        )?;
+        get_by_id(pool, &id)
+    })
+}
+
+/// A project-less team of exactly this name that no workspace has claimed yet.
+///
+/// The one caller is `workspace_team::ensure_workspace_team`, adopting a group
+/// minted in the era when the formatted name WAS the key. `project_id IS NULL`
+/// is the guard that keeps a project's identically-named roster out of it.
+pub fn find_unbound_group_by_name(
+    pool: &DbPool,
+    name: &str,
+) -> Result<Option<PersonaTeam>, AppError> {
+    timed_query!("teams", "teams::find_unbound_group_by_name", {
+        use rusqlite::OptionalExtension;
+        let conn = pool.get()?;
+        // `id ASC` is the tiebreak, not decoration: `created_at` is written at
+        // second granularity by some doors, so two same-named unbound teams
+        // created in one tick would otherwise be adopted in an order the data
+        // does not determine (census `clock-ordered-history-read-without-tiebreak`).
+        let mut stmt = conn.prepare_cached(&format!(
+            "SELECT {TEAM_COLUMNS} FROM persona_teams
+             WHERE name = ?1 AND project_id IS NULL AND workspace_id IS NULL
+             ORDER BY created_at ASC, id ASC
+             LIMIT 1"
+        ))?;
+        stmt.query_row(params![name], row_to_team)
+            .optional()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Bind (or unbind) a team to a workspace as its cross-project group.
+///
+/// A direct setter rather than an `UpdateTeamInput` field: the binding is an
+/// invariant `workspace_team` owns, not a property a team editor may set, and
+/// the unique index means a bad write fails loudly here instead of producing a
+/// second group. Unlike `set_north_star`, the column this writes IS carried by
+/// `row_to_team` and by the ts-rs binding, so what it writes is observable.
+///
+/// A vanished team is a `NotFound`, never a silent success: the statement is
+/// aimed at one primary key, so zero affected rows means exactly one thing, and
+/// `ensure_workspace_team` must not report a binding it did not make.
+pub fn set_workspace_id(
+    pool: &DbPool,
+    team_id: &str,
+    workspace_id: Option<&str>,
+) -> Result<(), AppError> {
+    timed_query!("teams", "teams::set_workspace_id", {
+        let conn = pool.get()?;
+        let rows = conn
+            .execute(
+                "UPDATE persona_teams SET workspace_id = ?2, updated_at = ?3 WHERE id = ?1",
+                params![team_id, workspace_id, chrono::Utc::now().to_rfc3339()],
+            )
+            .map_err(AppError::Database)?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Team {team_id}")));
+        }
+        Ok(())
+    })
+}
+
 /// Deep-clone a team: copies the team row, all members, all connections (with
 /// remapped member IDs), and all team memories. Returns the new team.
 pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, AppError> {
@@ -158,7 +295,13 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1. Insert cloned team with parent_team_id pointing to source
+        // 1. Insert cloned team with parent_team_id pointing to source.
+        // `workspace_id` is deliberately absent from the column list: a
+        // workspace owns exactly ONE cross-project group, so a fork that
+        // carried the binding would be refused by
+        // `idx_persona_teams_workspace_group` — and if it somehow were not,
+        // the workspace would have two groups. A fork is a new team, not a
+        // second group.
         tx.execute(
             "INSERT INTO persona_teams
              (id, project_id, parent_team_id, name, description, canvas_data, team_config, icon, color, enabled, created_at, updated_at)

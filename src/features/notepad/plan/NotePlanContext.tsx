@@ -11,7 +11,7 @@
 // only for a note that is actually on the plan rail. That is a conditional
 // component, never a conditional hook: a brainstorm note never renders this
 // subtree, so a pad full of brainstorm notes pays no milestone IPC at all.
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { renameSession } from '@/api/fleet/fleet';
 import { recordNoteRunStart } from '@/api/notepad';
@@ -84,6 +84,8 @@ export function NotePlanProvider({
   project,
   tab,
   onTabChange,
+  certifyOnOpen = false,
+  onCertifyConsumed,
   children,
 }: {
   noteId: string;
@@ -95,6 +97,13 @@ export function NotePlanProvider({
   /** Held by the host so its `Ctrl+1/2/3` handler can move it. */
   tab: PlanTab;
   onTabChange: (tab: PlanTab) => void;
+  /** A desk card's rail asked for the certify dialog (cut / ship). Honoured
+   *  once the milestone has loaded — and for a SHIP only when the verdict is
+   *  `go`, the dispatch bar's own `shipBlocked` gate, so the desk is never a
+   *  way round it. A refused request leaves the note open with the bar's
+   *  disabled Ship and its tooltip saying why. */
+  certifyOnOpen?: boolean;
+  onCertifyConsumed?: () => void;
   children: ReactNode;
 }) {
   const askAthena = useAskAthena();
@@ -125,6 +134,14 @@ export function NotePlanProvider({
   );
 
   const runner = useShipMilestoneRun(milestoneId, project.root_path, onSpawned);
+
+  useEffect(() => {
+    if (!certifyOnOpen || !vm) return;
+    if (vm.status === 'planned' || (vm.status === 'active' && shipVerdict(vm.criteria) === 'go')) {
+      setCertifying(true);
+    }
+    onCertifyConsumed?.();
+  }, [certifyOnOpen, vm, onCertifyConsumed]);
 
   const decompose = useCallback(() => {
     if (!vm) return;

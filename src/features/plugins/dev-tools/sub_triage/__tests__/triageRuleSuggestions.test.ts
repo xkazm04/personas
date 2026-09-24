@@ -8,9 +8,14 @@ function idea(over: Partial<DevIdea>): DevIdea {
     id: Math.random().toString(36),
     category: 'technical',
     status: 'rejected',
-    effort: 5,
-    impact: 5,
-    risk: 5,
+    // The neutral fixture sits at the MIDPOINT of the 1-5 scale, so a test
+    // about one pattern does not silently satisfy the other two. It read 5
+    // back when the column carried a ten-point scale; on a five-point one that
+    // is the ceiling, and every "neutral" idea would have counted as heavy,
+    // high-impact and risky at the same time.
+    effort: 3,
+    impact: 3,
+    risk: 3,
     origin: null,
     ...over,
   } as unknown as DevIdea;

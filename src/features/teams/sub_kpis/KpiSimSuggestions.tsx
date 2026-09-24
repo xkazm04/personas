@@ -146,7 +146,10 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
         <Sparkles className="w-3.5 h-3.5 text-violet-300" aria-hidden />
         {tx(t.kpis.suggest_title, { count: suggestions.length })}
       </h3>
-      <ul className="space-y-2">
+      {/* Divided rows rather than spaced cards: each suggestion is one line of
+          a ledger - what, why, and the two decisions - so a column of five
+          reads as a table, not a pile. */}
+      <ul className="divide-y divide-violet-400/15 border-t border-violet-400/15">
         {suggestions.map((s) => (
           <SuggestionRow
             key={s.ideaId}
@@ -196,14 +199,12 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
   })();
 
   return (
-    <li className="flex items-start gap-2">
-      <Icon className="w-3.5 h-3.5 mt-0.5 text-violet-300 shrink-0" aria-hidden />
+    <li className="flex items-start gap-3 py-2.5">
+      <Icon className="w-3.5 h-3.5 mt-1 text-violet-300 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="typo-body text-foreground">{headline.label}</span>
-          {headline.detail && (
-            <span className="typo-caption text-foreground opacity-80 font-mono truncate">{headline.detail}</span>
-          )}
+          <span className="typo-data">{headline.label}</span>
+          {headline.detail && <span className="typo-code font-mono truncate">{headline.detail}</span>}
           {s.citations.length > 0 && (
             <Tooltip content={s.citations.join('\n')} placement="top">
               <span className="typo-caption text-violet-300/90 cursor-help">
@@ -212,9 +213,9 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
             </Tooltip>
           )}
         </div>
-        {s.rationale && <p className="typo-caption text-foreground opacity-70 leading-snug">{s.rationale}</p>}
+        {s.rationale && <p className="mt-0.5 typo-caption">{s.rationale}</p>}
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex w-[7.5rem] shrink-0 items-center justify-end gap-1">
         <button
           type="button"
           onClick={onApply}
@@ -231,7 +232,7 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
           disabled={busy}
           aria-label={t.kpis.suggest_dismiss}
           title={t.kpis.suggest_dismiss}
-          className="p-1 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
+          className="p-1 rounded-interactive text-foreground hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
         </button>

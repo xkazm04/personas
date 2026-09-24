@@ -5,6 +5,9 @@ import { FLEET_MAX_PARALLEL_SESSIONS_BOUNDS } from '../autopilotBounds';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
+import { setAppSetting } from '@/api/system/settings';
+import { toastCatch } from '@/lib/silentCatch';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { getMetricsChartData } from '@/api/overview/observability';
 import { formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -46,6 +49,48 @@ const ROSTER_KEY = 'max_active_personas';
 const ROSTER_MIN = 1;
 const ROSTER_MAX = 50;
 const ROSTER_DEFAULT = 10;
+
+// Kill switch for resource-aware fleet admission (`fleet.dynamic_budgets`,
+// settings_keys.rs `FLEET_DYNAMIC_BUDGETS`, default true). Off = the dispatch
+// queue charges nothing but the fixed session cap above it.
+const DYNAMIC_BUDGETS_KEY = 'fleet.dynamic_budgets';
+const DYNAMIC_BUDGETS_DEFAULT = true;
+
+function isBoolSetting(value: string): boolean {
+  return value === 'true' || value === 'false';
+}
+
+/** The "Dynamic fleet budgets" row. Same shape as the Autopilot pacing toggle:
+ *  a toggle is its own commit, so it writes directly instead of going through
+ *  the hook's Set-button `save`. */
+function DynamicBudgetsRow() {
+  const { t } = useTranslation();
+  const s = t.settings.limits;
+  const setting = useAppSetting(DYNAMIC_BUDGETS_KEY, String(DYNAMIC_BUDGETS_DEFAULT), isBoolSetting);
+  const on = setting.value === 'true';
+  return (
+    <div className="flex items-start gap-3 border-t border-border/60 pt-3" data-testid="fleet-dynamic-budgets-row">
+      <AccessibleToggle
+        checked={on}
+        onChange={() => {
+          const next = on ? 'false' : 'true';
+          setAppSetting(DYNAMIC_BUDGETS_KEY, next)
+            .then(() => setting.setValue(next))
+            .catch(toastCatch('settings/LimitsSettings:dynamicBudgets', s.dynamic_budgets_label));
+        }}
+        label={s.dynamic_budgets_label}
+        size="sm"
+        disabled={!setting.loaded}
+        data-testid="fleet-dynamic-budgets-toggle"
+      />
+      <div className="min-w-0">
+        <div className="typo-body text-foreground">{s.dynamic_budgets_label}</div>
+        <p className="typo-caption text-foreground">{s.dynamic_budgets_hint}</p>
+        {setting.error && <span className="typo-caption text-red-400">{setting.error}</span>}
+      </div>
+    </div>
+  );
+}
 
 /** One trailing calendar month of total spend, for the usage table. */
 type MonthSpend = { key: string; label: string; spend: number };
@@ -279,6 +324,7 @@ export default function LimitsSettings() {
             />
             <p className="typo-caption text-foreground">{s.fleet_concurrency_hint}</p>
           </div>
+          <DynamicBudgetsRow />
         </div>
       ),
     },

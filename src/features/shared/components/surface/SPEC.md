@@ -66,3 +66,48 @@ executes → recorded by the chosen transport. **Nothing runs on render.**
 > types `stat_row`, `table`, `decisions`, `markdown`, `gauge`, `progress`, `terminal`. Put prose
 > in a `markdown` block. Propose work as `decisions` items with actions — the operator confirms
 > every action. When output is purely narrative, respond with plain markdown instead.
+
+## In markdown — the same blocks as tags (`editors/RichMarkdown`)
+
+Where the app displays markdown someone or something AUTHORED (a KPI
+description, a director review), the same vocabulary is available inline as
+tags, using the CommonMark directive syntax. It is not a second format: each
+block tag is read into the SurfaceSpec block of the same name, validated by the
+same schema, rendered by the same renderer, and its actions go through the same
+consent dialogs. Anything a surface can say, a document can say.
+
+| Tag | Form | Body / attributes |
+|---|---|---|
+| `:::stats` | container | a ```json fence: an array of stats, or `{"stats": [...]}` |
+| `:::table{title="..."}` | container | a ```json fence: `{"columns": [...], "rows": [...]}` |
+| `:::decisions{title="..."}` | container | a ```json fence: an array of items, or `{"items": [...]}` |
+| `:::terminal{title="..."}` | container | any fence; one output line per line |
+| `::gauge{label="..." value=62 hint="..."}` | leaf | value 0-100 |
+| `::progress{label="..." value=40 hint="..."}` | leaf | value 0-100 |
+
+Plus the execution detail's content grammar (`components/content/`):
+
+| Tag | Form | Renders |
+|---|---|---|
+| `:::card[Title]{tone=amber variant=framed}` ... `:::` | container | a content card; its body is markdown |
+| `:::well` ... `:::` | container | the recessed well for machine text |
+| `::eyebrow[Blockers]` | leaf | the tracked uppercase sub-heading |
+| `:pill[stale]{tone=blue}` | inline | a state pill inside a sentence |
+
+Tones: `primary`, `blue`, `amber`, `violet`, `emerald`, `red`, `neutral`.
+
+Two rules the renderer keeps, so writing tags is never lossy:
+- an **inline** tag it does not know is printed back literally (`status:ok`
+  stays `status:ok`);
+- a **block** tag it does not know, or whose body fails its schema, is shown as
+  written with the reason beside it. Nothing is dropped.
+
+```markdown
+Coverage is the headline this week.
+
+::gauge{label="Observed" value=13.8 hint="144 of 1,044 KPIs have a reading"}
+
+:::card[Why this matters]{tone=amber}
+Only :pill[3]{tone=red} of the 17 groups in *personas* have a single reading.
+:::
+```

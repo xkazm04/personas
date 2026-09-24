@@ -18,7 +18,15 @@ import { toastCatch } from '@/lib/silentCatch';
 
 import { buildNoteAskPrompt } from './athena/buildNoteAskPrompt';
 import { buildNoteGoalsPrompt } from './athena/buildNoteGoalsPrompt';
+import { openSuggestionCountFor } from './athena/noteSuggestions';
+import { startAsk } from './notepadAskState';
 import { linkMilestone, promoteNote, setNoteStatus } from './notepadStore';
+import { noteSessionLabel } from './noteGuards';
+
+// Re-exported: the label moved to `noteGuards.ts` so pure predicates (the
+// delete guard, the presence chip) can match sessions without importing the
+// dispatch doors.
+export { noteSessionLabel };
 
 /** Outcome of a dispatch attempt. `ok: false` carries a reason the bar shows. */
 export interface NoteDispatchResult {
@@ -36,11 +44,6 @@ const BLOCKED: NoteDispatchResult = { ok: false, pending: true };
 /** The `dispatch_key` a note carries once it has left the pad. */
 export const noteDispatchKey = (noteId: string) => `note:${noteId}`;
 
-/** The Fleet session label. Short on purpose — it sits in a grid beside seven
- *  others, and a full uuid there is a column of noise. The listener that maps a
- *  running session back to its note matches on this prefix. */
-export const noteSessionLabel = (noteId: string) => `note:${noteId.slice(0, 8)}`;
-
 /** Where the published brief lands inside the target repo. Mirrors the path
  *  the `note-task` skill reads and the sweeper watches beside. */
 export const noteBriefPath = (noteId: string) => `.personas/notepad/${noteId}/note.md`;
@@ -54,9 +57,10 @@ export const noteBriefPath = (noteId: string) => `.personas/notepad/${noteId}/no
  * a situation rather than the operator typing, which keeps it from cancelling
  * an autonomous chain and tells her a button was pressed.
  */
-function ask(text: string): void {
+export function sendAthenaPointer(text: string): void {
   useCompanionStore.getState().setPendingChatPrompt({ text, source: 'notepad' });
 }
+const ask = sendAthenaPointer;
 
 /**
  * Ask Athena about this note, optionally focused on something the operator
@@ -71,21 +75,138 @@ export async function askAthena(note: DevNote, focus?: string): Promise<NoteDisp
   // that carries the milestone id, not the caller, so nothing upstream has to
   // know which rail this note is on.
   ask(buildNoteAskPrompt(note.id, focus, note.milestoneId));
+  // Open the wait here, not only in the bar: the card menu's quick-ask reaches
+  // this door too, and the presence chip must read the same answer.
+  startAsk(note.id, openSuggestionCountFor(note.id));
   return OK;
 }
 
 /**
- * Publish the note to Fleet as a `/note-task` session.
+ * What the operator said about the previous run — appended to the brief as a
+ * trailing `## Operator feedback` section on a re-dispatch. The `note-task`
+ * skill treats that section as binding.
+ */
+export interface NoteRunFeedback {
+  /** Why the last run was rejected. Required: a re-run with no reason is the
+   *  same run again. */
+  reason: string;
+  /** The operator's thread comments posted since that run's review. */
+  comments?: readonly string[];
+}
+
+/** The heading the `note-task` skill looks for. Fixed: it finds it by name. */
+export const OPERATOR_FEEDBACK_HEADING = '## Operator feedback';
+
+/** The brief `note.md` the `note-task` skill reads. Pure — exported for tests. */
+export function composeNoteBrief(
+  note: Pick<DevNote, 'id' | 'title' | 'bodyMd'>,
+  projectId: string,
+  feedback?: NoteRunFeedback,
+): string {
+  // Frontmatter first so the skill can identify the note without parsing the
+  // path it was handed. `note_id` is the handshake: every artifact the run
+  // writes back is keyed on it.
+  const lines = [
+    '---',
+    `note_id: ${note.id}`,
+    `title: ${JSON.stringify(note.title)}`,
+    `project_id: ${projectId}`,
+    '---',
+    '',
+    note.bodyMd,
+    '',
+  ];
+  if (feedback) {
+    // LAST, and under a fixed heading: the skill finds it by name, and a
+    // section appended after the body cannot be mistaken for part of the
+    // requirement the operator wrote.
+    const comments = (feedback.comments ?? []).map((c) => c.trim()).filter(Boolean);
+    lines.push(
+      OPERATOR_FEEDBACK_HEADING,
+      '',
+      'The previous run of this note was rejected. What follows is binding for this run.',
+      '',
+      `Reason: ${feedback.reason.trim()}`,
+      '',
+    );
+    if (comments.length > 0) {
+      lines.push('Comments since the previous run:', '');
+      for (const c of comments) lines.push(`- ${c.replace(/\s*\n+\s*/g, ' ')}`);
+      lines.push('');
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Write the brief, install the skill, launch the session — the three steps of a
+ * Fleet dispatch that do NOT touch the note's status. THROWS on any failure.
+ *
+ * Shared by `publishFleet` (which stamps `published` after it) and the rework
+ * path (where the server already moved the note `completed → published` when
+ * the run review was rejected, so a second status write would be refused).
  *
  * Order is load-bearing and each step is a precondition for the next:
  *   1. write `note.md` into the repo — the session's brief must exist BEFORE
  *      anything is spawned that will read it;
  *   2. install the `note-task` skill into that repo — a dispatched session can
  *      only invoke `/note-task` if the skill is physically there;
- *   3. dispatch through the typed door;
- *   4. only then stamp the note `published`, because that stamp is what LOCKS
- *      the body, and locking it before the dispatch succeeded would leave him
- *      with a note he can neither run nor edit.
+ *   3. dispatch through the typed door.
+ */
+export async function dispatchNoteToFleet(
+  note: DevNote,
+  project: DevProject,
+  opts?: { feedback?: NoteRunFeedback },
+): Promise<void> {
+  await writeDispatchBrief(
+    project.root_path,
+    noteBriefPath(note.id),
+    composeNoteBrief(note, project.id, opts?.feedback),
+  );
+  // Deterministic copy from the app bundle — no LLM, no token cost. `true`
+  // refreshes a stale local copy, which is what `dispatchSkillToRepo` does for
+  // the same reason: a run must not use an edited copy of a system skill.
+  //
+  // The outcome is READ, not assumed. With `overwrite: true` the backend
+  // either writes or throws, so `installed: false` should be unreachable —
+  // but "should be unreachable" is exactly the claim that turns into a
+  // dispatched session invoking a slash command that does not exist in the
+  // repo, and the operator sees a terminal that does nothing. Refuse here
+  // instead, while nothing has been spawned and nothing has been locked.
+  const install = await installSystemSkill('note-task', project.id, true);
+  if (!install.installed) {
+    throw new Error(
+      `The note-task skill is not installed in ${project.name} (${install.reason ?? 'unknown reason'}), so a dispatched session would have no /note-task to run.`,
+    );
+  }
+  await companionDispatchFleetPlan(
+    `Execute note: ${note.title}`,
+    [
+      {
+        cwd: project.root_path,
+        // The server composes `/note-task <objective>`, so the objective IS
+        // the note id — the whole brief is on disk and the skill reads it.
+        objective: note.id,
+        skill: 'note-task',
+        label: noteSessionLabel(note.id),
+      },
+    ],
+    undefined,
+    'notepad',
+  );
+  // `fleetSessionId` is deliberately absent: `companion_dispatch_fleet_plan`
+  // returns a human-readable message, not an id. The fleet session-state
+  // listener binds the id when the session reaches Running (it matches on the
+  // label above), and the run-artifact sweeper is authoritative for the rest
+  // of the lifecycle either way.
+}
+
+/**
+ * Publish the note to Fleet as a `/note-task` session.
+ *
+ * `dispatchNoteToFleet` first, and only then the `published` stamp, because
+ * that stamp is what LOCKS the body, and locking it before the dispatch
+ * succeeded would leave him with a note he can neither run nor edit.
  */
 export async function publishFleet(
   note: DevNote,
@@ -94,56 +215,7 @@ export async function publishFleet(
   if (!project || note.projectId !== project.id) return BLOCKED;
   if (note.status !== 'draft') return BLOCKED;
   try {
-    // Frontmatter first so the skill can identify the note without parsing the
-    // path it was handed. `note_id` is the handshake: every artifact the run
-    // writes back is keyed on it.
-    const brief = [
-      '---',
-      `note_id: ${note.id}`,
-      `title: ${JSON.stringify(note.title)}`,
-      `project_id: ${project.id}`,
-      '---',
-      '',
-      note.bodyMd,
-      '',
-    ].join('\n');
-    await writeDispatchBrief(project.root_path, noteBriefPath(note.id), brief);
-    // Deterministic copy from the app bundle — no LLM, no token cost. `true`
-    // refreshes a stale local copy, which is what `dispatchSkillToRepo` does for
-    // the same reason: a run must not use an edited copy of a system skill.
-    //
-    // The outcome is READ, not assumed. With `overwrite: true` the backend
-    // either writes or throws, so `installed: false` should be unreachable —
-    // but "should be unreachable" is exactly the claim that turns into a
-    // dispatched session invoking a slash command that does not exist in the
-    // repo, and the operator sees a terminal that does nothing. Refuse here
-    // instead, while nothing has been spawned and nothing has been locked.
-    const install = await installSystemSkill('note-task', project.id, true);
-    if (!install.installed) {
-      throw new Error(
-        `The note-task skill is not installed in ${project.name} (${install.reason ?? 'unknown reason'}), so a dispatched session would have no /note-task to run.`,
-      );
-    }
-    await companionDispatchFleetPlan(
-      `Execute note: ${note.title}`,
-      [
-        {
-          cwd: project.root_path,
-          // The server composes `/note-task <objective>`, so the objective IS
-          // the note id — the whole brief is on disk and the skill reads it.
-          objective: note.id,
-          skill: 'note-task',
-          label: noteSessionLabel(note.id),
-        },
-      ],
-      undefined,
-      'notepad',
-    );
-    // `fleetSessionId` is deliberately absent: `companion_dispatch_fleet_plan`
-    // returns a human-readable message, not an id. The fleet session-state
-    // listener binds the id when the session reaches Running (it matches on the
-    // label above), and the run-artifact sweeper is authoritative for the rest
-    // of the lifecycle either way.
+    await dispatchNoteToFleet(note, project);
     await setNoteStatus(note.id, 'published', {
       dispatchTarget: 'fleet',
       dispatchKey: noteDispatchKey(note.id),

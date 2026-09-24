@@ -291,6 +291,16 @@ pub enum ProtocolMessage {
         /// `serde(default)` because every persisted / older payload predates it.
         #[serde(default)]
         target: Option<String>,
+        /// The execution plan the FILING model leaves for the EXECUTING one.
+        ///
+        /// The asymmetry this closes, measured 2026-09-21: the item's prose was
+        /// pasted into the worker's prompt under `## Background` and the plan
+        /// was then demanded FROM the worker — the expensive model analysed and
+        /// the cheap model planned. Optional and `serde(default)`: a filer with
+        /// no repo access cannot plan, and an unplanned filing is stored and
+        /// graded `draft` rather than dropped.
+        #[serde(default)]
+        plan: Option<crate::models::IdeaPlan>,
     },
     /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
     /// for user review. Never applied directly -- always goes through Lab UI.

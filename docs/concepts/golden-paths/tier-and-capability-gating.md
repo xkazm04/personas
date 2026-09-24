@@ -259,9 +259,11 @@ privilege-escalation incident to show for it.
 - **Destructuring a `useTier()` convenience boolean to branch inline.** 13 files
   (§9 rule). `const { isStarter: isSimple } = useTier()` then `{!isSimple && <Panel/>}`
   makes the decision invisible to every enumerator: `registry.test.ts` cannot see it,
-  `check:tiers` cannot see it, and no reviewer can answer "what does starter lose?"
-  without reading 4,829 files. The declared form —
-  `minTier` + `passesGates` — answers that question by iteration.
+  `tierMatrix.test.ts` cannot see it (its "every surface a tier loses is lost because of a
+  DECLARED gate" case is precisely the assertion an ambient boolean walks around), and no
+  reviewer can answer "what does starter lose?" without reading 4,829 files. The declared
+  form — `minTier` + `passesGates` — answers that question by iteration, and since
+  2026-09-20 `allowedFor(tier)` in the matrix test *is* that iteration.
   `CredentialList.tsx:111` then **prop-drills `isSimple` into `CredentialListColumns`**
   (`:53,:63,:77,:109,:112,:196`), which is the ambient boolean becoming a component API.
 - **Filtering the nav list and forgetting the content router.** The sidebar drops the item;
@@ -281,12 +283,28 @@ privilege-escalation incident to show for it.
   installer** (`VITE_APP_TIER` unset ⇒ builder), while `import.meta.env.DEV` is false there.
   Naming one after the other guarantees someone eventually gates a dev-only surface with a
   tier that is always on.
-- **Believing `npm run check:tiers` checks the tiers.** `scripts/check-tiers.mjs:34-44`
-  spawns `npx vite build` with `VITE_APP_TIER` set and asserts the **exit code**. It never
-  reads the output, never diffs the bundles, and never verifies the variable reached Vite
-  at all. Three green builds prove three compilations, nothing about what they contain —
-  and because all three write to the same `dist/`, the last one silently wins
-  (`ci.yml:153-155` documents having to order around that).
+- ~~**Believing `npm run check:tiers` checks the tiers.**~~ **PARTIALLY FIXED 2026-09-20 —
+  read the new shape before citing this.** The old text stands as the record of what was:
+  `scripts/check-tiers.mjs:34-44` spawned `npx vite build` three times with `VITE_APP_TIER`
+  set and asserted the **exit code** — never reading the output, never diffing the bundles,
+  never verifying the variable reached Vite, and with all three writing to the same `dist/`
+  so the last one silently won (`ci.yml:153-155` documents having to order around that).
+  **What it is now:** codegen → the tier-matrix Vitest
+  (`src/lib/navigation/tierMatrix.test.ts`) → **ONE** `vite build` whose output is then
+  READ (`dist/index.html` exists, at least one of its `<script src>` refs resolves to a
+  non-empty file on disk, `dist/assets` holds ≥ 200 JS chunks). `--all-tiers` preserves the
+  three-build behaviour and a positional tier list still works. Measured on
+  dollarstore/arm64: **40,844 ms → 10,059 ms** (`fe-check-tiers`, variants `baseline` →
+  `one-build-plus-matrix`, `docs/development/build-ledger.jsonl`).
+  **Still true, and the reason this entry is "partially":** the gate does NOT prove that
+  Vite's build-time substitution delivers `VITE_APP_TIER` into `uiModes.ts`. The matrix
+  test proves the *module* reads `import.meta.env.VITE_APP_TIER` (three tiers, via
+  `vi.stubEnv` + `vi.resetModules`, plus the unset⇒builder fallback that every shipped
+  installer actually uses); proving the *bundler* writes it still needs §9 fix 3's probe
+  build, which was declined because it restores a second build. Do not write that the gate
+  verifies the variable end to end.
+  **Also still true:** §7 A1 — no starter or team installer has ever been released, so
+  everything the matrix enumerates is a property of bundles that ship to nobody.
 - **Writing that a tier "unlocks", "enforces", or "tree-shakes".** `uiModes.ts:22`,
   `ci.yml:148-149` and `docs/development/build.md:28` all claim tree-shaking; none happens
   (§7 D1). `personas-web`'s shipping guide tells customers four capabilities are
@@ -516,15 +534,29 @@ step 4 mandates.
    `devOnly`, so every caller must remember the second half; `PluginsSidebarNav.tsx:117`
    remembers, `SidebarLevel2.tsx:88` does not and patches it 117 lines later at `:205`.
    `passesGates` already handles both — the L2 path should use it.
-4. **Nothing can enumerate what a tier hides below the top level.** `registry.test.ts`
-   enumerates 3 sections. The other 18 `minTier` declarations live in five separate arrays
-   with no shared type and no test. There is no function anywhere that answers "list
-   everything a starter build loses".
-5. **`check:tiers` cannot observe its own effect.** It asserts an exit code
-   (`check-tiers.mjs:34-44`). It does not assert that `VITE_APP_TIER` reached Vite, that
-   the bundles differ, or that any gated surface is absent — and all three tiers write to
-   the same `dist/`, so it cannot compare them even in principle without an output-dir
-   change.
+4. ~~**Nothing can enumerate what a tier hides below the top level.**~~ **MOSTLY FIXED
+   2026-09-20.** As written: `registry.test.ts` enumerated 3 sections; the other 18
+   `minTier` declarations lived in five separate arrays with no shared type and no test,
+   and no function answered "list everything a starter build loses".
+   `src/lib/navigation/tierMatrix.test.ts` is now that function — `allowedFor(tier)`
+   enumerates six declaring tables plus `getSettingsItems`, **17 gated surfaces**, and
+   freezes the starter⇒team delta as a literal list a reviewer must edit deliberately.
+   It also asserts the reverse direction (nothing differs between tiers for an UNDECLARED
+   reason), monotonicity exhaustively over all 9 `(minTier, activeTier)` pairs, and that no
+   gate names a surface no tier can reach.
+   **Not covered, and it is 2 of the 19:** `EditorTabBar.tsx:16-21` gates the `activity`
+   and `lab` persona-editor tabs from a module-private `tabDefs` const inside a component
+   file. Nothing can import it without rendering the component. Exporting that array is a
+   one-line change that brings them under the matrix; until then the matrix's own comment
+   names them as the known hole rather than implying completeness.
+5. **`check:tiers` can now observe part of its effect — but not the part about Vite.**
+   As written it asserted an exit code (`check-tiers.mjs:34-44`) and nothing else. It now
+   runs the matrix test and reads its single build's output (see the Anti-patterns entry
+   above for exactly what it reads and what it still does not). The specific residue: it
+   does not assert that `VITE_APP_TIER` reached the *bundler*, and — having dropped to one
+   build on purpose — it no longer even could diff two bundles. That trade was made
+   deliberately: three exit codes over identical-by-construction bundles were buying
+   nothing, and the matrix answers the question the diff was a proxy for.
 6. **There is no typed refusal.** No `AppError::TierRequired`, no `error_registry` key, no
    i18n string, no ts-rs binding. A gated capability has exactly one vocabulary — absence —
    and absence is indistinguishable from "not built yet" or "broken".
@@ -643,6 +675,16 @@ asserting anything about them. A registry that parses to an empty array must not
 "no drift" — the failure mode that let a gate check nothing in four of this repo's CI jobs.
 
 ### 3. Make `check:tiers` fail loudly when the tier had no effect (≈20 lines)
+
+> **STATUS 2026-09-20: partially adopted, and the shape changed.** The operator chose
+> **one Vite build + a Vitest tier matrix** over the two bullets below. Adopted: the gate
+> now reads its output and prints its audited totals. **Not adopted, still open:** the
+> `__probe__` build that would prove `VITE_APP_TIER` reaches Vite, and the per-tier
+> `--outDir` diff — both reinstate a second and third build, which is what the change was
+> removing. The matrix test covers the *logic* those bullets were proxying for (which
+> surfaces each tier shows, and that the resolver reads the variable); the *bundler
+> substitution* step remains unproven by anything. If that gap is ever paid for, the
+> probe bullet below is the cheapest way to close it — one build, one `grep`.
 
 `scripts/check-tiers.mjs` currently proves compilation. Two additions make it prove it
 compiled *something different*, without adding a build:

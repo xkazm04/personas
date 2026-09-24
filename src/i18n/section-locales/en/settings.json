@@ -793,7 +793,9 @@
     "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed.",
     "fleet_concurrency_label": "Fleet sessions",
     "fleet_concurrency_aria": "Maximum parallel fleet sessions",
-    "fleet_concurrency_hint": "Claude Code sessions that may run at once, across every dispatcher. Past this line a dispatch is admitted as queued and starts on its own when a slot frees. The Activity board’s header stepper writes the same setting."
+    "fleet_concurrency_hint": "Claude Code sessions that may run at once, across every dispatcher. Past this line a dispatch is admitted as queued and starts on its own when a slot frees. The Activity board’s header stepper writes the same setting.",
+    "dynamic_budgets_label": "Dynamic fleet budgets",
+    "dynamic_budgets_hint": "Admit fleet runs against live machine, GPU and plan budgets using each charter's resource profile. Turn off to fall back to the fixed session cap above."
   },
   "recent_change": {
     "label": "Last {action}: {when}",

@@ -834,14 +834,22 @@ pub struct NightProposal {
     /// parses it must accept both. Reporting what the row says is not the same
     /// as making it prettier.
     pub created_at: String,
-    /// `dev_ideas.origin`, **verbatim**: which sensor raised the idea (one of
-    /// `personas_db::models::FINDING_ORIGINS`), or `null` for a classic
-    /// Idea-Scanner idea.
+    /// `dev_ideas.origin`, **verbatim**: the PRODUCER that filed the idea, one
+    /// of `personas_db::models::BacklogSource`.
+    ///
+    /// It used to read "which sensor raised the idea, or `null` for a classic
+    /// Idea-Scanner idea", and `null` was a real answer. Since the backlog
+    /// contract (commit `8ae6711be`, which backfilled `origin` onto the whole
+    /// table, and the one write door that now stamps it on every new row) a
+    /// NULL means only "filed before that contract and never backfilled". What
+    /// marks a mechanical sensor sweep is membership of
+    /// `personas_db::models::FINDING_ORIGINS` — the eleven measurement
+    /// sensors, a strict subset of `BacklogSource` — not non-nullness.
     ///
     /// Paired with `createdAt` for the same reason: state alone cannot say
     /// whether a proposal came from the night's own reasoning or from a
     /// mechanical sensor sweep, and a bench grading a holder's judgement is
-    /// asking exactly that. `null` is a real answer here, not a gap.
+    /// asking exactly that.
     pub origin: Option<String>,
 }
 
@@ -870,17 +878,23 @@ pub struct NightBacklog {
 
 /// Project `dev_ideas.effort` onto a size word.
 ///
-/// The ladder is the emitter's own, documented where the scanner prompt defines
-/// it (`idea_scanner.rs`: 1=trivial … 10=epic) — folded in pairs, not invented:
-/// 1-2 `xs`, 3-4 `s`, 5-6 `m`, 7-8 `l`, 9-10 `xl`. An absent or out-of-range
-/// effort is `None`; a size no emitter stated is not a size.
+/// One word per point, because the column now holds one scale
+/// (`personas_core::models::IDEA_SCALE_MAX`). This ladder used to fold a
+/// ten-point effort in pairs — 1-2 `xs`, 3-4 `s`, 5-6 `m`, 7-8 `l`, 9-10 `xl`
+/// — which is the same fold `normalize_scale` now performs at the write door.
+/// Keeping both would apply it twice and report every item two sizes smaller
+/// than its author meant, so the fold happens once, on the way in, and this is
+/// a straight map.
+///
+/// An absent or out-of-range effort is `None`; a size no emitter stated is not
+/// a size.
 pub fn proposal_size(effort: Option<i32>) -> Option<&'static str> {
     match effort? {
-        1..=2 => Some("xs"),
-        3..=4 => Some("s"),
-        5..=6 => Some("m"),
-        7..=8 => Some("l"),
-        9..=10 => Some("xl"),
+        1 => Some("xs"),
+        2 => Some("s"),
+        3 => Some("m"),
+        4 => Some("l"),
+        5 => Some("xl"),
         _ => None,
     }
 }
@@ -1611,15 +1625,19 @@ mod tests {
     #[test]
     fn a_proposal_size_folds_the_emitters_own_effort_ladder() {
         assert_eq!(proposal_size(None), None);
+        // One word per point: the column carries 1-5 and the fold from a
+        // ten-point emitter happens once, at the write door.
         assert_eq!(proposal_size(Some(1)), Some("xs"));
-        assert_eq!(proposal_size(Some(2)), Some("xs"));
-        assert_eq!(proposal_size(Some(4)), Some("s"));
-        assert_eq!(proposal_size(Some(5)), Some("m"));
-        assert_eq!(proposal_size(Some(8)), Some("l"));
-        assert_eq!(proposal_size(Some(10)), Some("xl"));
-        // Out of the emitter's stated 1..=10 range is not a size.
+        assert_eq!(proposal_size(Some(2)), Some("s"));
+        assert_eq!(proposal_size(Some(3)), Some("m"));
+        assert_eq!(proposal_size(Some(4)), Some("l"));
+        assert_eq!(proposal_size(Some(5)), Some("xl"));
+        // Past the scale is not a size. The ladder and the column agree on
+        // where the scale ends, which is the property that broke while this
+        // ladder still described a range the column no longer held.
         assert_eq!(proposal_size(Some(0)), None);
-        assert_eq!(proposal_size(Some(11)), None);
+        assert_eq!(proposal_size(Some(6)), None);
+        assert_eq!(proposal_size(Some(10)), None);
     }
 
     fn backlog_pool() -> personas_db::DbPool {
@@ -1675,9 +1693,9 @@ mod tests {
             Some("the shape is generated but never enforced"),
             Some("two call sites already disagree"),
             Some("accepted"),
-            Some(4),
-            Some(7),
             Some(2),
+            Some(4),
+            Some(1),
             None,
             None,
         )
@@ -1709,9 +1727,9 @@ mod tests {
             None,
             None,
             Some("pending"),
-            Some(9),
-            Some(3),
-            Some(9),
+            Some(5),
+            Some(2),
+            Some(5),
             None,
             None,
         )
@@ -1821,9 +1839,9 @@ mod tests {
             Some(&use_case.id),
             None,
             "seam:decode",
-            Some(6),
-            Some(6),
-            Some(2),
+            Some(3),
+            Some(3),
+            Some(1),
         )
         .expect("finding")
         .expect("a fresh dedup key writes a row");
@@ -1882,9 +1900,9 @@ mod tests {
                  Axis: risk",
             ),
             Some("accepted"),
-            Some(3),
-            Some(7),
             Some(2),
+            Some(4),
+            Some(1),
             None,
             None,
         )
@@ -1903,7 +1921,7 @@ mod tests {
             Some("nobody outside the module sees this\nJourney: none\nAxis: banana"),
             Some("accepted"),
             Some(1),
-            Some(2),
+            Some(1),
             Some(1),
             None,
             None,
@@ -2080,9 +2098,9 @@ mod tests {
             Some("the shape is generated but never enforced"),
             Some("two call sites already disagree"),
             Some("accepted"),
-            Some(4),
-            Some(7),
             Some(2),
+            Some(4),
+            Some(1),
             None,
             None,
         )
@@ -2098,9 +2116,9 @@ mod tests {
             None,
             None,
             "seam:decode",
-            Some(6),
-            Some(6),
-            Some(2),
+            Some(3),
+            Some(3),
+            Some(1),
         )
         .expect("finding")
         .expect("a fresh dedup key writes a row");
@@ -2114,9 +2132,9 @@ mod tests {
             None,
             None,
             Some("rejected"),
-            Some(9),
-            Some(2),
-            Some(8),
+            Some(5),
+            Some(1),
+            Some(4),
             None,
             None,
         )
@@ -2136,10 +2154,16 @@ mod tests {
             proposal("Close the decode seam").created_at,
             scanned.created_at
         );
+        let scanner_origin = proposal("Close the decode seam").origin.clone();
         assert_eq!(
-            proposal("Close the decode seam").origin,
-            None,
-            "a classic Idea-Scanner idea has no sensor, and null says so"
+            scanner_origin.as_deref(),
+            Some("manual"),
+            "every row carries its producer since the backlog contract"
+        );
+        assert!(
+            !personas_db::models::FINDING_ORIGINS
+                .contains(&scanner_origin.as_deref().unwrap_or_default()),
+            "a classic Idea-Scanner idea still has no SENSOR - now a question about FINDING_ORIGINS membership, not about null"
         );
         assert_eq!(
             proposal("Enforce the shape at the seam").created_at,
@@ -2151,7 +2175,11 @@ mod tests {
         );
         assert_eq!(backlog.declines.len(), 1);
         assert_eq!(backlog.declines[0].created_at, declined.created_at);
-        assert_eq!(backlog.declines[0].origin, None);
+        assert_eq!(
+            backlog.declines[0].origin.as_deref(),
+            Some("manual"),
+            "a decline carries its producer too"
+        );
 
         // Additive, and the addition is checked as such: the seven fields a
         // driver already deep-scans are still there, spelled the same way, on
@@ -2174,7 +2202,7 @@ mod tests {
         assert_eq!(row["size"], serde_json::json!("s"));
         assert_eq!(row["confidence"], serde_json::Value::Null);
         assert_eq!(row["createdAt"], serde_json::json!(scanned.created_at));
-        assert_eq!(row["origin"], serde_json::Value::Null);
+        assert_eq!(row["origin"], serde_json::json!("manual"));
         assert_eq!(
             row.as_object().unwrap().len(),
             9,
@@ -2185,7 +2213,7 @@ mod tests {
         assert_eq!(decline["title"], serde_json::json!("Rewrite the renderer"));
         assert_eq!(decline["reason"], serde_json::Value::Null);
         assert_eq!(decline["createdAt"], serde_json::json!(declined.created_at));
-        assert_eq!(decline["origin"], serde_json::Value::Null);
+        assert_eq!(decline["origin"], serde_json::json!("manual"));
         assert_eq!(decline.as_object().unwrap().len(), 4);
     }
 }

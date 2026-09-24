@@ -47,7 +47,6 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
 
   const showHero = isDark || isStarter;
   const webpSrc = `${bgBase}.webp`;
-  const pngSrc = `${bgBase}.png`;
 
   return (
     // min-w-[80vw] mirrors the ContentHeader minimum-width contract so the
@@ -58,22 +57,21 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
       {showHero && (
         <>
           {/* React 19 hoists <link> to <head>; preload kicks off the WebP fetch
-              before the <picture> below mounts so cold-boot decode is masked. */}
+              before the <img> below mounts so cold-boot decode is masked. The
+              PNG fallback was retired with the originals: every webview Tauri
+              targets (WebView2, WKWebView, WebKitGTK) decodes WebP. */}
           <link rel="preload" as="image" href={webpSrc} type="image/webp" />
           <div className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl">
-            <picture>
-              <source srcSet={webpSrc} type="image/webp" />
-              <img
-                src={pngSrc}
-                alt=""
-                width={1920}
-                height={600}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className={`w-full h-full object-cover ${!isDark ? 'opacity-60' : ''}`}
-              />
-            </picture>
+            <img
+              src={webpSrc}
+              alt=""
+              width={1920}
+              height={600}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className={`w-full h-full object-cover ${!isDark ? 'opacity-60' : ''}`}
+            />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
           </div>
         </>

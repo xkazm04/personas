@@ -1,6 +1,11 @@
 //! The conditional tails — the blocks appended only when something about this
-//! turn asks for them: the daily-goals ritual, language, voice and display,
-//! autonomy, tools, delegation, progress narration, onboarding.
+//! turn asks for them: the daily-goals ritual, language, autonomy, tools,
+//! delegation, progress narration, onboarding.
+//!
+//! The voice-only register (the dual-language display addendum and the
+//! `# VOICE PLAYBACK` TTS-emission block) was retired by the layered-voice
+//! spark (2026-09-23): layer one IS the spoken register, taught once in the
+//! static core, and a voice-on turn carries only `chat_family::voice_flag`.
 //!
 //! Moved verbatim out of the former single-file `prompt.rs`.
 
@@ -57,10 +62,6 @@ pub(super) fn language_directive(lang: &str) -> String {
     )
 }
 
-/// Voice addendum: only when the user toggled voice playback on. Tells
-/// Athena to emit a TTS line in addition to her normal markdown reply.
-/// Skipped entirely when voice is off so we don't waste tokens or
-/// confuse Athena with capabilities she shouldn't use.
 /// Autonomous-mode addendum — only emitted when the header toggle is
 /// on. Tells Athena she's allowed to chain turns by emitting
 /// `OP: continue_autonomously` and how to use her subagent toolbox.
@@ -230,98 +231,7 @@ your orb) until it finishes. Use that.
 "#
 }
 
-/// Dual-language directive — only emitted when voice playback is on.
-///
-/// When the user is *listening* to the spoken summary, the chat-bubble
-/// text should not duplicate the same prose visually. Instead, it
-/// becomes a skimmable index: short labels, bullets, and one or two
-/// QR chips the user can tap without re-reading the answer they just
-/// heard. The TTS line owns the nuance; the visual owns the next
-/// click.
-///
-/// When voice is OFF, this returns "" — the visual reply stays in
-/// Athena's default register (full prose, headings, citations).
-pub(super) fn display_addendum_if_voice_active(voice_enabled: bool) -> String {
-    if !voice_enabled {
-        return String::new();
-    }
-    String::from(
-        r#"
-
-# DUAL-LANGUAGE — visual reply when voice is on
-
-The user is listening to your spoken summary right now. Don't make
-them read the same thing twice. Treat the chat bubble as a *control
-panel* for what they just heard, not a transcript:
-
-- Lead with one short headline sentence — the same one your TTS line
-  opens with. The bubble is the index card on top of the audio.
-- Keep prose to a minimum. Where you'd normally write a paragraph of
-  exposition, replace it with two or three bullets, or skip it
-  entirely. The voice already said it.
-- Lean on QR chips. If the spoken summary offers two choices, those
-  same two choices belong in `QR:` as tappable next actions. Aim for
-  2–4 chips; you can offer up to 5 when the branch space is real.
-- Use headings sparingly — at most one H2 per reply, only when the
-  bubble has clearly separate sections.
-- No long code blocks; quote at most one short line. Bullet lists of
-  identifiers (filenames, ids) are fine — they're scannable.
-- Preserve all `OP:` and `propose_action` lines exactly. Auto-fire
-  ops and approval cards are how Athena acts; they don't change just
-  because the user is listening.
-- Citations (`[memory:...]`, `[doctrine:...]`) still go in the visual
-  reply — voice elides them, the user wants to see the source.
-
-When voice is OFF the bubble goes back to its normal register —
-full prose, headings, longer answers when warranted. Read the user's
-current mode and write accordingly.
-"#,
-    )
-}
-
-pub(super) fn voice_addendum_if_needed(voice_enabled: bool) -> String {
-    if !voice_enabled {
-        return String::new();
-    }
-    String::from(
-        r#"
-
-# VOICE PLAYBACK — emit a TTS line this turn
-
-Voice playback is on. Alongside your normal markdown reply, emit one
-line that's safe to speak aloud — suitable for ElevenLabs synthesis.
-
-Format (exactly one line, anywhere in the reply):
-
-    TTS: "Two lab agents are failing. Want me to walk you through them?"
-
-Discipline:
-
-- Spoken text is a *different rendering* of the same content, not a
-  transcription. Bullet lists, headings, code blocks, file paths,
-  citations — none of them sound right read aloud.
-- 1–3 sentences total. Headlines, not the full reply.
-- First-person, conversational, no preamble. ("I see two failures, both
-  in the lab — let me know if you want to dig in.")
-- Plain English. No markdown, no parens, no lists, no code-style names.
-  If you'd say "see ``persona-capabilities/00-vision.md``" in writing,
-  speak it as "the vision doc."
-- Never read out IDs, paths, or hashes verbatim — describe instead.
-- Match the visual reply's tone but trim ruthlessly — if the written
-  answer is one sentence, the spoken version is the same sentence
-  cleaned of any formatting cruft.
-- If the visual reply is purely a question or a chip-prompt, the TTS
-  line can mirror it verbatim.
-- One TTS line per turn. Don't emit if the visual reply has no
-  meaningful spoken summary (rare; most replies do).
-- Your `PROGRESS:` beats (see their own section) are separate from this
-  single closing `TTS:` line — beats are in-progress narration, `TTS:`
-  is the spoken version of the final reply.
-"#,
-    )
-}
-
-/// Always-on narration grammar. Unlike the TTS line (which only makes
+/// Always-on narration grammar. Unlike the optional TTS line (which only makes
 /// sense when a voice engine will speak it), `PROGRESS:` beats feed the
 /// *visual* narration timeline in the chat panel for every user — voice
 /// merely adds spoken playback on top. This addendum is therefore

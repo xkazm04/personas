@@ -558,8 +558,19 @@ mod tests {
         );
         match result {
             Err(AppError::Validation(msg)) => {
+                // Either message is the contract being asserted: a malformed
+                // chain config is rejected as a Validation error naming the
+                // JSON parse. Which layer speaks first is an implementation
+                // detail — `create` calls `validate_all` (whose
+                // `validate_config`/`validate_config_json` fail CLOSED on bad
+                // JSON with "Invalid config JSON") BEFORE it reaches the
+                // chain-cycle block's own "Chain trigger config is not valid
+                // JSON". The general validator therefore wins here, which is
+                // the safer order, not a regression. Same allowance as the
+                // update-side twin below.
                 assert!(
-                    msg.contains("Chain trigger config is not valid JSON"),
+                    msg.contains("Chain trigger config is not valid JSON")
+                        || msg.contains("Invalid config JSON"),
                     "expected JSON-parse validation error, got: {msg}"
                 );
             }

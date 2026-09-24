@@ -5,9 +5,14 @@
 // this mirrors them to src-tauri/resources/skills/ (gitignored) which
 // tauri.conf `bundle.resources` maps into <resource_dir>/skills/.
 //
-// Runs from `npm run build` (tauri's beforeBuildCommand), so the resource dir
-// exists before Tauri collects bundle resources, AND from the predev/prebuild
-// codegen presets — Tauri validates `bundle.resources` paths in dev mode too,
+// Runs as the `system-skills` task of the predev/prebuild codegen presets
+// (scripts/run-codegen.mjs). `npm run build` - tauri's beforeBuildCommand - reaches
+// it through npm's `prebuild` hook, so the resource dir exists before Tauri
+// collects bundle resources. Until 2026-09-18 the `build` script ALSO ran it
+// inline, i.e. twice per build; every path to `build` (build:starter|team|builder,
+// tauri.conf.json) goes through `npm run build`, so the hook always fires.
+// `npx vite build` alone skips it, as it skips every codegen task. The presets
+// run it in predev as well, because Tauri validates `bundle.resources` paths in dev mode too,
 // so a checkout that only ever ran `tauri dev` would otherwise die with
 // "resource path `resources\skills` doesn't exist". Idempotent + cheap; on a
 // plain `vite build` (no packaging) it's harmless.

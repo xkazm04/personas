@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% của cửa sổ 7 ngày",
     "fleet_concurrency_label": "Phiên của đội",
     "fleet_concurrency_aria": "Số phiên đội chạy song song tối đa",
-    "fleet_concurrency_hint": "Số phiên Claude Code có thể chạy cùng lúc, tính trên mọi nguồn điều phối. Vượt ngưỡng này, điều phối được tiếp nhận ở trạng thái chờ và tự bắt đầu khi có chỗ trống. Bộ điều chỉnh trên tiêu đề bảng Hoạt động ghi cùng một cài đặt."
+    "fleet_concurrency_hint": "Số phiên Claude Code có thể chạy cùng lúc, tính trên mọi nguồn điều phối. Vượt ngưỡng này, điều phối được tiếp nhận ở trạng thái chờ và tự bắt đầu khi có chỗ trống. Bộ điều chỉnh trên tiêu đề bảng Hoạt động ghi cùng một cài đặt.",
+    "dynamic_budgets_hint": "Cho phép các lượt chạy của đội máy tính dựa trên ngân sách máy, GPU và gói theo thời gian thực, sử dụng hồ sơ tài nguyên của từng nhiệm vụ. Tắt để quay lại giới hạn phiên cố định ở trên.",
+    "dynamic_budgets_label": "Ngân sách đội máy tính động"
   },
   "notifications": {
     "digest_description": "Thông báo hàng tuần tóm tắt các vấn đề sức khỏe trên tất cả tác tử với điểm sức khỏe tổng",

@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% dari jendela 7 hari",
     "fleet_concurrency_label": "Sesi armada",
     "fleet_concurrency_aria": "Maksimum sesi armada paralel",
-    "fleet_concurrency_hint": "Sesi Claude Code yang boleh berjalan bersamaan, dari semua pengirim. Melewati garis ini pengiriman diterima sebagai mengantre dan mulai sendiri saat slot kosong. Stepper di header papan Aktivitas menulis pengaturan yang sama."
+    "fleet_concurrency_hint": "Sesi Claude Code yang boleh berjalan bersamaan, dari semua pengirim. Melewati garis ini pengiriman diterima sebagai mengantre dan mulai sendiri saat slot kosong. Stepper di header papan Aktivitas menulis pengaturan yang sama.",
+    "dynamic_budgets_hint": "Izinkan proses armada berjalan berdasarkan anggaran mesin, GPU, dan paket secara langsung menggunakan profil sumber daya setiap mandat. Matikan untuk kembali ke batas sesi tetap di atas.",
+    "dynamic_budgets_label": "Anggaran armada dinamis"
   },
   "notifications": {
     "digest_description": "Notifikasi mingguan merangkum masalah kesehatan di semua agen dengan skor kesehatan total",

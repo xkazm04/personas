@@ -384,6 +384,10 @@ export const draftForPage = (
  * The result is a proposal, never a commitment: `doneHint` is advisory and the
  * caller derives completion from readiness. A rejected promise here means the
  * slot stays OPEN — it must never be treated as a finished step.
+ *
+ * `locale` is the app's language code: the guide asks its question in it,
+ * while suggested answers stay in the twin's own language. Omitted, the guide
+ * speaks the twin's language.
  */
 export const setupTurn = (
   twinId: string,
@@ -392,6 +396,7 @@ export const setupTurn = (
   focus?: string,
   topic?: string,
   lastAnswer?: string,
+  locale?: string,
 ) =>
   invoke<SetupTurnResult>("twin_setup_turn", {
     twinId,
@@ -400,6 +405,7 @@ export const setupTurn = (
     topic,
     history,
     lastAnswer,
+    locale,
   });
 
 // ============================================================================

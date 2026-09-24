@@ -7,6 +7,10 @@
 // hibernated and finished rows, and rows that exited within the last hour, so
 // a column that just drained is not a column that was never there. Older
 // exits stay on the Fleet page, where the tail belongs.
+//
+// Every node FILLS its lane (`fill`): the lane is the column, so a fixed
+// 172 px node would leave the rest of it empty and truncate the title for
+// nothing. Runway and Classic keep the fixed node width.
 
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -58,9 +62,10 @@ export function LanesBoard({
 
   const spring = reducedMotion ? { duration: 0 } : { type: 'spring' as const, stiffness: 400, damping: 32 };
   const still = (item: QueueItem, over = false) => (
-    <motion.div key={item.sessionId} layoutId={reducedMotion ? undefined : `queue:${item.sessionId}`} transition={spring}>
+    <motion.div key={item.sessionId} layoutId={reducedMotion ? undefined : `queue:${item.sessionId}`} transition={spring} className="w-full">
       <QueueTile
         item={item}
+        fill
         actions={actions}
         onOpen={item.session.state === 'exited' ? undefined : onOpenSession}
         onRecap={onRecapSession}
@@ -88,6 +93,7 @@ export function LanesBoard({
             ariaLabel={s.queue_reorder_aria}
             className="flex flex-col gap-1.5"
             accentFor={(item) => (item.teamId ? teamColor.get(item.teamId) : undefined)}
+            fill
           />
         </Lane>
         <Lane title={s.queue_lane_parked} count={parked.length} testId="fleet-queue-lane-parked">

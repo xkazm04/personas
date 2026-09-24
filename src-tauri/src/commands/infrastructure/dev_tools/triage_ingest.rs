@@ -453,6 +453,10 @@ mod tests {
             verify_state: None,
             verify_checked_at: None,
             verify_evidence: None,
+            // Both absent: this fixture predates the backlog contract, and an
+            // unplanned item is the shape every row filed before it has.
+            plan: None,
+            completeness: None,
             created_at: "2026-08-01T00:00:00Z".into(),
             updated_at: "2026-08-01T00:00:00Z".into(),
         }

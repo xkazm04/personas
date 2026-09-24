@@ -982,7 +982,13 @@ mod attention_queue_tests {
         let p = create_project(&pool, "P", "/tmp/settled", None, None, None, None, None).unwrap();
 
         // Every non-accepted status, all task-less and all ancient.
-        for status in ["pending", "rejected", "archived", "done"] {
+        //
+        // `done` used to stand in here for "some other status"; the backlog
+        // contract closed the vocabulary and `decide_idea_cas` / the one write
+        // door now refuse a token outside it. The list is the real remainder
+        // of `IdeaStatus`, which also gets the two terminal states this test
+        // could not have covered before.
+        for status in ["pending", "rejected", "archived", "delivered", "expired"] {
             let i = idea(&pool, &p.id, status, status);
             set(
                 &pool,

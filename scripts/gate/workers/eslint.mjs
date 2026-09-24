@@ -51,7 +51,10 @@ function getInstance(root) {
   const eslint = new ESLint({
     cwd: key,
     cache: true,
-    cacheLocation: path.join(key, '.eslintcache'),
+    // Not the repo-root default: any eslint run without --cache deletes that file
+    // (measured 2026-09-18, see lefthook.yml eslint-staged). Trailing separator =
+    // directory form, so the file is named by a hash of cwd.
+    cacheLocation: path.join(key, 'node_modules', '.cache', 'eslint', 'gate') + path.sep,
     // Pin typescript-eslint's project root to THIS checkout. Without it the
     // parser sees two candidate tsconfig roots (the main checkout and the
     // worktree) and refuses to parse: "multiple candidate TSConfigRootDirs are

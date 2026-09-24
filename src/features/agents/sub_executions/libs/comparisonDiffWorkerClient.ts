@@ -1,17 +1,16 @@
-import { diffLines, jsonDiff } from './comparisonHelpers';
+// The algorithms, the message contract and the entry types all come from the
+// pure core the worker itself imports — one definition for both sides of the
+// boundary. Importing them from `comparisonHelpers` (as this file used to) is
+// what put the i18n layer into the worker's graph; see comparisonDiffCore.ts.
+import { diffLines, jsonDiff } from './comparisonDiffCore';
+import type {
+  DiffWorkerRequest,
+  DiffWorkerResponse,
+  JsonDiffEntry,
+  LineDiffEntry,
+} from './comparisonDiffCore';
 
-export type LineDiffEntry = { type: 'same' | 'added' | 'removed'; text: string };
-export type JsonDiffEntry = { path: string; left: string; right: string };
-
-type WorkerRequest =
-  | { id: number; kind: 'line'; left: string | null; right: string | null; chunkSize: number }
-  | { id: number; kind: 'json'; left: string | null; right: string | null };
-
-type WorkerResponse =
-  | { id: number; kind: 'line-chunk'; chunk: LineDiffEntry[] }
-  | { id: number; kind: 'line-complete'; result: LineDiffEntry[] }
-  | { id: number; kind: 'json-complete'; result: JsonDiffEntry[] }
-  | { id: number; kind: 'error'; error: string };
+export type { JsonDiffEntry, LineDiffEntry };
 
 type PendingLine = {
   onChunk: (chunk: LineDiffEntry[]) => void;
@@ -116,7 +115,7 @@ function getWorker(): Worker | null {
     worker = new Worker(new URL('../workers/comparisonDiff.worker.ts', import.meta.url), {
       type: 'module',
     });
-    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+    worker.onmessage = (event: MessageEvent<DiffWorkerResponse>) => {
       const message = event.data;
       if (message.kind === 'line-chunk') {
         pendingLine.get(message.id)?.onChunk(message.chunk);
@@ -218,7 +217,7 @@ export function computeLineDiffOffThread(
     });
   });
 
-  const request: WorkerRequest = { id, kind: 'line', left, right, chunkSize: 50 };
+  const request: DiffWorkerRequest = { id, kind: 'line', left, right, chunkSize: 50 };
   activeWorker.postMessage(request);
 
   return {
@@ -255,7 +254,7 @@ export function computeJsonDiffOffThread(
     });
   });
 
-  const request: WorkerRequest = { id, kind: 'json', left, right };
+  const request: DiffWorkerRequest = { id, kind: 'json', left, right };
   activeWorker.postMessage(request);
 
   return {

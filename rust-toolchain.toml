@@ -1,0 +1,7 @@
+# Pins the toolchain for every cargo invocation in this repo (local, agents, CI).
+# Until 2026-09-18 there was no pin: channel and components were whatever the
+# machine happened to have, and no cache key could name the compiler it was built by.
+# Bump deliberately, with a build-ledger before/after pair (docs/development/build-measurement.md).
+[toolchain]
+channel = "1.96.1"
+components = ["rustfmt", "clippy"]

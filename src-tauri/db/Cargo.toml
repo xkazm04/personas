@@ -41,39 +41,35 @@ desktop = ["personas-core/desktop"]
 test-support = []
 
 [dependencies]
-personas-core = { path = "../core" }
+personas-core = { workspace = true }
 
-# Versions/features are copied verbatim from the desktop crate. Keep them
-# identical: if they drift, cargo stops unifying the dependency and compiles it
-# twice, which costs exactly the build time this crate split exists to reclaim.
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-rusqlite = { version = "0.38", features = ["bundled", "hooks", "preupdate_hook"] }
-r2d2 = "0.8"
-r2d2_sqlite = "0.32"
-uuid = { version = "1", features = ["v4", "v5"] }
-chrono = { version = "0.4", features = ["serde"] }
-ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
-tracing = "0.1"
-sha2 = "0.10"
-rand = "0.8"
-url = "2"
-hex = "0.4"
+# Versions and base feature sets come from [workspace.dependencies] in
+# ../Cargo.toml, so they cannot drift between the four crates.
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { workspace = true, features = ["preupdate_hook"] }
+r2d2 = { workspace = true }
+r2d2_sqlite = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+ts-rs = { workspace = true }
+tracing = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
+url = { workspace = true }
+hex = { workspace = true }
 # Only reached from the p2p-gated identity repo — but Cargo deps are not
 # feature-gated here, and it is already in the graph.
-base64 = "0.22"
+base64 = { workspace = true }
 # ml-gated: f32 embedding vectors -> byte blobs for sqlite-vec.
-bytemuck = "1"
-whoami = "1"
-tokio = { version = "1", features = [
-    "rt-multi-thread", "macros", "sync", "time",
-    "process", "io-util", "fs", "net", "signal",
-] }
+bytemuck = { workspace = true }
+whoami = { workspace = true }
+tokio = { workspace = true }
 # `cdc` emits change events to the frontend, so it takes a `tauri::AppHandle`.
-tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+tauri = { workspace = true }
 
-sqlite-vec = { version = "0.1", optional = true }
-fastembed = { version = "4", optional = true }
+sqlite-vec = { workspace = true, optional = true }
+fastembed = { workspace = true, optional = true }
 
 [lints]
 workspace = true

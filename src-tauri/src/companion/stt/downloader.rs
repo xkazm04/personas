@@ -276,9 +276,19 @@ mod tests {
         std::env::set_var("PERSONAS_HOME", "C:\\test-home");
         let p = model_path("base.en").unwrap();
         std::env::remove_var("PERSONAS_HOME");
-        assert!(p
-            .to_string_lossy()
-            .ends_with("companion-stt\\models\\ggml-base.en.bin"));
+        // Compare PATH COMPONENTS, not a rendered string: the literal
+        // "companion-stt\\models\\ggml-base.en.bin" only ever matched on
+        // Windows, so this assertion was dead on the Linux CI leg and failed
+        // there. `Path::ends_with` matches whole components on every platform.
+        let expected: std::path::PathBuf = ["companion-stt", "models", "ggml-base.en.bin"]
+            .iter()
+            .collect();
+        assert!(
+            p.ends_with(&expected),
+            "{} should end with {}",
+            p.display(),
+            expected.display(),
+        );
     }
 
     #[test]

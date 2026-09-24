@@ -279,7 +279,9 @@
    */
   function hrefTail(el) {
     const href = el.getAttribute?.("href");
-    if (!href || href.startsWith("javascript:") || href === "#") return "";
+    if (!href || href === "#") return "";
+    const scheme = href.trim().split(":", 1)[0].toLowerCase();
+    if (scheme === "javascript" || scheme === "data" || scheme === "vbscript") return "";
     try {
       const path = new URL(href, location.href).pathname;
       const tail = path.split("/").filter(Boolean).pop() ?? "";

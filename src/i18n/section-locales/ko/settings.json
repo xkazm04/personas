@@ -620,7 +620,9 @@
     "autopilot_target_unit": "7일 윈도우 대비 %",
     "fleet_concurrency_label": "플릿 세션",
     "fleet_concurrency_aria": "플릿 최대 병렬 세션 수",
-    "fleet_concurrency_hint": "모든 디스패처를 합쳐 동시에 실행할 수 있는 Claude Code 세션 수입니다. 이 선을 넘으면 디스패치가 대기 상태로 접수되고 슬롯이 비면 자동으로 시작됩니다. 활동 보드 헤더의 스테퍼도 같은 설정을 씁니다."
+    "fleet_concurrency_hint": "모든 디스패처를 합쳐 동시에 실행할 수 있는 Claude Code 세션 수입니다. 이 선을 넘으면 디스패치가 대기 상태로 접수되고 슬롯이 비면 자동으로 시작됩니다. 활동 보드 헤더의 스테퍼도 같은 설정을 씁니다.",
+    "dynamic_budgets_hint": "각 책무의 리소스 프로필을 사용해 실시간 머신, GPU, 플랜 예산에 대해 플릿 실행을 허용합니다. 끄면 위의 고정 세션 상한으로 대체됩니다.",
+    "dynamic_budgets_label": "동적 플릿 예산"
   },
   "notifications": {
     "digest_description": "모든 에이전트의 상태 문제를 요약하고 총 상태 점수를 포함하는 주간 알림",

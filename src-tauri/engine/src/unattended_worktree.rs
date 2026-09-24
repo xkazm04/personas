@@ -742,8 +742,41 @@ pub fn parse_worktree_list(out: &str) -> Vec<WorktreeEntry> {
 /// carry the prefix and the other would not — which is how a retired
 /// worktree's own directory once failed to be recognised as ours.
 fn path_is_under(candidate: &str, root: &Path) -> bool {
+    /// Canonicalize what exists and keep the rest verbatim.
+    ///
+    /// Plain `canonicalize` is all-or-nothing, so a path that no longer
+    /// exists — a worktree directory retired while its branch was kept — came
+    /// back untouched while the root beside it came back resolved. On Windows
+    /// that is not a cosmetic difference: a runner's `TEMP` is
+    /// `C:\Users\RUNNER~1\AppData\Local\Temp`, canonicalizing expands the 8.3
+    /// name to `runneradmin`, and the two strings then share no prefix at all.
+    /// `reattach_authoring_worktree` read that as "not a worktree this app
+    /// created" and refused to revive a branch it had just made.
+    fn resolve_existing_prefix(p: &Path) -> std::path::PathBuf {
+        if let Ok(full) = std::fs::canonicalize(p) {
+            return full;
+        }
+        let mut tail: Vec<std::ffi::OsString> = Vec::new();
+        let mut cursor = p.to_path_buf();
+        while let Some(parent) = cursor.parent().map(Path::to_path_buf) {
+            let Some(name) = cursor.file_name().map(|n| n.to_os_string()) else {
+                break;
+            };
+            tail.push(name);
+            if let Ok(resolved) = std::fs::canonicalize(&parent) {
+                let mut out = resolved;
+                for seg in tail.iter().rev() {
+                    out.push(seg);
+                }
+                return out;
+            }
+            cursor = parent;
+        }
+        p.to_path_buf()
+    }
+
     fn norm(p: &Path) -> String {
-        let resolved = std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf());
+        let resolved = resolve_existing_prefix(p);
         let s = resolved.to_string_lossy().replace('\\', "/");
         let s = s
             .strip_prefix("//?/UNC/")

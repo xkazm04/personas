@@ -25,7 +25,6 @@
     "http.rs": {"count":1,"sections":[12],"lines":["328,428"],"contexts":["(`http.rs:328,428`). It has one ranking entry point for both surfaces"],"resolved":false},
     "insightSimilarity.ts": {"count":1,"sections":[12],"lines":["65"],"contexts":["Of those two, `vibeman` is **silent**: `insightSimilarity.ts:65` computes cosine"],"resolved":false},
     "mcp.rs": {"count":3,"sections":[12],"lines":["1036-1092","959-963","1097-1104"],"contexts":["its MCP `memory_search` payload (`mcp.rs:1036-1092`) returns per-hit `id`,"],"resolved":false},
-    "prompt.rs": {"count":4,"sections":[2,7,12],"lines":["102","44-49","74-83"],"contexts":["(`prompt.rs:102`) is the shape: zero DB, borrows in-memory fields, bounded by the"],"resolved":false},
     "reviews.rs": {"count":1,"sections":[9],"lines":["1014"],"contexts":["`dev_tools.rs:3831`, `reviews.rs:1014`, `twin.rs:851`, `fix_pass.rs:309`,"],"resolved":false},
     "session.rs": {"count":1,"sections":[],"contexts":["path (`src-tauri/src/companion/prompt.rs`, `session.rs`,"],"resolved":false},
     "src-tauri/**/*.rs": {"count":1,"sections":[9],"contexts":["**Measured, `src-tauri/**/*.rs`, `#[cfg(test)]` stripped:**"],"resolved":false},
@@ -48,6 +47,14 @@
       "contexts": ["`context_generation.rs:1534,1704,2073,2092`, `crypto.rs:117,1162`, `cron.rs:160`,"],
       "resolvedFrom": "basename",
       "verbatim": "context_generation.rs"
+    },
+    "src-tauri/src/commands/infrastructure/twin_style/prompt.rs": {
+      "count": 4,
+      "sections": [2,7,12],
+      "lines": ["102","44-49","74-83"],
+      "contexts": ["(`prompt.rs:102`) is the shape: zero DB, borrows in-memory fields, bounded by the"],
+      "resolvedFrom": "basename",
+      "verbatim": "prompt.rs"
     },
     "src-tauri/src/companion/brain/embeddings.rs": {
       "count": 1,

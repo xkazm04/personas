@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% des 7-Tage-Fensters",
     "fleet_concurrency_label": "Flottensitzungen",
     "fleet_concurrency_aria": "Maximale parallele Flottensitzungen",
-    "fleet_concurrency_hint": "Wie viele Claude-Code-Sitzungen gleichzeitig laufen dürfen, über alle Auslöser hinweg. Über dieser Linie wird ein Auftrag als wartend aufgenommen und startet von selbst, sobald ein Slot frei wird. Der Stepper in der Kopfzeile des Aktivitäts-Boards schreibt dieselbe Einstellung."
+    "fleet_concurrency_hint": "Wie viele Claude-Code-Sitzungen gleichzeitig laufen dürfen, über alle Auslöser hinweg. Über dieser Linie wird ein Auftrag als wartend aufgenommen und startet von selbst, sobald ein Slot frei wird. Der Stepper in der Kopfzeile des Aktivitäts-Boards schreibt dieselbe Einstellung.",
+    "dynamic_budgets_hint": "Lässt Flotten-Läufe anhand der aktuellen Maschinen-, GPU- und Plan-Budgets zu, basierend auf dem Ressourcenprofil jedes Mandats. Deaktivieren, um auf die feste Sitzungsobergrenze oben zurückzufallen.",
+    "dynamic_budgets_label": "Dynamische Flotten-Budgets"
   },
   "notifications": {
     "digest_description": "Wöchentliche Benachrichtigung mit Zusammenfassung der Zustandsprobleme aller Agenten und Gesamt-Zustandsbewertung",

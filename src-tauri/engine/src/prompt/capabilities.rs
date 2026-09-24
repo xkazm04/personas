@@ -100,6 +100,251 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
     serde_json::from_str::<ModelProfile>(json_str).ok()
 }
 
+/// Which step of the charter model chain produced a value - kept on the result
+/// so a log line (and a test) can say WHY a run got the model it got. Declared
+/// in PRECEDENCE order, highest first (operator decision Q15, 2026-09-18).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModelChoiceStep {
+    /// The charter's explicit `spec.modelOverride`.
+    Override,
+    /// The difficulty routing table, from the charter's DECLARED profile.
+    Difficulty,
+    /// The persona's own `model_profile`.
+    PersonaProfile,
+    /// A `model_routing` cascade rule.
+    Cascade,
+    /// [`DEFAULT_CAPABILITY_MODEL`]; effort left to the spawn's own default.
+    Default,
+}
+
+/// A charter's resolved `(model, effort)` and where each came from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CharterModelChoice {
+    /// Never empty: the last step is a constant.
+    pub model: String,
+    /// `None` = nobody chose one; the spawn keeps its own default (the headless
+    /// persona lane pins [`super::DEFAULT_EFFORT`], a fleet session the CLI's).
+    pub effort: Option<String>,
+    pub model_step: ModelChoiceStep,
+    pub effort_step: ModelChoiceStep,
+}
+
+/// One step's contribution: a Claude model id and/or a valid effort.
+fn step_values(model: Option<&str>, effort: Option<&str>) -> (Option<String>, Option<String>) {
+    let model = model
+        .and_then(|m| resolve_use_case_model_override(&serde_json::Value::String(m.to_string())))
+        .and_then(|p| p.model)
+        .filter(|m| !m.trim().is_empty());
+    let effort = effort
+        .map(|e| e.trim().to_ascii_lowercase())
+        .filter(|e| personas_db::model_routing::is_valid_effort(e));
+    (model, effort)
+}
+
+/// An explicit override read into a profile, accepting the THREE shapes that
+/// reach the chain: a tier slug / `claude-*` id, a `ModelProfile` object, and
+/// the compact JSON string of such an object (what the adoption door stores on
+/// `spec.modelOverride` when the object names no `model`).
+fn override_profile(mo: &serde_json::Value) -> Option<ModelProfile> {
+    match mo {
+        serde_json::Value::String(s) if s.trim_start().starts_with('{') => {
+            let parsed = serde_json::from_str::<serde_json::Value>(s.trim()).ok()?;
+            resolve_use_case_model_override(&parsed)
+        }
+        other => resolve_use_case_model_override(other),
+    }
+}
+
+/// Is this profile routed by tier at all? A non-Anthropic (BYOM) profile is
+/// not: tier slugs and `--effort` mean nothing to its endpoint, so neither the
+/// difficulty table nor a cascade rule may touch it.
+fn is_anthropic_profile(profile: Option<&ModelProfile>) -> bool {
+    profile
+        .and_then(|p| p.provider.as_deref())
+        .map(|pr| pr.trim().is_empty() || pr.eq_ignore_ascii_case("anthropic"))
+        .unwrap_or(true)
+}
+
+/// THE charter model chain (spark `resource-aware-orchestration`), one pure
+/// function so the attention dispatcher, `execute_persona_inner` and the runner
+/// floor cannot each grow their own order. Highest first (operator decision
+/// Q15, 2026-09-18 - the charter's difficulty outranks the persona's model):
+///
+/// 1. explicit `spec.modelOverride` - a tier slug, a `claude-*` id, or the
+///    compact JSON of a `ModelProfile` object (what the adoption door stores
+///    when the object names no `model`); an object's `effort` SURVIVES, which
+///    it did not before this function existed;
+/// 2. the difficulty table, for a charter whose profile was DECLARED
+///    (`difficulty` is `None` for an untagged charter, so an untagged fleet
+///    keeps the persona's model exactly as before profiles existed). Until Q15
+///    it sat BELOW the cascade rule, where it was inert for every persona with
+///    a model set - which is nearly all of them;
+/// 3. the persona's own `model_profile`;
+/// 4. the `model_routing` cascade rule for the persona;
+/// 5. [`DEFAULT_CAPABILITY_MODEL`], effort unset.
+///
+/// Model and effort cascade PER FIELD, independently, like the stylesheet
+/// `model_routing` is modelled on: `modelOverride: "opus"` on a `hard` charter
+/// runs opus at the table's `high`, because the override named a model and
+/// said nothing about effort. Every effort is checked against
+/// `model_routing::EFFORT_LEVELS` before it is returned - the value becomes an
+/// argv token.
+///
+/// One exemption, shared with [`fill_profile_from_routing`] so the two chains
+/// agree: a persona whose own profile names a non-Anthropic provider is never
+/// routed by tier, so step 2 is skipped for it.
+pub fn resolve_charter_model_choice(
+    model_override: Option<&str>,
+    persona_model_profile: Option<&str>,
+    cascade: Option<&personas_db::model_routing::ResolvedModel>,
+    difficulty: Option<personas_core::models::Difficulty>,
+) -> CharterModelChoice {
+    let from_override = model_override
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| override_profile(&serde_json::Value::String(s.to_string())))
+        .map(|p| step_values(p.model.as_deref(), p.effort.as_deref()))
+        .unwrap_or((None, None));
+    let persona_profile = parse_model_profile(persona_model_profile);
+    let tier_routed = is_anthropic_profile(persona_profile.as_ref());
+    let from_persona = persona_profile
+        .map(|p| {
+            // A persona profile may name a BYOM model; it is the operator's
+            // explicit choice and is kept verbatim rather than slug-filtered.
+            let model = p.model.filter(|m| !m.trim().is_empty());
+            (model, step_values(None, p.effort.as_deref()).1)
+        })
+        .unwrap_or((None, None));
+    let from_cascade = cascade
+        .map(|r| step_values(Some(&r.model), r.effort.as_deref()))
+        .unwrap_or((None, None));
+    let from_difficulty = difficulty
+        .filter(|_| tier_routed)
+        .map(|d| {
+            let (slug, effort) = personas_db::model_routing::route_for_difficulty(d);
+            step_values(Some(slug), Some(effort))
+        })
+        .unwrap_or((None, None));
+
+    let steps = [
+        (ModelChoiceStep::Override, from_override),
+        (ModelChoiceStep::Difficulty, from_difficulty),
+        (ModelChoiceStep::PersonaProfile, from_persona),
+        (ModelChoiceStep::Cascade, from_cascade),
+    ];
+    let (model_step, model) = steps
+        .iter()
+        .find_map(|(step, (m, _))| m.clone().map(|m| (*step, m)))
+        .unwrap_or_else(|| {
+            (
+                ModelChoiceStep::Default,
+                DEFAULT_CAPABILITY_MODEL.to_string(),
+            )
+        });
+    let (effort_step, effort) = steps
+        .iter()
+        .find_map(|(step, (_, e))| e.clone().map(|e| (*step, Some(e))))
+        .unwrap_or((ModelChoiceStep::Default, None));
+    CharterModelChoice {
+        model,
+        effort,
+        model_step,
+        effort_step,
+    }
+}
+
+/// Which fields the explicit override NAMED - the only thing a declared
+/// difficulty yields to on the execution path.
+///
+/// `execute_persona_inner` and the runner fold the override into the persona's
+/// profile before routing runs, so by then "opus, from the override" and "opus,
+/// the persona's own model" are the same string. The difficulty step outranks
+/// one and not the other, so the caller says which fields the override supplied.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OverrideNamed {
+    pub model: bool,
+    pub effort: bool,
+}
+
+impl OverrideNamed {
+    /// Read it off the override value itself (any of the three shapes
+    /// [`resolve_charter_model_choice`] accepts). `None`, `null` and an
+    /// unrecognized value name nothing. An effort outside
+    /// `model_routing::EFFORT_LEVELS` names nothing either - the same filter
+    /// the fleet chain applies, so the two agree on what an override said.
+    pub fn of(model_override: Option<&serde_json::Value>) -> Self {
+        let Some(p) = model_override.and_then(override_profile) else {
+            return Self::default();
+        };
+        Self {
+            model: p.model.as_deref().is_some_and(|m| !m.trim().is_empty()),
+            effort: step_values(None, p.effort.as_deref()).1.is_some(),
+        }
+    }
+}
+
+/// The EXECUTION-path half of the charter model chain. `execute_persona_inner`
+/// and the runner resolve the override and the persona's own profile themselves
+/// (the legacy use-case override may be a BYOM object with a provider and
+/// endpoint, which [`resolve_charter_model_choice`]'s argv-safe filter would
+/// wrongly drop) and hand the merged result in as `profile`. This applies the
+/// rest of the chain in the SAME order the fleet path walks (Q15):
+///
+/// * step 2, the DECLARED difficulty, REPLACES the model and the effort - per
+///   field, and only a field the override did not name (`named`). It outranks
+///   the persona's own profile, which is why this is no longer a pure fill;
+/// * step 4, the `model_routing` cascade rule, fills what is still EMPTY.
+///
+/// A non-Anthropic profile is returned untouched - tier slugs and `--effort`
+/// mean nothing to a BYOM endpoint. With no declared difficulty and no rule the
+/// profile is returned as it came, so an untagged, unruled charter still
+/// reaches the caller's own sonnet floor exactly as before. Idempotent: the
+/// runner re-applies it to a profile `execute_persona_inner` already routed.
+pub fn fill_profile_from_routing(
+    profile: Option<ModelProfile>,
+    named: OverrideNamed,
+    cascade: Option<&personas_db::model_routing::ResolvedModel>,
+    difficulty: Option<personas_core::models::Difficulty>,
+) -> Option<ModelProfile> {
+    if !is_anthropic_profile(profile.as_ref()) {
+        return profile;
+    }
+    let (table_model, table_effort) = difficulty
+        .map(|d| {
+            let (slug, effort) = personas_db::model_routing::route_for_difficulty(d);
+            step_values(Some(slug), Some(effort))
+        })
+        .unwrap_or((None, None));
+    let (rule_model, rule_effort) = cascade
+        .map(|r| step_values(Some(&r.model), r.effort.as_deref()))
+        .unwrap_or((None, None));
+
+    let mut routed = profile.clone().unwrap_or_default();
+    if let Some(m) = table_model.filter(|_| !named.model) {
+        routed.model = Some(m);
+    }
+    if let Some(e) = table_effort.filter(|_| !named.effort) {
+        routed.effort = Some(e);
+    }
+    let model_missing = routed
+        .model
+        .as_deref()
+        .map(|m| m.trim().is_empty())
+        .unwrap_or(true);
+    if model_missing && rule_model.is_some() {
+        routed.model = rule_model;
+    }
+    if routed.effort.is_none() {
+        routed.effort = rule_effort;
+    }
+    // Nothing routed: hand back exactly what came in (`None` stays `None`, so
+    // the caller's sonnet floor still sees a profile-less persona).
+    if routed == profile.clone().unwrap_or_default() {
+        return profile;
+    }
+    Some(routed)
+}
+
 // `render_active_capabilities` (Phase C1's `## Active Capabilities` roster
 // over design_context.useCases) was RETIRED in spark `agent-manifest-rebase`
 // WP2: the `## Responsibilities` roster in `core_section.rs` renders every
@@ -378,5 +623,263 @@ mod model_override_provenance_tests {
         let p = resolve_use_case_model_override(&json!("haiku")).expect("slug resolves");
         assert_eq!(p.model.as_deref(), Some("claude-haiku-4-5-20251001"));
         assert_eq!(p.auth_token, None);
+    }
+}
+
+#[cfg(test)]
+mod charter_model_choice_tests {
+    use super::{
+        fill_profile_from_routing, resolve_charter_model_choice, ModelChoiceStep, OverrideNamed,
+        DEFAULT_CAPABILITY_MODEL,
+    };
+    use personas_core::model_ids::{HAIKU_CURRENT, OPUS_CURRENT, SONNET_CURRENT};
+    use personas_core::models::Difficulty;
+    use personas_core::types::ModelProfile;
+    use personas_db::model_routing::ResolvedModel;
+
+    fn cascade(model: &str, effort: Option<&str>) -> ResolvedModel {
+        ResolvedModel {
+            model: model.to_string(),
+            effort: effort.map(str::to_string),
+        }
+    }
+
+    /// Q15 (2026-09-18): override > DECLARED difficulty > persona profile >
+    /// cascade rule > default.
+    #[test]
+    fn charter_model_precedence_override_beats_difficulty_beats_cascade_beats_default() {
+        let rule = cascade("sonnet", Some("low"));
+        // 1. override wins the model over everything below it.
+        let c =
+            resolve_charter_model_choice(Some("opus"), None, Some(&rule), Some(Difficulty::Light));
+        assert_eq!(c.model, OPUS_CURRENT);
+        assert_eq!(c.model_step, ModelChoiceStep::Override);
+        // 2. no override: the declared difficulty beats the cascade rule, for
+        //    the model AND the effort.
+        let c = resolve_charter_model_choice(None, None, Some(&rule), Some(Difficulty::Hard));
+        assert_eq!(c.model, OPUS_CURRENT);
+        assert_eq!(c.model_step, ModelChoiceStep::Difficulty);
+        assert_eq!(c.effort.as_deref(), Some("high"));
+        assert_eq!(c.effort_step, ModelChoiceStep::Difficulty);
+        // 2b. an UNDECLARED charter leaves the rule in charge.
+        let c = resolve_charter_model_choice(None, None, Some(&rule), None);
+        assert_eq!(c.model, SONNET_CURRENT);
+        assert_eq!(c.model_step, ModelChoiceStep::Cascade);
+        assert_eq!(c.effort.as_deref(), Some("low"));
+        // 3. no rule: the declared difficulty routes.
+        let c = resolve_charter_model_choice(None, None, None, Some(Difficulty::Hard));
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (OPUS_CURRENT, Some("high"))
+        );
+        assert_eq!(c.model_step, ModelChoiceStep::Difficulty);
+        let c = resolve_charter_model_choice(None, None, None, Some(Difficulty::Light));
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (HAIKU_CURRENT, Some("low"))
+        );
+        // 4. nothing declared anywhere: the capability default, effort unset.
+        let c = resolve_charter_model_choice(None, None, None, None);
+        assert_eq!(c.model, DEFAULT_CAPABILITY_MODEL);
+        assert_eq!(c.effort, None);
+        assert_eq!(c.model_step, ModelChoiceStep::Default);
+        assert_eq!(c.effort_step, ModelChoiceStep::Default);
+    }
+
+    #[test]
+    fn charter_model_persona_profile_sits_between_difficulty_and_cascade() {
+        let rule = cascade("opus", Some("high"));
+        let profile = format!(r#"{{"model":"{HAIKU_CURRENT}"}}"#);
+        // Undeclared: the persona's own model beats the rule.
+        let c = resolve_charter_model_choice(None, Some(&profile), Some(&rule), None);
+        assert_eq!(c.model, HAIKU_CURRENT);
+        assert_eq!(c.model_step, ModelChoiceStep::PersonaProfile);
+        // The profile named no effort, so the next step that has one supplies it.
+        assert_eq!(c.effort.as_deref(), Some("high"));
+        assert_eq!(c.effort_step, ModelChoiceStep::Cascade);
+        // Declared: the difficulty outranks the persona's own model.
+        let c = resolve_charter_model_choice(
+            None,
+            Some(&profile),
+            Some(&rule),
+            Some(Difficulty::Standard),
+        );
+        assert_eq!(c.model, SONNET_CURRENT);
+        assert_eq!(c.model_step, ModelChoiceStep::Difficulty);
+        assert_eq!(c.effort.as_deref(), Some("medium"));
+        let c = resolve_charter_model_choice(Some("sonnet"), Some(&profile), None, None);
+        assert_eq!(c.model, SONNET_CURRENT);
+    }
+
+    /// The three cases the operator's decision is stated in (Q15).
+    #[test]
+    fn charter_model_declared_difficulty_outranks_the_persona_model() {
+        let opus_persona = format!(r#"{{"model":"{OPUS_CURRENT}","effort":"xhigh"}}"#);
+        // persona opus + declared light => haiku / low, both fields.
+        let c =
+            resolve_charter_model_choice(None, Some(&opus_persona), None, Some(Difficulty::Light));
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (HAIKU_CURRENT, Some("low"))
+        );
+        assert_eq!(c.model_step, ModelChoiceStep::Difficulty);
+        assert_eq!(c.effort_step, ModelChoiceStep::Difficulty);
+        // persona opus + UNDECLARED => opus, at the persona's own effort.
+        let c = resolve_charter_model_choice(None, Some(&opus_persona), None, None);
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (OPUS_CURRENT, Some("xhigh"))
+        );
+        assert_eq!(c.model_step, ModelChoiceStep::PersonaProfile);
+        // charter override sonnet + declared hard => sonnet; the override named
+        // no effort, so the effort comes from the difficulty (`high`), not from
+        // the persona below it.
+        let c = resolve_charter_model_choice(
+            Some("sonnet"),
+            Some(&opus_persona),
+            None,
+            Some(Difficulty::Hard),
+        );
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (SONNET_CURRENT, Some("high"))
+        );
+        assert_eq!(c.model_step, ModelChoiceStep::Override);
+        assert_eq!(c.effort_step, ModelChoiceStep::Difficulty);
+        // ...and an override that DOES carry an effort keeps it.
+        let mo = format!(r#"{{"model":"{SONNET_CURRENT}","effort":"low"}}"#);
+        let c = resolve_charter_model_choice(
+            Some(&mo),
+            Some(&opus_persona),
+            None,
+            Some(Difficulty::Hard),
+        );
+        assert_eq!(
+            (c.model.as_str(), c.effort.as_deref()),
+            (SONNET_CURRENT, Some("low"))
+        );
+        assert_eq!(c.effort_step, ModelChoiceStep::Override);
+        // A BYOM persona is never routed by tier, declared or not.
+        let byom = r#"{"provider":"ollama","model":"llama3"}"#;
+        let c = resolve_charter_model_choice(None, Some(byom), None, Some(Difficulty::Light));
+        assert_eq!(c.model, "llama3");
+        assert_eq!(c.model_step, ModelChoiceStep::PersonaProfile);
+    }
+
+    #[test]
+    fn charter_model_effort_survives_an_object_override() {
+        // The adoption door stores an object override that names no usable
+        // model string as its compact JSON; its effort used to be dropped.
+        let mo = format!(r#"{{"model":"{OPUS_CURRENT}","effort":"xhigh"}}"#);
+        let c = resolve_charter_model_choice(Some(&mo), None, None, Some(Difficulty::Light));
+        assert_eq!(c.model, OPUS_CURRENT);
+        assert_eq!(c.effort.as_deref(), Some("xhigh"));
+        assert_eq!(c.effort_step, ModelChoiceStep::Override);
+        // An effort-only object keeps its effort and lets the model fall through.
+        let c = resolve_charter_model_choice(
+            Some(r#"{"effort":"high"}"#),
+            None,
+            None,
+            Some(Difficulty::Light),
+        );
+        assert_eq!(c.model, HAIKU_CURRENT);
+        assert_eq!(c.effort.as_deref(), Some("high"));
+    }
+
+    #[test]
+    fn charter_model_effort_outside_the_vocabulary_never_reaches_an_argv() {
+        let c = resolve_charter_model_choice(
+            Some(r#"{"model":"opus","effort":"--dangerously-skip"}"#),
+            None,
+            Some(&cascade("sonnet", Some("ultra"))),
+            None,
+        );
+        assert_eq!(c.effort, None);
+        // A slug override on a tagged charter borrows the table's effort.
+        let c = resolve_charter_model_choice(Some("opus"), None, None, Some(Difficulty::Hard));
+        assert_eq!(c.effort.as_deref(), Some("high"));
+        assert_eq!(c.effort_step, ModelChoiceStep::Difficulty);
+    }
+
+    #[test]
+    fn charter_model_execution_chain_walks_the_same_order_as_the_fleet_chain() {
+        let none = OverrideNamed::default();
+        // Nothing resolved above, charter declared `hard`: the table sets both.
+        let p =
+            fill_profile_from_routing(None, none, None, Some(Difficulty::Hard)).expect("routed");
+        assert_eq!(p.model.as_deref(), Some(OPUS_CURRENT));
+        assert_eq!(p.effort.as_deref(), Some("high"));
+        // The PERSONA's own model and effort are below the difficulty: replaced.
+        let persona = ModelProfile {
+            model: Some(OPUS_CURRENT.to_string()),
+            effort: Some("xhigh".into()),
+            ..Default::default()
+        };
+        let p =
+            fill_profile_from_routing(Some(persona.clone()), none, None, Some(Difficulty::Light))
+                .expect("routed");
+        assert_eq!(p.model.as_deref(), Some(HAIKU_CURRENT));
+        assert_eq!(p.effort.as_deref(), Some("low"));
+        // ...and an UNDECLARED charter leaves the persona exactly as it was.
+        let p = fill_profile_from_routing(Some(persona.clone()), none, None, None).expect("kept");
+        assert_eq!(p, persona);
+        // A model the OVERRIDE named is above the difficulty: kept; the effort
+        // it did not name comes from the table.
+        let overridden = ModelProfile {
+            model: Some(SONNET_CURRENT.to_string()),
+            ..Default::default()
+        };
+        let named = OverrideNamed::of(Some(&serde_json::json!("sonnet")));
+        assert_eq!(
+            named,
+            OverrideNamed {
+                model: true,
+                effort: false
+            }
+        );
+        let p = fill_profile_from_routing(Some(overridden), named, None, Some(Difficulty::Hard))
+            .expect("kept");
+        assert_eq!(p.model.as_deref(), Some(SONNET_CURRENT));
+        assert_eq!(p.effort.as_deref(), Some("high"));
+        // The difficulty beats a cascade rule; the rule fills only what is empty.
+        let rule = cascade("haiku", Some("low"));
+        let p = fill_profile_from_routing(None, none, Some(&rule), Some(Difficulty::Hard))
+            .expect("routed");
+        assert_eq!(p.model.as_deref(), Some(OPUS_CURRENT));
+        assert_eq!(p.effort.as_deref(), Some("high"));
+        let p = fill_profile_from_routing(None, none, Some(&rule), None).expect("filled");
+        assert_eq!(p.model.as_deref(), Some(HAIKU_CURRENT));
+        assert_eq!(p.effort.as_deref(), Some("low"));
+        // Untagged and unruled: untouched, so the caller's sonnet floor decides.
+        assert!(fill_profile_from_routing(None, none, None, None).is_none());
+        // A BYOM profile is never routed by tier.
+        let byom = ModelProfile {
+            provider: Some("ollama".into()),
+            ..Default::default()
+        };
+        let p = fill_profile_from_routing(Some(byom), none, None, Some(Difficulty::Hard))
+            .expect("kept");
+        assert_eq!((p.model, p.effort), (None, None));
+        // Idempotent: the runner re-applies it to what the command already routed.
+        let once = fill_profile_from_routing(None, none, None, Some(Difficulty::Light));
+        let twice = fill_profile_from_routing(once.clone(), none, None, Some(Difficulty::Light));
+        assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn charter_model_override_named_reads_all_three_shapes() {
+        let named = |v: serde_json::Value| OverrideNamed::of(Some(&v));
+        assert_eq!(OverrideNamed::of(None), OverrideNamed::default());
+        assert_eq!(named(serde_json::Value::Null), OverrideNamed::default());
+        assert_eq!(
+            named(serde_json::json!("not-a-model")),
+            OverrideNamed::default()
+        );
+        assert!(named(serde_json::json!("opus")).model);
+        let obj = named(serde_json::json!({ "effort": "high" }));
+        assert_eq!((obj.model, obj.effort), (false, true));
+        // The compact-JSON string the adoption door stores on a charter.
+        let compact = named(serde_json::json!(r#"{"model":"opus","effort":"bogus"}"#));
+        assert_eq!((compact.model, compact.effort), (true, false));
     }
 }

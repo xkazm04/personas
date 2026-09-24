@@ -52,6 +52,7 @@ pub async fn fleet_spawn_session(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .await
@@ -89,6 +90,8 @@ pub async fn fleet_spawn_headless_session(
         args,
         None,
         Provenance::from_origin(DispatchOrigin::Manual),
+        // A manual headless session has no charter: charged the default.
+        None,
     )
     .await
 }
@@ -111,6 +114,7 @@ pub async fn spawn_codex_worker_in_run(
     model: String,
     run_label: Option<&str>,
     provenance: Provenance,
+    profile: Option<crate::db::models::ResourceProfile>,
 ) -> Result<String, String> {
     let admission = queue::admit(
         &app,
@@ -126,6 +130,7 @@ pub async fn spawn_codex_worker_in_run(
             goal_id: provenance.goal_id,
             cycle_index: provenance.cycle_index,
             not_before_ms: provenance.not_before_ms,
+            profile,
         },
     )
     .await
@@ -147,6 +152,7 @@ pub async fn spawn_headless_session_in_run(
     args: Option<Vec<String>>,
     run_label: Option<&str>,
     provenance: Provenance,
+    profile: Option<crate::db::models::ResourceProfile>,
 ) -> Result<String, String> {
     let admission = queue::admit(
         &app,
@@ -162,6 +168,7 @@ pub async fn spawn_headless_session_in_run(
             goal_id: provenance.goal_id,
             cycle_index: provenance.cycle_index,
             not_before_ms: provenance.not_before_ms,
+            profile,
         },
     )
     .await
@@ -352,6 +359,7 @@ pub async fn fleet_wake_session(
             goal_id: None,
             cycle_index: None,
             not_before_ms: None,
+            profile: None,
         },
     )
     .await

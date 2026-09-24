@@ -9,6 +9,11 @@
 // nothing once the colour is a `var(--token)`. A shadow that only works for one
 // of the two colour forms is worse than no shadow.
 import type { ReactNode } from 'react';
+import { CircleDashed, CirclePlus, Target } from 'lucide-react';
+
+import { goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
+
+import { PLAN_INK } from './planInk';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -33,7 +38,10 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
   dashed?: boolean;
   /** Optional leading marker overriding the state dot. */
   marker?: ReactNode;
-  /** Extra inline info right after the name (e.g. "proposed since the cut"). */
+  /** The row's marks — type and assignment as ICONS, not words. They sit in
+    *  the right-hand group beside the actions, because a reading you glance at
+    *  and a control you press belong at the same edge; a label in the middle of
+    *  the name made the row read as a sentence with two subjects. */
   meta?: ReactNode;
   actions?: ReactNode;
   /**
@@ -65,11 +73,24 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
       <span className="flex items-center gap-2 min-w-0">
         {/* The dot is the one place the caller's colour has to be a VALUE —
             it is data, not a role this file can name. */}
-        {marker ?? <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue }} />}
+        {/* THE DOT IS THE STATUS, and now says so. It already carried the
+            state's colour; giving it the state's NAME retires the word that
+            used to be repeated on the far edge, and costs no width. */}
+        {marker ?? (
+          <span
+            className="w-[7px] h-[7px] rounded-full shrink-0"
+            style={{ background: hue }}
+            role={stateLabel ? 'img' : undefined}
+            aria-label={stateLabel ?? undefined}
+          />
+        )}
         <span className="typo-body font-medium text-foreground/95 min-w-0">{name}</span>
-        {meta}
-        {stateLabel && <span className="ml-auto typo-caption shrink-0" style={{ color: hue }}>{stateLabel}</span>}
-        {actions && <span className={`shrink-0 inline-flex items-center gap-1 ${stateLabel ? '' : 'ml-auto'}`}>{actions}</span>}
+        {(meta || actions) && (
+          <span className="ml-auto shrink-0 inline-flex items-center gap-1.5">
+            {meta}
+            {actions}
+          </span>
+        )}
       </span>
       {contexts.length > 0 && (
         <span className="flex items-center gap-1.5 mt-1 pl-[15px] flex-wrap">
@@ -166,5 +187,53 @@ export function LedgerEmpty({ children, tone = 'setup', testid }: {
     >
       {children}
     </li>
+  );
+}
+
+/** The row's marks, as icons. A word here costs width on every row and says
+ *  the same thing a glyph does — and these three (kind, cut-assignment,
+ *  readiness) are exactly the readings the operator scans rather than reads. */
+export function KindMark({ label }: { label: string }) {
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={PLAN_INK.accent}>
+        <Target className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
+  );
+}
+
+/** A goal's STATUS as its own glyph. The table already carries one per status
+ *  (`GOAL_STATUS_META.icon`) and the tint that goes with it, so the ledger and
+ *  the Goals feature cannot show the same status two different ways. */
+export function StatusMark({ status, label }: { status: string; label: string }) {
+  const meta = goalStatusMeta(status);
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={meta.tint}>
+        <meta.icon className="w-3.5 h-3.5" />
+      </span>
+    </Tooltip>
+  );
+}
+
+/** In the pool and assigned to no bucket yet. */
+export function UnassignedMark({ label }: { label: string }) {
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className="text-foreground/60">
+        <CircleDashed className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
+  );
+}
+
+export function AfterCutMark({ label }: { label: string }) {
+  return (
+    <Tooltip content={label}>
+      <span role="img" aria-label={label} className={PLAN_INK.athena}>
+        <CirclePlus className="w-3.5 h-3.5" aria-hidden />
+      </span>
+    </Tooltip>
   );
 }

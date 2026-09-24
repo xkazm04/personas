@@ -1,8 +1,9 @@
 use super::projects::row_to_project;
 use crate::models::{
-    CrossProjectRelation, DevIdea, PortfolioHealthSummary, ProjectHealthEntry, RiskMatrixEntry,
-    TechRadarEntry,
+    BacklogSource, CrossProjectRelation, DevIdea, IdeaDraft, PortfolioHealthSummary,
+    ProjectHealthEntry, RiskMatrixEntry, TechRadarEntry,
 };
+use crate::repos::dev::ideas::file_idea;
 use crate::DbPool;
 use personas_core::error::AppError;
 use rusqlite::{params, Row};
@@ -87,7 +88,30 @@ pub fn delete_cross_project_relations_for_project(
     )
 }
 
-/// Bulk create ideas across multiple projects in a single transaction.
+/// Bulk create ideas across multiple projects.
+///
+/// This was a FOURTH write door into `dev_ideas` — its own `INSERT`, its own
+/// column set, and a `DevIdea` assembled by hand in Rust rather than read back
+/// from the row it claimed to describe. It wrote no `origin`, normalised no
+/// category, and its hand-built return value would drift from the table on the
+/// next `ALTER TABLE ADD COLUMN` with nothing to catch it.
+///
+/// It now files each tuple through [`file_idea`], so the batch is governed by
+/// the same validation, the same category vocabulary and the same `origin`
+/// stamp as every other filing. The signature is unchanged: its one caller
+/// (`dev_tools_create_idea_batch`) does not move.
+///
+/// The source is resolved from the tuple's `scan_type`, which is exactly why
+/// `BacklogSource::from_token` accepts `cross-impact` — that is this path's
+/// default and it means a human's cross-project note, i.e. `manual`.
+///
+/// Two honest notes:
+/// * the doc said "in a single transaction" and never opened one — one pooled
+///   connection is not a transaction. Routing through the repo door does not
+///   change that: a partial batch stays partial, exactly as before;
+/// * the empty-title guard at the door now refuses a row this function used to
+///   write. Its caller substitutes `"Untitled"` before reaching here, so no
+///   live path changes.
 #[allow(clippy::type_complexity)]
 pub fn bulk_create_ideas_cross_project(
     pool: &DbPool,
@@ -105,8 +129,6 @@ pub fn bulk_create_ideas_cross_project(
     // Each tuple: (project_id, context_id, scan_type, category, title, description, effort, impact, risk)
 ) -> Result<Vec<DevIdea>, AppError> {
     timed_query!("dev_ideas", "dev_ideas::bulk_create_ideas_cross_project", {
-        let conn = pool.get()?;
-        let now = chrono::Utc::now().to_rfc3339();
         let mut created = Vec::with_capacity(ideas.len());
 
         for &(
@@ -121,41 +143,25 @@ pub fn bulk_create_ideas_cross_project(
             risk,
         ) in ideas
         {
-            let id = uuid::Uuid::new_v4().to_string();
-            conn.execute(
-            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?11)",
-            params![id, project_id, context_id, scan_type, category, title, description, effort, impact, risk, now],
-        )?;
-            created.push(DevIdea {
-                id,
-                project_id: project_id.map(|s| s.to_string()),
-                context_id: context_id.map(|s| s.to_string()),
-                scan_type: scan_type.to_string(),
-                category: category.to_string(),
-                title: title.to_string(),
-                description: description.map(|s| s.to_string()),
-                reasoning: None,
-                status: "pending".to_string(),
-                effort,
-                impact,
-                risk,
-                priority: None,
-                provider: None,
-                model: None,
-                rejection_reason: None,
-                // Scanner batch — not a sensor finding.
-                origin: None,
-                use_case_id: None,
-                evidence: None,
-                dedup_key: None,
-                goal_id: None,
-                verify_state: None,
-                verify_checked_at: None,
-                verify_evidence: None,
-                created_at: now.clone(),
-                updated_at: now.clone(),
-            });
+            let source = BacklogSource::from_token(scan_type).unwrap_or(BacklogSource::Manual);
+            let mut draft = match project_id {
+                Some(pid) => IdeaDraft::new(pid, source, title),
+                None => IdeaDraft::unassigned(source, title),
+            };
+            draft.scan_type = Some(scan_type.to_string());
+            draft.context_id = context_id.map(str::to_string);
+            draft.category = Some(category.to_string());
+            draft.description = description.map(str::to_string);
+            draft.effort = effort;
+            draft.impact = impact;
+            draft.risk = risk;
+
+            // No `dedup_key`, so the door never answers `Ok(None)` here — this
+            // is the unguarded path, as it has always been.
+            let idea = file_idea(pool, draft)?.ok_or_else(|| {
+                AppError::Internal("file_idea returned no row for an unguarded filing".into())
+            })?;
+            created.push(idea);
         }
         Ok(created)
     })
@@ -222,7 +228,7 @@ pub fn get_portfolio_health(pool: &DbPool) -> Result<PortfolioHealthSummary, App
             params![p.id], |r| r.get(0),
         ).ok();
             let open_risk_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 7",
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 4",
             params![p.id], |r| r.get(0),
         )?;
 
@@ -339,13 +345,13 @@ pub fn get_risk_matrix(pool: &DbPool) -> Result<Vec<RiskMatrixEntry>, AppError> 
 
             // Check for high-risk pending ideas
             let high_risk_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 8",
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 4",
             params![p.id], |r| r.get(0),
         )?;
             if high_risk_count > 0 {
                 let affected: Vec<String> = {
                     let mut s = conn.prepare(
-                    "SELECT DISTINCT c.name FROM dev_ideas i JOIN dev_contexts c ON i.context_id = c.id WHERE i.project_id = ?1 AND i.status = 'pending' AND i.risk >= 8"
+                    "SELECT DISTINCT c.name FROM dev_ideas i JOIN dev_contexts c ON i.context_id = c.id WHERE i.project_id = ?1 AND i.status = 'pending' AND i.risk >= 4"
                 )?;
                     let rows = s.query_map(params![p.id], |r| r.get::<_, String>(0))?;
                     rows.filter_map(|r| r.ok()).collect()

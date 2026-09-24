@@ -34,8 +34,11 @@ const nonEn = fs
   .filter((f) => f.endsWith('.json') && f !== 'en.json')
   .map((f) => f.replace(/\.json$/, ''));
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function deepSet(obj, dotkey, value) {
   const parts = dotkey.split('.');
+  if (parts.some((p) => UNSAFE_KEYS.has(p))) return;
   let cur = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];

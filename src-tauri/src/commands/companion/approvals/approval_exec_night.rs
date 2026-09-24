@@ -89,6 +89,7 @@ pub(crate) fn execute_night_shift_execute_plan(
                 goal_id: None,
                 cycle_index: None,
                 not_before_ms: None,
+                profile: None,
             },
         ) {
             Ok(a) => a,

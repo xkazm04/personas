@@ -38,6 +38,24 @@
 — wrappers in `src/api/devTools/workspaces.ts`. The headless bridge adds
 `GET /dev-tools/workspaces` and `POST /dev-tools/workspaces/{id}/protect`.
 
+## The workspace's group on the Fleet board
+
+Creating a workspace creates one team that belongs to no project and carries the
+workspace's id — the workspace's *cross-project group*. It is where personas that work
+across every project in the workspace are filed, and it is the workspace's one presence
+on **Fleet ▸ Activity**: pinned to the front of the board and drawn as a framed panel,
+visible from the moment the workspace exists rather than from the moment somebody is
+filed in it. The column's header rule carries the workspace's own colour, so the swatch
+picked here is what identifies the group on the board.
+
+The route runs both ways: right-clicking that column's header offers **Open workspace**,
+which selects the workspace here and opens this page, or renames the group in place.
+
+Workspaces that pre-date the column got theirs by backfill, and a workspace that had
+already been given a hand-made project-less group kept it, with its members, rather
+than being given a second one. Renaming a workspace renames its group; deleting one
+unbinds the group rather than taking it down.
+
 ## Retired: the Workspace Knowledge Center (2026-09-14)
 
 Until 2026-09-14 a workspace also carried a DB-backed, governed practice

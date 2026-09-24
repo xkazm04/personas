@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { Layers, Search } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { colorDot } from './GroupColorPicker';
@@ -24,6 +25,9 @@ import {
   isNeutral,
   type ContextKpiStatus,
 } from './contextKpiStatus';
+
+/** Stable identity so a context with no features does not remount its chip. */
+const EMPTY_USE_CASES: DevUseCase[] = [];
 
 export default function ContextGroupRowsStats(props: ContextLedgerProps) {
   const { t: tRoot } = useTranslation();
@@ -41,6 +45,8 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
     onScanContext,
     scanningContextId,
     scanBusy,
+    useCasesByContext,
+    featureChip,
   } = props;
 
   const [query, setQuery] = useState('');
@@ -116,6 +122,8 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
                     selected={c.id === selectedCtxId}
                     dimmed={highlighted.size > 0 && !highlighted.has(c.id)}
                     featureCount={featureCountByContext.get(c.id) ?? 0}
+                    contextUseCases={useCasesByContext.get(c.id) ?? EMPTY_USE_CASES}
+                    chip={featureChip}
                     goalCount={goalCoverageByContext.get(c.id)?.count ?? 0}
                     kpiCount={kpiCoverageByContext.get(c.id) ?? 0}
                     scanning={scanningContextId === c.id}

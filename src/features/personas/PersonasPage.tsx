@@ -46,6 +46,7 @@ const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
 const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
 const MastermindPage = lazyRetry(() => import('@/features/teams/sub_mastermind/MastermindPage'));
+const CouncilPage = lazyRetry(() => import('@/features/teams/sub_council/CouncilPage'));
 const WhitelistPage = lazyRetry(() => import('@/features/browser/whitelist/WhitelistPage'));
 const WebviewPage = lazyRetry(() => import('@/features/browser/webview/WebviewPage'));
 const CloudDeployPanel = lazyRetry(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
@@ -320,6 +321,9 @@ export default function PersonasPage() {
       // reading of "this surface does not exist here".
       if (teamsTab === 'competition' && import.meta.env.DEV) {
         return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={<RouteChunkSkeleton />}><CompetitionPage /></Suspense></ErrorBoundary>;
+      }
+      if (teamsTab === 'council') {
+        return <ErrorBoundary onGoHome={goHome} name="Council"><Suspense fallback={<RouteChunkSkeleton />}><CouncilPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'mastermind') {
         return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={<RouteChunkSkeleton />}><MastermindPage /></Suspense></ErrorBoundary>;

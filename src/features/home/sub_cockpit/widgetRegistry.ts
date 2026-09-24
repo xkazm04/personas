@@ -40,6 +40,7 @@ import { ComparisonCardsWidget } from './widgets/ComparisonCardsWidget';
 import { TimelineWidget } from './widgets/TimelineWidget';
 import { StatGridWidget } from './widgets/StatGridWidget';
 import { LogExcerptWidget } from './widgets/LogExcerptWidget';
+import { CouncilMediaWidget } from './widgets/CouncilMediaWidget';
 
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
@@ -83,6 +84,13 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   timeline: TimelineWidget,
   stat_grid: StatGridWidget,
   log_excerpt: LogExcerptWidget,
+  // council_media - a screenshot or recording a council member staged as
+  // evidence. APP-COMPOSED ONLY: deliberately absent from Athena's
+  // constitution and from every Rust op allowlist, because the only thing
+  // allowed to point it at a path inside a run directory is
+  // `composeCouncilEvidence`, which builds it from the verdict's own
+  // `evidence[]`. Do not add it to either allowlist.
+  council_media: CouncilMediaWidget,
   // Persona-design walkthrough — Athena's step-by-step plan applying
   // the persona-design best-practices doctrine to a user intent. Emitted
   // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
@@ -153,7 +161,10 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   walkthrough_offer: WalkthroughOfferWidget,
 };
 
-/** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
+/** `council_media` sits with the three-row kinds because a frame at two rows
+ *  is a thumbnail, and the frame IS the evidence.
+ *
+ *  Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form
  *  widgets vertical room; dense widgets stay at 2 rows. */
 export function cockpitRowSpan(kind: string): number {
   switch (kind) {
@@ -165,6 +176,7 @@ export function cockpitRowSpan(kind: string): number {
     case 'flow_steps':
     case 'comparison_cards':
     case 'timeline':
+    case 'council_media':
     case 'log_excerpt':
       return 3;
     case 'metric_spark':

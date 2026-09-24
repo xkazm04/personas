@@ -15,6 +15,7 @@ import { useMemo, useState } from 'react';
 import { Layers, Search, X, Plus, FolderTree } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -33,6 +34,10 @@ import {
   useFilteredGroups,
   useMemberCounts,
 } from './contextMapPerf';
+
+/** One shared empty array, so a context with no features still hands the
+ *  memoised row a referentially stable prop. */
+const EMPTY_USE_CASES: DevUseCase[] = [];
 
 export default function ContextLedger(props: ContextLedgerProps) {
   const { t: tRoot, tx } = useTranslation();
@@ -58,6 +63,8 @@ export default function ContextLedger(props: ContextLedgerProps) {
     onShowNewGroup,
     onCreateGroup,
     onScan,
+    useCasesByContext,
+    featureChip,
   } = props;
 
   const [query, setQuery] = useState('');
@@ -225,6 +232,8 @@ export default function ContextLedger(props: ContextLedgerProps) {
                     memberSets={memberSets}
                     selectedUseCaseId={selectedUseCaseId}
                     useCaseCount={memberCounts.get(c.id) ?? 0}
+                    contextUseCases={useCasesByContext.get(c.id) ?? EMPTY_USE_CASES}
+                    featureChip={featureChip}
                     goal={goalCoverageByContext.get(c.id)}
                     ideaCount={ideaCoverageByContext.get(c.id) ?? 0}
                     kpiCount={kpiCoverageByContext.get(c.id) ?? 0}

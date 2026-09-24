@@ -30,9 +30,10 @@
 //! required or the seed is inert:
 //!
 //! 1. one `dev_ideas` row per item, written **`pending`** (the status triage
-//!    reads) through [`crate::repos::dev::ideas::create_idea_deduped`] — the
-//!    same guarded door every generated idea goes through, so the findings
-//!    spine's idempotency guard governs a seed exactly as it governs a scan;
+//!    reads) through [`crate::repos::dev::ideas::file_idea`] carrying a
+//!    `dedup_key` — the same guarded door every generated idea goes through,
+//!    so the findings spine's idempotency guard governs a seed exactly as it
+//!    governs a scan;
 //! 2. one enabled `dev_triage_rules` row with action `accept` whose condition is
 //!    `scan_type == headless_bench_seed`, which is the mechanical equivalent of
 //!    the protocol's "or let the project's triage rules accept them".
@@ -53,9 +54,13 @@
 //! reported. `scan_type` was chosen over `origin` deliberately: it is one of the
 //! five fields `evaluate_conditions` can key a triage rule on, so the same
 //! column that records the provenance is the one that makes the seed
-//! dispatchable. (`origin` would work too, but `create_finding` validates it
-//! against `FINDING_ORIGINS` and hands the row's lifecycle to a sensor sweep
-//! that would keep re-measuring a bench task forever.)
+//! dispatchable. `origin` is ALSO written now — the backlog contract stamps it
+//! from `BacklogSource::HeadlessBenchSeed` on every row — and that is safe
+//! precisely because a bench seed is not one of the eleven `FINDING_ORIGINS`:
+//! the sensor sweeps key on those, so nothing re-measures a bench task
+//! forever. Before that contract, reaching `origin` at all meant going through
+//! `create_finding`, which validated against `FINDING_ORIGINS` and would have
+//! enrolled the seed in exactly that loop.
 //!
 //! # What is deliberately NOT written
 //!
@@ -68,8 +73,8 @@
 //! **invalid**. So the endpoint validates them, echoes them back to the caller
 //! (whose journal is where the seed→idea mapping belongs) and stores neither.
 
-use crate::models::TriageRule;
-use crate::repos::dev::ideas::{create_idea_deduped, scan_dedup_key};
+use crate::models::{BacklogSource, IdeaDraft, TriageRule};
+use crate::repos::dev::ideas::{file_idea, scan_dedup_key};
 use crate::repos::dev::triage_rules::{create_triage_rule, list_triage_rules};
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -407,22 +412,20 @@ pub fn seed_bench_work_salted(
             .map(str::trim)
             .filter(|d| !d.is_empty());
 
-        let written = create_idea_deduped(
-            pool,
-            project_id,
-            None, // context_id — a seed is project-wide
-            BENCH_SEED_SCAN_TYPE,
-            Some(BENCH_SEED_CATEGORY),
-            title,
-            description,
-            None, // reasoning: it would reach the agent's prompt
-            None, // effort / impact / risk stay NULL so a numeric triage rule
-            None, // written for the real backlog cannot sweep a seed up on a
-            None, // score this module invented.
-            None, // provider
-            None, // model
-            &dedup_key,
-        )?;
+        // One `IdeaDraft` through the one door. `scan_type` stays
+        // `BENCH_SEED_SCAN_TYPE` because that is the column the auto-accept
+        // triage rule keys on; `source` now records the producer as well, so
+        // the row is legible to the backlog without reading its scan_type.
+        // Everything left absent stays absent — in particular the three scales,
+        // so a numeric triage rule written for the real backlog cannot sweep a
+        // seed up on a score this module invented, and `reasoning`, which
+        // would reach the agent's prompt.
+        let mut draft = IdeaDraft::new(project_id, BacklogSource::HeadlessBenchSeed, title);
+        draft.scan_type = Some(BENCH_SEED_SCAN_TYPE.to_string());
+        draft.category = Some(BENCH_SEED_CATEGORY.to_string());
+        draft.description = description.map(str::to_string);
+        draft.dedup_key = Some(dedup_key.clone());
+        let written = file_idea(pool, draft)?;
 
         match written {
             Some(idea) => {

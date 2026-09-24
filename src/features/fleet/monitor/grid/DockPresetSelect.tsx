@@ -1,7 +1,9 @@
 // A preset picker whose menu opens ABOVE its trigger: the dispatch dock sits at
 // the bottom of the board, so a downward menu would land off-screen. Non-portal
 // on purpose — anchored inside the dock, out of flow, like the suggestions.
-// Extracted from QuickDispatchDock 2026-09-17 (file-size split, no behaviour change).
+// Extracted from QuickDispatchDock 2026-09-17 (file-size split, no behaviour change);
+// restyled 2026-09-21 as one of the Launch Rail's instrument pills — trigger
+// chrome only, the upward-menu behaviour is untouched.
 import { Check, ChevronUp } from 'lucide-react';
 
 import { Listbox } from '@/features/shared/components/forms/Listbox';
@@ -35,14 +37,17 @@ export function DockPresetSelect({
           aria-expanded={isOpen}
           aria-label={ariaLabel}
           data-testid={testId}
-          className={`flex items-center gap-1 rounded-interactive border px-2 py-0.5 font-mono text-xs transition-colors ${
+          // The Launch Rail's instrument pill: a pill rather than a rounded
+          // rectangle, so the preset reads as a setting on the console and not
+          // as a second button next to the launch. Set = accent-tinted.
+          className={`typo-code flex h-6 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 transition-colors ${
             value
-              ? 'border-primary/25 bg-primary/10 text-primary'
-              : 'border-border text-foreground hover:bg-secondary/60'
+              ? 'border-accent/45 bg-accent/10 text-accent'
+              : `border-card-border bg-card-bg text-foreground opacity-80 hover:border-primary/45 hover:opacity-100 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
           }`}
         >
           <span className="whitespace-nowrap">{format(value)}</span>
-          <ChevronUp className={`h-3 w-3 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
+          <ChevronUp className={`h-3 w-3 opacity-70 transition-transform ${isOpen ? '' : 'rotate-180'}`} aria-hidden />
         </button>
       )}
     >

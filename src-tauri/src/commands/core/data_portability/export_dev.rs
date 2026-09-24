@@ -522,7 +522,7 @@ pub(crate) fn collect_dev_project_exports(
         let use_cases = query_rows(
             &conn,
             "SELECT id, name, slug, description, kind, primary_context_id, status, created_by, \
-                    pinned, rationale, created_at, updated_at \
+                    pinned, tier, rationale, created_at, updated_at \
              FROM dev_use_cases WHERE project_id = ?1",
             pid,
             |r| {
@@ -536,9 +536,10 @@ pub(crate) fn collect_dev_project_exports(
                     status: r.get(6)?,
                     created_by: r.get(7)?,
                     pinned: r.get(8)?,
-                    rationale: r.get(9)?,
-                    created_at: r.get(10)?,
-                    updated_at: r.get(11)?,
+                    tier: r.get(9)?,
+                    rationale: r.get(10)?,
+                    created_at: r.get(11)?,
+                    updated_at: r.get(12)?,
                 })
             },
         )?;

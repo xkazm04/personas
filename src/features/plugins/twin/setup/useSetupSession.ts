@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useI18nStore } from '@/stores/i18nStore';
 import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import * as twinApi from '@/api/twin/twin';
@@ -7,8 +8,10 @@ import type { TwinChannelKind } from '@/api/enums';
 import { deriveReadiness, type MilestoneStatus } from '../useTwinReadiness';
 import { slotStatusOf } from '../shared/twinStatus';
 import { trainingQaFacts, type PresetId } from '../sub_training/topicCoverage';
+import { appendJsonItem } from './fields/toneParts';
 import {
   SETUP_FOCUS_ORDER,
+  type SetupAnswerMode,
   type SetupChecklistItem,
   type SetupFieldEdit,
   type SetupFocus,
@@ -68,6 +71,32 @@ function newId(prefix: string): string {
 const DECLINED_NOTE =
   '(They chose not to answer that question. Ask about something else in this slot, and do not ask it again.)';
 
+/** The shape of every turn that is not a writing sample, and of no turn at all. */
+const PICK_SHAPE = { answerMode: 'pick', incoming: null, toneChannel: null } as const satisfies {
+  answerMode: SetupAnswerMode;
+  incoming: string | null;
+  toneChannel: string | null;
+};
+
+/**
+ * The answer to a `write` turn, offered back as a sample message for the
+ * channel it was written for. Built HERE, from the typed text, rather than
+ * asked of the generator — the backend drops any sample a model writes,
+ * because a sample only teaches the twin a voice if it is the person's own.
+ * It is an offer like any other: nothing is stored until it is accepted.
+ */
+function sampleOffer(text: string, channel: string | null): SetupProposal {
+  return {
+    id: newId('sample'),
+    kind: 'tone',
+    part: 'examples',
+    channel: channel ?? 'generic',
+    value: text,
+    lengthHint: null,
+    reason: '',
+  };
+}
+
 export function useSetupSession(): SetupSessionApi {
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
@@ -79,6 +108,12 @@ export function useSetupSession(): SetupSessionApi {
   const recordTwinInteraction = useSystemStore((s) => s.recordTwinInteraction);
   const pendingTrainingQuestions = useSystemStore((s) => s.pendingTrainingQuestions);
   const setPendingTrainingQuestions = useSystemStore((s) => s.setPendingTrainingQuestions);
+  // The guide asks in the app's language; the answers it offers stay in the
+  // twin's own. Read through a ref by `requestTurn`, so a language switch does
+  // not rebuild every callback that depends on it.
+  const locale = useI18nStore((s) => s.language);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   const [stage, setStage] = useState<SetupStage>('setup');
   const [topic, setTopicText] = useState<string | null>(null);
@@ -89,6 +124,16 @@ export function useSetupSession(): SetupSessionApi {
     setTopicPreset(presetId ?? null);
   }, []);
   const [question, setQuestion] = useState<string | null>(null);
+  /**
+   * The live turn's shape. A `write` turn asks for a writing sample, so its
+   * answer is offered back as a sample message (see `answer`). A generator
+   * that predates the field sends nothing, which reads as `pick`.
+   */
+  const [turnShape, setTurnShape] = useState<{
+    answerMode: SetupAnswerMode;
+    incoming: string | null;
+    toneChannel: string | null;
+  }>(PICK_SHAPE);
   const [suggestions, setSuggestions] = useState<SetupSuggestion[]>([]);
   const [proposals, setProposals] = useState<SetupProposal[]>([]);
   const [history, setHistory] = useState<SetupHistoryEntry[]>([]);
@@ -146,8 +191,15 @@ export function useSetupSession(): SetupSessionApi {
       const type = c.channel_type?.trim();
       if (type) seen.add(type);
     }
+    // A register with a tone row and no bound channel behind it: one the
+    // person named in conversation ("I mostly write email") and accepted.
+    // Leaving it out would hide a row they own from the surface that edits it.
+    for (const t of tones) {
+      const channel = t.channel?.trim();
+      if (channel) seen.add(channel);
+    }
     return [...seen];
-  }, [channels]);
+  }, [channels, tones]);
 
   /** Current stored value of every editable slot, keyed like `SetupFieldEdit`. */
   const values = useMemo(() => {
@@ -216,8 +268,8 @@ export function useSetupSession(): SetupSessionApi {
 
   // `answer` is rebuilt on every render it depends on; the hands-free path and
   // the queued-question effect call it through a ref so neither re-subscribes.
-  const stateRef = useRef({ stage, topic, topicPreset, focus, history, question });
-  stateRef.current = { stage, topic, topicPreset, focus, history, question };
+  const stateRef = useRef({ stage, topic, topicPreset, focus, history, question, turnShape });
+  stateRef.current = { stage, topic, topicPreset, focus, history, question, turnShape };
 
   /**
    * The focus `requestTurn` reads, held in a ref AS WELL as in state.
@@ -251,7 +303,12 @@ export function useSetupSession(): SetupSessionApi {
    * form remains the way forward.
    */
   const requestTurn = useCallback(
-    async (entries: SetupHistoryEntry[], lastAnswer: string | undefined) => {
+    async (
+      entries: SetupHistoryEntry[],
+      lastAnswer: string | undefined,
+      /** Offers the session made itself (a sample message), dealt with the next turn. */
+      offered: SetupProposal[] = [],
+    ) => {
       if (!activeTwinId) return;
       const { stage: st, topic: tp } = stateRef.current;
       // From the ref, never from `stateRef`: see `focusRef`'s comment.
@@ -265,10 +322,14 @@ export function useSetupSession(): SetupSessionApi {
         queuedRef.current = queuedRef.current.slice(1);
         setQueuedQuestions(queuedRef.current);
         setQuestion(queued);
+        setTurnShape(PICK_SHAPE);
         setSuggestions([]);
-        setProposals([]);
+        setProposals(offered);
         setGeneratorError(null);
-        setHistory([...entries, { id: newId('g'), role: 'guide', text: queued }]);
+        setHistory([
+          ...entries,
+          { id: newId('g'), role: 'guide', text: queued, ...(offered.length > 0 ? { proposals: offered } : {}) },
+        ]);
         return;
       }
 
@@ -282,17 +343,27 @@ export function useSetupSession(): SetupSessionApi {
           fc,
           tp ?? undefined,
           lastAnswer,
+          localeRef.current,
         );
+        const dealt: SetupProposal[] = [...offered, ...turn.proposals];
         setQuestion(turn.question);
-        setSuggestions(turn.suggestions);
-        setProposals(turn.proposals);
+        // A backend that predates `answerMode` sends none, and that turn is
+        // a choice between answers.
+        const write = turn.answerMode === 'write';
+        setTurnShape({
+          answerMode: write ? 'write' : 'pick',
+          incoming: write ? (turn.incoming ?? null) : null,
+          toneChannel: turn.toneChannel ?? null,
+        });
+        setSuggestions(write ? [] : turn.suggestions);
+        setProposals(dealt);
         setHistory([
           ...entries,
           {
             id: newId('g'),
             role: 'guide',
             text: turn.question,
-            ...(turn.proposals.length > 0 ? { proposals: turn.proposals } : {}),
+            ...(dealt.length > 0 ? { proposals: dealt } : {}),
           },
         ]);
         // `turn.doneHint` is deliberately dropped here. It is the model's
@@ -306,7 +377,9 @@ export function useSetupSession(): SetupSessionApi {
         toastCatch('features/plugins/twin/setup/useSetupSession:requestTurn')(e);
         setGeneratorError(resolveError(extractMessage(e)).message);
         setSuggestions([]);
-        setProposals([]);
+        // The guide being down is no reason to lose what the person just
+        // wrote: their own sample stays on offer.
+        setProposals(offered);
         setHistory(entries);
       } finally {
         inFlightRef.current = false;
@@ -345,7 +418,13 @@ export function useSetupSession(): SetupSessionApi {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || !activeTwinId) return;
-      const { stage: st, question: asked, history: current, topicPreset: preset } = stateRef.current;
+      const {
+        stage: st,
+        question: asked,
+        history: current,
+        topicPreset: preset,
+        turnShape: shape,
+      } = stateRef.current;
       const next: SetupHistoryEntry[] = [
         ...current,
         { id: newId('u'), role: 'user', text: trimmed },
@@ -378,7 +457,15 @@ export function useSetupSession(): SetupSessionApi {
         }
       }
 
-      await requestTurnRef.current(next, trimmed);
+      // The answer to a writing-sample question IS a sample: offer it back,
+      // verbatim, for the channel it was written for. Setup stage only — a
+      // training answer is already kept word for word as training material.
+      const offered =
+        st === 'setup' && asked && shape.answerMode === 'write'
+          ? [sampleOffer(trimmed, shape.toneChannel)]
+          : [];
+
+      await requestTurnRef.current(next, trimmed, offered);
     },
     [activeTwinId, recordTwinInteraction],
   );
@@ -409,22 +496,47 @@ export function useSetupSession(): SetupSessionApi {
         } else {
           const channel = proposal.channel ?? 'generic';
           const row = tones.find((t) => t.channel === channel);
-          await upsertTwinTone(
-            activeTwinId,
-            // INVARIANT: any BOUND channel type is a legal tone channel.
-            // `twin_upsert_tone` stores the channel verbatim and does not
-            // constrain it to `TwinChannelKind`; the union is the well-known
-            // subset, not the allowed set. The value is either 'generic' or a
-            // `twin_channels.channel_type` the user created.
-            channel as TwinChannelKind,
-            proposal.value,
-            // A proposal offers VOICE DIRECTIVES. The row is written whole, so
-            // the examples and constraints the user typed are carried over;
-            // accepting an offer must not empty the parts it says nothing about.
-            row?.examples_json ?? null,
-            row?.constraints_json ?? null,
-            proposal.lengthHint ?? row?.length_hint ?? null,
-          );
+          const part = proposal.part ?? 'voice';
+          if (part === 'voice') {
+            await upsertTwinTone(
+              activeTwinId,
+              // INVARIANT: any BOUND channel type is a legal tone channel.
+              // `twin_upsert_tone` stores the channel verbatim and does not
+              // constrain it to `TwinChannelKind`; the union is the well-known
+              // subset, not the allowed set. The value is either 'generic', a
+              // `twin_channels.channel_type` the user created, or a register
+              // the guide named from their own answer ("email").
+              channel as TwinChannelKind,
+              proposal.value,
+              // A voice proposal offers VOICE DIRECTIVES. The row is written
+              // whole, so the examples and constraints the user typed are
+              // carried over; accepting an offer must not empty the parts it
+              // says nothing about.
+              row?.examples_json ?? null,
+              row?.constraints_json ?? null,
+              proposal.lengthHint ?? row?.length_hint ?? null,
+            );
+          } else {
+            // A sample or a rule is ONE more item on its list, never a
+            // replacement for the list; the other three parts travel over.
+            const examples =
+              part === 'examples'
+                ? appendJsonItem(row?.examples_json, proposal.value)
+                : (row?.examples_json ?? null);
+            const constraints =
+              part === 'constraints'
+                ? appendJsonItem(row?.constraints_json, proposal.value)
+                : (row?.constraints_json ?? null);
+            await upsertTwinTone(
+              activeTwinId,
+              // INVARIANT: as above — a legal tone channel, stored verbatim.
+              channel as TwinChannelKind,
+              row?.voice_directives ?? '',
+              examples,
+              constraints,
+              row?.length_hint ?? null,
+            );
+          }
         }
         resolveProposal(proposal, 'accepted');
       } catch (e) {
@@ -493,14 +605,15 @@ export function useSetupSession(): SetupSessionApi {
         }
         // An edit answers whatever the guide had proposed for that slot, so any
         // live proposal of the same kind is marked edited rather than left
-        // hanging as an unanswered offer. Only the VOICE part answers a tone
-        // proposal — a proposal offers voice directives, and adding an example
-        // leaves the offer open.
+        // hanging as an unanswered offer. A tone edit answers only an offer
+        // for the SAME part of the same channel: typing a voice directive
+        // leaves an offered rule open, and adding an example leaves an offered
+        // voice open.
         for (const p of proposals) {
           const sameSlot =
             change.field === 'tone'
               ? p.kind === 'tone' &&
-                (change.part ?? 'voice') === 'voice' &&
+                (change.part ?? 'voice') === (p.part ?? 'voice') &&
                 (p.channel ?? 'generic') === (change.channel ?? 'generic')
               : p.kind === change.field;
           if (sameSlot) resolveProposal(p, 'edited');
@@ -523,6 +636,22 @@ export function useSetupSession(): SetupSessionApi {
     setSuggestions([]);
     setProposals([]);
     await requestTurnRef.current(current, DECLINED_NOTE);
+  }, []);
+
+  /**
+   * A fresh question on whatever is being worked now. `setTopic` and
+   * `setStage` only change what the NEXT question is about; this is how a
+   * surface asks for it immediately. Read from `stateRef`, so it must be
+   * called from an effect or handler that runs after the render carrying the
+   * new topic or stage — never in the same tick as the setter.
+   */
+  const redeal = useCallback(() => {
+    if (inFlightRef.current) return;
+    setSuggestions([]);
+    setProposals([]);
+    requestTurnRef.current(stateRef.current.history, undefined).catch(
+      silentCatch('features/plugins/twin/setup/useSetupSession:redeal'),
+    );
   }, []);
 
   /**
@@ -556,6 +685,7 @@ export function useSetupSession(): SetupSessionApi {
   useEffect(() => {
     setHistory([]);
     setQuestion(null);
+    setTurnShape(PICK_SHAPE);
     setSuggestions([]);
     setProposals([]);
     setGeneratorError(null);
@@ -582,6 +712,9 @@ export function useSetupSession(): SetupSessionApi {
     checklist,
     score: readiness.score,
     question,
+    answerMode: turnShape.answerMode,
+    incoming: turnShape.incoming,
+    toneChannel: turnShape.toneChannel,
     suggestions,
     proposals,
     history,
@@ -593,6 +726,7 @@ export function useSetupSession(): SetupSessionApi {
     dismiss,
     edit,
     skip,
+    redeal,
     focusOn,
     setStage,
     topic,

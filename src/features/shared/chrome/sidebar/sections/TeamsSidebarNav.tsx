@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -48,9 +48,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind';
+  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -68,6 +68,7 @@ const DEV_ITEMS: Array<{
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
+  { id: 'council', icon: Scale, labelKey: 'council', testId: 'teams-council-nav' },
 ];
 
 // "Browser" group — agent web-app control (spark browser-control, 2026-09-15).

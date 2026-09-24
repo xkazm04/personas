@@ -19,16 +19,45 @@
 //!   `milestone_id` `show_ship_goals` needs is in the answer rather than being
 //!   a second lookup she has to remember to make.
 //!
+//! * The tail of the note's THREAD (`dev_note_comments`): the last
+//!   [`THREAD_TAIL`] entries — operator comments, her own, the note-task
+//!   agent's run reviews, status milestones — each clipped to
+//!   [`THREAD_ENTRY_CAP`]. The pad asks her to read the thread before she
+//!   answers on it, and this is the reading.
+//!
 //! It does NOT restate the note's dispatch history (`dispatch_target`,
 //! `fleet_session_id`, the ingested `result_json`). Those are the pad's own
 //! bookkeeping, they are visible on the operator's screen, and a decomposition
-//! is not improved by knowing which fleet session last touched the note.
+//! is not improved by knowing which fleet session last touched the note. (A
+//! finished run DOES reach her, as the agent's review entry on the thread.)
+//!
+//! # `comment_on_note` — the one write here
+//!
+//! [`comment_on_note`] posts HER reply to a note's thread. It is the write half
+//! of the thread the read above exposes, and it is deliberately narrow: one
+//! comment, on a note that exists, capped at [`COMMENT_BODY_MAX_BYTES`]. A
+//! miss is an answer, not an error — the same rule [`describe_note`] follows.
 
 use rusqlite::OptionalExtension;
 
-use crate::db::models::{DevNote, NoteStatus};
+use crate::db::models::{DevNote, NoteComment, NoteCommentAuthor, NoteCommentKind, NoteStatus};
+use crate::db::repos::dev::note_comments::{self as comments_repo, NewNoteComment};
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
+
+/// Thread entries `describe_note` shows — the most recent ones, oldest first.
+const THREAD_TAIL: usize = 8;
+
+/// Longest single thread entry the answer renders, in characters. Eight of
+/// these plus the body cap is what `READ_OP_DETAIL_CHARS_NOTE` is sized for.
+const THREAD_ENTRY_CAP: usize = 400;
+
+/// Longest `comment_on_note` body, in BYTES (clipped on a char boundary). The
+/// same 4 KiB the suggestion rows use: a comment is a reply, not a document.
+pub(crate) const COMMENT_BODY_MAX_BYTES: usize = 4096;
+
+/// How her comments are signed on the thread.
+const ATHENA_AUTHOR: &str = "Athena";
 
 /// Longest body the answer renders verbatim.
 ///
@@ -47,6 +76,134 @@ fn clip_chars(s: &str, max: usize) -> String {
     }
     let head: String = s.chars().take(max).collect();
     format!("{head}…\n\n[body truncated at {max} characters — ask the operator for the rest rather than guessing what follows]")
+}
+
+/// One thread entry, clipped for the answer, plus whether anything was cut —
+/// the flag rides out beside the text rather than as punctuation spliced into
+/// it (the tool-result contract). Whitespace is flattened so an entry stays
+/// one bullet: the answer is read as a list, and a multi-line entry would
+/// read as several.
+fn clip_entry(s: &str) -> (String, bool) {
+    let flat = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if flat.chars().count() <= THREAD_ENTRY_CAP {
+        return (flat, false);
+    }
+    (flat.chars().take(THREAD_ENTRY_CAP).collect(), true)
+}
+
+/// The thread tail as answer lines. A read failure says so rather than
+/// pretending the thread is empty — "no comments" is a claim she would repeat.
+fn thread_lines(pool: &DbPool, note_id: &str) -> Vec<String> {
+    let entries = match comments_repo::recent_comments(pool, note_id, THREAD_TAIL) {
+        Ok(e) => e,
+        Err(e) => {
+            tracing::warn!(note_id, error = %e, "describe_note: thread read failed");
+            return vec!["THREAD: could not be read this turn — do not claim it is empty.".into()];
+        }
+    };
+    if entries.is_empty() {
+        return vec!["THREAD: empty — nothing has been posted on this note yet.".into()];
+    }
+    let mut out = vec![format!(
+        "THREAD (the last {} entries, oldest first):",
+        entries.len()
+    )];
+    for c in &entries {
+        let author = match (c.author_kind, c.author_name.as_deref()) {
+            (NoteCommentAuthor::Operator, _) => "operator".to_string(),
+            (NoteCommentAuthor::Athena, _) => "you (Athena)".to_string(),
+            (NoteCommentAuthor::Agent, Some(name)) => format!("agent {name}"),
+            (NoteCommentAuthor::Agent, None) => "agent".to_string(),
+            (NoteCommentAuthor::System, _) => "system".to_string(),
+        };
+        let verdict = c
+            .verdict
+            .map(|v| format!(" [{}]", v.as_str()))
+            .unwrap_or_default();
+        let about = c
+            .ref_kind
+            .map(|r| format!(" ({})", r.as_str()))
+            .unwrap_or_default();
+        let (body, clipped) = clip_entry(&c.body_md);
+        let clipped = if clipped {
+            " [clipped — the operator sees the whole entry on the pad]"
+        } else {
+            ""
+        };
+        out.push(format!(
+            "- {} · {author} · {}{verdict}{about}: {body}{clipped}",
+            c.created_at,
+            c.kind.as_str(),
+        ));
+    }
+    out
+}
+
+/// What [`comment_on_note`] did. Not a `Result`: a refusal is an ANSWER she
+/// reads next turn, never an error string that looks like nothing happened.
+#[derive(Debug)]
+pub enum CommentOnNote {
+    /// The comment is on the thread.
+    Posted(NoteComment),
+    /// It was not posted; the text says why and what would work.
+    Refused(String),
+}
+
+/// Post Athena's comment on a note's thread (`comment_on_note`).
+///
+/// The note is resolved by EXACT id only — unlike the read, a write that
+/// guessed which note a title meant would post her words under the wrong
+/// requirement. The body is trimmed and clipped to
+/// [`COMMENT_BODY_MAX_BYTES`] on a char boundary.
+pub fn comment_on_note(sys_db: &DbPool, note_id: &str, body_md: &str) -> CommentOnNote {
+    let note_id = note_id.trim();
+    let body = body_md.trim();
+    if note_id.is_empty() {
+        return CommentOnNote::Refused(
+            "`comment_on_note` needs a `note_id` — the exact id `describe_note` printed.".into(),
+        );
+    }
+    if body.is_empty() {
+        return CommentOnNote::Refused(
+            "`comment_on_note` needs a non-empty `body_md`; nothing was posted.".into(),
+        );
+    }
+    let note = match repo::get_note(sys_db, note_id) {
+        Ok(n) => n,
+        Err(crate::error::AppError::NotFound(_)) => {
+            return CommentOnNote::Refused(format!(
+                "No note has the id `{note_id}`, so the comment was not posted. Read the note                  with `describe_note` and use the exact id it prints — do not guess one."
+            ))
+        }
+        Err(e) => {
+            return CommentOnNote::Refused(format!(
+                "The comment was not posted: the note could not be read ({e}). Tell the                  operator rather than retrying blind."
+            ))
+        }
+    };
+    let mut end = body.len().min(COMMENT_BODY_MAX_BYTES);
+    while !body.is_char_boundary(end) {
+        end -= 1;
+    }
+    match comments_repo::insert_comment(
+        sys_db,
+        &NewNoteComment {
+            note_id: &note.id,
+            author_kind: NoteCommentAuthor::Athena,
+            author_name: Some(ATHENA_AUTHOR),
+            kind: NoteCommentKind::Comment,
+            body_md: &body[..end],
+            ref_kind: None,
+            ref_id: None,
+            verdict: None,
+        },
+    ) {
+        Ok(c) => CommentOnNote::Posted(c),
+        Err(e) => CommentOnNote::Refused(format!(
+            "The comment was not posted on `{}`: {e}.",
+            note.title
+        )),
+    }
 }
 
 /// Resolve a lookup string to one note: exact id first, then an exact
@@ -183,10 +340,14 @@ pub fn describe_note(sys_db: &DbPool, query: &str) -> String {
     }
 
     out.push(String::new());
+    out.extend(thread_lines(sys_db, &note.id));
+
+    out.push(String::new());
     out.push(
         "Suggest changes with `show_note_suggestions` (note_id above): section / edit / \
          question rows that land as inline blocks in the pad, where he accepts or rejects \
-         each one. Body edits only apply while the note is a DRAFT."
+         each one. Body edits only apply while the note is a DRAFT. Answer on the thread \
+         with `comment_on_note` (same note_id) — read the entries above first."
             .into(),
     );
 
@@ -301,6 +462,90 @@ Make it good.",
             out.contains("show_note_suggestions"),
             "the tail must survive the clip"
         );
+    }
+
+    /// The thread tail rides in the answer BEFORE the closing doctrine: the
+    /// last eight entries only, oldest first, each clipped, with who wrote it
+    /// and a review's verdict — so she reads the conversation before replying.
+    #[test]
+    fn the_answer_carries_the_thread_tail_before_the_doctrine() -> Result<(), crate::error::AppError>
+    {
+        let p = pool();
+        let note = repo::create_note(&p, "Threaded", None)?;
+        assert!(describe_note(&p, &note.id).contains("THREAD: empty"));
+        for i in 0..10 {
+            comments_repo::insert_comment(
+                &p,
+                &NewNoteComment::operator_comment(&note.id, &format!("entry number {i}")),
+            )?;
+        }
+        let long = "y".repeat(THREAD_ENTRY_CAP + 50);
+        comments_repo::insert_comment(
+            &p,
+            &NewNoteComment {
+                note_id: &note.id,
+                author_kind: NoteCommentAuthor::Agent,
+                author_name: Some("note-task"),
+                kind: NoteCommentKind::Review,
+                body_md: &long,
+                ref_kind: Some(crate::db::models::NoteCommentRef::Run),
+                ref_id: Some("run-1"),
+                verdict: None,
+            },
+        )?;
+        let out = describe_note(&p, &note.id);
+        assert!(out.contains("THREAD (the last 8 entries"), "{out}");
+        assert!(!out.contains("entry number 2"), "only the tail: {out}");
+        assert!(out.contains("entry number 3"), "{out}");
+        assert!(
+            out.contains("agent note-task · review [pending] (run)"),
+            "{out}"
+        );
+        assert!(
+            out.contains("[clipped"),
+            "a long entry is clipped, visibly: {out}"
+        );
+        let thread_at = out.find("THREAD").unwrap_or(usize::MAX);
+        let doctrine_at = out.find("comment_on_note").unwrap_or(0);
+        assert!(thread_at < doctrine_at, "the doctrine stays last: {out}");
+        Ok(())
+    }
+
+    #[test]
+    fn comment_on_note_posts_an_athena_comment_and_clips_it() -> Result<(), crate::error::AppError>
+    {
+        let p = pool();
+        let note = repo::create_note(&p, "Target", None)?;
+        // Two bytes per char, so the 4 KiB cut must land on a char boundary.
+        let long = "é".repeat(COMMENT_BODY_MAX_BYTES);
+        let CommentOnNote::Posted(c) = comment_on_note(&p, &note.id, &long) else {
+            panic!("expected the comment to post");
+        };
+        assert_eq!(c.author_kind, NoteCommentAuthor::Athena);
+        assert_eq!(c.author_name.as_deref(), Some("Athena"));
+        assert_eq!(c.kind, NoteCommentKind::Comment);
+        assert!(c.body_md.len() <= COMMENT_BODY_MAX_BYTES);
+        assert!(c.read_at.is_none(), "her comment is news to the operator");
+        Ok(())
+    }
+
+    #[test]
+    fn comment_on_note_refuses_an_unknown_note_and_an_empty_body_with_an_answer() {
+        let p = pool();
+        match comment_on_note(&p, "nope", "hello") {
+            CommentOnNote::Refused(why) => {
+                assert!(why.contains("No note has the id `nope`"), "{why}")
+            }
+            CommentOnNote::Posted(_) => panic!("an unknown note must not take a comment"),
+        }
+        assert!(matches!(
+            comment_on_note(&p, "nope", "   "),
+            CommentOnNote::Refused(_)
+        ));
+        assert!(matches!(
+            comment_on_note(&p, "  ", "x"),
+            CommentOnNote::Refused(_)
+        ));
     }
 
     /// A project with NO unshipped milestone has nothing for `show_ship_goals`

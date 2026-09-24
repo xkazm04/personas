@@ -1,7 +1,7 @@
 export function RecipeBookIllustration({ className }: { className?: string }) {
   return (
     <img
-      src="/illustrations/recipe-book.png"
+      src="/illustrations/recipe-book.webp"
       alt=""
       aria-hidden="true"
       className={className}

@@ -13,7 +13,7 @@ import {
 
 type ResolverInput = Parameters<typeof resolveIllustration>[0];
 
-const URL_RE = /^\/illustrations\/personas\/category-[a-z]+\.png$/;
+const URL_RE = /^\/illustrations\/personas\/category-[a-z]+\.webp$/;
 
 function persona(overrides: Partial<ResolverInput> = {}): ResolverInput {
   return {
@@ -140,7 +140,7 @@ describe('resolveIllustration', () => {
   });
 
   describe('URL shape', () => {
-    it('every returned url matches /illustrations/personas/category-<name>.png', () => {
+    it('every returned url matches /illustrations/personas/category-<name>.webp', () => {
       const cases: ResolverInput[] = [
         persona({ id: 'x', icon: '📧' }),
         persona({ id: 'x', icon: '👨‍💻' }),
@@ -151,7 +151,7 @@ describe('resolveIllustration', () => {
       for (const p of cases) {
         const result = resolveIllustration(p);
         expect(result.url).toMatch(URL_RE);
-        expect(result.url).toBe(`/illustrations/personas/category-${result.category}.png`);
+        expect(result.url).toBe(`/illustrations/personas/category-${result.category}.webp`);
       }
     });
   });

@@ -350,6 +350,14 @@
       "marketingModule": "home"
     },
     {
+      "doc": "docs/features/companion/layered-voice.md",
+      "sourceGlobs": [
+        "src-tauri/src/companion/register.rs",
+        "src-tauri/src/companion/reports.rs",
+        "src-tauri/src/commands/companion/layered_voice.rs"
+      ]
+    },
+    {
       "doc": "docs/features/onboarding.md",
       "sourceGlobs": [
         "src/features/onboarding/**",
@@ -613,6 +621,19 @@
       "sourceGlobs": [
         "src/features/browser/**",
         "src-tauri/src/browser_bridge/**"
+      ]
+    },
+    {
+      "doc": "docs/features/council.md",
+      "sourceGlobs": [
+        "src/features/plugins/dev-tools/sub_context/council*",
+        "src/features/plugins/dev-tools/sub_context/Feature*",
+        "src/api/devTools/council.ts",
+        "src/features/teams/sub_council/**",
+        "src/features/home/sub_cockpit/widgets/CouncilMediaWidget.tsx",
+        "src-tauri/src/commands/infrastructure/dev_tools/council*.rs",
+        "src-tauri/db/src/repos/dev/council.rs",
+        "src-tauri/core/src/models/council.rs"
       ]
     }
   ]

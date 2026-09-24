@@ -137,6 +137,10 @@ seeded whitelist origin), `--timeout <s>` per turn and per wait (default 300), `
 directory holding `personas_data.db` (default `%APPDATA%/com.personas.desktop`). Exit codes:
 0 done, 1 harness error, 2 app not reachable.
 
+The tier table is the operator's setting: the harness reads it once at start and restores it on every exit
+path (normal end, error, Ctrl+C), so a matrix that ends on grok leaves Athena on her configured tier. The
+calibrated default is MAIN claude-opus-5 low; with no `companion.tier.*` rows persisted that is what runs.
+
 Resume: a key `(setup, rep, scenario, turn)` that already has a clean row (no `error`, no
 `timedOut`) is skipped; errored and timed-out keys are re-run. An engine reported
 `installed: false` by `companion_probe_engines` records `skipped` rows and moves on.

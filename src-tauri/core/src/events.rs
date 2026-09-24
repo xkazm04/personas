@@ -171,6 +171,19 @@ event_names! {
     // status move goes through `notepad_set_status`, whose caller already
     // holds the updated row.
     NOTEPAD_NOTE_CHANGED       => "notepad-note-changed",
+    // Council: a subject's verdict chain moved -- a run was ingested, a human
+    // decided, or the drift sweep re-marked an approval. Payload
+    // `{projectId, subjectId?}`; the ledger refetches the project's subject
+    // states. ONE name for the whole chain on purpose: the frontend's unit of
+    // invalidation is the project's council state, not a table, and a
+    // finer-grained event would only let a listener subscribe to half a
+    // verdict.
+    DEV_TOOLS_COUNCIL_CHANGED  => "dev-tools://council-changed",
+    // Notepad: one per-note thread entry was written or answered (e40
+    // `dev_note_comments`) — an operator comment, a review, a verdict stamp,
+    // a status milestone. Payload: the full `NoteComment` row, so the thread
+    // store and the card bubbles need no refetch.
+    NOTEPAD_NOTE_COMMENT       => "notepad-note-comment",
     // Browser > Webview: the whole tab list, every time any of it moves (open,
     // close, focus, a page navigating itself, a title changing). One event
     // carrying the WHOLE list rather than a diff -- the list is capped at
@@ -358,6 +371,10 @@ event_names! {
     STANDARDS_SCAN_STATUS        => "dev_tools_standards_scan_status",
     RADIO_STATE                  => "radio:state",
     KB_EXTRACTION_PROGRESS       => "kb-extraction-progress",
+    // New pending approval rows: from a turn, or from a background pass that
+    // files one (profile synthesis, the reply-register reflection). Payload:
+    // `Vec<CreatedApproval>`. `companion::session::APPROVALS_EVENT` aliases it.
+    COMPANION_APPROVALS          => "companion://approvals",
 }
 
 /// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of

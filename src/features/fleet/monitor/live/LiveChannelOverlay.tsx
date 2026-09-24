@@ -1,13 +1,16 @@
-// LIVE CHANNEL OVERLAY — the production host for the corner pop-up layer.
+// LIVE CHANNEL OVERLAY — the production host for the title-bar pop-up layer.
 //
 // Mounted at App root (sibling to ToastContainer) so it floats over the whole
 // app whether or not the Persona Monitor is open. It watches every team that
 // has a channel via the shared MergedChannels feed, projects genuinely-NEW
 // items into pop-ups (history present at mount is absorbed silently — no
-// startup blast), and owns the queue engine: click-to-dismiss, the natural
-// auto-timeout, and hover-pause. Presentation is the Comms Stack. The whole
-// layer is gated behind the persisted `monitorLiveMode` toggle, surfaced in the
-// Channels → Timeline view.
+// startup blast), and owns the queue engine: acknowledge-to-read, the 10s
+// per-message lifetime (useLiveLifetimes), and hold-to-pause. Presentation is
+// the Signal Island (LiveCommsStack). The CHANNEL
+// feed is gated behind the persisted `monitorLiveMode` toggle, surfaced in the
+// Channels → Timeline view. External feeds (`liveExternal.ts` — Notepad thread
+// entries for a note whose card is not on screen) are not: they carry decisions
+// waiting on the operator, not channel chatter, and they survive the toggle.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
@@ -20,6 +23,8 @@ import type { FeedTeam, TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import { LiveCommsStack } from './LiveCommsStack';
 import { onMockLiveMessage } from './liveDevHarness';
+import { liveSourceFor, onExternalLiveMessage } from './liveExternal';
+import { useLiveLifetimes } from './useLiveLifetimes';
 import { projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
 
 const CAP = 30;        // bound the accumulated window
@@ -127,6 +132,22 @@ export function LiveChannelOverlay() {
   // fires "Mock pop-up". Lets the redesign be evaluated on demand without
   // waiting for live channel traffic. Remove with liveDevHarness.
   useEffect(() => onMockLiveMessage((m) => enqueue([m])), [enqueue]);
+
+  // EXTERNAL FEEDS (Notepad thread entries, `liveExternal.ts`). Not gated by
+  // live mode: live mode is the operator's switch for CHANNEL chatter, and a
+  // review waiting on him in a note he is not looking at is not chatter. One
+  // entry per note — a newer one replaces the older, the same coalescing the
+  // desk card's bubble applies.
+  useEffect(
+    () =>
+      onExternalLiveMessage((m) => {
+        setIncoming((prev) => {
+          const rest = m.noteId ? prev.filter((x) => !(x.source === m.source && x.noteId === m.noteId)) : prev;
+          return [m, ...rest].slice(0, CAP);
+        });
+      }),
+    [],
+  );
   // Acknowledge = mark read, forever. The click lives on the card's icon
   // button; body clicks keep opening the messaging UI instead.
   const onDismiss = useCallback((id: string) => {
@@ -135,7 +156,17 @@ export function LiveChannelOverlay() {
       persistReadIds(next);
       return next;
     });
+    // A feed's own meaning of "acknowledged" (Notepad: the thread is read).
+    const msg = incomingRef.current.find((m) => m.id === id);
+    if (msg) liveSourceFor(msg)?.acknowledge?.(msg);
   }, []);
+  const onOpenExternal = useCallback(
+    (m: LiveMessage) => {
+      liveSourceFor(m)?.open?.(m);
+      onDismiss(m.id);
+    },
+    [onDismiss],
+  );
   const onDismissAll = useCallback(() => {
     setDismissed((p) => {
       const next = new Set(p);
@@ -143,6 +174,7 @@ export function LiveChannelOverlay() {
       persistReadIds(next);
       return next;
     });
+    for (const m of incomingRef.current) liveSourceFor(m)?.acknowledge?.(m);
   }, []);
   const onOpenConversation = useCallback((teamId?: string, personaId?: string | null, itemId?: string | null) => {
     // Into CONVERSATIONS, scoped to the pop-up's team when the card carries
@@ -168,13 +200,11 @@ export function LiveChannelOverlay() {
   // — but the read ledger survives: acknowledged means acknowledged.
   useEffect(() => {
     if (enabled) return;
-    setIncoming([]);
+    // Channel rows only — an external feed's entries are not live-mode's to wipe.
+    setIncoming((prev) => prev.filter((m) => m.source !== undefined && m.source !== 'channel'));
     setDismissed(loadReadIds());
   }, [enabled]);
 
-  // No auto-timeout (redesigned 2026-08-26): pop-ups showed and hid too
-  // quickly. A card now stays until the operator acknowledges it (the icon
-  // button — marks it read persistently) or opens the messaging UI from it.
 
   // Prune the tombstone set whenever the live window shrinks (CAP eviction or
   // an enqueue) — otherwise `dismissed` is a permanent set that only grows,
@@ -194,9 +224,20 @@ export function LiveChannelOverlay() {
   }, [incoming]);
 
   const live = useMemo(() => incoming.filter((m) => !dismissed.has(m.id)), [incoming, dismissed]);
-  const props: LiveVariantProps = { messages: live, onDismiss, onDismissAll, onOpenConversation, reducedMotion };
+  // Each pop-up lives LIVE_LIFETIME_MS from arrival (paused while the operator
+  // holds the island open). Expiry drops it from the queue WITHOUT marking it
+  // read — it was not acknowledged, only not looked at in time.
+  const expire = useCallback((ids: ReadonlySet<string>) => {
+    setIncoming((prev) => prev.filter((m) => !ids.has(m.id)));
+  }, []);
+  const { deadlines, onHoldChange } = useLiveLifetimes(live, expire);
+  const props: LiveVariantProps = {
+    messages: live, onDismiss, onDismissAll, onOpenConversation, onOpenExternal, reducedMotion, deadlines, onHoldChange,
+  };
 
-  if (!enabled) return null;
+  // Live mode off: no channel feed at all, but the stack still carries whatever
+  // an external feed pushed (the queue holds only those once the mode is off).
+  if (!enabled) return live.length > 0 ? <LiveCommsStack {...props} /> : null;
 
   return (
     <>

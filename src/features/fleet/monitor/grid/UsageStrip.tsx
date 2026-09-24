@@ -1,32 +1,38 @@
-// UsageStrip — the band above the project columns that says how much of the
-// Claude subscription this fleet has burned, whose logins those are, and —
-// once logins are stored — which of up to five plans is live and how the
-// others are doing.
+// UsageStrip — the band above the project columns that says how much of each
+// coding subscription this fleet has burned, and whose logins those are: ONE ROW
+// PER ACCOUNT, across Claude, Codex and Grok.
 //
-// THE FRAME (`UsageStripShell`) is a header row and five plan slots. This
+// THE FRAME (`UsageStripShell`) is a permanent header and a grid of rows. This
 // file decides what goes in each:
 //   • HEADER LEFT — the title and the stored-plan count (the frame's own).
 //   • HEADER RIGHT — `UsageStripControls` (auto-rotate, threshold, last
 //     rotation) once anything is stored, then refresh with its "as of" stamp,
 //     live only once the five-minute cache has elapsed.
-//   • SLOTS — `AccountRows` once anything is stored, `UsageStripLive` (one
-//     card) while nothing is. Empty slots keep their width, so the first plan
-//     is exactly as wide as the fifth will be.
+//   • ROWS — `AccountRows`, fed by ONE joined `ResourceModel`
+//     (`usage/useResourceModel`): every stored Claude plan (or, while nothing is
+//     stored, the single live login as one row of the same component), then the
+//     read-only Codex / Grok usage (`usage/useCliUsage`). A read that has not
+//     settled is a ghost row under the header — never a spinner.
+//
+// THERE IS ONE LAYOUT. The strip was a five-variant prototype host for a round;
+// the variants were deleted and the switcher with them. A layout name a browser
+// profile still holds under `monitor.usage.variant` is read by nothing.
 //
 // STORING IS AUTOMATIC. When the backend reports a live login that is not one
 // of the stored plans, `useAutoCapture` stores it — once per login, never in
-// a loop — and the strip switches to multi-plan mode on the snapshot that
-// comes back. The *Store this login* button is gone; Forget stays manual.
+// a loop — and the strip shows the stored plan on the snapshot that comes back.
+// Forget stays manual.
 //
 // The acts live in `usageStripActions`; the meters' arithmetic in `usageModel`.
 //
-// SIMULATION. With `simulated`, both reads are switched off (`enabled` goes
-// false, so neither poll runs, and the auto-capture is inert) and the strip
-// renders `useSimPlans` — five plans covering every branch `AccountRows` can
-// take, including the projected, the unreadable and the quarantined. The
-// switch, the forget and the auto-rotate control stay wired; they land in
-// that state instead of in the backend, so each flow can be walked with its
-// real confirm dialog.
+// SIMULATION. With `simulated`, every read is switched off (`enabled` goes
+// false, so no poll runs, and the auto-capture is inert) and the strip renders
+// `useSimPlans` — five plans covering every branch a row can take, including
+// the projected, the unreadable and the quarantined — beside a simulated Codex
+// (one window) and a not-installed Grok (`buildSimCliUsage`). The switch, the
+// forget and the auto-rotate control stay wired; they land in that state
+// instead of in the backend, so each flow can be walked with its real confirm
+// dialog.
 
 import { memo, useCallback, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
@@ -42,11 +48,12 @@ import { useAutoCapture } from './useAutoCapture';
 import { formatCountdown } from './usageModel';
 import { AccountRows } from './AccountRows';
 import { StripFrame } from './UsageStripShell';
-import { UsageStripLive, UsageStripLoading } from './UsageStripLive';
 import { UsageStripControls } from './UsageStripControls';
 import { useUsageActions } from './usageStripActions';
 import { useUsageClock } from './usageBits';
 import { useSimPlans } from './simulation';
+import { useCliUsage } from './usage/useCliUsage';
+import { useResourceModel } from './usage/useResourceModel';
 
 export const UsageStrip = memo(function UsageStrip({
   enabled = true, simulated = false,
@@ -101,20 +108,21 @@ export const UsageStrip = memo(function UsageStrip({
   const liveUncaptured = snap !== null && snap.livePresent && !snap.liveCaptured;
   useAutoCapture({ active: live && liveUncaptured, liveEmail: snap?.liveEmail ?? null, capture: actions.capture });
 
-  // Slots -----------------------------------------------------------------
-  const cold = !single.snapshot && !single.ipcFailed && !accounts.ipcFailed;
-  const slots = multi ? (
-    <AccountRows accounts={stored} now={now} onSwitch={onSwitch} onRemove={onRemove} />
-  ) : cold ? (
-    <UsageStripLoading />
-  ) : (
-    <UsageStripLive snapshot={single.snapshot} liveEmail={snap?.liveEmail ?? null} now={now} />
-  );
+  // The joined model — every row the strip paints comes out of it.
+  const cli = useCliUsage(enabled, simulated);
+  const model = useResourceModel({
+    accounts: snap,
+    single: simulated ? null : single.snapshot,
+    cli: cli.snapshot,
+    fetchedAt: multi ? accounts.fetchedAt : (single.fetchedAt ?? accounts.fetchedAt),
+    claudeFailed: !simulated && !single.snapshot && (single.ipcFailed || accounts.ipcFailed),
+    now,
+  });
 
   // Header right: refresh + stamp ------------------------------------------
   const refresh = useCallback(async () => {
-    await Promise.all([accounts.refresh(), multi ? Promise.resolve() : single.refresh()]);
-  }, [accounts, single, multi]);
+    await Promise.all([accounts.refresh(), multi ? Promise.resolve() : single.refresh(), cli.refresh()]);
+  }, [accounts, single, multi, cli]);
 
   const fetchedAt = multi ? accounts.fetchedAt : (single.fetchedAt ?? accounts.fetchedAt);
   const canRefresh = multi ? accounts.canRefresh : single.canRefresh;
@@ -158,9 +166,7 @@ export const UsageStrip = memo(function UsageStrip({
 
   return (
     <StripFrame planCount={stored.length} titleRight={titleRight} controls={controls}>
-      <div className="contents" data-mode={multi ? 'multi' : 'single'} data-simulated={simulated || undefined}>
-        {slots}
-      </div>
+      <AccountRows model={model} onSwitch={onSwitch} onRemove={onRemove} />
     </StripFrame>
   );
 });

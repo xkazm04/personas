@@ -620,7 +620,9 @@
     "autopilot_target_unit": "% de la ventana de 7 días",
     "fleet_concurrency_label": "Sesiones de la flota",
     "fleet_concurrency_aria": "Máximo de sesiones de flota en paralelo",
-    "fleet_concurrency_hint": "Sesiones de Claude Code que pueden ejecutarse a la vez, desde cualquier despachador. Por encima de esta línea un despacho se admite en cola y arranca solo cuando se libera una plaza. El control del encabezado del tablero de Actividad escribe el mismo ajuste."
+    "fleet_concurrency_hint": "Sesiones de Claude Code que pueden ejecutarse a la vez, desde cualquier despachador. Por encima de esta línea un despacho se admite en cola y arranca solo cuando se libera una plaza. El control del encabezado del tablero de Actividad escribe el mismo ajuste.",
+    "dynamic_budgets_hint": "Admite ejecuciones de flota según los presupuestos en vivo de máquina, GPU y plan usando el perfil de recursos de cada mandato. Desactive para volver al límite de sesión fijo indicado arriba.",
+    "dynamic_budgets_label": "Presupuestos dinámicos de flota"
   },
   "notifications": {
     "digest_description": "Notificación semanal que resume problemas de salud de todos los agentes con una puntuación de salud total",
