@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "{name} 편집 중",
       "header_subtitle_new": "처음부터 새 에이전트 구성",
       "header_title": "빌드",
-      "new_agent": "새 에이전트"
+      "new_agent": "새 에이전트",
+      "promote_receipt_connect": "커넥터 열기",
+      "promote_receipt_connectors": "아직 연결 필요: {names}",
+      "promote_receipt_failed_title": "승격이 완료되지 않았습니다",
+      "promote_receipt_later": "나중에",
+      "promote_receipt_needs_setup_title": "승격되었지만 실행하려면 설정이 필요합니다",
+      "promote_receipt_retry": "승격 다시 시도",
+      "promote_receipt_unverified": "첫 확인 실행에서 가치를 내지 못했습니다. 믿고 쓰기 전에 커넥터를 확인하세요."
     },
     "matrix_tab": {
       "loading": "매트릭스 로딩",

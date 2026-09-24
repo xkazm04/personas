@@ -1846,7 +1846,14 @@
     "header_subtitle_new": "Compose a new agent from scratch",
     "header_subtitle_editing": "Editing {name}",
     "new_agent": "New Agent",
-    "build_failed": "Build failed to start. Check CLI configuration."
+    "build_failed": "Build failed to start. Check CLI configuration.",
+    "promote_receipt_needs_setup_title": "Promoted, but it needs setup before it can run",
+    "promote_receipt_connectors": "Still to connect: {names}",
+    "promote_receipt_unverified": "Its first check run could not deliver value. Review its connectors before relying on it.",
+    "promote_receipt_connect": "Open connectors",
+    "promote_receipt_later": "Later",
+    "promote_receipt_failed_title": "Promote did not go through",
+    "promote_receipt_retry": "Retry promote"
   },
   "build_simulate": {
     "title": "Dry-run preview",

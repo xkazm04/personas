@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Редактирование {name}",
     "header_subtitle_new": "Создание нового агента с нуля",
     "header_title": "Сборка",
-    "new_agent": "Новый агент"
+    "new_agent": "Новый агент",
+    "promote_receipt_connect": "Открыть коннекторы",
+    "promote_receipt_connectors": "Осталось подключить: {names}",
+    "promote_receipt_failed_title": "Повышение не выполнено",
+    "promote_receipt_later": "Позже",
+    "promote_receipt_needs_setup_title": "Повышен, но перед запуском нужна настройка",
+    "promote_receipt_retry": "Повторить повышение",
+    "promote_receipt_unverified": "Первый проверочный запуск не принёс результата. Проверьте коннекторы, прежде чем полагаться на агента."
   },
   "matrix_tab": {
     "loading": "Загрузка матрицы",

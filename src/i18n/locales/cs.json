@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "Upravujete {name}",
       "header_subtitle_new": "Sestavte nového agenta od základu",
       "header_title": "Sestavení",
-      "new_agent": "Nový agent"
+      "new_agent": "Nový agent",
+      "promote_receipt_connect": "Otevřít konektory",
+      "promote_receipt_connectors": "Zbývá připojit: {names}",
+      "promote_receipt_failed_title": "Povýšení neproběhlo",
+      "promote_receipt_later": "Později",
+      "promote_receipt_needs_setup_title": "Povýšeno, ale před spuštěním potřebuje nastavení",
+      "promote_receipt_retry": "Zkusit povýšení znovu",
+      "promote_receipt_unverified": "Jeho první kontrolní běh nepřinesl hodnotu. Než se na něj spolehnete, zkontrolujte jeho konektory."
     },
     "matrix_tab": {
       "loading": "Načítání matice",

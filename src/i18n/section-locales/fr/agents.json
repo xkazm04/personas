@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Modification de {name}",
     "header_subtitle_new": "Composez un nouvel agent à partir de zéro",
     "header_title": "Création",
-    "new_agent": "Nouvel agent"
+    "new_agent": "Nouvel agent",
+    "promote_receipt_connect": "Ouvrir les connecteurs",
+    "promote_receipt_connectors": "Reste à connecter : {names}",
+    "promote_receipt_failed_title": "La promotion n'a pas abouti",
+    "promote_receipt_later": "Plus tard",
+    "promote_receipt_needs_setup_title": "Promu, mais une configuration est nécessaire avant qu'il puisse fonctionner",
+    "promote_receipt_retry": "Relancer la promotion",
+    "promote_receipt_unverified": "Sa première exécution de contrôle n'a pas produit de valeur. Vérifiez ses connecteurs avant de vous y fier."
   },
   "matrix_tab": {
     "loading": "Chargement de la matrice",

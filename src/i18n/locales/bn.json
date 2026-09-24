@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "{name} সম্পাদনা করা হচ্ছে",
       "header_subtitle_new": "স্ক্র্যাচ থেকে নতুন এজেন্ট তৈরি",
       "header_title": "বিল্ড",
-      "new_agent": "নতুন এজেন্ট"
+      "new_agent": "নতুন এজেন্ট",
+      "promote_receipt_connect": "কানেক্টর খুলুন",
+      "promote_receipt_connectors": "এখনও সংযোগ বাকি: {names}",
+      "promote_receipt_failed_title": "প্রোমোট সম্পন্ন হয়নি",
+      "promote_receipt_later": "পরে",
+      "promote_receipt_needs_setup_title": "প্রোমোট হয়েছে, তবে চালানোর আগে সেটআপ দরকার",
+      "promote_receipt_retry": "আবার প্রোমোট করুন",
+      "promote_receipt_unverified": "এর প্রথম যাচাই রান কোনো মূল্য দিতে পারেনি। এর ওপর নির্ভর করার আগে কানেক্টরগুলো দেখে নিন।"
     },
     "matrix_tab": {
       "loading": "ম্যাট্রিক্স লোড হচ্ছে",

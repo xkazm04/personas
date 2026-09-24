@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} を編集中",
     "header_subtitle_new": "新しいエージェントを一から作成",
     "header_title": "ビルド",
-    "new_agent": "新しいエージェント"
+    "new_agent": "新しいエージェント",
+    "promote_receipt_connect": "コネクターを開く",
+    "promote_receipt_connectors": "未接続: {names}",
+    "promote_receipt_failed_title": "昇格できませんでした",
+    "promote_receipt_later": "後で",
+    "promote_receipt_needs_setup_title": "昇格しましたが、実行する前にセットアップが必要です",
+    "promote_receipt_retry": "昇格を再試行",
+    "promote_receipt_unverified": "最初の確認実行で成果を出せませんでした。頼る前にコネクターを確認してください。"
   },
   "matrix_tab": {
     "loading": "マトリクスを読み込み中",

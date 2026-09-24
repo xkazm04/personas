@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Đang chỉnh sửa {name}",
     "header_subtitle_new": "Soạn một tác nhân mới từ đầu",
     "header_title": "Xây dựng",
-    "new_agent": "Tác nhân mới"
+    "new_agent": "Tác nhân mới",
+    "promote_receipt_connect": "Mở trình kết nối",
+    "promote_receipt_connectors": "Còn cần kết nối: {names}",
+    "promote_receipt_failed_title": "Chưa thăng cấp được",
+    "promote_receipt_later": "Để sau",
+    "promote_receipt_needs_setup_title": "Đã thăng cấp, nhưng cần thiết lập trước khi có thể chạy",
+    "promote_receipt_retry": "Thử thăng cấp lại",
+    "promote_receipt_unverified": "Lần chạy kiểm tra đầu tiên chưa mang lại giá trị. Hãy xem lại các trình kết nối trước khi dựa vào nó."
   },
   "matrix_tab": {
     "loading": "Đang tải ma trận",

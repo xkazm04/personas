@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "正在编辑 {name}",
     "header_subtitle_new": "从零开始创建新的智能体",
     "header_title": "构建",
-    "new_agent": "新智能体"
+    "new_agent": "新智能体",
+    "promote_receipt_connect": "打开连接器",
+    "promote_receipt_connectors": "仍需连接：{names}",
+    "promote_receipt_failed_title": "升级未成功",
+    "promote_receipt_later": "稍后",
+    "promote_receipt_needs_setup_title": "已升级，但运行前还需要完成设置",
+    "promote_receipt_retry": "重试升级",
+    "promote_receipt_unverified": "首次检查运行未能产生价值。在依赖它之前，请检查其连接器。"
   },
   "matrix_tab": {
     "loading": "正在加载矩阵",

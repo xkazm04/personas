@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} संपादित हो रहा है",
     "header_subtitle_new": "शुरुआत से एक नया एजेंट बनाएं",
     "header_title": "बिल्ड",
-    "new_agent": "नया एजेंट"
+    "new_agent": "नया एजेंट",
+    "promote_receipt_connect": "कनेक्टर खोलें",
+    "promote_receipt_connectors": "अभी जोड़ना बाकी: {names}",
+    "promote_receipt_failed_title": "प्रमोट पूरा नहीं हुआ",
+    "promote_receipt_later": "बाद में",
+    "promote_receipt_needs_setup_title": "प्रमोट हो गया, लेकिन चलने से पहले सेटअप ज़रूरी है",
+    "promote_receipt_retry": "प्रमोट दोबारा आज़माएँ",
+    "promote_receipt_unverified": "इसका पहला जाँच रन कोई नतीजा नहीं दे सका। इस पर भरोसा करने से पहले इसके कनेक्टर देखें।"
   },
   "matrix_tab": {
     "loading": "मैट्रिक्स लोड हो रहा है",

@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "Editando {name}",
       "header_subtitle_new": "Componga un nuevo agente desde cero",
       "header_title": "Compilación",
-      "new_agent": "Nuevo agente"
+      "new_agent": "Nuevo agente",
+      "promote_receipt_connect": "Abrir conectores",
+      "promote_receipt_connectors": "Falta conectar: {names}",
+      "promote_receipt_failed_title": "La promoción no se completó",
+      "promote_receipt_later": "Más tarde",
+      "promote_receipt_needs_setup_title": "Promovido, pero necesita configuración antes de poder ejecutarse",
+      "promote_receipt_retry": "Reintentar promoción",
+      "promote_receipt_unverified": "Su primera ejecución de comprobación no pudo aportar valor. Revisa sus conectores antes de confiar en él."
     },
     "matrix_tab": {
       "loading": "Cargando matriz",

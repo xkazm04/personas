@@ -4060,6 +4060,13 @@ export type Translations = {
       header_subtitle_editing: string;
       new_agent: string;
       build_failed: string;
+      promote_receipt_needs_setup_title: string;
+      promote_receipt_connectors: string;
+      promote_receipt_unverified: string;
+      promote_receipt_connect: string;
+      promote_receipt_later: string;
+      promote_receipt_failed_title: string;
+      promote_receipt_retry: string;
     };
     build_simulate: {
       title: string;

@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "تعديل {name}",
     "header_subtitle_new": "إنشاء وكيل جديد من الصفر",
     "header_title": "البناء",
-    "new_agent": "وكيل جديد"
+    "new_agent": "وكيل جديد",
+    "promote_receipt_connect": "فتح الموصلات",
+    "promote_receipt_connectors": "ما زال يلزم ربط: {names}",
+    "promote_receipt_failed_title": "لم تكتمل الترقية",
+    "promote_receipt_later": "لاحقًا",
+    "promote_receipt_needs_setup_title": "تمت الترقية، لكنه يحتاج إلى إعداد قبل أن يعمل",
+    "promote_receipt_retry": "إعادة محاولة الترقية",
+    "promote_receipt_unverified": "لم يحقق تشغيل الفحص الأول أي قيمة. راجع موصلاته قبل الاعتماد عليه."
   },
   "matrix_tab": {
     "loading": "جارٍ تحميل المصفوفة",

@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "Mengedit {name}",
       "header_subtitle_new": "Bangun agen baru dari awal",
       "header_title": "Bangun",
-      "new_agent": "Agen baru"
+      "new_agent": "Agen baru",
+      "promote_receipt_connect": "Buka konektor",
+      "promote_receipt_connectors": "Masih perlu dihubungkan: {names}",
+      "promote_receipt_failed_title": "Promosi tidak berhasil",
+      "promote_receipt_later": "Nanti",
+      "promote_receipt_needs_setup_title": "Dipromosikan, tetapi perlu penyiapan sebelum bisa berjalan",
+      "promote_receipt_retry": "Coba promosi lagi",
+      "promote_receipt_unverified": "Uji coba pertamanya tidak menghasilkan nilai. Periksa konektornya sebelum mengandalkannya."
     },
     "matrix_tab": {
       "loading": "Memuat matriks",

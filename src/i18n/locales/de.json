@@ -2157,7 +2157,14 @@
       "header_subtitle_editing": "{name} wird bearbeitet",
       "header_subtitle_new": "Neuen Agenten von Grund auf erstellen",
       "header_title": "Build",
-      "new_agent": "Neuer Agent"
+      "new_agent": "Neuer Agent",
+      "promote_receipt_connect": "Konnektoren öffnen",
+      "promote_receipt_connectors": "Noch zu verbinden: {names}",
+      "promote_receipt_failed_title": "Hochstufen ist nicht durchgegangen",
+      "promote_receipt_later": "Später",
+      "promote_receipt_needs_setup_title": "Hochgestuft, aber vor dem ersten Lauf ist noch Einrichtung nötig",
+      "promote_receipt_retry": "Hochstufen erneut versuchen",
+      "promote_receipt_unverified": "Der erste Prüflauf konnte keinen Nutzen liefern. Prüfe die Konnektoren, bevor du dich darauf verlässt."
     },
     "matrix_tab": {
       "loading": "Matrix wird geladen",
