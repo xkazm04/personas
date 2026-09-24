@@ -785,11 +785,12 @@ mod tests {
     }
 
     #[test]
-    fn persona_projection_failed_sync_after_toggle_keeps_the_toggle() {
+    fn persona_projection_failed_sync_after_toggle_keeps_the_toggle(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let pool = crate::db::init_test_db().expect("db");
         let persona = seed_persona(&pool, "Toggle");
         {
-            let mut conn = pool.get().expect("conn");
+            let mut conn = pool.get()?;
             crate::commands::core::use_cases::testable::cascade_use_case_toggle(
                 &mut conn,
                 &persona.id,
@@ -808,5 +809,6 @@ mod tests {
         let still = persona_repo::get_by_id(&pool, &persona.id).expect("persona");
         let dc = still.design_context.expect("design_context");
         assert!(dc.contains("\"enabled\":false"), "toggle persisted: {dc}");
+        Ok(())
     }
 }
