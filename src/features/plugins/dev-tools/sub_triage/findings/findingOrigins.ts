@@ -74,10 +74,14 @@ const ORIGIN_META: Record<
   },
   // The scan-sweep skill's findings + deep-scan escalations, arriving through
   // the memory-outbox door rather than an in-app sensor.
+  // Lime, not purple (operator, Gate 2b): light's repair rendered purple and
+  // violet (Readiness) as the same hex. CIEDE2000 against the other ten sensor
+  // hues: 21.1 dark (amber), 27.5 light (teal); against every status: 21.5 dark,
+  // 25.4 light (success both times).
   scan_sweep: {
     labelKey: 'origin_scan_sweep',
     icon: Compass,
-    tw: 'bg-purple-500/10 text-purple-300 border-purple-500/25',
+    tw: 'bg-lime-500/10 text-lime-300 border-lime-500/25',
   },
 };
 
