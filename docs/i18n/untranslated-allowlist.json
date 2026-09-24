@@ -1991,6 +1991,7 @@
   "fr:common.description",
   "fr:common.description_label",
   "fr:companions.blueprint.cell_scored",
+  "fr:companions.blueprint.console.lane_tag.native",
   "fr:companions.blueprint.gauge_budget",
   "fr:companions.blueprint.group_total",
   "fr:companions.blueprint.head_total",
