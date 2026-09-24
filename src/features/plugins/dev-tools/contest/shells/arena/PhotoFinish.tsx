@@ -92,7 +92,7 @@ export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: Ph
                 <SeatSpecChips spec={maker} />
               </div>
             )}
-            {variant && <ReviewSheet variant={variant} draft={draft} />}
+            {variant && <ReviewSheet variant={variant} draft={draft} showBuckets={false} />}
             <PodiumTrays trays={trays(review, detail.variants)} current={current} draft={draft} onSelect={onSelect} />
             <FieldNoteEditor draft={draft} />
             {detail.scoreboard && <StewardsScoreboard scoreboard={detail.scoreboard} current={current} onSelect={onSelect} />}

@@ -49,7 +49,7 @@ export function LoupeSide({ detail, variant, draft, unmasked, onUnmaskedChange, 
         )}
       </div>
 
-      <ReviewSheet variant={variant} draft={draft} />
+      <ReviewSheet variant={variant} draft={draft} showBuckets={false} />
 
       {draft.review && <SortTrays review={draft.review} current={variant.key} onPick={onPick} />}
     </aside>

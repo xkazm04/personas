@@ -19,10 +19,13 @@ import { REVIEW_BUCKETS, removePin, setBucket, setField, setNote, updatePin, var
 export interface ReviewSheetProps {
   variant: ContestVariant;
   draft: ReviewDraft;
+  /** Hide the bucket picker when the host shell sorts variants its own way
+   *  (a podium, grease-pencil marks). Defaults to true. */
+  showBuckets?: boolean;
   className?: string;
 }
 
-export function ReviewSheet({ variant, draft, className = '' }: ReviewSheetProps) {
+export function ReviewSheet({ variant, draft, showBuckets = true, className = '' }: ReviewSheetProps) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
   if (!draft.review) return null;
@@ -48,6 +51,7 @@ export function ReviewSheet({ variant, draft, className = '' }: ReviewSheetProps
         <VariantFacts variant={variant} />
       </header>
 
+      {showBuckets && (
       <div className="space-y-1.5">
         <p className="typo-label text-foreground">{s.bucket_label}</p>
         <div role="group" aria-label={s.bucket_label} className="flex flex-wrap gap-1.5">
@@ -70,6 +74,7 @@ export function ReviewSheet({ variant, draft, className = '' }: ReviewSheetProps
           )}
         </div>
       </div>
+      )}
 
       <label className="block space-y-1.5">
         <span className="typo-label text-foreground">{s.note_label}</span>
