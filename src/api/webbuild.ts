@@ -3,6 +3,7 @@ import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { BuildTurnResult } from '@/lib/bindings/BuildTurnResult';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
+import type { SiteSketch } from '@/lib/bindings/SiteSketch';
 
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
@@ -10,6 +11,12 @@ import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 /** Scaffold + register a blank Next/TS/Tailwind project. Slow — Bun install. */
 export const webbuildScaffold = (name: string) =>
   invokeWithTimeout<DevProject>('webbuild_scaffold', { name }, undefined, 600_000);
+
+/** The sketch lane: a fast first reading of a vision (pages, regions, draft
+ *  goals, the owner-only questions), run in parallel with the scaffold. A
+ *  one-shot micro call; usually seconds, bounded at two minutes. */
+export const webbuildSketch = (vision: string) =>
+  invokeWithTimeout<SiteSketch>('webbuild_sketch', { vision }, undefined, 120_000);
 
 /** Start (or restart) a project's Bun dev server. May still be booting. */
 export const webbuildDevStart = (projectId: string) =>

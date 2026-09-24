@@ -14,6 +14,28 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::webbuild::{self, DevServerStatus};
 use crate::AppState;
 
+/// The sketch lane (`webbuild::sketch`): a fast, stateless first reading of a
+/// new project's vision (pages and regions, draft goals, the questions only the
+/// owner can answer), run on the MICRO tier the moment the user submits, in
+/// parallel with the scaffold. Needs no project, no directory and no dev server,
+/// which is the point: it fills the setup wait with something true to draw and
+/// to ask. The seed turn still owns the real plan.
+#[tauri::command]
+pub async fn webbuild_sketch(
+    state: State<'_, Arc<AppState>>,
+    vision: String,
+) -> Result<webbuild::sketch::SiteSketch, AppError> {
+    require_auth(&state).await?;
+    personas_core::validation::require_non_empty("vision", &vision)?;
+    let (text, _turn_id) = crate::companion::athena_reaction::cli_text_tracked(
+        webbuild::sketch::sketch_prompt(&vision),
+        &state.user_db,
+        "studio_sketch",
+    )
+    .await?;
+    webbuild::sketch::parse_sketch(&text)
+}
+
 /// Scaffold a blank Next.js + TS + Tailwind app from a human project name and
 /// register it as a Dev Tools project. Returns the created project row.
 #[tauri::command]
