@@ -14,6 +14,7 @@ use crate::db::models::{
 };
 use crate::db::repos::twin as repo;
 use crate::engine::event_registry::event_name;
+use crate::engine::twin_setup::llm::{spawn_claude_logged, TwinCall};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -732,7 +733,7 @@ pub async fn twin_generate_bio(
     // Shared spawn envelope (also used by twin_compile_wiki / twin_audit_wiki) —
     // owns CLI arg building, --model, Windows creation flags, env handling, and
     // mandatory subscription-auth enforcement.
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw = spawn_claude_logged(&state.db, TwinCall::legacy("generate_bio"), prompt_text).await?;
     // Strip any JSON wrapper if the CLI outputs structured content
     let bio = raw.trim().trim_matches('"').to_string();
     // Clause dashes are a generated tell unless the person's own words use
@@ -754,7 +755,7 @@ pub async fn twin_generate_bio(
 // distilled self-facts). This is the answer half of the Training Studio: the
 // user reviews/edits the draft before it is saved as a memory. `directions`
 // carries the user's steering or critique on a regenerate ("too formal, add
-// the 2019 story"). Uses the shared spawn_claude_with_prompt envelope rather
+// the 2019 story"). Uses the shared spawn_claude_logged envelope rather
 // than abusing twin_generate_bio's bio-framed prompt.
 // ----------------------------------------------------------------------------
 
@@ -1008,7 +1009,8 @@ pub async fn twin_simulate_answer(
         effective.as_deref(),
         &kb_block,
     );
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw =
+        spawn_claude_logged(&state.db, TwinCall::legacy("simulate_answer"), prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
 }
 
@@ -1020,7 +1022,7 @@ pub async fn twin_simulate_answer(
 // path): the contact's distilled facts + self-facts, recent communications
 // with that contact, and the channel's tone profile (falling back to the
 // generic tone). Mirrors `twin_simulate_answer`'s persona-invocation envelope
-// (spawn_claude_with_prompt) but frames the prompt as a reply-in-conversation
+// (spawn_claude_logged) but frames the prompt as a reply-in-conversation
 // rather than an interview answer. Returns the draft PROSE; the human reviews/
 // edits it in the Channels atelier outbox and, on approve, persists it as an
 // outbound communication via the existing `twin_record_interaction`. Nothing
@@ -1122,7 +1124,7 @@ pub async fn twin_draft_reply(
         effective.as_deref(),
         &kb_block,
     );
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw = spawn_claude_logged(&state.db, TwinCall::legacy("draft_reply"), prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
 }
 
@@ -1132,7 +1134,7 @@ pub async fn twin_draft_reply(
 // Drafts the comment the user would post into a page input, in the twin's
 // voice, from the page context the Browser webview picked. Same grounding as
 // the outbox path (profile, tone, distilled self-facts, bound KB, merged
-// directives, the shared spawn_claude_with_prompt envelope) but NO contact /
+// directives, the shared spawn_claude_logged envelope) but NO contact /
 // thread / channel shelves: a web page has no contact row. Every string in
 // `page` is UNTRUSTED page text — it is capped, nonce-fenced and provenance-
 // labelled before it reaches the prompt, and a draft that echoes the nonce
@@ -1196,7 +1198,8 @@ pub async fn twin_draft_for_page(
         &kb_block,
         &nonce,
     );
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw =
+        spawn_claude_logged(&state.db, TwinCall::legacy("draft_for_page"), prompt_text).await?;
     let draft = finish_page_draft(&raw, &nonce)?;
     Ok(TwinPageDraft {
         draft,
@@ -1941,10 +1944,11 @@ pub async fn twin_studio_generate_questions(
     let batch_for_task = batch_id.clone();
     let twin_name = profile.name.clone();
 
+    let pool = state.db.clone();
     tokio::spawn(async move {
         let result = tokio::select! {
             _ = cancel_token.cancelled() => Err(AppError::Internal("Cancelled by user".into())),
-            res = spawn_claude_with_prompt(prompt_text) => res,
+            res = spawn_claude_logged(&pool, TwinCall::legacy("studio_questions"), prompt_text) => res,
         };
         match result {
             Ok(raw) => {
@@ -2083,7 +2087,7 @@ pub async fn twin_studio_generate_answers(
             );
             let answer = tokio::select! {
                 _ = cancel_token.cancelled() => { cancelled = true; break; }
-                res = spawn_claude_with_prompt(prompt) => res.ok(),
+                res = spawn_claude_logged(&app_state.db, TwinCall::legacy("studio_answers"), prompt) => res.ok(),
             };
             let item = TwinStudioItem {
                 id: seed.id.clone(),
@@ -2198,35 +2202,6 @@ fn strip_html_to_text(html: &str) -> String {
     decoded.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Spawn the Claude CLI with a prompt and return its stdout. Shared envelope
-/// for twin_compile_wiki and twin_audit_wiki — same pattern as twin_generate_bio
-/// but factored out so both new commands can reuse it without duplicating the
-/// Windows creation_flags / env_overrides / stdin-pipe boilerplate.
-pub(crate) async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppError> {
-    let child = crate::engine::cli_process::spawn_headless_claude(
-        prompt_text,
-        "claude-sonnet-4-6",
-        &[],
-        None,
-        false,
-    )?;
-
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|e| AppError::Internal(format!("CLI execution failed: {e}")))?;
-
-    if !output.status.success() {
-        return Err(AppError::Internal(
-            "Claude CLI returned non-zero exit code".into(),
-        ));
-    }
-
-    Ok(claude_text_from_stream(&String::from_utf8_lossy(
-        &output.stdout,
-    )))
-}
-
 /// Reduce the CLI's `--output-format stream-json --verbose` stdout to the
 /// assistant's answer.
 ///
@@ -2241,7 +2216,7 @@ pub(crate) async fn spawn_claude_with_prompt(prompt_text: String) -> Result<Stri
 /// Order of preference: the final `result` event, then concatenated assistant
 /// text blocks, then the raw text unchanged - so a plain-text CLI (or a future
 /// format change) degrades to today's behaviour instead of returning nothing.
-fn claude_text_from_stream(stdout: &str) -> String {
+pub(crate) fn claude_text_from_stream(stdout: &str) -> String {
     let mut result_text: Option<String> = None;
     let mut assistant_text = String::new();
 
@@ -2472,7 +2447,7 @@ pub async fn twin_compile_wiki(
         today = chrono::Utc::now().format("%Y-%m-%d"),
     );
 
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw = spawn_claude_logged(&state.db, TwinCall::legacy("compile_wiki"), prompt_text).await?;
 
     // Parse === FILE: name === / === END FILE === blocks and write files
     let mut written = 0u32;
@@ -2604,7 +2579,8 @@ pub async fn twin_audit_wiki(
         today = today,
     );
 
-    let report = spawn_claude_with_prompt(prompt_text).await?;
+    let report =
+        spawn_claude_logged(&state.db, TwinCall::legacy("audit_wiki"), prompt_text).await?;
     let title_text = format!("[audit] Wiki review {today} ({file_count} files)");
 
     repo::create_pending_memory(
@@ -2917,7 +2893,7 @@ pub async fn twin_reflect(
         seed = seed,
     );
 
-    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    let raw = spawn_claude_logged(&state.db, TwinCall::legacy("reflect"), prompt_text).await?;
     let content = raw.trim();
     if content.is_empty() {
         return Err(AppError::Internal(
@@ -3171,7 +3147,7 @@ mod kb_grounding_tests {
 
     /// Studio batch grounding: the batch answer loop builds each per-question
     /// prompt with `build_answer_prompt(.., &twin_kb_block(..))` and derives
-    /// `kb_grounded = !kb_block.is_empty()`. The CLI (`spawn_claude_with_prompt`)
+    /// `kb_grounded = !kb_block.is_empty()`. The CLI (`spawn_claude_logged`)
     /// is the opaque boundary, so this pins the last observable seam before it —
     /// a seeded KB fact reaches the exact prompt handed to the CLI, and the
     /// provenance flag records that the bound brain informed the answer.
@@ -3220,7 +3196,7 @@ mod kb_grounding_tests {
 // envelope for an interview question returns a bio-shaped sentence, so the
 // questions came back distorted and the answers were unusable as tone or
 // channel material. Nothing here reuses that wrapper; only the CLI spawn
-// envelope (`spawn_claude_with_prompt`) is shared.
+// envelope (`spawn_claude_logged`) is shared.
 //
 // Contract: the model proposes CONTENT (a question, some suggested answers,
 // typed field proposals). The CLIENT owns STRUCTURE — which slot is being
@@ -3283,7 +3259,7 @@ fn setup_focus_of(candidate: &str, requested: Option<&str>) -> String {
 /// twin's primary language for everything written AS the person (suggested
 /// answers, proposed values). Before this the prompt named no language at all,
 /// so a Czech twin was interviewed, and offered answers, in English.
-fn setup_languages(profile: &TwinProfile, locale: Option<&str>) -> (String, String) {
+pub(crate) fn setup_languages(profile: &TwinProfile, locale: Option<&str>) -> (String, String) {
     use super::twin_style::prompt::{language_label, parse_languages};
     let twin = parse_languages(profile.languages.as_deref())
         .first()
@@ -3300,7 +3276,7 @@ fn setup_languages(profile: &TwinProfile, locale: Option<&str>) -> (String, Stri
 /// Tone rows as the guide sees them: the voice notes, how many real sample
 /// messages back them, and the rules already accepted — so the guide can go
 /// after the thinnest channel and never re-propose a rule that is on file.
-fn setup_tone_block(tones: &[TwinTone]) -> String {
+pub(crate) fn setup_tone_block(tones: &[TwinTone]) -> String {
     if tones.is_empty() {
         return "Tone per channel: nothing on file yet.".to_string();
     }
@@ -3337,7 +3313,7 @@ fn setup_tone_block(tones: &[TwinTone]) -> String {
 /// `toneChannels` in `useSetupSession.ts`. The third source is what lets a
 /// register the person named in conversation ("I mostly write email") become
 /// a channel the guide keeps working, before any channel is bound.
-fn setup_tone_channels(channels: &[TwinChannel], tones: &[TwinTone]) -> Vec<String> {
+pub(crate) fn setup_tone_channels(channels: &[TwinChannel], tones: &[TwinTone]) -> Vec<String> {
     let mut out = vec!["generic".to_string()];
     let kinds = channels
         .iter()
@@ -3357,7 +3333,7 @@ fn setup_tone_channels(channels: &[TwinChannel], tones: &[TwinTone]) -> Vec<Stri
 /// it well, so the tone slot asks for checkable habits and real replies rather
 /// than adjectives, and the memories slot asks for scenes rather than
 /// summaries.
-fn setup_task_block(
+pub(crate) fn setup_task_block(
     stage: &str,
     focus: Option<&str>,
     topic: Option<&str>,
@@ -3753,7 +3729,8 @@ pub async fn twin_setup_turn(
         )
     };
 
-    let raw = spawn_claude_with_prompt(prompt_for(None)).await?;
+    let raw =
+        spawn_claude_logged(&state.db, TwinCall::legacy("setup_turn"), prompt_for(None)).await?;
     let first_error = match parse_setup_turn(&raw, stage, focus_ref, dashes_are_theirs) {
         Ok(result) => return Ok(result),
         Err(e) => e,
@@ -3763,7 +3740,12 @@ pub async fn twin_setup_turn(
     // cannot hold the contract: the caller then keeps the slot OPEN and the
     // typed form stays the way through. An error here must never read as
     // completion.
-    let repaired = spawn_claude_with_prompt(prompt_for(Some(&first_error))).await?;
+    let repaired = spawn_claude_logged(
+        &state.db,
+        TwinCall::legacy("setup_turn"),
+        prompt_for(Some(&first_error)),
+    )
+    .await?;
     parse_setup_turn(&repaired, stage, focus_ref, dashes_are_theirs).map_err(|second_error| {
         AppError::External(format!(
             "The setup guide returned unusable output twice ({first_error}; then {second_error}). Nothing was saved — fill the field in directly, or ask again."

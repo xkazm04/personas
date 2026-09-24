@@ -237,14 +237,16 @@ row_mapper!(row_to_kind_stat -> SetupKindStat {
 // Plan
 // ============================================================================
 
-fn get_plan_on(conn: &Connection, twin_id: &str) -> Result<Option<PlanRow>, AppError> {
-    Ok(conn
-        .query_row(
-            &format!("SELECT {PLAN_COLUMNS} FROM twin_setup_plans WHERE twin_id = ?1"),
-            params![twin_id],
-            row_to_plan,
-        )
-        .optional()?)
+pub fn get_plan_on(conn: &Connection, twin_id: &str) -> Result<Option<PlanRow>, AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::get_plan_on", {
+        Ok(conn
+            .query_row(
+                &format!("SELECT {PLAN_COLUMNS} FROM twin_setup_plans WHERE twin_id = ?1"),
+                params![twin_id],
+                row_to_plan,
+            )
+            .optional()?)
+    })
 }
 
 /// The twin's plan row, `None` before the first plan was started.
@@ -261,6 +263,14 @@ pub fn get_plan(pool: &DbPool, twin_id: &str) -> Result<Option<PlanRow>, AppErro
 pub fn upsert_plan(pool: &DbPool, plan: &PlanRow) -> Result<(), AppError> {
     timed_query!("twin_setup_plans", "twin_setup_plans::upsert", {
         let conn = pool.get()?;
+        upsert_plan_on(&conn, plan)
+    })
+}
+
+/// [`upsert_plan`] on a caller's connection (or transaction). Note `lease_at`
+/// is written from the row verbatim; stamp a lease with [`take_lease_on`].
+pub fn upsert_plan_on(conn: &Connection, plan: &PlanRow) -> Result<(), AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::upsert_plan_on", {
         conn.execute(
             "INSERT INTO twin_setup_plans
                 (twin_id, status, version, stage, topic_preset, focus_slot, locale,
@@ -304,13 +314,15 @@ pub fn upsert_plan(pool: &DbPool, plan: &PlanRow) -> Result<(), AppError> {
 // Goals
 // ============================================================================
 
-fn list_goals_on(conn: &Connection, twin_id: &str) -> Result<Vec<SetupGoal>, AppError> {
-    let mut stmt = conn.prepare(&format!(
-        "SELECT {GOAL_COLUMNS} FROM twin_setup_goals WHERE twin_id = ?1 \
-         ORDER BY position ASC, rowid ASC"
-    ))?;
-    let rows = stmt.query_map(params![twin_id], row_to_goal)?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+pub fn list_goals_on(conn: &Connection, twin_id: &str) -> Result<Vec<SetupGoal>, AppError> {
+    timed_query!("twin_setup_goals", "twin_setup_goals::list_goals_on", {
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {GOAL_COLUMNS} FROM twin_setup_goals WHERE twin_id = ?1 \
+             ORDER BY position ASC, rowid ASC"
+        ))?;
+        let rows = stmt.query_map(params![twin_id], row_to_goal)?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    })
 }
 
 /// Every goal of the twin's plan (dropped ones included), by position.
@@ -336,38 +348,40 @@ pub enum StepOrder {
     Recent,
 }
 
-fn list_steps_on(
+pub fn list_steps_on(
     conn: &Connection,
     twin_id: &str,
     statuses: &[&str],
     order: StepOrder,
     limit: i64,
 ) -> Result<Vec<SetupStep>, AppError> {
-    let mut qb = QueryBuilder::new();
-    qb.where_eq("twin_id", twin_id.to_string());
-    qb.where_in(
-        "status",
-        statuses
-            .iter()
-            .map(|s| (*s).to_string())
-            .collect::<Vec<_>>(),
-    );
-    match order {
-        StepOrder::Position => qb.order_by_multiple(&[("position", "ASC"), ("rowid", "ASC")]),
-        StepOrder::Recent => qb.order_by_multiple(&[
-            ("COALESCE(answered_at, asked_at, created_at)", "DESC"),
-            ("rowid", "DESC"),
-        ]),
-    };
-    qb.limit(limit);
-    let sql = qb.build_select(&format!("SELECT {STEP_COLUMNS} FROM twin_setup_steps"));
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_step)?;
-    let mut out = rows.collect::<Result<Vec<_>, _>>()?;
-    if order == StepOrder::Recent {
-        out.reverse();
-    }
-    Ok(out)
+    timed_query!("twin_setup_steps", "twin_setup_steps::list_steps_on", {
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("twin_id", twin_id.to_string());
+        qb.where_in(
+            "status",
+            statuses
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect::<Vec<_>>(),
+        );
+        match order {
+            StepOrder::Position => qb.order_by_multiple(&[("position", "ASC"), ("rowid", "ASC")]),
+            StepOrder::Recent => qb.order_by_multiple(&[
+                ("COALESCE(answered_at, asked_at, created_at)", "DESC"),
+                ("rowid", "DESC"),
+            ]),
+        };
+        qb.limit(limit);
+        let sql = qb.build_select(&format!("SELECT {STEP_COLUMNS} FROM twin_setup_steps"));
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_step)?;
+        let mut out = rows.collect::<Result<Vec<_>, _>>()?;
+        if order == StepOrder::Recent {
+            out.reverse();
+        }
+        Ok(out)
+    })
 }
 
 /// The twin's steps whose status is one of `statuses`, at most `limit`, in
@@ -387,17 +401,19 @@ pub fn list_steps(
     })
 }
 
-fn live_step_on(conn: &Connection, twin_id: &str) -> Result<Option<SetupStep>, AppError> {
-    Ok(conn
-        .query_row(
-            &format!(
-                "SELECT {STEP_COLUMNS} FROM twin_setup_steps \
-                 WHERE twin_id = ?1 AND status = 'live'"
-            ),
-            params![twin_id],
-            row_to_step,
-        )
-        .optional()?)
+pub fn live_step_on(conn: &Connection, twin_id: &str) -> Result<Option<SetupStep>, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::live_step_on", {
+        Ok(conn
+            .query_row(
+                &format!(
+                    "SELECT {STEP_COLUMNS} FROM twin_setup_steps \
+                     WHERE twin_id = ?1 AND status = 'live'"
+                ),
+                params![twin_id],
+                row_to_step,
+            )
+            .optional()?)
+    })
 }
 
 /// The one live step (the partial unique index guarantees at most one).
@@ -461,16 +477,22 @@ fn last_answer_offer_ids_on(conn: &Connection, twin_id: &str) -> Result<Vec<Stri
 // Observations
 // ============================================================================
 
-fn list_observations_on(
+pub fn list_observations_on(
     conn: &Connection,
     twin_id: &str,
 ) -> Result<Vec<SetupObservation>, AppError> {
-    let mut stmt = conn.prepare(&format!(
-        "SELECT {OBSERVATION_COLUMNS} FROM twin_setup_observations WHERE twin_id = ?1 \
-         ORDER BY evidence DESC, updated_at DESC, rowid ASC"
-    ))?;
-    let rows = stmt.query_map(params![twin_id], row_to_observation)?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    timed_query!(
+        "twin_setup_observations",
+        "twin_setup_observations::list_observations_on",
+        {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {OBSERVATION_COLUMNS} FROM twin_setup_observations WHERE twin_id = ?1 \
+             ORDER BY evidence DESC, updated_at DESC, rowid ASC"
+            ))?;
+            let rows = stmt.query_map(params![twin_id], row_to_observation)?;
+            Ok(rows.collect::<Result<Vec<_>, _>>()?)
+        }
+    )
 }
 
 /// What the engine has observed about the person, best-supported first.
@@ -521,6 +543,639 @@ pub fn kind_stats(pool: &DbPool) -> Result<Vec<SetupKindStat>, AppError> {
 }
 
 // ============================================================================
+// Engine writers (WP1) — connection-level, so the engine composes them inside
+// ONE transaction per operation. Every timestamp is stamped in SQL.
+// ============================================================================
+
+/// Take the planner lease: `building`, error cleared, `lease_at = now`.
+pub fn take_lease_on(conn: &Connection, twin_id: &str) -> Result<(), AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::take_lease_on", {
+        conn.execute(
+            "UPDATE twin_setup_plans
+                SET status = 'building', error = NULL, lease_at = datetime('now'),
+                    updated_at = datetime('now')
+              WHERE twin_id = ?1",
+            params![twin_id],
+        )?;
+        Ok(())
+    })
+}
+
+/// Whether the plan's lease is absent or older than `max_age_secs`.
+pub fn lease_is_stale_on(
+    conn: &Connection,
+    twin_id: &str,
+    max_age_secs: i64,
+) -> Result<bool, AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::lease_is_stale_on", {
+        let stale: Option<bool> = conn
+            .query_row(
+                "SELECT (lease_at IS NULL OR lease_at < datetime('now', ?2)) AS stale
+                   FROM twin_setup_plans WHERE twin_id = ?1",
+                params![twin_id, format!("-{max_age_secs} seconds")],
+                |row| row.get("stale"),
+            )
+            .optional()?;
+        Ok(stale.unwrap_or(true))
+    })
+}
+
+/// A deep pass landed: `ready`, `version + 1`, counters reset, lease and error
+/// cleared, `change_note` stored. Returns the new version.
+pub fn finish_plan_on(
+    conn: &Connection,
+    twin_id: &str,
+    change_note: Option<&str>,
+) -> Result<i64, AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::finish_plan_on", {
+        conn.execute(
+            "UPDATE twin_setup_plans
+                SET status = 'ready', version = version + 1, answers_since_deep = 0,
+                    last_deep_at = datetime('now'), error = NULL, lease_at = NULL,
+                    change_note = ?2, updated_at = datetime('now')
+              WHERE twin_id = ?1",
+            params![twin_id, change_note],
+        )?;
+        let version: i64 = conn.query_row(
+            "SELECT version FROM twin_setup_plans WHERE twin_id = ?1",
+            params![twin_id],
+            |row| row.get("version"),
+        )?;
+        Ok(version)
+    })
+}
+
+/// A deep pass failed: `failed` with a short reason, lease cleared.
+pub fn fail_plan_on(conn: &Connection, twin_id: &str, error: &str) -> Result<(), AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::fail_plan_on", {
+        conn.execute(
+            "UPDATE twin_setup_plans
+                SET status = 'failed', error = ?2, lease_at = NULL, updated_at = datetime('now')
+              WHERE twin_id = ?1",
+            params![twin_id, error],
+        )?;
+        Ok(())
+    })
+}
+
+/// A goal to insert. Appended at the twin's next free position.
+#[derive(Debug, Clone)]
+pub struct NewGoal<'a> {
+    pub slot: &'a str,
+    pub title: &'a str,
+    pub intent: &'a str,
+    pub criteria: &'a [String],
+}
+
+pub fn insert_goal_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal: &NewGoal,
+) -> Result<String, AppError> {
+    timed_query!("twin_setup_goals", "twin_setup_goals::insert_goal_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO twin_setup_goals (id, twin_id, slot, title, intent, criteria_json, position)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6,
+                     (SELECT COALESCE(MAX(position), -1) + 1 FROM twin_setup_goals WHERE twin_id = ?2))",
+            params![id, twin_id, goal.slot, goal.title, goal.intent, Json(goal.criteria)],
+        )?;
+        Ok(id)
+    })
+}
+
+/// Rewrite a goal's content (title, intent, criteria). Coverage, state,
+/// pinned and counters are untouched. `false` when no such goal.
+pub fn update_goal_text_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+    title: &str,
+    intent: &str,
+    criteria: &[String],
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::update_goal_text_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_goals
+                SET title = ?3, intent = ?4, criteria_json = ?5, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+                params![twin_id, goal_id, title, intent, Json(criteria)],
+            )? > 0)
+        }
+    )
+}
+
+/// `state` is `open` | `covered` | `dropped` (CHECKed).
+pub fn set_goal_state_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+    state: &str,
+) -> Result<bool, AppError> {
+    timed_query!("twin_setup_goals", "twin_setup_goals::set_goal_state_on", {
+        Ok(conn.execute(
+            "UPDATE twin_setup_goals SET state = ?3, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+            params![twin_id, goal_id, state],
+        )? > 0)
+    })
+}
+
+pub fn set_goal_pinned_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+    pinned: bool,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::set_goal_pinned_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_goals SET pinned = ?3, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+                params![twin_id, goal_id, pinned as i64],
+            )? > 0)
+        }
+    )
+}
+
+/// The assessor's reading of one goal: coverage, state, stall counter.
+pub fn set_goal_progress_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+    coverage: f64,
+    state: &str,
+    stall: i64,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::set_goal_progress_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_goals
+                SET coverage = ?3, state = ?4, stall = ?5, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+                params![twin_id, goal_id, coverage, state, stall],
+            )? > 0)
+        }
+    )
+}
+
+/// One more step answered against the goal.
+pub fn bump_goal_answered_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "twin_setup_goals",
+        "twin_setup_goals::bump_goal_answered_on",
+        {
+            conn.execute(
+                "UPDATE twin_setup_goals SET answered = answered + 1, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2",
+                params![twin_id, goal_id],
+            )?;
+            Ok(())
+        }
+    )
+}
+
+/// Each goal's `stall` counter (not on the wire type), keyed by goal id.
+pub fn goal_stalls_on(
+    conn: &Connection,
+    twin_id: &str,
+) -> Result<std::collections::HashMap<String, i64>, AppError> {
+    timed_query!("twin_setup_goals", "twin_setup_goals::goal_stalls_on", {
+        let mut stmt = conn.prepare("SELECT id, stall FROM twin_setup_goals WHERE twin_id = ?1")?;
+        let rows = stmt.query_map(params![twin_id], |row| {
+            Ok((row.get::<_, String>("id")?, row.get::<_, i64>("stall")?))
+        })?;
+        Ok(rows.collect::<Result<_, _>>()?)
+    })
+}
+
+/// Where [`insert_step_on`] puts a step in the twin's order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Placement {
+    /// After every existing row (`MAX(position) + 1`).
+    Tail,
+    /// Before every existing row (`MIN(position) - 1`) — the next one asked.
+    Head,
+}
+
+/// A step to insert.
+#[derive(Debug, Clone)]
+pub struct NewStep<'a> {
+    pub goal_id: Option<&'a str>,
+    /// `setup` | `training`.
+    pub stage: &'a str,
+    /// `opener` | `plan` | `follow_up` | `handoff`.
+    pub origin: &'a str,
+    pub kind: &'a str,
+    pub question: &'a str,
+    /// `pick` | `write`.
+    pub answer_mode: &'a str,
+    pub incoming: Option<&'a str>,
+    pub tone_channel: Option<&'a str>,
+    pub suggestions: &'a [SetupSuggestion],
+    pub plan_version: i64,
+}
+
+/// Insert a step as `queued` or `live` (a live step is stamped `asked_at`).
+/// The position is allocated inside the INSERT over ALL the twin's rows, so
+/// it can never collide with an answered or obsolete step.
+pub fn insert_step_on(
+    conn: &Connection,
+    twin_id: &str,
+    step: &NewStep,
+    status: &str,
+    placement: Placement,
+) -> Result<String, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::insert_step_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let position = match placement {
+            Placement::Tail => {
+                "(SELECT COALESCE(MAX(position), -1) + 1 FROM twin_setup_steps WHERE twin_id = ?2)"
+            }
+            Placement::Head => {
+                "(SELECT COALESCE(MIN(position), 1) - 1 FROM twin_setup_steps WHERE twin_id = ?2)"
+            }
+        };
+        conn.execute(
+            &format!(
+                "INSERT INTO twin_setup_steps
+                    (id, twin_id, goal_id, stage, origin, kind, question, answer_mode, incoming,
+                     tone_channel, suggestions_json, status, position, plan_version, asked_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, {position}, ?13,
+                         CASE WHEN ?12 = 'live' THEN datetime('now') END)"
+            ),
+            params![
+                id,
+                twin_id,
+                step.goal_id,
+                step.stage,
+                step.origin,
+                step.kind,
+                step.question,
+                step.answer_mode,
+                step.incoming,
+                step.tone_channel,
+                Json(step.suggestions),
+                status,
+                step.plan_version,
+            ],
+        )?;
+        Ok(id)
+    })
+}
+
+/// One step of the twin, any status.
+pub fn step_on(
+    conn: &Connection,
+    twin_id: &str,
+    step_id: &str,
+) -> Result<Option<SetupStep>, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::step_on", {
+        Ok(conn
+            .query_row(
+                &format!(
+                    "SELECT {STEP_COLUMNS} FROM twin_setup_steps WHERE twin_id = ?1 AND id = ?2"
+                ),
+                params![twin_id, step_id],
+                row_to_step,
+            )
+            .optional()?)
+    })
+}
+
+/// `queued` → `live`, stamping `asked_at`. `false` when the step was not queued.
+pub fn make_live_on(conn: &Connection, twin_id: &str, step_id: &str) -> Result<bool, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::make_live_on", {
+        Ok(conn.execute(
+            "UPDATE twin_setup_steps SET status = 'live', asked_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2 AND status = 'queued'",
+            params![twin_id, step_id],
+        )? > 0)
+    })
+}
+
+/// `live` → `queued` at the HEAD of the queue (`MIN(position) - 1`), its
+/// `asked_at` cleared. `false` when the step was not live.
+pub fn requeue_at_head_on(
+    conn: &Connection,
+    twin_id: &str,
+    step_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::requeue_at_head_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_steps
+                SET status = 'queued', asked_at = NULL,
+                    position = (SELECT MIN(position) - 1 FROM twin_setup_steps WHERE twin_id = ?1)
+              WHERE twin_id = ?1 AND id = ?2 AND status = 'live'",
+                params![twin_id, step_id],
+            )? > 0)
+        }
+    )
+}
+
+/// Close the live step: `answered` with the text, or `skipped` (`answer ==
+/// None`, and the answer column stays NULL — a skip is never a value).
+/// `false` when the step was not live.
+pub fn finish_step_on(
+    conn: &Connection,
+    twin_id: &str,
+    step_id: &str,
+    answer: Option<&str>,
+) -> Result<bool, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::finish_step_on", {
+        Ok(conn.execute(
+            "UPDATE twin_setup_steps
+                SET status = CASE WHEN ?3 IS NULL THEN 'skipped' ELSE 'answered' END,
+                    answer = ?3, answered_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2 AND status = 'live'",
+            params![twin_id, step_id, answer],
+        )? > 0)
+    })
+}
+
+/// Retire one queued or live step (a redeal throws the live one away).
+pub fn obsolete_step_on(conn: &Connection, twin_id: &str, step_id: &str) -> Result<bool, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::obsolete_step_on", {
+        Ok(conn.execute(
+            "UPDATE twin_setup_steps SET status = 'obsolete'
+              WHERE twin_id = ?1 AND id = ?2 AND status IN ('queued','live')",
+            params![twin_id, step_id],
+        )? > 0)
+    })
+}
+
+/// Retire QUEUED steps — all of them, or only one goal's — never the live
+/// step. Handed-over questions (`origin = 'handoff'`) are kept unless
+/// `include_handoffs`: they were asked for verbatim, a re-plan does not own them.
+pub fn obsolete_queued_on(
+    conn: &Connection,
+    twin_id: &str,
+    goal_id: Option<&str>,
+    include_handoffs: bool,
+) -> Result<usize, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::obsolete_queued_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_steps SET status = 'obsolete'
+              WHERE twin_id = ?1 AND status = 'queued'
+                AND (?2 IS NULL OR goal_id = ?2)
+                AND (?3 = 1 OR origin != 'handoff')",
+                params![twin_id, goal_id, include_handoffs as i64],
+            )?)
+        }
+    )
+}
+
+/// Queued steps in `stage`.
+pub fn count_queued_on(conn: &Connection, twin_id: &str, stage: &str) -> Result<i64, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::count_queued_on", {
+        Ok(conn.query_row(
+            "SELECT COUNT(id) AS n FROM twin_setup_steps
+              WHERE twin_id = ?1 AND status = 'queued' AND stage = ?2",
+            params![twin_id, stage],
+            |row| row.get("n"),
+        )?)
+    })
+}
+
+/// Whether any step (queued, live, answered or skipped) already asks `question`.
+pub fn question_seen_on(
+    conn: &Connection,
+    twin_id: &str,
+    question: &str,
+) -> Result<bool, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::question_seen_on", {
+        Ok(conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM twin_setup_steps
+                            WHERE twin_id = ?1 AND status != 'obsolete'
+                              AND lower(trim(question)) = lower(trim(?2))) AS found",
+            params![twin_id, question],
+            |row| row.get("found"),
+        )?)
+    })
+}
+
+/// Answered or skipped steps not yet reconciled, oldest first, each with its
+/// `reconcile_attempts`.
+pub fn unreconciled_on(
+    conn: &Connection,
+    twin_id: &str,
+) -> Result<Vec<(SetupStep, i64)>, AppError> {
+    timed_query!("twin_setup_steps", "twin_setup_steps::unreconciled_on", {
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {STEP_COLUMNS}, reconcile_attempts FROM twin_setup_steps
+              WHERE twin_id = ?1 AND status IN ('answered','skipped') AND reconciled = 0
+              ORDER BY COALESCE(answered_at, created_at) ASC, rowid ASC"
+        ))?;
+        let rows = stmt.query_map(params![twin_id], |row| {
+            Ok((row_to_step(row)?, row.get::<_, i64>("reconcile_attempts")?))
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    })
+}
+
+/// Fold done: `reconciled = 1`, with the step's goal-coverage delta (NULL when
+/// none was measured, e.g. a skip or a failed assessment). `false` when no
+/// such step exists.
+pub fn mark_reconciled_on(
+    conn: &Connection,
+    step_id: &str,
+    coverage_gain: Option<f64>,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::mark_reconciled_on",
+        {
+            let rows = conn.execute(
+                "UPDATE twin_setup_steps SET reconciled = 1, coverage_gain = ?2 WHERE id = ?1",
+                params![step_id, coverage_gain],
+            )?;
+            Ok(rows > 0)
+        }
+    )
+}
+
+/// One more failed reconcile attempt; returns the new count.
+pub fn bump_reconcile_attempts_on(conn: &Connection, step_id: &str) -> Result<i64, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::bump_reconcile_attempts_on",
+        {
+            conn.execute(
+            "UPDATE twin_setup_steps SET reconcile_attempts = reconcile_attempts + 1 WHERE id = ?1",
+            params![step_id],
+        )?;
+            Ok(conn.query_row(
+                "SELECT reconcile_attempts FROM twin_setup_steps WHERE id = ?1",
+                params![step_id],
+                |row| row.get("reconcile_attempts"),
+            )?)
+        }
+    )
+}
+
+/// Whether any answered or skipped step still waits to be reconciled.
+pub fn has_unreconciled_on(conn: &Connection, twin_id: &str) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_steps",
+        "twin_setup_steps::has_unreconciled_on",
+        {
+            Ok(conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM twin_setup_steps
+                            WHERE twin_id = ?1 AND status IN ('answered','skipped')
+                              AND reconciled = 0) AS found",
+                params![twin_id],
+                |row| row.get("found"),
+            )?)
+        }
+    )
+}
+
+/// An offer to insert (`status = 'open'`).
+#[derive(Debug, Clone)]
+pub struct NewOffer<'a> {
+    pub step_id: &'a str,
+    /// `reconcile` | `sample`.
+    pub origin: &'a str,
+    /// `bio` | `role` | `tone`.
+    pub kind: &'a str,
+    pub part: Option<&'a str>,
+    pub channel: Option<&'a str>,
+    pub value: &'a str,
+    pub length_hint: Option<&'a str>,
+    pub reason: &'a str,
+}
+
+pub fn insert_offer_on(
+    conn: &Connection,
+    twin_id: &str,
+    offer: &NewOffer,
+) -> Result<String, AppError> {
+    timed_query!("twin_setup_offers", "twin_setup_offers::insert_offer_on", {
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO twin_setup_offers
+                (id, twin_id, step_id, origin, kind, part, channel, value, length_hint, reason)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                id,
+                twin_id,
+                offer.step_id,
+                offer.origin,
+                offer.kind,
+                offer.part,
+                offer.channel,
+                offer.value,
+                offer.length_hint,
+                offer.reason,
+            ],
+        )?;
+        Ok(id)
+    })
+}
+
+/// Flip an OPEN offer to `verdict` once, stamping `resolved_at`. `false` when
+/// it was not open (already resolved, or no such offer).
+pub fn resolve_offer_on(
+    conn: &Connection,
+    twin_id: &str,
+    offer_id: &str,
+    verdict: &str,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_offers",
+        "twin_setup_offers::resolve_offer_on",
+        {
+            Ok(conn.execute(
+                "UPDATE twin_setup_offers SET status = ?3, resolved_at = datetime('now')
+              WHERE twin_id = ?1 AND id = ?2 AND status = 'open'",
+                params![twin_id, offer_id, verdict],
+            )? > 0)
+        }
+    )
+}
+
+/// Replace the twin's observations with `texts` (evidence 1 each).
+pub fn replace_observations_on(
+    conn: &Connection,
+    twin_id: &str,
+    texts: &[String],
+) -> Result<(), AppError> {
+    timed_query!(
+        "twin_setup_observations",
+        "twin_setup_observations::replace_observations_on",
+        {
+            conn.execute(
+                "DELETE FROM twin_setup_observations WHERE twin_id = ?1",
+                params![twin_id],
+            )?;
+            for text in texts {
+                conn.execute(
+                    "INSERT INTO twin_setup_observations (id, twin_id, text) VALUES (?1, ?2, ?3)",
+                    params![uuid::Uuid::new_v4().to_string(), twin_id, text],
+                )?;
+            }
+            Ok(())
+        }
+    )
+}
+
+/// Record one observation: bump `evidence` on an existing one with the same
+/// text (case-insensitive), else append it while the twin has fewer than
+/// `cap`. Returns whether anything changed.
+pub fn note_observation_on(
+    conn: &Connection,
+    twin_id: &str,
+    text: &str,
+    cap: i64,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "twin_setup_observations",
+        "twin_setup_observations::note_observation_on",
+        {
+            let bumped = conn.execute(
+                "UPDATE twin_setup_observations
+                SET evidence = evidence + 1, updated_at = datetime('now')
+              WHERE twin_id = ?1 AND lower(trim(text)) = lower(trim(?2))",
+                params![twin_id, text],
+            )?;
+            if bumped > 0 {
+                return Ok(true);
+            }
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(id) AS n FROM twin_setup_observations WHERE twin_id = ?1",
+                params![twin_id],
+                |row| row.get("n"),
+            )?;
+            if count >= cap {
+                return Ok(false);
+            }
+            conn.execute(
+                "INSERT INTO twin_setup_observations (id, twin_id, text) VALUES (?1, ?2, ?3)",
+                params![uuid::Uuid::new_v4().to_string(), twin_id, text.trim()],
+            )?;
+            Ok(true)
+        }
+    )
+}
+
+// ============================================================================
 // Snapshot
 // ============================================================================
 
@@ -547,48 +1202,50 @@ fn empty_snapshot(twin_id: &str) -> SetupSessionSnapshot {
     }
 }
 
-fn snapshot_on(conn: &Connection, twin_id: &str) -> Result<SetupSessionSnapshot, AppError> {
-    let Some(plan) = get_plan_on(conn, twin_id)? else {
-        return Ok(empty_snapshot(twin_id));
-    };
-    let live = live_step_on(conn, twin_id)?;
-    let offers = list_offers_on(conn, twin_id, live.as_ref().map(|s| s.id.as_str()))?;
-    let reconciling: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM twin_setup_steps
-                        WHERE twin_id = ?1 AND status = 'answered' AND reconciled = 0) AS found",
-        params![twin_id],
-        |row| row.get("found"),
-    )?;
-    Ok(SetupSessionSnapshot {
-        twin_id: twin_id.to_string(),
-        planning: plan.status == "building",
-        stage: plan.stage,
-        topic_preset: plan.topic_preset,
-        focus_slot: plan.focus_slot,
-        plan_status: plan.status,
-        plan_version: plan.version,
-        plan_error: plan.error,
-        change_note: plan.change_note,
-        goals: list_goals_on(conn, twin_id)?,
-        upcoming: list_steps_on(
-            conn,
-            twin_id,
-            &["queued"],
-            StepOrder::Position,
-            SNAPSHOT_UPCOMING,
-        )?,
-        transcript: list_steps_on(
-            conn,
-            twin_id,
-            &["answered", "skipped"],
-            StepOrder::Recent,
-            SNAPSHOT_TRANSCRIPT,
-        )?,
-        live,
-        offers,
-        last_answer_offer_ids: last_answer_offer_ids_on(conn, twin_id)?,
-        observations: list_observations_on(conn, twin_id)?,
-        reconciling,
+pub fn snapshot_on(conn: &Connection, twin_id: &str) -> Result<SetupSessionSnapshot, AppError> {
+    timed_query!("twin_setup_plans", "twin_setup_plans::snapshot_on", {
+        let Some(plan) = get_plan_on(conn, twin_id)? else {
+            return Ok(empty_snapshot(twin_id));
+        };
+        let live = live_step_on(conn, twin_id)?;
+        let offers = list_offers_on(conn, twin_id, live.as_ref().map(|s| s.id.as_str()))?;
+        let reconciling: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM twin_setup_steps
+                            WHERE twin_id = ?1 AND status = 'answered' AND reconciled = 0) AS found",
+            params![twin_id],
+            |row| row.get("found"),
+        )?;
+        Ok(SetupSessionSnapshot {
+            twin_id: twin_id.to_string(),
+            planning: plan.status == "building",
+            stage: plan.stage,
+            topic_preset: plan.topic_preset,
+            focus_slot: plan.focus_slot,
+            plan_status: plan.status,
+            plan_version: plan.version,
+            plan_error: plan.error,
+            change_note: plan.change_note,
+            goals: list_goals_on(conn, twin_id)?,
+            upcoming: list_steps_on(
+                conn,
+                twin_id,
+                &["queued"],
+                StepOrder::Position,
+                SNAPSHOT_UPCOMING,
+            )?,
+            transcript: list_steps_on(
+                conn,
+                twin_id,
+                &["answered", "skipped"],
+                StepOrder::Recent,
+                SNAPSHOT_TRANSCRIPT,
+            )?,
+            live,
+            offers,
+            last_answer_offer_ids: last_answer_offer_ids_on(conn, twin_id)?,
+            observations: list_observations_on(conn, twin_id)?,
+            reconciling,
+        })
     })
 }
 

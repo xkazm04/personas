@@ -7,31 +7,22 @@
 //! payload `SetupUpdatedEvent`), after which the client calls
 //! [`twin_setup_get`].
 //!
-//! WP0 lands the CONTRACT only: every body is a stub that returns the stored
-//! snapshot. The `// WP1:` note in each names what the engine will do there.
+//! Each command is a thin adapter over `engine::twin_setup` (the operations
+//! run in one transaction off the IPC thread, then schedule the background
+//! plan / reconcile / refill work on the per-twin worker).
 
 use std::sync::Arc;
 
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::models::{SetupOpener, SetupReadiness, SetupSessionSnapshot, SetupSteer};
-use crate::db::repos::twin_setup as repo;
+use crate::engine::twin_setup::{self as engine, JobCtx};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
-/// Read the snapshot off the IPC thread (a sync rusqlite read would block it).
-async fn snapshot_blocking(
-    state: &AppState,
-    twin_id: String,
-    operation: &'static str,
-) -> Result<SetupSessionSnapshot, AppError> {
-    let db = state.db.clone();
-    match tokio::task::spawn_blocking(move || repo::snapshot(&db, &twin_id)).await {
-        Ok(result) => result,
-        Err(e) if e.is_panic() => Err(AppError::Internal(format!("{operation} panicked: {e}"))),
-        Err(e) => Err(AppError::Internal(format!("{operation}: {e}"))),
-    }
+fn ctx(app: &AppHandle, state: &AppState) -> JobCtx {
+    JobCtx::for_app(app, state.db.clone())
 }
 
 /// The current session. Pure read.
@@ -41,12 +32,15 @@ pub async fn twin_setup_get(
     twin_id: String,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    snapshot_blocking(&state, twin_id, "twin_setup_get").await
+    engine::get(&state.db, twin_id).await
 }
 
-/// Open (or resume) the setup session.
+/// Open (or resume) the setup session: ensure a plan (the deep pass starts in
+/// the background when there is none, it failed, or its lease went stale) and
+/// a live step (the queue's head, else `opener`).
 #[tauri::command]
 pub async fn twin_setup_open(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     locale: Option<String>,
@@ -54,16 +48,14 @@ pub async fn twin_setup_open(
     opener: Option<SetupOpener>,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP1: create the plan row if absent (status `building`), store locale +
-    // readiness, make `opener` the live step (origin `opener`) so the first
-    // question needs no LLM, and start the background planner under the lease.
-    let _ = (locale, readiness, opener);
-    snapshot_blocking(&state, twin_id, "twin_setup_open").await
+    engine::open(&ctx(&app, &state), twin_id, locale, readiness, opener).await
 }
 
-/// Answer (or skip, with `answer == None`) the live step.
+/// Answer (or skip, with `answer == None`) the live step. A `step_id` that is
+/// not the live step is a no-op returning the snapshot unchanged.
 #[tauri::command]
 pub async fn twin_setup_answer(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     step_id: String,
@@ -72,17 +64,22 @@ pub async fn twin_setup_answer(
     readiness: SetupReadiness,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP1: mark `step_id` answered/skipped, promote the next queued step to
-    // live, bump goal counters, and queue the reconciler (offers +
-    // observations) and a refill/deep re-plan when due.
-    let _ = (step_id, answer, locale, readiness);
-    snapshot_blocking(&state, twin_id, "twin_setup_answer").await
+    engine::answer(
+        &ctx(&app, &state),
+        twin_id,
+        step_id,
+        answer,
+        locale,
+        readiness,
+    )
+    .await
 }
 
 /// Apply an operator steer (drop/pin/restore a goal, ask a step next, change
 /// stage/topic/focus, hand questions over, redeal the queue).
 #[tauri::command]
 pub async fn twin_setup_steer(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     steer: SetupSteer,
@@ -90,40 +87,33 @@ pub async fn twin_setup_steer(
     readiness: SetupReadiness,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP1: apply `steer` to goals/steps in one transaction; steers that change
-    // what the plan should ask (SetStage, SetTopic, FocusSlot, Redeal, DropGoal)
-    // start a background re-plan.
-    let _ = (steer, locale, readiness);
-    snapshot_blocking(&state, twin_id, "twin_setup_steer").await
+    engine::steer(&ctx(&app, &state), twin_id, steer, locale, readiness).await
 }
 
 /// Record the operator's verdict on an offer: `accepted` | `edited` |
-/// `dismissed`.
+/// `dismissed`. The field write itself stays client-side.
 #[tauri::command]
 pub async fn twin_setup_offer_verdict(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     offer_id: String,
     verdict: String,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP1: validate `verdict`, set the offer's status + resolved_at. The field
-    // write itself stays client-side (the existing accept path owns it).
-    let _ = (offer_id, verdict);
-    snapshot_blocking(&state, twin_id, "twin_setup_offer_verdict").await
+    engine::offer_verdict(&ctx(&app, &state), twin_id, offer_id, verdict).await
 }
 
-/// Throw the plan away and build a fresh one (after a failure, or on demand).
+/// Build a fresh plan over everything on file. Transcript, offers and
+/// observations are kept.
 #[tauri::command]
 pub async fn twin_setup_rebuild(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     twin_id: String,
     locale: Option<String>,
     readiness: SetupReadiness,
 ) -> Result<SetupSessionSnapshot, AppError> {
     require_auth(&state).await?;
-    // WP1: set the plan `building`, obsolete the queued steps, clear the error
-    // and start the background planner.
-    let _ = (locale, readiness);
-    snapshot_blocking(&state, twin_id, "twin_setup_rebuild").await
+    engine::rebuild(&ctx(&app, &state), twin_id, locale, readiness).await
 }
