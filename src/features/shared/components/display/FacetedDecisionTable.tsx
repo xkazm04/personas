@@ -86,6 +86,12 @@ export interface FacetedDecisionTableProps<T> {
    */
   nodeMeta?: (path: string, count: number) => { share: number; pending: number } | null;
   labels: FacetedDecisionTableLabels;
+  /**
+   * Forwarded to DataGrid's `fit`. `'content'`: the rail and the table are as tall
+   * as the rows (capped by the height available), so the pager sits under the last
+   * row instead of at the bottom of the viewport. Default `'fill'`.
+   */
+  fit?: 'fill' | 'content';
   /* -- DataGrid selection / bulk pass-throughs ------------------------------ */
   isRowSelected?: (row: T) => boolean;
   selectAll?: boolean;
@@ -117,6 +123,7 @@ export function FacetedDecisionTable<T>({
   formatSegment,
   nodeMeta,
   labels,
+  fit = 'fill',
   isRowSelected,
   selectAll,
   onSelectAll,
@@ -146,7 +153,7 @@ export function FacetedDecisionTable<T>({
     });
 
   return (
-    <div className="flex min-h-0 h-full gap-4">
+    <div className={`flex min-h-0 gap-4 ${fit === 'content' ? 'max-h-full' : 'h-full'}`}>
       <aside className="w-60 shrink-0 overflow-y-auto rounded-card border border-primary/10 p-2">
         <NodeButton
           label={labels.allGroups}
@@ -219,7 +226,8 @@ export function FacetedDecisionTable<T>({
           selectedCount={selectedCount}
           bulkActions={bulkActions}
           onClearSelection={onClearSelection}
-          className="flex-1 min-h-0 rounded-card border border-primary/10"
+          fit={fit}
+          className={`${fit === 'content' ? '' : 'flex-1 '}min-h-0 rounded-card border border-primary/10`}
         />
       </div>
     </div>
