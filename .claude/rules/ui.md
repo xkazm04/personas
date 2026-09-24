@@ -49,7 +49,7 @@ rendered rows; a lazy view keeps a module cache, `createModuleCache` when it hol
   `typo-submodule-header` (primary), `typo-card-label` (glow). A `text-*` beside one now REPLACES
   the tint, so write it only when you mean to lose the tint; otherwise use a colourless tier
   (`typo-body`, `typo-body-lg`, `typo-heading`) plus `text-*`. `typo-caption` mutes via `@layer base`.
-- Only names `typography.css` defines exist (`typo-eyebrow` is new); `[&_h1]:typo-*` makes no CSS.
+- Only names `typography.css` defines exist (`typo-eyebrow` is new); `[&_h1]:typo-*` makes no CSS. Dense tool surfaces opt into `data-type-density="compact"` (ramp one step down; one emphasis per row by weight, figures and meta at 400).
 - Colour by meaning: `text-status-*` / `STATUS_PALETTE`, roles `text-role-agent|human|external|highlight`,
   `text-primary`, `text-foreground`. Hierarchy comes from the type scale, never `opacity-*`.
 

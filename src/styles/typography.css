@@ -378,6 +378,40 @@ body {
   [data-text-scale="large"]   { --type-f: 0.9375; }
   [data-text-scale="larger"]  { --type-f: 1; }
   [data-text-scale="xl"]      { --type-f: 1.0625; }
+
+  /* -- Compact type density: an opt-in surface tier (Gate 3, 2026-09-24) -----
+     Dense tool surfaces (Fleet's session list, activity feed, settings) read
+     better one step smaller. A surface opts in with the attribute
+     data-type-density="compact" on its root; everything inside it takes the
+     ramp one step down. Only SIZES move: the steps are rebound here, so every
+     token keeps its weight, tracking, colour and tint, and the text-scale
+     factor (--type-f) still multiplies the result.
+
+       step   normal     compact    at Standard (larger, 16.5px root, f=1)
+       0      0.875rem   0.8125rem  14.4px -> 13.4px  label, code, card label
+       1      1rem       0.875rem   16.5px -> 14.4px  body, caption, title, data, heading
+       2      1.125rem   1rem       18.6px -> 16.5px  body-lg, title-lg
+       3      1.25rem    1.125rem   20.6px -> 18.6px  section title
+
+     Steps 4-6 (page heading, lead figure, hero) are not row text and stay.
+     This overrides the Gate 0 0.875rem floor for opted-in surfaces only.
+     The row step lands where Fleet's old text-[13px]/[14px] rendered at the
+     Standard scale (15px/16px there, 14.4px/13.4px here) without the private
+     sizes. Rule for a compact row: one size, ONE element emphasised by weight,
+     figures and meta at regular weight.
+
+     An attribute, not a class, because it is a mode like data-text-scale.
+     Not data-density: that is the user's spacing setting on <html>, and its
+     [data-density="compact"] rules would fire inside any subtree that reused
+     the name. */
+  [data-type-density="compact"] {
+    --type-0: 0.8125rem;
+    --type-1: 0.875rem;
+    --type-2: 1rem;
+    --type-3: 1.125rem;
+  }
+  /* Body line-height tightens with the size so a compact row keeps its rhythm. */
+  [data-type-density="compact"] .typo-body { line-height: 1.5; }
 }
 
 @layer base {
@@ -385,6 +419,19 @@ body {
     color: color-mix(in srgb, var(--foreground) 70%, transparent);
   }
 }
+
+/* Compact type density, guard. The unlayered `.fleet-typescale` rules in
+   globals.css pin typo-caption / typo-label to 0.875rem and typo-card-label to
+   1rem as literals (a +2px bump from before the one-factor ramp). Inside a
+   compact surface they beat the rebound steps: measured at Standard, label
+   14.4px instead of 13.4 and card label 16.5px instead of 13.4; at Large a
+   caption rendered 13.1px beside 12.3px body. These three rules give the
+   compact ramp back to them. UNLAYERED with a doubled attribute (0,3,0) so they
+   outrank that (0,2,0) block, which loads later. Delete them together with
+   `.fleet-typescale` once that block is retired. */
+[data-type-density="compact"][data-type-density] .typo-caption    { font-size: calc(var(--type-1) * var(--type-f)); }
+[data-type-density="compact"][data-type-density] .typo-label      { font-size: calc(var(--type-0) * var(--type-f)); }
+[data-type-density="compact"][data-type-density] .typo-card-label { font-size: calc(var(--type-0) * var(--type-f)); }
 
 /* Weight modifier -- one step (100) lighter than the body ramp, for row hints
    that must recede under a .typo-title label. Kept UNLAYERED on purpose when
