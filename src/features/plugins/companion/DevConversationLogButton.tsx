@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { FileDown } from 'lucide-react';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   companionExportConversationLog,
@@ -42,13 +43,13 @@ async function fetchFullTranscript(
 }
 
 /**
- * Dev-only header button: dump the active Athena conversation (messages
- * plus the session-scoped tool trail / plan / summaries / recall /
- * autonomous-actions ledger) into the gitignored
+ * Dev-only key in the dev ledger row (`DevOpLedger`): dump the active Athena
+ * conversation (messages plus the session-scoped tool trail / plan /
+ * summaries / recall / autonomous-actions ledger) into the gitignored
  * `logs/athena-conversations/` directory for reflective development.
  *
- * The component carries no environment gate itself — the call site in
- * `CompanionPanel`'s header renders it behind `devModeAvailable`.
+ * The component carries no environment gate itself: the ledger row it sits in
+ * renders only in dev mode, behind `devModeAvailable`, in both chat surfaces.
  */
 export function DevConversationLogButton() {
   const { t, tx } = useTranslation();
@@ -102,16 +103,18 @@ export function DevConversationLogButton() {
   }, [busy, addToast, t, tx]);
 
   return (
-    <button
-      type="button"
-      onClick={() => void onExport()}
-      disabled={busy}
-      data-testid="companion-dev-dump-log"
-      className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring disabled:opacity-50"
-      aria-label={t.plugins.companion.dev_dump_log}
-      title={t.plugins.companion.dev_dump_log}
-    >
-      <FileDown className="w-4 h-4" />
-    </button>
+    <Tooltip content={t.plugins.companion.dev_dump_log}>
+      <button
+        type="button"
+        onClick={() => void onExport()}
+        disabled={busy}
+        aria-busy={busy}
+        data-testid="companion-dev-dump-log"
+        className="p-1 rounded-interactive text-amber-400/70 transition-colors focus-ring hover:bg-amber-500/10 hover:text-amber-400 disabled:is-disabled"
+        aria-label={t.plugins.companion.dev_dump_log}
+      >
+        <FileDown className="w-3.5 h-3.5" aria-hidden />
+      </button>
+    </Tooltip>
   );
 }

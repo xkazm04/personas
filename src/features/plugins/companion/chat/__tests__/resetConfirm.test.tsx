@@ -12,19 +12,18 @@ vi.mock('../athenaChatActions', () => ({
   setAutonomousMode: vi.fn(),
   setDevMode: vi.fn(),
 }));
-// The switcher and the dev-only buttons reach the companion backend; the
-// header's reset affordance is what is under test.
+// The switcher, the autonomy option and the dev-only buttons reach the
+// companion backend; the header's reset affordance is what is under test.
 vi.mock('../../ConversationSwitcher', () => ({ ConversationSwitcher: () => null }));
-vi.mock('../../DevConversationLogButton', () => ({ DevConversationLogButton: () => null }));
 vi.mock('../AthenaChatSleepButton', () => ({ AthenaChatSleepButton: () => null }));
+vi.mock('../AthenaAutonomyOption', () => ({ AthenaAutonomyOption: () => null }));
 
 import { AthenaChatHeader } from '../AthenaChatHeader';
 import { resetConversation } from '../athenaChatActions';
 
 const mockReset = resetConversation as ReturnType<typeof vi.fn>;
 
-const mount = () =>
-  render(<AthenaChatHeader expandedStrip={null} onToggleStrip={() => {}} />);
+const mount = () => render(<AthenaChatHeader />);
 
 beforeEach(() => {
   mockReset.mockClear();
@@ -51,5 +50,27 @@ describe('companion header reset', () => {
     fireEvent.click(screen.getByTestId('companion-reset'));
     fireEvent.click(screen.getByText(en.plugins.companion.reset_confirm_action));
     await waitFor(() => expect(mockReset).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByTestId('companion-reset-confirm')).toBeNull());
+  });
+
+  it('asks in an anchored popover (the shared ConfirmPopover), not a modal', () => {
+    mount();
+    fireEvent.click(screen.getByTestId('companion-reset'));
+    const dialog = screen.getByTestId('companion-reset-confirm');
+    expect(dialog).toHaveAttribute('role', 'dialog');
+    expect(dialog).toHaveTextContent(en.plugins.companion.reset_confirm_body);
+    // Irreversible: focus starts on Cancel, not on the destructive action.
+    expect(document.activeElement).toHaveTextContent(en.common.cancel);
+  });
+
+  it('Escape and a press outside both close it without resetting', () => {
+    mount();
+    fireEvent.click(screen.getByTestId('companion-reset'));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('companion-reset-confirm')).toBeNull();
+    fireEvent.click(screen.getByTestId('companion-reset'));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('companion-reset-confirm')).toBeNull();
+    expect(mockReset).not.toHaveBeenCalled();
   });
 });

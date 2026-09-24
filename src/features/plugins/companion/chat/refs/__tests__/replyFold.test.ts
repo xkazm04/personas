@@ -34,6 +34,32 @@ describe('foldAfterSentences', () => {
     expect(foldAfterSentences(text, 2)).toEqual({ head: 'First.\n- a\n- b', rest: 'Third. Fourth.' });
   });
 
+  it('folds a line that introduces what follows together with it', () => {
+    const text = 'One. Two.\n\nTwo options:\n\n1. a\n2. b\n3. c\n4. d';
+    expect(foldAfterSentences(text, 3)).toEqual({
+      head: 'One. Two.',
+      rest: 'Two options:\n\n1. a\n2. b\n3. c\n4. d',
+    });
+  });
+
+  it('never cuts inside a table: the whole table folds away', () => {
+    const text = 'Lead.\n| Issue | Events |\n| --- | --- |\n| a | 1 |\n| b | 2 |\nMore.';
+    expect(foldAfterSentences(text, 3)).toEqual({
+      head: 'Lead.',
+      rest: '| Issue | Events |\n| --- | --- |\n| a | 1 |\n| b | 2 |\nMore.',
+    });
+  });
+
+  it('does not fold a reply that opens with a table it would have to split', () => {
+    const text = '| Issue | Events |\n| --- | --- |\n| a | 1 |\n| b | 2 |\nMore.';
+    expect(foldAfterSentences(text, 2)).toBeNull();
+  });
+
+  it('keeps a cut that closes a table', () => {
+    const text = 'Found:\n| a |\n| --- |\nAfter. And more.';
+    expect(foldAfterSentences(text, 3)).toEqual({ head: 'Found:\n| a |\n| --- |', rest: 'After. And more.' });
+  });
+
   it('cuts inside a long list at the cap', () => {
     const text = '- a\n- b\n- c\n- d\n- e';
     expect(foldAfterSentences(text, 3)).toEqual({ head: '- a\n- b\n- c', rest: '- d\n- e' });

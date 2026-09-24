@@ -17277,6 +17277,14 @@ export type Translations = {
       read_aloud_failed: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
+      autonomy_options: string;
+      autonomy_on: string;
+      autonomy_off: string;
+      autonomy_status_on: string;
+      autonomy_status_off: string;
+      autonomy_power: string;
+      autonomy_cadence: string;
+      autonomy_needs_power: string;
       composer_placeholder: string;
       slash_palette_heading: string;
       slash_palette_empty: string;

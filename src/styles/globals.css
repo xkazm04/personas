@@ -5461,6 +5461,36 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   padding: 0.05em 0.35em;
 }
 
+/* The Halo exchange transcript (chat/next/ExchangeTranscript.tsx) sets replies
+   at typo-body-lg on a 68ch reading measure, not the bubble's typo-body. The
+   bubble rhythm above (0.5rem gaps) reads cramped at that size, so here the
+   gaps scale with the text (em), headings sit flush when they open a reply,
+   and a long path or id in inline code breaks instead of overflowing the
+   column. Scoped to `.athena-exchange`, so the Current bubbles are untouched. */
+.athena-exchange .athena-chat-md p { margin-bottom: 0.7em; }
+.athena-exchange .athena-chat-md ul,
+.athena-exchange .athena-chat-md ol {
+  margin-bottom: 0.7em;
+  padding-left: 1.3em;
+}
+.athena-exchange .athena-chat-md li + li { margin-top: 0.3em; }
+.athena-exchange .athena-chat-md li > p { margin-bottom: 0.3em; }
+.athena-exchange .athena-chat-md.athena-chat-md h1,
+.athena-exchange .athena-chat-md.athena-chat-md h2,
+.athena-exchange .athena-chat-md.athena-chat-md h3,
+.athena-exchange .athena-chat-md.athena-chat-md h4 {
+  margin-top: 1.1em;
+  margin-bottom: 0.35em;
+}
+.athena-exchange .athena-chat-md > :first-child { margin-top: 0; }
+.athena-exchange .athena-chat-md > :last-child { margin-bottom: 0; }
+.athena-exchange .athena-chat-md :not(pre) > code {
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.athena-exchange .athena-chat-md table { margin-top: 0.4em; margin-bottom: 0.8em; }
+
 /* ---------------------------------------------------------------------------
    Athena chat — syntax highlighting tuned to the app palette, SCOPED to the
    chat bubbles. The global `@import github-dark-dimmed` (globals.css top) is a

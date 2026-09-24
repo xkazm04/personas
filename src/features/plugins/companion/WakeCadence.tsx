@@ -1,23 +1,31 @@
-// Autonomy cadence strip (docs/plans/athena-wake-window.md) — visible while
-// autonomous mode is ON: pick the wake window (signals accumulate and Athena
-// handles them in batches once they're stale enough) and see what autonomy
-// actually did in the last 24 h. Priority signals (blocked teams, urgent
-// messages) bypass the window — the timer never delays an unblock.
+// Autonomy cadence (docs/plans/athena-wake-window.md) — lives inside the
+// autonomy options popup (`AthenaAutonomyOption`): pick the wake window
+// (signals accumulate and Athena handles them in batches once they're stale
+// enough) and see what autonomy actually did in the last 24 h. Priority
+// signals (blocked teams, urgent messages) bypass the window — the timer never
+// delays an unblock.
 import { useCallback, useEffect, useState } from 'react';
-import { Timer } from 'lucide-react';
 import {
   companionWakeStats,
   type CompanionWakeStats as WakeStats,
 } from '@/api/companion/bridges';
 import { setAppSetting } from '@/api/system/settings';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { silentCatch } from '@/lib/silentCatch';
+import { ChoiceRow } from './AutonomyChoiceRow';
 
 const WINDOW_CHOICES = [0, 30, 60, 120] as const;
 
-export function WakeCadence() {
-  const { t, tx } = useTranslation();
+export interface WakeCadenceState {
+  stats: WakeStats | null;
+  windowMinutes: number | null;
+  setWindow: (minutes: number) => void;
+  labelFor: (minutes: number) => string;
+}
+
+/** The wake window and its 24 h impact. Reads once when `enabled` turns on. */
+export function useWakeCadence(enabled = true): WakeCadenceState {
+  const { t } = useTranslation();
   const c = t.plugins.companion;
   const [stats, setStats] = useState<WakeStats | null>(null);
 
@@ -28,14 +36,32 @@ export function WakeCadence() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (enabled) refresh();
+  }, [enabled, refresh]);
 
-  const setWindow = (minutes: number) => {
-    setAppSetting('athena_wake_window_minutes', String(minutes))
-      .then(refresh)
-      .catch(silentCatch('set_wake_window'));
-  };
+  const setWindow = useCallback(
+    (minutes: number) => {
+      // Optimistic, so the choice lights up before the round trip.
+      setStats((s) => (s ? { ...s, windowMinutes: minutes } : s));
+      setAppSetting('athena_wake_window_minutes', String(minutes))
+        .then(refresh)
+        .catch(silentCatch('set_wake_window'));
+    },
+    [refresh],
+  );
+
+  const labelFor = useCallback(
+    (m: number) => (m === 0 ? c.wake_reactive : m === 30 ? c.wake_30 : m === 60 ? c.wake_60 : c.wake_120),
+    [c],
+  );
+
+  return { stats, windowMinutes: stats?.windowMinutes ?? null, setWindow, labelFor };
+}
+
+export function WakeCadence({ cadence, disabled = false }: { cadence: WakeCadenceState; disabled?: boolean }) {
+  const { t, tx } = useTranslation();
+  const c = t.plugins.companion;
+  const { stats, windowMinutes, setWindow, labelFor } = cadence;
 
   const totals = (stats?.surfaces ?? []).reduce(
     (acc, s) => ({
@@ -47,49 +73,25 @@ export function WakeCadence() {
     { wakes: 0, signals: 0, calls: 0, actions: 0 },
   );
 
-  const labelFor = (m: number) =>
-    m === 0 ? c.wake_reactive : m === 30 ? c.wake_30 : m === 60 ? c.wake_60 : c.wake_120;
-
   return (
-    <div
-      className="flex items-center gap-2 px-3 py-1.5 border-b border-primary/10 bg-primary/[0.03]"
-      data-testid="companion-wake-cadence"
-    >
-      <Tooltip content={c.wake_cadence_hint}>
-        <span className="flex items-center gap-1 typo-caption text-foreground/80 flex-shrink-0">
-          <Timer className="w-3 h-3" aria-hidden />
-          {c.wake_cadence_label}
-        </span>
-      </Tooltip>
-      <div className="flex items-center gap-0.5" role="radiogroup" aria-label={c.wake_cadence_label}>
-        {WINDOW_CHOICES.map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={stats?.windowMinutes === m}
-            onClick={() => setWindow(m)}
-            className={`px-1.5 py-0.5 rounded-interactive typo-caption transition-colors focus-ring ${
-              stats?.windowMinutes === m
-                ? 'bg-primary/15 text-primary'
-                : 'text-foreground/70 hover:bg-secondary/40'
-            }`}
-            data-testid={`wake-window-${m}`}
-          >
-            {labelFor(m)}
-          </button>
-        ))}
-      </div>
-      <div className="flex-1" />
+    <div className="flex flex-col gap-2" data-testid="companion-wake-cadence">
+      <p className="typo-caption text-foreground">{c.wake_cadence_hint}</p>
+      <ChoiceRow
+        label={c.wake_cadence_label}
+        choices={WINDOW_CHOICES.map((m) => ({ id: String(m), label: labelFor(m), testId: `wake-window-${m}` }))}
+        value={windowMinutes === null ? null : String(windowMinutes)}
+        onChoose={(id) => setWindow(Number(id))}
+        disabled={disabled}
+      />
       {stats && totals.wakes > 0 && (
-        <span className="typo-caption text-foreground/70 tabular-nums truncate">
+        <p className="typo-caption text-foreground tabular-nums">
           {tx(c.wake_impact_line, {
             wakes: totals.wakes,
             signals: totals.signals,
             calls: totals.calls,
             actions: totals.actions,
           })}
-        </span>
+        </p>
       )}
     </div>
   );
