@@ -397,63 +397,6 @@ pub(crate) fn collect_dev_project_exports(
             },
         )?;
 
-        let competitions = query_rows(
-            &conn,
-            "SELECT id, task_title, task_description, source_idea_id, source_goal_id, \
-                    slot_count, status, winner_task_id, winner_insight, baseline_json, \
-                    reviewer_notes, worktree_base_ref, created_at, resolved_at \
-             FROM dev_competitions WHERE project_id = ?1",
-            pid,
-            |r| {
-                Ok(DevCompetitionExport {
-                    id: r.get(0)?,
-                    task_title: r.get(1)?,
-                    task_description: r.get(2)?,
-                    source_idea_id: r.get(3)?,
-                    source_goal_id: r.get(4)?,
-                    slot_count: r.get(5)?,
-                    status: r.get(6)?,
-                    winner_task_id: r.get(7)?,
-                    winner_insight: r.get(8)?,
-                    baseline_json: r.get(9)?,
-                    reviewer_notes: r.get(10)?,
-                    worktree_base_ref: r.get(11)?,
-                    created_at: r.get(12)?,
-                    resolved_at: r.get(13)?,
-                })
-            },
-        )?;
-
-        let competition_slots = query_rows(
-            &conn,
-            "SELECT s.id, s.competition_id, s.task_id, s.strategy_label, s.strategy_prompt, \
-                    s.worktree_name, s.branch_name, s.slot_index, s.disqualified, \
-                    s.disqualify_reason, s.diff_hash, s.diff_stats_json, s.diff_analyzed_at, \
-                    s.created_at \
-             FROM dev_competition_slots s \
-             JOIN dev_competitions c ON c.id = s.competition_id \
-             WHERE c.project_id = ?1 ORDER BY s.competition_id, s.slot_index",
-            pid,
-            |r| {
-                Ok(DevCompetitionSlotExport {
-                    id: r.get(0)?,
-                    competition_id: r.get(1)?,
-                    task_id: r.get(2)?,
-                    strategy_label: r.get(3)?,
-                    strategy_prompt: r.get(4)?,
-                    worktree_name: r.get(5)?,
-                    branch_name: r.get(6)?,
-                    slot_index: r.get(7)?,
-                    disqualified: r.get(8)?,
-                    disqualify_reason: r.get(9)?,
-                    diff_hash: r.get(10)?,
-                    diff_stats_json: r.get(11)?,
-                    diff_analyzed_at: r.get(12)?,
-                    created_at: r.get(13)?,
-                })
-            },
-        )?;
-
         let triage_rules = query_rows(
             &conn,
             "SELECT id, name, conditions, action, enabled, times_fired, created_at \
@@ -785,8 +728,6 @@ pub(crate) fn collect_dev_project_exports(
             context_fingerprints,
             ideas,
             tasks,
-            competitions,
-            competition_slots,
             triage_rules,
             pipelines,
             standards,

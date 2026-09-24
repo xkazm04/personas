@@ -508,8 +508,6 @@ mod tests {
             context_fingerprints: Vec::new(),
             ideas: Vec::new(),
             tasks: Vec::new(),
-            competitions: Vec::new(),
-            competition_slots: Vec::new(),
             triage_rules: Vec::new(),
             pipelines: Vec::new(),
             standards: Vec::new(),

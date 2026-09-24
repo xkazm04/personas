@@ -1948,3 +1948,87 @@ fn pending_use_case_proposals_are_promoted_to_active() -> Result<(), Box<dyn std
     );
     Ok(())
 }
+
+// ── e48: the retired Competition tables ─────────────────────────────────────
+
+/// e48 — the retired Competition tables never appear on a fresh database, and
+/// a LEGACY database that still carries them, with data, loses both on the next
+/// boot without touching the project and task they hung off. The chain is then
+/// replayed twice more: a CREATE surviving in an older era would show up here
+/// as a table that comes back.
+#[test]
+fn retire_competitions_drops_both_tables_and_keeps_projects_and_tasks(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use super::e48_retire_competitions::RETIRED_COMPETITION_TABLES;
+
+    let pool = crate::init_test_db()?;
+    let conn = pool.get()?;
+    for table in RETIRED_COMPETITION_TABLES {
+        assert!(
+            !has_table(&conn, table)?,
+            "a fresh database still creates the retired table `{table}`"
+        );
+    }
+
+    // Reconstruct the legacy shape (the retired schema.rs DDL, trimmed to the
+    // columns these rows need) with one competition and one slot.
+    conn.execute_batch(
+        "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+         INSERT INTO dev_tasks (id, project_id, title) VALUES ('t1', 'p1', 'Race me');
+         CREATE TABLE dev_competitions (
+            id          TEXT PRIMARY KEY,
+            project_id  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            task_title  TEXT NOT NULL,
+            slot_count  INTEGER NOT NULL
+         );
+         CREATE INDEX idx_dev_competitions_project ON dev_competitions(project_id);
+         CREATE TABLE dev_competition_slots (
+            id             TEXT PRIMARY KEY,
+            competition_id TEXT NOT NULL REFERENCES dev_competitions(id) ON DELETE CASCADE,
+            task_id        TEXT NOT NULL REFERENCES dev_tasks(id) ON DELETE CASCADE,
+            strategy_label TEXT NOT NULL,
+            worktree_name  TEXT NOT NULL,
+            slot_index     INTEGER NOT NULL
+         );
+         CREATE INDEX idx_dev_competition_slots_comp ON dev_competition_slots(competition_id);
+         INSERT INTO dev_competitions (id, project_id, task_title, slot_count)
+            VALUES ('c1', 'p1', 'Race me', 1);
+         INSERT INTO dev_competition_slots (id, competition_id, task_id, strategy_label, worktree_name, slot_index)
+            VALUES ('s1', 'c1', 't1', 'baseline', 'comp-c1-0', 0);",
+    )?;
+
+    run_incremental(&conn)?;
+
+    for table in RETIRED_COMPETITION_TABLES {
+        assert!(
+            !has_table(&conn, table)?,
+            "`{table}` survived the retirement"
+        );
+    }
+    for index in [
+        "idx_dev_competitions_project",
+        "idx_dev_competition_slots_comp",
+    ] {
+        assert!(!has_index(&conn, index)?, "index `{index}` survived");
+    }
+    // What the competition hung off is untouched.
+    let project: String =
+        conn.query_row("SELECT name FROM dev_projects WHERE id = 'p1'", [], |r| {
+            r.get("name")
+        })?;
+    assert_eq!(project, "P");
+    let task: String = conn.query_row("SELECT title FROM dev_tasks WHERE id = 't1'", [], |r| {
+        r.get("title")
+    })?;
+    assert_eq!(task, "Race me");
+
+    // Replay the whole boot chain twice: nothing may bring a table back.
+    for _ in 0..2 {
+        ensure_composite_fires_table(&conn)?;
+        run_incremental(&conn)?;
+    }
+    for table in RETIRED_COMPETITION_TABLES {
+        assert!(!has_table(&conn, table)?, "`{table}` came back on replay");
+    }
+    Ok(())
+}

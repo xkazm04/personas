@@ -44,7 +44,7 @@ const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
 const LifecyclePage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'));
-const CompetitionPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'));
+const ContestPage = lazyRetry(() => import('@/features/plugins/dev-tools/contest/ContestPage'));
 const MastermindPage = lazyRetry(() => import('@/features/teams/sub_mastermind/MastermindPage'));
 const CouncilPage = lazyRetry(() => import('@/features/teams/sub_council/CouncilPage'));
 const WhitelistPage = lazyRetry(() => import('@/features/browser/whitelist/WhitelistPage'));
@@ -200,15 +200,10 @@ export default function PersonasPage() {
       () => import('@/features/teams/sub_kpis/KPIsPage'),
       () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
       () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'),
-      // Competition is dev-only now — prefetching a chunk no production user
-      // can reach is bandwidth spent on nothing.
-      ...(import.meta.env.DEV
-        ? [() => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage')]
-        : []),
       () => import('@/features/teams/sub_factory/FactoryPage'),
     ], { initialDelayMs: 1500 });
     // Warm the projects list once, off the startup critical path. Every
-    // dev-tools Projects submodule (Manage / Lifecycle / Competition / Factory)
+    // dev-tools Projects submodule (Manage / Lifecycle / Contest / Factory)
     // and the Goals/KPIs shells gate their first paint on it, and it is not in
     // the runStartup waves. Delayed so it doesn't join the wave-2 IPC stampede;
     // the ghost-under-chrome still covers a click that beats this.
@@ -313,14 +308,13 @@ export default function PersonasPage() {
       if (teamsTab === 'lifecycle') {
         return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={<RouteChunkSkeleton />}><LifecyclePage /></Suspense></ErrorBoundary>;
       }
-      // Competition is EXPERIMENTAL and dev-gated (golden rail in
-      // `TeamsSidebarNav`). The nav entry is gone in a production build, but
-      // `teamsTab` is persisted — a store written in a dev build would
-      // otherwise land a prod user on a route with no way back to it in the
-      // menu. Falling through to the section's landing route is the honest
-      // reading of "this surface does not exist here".
-      if (teamsTab === 'competition' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={<RouteChunkSkeleton />}><CompetitionPage /></Suspense></ErrorBoundary>;
+      // Contest — the in-app home for the /contest method (setup, seats in
+      // the fleet queue, gallery review). Took over the retired Competition
+      // slot on 2026-09-24; a persisted `teamsTab: 'competition'` from an
+      // older build no longer matches any branch and falls through to the
+      // section's landing route below.
+      if (teamsTab === 'contest') {
+        return <ErrorBoundary onGoHome={goHome} name="Contest"><Suspense fallback={<RouteChunkSkeleton />}><ContestPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'council') {
         return <ErrorBoundary onGoHome={goHome} name="Council"><Suspense fallback={<RouteChunkSkeleton />}><CouncilPage /></Suspense></ErrorBoundary>;

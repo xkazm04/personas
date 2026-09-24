@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "عام"
   },
-  "competition": {
-    "awaiting_review": "بانتظار المراجعة",
-    "cancelled": "ملغى",
-    "resolved": "محلول",
-    "running": "جارٍ"
-  },
   "connector_status": {
     "failed": "فاشل",
     "no_credential": "لا بيانات اعتماد",

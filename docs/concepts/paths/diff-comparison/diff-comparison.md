@@ -22,7 +22,6 @@ evidence:
 counter_evidence:
   - src/features/agents/sub_lab/shared/DiffViewer.tsx                      # projection reads 5 of 7 fields and the empty state affirms "no structural difference" over the projection — a diff that can deny a change it cannot see
   - src/features/teams/sub_teamMemory/libs/memoryDiff.ts                   # id-set alignment across runs whose ids never match — byte-identical runs render as all-added + all-removed
-  - src-tauri/src/commands/infrastructure/dev_tools/competitions.rs        # two candidate baselines; the one displayed is whichever diff string is longer in bytes (:562)
 deviations:
   - w12-diff-comparison   # anchor in docs/concepts/golden-path-deferred-fixes.md
 ---

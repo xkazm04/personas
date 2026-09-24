@@ -244,7 +244,7 @@ const ALL_FEEDS: Required<Omit<MonitorFeeds, 'reviewLimit'>> = {
 
 /**
  * Module-scoped warm cache (loading pattern v2, mechanic 4 — precedent:
- * LifecyclePage / CompetitionList). The Monitor and the triage deck fully
+ * LifecyclePage). The Monitor and the triage deck fully
  * unmount on close, and this hook held its reviews/messages in component
  * state — so every re-open started from `loading: true` with an empty queue
  * and re-ghosted a surface the user saw populated two seconds ago. The last

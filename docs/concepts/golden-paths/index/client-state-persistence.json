@@ -59,14 +59,6 @@
       ],
       "resolved": false
     },
-    "keys.ts": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
-      ],
-      "resolved": false
-    },
     "personas.rs": {
       "count": 1,
       "sections": [7],
@@ -348,6 +340,15 @@
       "contexts": [
         "- **`src/features/plugins/obsidian-brain/useSavedVaultConfigs.ts:32-61`** — the **migration** template: read legacy key → merge → write backend → `removeItem` the legacy key, and **keep the legacy ke…"
       ]
+    },
+    "src/features/plugins/twin/experience/table/keys.ts": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "- **Assert non-zero extraction on both sides before comparing.** Zero keys parsed from `keys.ts`, or zero entries parsed from `ALLOWED_KEYS`, is `exit 1` with \"extractor matched nothing — the file mo…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "keys.ts"
     },
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {
       "count": 1,

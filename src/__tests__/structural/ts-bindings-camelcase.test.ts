@@ -141,11 +141,11 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   // held — ScanAgentMeta is the Deserialize target for the embedded scan_agents.toml registry — a rename panics at startup
   'src-tauri/core/src/models/dev_tools.rs': [
-    'ContextHealthSnapshot', 'CrossProjectRelation', 'DevCompetition', 'DevCompetitionSlot',
+    'ContextHealthSnapshot', 'CrossProjectRelation',
     'DevContext', 'DevContextGroup', 'DevContextGroupRelationship', 'DevGoal',
     'DevGoalDependency', 'DevGoalItem', 'DevGoalSignal', 'DevIdea', 'DevKpi', 'DevKpiBinding',
     'DevKpiMeasurement', 'DevPipeline', 'DevProject', 'DevScan', 'DevStandard',
-    'DevStrategyStats', 'DevTask', 'DevUseCase', 'DevWorkspace', 'DirectoryScanResult',
+    'DevTask', 'DevUseCase', 'DevWorkspace', 'DirectoryScanResult',
     'GitOperationResult', 'GoalProgressSuggestion', 'PendingAcceptanceGoal',
     'PortfolioHealthSummary', 'ProjectHealthEntry', 'RiskMatrixEntry', 'ScanAgentMeta',
     'TechRadarEntry', 'TestRunResult', 'TriageRule', 'WorkspaceImportItem',

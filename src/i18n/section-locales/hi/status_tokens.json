@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "वैश्विक"
   },
-  "competition": {
-    "awaiting_review": "समीक्षा की प्रतीक्षा",
-    "cancelled": "रद्द",
-    "resolved": "हल",
-    "running": "चल रहा है"
-  },
   "connector_status": {
     "failed": "विफल",
     "no_credential": "क्रेडेंशियल नहीं",

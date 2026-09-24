@@ -46,7 +46,6 @@
     "CommandPanelMessagingRow.tsx": {"count":1,"sections":[7],"lines":["158"],"contexts":["`CommandPanelComposeStep.tsx:95,105` · `CommandPanelMessagingRow.tsx:158` ·"],"resolved":false},
     "CommandPanelToolsRow.tsx": {"count":1,"sections":[7],"lines":["68"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
     "CommandPanelWhenRow.tsx": {"count":1,"sections":[7],"lines":["98"],"contexts":["`CommandPanelToolsRow.tsx:68` · `CommandPanelWhenRow.tsx:98` ·"],"resolved":false},
-    "Composer.tsx": {"count":2,"sections":[7],"lines":["233","310"],"contexts":["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],"resolved":false},
     "DesignPhaseApplied.tsx": {"count":2,"sections":[4,6],"lines":["32","21-32"],"contexts":["Landing target gets `tabIndex={-1}` (`DesignPhaseApplied.tsx:32`,"],"resolved":false},
     "DesignPhasePreview.tsx": {"count":1,"sections":[4],"lines":["85"],"contexts":["`DesignPhasePreview.tsx:85`, `DimensionPanel.tsx:65`, `SigilEditModal.tsx:93` all do"],"resolved":false},
     "DialogueComposePanel.tsx": {"count":1,"sections":[7],"lines":["155"],"contexts":["`PersonaSelectorModal.tsx:96` · `DialogueComposePanel.tsx:155` ·"],"resolved":false},
@@ -209,6 +208,14 @@
       "verbatim": "IssuesList.tsx"
     },
     "src/features/overview/sub_sla/components/SLACard.tsx": {"count":1,"sections":[7],"lines":["83"],"contexts":["`ByomApiKeyManager.tsx:361,497` · `TableListSidebar.tsx:107,144` · `SLACard.tsx:83` ·"],"resolvedFrom":"basename","verbatim":"SLACard.tsx"},
+    "src/features/plugins/companion/Composer.tsx": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["233","310"],
+      "contexts": ["`TwinPicker.tsx:162`, `FabricSearch.tsx:65`, `Composer.tsx:233` and `Listbox.tsx:137`"],
+      "resolvedFrom": "basename",
+      "verbatim": "Composer.tsx"
+    },
     "src/features/plugins/companion/FleetBoldnessDial.tsx": {
       "count": 1,
       "sections": [7],

@@ -1,6 +1,6 @@
 {
  "meta": {
-  "entries": 707
+  "entries": 705
  },
  "routes": [
   {
@@ -1081,17 +1081,6 @@
   },
   {
    "glob": "src/hooks/utility/data/useModuleSubscription.ts",
-   "subject": "client-fetch-cache",
-   "laws": [
-    "identity-survives-reuse",
-    "one-authority-per-vocabulary",
-    "creation-names-reaper",
-    "derivation-names-recomputation",
-    "failure-not-empty-success"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
    "subject": "client-fetch-cache",
    "laws": [
     "identity-survives-reuse",
@@ -6350,18 +6339,6 @@
   },
   {
    "glob": "src-tauri/src/engine/kpi_derivation.rs",
-   "subject": "scoring-rubrics",
-   "laws": [
-    "identity-survives-reuse",
-    "count-carries-predicate",
-    "gate-sees-target",
-    "one-authority-per-vocabulary",
-    "failure-not-empty-success",
-    "derivation-names-recomputation"
-   ]
-  },
-  {
-   "glob": "src/features/plugins/dev-tools/sub_lifecycle/competitions/qualityScore.ts",
    "subject": "scoring-rubrics",
    "laws": [
     "identity-survives-reuse",

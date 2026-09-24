@@ -16,8 +16,6 @@ pub mod auto_runs;
 /// `dev_triage_rules` row) in exactly the shape the overnight engine's triage
 /// pass reads, so a bench night has real work to dispatch.
 pub mod bench_seed;
-/// `dev_competitions` and `dev_competition_slots`.
-pub mod competitions;
 /// `dev_contexts` and its caches: groups, relationships, file hashes, fingerprints,
 /// and `context_health_snapshots`.
 pub mod contexts;

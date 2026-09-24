@@ -20,21 +20,6 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
     ); // ignore "duplicate column" error on re-run
 
-    // Competition slot diff metadata + auto-DQ (safe to run on existing DBs)
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN disqualified INTEGER NOT NULL DEFAULT 0;",
-    );
-    let _ =
-        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN disqualify_reason TEXT;");
-    let _ = conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_hash TEXT;");
-    let _ =
-        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_stats_json TEXT;");
-    let _ =
-        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_analyzed_at TEXT;");
-    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;");
-    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;");
-    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN worktree_base_ref TEXT;");
-
     // `resolved_schema()` — not the raw `SCHEMA` const — because the
     // persona_triggers CHECK is derived from `TriggerKind` rather than spelled
     // out. See schema.rs::resolved_schema.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Swords, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -20,7 +20,7 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **KPIs** — the outcome layer + its view submenu.
  * - **Development** — a label-only group holding the remaining project-engineering
  *   surfaces folded in from the retired Dev Tools tabs (Lifecycle / Factory /
- *   Competition / Mastermind). See DEV_ITEMS.
+ *   Contest / Mastermind). See DEV_ITEMS.
  * - **Browser** — a label-only group for agent web-app control: the Whitelist of
  *   origins agents may drive, and the embedded Webview they drive them in. See
  *   BROWSER_ITEMS and docs/features/browser.md.
@@ -48,9 +48,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'competition' | 'mastermind' | 'council';
+  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -66,7 +66,7 @@ const DEV_ITEMS: Array<{
 }> = [
   { id: 'lifecycle', icon: GitBranch, labelKey: 'lifecycle', testId: 'teams-lifecycle-nav' },
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
-  { id: 'competition', icon: Swords, labelKey: 'competition', testId: 'teams-competition-nav', devOnly: true },
+  { id: 'contest', icon: Trophy, labelKey: 'contest', testId: 'teams-contest-nav' },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
   { id: 'council', icon: Scale, labelKey: 'council', testId: 'teams-council-nav' },
 ];
@@ -252,7 +252,7 @@ export function TeamsSidebarNav() {
       </div>
 
       {/* Development — the project-engineering surfaces folded in from Dev Tools
-          (Manage / Lifecycle / Factory / Competition). A label-only group: none
+          (Manage / Lifecycle / Factory / Contest). A label-only group: none
           of these is a landing page of its own, so the header doesn't navigate. */}
       <div className="mt-3 pt-3 border-t border-primary/10">
         <div className="px-3 pb-1 typo-caption uppercase tracking-wider text-foreground/50">

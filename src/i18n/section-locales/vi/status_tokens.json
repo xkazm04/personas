@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Toàn cục"
   },
-  "competition": {
-    "awaiting_review": "Chờ đánh giá",
-    "cancelled": "Đã hủy",
-    "resolved": "Đã giải quyết",
-    "running": "Đang chạy"
-  },
   "connector_status": {
     "failed": "Thất bại",
     "no_credential": "Không có thông tin xác thực",

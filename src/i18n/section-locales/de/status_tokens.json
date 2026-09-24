@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Global"
   },
-  "competition": {
-    "awaiting_review": "Wartet auf Prüfung",
-    "cancelled": "Abgebrochen",
-    "resolved": "Gelöst",
-    "running": "Läuft"
-  },
   "connector_status": {
     "failed": "Fehlgeschlagen",
     "no_credential": "Keine Zugangsdaten",

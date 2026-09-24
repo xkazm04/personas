@@ -38,11 +38,9 @@ pub(crate) fn delete_project_children(
         "DELETE FROM dev_milestone_items WHERE milestone_id IN (SELECT id FROM dev_milestones WHERE project_id = ?1)",
         "DELETE FROM dev_kpi_measurements WHERE kpi_id IN (SELECT id FROM dev_kpis WHERE project_id = ?1)",
         "DELETE FROM dev_kpi_bindings WHERE kpi_id IN (SELECT id FROM dev_kpis WHERE project_id = ?1)",
-        "DELETE FROM dev_competition_slots WHERE competition_id IN (SELECT id FROM dev_competitions WHERE project_id = ?1)",
         "DELETE FROM memory_edges WHERE from_id IN (SELECT id FROM memory_nodes WHERE project_id = ?1) \
              OR to_id IN (SELECT id FROM memory_nodes WHERE project_id = ?1)",
         "DELETE FROM dev_tasks WHERE project_id = ?1",
-        "DELETE FROM dev_competitions WHERE project_id = ?1",
         "DELETE FROM dev_goals WHERE project_id = ?1",
         "DELETE FROM dev_kpis WHERE project_id = ?1",
         "DELETE FROM dev_use_cases WHERE project_id = ?1",
@@ -117,12 +115,6 @@ pub(crate) fn import_dev_project_graph(
             add(&r.id);
         }
         for r in &p.tasks {
-            add(&r.id);
-        }
-        for r in &p.competitions {
-            add(&r.id);
-        }
-        for r in &p.competition_slots {
             add(&r.id);
         }
         for r in &p.triage_rules {
@@ -792,85 +784,6 @@ pub(crate) fn insert_project_children(
                 t.created_at,
             ],
             &format!("Project '{pname}' task '{}'", t.title),
-            warnings,
-        );
-    }
-
-    for c in &p.competitions {
-        let src_idea = remap_soft(
-            map,
-            &c.source_idea_id,
-            strict,
-            warnings,
-            &format!("Project '{pname}' competition '{}'", c.task_title),
-        );
-        let src_goal = remap_soft(
-            map,
-            &c.source_goal_id,
-            strict,
-            warnings,
-            &format!("Project '{pname}' competition '{}'", c.task_title),
-        );
-        let winner = remap_soft(
-            map,
-            &c.winner_task_id,
-            strict,
-            warnings,
-            &format!("Project '{pname}' competition '{}'", c.task_title),
-        );
-        exec_row(
-            tx,
-            "INSERT INTO dev_competitions (id, project_id, task_title, task_description, \
-                 source_idea_id, source_goal_id, slot_count, status, winner_task_id, \
-                 winner_insight, baseline_json, reviewer_notes, worktree_base_ref, created_at, \
-                 resolved_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
-            rusqlite::params![
-                remap_req(map, &c.id),
-                project_id,
-                c.task_title,
-                c.task_description,
-                src_idea,
-                src_goal,
-                c.slot_count,
-                c.status,
-                winner,
-                c.winner_insight,
-                c.baseline_json,
-                c.reviewer_notes,
-                c.worktree_base_ref,
-                c.created_at,
-                c.resolved_at,
-            ],
-            &format!("Project '{pname}' competition '{}'", c.task_title),
-            warnings,
-        );
-    }
-
-    for s in &p.competition_slots {
-        exec_row(
-            tx,
-            "INSERT INTO dev_competition_slots (id, competition_id, task_id, strategy_label, \
-                 strategy_prompt, worktree_name, branch_name, slot_index, disqualified, \
-                 disqualify_reason, diff_hash, diff_stats_json, diff_analyzed_at, created_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
-            rusqlite::params![
-                remap_req(map, &s.id),
-                remap_req(map, &s.competition_id),
-                remap_req(map, &s.task_id),
-                s.strategy_label,
-                s.strategy_prompt,
-                s.worktree_name,
-                s.branch_name,
-                s.slot_index,
-                s.disqualified,
-                s.disqualify_reason,
-                s.diff_hash,
-                s.diff_stats_json,
-                s.diff_analyzed_at,
-                s.created_at,
-            ],
-            &format!("Project '{pname}' competition slot"),
             warnings,
         );
     }

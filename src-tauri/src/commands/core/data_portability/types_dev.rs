@@ -1,5 +1,5 @@
 //! Record shapes for the dev-project graph (goals, contexts, ideas,
-//! tasks, competitions, pipelines, milestones, KPIs, memory, skills).
+//! tasks, pipelines, milestones, KPIs, memory, skills).
 //!
 //! Extracted verbatim from the former single-file `data_portability.rs`.
 
@@ -57,8 +57,6 @@ pub struct DevProjectExport {
     pub context_fingerprints: Vec<DevContextFingerprintExport>,
     pub ideas: Vec<DevIdeaExport>,
     pub tasks: Vec<DevTaskExport>,
-    pub competitions: Vec<DevCompetitionExport>,
-    pub competition_slots: Vec<DevCompetitionSlotExport>,
     pub triage_rules: Vec<DevTriageRuleExport>,
     pub pipelines: Vec<DevPipelineExport>,
     pub standards: Vec<DevStandardExport>,
@@ -233,42 +231,6 @@ pub struct DevTaskExport {
     pub attempt: i32,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
-    pub created_at: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DevCompetitionExport {
-    pub id: String,
-    pub task_title: String,
-    pub task_description: Option<String>,
-    pub source_idea_id: Option<String>,
-    pub source_goal_id: Option<String>,
-    pub slot_count: i32,
-    pub status: String,
-    pub winner_task_id: Option<String>,
-    pub winner_insight: Option<String>,
-    pub baseline_json: Option<String>,
-    pub reviewer_notes: Option<String>,
-    pub worktree_base_ref: Option<String>,
-    pub created_at: String,
-    pub resolved_at: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DevCompetitionSlotExport {
-    pub id: String,
-    pub competition_id: String,
-    pub task_id: String,
-    pub strategy_label: String,
-    pub strategy_prompt: Option<String>,
-    pub worktree_name: String,
-    pub branch_name: Option<String>,
-    pub slot_index: i32,
-    pub disqualified: bool,
-    pub disqualify_reason: Option<String>,
-    pub diff_hash: Option<String>,
-    pub diff_stats_json: Option<String>,
-    pub diff_analyzed_at: Option<String>,
     pub created_at: String,
 }
 

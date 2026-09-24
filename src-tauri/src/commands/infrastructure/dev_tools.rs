@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::State;
 
-mod competitions;
 pub mod contexts;
 /// Council read commands plus the ONE verdict door.
 pub mod council;
@@ -25,11 +24,10 @@ mod triage;
 pub mod triage_ingest;
 pub mod workspace;
 
-// Re-export competition + dev-server commands so lib.rs invoke_handler
-// references like `commands::infrastructure::dev_tools::dev_tools_start_competition`
+// Re-export the child modules' commands so lib.rs invoke_handler
+// references like `commands::infrastructure::dev_tools::dev_tools_list_goals`
 // continue to resolve after the split. See ADR
 // [[Architect/decisions/2026-05-10-dev-tools-split]].
-pub use competitions::*;
 pub use contexts::*;
 pub use council::*;
 pub use council_ingest::*;

@@ -687,7 +687,6 @@ pub async fn dev_tools_execute_task(
     let project_name = project.name.clone();
     let goal_id = task.goal_id.clone();
     let title = task.title.clone();
-    let worktree_name = extract_worktree_name(task.session_id.as_deref());
     let exec_model = model.unwrap_or_else(|| DEFAULT_DEV_TASK_MODEL.to_string());
 
     let app_handle_for_panic = app_handle.clone();
@@ -709,7 +708,6 @@ pub async fn dev_tools_execute_task(
                 &pool,
                 &root_path,
                 prompt_text,
-                worktree_name,
                 &exec_model,
                 &title,
                 &task_id_for_spawn,
@@ -879,14 +877,12 @@ pub async fn dev_tools_start_batch(
                     TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Warning] {w}"));
                 }
 
-                let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
                 let result = run_task_execution(
                     &app_handle,
                     &tid,
                     &pool,
                     &project.root_path,
                     prompt_text,
-                    batch_worktree_name,
                     DEFAULT_DEV_TASK_MODEL,
                     &task.title,
                     &batch_id,
@@ -943,37 +939,6 @@ pub async fn dev_tools_start_batch(
     Ok(json!({ "batch_id": batch_id, "started": started }))
 }
 
-/// Cancel an in-flight task execution. Callable from other modules
-/// (e.g. competition cancellation needs to cancel all running competitor tasks).
-/// Returns true if the task was running and got cancelled, false otherwise.
-pub fn cancel_running_task(
-    pool: &crate::db::DbPool,
-    app: &tauri::AppHandle,
-    task_id: &str,
-) -> Result<bool, AppError> {
-    if let Some(token) = TASK_EXEC_JOBS.get_cancel_token(task_id)? {
-        token.cancel();
-        TASK_EXEC_JOBS.set_status(app, task_id, "cancelled", None);
-        let now = chrono::Utc::now().to_rfc3339();
-        let _ = repo::update_task(
-            pool,
-            task_id,
-            None,
-            None,
-            Some("cancelled"),
-            None,
-            None,
-            None,
-            Some(Some("Cancelled by user")),
-            None,
-            Some(Some(&now)),
-        );
-        Ok(true)
-    } else {
-        Ok(false)
-    }
-}
-
 #[tauri::command]
 pub async fn dev_tools_cancel_task_execution(
     state: State<'_, Arc<AppState>>,
@@ -1008,15 +973,6 @@ pub async fn dev_tools_cancel_task_execution(
 // =============================================================================
 // Core task execution logic
 // =============================================================================
-
-/// Extract a Claude Code worktree name from a task's session_id field.
-/// Convention: session_id = "worktree:<name>" signals the task should run
-/// in an isolated Claude Code git worktree (requires Claude Code >= v2.1.49).
-fn extract_worktree_name(session_id: Option<&str>) -> Option<String> {
-    session_id
-        .and_then(|s| s.strip_prefix("worktree:"))
-        .map(|s| s.to_string())
-}
 
 /// Dev-runner default model — the app-wide headless Sonnet. A per-run override
 /// (e.g. skill adopt/share → "claude-sonnet-5") is threaded from
@@ -1157,22 +1113,16 @@ async fn resolve_task_workspace(
 /// after the task, origin `dev_runner`, under the batch's `dev-runner:<batch>`
 /// run label (which is what makes it a one-shot worker — its process is
 /// freed the moment its single turn ends, as the runner's own child used to
-/// exit by itself). The model rides as `--model`, a competition-bound task's
-/// checkout as `--worktree <name>`. Pure over its inputs so a batch can be
-/// checked without an app.
+/// exit by itself). The model rides as `--model`. Pure over its inputs so a
+/// batch can be checked without an app.
 fn dev_runner_request(
     exec_dir: &std::path::Path,
     title: &str,
     prompt_text: String,
     model: &str,
-    worktree_name: Option<&str>,
     batch_id: &str,
 ) -> DispatchRequest {
-    let mut extra: Vec<String> = vec!["--model".to_string(), model.to_string()];
-    if let Some(wt) = worktree_name {
-        extra.push("--worktree".to_string());
-        extra.push(wt.to_string());
-    }
+    let extra: Vec<String> = vec!["--model".to_string(), model.to_string()];
     DispatchRequest {
         cwd: exec_dir.to_string_lossy().into_owned(),
         name: Some(title.trim().to_string()).filter(|s| !s.is_empty()),
@@ -1440,24 +1390,12 @@ async fn run_task_execution(
     pool: &crate::db::DbPool,
     root_path: &str,
     prompt_text: String,
-    worktree_name: Option<String>,
     model: &str,
     title: &str,
     batch_id: &str,
     cancel: &CancellationToken,
 ) -> Result<i32, AppError> {
     TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Starting task execution...");
-
-    // If the task is bound to a worktree (e.g. from a competition run),
-    // pass --worktree <name> so Claude Code creates an isolated checkout
-    // at <repo>/.claude/worktrees/<name>/ on branch worktree-<name>.
-    if let Some(ref wt) = worktree_name {
-        TASK_EXEC_JOBS.emit_line(
-            app,
-            task_id,
-            format!("[Milestone] Using Claude Code worktree: {wt}"),
-        );
-    }
 
     // G12: every runner task authors in an isolated worktree of the project's
     // repository, never in the operator's live checkout.
@@ -1509,34 +1447,23 @@ async fn run_task_execution(
     }
 
     let exec_dir = workspace.exec_dir;
-    let request = dev_runner_request(
-        &exec_dir,
-        title,
-        prompt_text,
-        model,
-        worktree_name.as_deref(),
-        batch_id,
-    );
+    let request = dev_runner_request(&exec_dir, title, prompt_text, model, batch_id);
     let admission = queue::admit(app, request).await?;
     let session_id = admission.session_id.clone();
-    // Bind the task row to its fleet session so the Run Desk can find it —
-    // unless the column already carries a `worktree:<name>` binding, which is
-    // the competition runner's and must survive the run.
-    if worktree_name.is_none() {
-        let _ = repo::update_task(
-            pool,
-            task_id,
-            None,
-            None,
-            None,
-            Some(Some(session_id.as_str())),
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
-    }
+    // Bind the task row to its fleet session so the Run Desk can find it.
+    let _ = repo::update_task(
+        pool,
+        task_id,
+        None,
+        None,
+        None,
+        Some(Some(session_id.as_str())),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
     let id8 = &session_id[..session_id.len().min(8)];
     match admission.rank {
         Some(rank) => TASK_EXEC_JOBS.emit_line(
@@ -1620,220 +1547,7 @@ async fn run_task_execution(
         format!("[Complete] Task finished with {output_lines} output lines"),
     );
 
-    // Auto-PR hook: opt-in per project. Best-effort — failure is logged as a
-    // warning so the task itself stays "complete" rather than flipping to
-    // "failed" because of a downstream git/GitHub hiccup. Only fires when
-    // (a) the task ran in a worktree (we have a branch to push), (b) the
-    // session ended well — a one-shot worker parked `finished`, or a clean
-    // exit — and (c) the project's project-level gate is on.
-    let ended_well = matches!(state, FleetSessionState::Finished) || exit_code == Some(0);
-    if ended_well {
-        if let Some(ref wt) = worktree_name {
-            // The push runs where the work is. Branches are repository-global
-            // so either directory would push the same ref, but a `git` invoked
-            // in the operator's checkout is exactly what G12 removed from this
-            // path — the writeback follows the exec dir like everything else.
-            try_auto_pr_after_success(app, task_id, pool, &exec_dir.to_string_lossy(), wt).await;
-        }
-    }
-
     Ok(output_lines)
-}
-
-/// Resolve the project's default branch via `git symbolic-ref`. Falls back
-/// to "main" when the symbolic ref is missing (fresh clone, detached HEAD).
-async fn detect_default_branch(root_path: &str) -> String {
-    let out = tokio::process::Command::new("git")
-        .args(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
-        .current_dir(root_path)
-        .output()
-        .await;
-    if let Ok(o) = out {
-        if o.status.success() {
-            let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            // Format is "origin/<branch>"; strip the prefix.
-            if let Some(stripped) = s.strip_prefix("origin/") {
-                if !stripped.is_empty() {
-                    return stripped.to_string();
-                }
-            }
-        }
-    }
-    "main".to_string()
-}
-
-/// Parse owner/repo from a GitHub URL of either form:
-///   https://github.com/{owner}/{repo}
-///   git@github.com:{owner}/{repo}.git
-fn parse_github_owner_repo(url: &str) -> Option<(String, String)> {
-    let trimmed = url.trim().trim_end_matches(".git");
-    let after_host = trimmed
-        .strip_prefix("https://github.com/")
-        .or_else(|| trimmed.strip_prefix("http://github.com/"))
-        .or_else(|| trimmed.strip_prefix("git@github.com:"))?;
-    let mut parts = after_host.splitn(2, '/');
-    let owner = parts.next()?.to_string();
-    let repo = parts.next()?.to_string();
-    if owner.is_empty() || repo.is_empty() {
-        return None;
-    }
-    Some((owner, repo))
-}
-
-/// Best-effort auto-PR flow invoked from `run_task_execution` after a clean
-/// CLI exit. All failure modes log a `[Warning]` line and return — the task
-/// itself remains successful regardless of outcome here.
-async fn try_auto_pr_after_success(
-    app: &tauri::AppHandle,
-    task_id: &str,
-    pool: &crate::db::DbPool,
-    root_path: &str,
-    worktree_name: &str,
-) {
-    let task = match repo::get_task_by_id(pool, task_id) {
-        Ok(t) => t,
-        Err(e) => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Warning] Auto-PR skipped: failed to load task: {e}"),
-            );
-            return;
-        }
-    };
-
-    let Some(ref project_id) = task.project_id else {
-        return; // tasks without a project can't have a project-level PR config
-    };
-
-    let project = match repo::get_project_by_id(pool, project_id) {
-        Ok(p) => p,
-        Err(e) => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Warning] Auto-PR skipped: project lookup failed: {e}"),
-            );
-            return;
-        }
-    };
-
-    if !project.auto_pr_on_success {
-        return; // gate off — silent skip
-    }
-
-    let Some(github_url) = project.github_url.as_deref() else {
-        TASK_EXEC_JOBS.emit_line(
-            app,
-            task_id,
-            "[Warning] Auto-PR skipped: project has no github_url",
-        );
-        return;
-    };
-
-    let Some((owner, repo)) = parse_github_owner_repo(github_url) else {
-        TASK_EXEC_JOBS.emit_line(
-            app,
-            task_id,
-            format!("[Warning] Auto-PR skipped: could not parse owner/repo from {github_url}"),
-        );
-        return;
-    };
-
-    let Some(ref credential_id) = project.pr_credential_id else {
-        TASK_EXEC_JOBS.emit_line(
-            app,
-            task_id,
-            "[Warning] Auto-PR skipped: project has no pr_credential_id set",
-        );
-        return;
-    };
-
-    // Branch name produced by Claude Code's --worktree flag.
-    let branch = format!("worktree-{worktree_name}");
-
-    // Push the branch. If the remote rejects, surface the stderr — common
-    // causes are protected branch rules or stale upstream tracking.
-    let push = tokio::process::Command::new("git")
-        .args(["push", "-u", "origin", &branch])
-        .current_dir(root_path)
-        .output()
-        .await;
-    match push {
-        Err(e) => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Warning] Auto-PR push failed to spawn git: {e}"),
-            );
-            return;
-        }
-        Ok(o) if !o.status.success() => {
-            let stderr = String::from_utf8_lossy(&o.stderr).trim().to_string();
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Warning] Auto-PR push failed: {stderr}"),
-            );
-            return;
-        }
-        _ => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Milestone] Auto-PR: pushed {branch} to origin"),
-            );
-        }
-    }
-
-    let base = detect_default_branch(root_path).await;
-
-    let client =
-        match crate::engine::platforms::github::build_client_from_credential(pool, credential_id) {
-            Ok(c) => c,
-            Err(e) => {
-                TASK_EXEC_JOBS.emit_line(
-                    app,
-                    task_id,
-                    format!("[Warning] Auto-PR skipped: GitHub credential load failed: {e}"),
-                );
-                return;
-            }
-        };
-
-    let title = task.title.clone();
-    let body = task.description.clone().unwrap_or_default();
-    match client
-        .create_pull_request(&owner, &repo, &branch, &base, &title, Some(&body))
-        .await
-    {
-        Ok(pr) => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!(
-                    "[Milestone] Auto-PR created: {} (#{}, {} -> {})",
-                    pr.html_url, pr.number, pr.head_branch, pr.base_branch
-                ),
-            );
-            // Best-effort emit of the json payload for any UI that listens.
-            let _ = app.emit(
-                "task-auto-pr",
-                json!({
-                    "task_id": task_id,
-                    "pr_number": pr.number,
-                    "pr_url": pr.html_url,
-                }),
-            );
-        }
-        Err(e) => {
-            TASK_EXEC_JOBS.emit_line(
-                app,
-                task_id,
-                format!("[Warning] Auto-PR creation failed: {e}"),
-            );
-        }
-    }
 }
 
 // =============================================================================
@@ -1936,14 +1650,12 @@ async fn run_one_task_for_auto(
         TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Warning] {w}"));
     }
 
-    let worktree_name = extract_worktree_name(task.session_id.as_deref());
     let result = run_task_execution(
         &app,
         &task_id,
         &pool,
         &project.root_path,
         prompt_text,
-        worktree_name,
         DEFAULT_DEV_TASK_MODEL,
         &task.title,
         &run_id,
@@ -2461,8 +2173,7 @@ mod tests {
 
     /// A batch of N tasks is N admissions with origin `dev_runner`, headless,
     /// under ONE `dev-runner:<batch>` run label, each named after its task and
-    /// carrying its model (and, for a competition-bound task, its worktree)
-    /// behind the task marker.
+    /// carrying its model behind the task marker.
     #[test]
     fn a_batch_of_tasks_becomes_dev_runner_dispatches_under_one_run_label() {
         let batch = "batch-42";
@@ -2476,7 +2187,6 @@ mod tests {
                     t,
                     format!("do {i}"),
                     DEFAULT_DEV_TASK_MODEL,
-                    (i == 2).then_some("comp-7"),
                     batch,
                 )
             })
@@ -2496,12 +2206,9 @@ mod tests {
             assert_eq!(r.args[1], format!("do {i}"));
             assert_eq!(&r.args[2..4], ["--model", DEFAULT_DEV_TASK_MODEL]);
         }
-        assert_eq!(&requests[2].args[4..6], ["--worktree", "comp-7"]);
-        assert_eq!(
-            requests[0].args.len(),
-            4,
-            "no worktree flag without a binding"
-        );
+        for r in &requests {
+            assert_eq!(r.args.len(), 4, "the model is the only CLI extra");
+        }
         // The one-shot classification the reap relies on reads the same label.
         assert!(crate::commands::fleet::classify::is_one_shot_worker_label(
             requests[0].run_label.as_deref()

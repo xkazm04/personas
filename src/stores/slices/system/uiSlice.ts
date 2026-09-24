@@ -145,10 +145,6 @@ export interface UiSlice {
   contextScanComplete: boolean;
   /** Pending category filter applied when the credentials catalog next mounts. */
   pendingCatalogCategoryFilter: string | null;
-  /** Pending sub-tab applied when the Lifecycle page next mounts. Goals
-   *  lives in its own DevTools tab now, so any handoff that wants to
-   *  surface goals should call setDevToolsTab('goals') directly. */
-  pendingLifecycleSubTab: 'setup' | 'competitions' | 'tracking' | null;
   /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
   pendingTaskFocusId: string | null;
   /** Pending Approvals decision mode applied when ManualReviewList next mounts
@@ -311,7 +307,6 @@ export interface UiSlice {
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
   setPendingCatalogCategoryFilter: (category: string | null) => void;
-  setPendingLifecycleSubTab: (tab: 'setup' | 'competitions' | 'tracking' | null) => void;
   setPendingTaskFocusId: (id: string | null) => void;
   setPendingApprovalsMode: (mode: ApprovalsMode | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
@@ -461,7 +456,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   contextScanActive: false,
   contextScanComplete: false,
   pendingCatalogCategoryFilter: null,
-  pendingLifecycleSubTab: null,
   pendingTaskFocusId: null,
   pendingApprovalsMode: null,
   pendingGoalSpotlightId: null,
@@ -581,7 +575,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
-  setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
   setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
   setPendingApprovalsMode: (mode) => set({ pendingApprovalsMode: mode }),
   setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),

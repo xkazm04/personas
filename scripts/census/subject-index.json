@@ -1198,7 +1198,6 @@
     "src/lib/async/createCachedFetch.ts",
     "src/lib/async/createTtlValueCache.ts",
     "src/hooks/utility/data/useModuleSubscription.ts",
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
     "src/features/overview/sub_certification/useCertificationData.ts",
     "src/i18n/useTranslation.ts",
@@ -2466,8 +2465,7 @@
    ],
    "counter_evidence": [
     "src/features/agents/sub_lab/shared/DiffViewer.tsx",
-    "src/features/teams/sub_teamMemory/libs/memoryDiff.ts",
-    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs"
+    "src/features/teams/sub_teamMemory/libs/memoryDiff.ts"
    ],
    "deviations": [
     "w12-diff-comparison"
@@ -6186,8 +6184,7 @@
     "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts",
     "src/features/overview/sub_health/libs/compositeHealthScore.ts",
     "src/features/teams/sub_kpis/kpiMath.ts",
-    "src-tauri/src/engine/kpi_derivation.rs",
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/qualityScore.ts"
+    "src-tauri/src/engine/kpi_derivation.rs"
    ],
    "counter_evidence": [
     "src/features/vault/shared/utils/credentialHealthScore.ts"

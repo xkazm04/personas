@@ -3,7 +3,7 @@ import {
   wilsonInterval,
   isTopOrderingSeparated,
   MIN_RANKABLE_SAMPLE,
-} from '../StrategyLeaderboard';
+} from '../stats';
 
 describe('wilsonInterval', () => {
   it('returns the whole range when there are no trials at all', () => {
@@ -12,7 +12,7 @@ describe('wilsonInterval', () => {
   });
 
   it('does NOT collapse to a point at a perfect record over one race', () => {
-    // This is the whole reason the panel uses Wilson and not the normal
+    // This is the whole reason the board uses Wilson and not the normal
     // approximation: 1/1 under the normal interval has zero width, i.e. it
     // asserts certainty from a single race.
     const ci = wilsonInterval(1, 1);
@@ -49,8 +49,8 @@ describe('isTopOrderingSeparated', () => {
   });
 
   it('refuses to call a 1-0 vs 0-1 board a result', () => {
-    // The exact shape a fresh competition project produces, and the one the
-    // panel used to render as a ranked conclusion.
+    // The exact shape a fresh seat spec produces, and the one the
+    // old leaderboard used to render as a ranked conclusion.
     expect(isTopOrderingSeparated([{ wins: 1, total: 1 }, { wins: 0, total: 1 }])).toBe(false);
   });
 
@@ -70,7 +70,7 @@ describe('isTopOrderingSeparated', () => {
 });
 
 describe('MIN_RANKABLE_SAMPLE', () => {
-  it('is above the one-to-three races a real competition project starts with', () => {
+  it('is above the one-to-three contests a real seat spec starts with', () => {
     expect(MIN_RANKABLE_SAMPLE).toBeGreaterThan(3);
   });
 });

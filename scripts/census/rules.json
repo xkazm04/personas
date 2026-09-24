@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 140,
-        "matches": 192
+        "files": 136,
+        "matches": 187
       },
       "floor": 2500
     },
@@ -384,8 +384,8 @@
         }
       ],
       "baseline": {
-        "files": 33,
-        "matches": 71
+        "files": 32,
+        "matches": 70
       },
       "floor": 900
     },
@@ -559,8 +559,8 @@
         "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
       },
       "baseline": {
-        "files": 725,
-        "matches": 1750
+        "files": 723,
+        "matches": 1744
       },
       "floor": 2000
     },
@@ -588,8 +588,8 @@
         }
       ],
       "baseline": {
-        "files": 287,
-        "matches": 636
+        "files": 286,
+        "matches": 634
       },
       "floor": 4000
     },
@@ -651,8 +651,8 @@
         "description": "a #[tauri::command] whose success type is serde_json::Value, directly or wrapped in Option/Vec. PROXY FOR the stack-free condition \"an operation's success payload is an untyped document, so the type generator emits nothing and the caller hand-authors the contract\". The [^{]{0,900} span cannot cross a function body, so the attribute and the return arrow are guaranteed to belong to the same signature. Measured consequence in this repo: 104 such commands; 55 production call sites in src/api/** hit them; 51 of those declare a concrete TypeScript type anyway; and 19 of those types are ORPHAN bindings whose Rust source no longer exists (src/lib/bindings/VaultStatus.ts, MigrationResult.ts, DesignStartResult.ts, ...). CI's binding-drift job cannot see them (ts-rs never deletes a file, so there is no diff) and check-unused-bindings.sh cannot see them (it asks whether a binding is USED, not whether it is still GENERATED). PRECONDITION: this repo spells its untyped escape hatch serde_json::Value; a repo using Box<dyn Serialize>, an un-schema'd JSON response, or `any` has the same condition wearing different markup and must re-derive the proxy. Legal destination: a named struct or enum carrying #[derive(TS)] #[ts(export)], imported on the frontend from @/lib/bindings/<Name>."
       },
       "baseline": {
-        "files": 32,
-        "matches": 88
+        "files": 31,
+        "matches": 84
       },
       "floor": 500
     },
@@ -744,8 +744,8 @@
         "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
       },
       "baseline": {
-        "files": 54,
-        "matches": 140
+        "files": 53,
+        "matches": 134
       },
       "floor": 200
     },
@@ -766,8 +766,8 @@
         "description": "a ts-rs-generated field typed `bigint`. PROXY FOR the stack-free condition \"a generated wire type declares a value the transport cannot carry\". ts-rs v10 maps i64/u64/CORRECTED 2026-08-14 (this sentence previously claimed usize/isize also map to bigint, which is FALSE and would rewrite correct fields): ts-rs maps i64 and u64 to bigint, but usize maps to number (verified: LedgerAnomalyScore.sample_count is `number`) and isize does not appear in any exported type.parse (which cannot produce a bigint). Verified from the workaround rather than assumed - src/api/companion.ts:744 guards with `typeof raw.totalSignalsCaptured === 'bigint'`, a branch that can never be taken at runtime, and its comment at :722-726 states the coercion exists because the binding uses bigint; src/features/agents/sub_deployment/components/cloud/CloudExecutionRow.tsx:31 writes Number(exec.durationMs) for the same reason. Precision is 100% by construction: every match was emitted by the generator and the argument applies to all of them identically. 288 are field declarations; the balance are tuple positions such as Array<[string, bigint]>, which are the same defect. PRECONDITION (must be re-derived per repo): this repo generates frontend types with ts-rs v10. A repo whose generator emits number or string for 64-bit integers, or which hand-authors its types, has this condition wearing different markup and scores zero here. LEGAL FIX, in order: (1) narrow the Rust field to i32/f64 where the value provably fits, which is the honest fix; (2) `#[ts(type = \"number\")]` where the Rust type must stay 64-bit and the value stays under 2^53 - 314 such pins already exist, core/src/models/execution.rs:36,38,43,46,55 being the densest; (3) for a value that genuinely exceeds 2^53, change the Rust field to String, because JSON has no other honest carrier. Never hand-author a shadowing TypeScript interface - src/api/companion.ts:705-714 is what that costs."
       },
       "baseline": {
-        "files": 135,
-        "matches": 281
+        "files": 134,
+        "matches": 280
       },
       "floor": 900
     },
@@ -811,7 +811,7 @@
       },
       "baseline": {
         "files": 40,
-        "matches": 196
+        "matches": 193
       },
       "floor": 50
     },
@@ -861,8 +861,8 @@
         }
       ],
       "baseline": {
-        "files": 7,
-        "matches": 13
+        "files": 4,
+        "matches": 9
       },
       "floor": 4000
     },
@@ -984,7 +984,7 @@
       },
       "baseline": {
         "files": 11,
-        "matches": 49
+        "matches": 46
       },
       "floor": 4000
     },
@@ -1130,8 +1130,8 @@
         "description": "a tracing macro whose FIRST argument is the message string (so no structured field precedes it) and whose message contains a format placeholder, meaning the record's variable content is interpolated into the message text rather than attached as a field. PROXY FOR the stack-free condition: a log record's whole identifying content is baked into a per-occurrence string, so N occurrences of one event become N distinct messages that can be neither grouped by event nor filtered by value. Measured 2026-08-14 at HEAD: 288 matches across 67 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY - this regex and a paren-matching argument splitter that tokenizes strings/comments and classifies each call's arguments both report 288 matches in the same 67 files with ZERO disagreeing files, so precision on the condition is 288/288. The compliant sibling form is used 2,118 times in the same tree (1,724 with a constant message plus fields, 394 with fields but a still-interpolated message), so this is a minority deviation from an established in-repo convention, not a migration. The optional (target|name|parent): prefix is load-bearing: without it the pattern misses exactly 5 sites, all of them tracing's pseudo-arguments (src/lib.rs:514-516 is the WebView console bridge re-emitting every frontend console line as a fully opaque \"{}\" passthrough; src/engine/mcp_tools.rs:2108 does the same for MCP server stderr). The fill class excludes the double-quote and the newline so a match can never run past the end of its own string literal into surrounding code - the cost is a false NEGATIVE for a placeholder sitting on a backslash-continued second line, which makes the count a floor rather than an estimate. {{ is excluded by the negative lookahead because an escaped literal brace is not interpolation. Zero matches sit in a test or build.rs file, so no exclude entry exists and no stale exemption can accumulate. PRECONDITION (must be re-derived per repo): this repo logs through the tracing crate, whose macros take structured key-value fields BEFORE the message, so 'field or no field' is a positional property a regex can see. A repo using a logger whose call is log.warn({persona_id}, 'msg') or logger.warn('msg', {ctx}) has the SAME condition wearing markup where position carries no meaning, and this pattern scores ZERO against it while the condition is present - personas-cloud is exactly that repo (194 pino-style logger.<level>( calls, zero tracing macros). A repo whose logger accepts only a formatted string has the condition designed in and needs a different instrument entirely. LEGAL FIX: move each interpolated value out of the message and into a field, leaving the message a constant - tracing::warn!(\"Failed to store master key: {}\", e) becomes tracing::warn!(error = %e, \"Failed to store master key\"). Use % for Display and ? for Debug. src-tauri/db/src/backup.rs:107 is the shape to copy. Do NOT silence a match by deleting the log call, and do NOT silence it by moving the interpolation into a format! argument - both trade this condition for a worse one."
       },
       "baseline": {
-        "files": 83,
-        "matches": 279
+        "files": 82,
+        "matches": 264
       },
       "floor": 700
     },
@@ -1204,8 +1204,8 @@
         }
       ],
       "baseline": {
-        "files": 42,
-        "matches": 58
+        "files": 41,
+        "matches": 57
       },
       "floor": 4000
     },
@@ -1421,8 +1421,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 462,
-        "matches": 861
+        "files": 459,
+        "matches": 853
       },
       "floor": 2000
     },
@@ -1916,8 +1916,8 @@
         "description": "an emptiness test on a value whose guard consequent constructs an AppError::Validation - i.e. `require_non_empty(field, value)?` open-coded at the call site, with its own hand-written sentence. PROXY FOR the stack-free condition: a codebase owns a shared input-validation vocabulary and its call sites re-implement the vocabulary's most basic rule inline, so the rule's identity (which field, which rule id) is destroyed at the moment it is applied and only an English sentence survives. MEASURED CONSEQUENCE IN THIS REPO: 305 open-coded emptiness refusals across 135 files, against 31 real `require_non_empty(` call sites confined to 4 files (all of them on the import/export path) - a 9.8x ratio. The helper is one line, returns the identical AppError::Validation, and predates almost all 305. Each open-coded site also loses the {field, rule, message} triple that `ValidationError::new` would have produced, which is why `contract::check` reaches only 3 of 1,661 commands and why `src/lib/bindings/ValidationError.ts` has zero importers: there is nothing structured left to send. COUNTS PRODUCED TWICE, as the contract requires, by deliberately different methods: this bounded-span regex over RAW whole-file content through the real census engine reports 305 matches / 135 files / 950 walked; an independent comment-and-string-MASKED walk that pairs each emptiness test with its own guard consequent (the `{...}` block or the expression up to `;`) reports 301 / 129. The 1.3% gap is the regex's known bridging behaviour and is documented in the golden path. A FIRST attempt at the second implementation returned 17 - it split `if cond {` away from its own block, so the test and the refusal never co-occurred in one unit; recorded because that is precisely the failure the contract warns about, and the fix was to make the guard-with-its-consequent the unit rather than the statement. PRECISION audited on a systematic every-9th-file sample of 15 sites: 14/15 genuine; the one miss is src-tauri/src/commands/companion/browser_test.rs:92, where the span bridges `if x.is_empty() { return Ok(0); }` into a following, unrelated length check. PRECONDITION, which an adopting repo must re-derive: this repo spells emptiness as `.is_empty()` / `.trim().is_empty()` and spells refusal as `AppError::Validation(..)`. A repo that refuses with a schema (`zod .min(1)`), a typed extractor, or a `NonEmptyString` newtype scores zero here while being strictly MORE correct - the sibling sweep found exactly that: personas-cloud expresses the same rule declaratively in 20 zod schemas and brainiac's REST half gets it from `Path<Uuid>` with no code at all. LEGAL DESTINATION, in order of preference: (1) make it unrepresentable - a parameter newtype whose Deserialize refuses the empty case, so the command body never runs; (2) `personas_core::validation::require_non_empty(field, value)?`; (3) `ValidationError::new(field, \"required\", msg)` collected and passed to `contract::check`, which is the only form that preserves the field/rule identifiers the frontend binding was built to consume."
       },
       "baseline": {
-        "files": 142,
-        "matches": 280
+        "files": 140,
+        "matches": 278
       },
       "floor": 400
     },
@@ -1984,7 +1984,7 @@
       },
       "baseline": {
         "files": 59,
-        "matches": 157
+        "matches": 156
       },
       "floor": 700
     },
@@ -2343,8 +2343,8 @@
         }
       ],
       "baseline": {
-        "files": 15,
-        "matches": 33
+        "files": 14,
+        "matches": 32
       },
       "floor": 500
     },
@@ -3016,8 +3016,8 @@
         "description": "An outbound-URL affordance routed through a door this build does not implement: `target=\"_blank\"` and `window.open()` are both suppressed because no `on_new_window` handler is installed (wry-0.55.1 src/webview2/mod.rs:781 sets SetHandled(true) with no new window; measured live: window.open -> null), and `@tauri-apps/plugin-shell` has no Rust crate in Cargo.lock and no `shell:` permission in capabilities/. The only wired doors are the `open_external_url` / `open_local_path` IPC commands."
       },
       "baseline": {
-        "files": 33,
-        "matches": 38
+        "files": 32,
+        "matches": 37
       },
       "floor": 4000
     },
@@ -3039,8 +3039,8 @@
         "description": "JSON.parse of a blob field on an entity or IPC record, asserted straight into a named type — the cast IS the validation. PROXY FOR the stack-free condition: a definition the app did not author becomes app state without being reconstructed against a closed vocabulary. Measured 2026-08-16 at 629a914af: 16 matches / 15 files, against 26 matches / 25 files for the compliant form (`: unknown = JSON.parse(`) — same anchor, disjoint by construction, 319 JSON.parse occurrences total in 4,829 files. PRECISION 15/16 hand-read (each parses a model-composed spec, an imported definition, an outside-CLI ingest blob, or a persona design_context; the one borderline is useEngineCapabilities.ts:60). RECALL is deliberately partial: requiring a MEMBER-EXPRESSION argument excludes the localStorage-hydration arm by construction (0 file overlap with raw-web-storage, verified) at the cost of missing the three n8n file/paste/URL import hooks, which bind the text to a local first. Widening to any expression gives 68 matches at ~44% precision. THE ARGUMENT MATCH MUST NOT BE A CONSUMING WILDCARD: a `[\\s\\S]{0,300}?` window slid across statement boundaries and flagged lib/channel/teamBridge.ts:42 — the exemplar of the COMPLIANT pattern — as a violation. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells the defect as a TS type assertion on a parsed JSON blob column. In Rust it wears serde_json::Value + .get(), in Python a Pydantic model never fed the body, in Next.js `(await res.json()) as T` — this pattern scores ZERO on all three."
       },
       "baseline": {
-        "files": 14,
-        "matches": 14
+        "files": 13,
+        "matches": 13
       },
       "floor": 4000
     },
@@ -3470,8 +3470,8 @@
         "description": "A spawn-family call in STATEMENT POSITION (preceded by ; { or }, so its JoinHandle is created and destroyed in the same statement) whose body is an INLINE async block or closure, and which contains no panic boundary (AssertUnwindSafe / catch_unwind / is_panic) within 2500 characters. PROXY FOR the stack-free condition: the only object that can report a task's abrupt death is discarded at the moment the task is created, so 'finished', 'crashed' and 'cancelled' become one observable — nothing. MEASURED 2026-08-16 at 17d059b1f over 963 .rs files: 169 matches across 86 files, commentMatchesSkipped 0. TWO INDEPENDENT IMPLEMENTATIONS — a comment/string-blanking Rust scanner with paren matching and brace-matched #[cfg(test)] exclusion, and the census engine — agree on 211 of 211 sites (ZERO membership disagreement) and on 210 of 211 classifications. AUDIT OF THE 169: 159 true production violations, 9 #[cfg(test)] sites the engine cannot exclude by range (subscription.rs:3325,3379,3393,3407 / cli_process.rs:852,882,902 / test_runner.rs:3042 / deliberation.rs:471 — carried in the baseline exactly as outcomeless-tick carries 2 and silent-row-skip carries 4), and 1 false positive (engine/mod.rs:3461, genuinely guarded 4619 chars into a 16324-char body, past the window; left in rather than excluded because an exclusion would be a claim about a body length, not about a file). PRECISION 159/169 = 94.1%; against the population the engine can reach, 159/160 = 99.4%. TWO FALSE NEGATIVES where the window spilled past a short body: db/src/embedder.rs:92, and companion/remote_jobs.rs:109 where the spill is SEMANTICALLY CORRECT — that dispatcher's callee holds the boundary (a call-graph fact no textual signal can follow; see the path's Gap 7, so any count here over-counts by however many sites push the boundary into a helper). test_automation.rs:1488 is counted as PRODUCTION (pub mod at lib.rs:43, shipped behind a cargo feature) — the first scanner's /(^|\\/)test_/ filename heuristic mis-filed it, the mirror image of the dev_tools_backlog_tests.rs hazard. CONSEQUENCE, MEASURED AGAINST THE OPERATOR'S OWN crash_logs/ DIRECTORY AND READ-ONLY COPIES OF THE LIVE DATABASES: 274 production spawn sites, 210 statement-position, 165 carrying no boundary at all (the [;{}] anchor reaches 161 of the 165 — the other 4 are spelled `let _ = spawn(..)`, listed in the path's Section 9); JoinError::is_panic() appears 3 times in 963 files and only ONE of those converts the panic into a value a caller can act on (companion/remote_jobs.rs:145, whose comment says 'instead of a task that vanishes and a job that never finishes'); 40 sites flatten the JoinError with .map_err and 7 with .ok(); ZERO use .await.unwrap(), .await.expect() or .await?. 20 persona_executions rows carry 'Internal error (panic):' — 7.8% of all 258 failed+incomplete — all with 0 tokens, 0 cost, 0 duration, 0 output. All 20 crash reports on disk are on a tokio-rt-worker thread and all 20 are panics the app SURVIVED, despite lib.rs:804 describing the hook as writing 'before aborting' (Cargo.toml:316 is panic = \"unwind\"). The 20 executions map to only 12 crash files — 8 reports (40%) lost to a one-second-resolution filename plus a truncating fs::write — and 17 of the 20 files contain zero application frames. commands/fleet/wait.rs:176 slices a String at a computed byte index and panicked 3 times inside the DETACHED task at commands/fleet/registry.rs:753, silently skipping the Enter-submit confirmation; the same defect class was closed in eval.rs by 6734382bf seven weeks earlier and this site was never enumerated. POSITIVE CONTROL: unobservable-detached-task-positive-control, the IDENTICAL anchor with the negative lookahead inverted, matches 30 files / 42 sites with ZERO overlap; 169 + 42 = 211 accounts for EVERY statement-position spawn with an inline body in the tree, so the partition is exact rather than a ratio. FAULT-INJECTED 18 WAYS, all correct, including a bound handle, handles.push(...), a `fn spawn(` definition, Command::new(..).spawn(), a function-call body, spawn_local, async { without move, CRLF, an interposed // comment, and a guard placed 3000 chars in (correctly NOT excluded). BACKTRACKING: the fill is a bounded [\\s\\S]{0,2500}? inside a ZERO-WIDTH lookahead — no nesting, no variable-length lookbehind; full 963-file run of rule + control 319 ms. OVERLAP-CHECKED against 469 match sites of the ten nearest rules (unraced-loop-wait, outcomeless-tick, unbound-child-lifetime, unpinned-billing-account-spawn, unowned-inflight-state-sweep, unverified-effect-dispatch, anonymous-deadline, silent-row-skip, unswept-job-registry-read, start-marker-before-admission): ONE collision, test_automation.rs:1486, shared with unverified-effect-dispatch (an app.emit on the line above the spawn); outcomeless-tick shares 4 files and 0 lines. LEGAL FIX: bind the handle and match on JoinError::is_panic(); or wrap the body in AssertUnwindSafe(..).catch_unwind() with a DURABLE Err arm; or move a periodic task into the subscription registry (background.rs::start_loops) and inherit run_single's boundary. Do NOT silence a match with `let _ = tokio::spawn(..)` (same discard, anchor still fires), by hoisting the body into a helper async fn so the call site has no inline block (the match disappears, the defect does not), or by adding an unused AssertUnwindSafe import near the top of the body. PRECONDITION (must be re-derived per repo): this repo spells detached work as tokio::spawn / tauri::async_runtime::spawn with an inline `async move {`. A TypeScript repo spells the identical condition as an unawaited promise, and all four TS siblings score a structural ZERO against this pattern while the condition is present at scale (vibeman 114 detached units vs 27 observed; ascent 50 vs 9). END OF LIFE: this rule is expected to FALL, not to reach zero — a population of deliberately detached tasks is correct (principle P8). If it ever does reach zero the runner fails structurally, BY DESIGN — DELETE the rule then, do not baseline it at 0."
       },
       "baseline": {
-        "files": 92,
-        "matches": 172
+        "files": 91,
+        "matches": 171
       },
       "floor": 900,
       "exclude": [
@@ -3528,8 +3528,8 @@
         }
       ],
       "baseline": {
-        "files": 41,
-        "matches": 68
+        "files": 40,
+        "matches": 66
       },
       "floor": 3000
     },
@@ -3745,8 +3745,8 @@
         }
       ],
       "baseline": {
-        "files": 27,
-        "matches": 36
+        "files": 23,
+        "matches": 32
       },
       "floor": 2000
     },
@@ -4204,12 +4204,7 @@
         "ignoreCommentLines": true,
         "description": "A component-scoped MULTI-ITEM SELECTION Set (useState<Set<...>> / useState(new Set()) bound to a select-ish name) that (a) is handed to an action RAW - spread, Array.from, or iterated with for..of - and (b) has NO set-membership reconciliation anywhere after its declaration: no `.filter(x => someSet.has(...))` and no `for (const id of prev) if (someSet.has(id))` prune loop. PROXY FOR the stack-free condition: a set of item identities chosen by a human is handed to an action without ever being re-derived against the items that currently exist, so the action can operate on things the user can no longer see and the count beside the button is not the count acted upon. MEASURED 2026-08-17 at 2a874e692: 9 files / 15 matches across 4829 .ts/.tsx files under src, EVERY MATCH OPENED (precision 9/9 files on the stated condition; 8/9 on the stricter 'can it act on an invisible id' - ContextPickerModal.tsx:34 selects context NAMES round-tripped into a skill config, so a vanished context yields a stale string rather than a wrong write). THE POPULATION PARTITIONS EXACTLY: the anchor (any component-scoped multi-item selection Set) matches 31 files = 9 violating + 17 compliant (the positive control) + 2 excluded below + 3 residual whose selection never leaves the component (usePanelRunState.ts model/effort pickers, MonitorChannelGrid.tsx a channel VIEW filter with no action, CreateApiKeyDialog.tsx scope checkboxes). MEASURED BY EXECUTION, not by reading: three of these surfaces were transcribed verbatim into a jsdom + React 19 harness and driven against rows from a READ-ONLY COPY of the operator's live personas.db (347 MB, copied 2026-08-17 02:22 UTC with the app running, never opened for write, deleted after). (1) KnowledgeTree.tsx:83 - selected is never pruned and bulk() at :215-224 sends `[...selected]` raw; over the real 1,306 workspace_knowledge rows, ONE click on the header checkbox selects 1,306 while the topic branch holds 107 and the DataGrid page shows 25 (52.2x the visible rows, 1,199 outside the branch), because selectablePendingIds (:199-202) is computed in KnowledgeTree while the BRANCH, the SEARCH BOX and the PAGE are applied one component lower in FacetedDecisionTable.tsx:123-128; then switching the project filter leaves 0 rows visible and bulk('adopt') still sends all 1,306, every one of them invisible. (2) ProjectManagerPage.tsx:94 - bulkArchive iterates `for (const id of selectedIds)` (:119) with no intersection against the rendered projects. (3) useDrive.ts:259 - selectAll (:537-539) selects `entries`, the UNFILTERED directory listing, while the grid renders visibleEntries (:553, search + kind filter); the selection is cleared on navigation (:384-389, correctly, with the reason written) but NOT on a refresh, so a path another process deleted stays selected and reaches moveManyInto. (4) useExportPicker.ts:78-84 - seven selection Sets over fetched entity lists, all handed raw at :377-383 to export_selective; the weakest included site, kept deliberately because 'another session writes' is the normal condition on this machine. (5) SyncPanel.tsx:40, (6) BundleExportDialog.tsx:73, (7) DataLinksPopover.tsx:45, (8) ChronologyAdoptionView.tsx:707. TWO INDEPENDENT IMPLEMENTATIONS AGREED ON THE ANCHOR (31 files) AND ON THE COUNT (9 violating) AND DESCRIBED DIFFERENT SETS: implementation #2 is a standalone Node walker that tests reconciliation FILE-WIDE rather than after the declaration and models the hand-off only as a spread. It called ChronologyAdoptionView.tsx compliant - hand-verified against this rule, its two `.filter(x => set.has(...))` sites are at :436 and :460, a duplicate-event guard and a name dedupe on UNRELATED collections 247 and 271 lines ABOVE the selection at :707 - and it missed ProjectManagerPage.tsx entirely because that hand-off is a for..of. AGREEING ON A COUNT IS NOT SOUNDNESS: these agreed on 31 and on 9 and were still describing different sets. ZERO SITE OVERLAP with all 152 committed rules, re-measured by re-running each neighbour's own pattern and intersecting - not assumed. The three nearest by subject are at 0 files AND 0 sites: `staged-verdict-map-collapsed` (selective-per-item-verdicts.md) anchors on useState<Record<string, ...Verdict>> where this anchors on useState<Set<...>>, and that path's section 9 names this Set as the half of the condition it CANNOT see; `absent-entity-count-as-zero` (aggregate-count-display.md) owns a count defaulted to 0 from a lookup miss; `unconsented-irreversible-door` (informed-consent-gate.md) owns whether the door is gated at all. The largest FILE overlap in the registry is 4 of 9 with `hand-rolled-disabled-state` (361 files, 815 matches, a styling rule) at unrelated lines - co-location, not duplication. DISCLOSED RECALL GAP, and it contains this document's own headline: the pattern asks whether a reconciliation EXISTS IN THE FILE, not whether it is on the path to the action, so it CANNOT SEE ManualReviewList.tsx, which reconciles at :267 to compute the label and does not at :246 to compute the argument - executed, the bulk bar renders 'Approve 40 reviews?' while handleBulkAction iterates 120 ids, calls resolveReviewRow on 40, and reports the other 80 as approved because the miss branch is `if (!review) return Promise.resolve()` (:249) and Promise.allSettled counts a resolve as success. It equally cannot see PersonaOverviewPage.tsx, where the prune is correct and the SELECT-ALL POPULATION is wrong (one click selects 78 above a 25-row DataGrid page, 53 of them off screen, 77 handed to bulk_delete_personas - which dry-run-preview.md measured at 15,958 rows across 20 tables). True recall over surfaces carrying this condition is about 9 of 13, and the misses are the three worst - which is the honest thing to say about a signal keyed on PRESENCE when the condition is a RELATION between two values at a time (section 8 Gap 1). It also cannot see useState<string[]> selections (7 more containers), a useReducer, or a selection lifted into a store (0 today, and 5 of 5 sibling repos also keep selections component-local - the one thing about this leaf nobody gets wrong). PRECONDITION (must be re-derived per repo): this repo expresses a selection as a React useState Set and a reconciliation as `.filter(x => set.has(...))` or a for..of prune. A repo whose selection is a Vue ref, a checkbox array in a form POST, a Signal<string[]>, or a server-rendered multi-select scores a structural zero here while carrying the condition at scale - measured in the sibling checkouts, where 13 such surfaces exist across personas-web, brainiac, vibeman and ascent, NONE of them prunes a selection at all, and none would match this pattern. Do NOT silence a match by wrapping the spread in a `.filter()` that tests something other than row membership, by renaming the state, or by deleting the bulk action while leaving the checkboxes: the honest fixes are the prune effect (FleetBroadcastModal.tsx:68-85, which writes down why) plus ONE `visibleSelection` value that the label and the handler both read (DeadLetterTab.tsx:227-236 and :558, the reference implementation and the only place in the tree where the count and the argument are the same predicate)."
       },
-      "exclude": [
-        {
-          "path": "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx",
-          "reason": "compareSelected is capped at 2 by its own toggle (:71-78) and the use site reconciles by LOOKUP instead of by membership - detail.slots.find(...) for each of the two ids followed by an explicit `if (!leftSlot || !rightSlot) return null` (:316-319), which is this rule's condition satisfied in a shape a membership-based matcher cannot see; if that null guard is ever removed this exemption must go with it"
-        }
-      ],
+      "exclude": [],
       "baseline": {
         "files": 8,
         "matches": 14
@@ -4476,8 +4471,8 @@
         }
       ],
       "baseline": {
-        "files": 22,
-        "matches": 130
+        "files": 21,
+        "matches": 126
       },
       "floor": 900
     },
@@ -4722,7 +4717,7 @@
       },
       "baseline": {
         "files": 24,
-        "matches": 116
+        "matches": 115
       },
       "floor": 900,
       "exclude": [
@@ -4750,8 +4745,8 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 12,
-        "matches": 13
+        "files": 11,
+        "matches": 12
       },
       "floor": 900
     },
@@ -5320,8 +5315,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 33,
-        "matches": 36
+        "files": 31,
+        "matches": 34
       },
       "floor": 4000
     },
@@ -5416,8 +5411,8 @@
         }
       ],
       "baseline": {
-        "files": 58,
-        "matches": 130
+        "files": 56,
+        "matches": 112
       },
       "floor": 900
     },
@@ -5462,8 +5457,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 64,
-        "matches": 286
+        "files": 63,
+        "matches": 280
       },
       "floor": 100
     },

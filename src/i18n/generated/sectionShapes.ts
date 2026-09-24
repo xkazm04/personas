@@ -569,7 +569,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "build": {},
     "remote_job": {},
     "event_reason": {},
-    "competition": {},
     "kb_document": {},
     "memory_tier": {},
     "span_type": {},

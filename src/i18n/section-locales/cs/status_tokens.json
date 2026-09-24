@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Globální"
   },
-  "competition": {
-    "awaiting_review": "Čeká na kontrolu",
-    "cancelled": "Zrušeno",
-    "resolved": "Vyřešeno",
-    "running": "Běží"
-  },
   "connector_status": {
     "failed": "Selhalo",
     "no_credential": "Bez přihlašovacího údaje",

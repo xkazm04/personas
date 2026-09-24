@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "Keseluruhan"
   },
-  "competition": {
-    "awaiting_review": "Menunggu tinjauan",
-    "cancelled": "Dibatalkan",
-    "resolved": "Terselesaikan",
-    "running": "Berjalan"
-  },
   "connector_status": {
     "failed": "Gagal",
     "no_credential": "Tidak ada kredensial",

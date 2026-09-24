@@ -11,7 +11,6 @@
 // SHIM: retire in W4 once callers migrate.
 pub use super::dev::attention::*;
 pub use super::dev::auto_runs::*;
-pub use super::dev::competitions::*;
 pub use super::dev::contexts::*;
 pub use super::dev::cross_project::*;
 pub use super::dev::goals::*;

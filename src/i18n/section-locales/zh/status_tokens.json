@@ -46,12 +46,6 @@
     "provider_codex_cli": "Codex",
     "provider_global": "全局"
   },
-  "competition": {
-    "awaiting_review": "待审核",
-    "cancelled": "已取消",
-    "resolved": "已解决",
-    "running": "运行中"
-  },
   "connector_status": {
     "failed": "失败",
     "no_credential": "无凭据",
