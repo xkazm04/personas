@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
@@ -6,10 +6,15 @@ import { webbuildListProjects } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import StudioTabBar from './StudioTabBar';
-import StudioCurrentLayout from './StudioCurrentLayout';
-import GuideStudio from './guide/GuideStudio';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory, type StudioLayout } from './studioHistory';
+
+// Each layout is its own chunk: opening Guide never downloads Classic, and
+// the tab strip + switch paint before either layout's code has arrived.
+const GuideStudio = lazyRetry(() => import('./guide/GuideStudio'));
+const StudioCurrentLayout = lazyRetry(() => import('./StudioCurrentLayout'));
 
 // Dev-only experimental surface: Athena web-dev companion. Projects run as
 // browser-style tabs; all build runtime lives in studioStore so a project keeps
@@ -89,16 +94,18 @@ export default function StudioPage() {
         aria-labelledby={`studio-layout-tab-${layout}`}
         className="flex min-h-0 w-full min-w-0 flex-1 flex-col"
       >
-        {layout === 'guide' ? (
-          <GuideStudio
-            showVision={showVision}
-            submitting={submitting}
-            onCreate={onCreate}
-            onCancelCreate={tabCount > 0 ? () => setCreating(false) : undefined}
-          />
-        ) : (
-          <StudioCurrentLayout showVision={showVision} submitting={submitting} onCreate={onCreate} />
-        )}
+        <Suspense fallback={<RouteChunkSkeleton showActions={false} showSubtitle={false} />}>
+          {layout === 'guide' ? (
+            <GuideStudio
+              showVision={showVision}
+              submitting={submitting}
+              onCreate={onCreate}
+              onCancelCreate={tabCount > 0 ? () => setCreating(false) : undefined}
+            />
+          ) : (
+            <StudioCurrentLayout showVision={showVision} submitting={submitting} onCreate={onCreate} />
+          )}
+        </Suspense>
       </div>
     </div>
   );

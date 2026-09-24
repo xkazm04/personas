@@ -18151,7 +18151,9 @@
       "why_research": "Cách các trang web hàng đầu cùng loại giải quyết việc này, trước khi cô ấy bắt tay xây dựng.",
       "why_tour": "Một lượt giới thiệu rõ ràng từng phần và quyết định nào của bạn đã định hình nó.",
       "yes": "Có",
-      "your_call": "Tùy bạn quyết định"
+      "your_call": "Tùy bạn quyết định",
+      "goals_none": "Chưa có kế hoạch. Hãy nhờ Athena lập kế hoạch, hoặc cho cô ấy biết cần thay đổi gì.",
+      "preview_loading": "Đang tải trang web của bạn"
     }
   },
   "system_health": {

@@ -15,8 +15,15 @@ export interface GuideGoalsRailHandle {
 // a turn asking Athena to slot the new goal into the plan herself.
 const GuideGoalsRail = forwardRef<
   GuideGoalsRailHandle,
-  { phases: BuildPhase[]; placeholder: boolean; canAdd: boolean; onAddGoal: (goal: string) => void }
->(function GuideGoalsRail({ phases, placeholder, canAdd, onAddGoal }, ref) {
+  {
+    phases: BuildPhase[];
+    placeholder: boolean;
+    /** A planning step is running: the goals are genuinely on their way. */
+    drafting: boolean;
+    canAdd: boolean;
+    onAddGoal: (goal: string) => void;
+  }
+>(function GuideGoalsRail({ phases, placeholder, drafting, canAdd, onAddGoal }, ref) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
   const [adding, setAdding] = useState(false);
@@ -53,15 +60,19 @@ const GuideGoalsRail = forwardRef<
       </div>
       {placeholder ? (
         <div className="px-4">
-          <p className="typo-body text-foreground/90">{g.goals_drafting}</p>
-          <ul className="mt-4 space-y-4" aria-hidden>
-            {[70, 82, 60, 76].map((w) => (
-              <li key={w} className="flex items-center gap-3">
-                <span className="h-3 w-3 shrink-0 rounded-full border border-border" />
-                <span className="h-2.5 rounded-full bg-secondary/60" style={{ width: `${w}%` }} />
-              </li>
-            ))}
-          </ul>
+          <p className="typo-body text-foreground/90">{drafting ? g.goals_drafting : g.goals_none}</p>
+          {/* Ghost rows only while goals are really on their way; an idle
+              project with no plan says so instead of loading forever. */}
+          {drafting && (
+            <ul className="mt-4 space-y-4" aria-hidden>
+              {[70, 82, 60, 76].map((w) => (
+                <li key={w} className="flex items-center gap-3">
+                  <span className="h-3 w-3 shrink-0 rounded-full border border-border" />
+                  <span className="h-2.5 rounded-full bg-secondary/60" style={{ width: `${w}%` }} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ) : (
         <ol ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-3">
@@ -92,9 +103,19 @@ const GuideGoalsRail = forwardRef<
                   {status === 'done' && <Check className="h-3 w-3" strokeWidth={3} />}
                 </span>
                 <div className="min-w-0">
-                  <p className={`typo-title ${status === 'pending' ? 'text-foreground/90' : 'text-foreground'}`}>{p.title}</p>
-                  <p className={`typo-caption ${status === 'active' ? 'text-primary' : 'text-foreground/90'}`}>
-                    {status === 'active' ? g.goal_now : status === 'done' ? (p.note || g.goal_done) : (p.note || null)}
+                  <p
+                    className={`typo-title ${status === 'pending' ? 'text-foreground/90' : 'text-foreground'}`}
+                  >
+                    {p.title}
+                  </p>
+                  <p
+                    className={`typo-caption ${status === 'active' ? 'text-primary' : 'text-foreground/90'}`}
+                  >
+                    {status === 'active'
+                      ? g.goal_now
+                      : status === 'done'
+                        ? p.note || g.goal_done
+                        : p.note || null}
                   </p>
                 </div>
               </li>

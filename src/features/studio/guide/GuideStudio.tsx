@@ -53,14 +53,19 @@ export default function GuideStudio({
   const live = !!rt && rt.phase === 'live' && rt.healthy;
   const working = !!rt && (rt.busy || rt.autonomous);
   const doneCount = rt ? rt.phases.filter((p) => p.status === 'done').length : 0;
-  const everBuilt = !!rt && (doneCount > 1 || rt.activity.some((a) => a.kind === 'build'));
-  // The blueprint holds the stage from setup until something is actually built;
-  // B pins it either way.
-  const showBlueprint = !showVision && !!rt && (blueprintPinned ?? (!live || (placeholder || !everBuilt)));
+  const question = rt?.question ?? null;
+  // The plan sheet takes the stage only while something is really happening
+  // on it: setup, a planning step running, or a first plan waiting for its
+  // approval. An idle project shows its live site. A sheet held up with
+  // nothing behind it reads as a frozen screen (measured live 2026-09-24: an
+  // idle project with no plan kept its drafting ghosts forever and hid the
+  // running site). B pins it either way.
+  const planning = !!rt && rt.busy && placeholder;
+  const awaitingApproval = !!rt && !!question && doneCount === 0 && !rt.activity.some((a) => a.kind === 'build');
+  const showBlueprint = !showVision && !!rt && (blueprintPinned ?? (!live || planning || awaitingApproval));
   const step = (rt?.turnDurations.length ?? 0) + (rt?.busy ? 1 : 0);
   const lastTurnSecs = rt && rt.turnDurations.length ? rt.turnDurations[rt.turnDurations.length - 1]! : null;
   const estimate = estimateText(g, tx, rt?.turnDurations ?? []);
-  const question = rt?.question ?? null;
 
   // A new question always arrives visible; a new project starts on its own terms.
   useEffect(() => setQuestionHidden(false), [question]);
@@ -120,6 +125,7 @@ export default function GuideStudio({
         ref={railRef}
         phases={rt?.phases ?? []}
         placeholder={placeholder || showVision}
+        drafting={!showVision && planning}
         canAdd={!!rt && live && !showVision}
         onAddGoal={(goal) => (working && id ? useStudioStore.getState().queueNote(id, goal) : run(addGoalPrompt(goal)))}
       />

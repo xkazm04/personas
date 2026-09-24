@@ -58,6 +58,17 @@ describe('Guide layout', () => {
     expect(screen.queryByTestId('dock')).toBeNull();
   });
 
+  it('never holds a loading sheet over an idle project with no plan', () => {
+    // Measured live 2026-09-24: an idle live project with no plan kept its
+    // drafting ghosts forever over a running site, which read as frozen.
+    seed({});
+    mount();
+    expect(screen.getByText('goals_none')).toBeTruthy();
+    expect(screen.queryByText('goals_drafting')).toBeNull();
+    expect(screen.queryByText('frame_blueprint')).toBeNull();
+    expect(screen.getByText('frame_live')).toBeTruthy();
+  });
+
   it('shows plain activity and honest time while she plans', () => {
     seed({ busy: true, turnStartedAt: Date.now() - 65_000, activity: [{ id: 'a', kind: 'search', subject: 'bakeries', detail: 'WebSearch', ts: 0 }] });
     mount();

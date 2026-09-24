@@ -18151,7 +18151,9 @@
       "why_research": "Cara situs-situs terbaik sejenis ini menyelesaikannya, sebelum ia membangunnya.",
       "why_tour": "Penjelasan sederhana tiap bagian dan keputusanmu mana yang membentuknya.",
       "yes": "Ya",
-      "your_call": "Terserah kamu"
+      "your_call": "Terserah kamu",
+      "goals_none": "Belum ada rencana. Minta Athena menyusunnya, atau beri tahu apa yang perlu diubah.",
+      "preview_loading": "Memuat situs Anda"
     }
   },
   "system_health": {

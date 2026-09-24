@@ -23386,6 +23386,8 @@ export type Translations = {
       act_browser: string;
       act_command: string;
       act_other: string;
+      goals_none: string;
+      preview_loading: string;
     };
   };
   notepad: {

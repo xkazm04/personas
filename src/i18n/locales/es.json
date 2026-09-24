@@ -18151,7 +18151,9 @@
       "why_research": "Cómo lo resuelven los mejores sitios de este tipo, antes de construirlo.",
       "why_tour": "Un recorrido sencillo por cada parte y qué decisiones tuyas la moldearon.",
       "yes": "Sí",
-      "your_call": "Tú decides"
+      "your_call": "Tú decides",
+      "goals_none": "Aún no hay plan. Pide a Athena que lo prepare o dile qué cambiar.",
+      "preview_loading": "Cargando tu sitio"
     }
   },
   "system_health": {

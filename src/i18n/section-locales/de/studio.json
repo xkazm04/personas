@@ -182,6 +182,8 @@
     "why_research": "Wie die besten Websites dieser Art es lösen, bevor sie es baut.",
     "why_tour": "Ein einfacher Rundgang durch jeden Teil und welche deiner Entscheidungen ihn geprägt hat.",
     "yes": "Ja",
-    "your_call": "Deine Entscheidung"
+    "your_call": "Deine Entscheidung",
+    "goals_none": "Noch kein Plan. Bitte Athena, ihn zu erstellen, oder sag ihr, was sie ändern soll.",
+    "preview_loading": "Deine Website wird geladen"
   }
 }
