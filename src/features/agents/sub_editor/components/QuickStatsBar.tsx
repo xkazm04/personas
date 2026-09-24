@@ -115,7 +115,7 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
       )}
       <Button
         variant="accent"
-        accentColor="amber"
+        tone="warning"
         size="xs"
         icon={<Trophy className="w-3 h-3" />}
         onClick={() => {

@@ -520,7 +520,7 @@ export function PrBridge({ task }: { task: DevTask }) {
             <ActionWithCheck done={doneSteps.has('open_gh')}>
               <Button
                 variant="accent"
-                accentColor="emerald"
+                tone="success"
                 size="sm"
                 icon={<GitPullRequest className="w-3.5 h-3.5" />}
                 loading={opening}

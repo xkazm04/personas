@@ -259,7 +259,7 @@ export default function RunDeskPage() {
                   </Button>
                   <Button
                     variant="accent"
-                    accentColor="amber"
+                    tone="warning"
                     size="sm"
                     icon={<ListChecks className="w-3.5 h-3.5" />}
                     onClick={() => {

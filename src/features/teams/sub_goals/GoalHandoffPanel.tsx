@@ -60,7 +60,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
               <p className="typo-body text-foreground">{dl.goal_handoff_stop_confirm_q}</p>
               <p className="typo-caption text-foreground">{dl.goal_handoff_stop_explain}</p>
               <div className="flex items-center gap-2">
-                <Button variant="accent" accentColor="rose" size="sm" icon={<Ban className="w-3.5 h-3.5" />} disabled={aborting} onClick={onAbort}>
+                <Button variant="accent" tone="error" size="sm" icon={<Ban className="w-3.5 h-3.5" />} disabled={aborting} onClick={onAbort}>
                   {aborting ? dl.goal_handoff_stopping : dl.goal_handoff_stop}
                 </Button>
                 <Button variant="ghost" size="sm" disabled={aborting} onClick={() => setStopConfirm(false)}>
@@ -77,7 +77,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
           <div className="flex items-center gap-2">
             <Button
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               size="sm"
               icon={<ArrowRight className="w-3.5 h-3.5" />}
               disabled={advancing}
@@ -95,7 +95,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
           <p className="typo-caption text-foreground">{dl.goal_handoff_explain}</p>
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             icon={<Bot className="w-3.5 h-3.5" />}
             onClick={() => setConfirming(true)}

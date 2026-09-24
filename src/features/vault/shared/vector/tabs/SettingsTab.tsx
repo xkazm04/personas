@@ -94,7 +94,7 @@ export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
         ) : (
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             icon={<RefreshCw className="w-3.5 h-3.5" />}
             onClick={() => setConfirmOpen(true)}

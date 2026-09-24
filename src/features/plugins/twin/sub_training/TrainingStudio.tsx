@@ -260,7 +260,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={handleGenerateQuestions} disabled={busy} size="sm" variant="accent" accentColor="violet">
+          <Button onClick={handleGenerateQuestions} disabled={busy} size="sm" variant="accent" tone="agent">
             {busy && studioPhase === 'questions' ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
             {t.training.studioGenerateQuestions}
           </Button>
@@ -274,7 +274,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             </button>
           )}
           <div className="flex-1" />
-          <Button onClick={() => void handleSave()} disabled={includedCount === 0 || savingPairs || busy} size="sm" variant="accent" accentColor="emerald">
+          <Button onClick={() => void handleSave()} disabled={includedCount === 0 || savingPairs || busy} size="sm" variant="accent" tone="success">
             {savingPairs ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
             {tx(t.training.studioSaveApproved, { count: includedCount })}
           </Button>

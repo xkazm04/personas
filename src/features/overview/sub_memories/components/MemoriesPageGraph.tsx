@@ -130,7 +130,7 @@ export default function MemoriesPageGraph() {
                 spinner, so the icon vanished and nothing replaced it. */}
             <Button
               variant="accent"
-              accentColor="cyan"
+              tone="highlight"
               size="sm"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               loading={memoryReviewRunning}

@@ -485,7 +485,7 @@ export function SentryProjectPicker({
       <div className="flex justify-end">
         <Button
           variant="accent"
-          accentColor="emerald"
+          tone="success"
           size="sm"
           icon={<Save className="w-3 h-3" />}
           onClick={handleSave}

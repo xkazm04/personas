@@ -29,7 +29,7 @@ Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/component
 |---|---|
 | busy state on a pressed control | `buttons/AsyncButton` (promise `onClick`) or `buttons/Button loading={flag}` |
 | a surface loading its data | ghost under permanent chrome: `display/UnifiedTable` (`isLoading` + `data`), `layout/RouteChunkSkeleton` as Suspense fallback |
-| styled `<button>` | `buttons/Button` (icon sizes for icon-only) |
+| styled `<button>` | `buttons/Button` (icon sizes for icon-only); a tinted one is `variant="accent" tone="success\|error\|agent\|..."`, never a hue |
 | modal, backdrop, confirm | `modals/BaseModal`, `feedback/ConfirmDialog` |
 | `title=` or a custom tooltip | `display/Tooltip` |
 | time, numbers, clipboard | `display/RelativeTime`, `display/Numeric`, `buttons/CopyButton` |
@@ -37,8 +37,7 @@ Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/component
 | tab strip; "no data" | `layout/PanelTabBar`, `layout/SegmentedTabs`; `feedback/ScenarioEmptyState` |
 | row or tile entrance | `display/RevealItem` + `useRevealTracker` |
 
-**Spinner boundary:** a spinner is banned for a surface loading its data and required on a control
-the user just pressed. `feedback/LoadingSpinner` renders `null`: it is neither.
+**Spinner boundary:** a spinner is banned for a surface loading its data and required on a control the user just pressed. `feedback/LoadingSpinner` renders `null`: it is neither.
 **Loading pattern v2:** `docs/design/overview-loading.md` (chrome always renders; a fetch never hides
 rendered rows; a lazy view keeps a module cache, `createModuleCache` when it holds several entries).
 

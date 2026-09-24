@@ -164,7 +164,7 @@ export function CampaignReportPanel({
                     </div>
                     <AsyncButton
                       variant="accent"
-                      accentColor="violet"
+                      tone="agent"
                       size="sm"
                       isLoading={compilingId === v.reviewId}
                       loadingText={t.director.lab_commissioning}

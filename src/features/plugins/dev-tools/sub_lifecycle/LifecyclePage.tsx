@@ -140,7 +140,7 @@ export default function LifecyclePage() {
           {allConfigured ? (
             <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>{t.plugins.dev_tools.teardown}</Button>
           ) : (
-            <Button variant="accent" accentColor="violet" size="sm" icon={<Zap className="w-3.5 h-3.5" />}
+            <Button variant="accent" tone="agent" size="sm" icon={<Zap className="w-3.5 h-3.5" />}
               onClick={handleAutoSetup} loading={configuring} disabled={!devClone}
               disabledReason={!devClone ? t.plugins.dev_tools.adopt_first : undefined}>{t.plugins.dev_tools.auto_setup}</Button>
           )}

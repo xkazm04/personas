@@ -110,7 +110,7 @@ export function CreateStage({ onClose, onCreated }: CreateStageProps) {
           disabled={!ready}
           disabledReason={tc.nameNeeded}
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           loadingText={tc.creating}
           data-testid="xo-create-submit"
         >

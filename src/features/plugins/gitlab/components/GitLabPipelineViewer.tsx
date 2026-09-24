@@ -102,7 +102,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
             loading={triggering}
             onClick={handleTrigger}
             disabled={triggering}
-            accentColor="orange"
+            tone="warning"
           >
             {t.gitlab.trigger_pipeline}
           </Button>

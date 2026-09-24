@@ -258,7 +258,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="typo-caption text-foreground">{dl.goal_delete_confirm}</span>
-                <Button variant="accent" accentColor="rose" size="sm" disabled={saving} onClick={handleDelete}>
+                <Button variant="accent" tone="error" size="sm" disabled={saving} onClick={handleDelete}>
                   {t.common.delete}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>{t.common.cancel}</Button>
@@ -274,7 +274,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
           <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim() || saving}

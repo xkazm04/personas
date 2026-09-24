@@ -145,7 +145,7 @@ export function DrawerReviewCard({
             <Button
               key={`${action}-${i}`}
               variant="accent"
-              accentColor="emerald"
+              tone="success"
               size="sm"
               block
               loading={isReviewInFlight(review.id, `action:${combine(action)}`)}
@@ -163,7 +163,7 @@ export function DrawerReviewCard({
       <div className="border-t border-primary/10 px-3 py-2 grid grid-cols-3 gap-2 bg-secondary/10">
         <Button
           variant="accent"
-          accentColor="rose"
+          tone="error"
           size="sm"
           block
           loading={isReviewInFlight(review.id, 'rejected')}
@@ -187,7 +187,7 @@ export function DrawerReviewCard({
         </button>
         <Button
           variant="accent"
-          accentColor="emerald"
+          tone="success"
           size="sm"
           block
           loading={isReviewInFlight(review.id, 'approved')}

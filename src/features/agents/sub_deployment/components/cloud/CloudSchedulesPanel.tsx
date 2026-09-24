@@ -147,7 +147,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setShowCreate(!showCreate)}
-            accentColor="indigo"
+            tone="agent"
           >
             {ds.add_trigger}
           </Button>

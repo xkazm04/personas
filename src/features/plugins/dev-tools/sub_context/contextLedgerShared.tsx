@@ -299,7 +299,7 @@ export function LedgerActions({
   return (
     <Button
       variant="accent"
-      accentColor="amber"
+      tone="warning"
       size="sm"
       onClick={() => void state.scan()}
       disabled={!hasMap}

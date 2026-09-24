@@ -478,7 +478,7 @@ export default function ProjectManagerPage() {
             <>
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 icon={<Network className="w-3.5 h-3.5" />}
                 onClick={() => setShowCrossProjectMap(true)}
@@ -489,7 +489,7 @@ export default function ProjectManagerPage() {
               </Button>
               <Button
                 variant="accent"
-                accentColor="amber"
+                tone="warning"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 onClick={() => { setEditingProject(null); setShowModal(true); }}
@@ -519,7 +519,7 @@ export default function ProjectManagerPage() {
                 />
                 <Button
                   variant="accent"
-                  accentColor="amber"
+                  tone="warning"
                   size="xs"
                   icon={<Archive className="w-3 h-3" />}
                   loading={archiving}
@@ -546,7 +546,7 @@ export default function ProjectManagerPage() {
               <p className="typo-body text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
               <Button
                 variant="accent"
-                accentColor="amber"
+                tone="warning"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 onClick={() => { setEditingProject(null); setShowModal(true); }}

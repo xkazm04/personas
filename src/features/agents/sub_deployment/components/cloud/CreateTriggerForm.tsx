@@ -136,7 +136,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       <div className="flex items-center gap-2 pt-1">
         <Button
           variant="accent"
-          accentColor="indigo"
+          tone="agent"
           size="sm"
           onClick={handleCreate}
           disabled={!createPersonaId}

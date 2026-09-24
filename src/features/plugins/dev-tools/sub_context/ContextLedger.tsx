@@ -138,7 +138,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
             />
             <Button
               variant="accent"
-              accentColor="amber"
+              tone="warning"
               size="sm"
               disabled={!newGroupName.trim()}
               onClick={handleCreateGroup}
@@ -171,7 +171,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
             <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onShowNewGroup(true)}>
               {t.add_group}
             </Button>
-            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>
+            <Button variant="accent" tone="warning" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={onScan}>
               {t.scan_codebase}
             </Button>
           </div>

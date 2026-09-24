@@ -141,7 +141,7 @@ export default function DirectorCoachingTab() {
       <StaleSweepButton agents={staleAgents} onReview={d.runOnPersona} />
       <AsyncButton
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="sm"
         isLoading={running}
         loadingText={t.director.running}

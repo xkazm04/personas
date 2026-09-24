@@ -147,7 +147,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {!isBuiltin && (
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 data-testid={`tool-run-${tool.name}`}
                 onClick={handleRun}

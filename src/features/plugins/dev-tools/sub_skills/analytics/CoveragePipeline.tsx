@@ -130,7 +130,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
         <span className="ml-auto flex-shrink-0">
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             icon={<PlayCircle className="w-3.5 h-3.5" />}
             disabled={busy || runnable.length === 0}

@@ -103,7 +103,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
       <div className="flex items-center gap-2">
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="sm"
           icon={<Sparkles className="w-3.5 h-3.5" />}
           loading={inferring}
@@ -117,7 +117,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
         {schema && (
           <Button
             variant="accent"
-            accentColor="emerald"
+            tone="success"
             size="sm"
             icon={<Play className="w-3.5 h-3.5" />}
             loading={busy}

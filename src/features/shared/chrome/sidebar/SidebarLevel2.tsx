@@ -290,7 +290,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
               <p className="typo-body text-foreground/90">{t.shared.sidebar_extra.no_credentials}</p>
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="md"
                 icon={<Sparkles className="w-3 h-3" />}
                 onClick={() => navigate('add-new')}

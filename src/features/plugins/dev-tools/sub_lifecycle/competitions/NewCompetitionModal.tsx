@@ -182,7 +182,7 @@ export function NewCompetitionModal({
 
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-primary/5">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={creating}>{t.common.cancel}</Button>
-          <Button variant="accent" accentColor="violet" size="sm" icon={<Swords className="w-3.5 h-3.5" />}
+          <Button variant="accent" tone="agent" size="sm" icon={<Swords className="w-3.5 h-3.5" />}
             onClick={handleCreate} loading={creating} disabled={!title.trim()}>
             {t.plugins.dev_lifecycle.start_competition_slots} ({slotCount} {t.plugins.dev_lifecycle.slots_suffix})
           </Button>

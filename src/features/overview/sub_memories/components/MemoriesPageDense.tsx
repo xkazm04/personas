@@ -332,7 +332,7 @@ export default function MemoriesPageDense() {
                 here rather than AsyncButton. */}
             <Button
               variant="accent"
-              accentColor="cyan"
+              tone="highlight"
               size="sm"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               loading={memoryReviewRunning}
@@ -345,7 +345,7 @@ export default function MemoriesPageDense() {
             <div className="relative" ref={reflectMenuRef}>
               <Button
                 variant="accent"
-                accentColor="amber"
+                tone="warning"
                 size="sm"
                 icon={<Lightbulb className="w-3.5 h-3.5" />}
                 loading={memoryReviewRunning}

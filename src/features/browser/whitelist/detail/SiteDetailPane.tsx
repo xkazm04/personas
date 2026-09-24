@@ -124,7 +124,7 @@ export default function SiteDetailPane({
           <AsyncButton
             size="xs"
             variant="accent"
-            accentColor="emerald"
+            tone="success"
             icon={<Check className="w-3.5 h-3.5" />}
             onClick={() => onConfirm(site)}
           >

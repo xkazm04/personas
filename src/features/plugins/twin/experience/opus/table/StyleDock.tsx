@@ -49,7 +49,7 @@ export function StyleDock({ phase, styleName, onOpen }: StyleDockProps) {
       {working && <span aria-hidden className="block h-1.5 w-2/3 rounded-pill bg-secondary/70" />}
       <Button
         variant={waiting ? 'accent' : 'secondary'}
-        accentColor="violet"
+        tone="agent"
         size="sm"
         onClick={onOpen}
         data-testid="xo-style-dock-open"

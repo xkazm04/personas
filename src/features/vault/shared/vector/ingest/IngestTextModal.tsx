@@ -106,7 +106,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         {/* ACTION control — Button owns the spinner, the dim, disabled and aria-busy. */}
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           loading={ingesting}
           loadingLabel={sh.ingesting}
           disabled={!canSubmit}

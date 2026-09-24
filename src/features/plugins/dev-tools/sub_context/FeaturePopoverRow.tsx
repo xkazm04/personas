@@ -147,7 +147,7 @@ export function FeaturePopoverRow({
         >
           <Button
             variant="accent"
-            accentColor="amber"
+            tone="warning"
             size="sm"
             className="shrink-0"
             data-testid="council-open-gate"

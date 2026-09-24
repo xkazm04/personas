@@ -206,7 +206,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           */}
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             loading={ingesting}
             loadingLabel={sh.scanning}
             disabled={!canSubmit}

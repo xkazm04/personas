@@ -122,7 +122,7 @@ export function CreateTwinDialog({ onClose }: { onClose: () => void }) {
           onClick={submit}
           disabled={!name.trim()}
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="sm"
           loadingText={twin.profiles.creating}
         >

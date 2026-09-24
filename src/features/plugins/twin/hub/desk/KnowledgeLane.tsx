@@ -56,7 +56,7 @@ export function KnowledgeLane({ feed }: HubDeskProps) {
           <AsyncButton
             size="xs"
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             isLoading={feed.busyId === HUB_BUSY.reflect}
             disabled={trimmed.length === 0}
             disabledReason={trimmed.length === 0 ? t.knowledge.reflectNeedsSeed : undefined}

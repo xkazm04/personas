@@ -161,7 +161,7 @@ export function PersonaDetailModal({
         </Button>
         <AsyncButton
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="sm"
           isLoading={running}
           loadingText={t.director.running}

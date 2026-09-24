@@ -161,7 +161,7 @@ export function TrainingTable({ initialStage, fresh, onClose, onOpenHub }: Train
           </div>
           <Button
             variant={styleOpen ? 'accent' : 'secondary'}
-            accentColor="violet"
+            tone="agent"
             size="sm"
             aria-pressed={styleOpen}
             onClick={() => setStyleOpen((open) => !open)}

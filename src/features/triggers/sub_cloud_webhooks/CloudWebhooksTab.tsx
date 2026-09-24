@@ -197,7 +197,7 @@ export function CloudWebhooksTab() {
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.cloud_webhook_triggers}
           </h3>
-          <Button variant="accent" accentColor="blue" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
+          <Button variant="accent" tone="info" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
             {t.triggers.add_webhook}
           </Button>
         </div>
@@ -224,7 +224,7 @@ export function CloudWebhooksTab() {
             <div className="flex items-center gap-2">
               <Button
                 variant="accent"
-                accentColor="blue"
+                tone="info"
                 onClick={handleCreate}
                 disabled={!createPersonaId}
                 loading={isCreating}

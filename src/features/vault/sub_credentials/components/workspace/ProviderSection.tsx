@@ -158,7 +158,7 @@ export function ProviderSection({
               <Button
                 onClick={ws.reset}
                 variant="accent"
-                accentColor="blue"
+                tone="info"
                 size="md"
                 icon={<RefreshCw className="w-3.5 h-3.5" />}
               >

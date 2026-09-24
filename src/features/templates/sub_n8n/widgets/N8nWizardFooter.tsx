@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Hammer } from 'lucide-react';
 import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
-import Button, { type AccentColor } from '@/features/shared/components/buttons/Button';
+import Button, { type ButtonTone } from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nWizardFooterProps {
@@ -52,7 +52,7 @@ export function N8nWizardFooter({
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     disabled: boolean;
-    variant: 'violet' | 'emerald';
+    tone: Extract<ButtonTone, 'agent' | 'success'>;
     spinning?: boolean;
   } | null => {
     switch (step) {
@@ -63,15 +63,15 @@ export function N8nWizardFooter({
           label: t.templates.n8n.review_and_confirm,
           icon: ArrowRight,
           disabled: !hasDraft || transforming || testStatus !== 'passed' || connectorsMissing > 0,
-          variant: 'violet',
+          tone: 'agent',
         };
       case 'confirm':
         if (created) {
-          return { label: t.templates.n8n.persona_saved, icon: Check, disabled: true, variant: 'emerald' };
+          return { label: t.templates.n8n.persona_saved, icon: Check, disabled: true, tone: 'success' };
         }
         return confirming
-          ? { label: t.templates.n8n.saving, icon: RefreshCw, disabled: true, variant: 'emerald', spinning: true }
-          : { label: t.templates.n8n.confirm_and_save, icon: Check, disabled: !hasDraft, variant: 'emerald' };
+          ? { label: t.templates.n8n.saving, icon: RefreshCw, disabled: true, tone: 'success', spinning: true }
+          : { label: t.templates.n8n.confirm_and_save, icon: Check, disabled: !hasDraft, tone: 'success' };
       default:
         return null;
     }
@@ -110,7 +110,7 @@ export function N8nWizardFooter({
         {step === 'edit' && onTest && (
           <Button
             variant="accent"
-            accentColor={testStatus === 'passed' ? 'emerald' : testStatus === 'failed' ? 'rose' : 'blue'}
+            tone={testStatus === 'passed' ? 'success' : testStatus === 'failed' ? 'error' : 'info'}
             onClick={onTest}
             disabled={!hasDraft}
             loading={testStatus === 'running'}
@@ -131,7 +131,7 @@ export function N8nWizardFooter({
 
         {/* Fix & Regenerate -- shown on edit step when test failed */}
         {step === 'edit' && testStatus === 'failed' && onApplyAdjustment && (
-          <Button variant="accent" accentColor="amber" onClick={onApplyAdjustment} icon={<Wand2 className="w-4 h-4" />}>
+          <Button variant="accent" tone="warning" onClick={onApplyAdjustment} icon={<Wand2 className="w-4 h-4" />}>
             {t.templates.n8n.fix_and_regenerate}
           </Button>
         )}
@@ -140,7 +140,7 @@ export function N8nWizardFooter({
         {step === 'analyze' && onProcessWithMatrix && hasParseResult && (
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             onClick={onProcessWithMatrix}
             loading={analyzing}
             loadingLabel={t.templates.n8n.analyzing_btn}
@@ -154,7 +154,7 @@ export function N8nWizardFooter({
         {nextAction && (
           <Button
             variant="accent"
-            accentColor={nextAction.variant as AccentColor}
+            tone={nextAction.tone}
             onClick={onNext}
             disabled={nextAction.disabled}
             loading={nextAction.spinning}

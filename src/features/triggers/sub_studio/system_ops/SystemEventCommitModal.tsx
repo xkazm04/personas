@@ -232,7 +232,7 @@ export function SystemEventCommitModal({
 
         <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-border">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
-          <AsyncButton variant="accent" accentColor="violet" size="sm" onClick={handleCreate} disabled={!canCreate}>
+          <AsyncButton variant="accent" tone="agent" size="sm" onClick={handleCreate} disabled={!canCreate}>
             {st.commit_create}
           </AsyncButton>
         </div>

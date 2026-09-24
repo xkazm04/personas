@@ -137,7 +137,7 @@ export function ConsoleTab({ credentialId, language, serviceType }: ConsoleTabPr
               so the old ternary deleted the Play icon and put nothing in its place. */}
           <Button
             variant="accent"
-            accentColor="emerald"
+            tone="success"
             size="md"
             onClick={handleExecute}
             disabled={!query.trim()}
@@ -156,7 +156,7 @@ export function ConsoleTab({ credentialId, language, serviceType }: ConsoleTabPr
           {executing && (
             <Button
               variant="accent"
-              accentColor="rose"
+              tone="error"
               size="md"
               onClick={cancelQuery}
               icon={<X className="w-3 h-3" />}

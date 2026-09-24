@@ -321,7 +321,9 @@ The don't-hand-roll quick table (full version in
 empty state → `feedback/ScenarioEmptyState` (default export, imported as
 `EmptyState`; `NoResults`/`InboxZero` wrappers alongside it) — chart panels use
 `display/ChartEmptyState`, a compact generic block `display/EmptyIllustration`;
-styled `<button>` → `buttons/Button`/`AsyncButton`; clipboard →
+styled `<button>` → `buttons/Button`/`AsyncButton` (a tinted action is `variant="accent"`
+with `tone`: `success`/`warning`/`error`/`info` or `agent`/`human`/`external`/`highlight`,
+named for meaning; `accentColor` is gone); clipboard →
 `buttons/CopyButton`; modal backdrop → `modals/BaseModal`/`feedback/ConfirmDialog`;
 tooltip → `display/Tooltip`; timestamps → `display/RelativeTime`; number
 formatting → `display/Numeric`; switch → `forms/AccessibleToggle`; dropdown →

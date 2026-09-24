@@ -304,7 +304,7 @@ export function CompetitionSlotRow({
         {!isFinished && taskStatus === 'completed' && !isDq && (
           <Button
             variant="accent"
-            accentColor="emerald"
+            tone="success"
             size="sm"
             icon={<Star className="w-3.5 h-3.5" />}
             onClick={() => onPickWinner(slot.task_id)}

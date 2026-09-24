@@ -132,7 +132,7 @@ export function NotificationChannelCard({
             old `<LoadingSpinner/>` rendered null, so "sending" had no icon. */}
         <Button
           variant={testStatus === 'success' || testStatus === 'error' ? 'accent' : 'secondary'}
-          accentColor={testStatus === 'success' ? 'emerald' : testStatus === 'error' ? 'rose' : undefined}
+          tone={testStatus === 'success' ? 'success' : testStatus === 'error' ? 'error' : undefined}
           size="sm"
           onClick={handleTestNotification}
           disabled={!enabled}

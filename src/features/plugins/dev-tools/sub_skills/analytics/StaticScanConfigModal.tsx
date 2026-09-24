@@ -111,7 +111,7 @@ export function StaticScanConfigModal({
 
         <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
-          <AsyncButton variant="accent" accentColor="emerald" size="sm" onClick={handleSave}>
+          <AsyncButton variant="accent" tone="success" size="sm" onClick={handleSave}>
             {ds.static_config_save_run}
           </AsyncButton>
         </div>

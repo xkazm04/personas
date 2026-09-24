@@ -355,7 +355,7 @@ export function ProjectModal({
                 {!isLastStep ? (
                   <Button
                     variant="accent"
-                    accentColor="amber"
+                    tone="warning"
                     size="sm"
                     iconRight={<ArrowRight className="w-3.5 h-3.5" />}
                     disabled={stepIndex === 0 && !stage0Complete}
@@ -366,7 +366,7 @@ export function ProjectModal({
                 ) : (
                   <Button
                     variant="accent"
-                    accentColor="amber"
+                    tone="warning"
                     size="sm"
                     icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     disabled={!canSubmit}
@@ -401,7 +401,7 @@ export function ProjectModal({
 
             <div className="flex justify-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleClose}>{dp.skip_for_now}</Button>
-              <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow} data-testid="dev-project-scan-now">
+              <Button variant="accent" tone="warning" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow} data-testid="dev-project-scan-now">
                 {dp.scan_codebase}
               </Button>
             </div>

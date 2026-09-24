@@ -51,7 +51,7 @@ export function QueryToolbar({
           old ternary deleted the Save icon and left the button blank mid-save. */}
       <Button
         variant={saveState === 'saved' ? 'accent' : 'ghost'}
-        accentColor={saveState === 'saved' ? 'emerald' : undefined}
+        tone={saveState === 'saved' ? 'success' : undefined}
         size="sm"
         onClick={onSave}
         loading={saveState === 'saving'}
@@ -70,7 +70,7 @@ export function QueryToolbar({
           state, and Cancel joins it as a separate affordance while in flight. */}
       <Button
         variant="accent"
-        accentColor="emerald"
+        tone="success"
         size="md"
         onClick={onExecute}
         disabled={!editorValue.trim()}
@@ -84,7 +84,7 @@ export function QueryToolbar({
       {executing && (
         <Button
           variant="accent"
-          accentColor="rose"
+          tone="error"
           size="md"
           onClick={onCancel}
           icon={<X className="w-3 h-3" />}
@@ -98,7 +98,7 @@ export function QueryToolbar({
           debug round-trip, which is the longest wait in this toolbar. */}
       <Button
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="sm"
         onClick={onAiRun}
         disabled={!editorValue.trim()}

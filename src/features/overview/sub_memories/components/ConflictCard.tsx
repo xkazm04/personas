@@ -100,12 +100,12 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {conflict.kind === 'duplicate' && (
-                <Button variant="accent" accentColor="indigo" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing || mergeBlocked} disabledReason={mergeBlocked ? mergeBlockedReason : mc.processing} onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
+                <Button variant="accent" tone="agent" size="xs" icon={<GitMerge className="w-3 h-3" />} disabled={isProcessing || mergeBlocked} disabledReason={mergeBlocked ? mergeBlockedReason : mc.processing} onClick={() => onResolve('merge')}>{t.overview.memory_conflict.merge}</Button>
               )}
-              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_a')}>
+              <Button variant="accent" tone="success" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_a')}>
                 {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryA.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
-              <Button variant="accent" accentColor="emerald" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_b')}>
+              <Button variant="accent" tone="success" size="xs" icon={<Check className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('keep_b')}>
                 {t.overview.memory_review.keep_prefix}{stripHtml(conflict.memoryB.title).slice(0, 20)}...{t.overview.memory_review.keep_suffix}
               </Button>
               <Button variant="secondary" size="xs" icon={<X className="w-3 h-3" />} disabled={isProcessing} disabledReason={mc.processing} onClick={() => onResolve('dismiss')}>{t.common.dismiss}</Button>

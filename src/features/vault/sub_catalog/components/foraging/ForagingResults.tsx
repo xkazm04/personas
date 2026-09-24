@@ -152,7 +152,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
           icon={<Download className="w-4 h-4" />}
           block
           onClick={onImport}
-          accentColor="violet"
+          tone="agent"
           className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
         >
           {tx(forage.selected.size !== 1 ? fg.import_to_vault_other : fg.import_to_vault_one, { count: forage.selected.size })}

@@ -46,7 +46,7 @@ export default function ExperienceSetupPage() {
         <div className="flex flex-wrap justify-center gap-2">
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             icon={<Play className="w-4 h-4" />}
             onClick={() => openTwinExperience({ mode: 'train', stage: 'setup' })}
             data-testid="xo-launch-setup"

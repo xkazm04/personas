@@ -46,7 +46,7 @@ export function WinnerInsightDialog({
         </Button>
         <Button
           variant="accent"
-          accentColor="emerald"
+          tone="success"
           size="sm"
           icon={<Star className="w-3.5 h-3.5" />}
           onClick={onConfirm}

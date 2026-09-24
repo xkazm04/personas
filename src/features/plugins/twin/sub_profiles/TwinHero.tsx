@@ -31,7 +31,7 @@ export function TwinHero({ onCreate }: { onCreate: () => void }) {
 
         {/* Primary CTA */}
         <div className="flex items-center justify-center gap-4">
-          <Button onClick={onCreate} variant="accent" accentColor="violet">
+          <Button onClick={onCreate} variant="accent" tone="agent">
             <Plus className="w-4 h-4 mr-1.5" />
             {t.hero.primaryCta}
           </Button>

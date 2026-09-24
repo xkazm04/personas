@@ -57,7 +57,7 @@ export function DirectorPanel() {
       </div>
       <Button
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="sm"
         icon={<ArrowRight className="w-3.5 h-3.5" />}
         onClick={() => d.openDirector()}

@@ -209,7 +209,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               <Button
                 size="sm"
                 variant="accent"
-                accentColor="cyan"
+                tone="highlight"
                 icon={<FlaskConical className="w-3.5 h-3.5" />}
                 onClick={openLab}
               >
@@ -221,7 +221,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <Button
               size="sm"
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={askAthena}
             >

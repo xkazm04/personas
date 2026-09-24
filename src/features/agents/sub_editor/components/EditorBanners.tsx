@@ -80,7 +80,7 @@ export function UnsavedChangesBanner({
         ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
         : t.agents.editor.unsaved_changes_generic}
       actions={[
-        <Button key="save" variant="accent" accentColor="amber" size="sm" onClick={onSaveAndSwitch}>
+        <Button key="save" variant="accent" tone="warning" size="sm" onClick={onSaveAndSwitch}>
           {t.agents.editor.save_and_switch}
         </Button>,
         <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch}>

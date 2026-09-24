@@ -67,7 +67,7 @@ export default function TourHandoffOffer() {
         </Button>
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="md"
           onClick={() => acceptTourHandoff(tourId)}
           data-testid="tour-handoff-accept"

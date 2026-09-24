@@ -151,7 +151,7 @@ export function TaskModal({
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <Button
             variant="accent"
-            accentColor="amber"
+            tone="warning"
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim()}

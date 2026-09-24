@@ -138,7 +138,7 @@ export default function GoalsPage() {
             <LifecycleProjectPicker allowNone />
             <Button
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               size="sm"
               icon={<Plus className="w-3.5 h-3.5" />}
               disabled={!activeProjectId}
@@ -195,7 +195,7 @@ export default function GoalsPage() {
             <div className="flex items-center gap-2">
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 disabled={!activeProjectId}

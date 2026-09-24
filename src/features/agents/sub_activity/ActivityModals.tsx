@@ -120,7 +120,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
               <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
                 <Button
                   variant="accent"
-                  accentColor="emerald"
+                  tone="success"
                   size="sm"
                   onClick={() => handleReviewAction('approved')}
                   disabled={reviewProcessing !== null}
@@ -132,7 +132,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                 </Button>
                 <Button
                   variant="accent"
-                  accentColor="rose"
+                  tone="error"
                   size="sm"
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing !== null}

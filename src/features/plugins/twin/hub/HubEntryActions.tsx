@@ -95,19 +95,19 @@ export function HubEntryActions({ entry, feed }: { entry: HubEntry; feed: HubFee
       {isReviewable(entry) && (
         <>
           <Icon label={t.entry.approve}>
-            <AsyncButton size="icon-sm" variant="accent" accentColor="emerald" isLoading={busy}
+            <AsyncButton size="icon-sm" variant="accent" tone="success" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.approve}
               onClick={() => feed.approve(entry)} data-testid="hub-entry-approve"
               icon={<Check className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.digDeeper}>
-            <AsyncButton size="icon-sm" variant="accent" accentColor="violet" isLoading={busy}
+            <AsyncButton size="icon-sm" variant="accent" tone="agent" isLoading={busy}
               disabled={otherBusy} aria-label={t.entry.digDeeper}
               onClick={() => feed.digDeeper(entry)} data-testid="hub-entry-dig-deeper"
               icon={<Wand2 className="w-3.5 h-3.5" />} />
           </Icon>
           <Icon label={t.entry.reject}>
-            <AsyncButton size="icon-sm" variant="accent" accentColor="rose" disabled={otherBusy || busy}
+            <AsyncButton size="icon-sm" variant="accent" tone="error" disabled={otherBusy || busy}
               aria-label={t.entry.reject} onClick={() => { setRejecting(true); }}
               data-testid="hub-entry-reject" icon={<X className="w-3.5 h-3.5" />} />
           </Icon>

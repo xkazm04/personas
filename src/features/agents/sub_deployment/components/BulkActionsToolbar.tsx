@@ -86,7 +86,7 @@ export function BulkActionsToolbar({
       {pausableIds.length > 0 && (
         <Button
           variant="accent"
-          accentColor="amber"
+          tone="warning"
           size="sm"
           onClick={() => handleBulk('pause')}
           disabled={isBusy}
@@ -100,7 +100,7 @@ export function BulkActionsToolbar({
       {resumableIds.length > 0 && (
         <Button
           variant="accent"
-          accentColor="emerald"
+          tone="success"
           size="sm"
           onClick={() => handleBulk('resume')}
           disabled={isBusy}

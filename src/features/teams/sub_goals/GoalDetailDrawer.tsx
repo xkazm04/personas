@@ -445,7 +445,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
             </p>
             <p className="typo-caption text-foreground">{progress.reason}</p>
           </div>
-          <Button variant="accent" accentColor="violet" size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={handleAcceptProgress}>
+          <Button variant="accent" tone="agent" size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={handleAcceptProgress}>
             {dl.goal_progress_accept}
           </Button>
         </div>
@@ -501,7 +501,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
                 {!verifyItem.done && (
                   <Button
                     variant="accent"
-                    accentColor="sky"
+                    tone="info"
                     size="sm"
                     icon={<Play className="w-3.5 h-3.5" />}
                     disabled={uatRunning || !todosComplete}
@@ -545,7 +545,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
                 className="w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/50 focus-ring"
               />
               <div className="flex items-center gap-2">
-                <Button variant="accent" accentColor="sky" size="sm" disabled={!uatScenario.trim()} onClick={handleSaveUat}>
+                <Button variant="accent" tone="info" size="sm" disabled={!uatScenario.trim()} onClick={handleSaveUat}>
                   {dl.uat_save}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowUatForm(false)}>{t.common.cancel}</Button>

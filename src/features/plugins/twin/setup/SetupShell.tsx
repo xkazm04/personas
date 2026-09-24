@@ -119,7 +119,7 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
         {session.stage === 'training' && (
           <Button
             variant={studioOpen ? 'accent' : 'secondary'}
-            accentColor="violet"
+            tone="agent"
             size="sm"
             aria-pressed={studioOpen}
             onClick={() => setStudioOpen((open) => !open)}

@@ -47,7 +47,7 @@ export function TrainingInvite({ onStart }: { onStart: () => void }) {
       <GraduationCap className="w-8 h-8 mx-auto text-[var(--xo-hue)]" aria-hidden />
       <h3 className="typo-heading-lg text-foreground">{xo.inviteTitle}</h3>
       <p className="typo-body-lg text-foreground max-w-xl mx-auto">{xo.inviteBody}</p>
-      <Button variant="accent" accentColor="violet" onClick={onStart} data-testid="xo-training-invite-start">
+      <Button variant="accent" tone="agent" onClick={onStart} data-testid="xo-training-invite-start">
         {xo.inviteStart}
       </Button>
     </div>
@@ -70,7 +70,7 @@ export function CompleteCard({ name, onTrain, onClose }: { name: string; onTrain
       <h3 className="typo-heading-lg text-foreground">{tx(xo.completeTitle, { name })}</h3>
       <p className="typo-body-lg text-foreground max-w-xl mx-auto">{xo.completeBody}</p>
       <div className="flex justify-center gap-2 pt-1">
-        <Button variant="accent" accentColor="violet" onClick={onTrain} data-testid="xo-complete-train">
+        <Button variant="accent" tone="agent" onClick={onTrain} data-testid="xo-complete-train">
           {xo.completeTrain}
         </Button>
         <Button variant="ghost" onClick={onClose}>

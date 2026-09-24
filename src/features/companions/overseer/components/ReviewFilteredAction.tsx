@@ -26,7 +26,7 @@ export function ReviewFilteredAction({
   return (
     <AsyncButton
       variant="accent"
-      accentColor="violet"
+      tone="agent"
       size="sm"
       isLoading={running}
       loadingText={tx(t.director.review_filtered_progress, { done: progress ?? 0, total: agents.length })}

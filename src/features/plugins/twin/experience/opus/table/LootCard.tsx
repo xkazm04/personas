@@ -78,7 +78,7 @@ export function LootCard({ proposal, resolution, onKeep, onEdit, onPass }: LootC
           <AsyncButton
             size="sm"
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             icon={<Check className="w-3.5 h-3.5" />}
             onClick={() => onKeep(proposal)}
             data-testid="xo-loot-keep"

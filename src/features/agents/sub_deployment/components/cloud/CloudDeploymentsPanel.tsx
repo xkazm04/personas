@@ -167,7 +167,7 @@ export function CloudDeploymentsPanel({
             loading={isDeploying}
             onClick={handleDeploy}
             disabled={!selectedPersonaId || isDeploying}
-            accentColor="indigo"
+            tone="agent"
           >
             {isDeploying ? t.deployment.deploying : 'Deploy'}
           </Button>

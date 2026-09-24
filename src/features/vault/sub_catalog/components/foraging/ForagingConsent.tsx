@@ -79,7 +79,7 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
           size="md"
           icon={<Sparkles className="w-4 h-4" />}
           onClick={onScan}
-          accentColor="violet"
+          tone="agent"
           data-testid="vault-foraging-scan"
           className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
         >

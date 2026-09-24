@@ -170,7 +170,7 @@ export function RunDeskControls({
       </Button>
       <Button
         variant="accent"
-        accentColor="amber"
+        tone="warning"
         size="sm"
         icon={<Play className="w-3.5 h-3.5" />}
         disabled={queued === 0}
@@ -181,7 +181,7 @@ export function RunDeskControls({
       </Button>
       <Button
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="sm"
         icon={<InfinityIcon className="w-3.5 h-3.5" />}
         disabled={!projectId || queued === 0}

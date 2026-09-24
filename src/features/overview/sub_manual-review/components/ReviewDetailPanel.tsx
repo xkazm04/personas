@@ -355,7 +355,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('approved', notes);
-              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" accentColor="emerald" icon={<Check className="w-3.5 h-3.5" />}>
+              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" tone="success" icon={<Check className="w-3.5 h-3.5" />}>
                 {hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
               </Button>
               <Button onClick={() => {
@@ -368,7 +368,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('rejected', notes);
-              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" accentColor="rose" icon={<X className="w-3.5 h-3.5" />}>
+              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" tone="error" icon={<X className="w-3.5 h-3.5" />}>
                 {t.overview.review.reject}
               </Button>
             </div>
