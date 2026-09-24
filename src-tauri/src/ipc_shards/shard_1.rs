@@ -80,6 +80,7 @@ pub(super) fn shard(
         commands::design::build_sessions::get_build_status,
         commands::design::build_sessions::test_build_draft,
         commands::design::build_sessions::promote_build_draft,
+        commands::design::build_sessions::preview_promote_build_draft,
         commands::design::archetypes::list_archetypes,
         commands::design::build_sessions::create_adoption_session,
         commands::design::build_sessions::save_adoption_answers,
