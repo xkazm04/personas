@@ -548,7 +548,10 @@ export default function SoundingsView(props: SoundingsViewProps) {
       if (node) reading = <><b>{node.label}</b>{` ${tx(m.soundings_reading_dim, { dim: '', project: curStation.island.name, status: statusWord(node.status) }).trimStart()}`}</>;
     } else {
       const s = stations[act];
-      if (s) {
+      // A ghost station has no verdict yet (unsettled or unmeasured): the line
+      // must not rank it or call it calm before the data says so.
+      if (s?.ghost) reading = m.loading_projects;
+      else if (s) {
         const r = rankOf(act);
         const head = r === 0 ? tx(m.soundings_reading_first, { name: '\u0000' }) : tx(m.soundings_reading_nth, { name: '\u0000', rank: r + 1 });
         const [pre, post] = head.split('\u0000');
