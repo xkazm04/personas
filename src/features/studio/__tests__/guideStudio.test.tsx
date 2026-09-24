@@ -183,6 +183,19 @@ describe('Guide layout', () => {
     expect(useStudioStore.getState().runtimes.p1!.queuedNotes).toEqual(['bigger logo']);
   });
 
+  it('a goal added while she works waits as a note that still says it is a new goal', () => {
+    seed({ busy: true, turnStartedAt: Date.now() });
+    mount();
+    fireEvent.click(screen.getByText('add_goal').closest('button')!);
+    const input = screen.getByPlaceholderText('add_goal_placeholder');
+    fireEvent.change(input, { target: { value: 'Gift cards' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    const [note] = useStudioStore.getState().runtimes.p1!.queuedNotes;
+    expect(note).toContain('Gift cards');
+    expect(note).toMatch(/goal/i);
+    expect(note).toMatch(/BUILD_PLAN/);
+  });
+
   it('asks the question on a large card with keyed options', () => {
     const phases = [
       { id: 'v', title: 'Vision', status: 'active', note: 'shop + ordering' },

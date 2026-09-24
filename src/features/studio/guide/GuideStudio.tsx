@@ -14,7 +14,7 @@ import GuideNowLine, { YourCallButton } from './GuideNowLine';
 import GuideQuestionCard from './GuideQuestionCard';
 import GuideDeck from './GuideDeck';
 import GuideToolArc from './GuideToolArc';
-import { addGoalPrompt, deriveDeck, setupSteps, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
+import { addGoalNote, addGoalPrompt, deriveDeck, setupSteps, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
 import { estimateText, guideStrings } from './guideCopy';
 import { useGuideRuntime } from './useGuideRuntime';
 import { useGuideReadAloud } from './useGuideReadAloud';
@@ -166,7 +166,10 @@ export default function GuideStudio({
         drafting={!showVision && !drafting && planning && !sketchSrc?.sketch}
         draftGoals={!showVision && (placeholder || drafting) ? sketchSrc?.sketch?.goals : undefined}
         canAdd={!!rt && live && !showVision && !drafting}
-        onAddGoal={(goal) => (working && id ? useStudioStore.getState().queueNote(id, goal) : run(addGoalPrompt(goal)))}
+        onAddGoal={(goal) => {
+          if (!working || !id) return run(addGoalPrompt(goal));
+          return useStudioStore.getState().queueNote(id, addGoalNote(goal));
+        }}
       />
       <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[5.25rem]">
         <GuideFrame

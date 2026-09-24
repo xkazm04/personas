@@ -145,6 +145,15 @@ export function addGoalPrompt(goal: string): string {
   return `Add this goal to the plan: "${goal}". Decide where it belongs among the existing goals, say in one sentence where you placed it and why, and emit the updated BUILD_PLAN. Do not start building it yet.`;
 }
 
+/**
+ * The same goal added while she works: it waits as a note for her next step,
+ * and the note must still say what it is. A bare title read as a request to
+ * build that thing right away.
+ */
+export function addGoalNote(goal: string): string {
+  return `New goal for the plan: "${goal}". Place it among the existing goals and include it in the next BUILD_PLAN you emit; do not start building it in this step unless it is the current goal.`;
+}
+
 export type SetupStepKey = 'sketch' | 'create' | 'preview' | 'plan';
 export type SetupStepState = 'done' | 'running' | 'pending' | 'failed';
 

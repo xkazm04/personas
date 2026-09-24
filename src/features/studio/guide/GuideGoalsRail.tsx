@@ -23,7 +23,8 @@ const GuideGoalsRail = forwardRef<
     /** The sketch lane's draft goals, shown until the real plan lands. */
     draftGoals?: { title: string; note: string }[];
     canAdd: boolean;
-    onAddGoal: (goal: string) => void;
+    /** False when the goal could not be taken (a full note queue). */
+    onAddGoal: (goal: string) => boolean | void;
   }
 >(function GuideGoalsRail({ phases, placeholder, drafting, draftGoals, canAdd, onAddGoal }, ref) {
   const { t, tx } = useTranslation();
@@ -47,7 +48,8 @@ const GuideGoalsRail = forwardRef<
   const submit = () => {
     const goal = draft.trim();
     if (!goal) return;
-    onAddGoal(goal);
+    // A full note queue refuses the goal: keep it in the box.
+    if (onAddGoal(goal) === false) return;
     setDraft('');
     setAdding(false);
   };
