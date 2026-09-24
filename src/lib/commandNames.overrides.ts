@@ -6,15 +6,6 @@
  * `node scripts/generate-command-names.mjs` and remove it from this list.
  */
 export type UnregisteredCommand =
-  // Curator's loop (stage 2b). The wire contract was frozen at 29d67ca26 so the
-  // Rust and the UI could be built in parallel; these five are referenced by
-  // `src/api/curator.ts` and drop off this list the moment the handler
-  // registration lands and `generate-command-names.mjs` re-runs.
-  | "curator_requests_list"
-  | "curator_request_create"
-  | "curator_request_cancel"
-  | "curator_skills_list"
-  | "curator_runtime_get"
   | "dev_tools_batch_create_tasks"
   | "dev_tools_cancel_task"
   | "dev_tools_generate_context_description"

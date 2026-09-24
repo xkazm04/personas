@@ -24,6 +24,14 @@ pub(super) fn shard(
         commands::curator::curator_plan_current,
         commands::curator::curator_plan_refresh,
         commands::curator::curator_process_read,
+        // Her RUNTIME: the operator's request lane, the skills she could
+        // dispatch, and every brake on her. Still nothing that acts - the lane
+        // has a claim function with no caller, by design.
+        commands::curator::curator_requests_list,
+        commands::curator::curator_request_create,
+        commands::curator::curator_request_cancel,
+        commands::curator::curator_skills_list,
+        commands::curator::curator_runtime_get,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,
