@@ -308,6 +308,10 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
     {
       code: `function C() { return <p className="bg-secondary">x</p>; }`,
     },
+    {
+      // dark-only white is the dark theme's contract, not a leak
+      code: `function C() { return <p className="dark:text-white dark:hover:bg-white/10">x</p>; }`,
+    },
   ],
   invalid: [
     {
@@ -316,6 +320,20 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
     },
     {
       code: `function C() { return <div className="bg-white/80">x</div>; }`,
+      errors: 1,
+    },
+    {
+      // state variants do not flip under a light theme either
+      code: `function C() { return <button className="px-2 hover:bg-white/5">x</button>; }`,
+      errors: 1,
+    },
+    {
+      code: `function C() { return <a className="group-hover:text-white">x</a>; }`,
+      errors: 1,
+    },
+    {
+      // a dark: chain earlier in the string does not hide a later leak
+      code: `function C() { return <p className="dark:text-white focus:bg-white/10">x</p>; }`,
       errors: 1,
     },
   ],
