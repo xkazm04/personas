@@ -42,7 +42,6 @@
 //! when disabled and free when no charter has `cadence.attentionEnabled`.
 
 use super::*;
-use std::cmp::Ordering as CmpOrdering;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -1312,11 +1311,7 @@ fn admit_persona(
 
     // (d) quiet hours: any charter's local window refuses; an unparseable
     // spec quiets nothing (lenient) and warns once per process.
-    let now_minute = {
-        use chrono::Timelike;
-        let now = chrono::Local::now();
-        now.hour() * 60 + now.minute()
-    };
+    let now_minute = personas_core::quiet_hours::local_minute_of_day();
     for c in charters {
         let Some(spec) = c.cadence.quiet_hours.as_deref() else {
             continue;
@@ -3178,29 +3173,15 @@ fn interval_floor_refusal(
     }
 }
 
-/// Lenient `"HH:MM-HH:MM"` → (start, end) minutes-of-day. `None` = no window.
-fn parse_quiet_hours(spec: &str) -> Option<(u32, u32)> {
-    let (start, end) = spec.split_once('-')?;
-    Some((parse_hhmm(start.trim())?, parse_hhmm(end.trim())?))
-}
-
-fn parse_hhmm(s: &str) -> Option<u32> {
-    let (h, m) = s.split_once(':')?;
-    let h: u32 = h.trim().parse().ok()?;
-    let m: u32 = m.trim().parse().ok()?;
-    (h <= 23 && m <= 59).then_some(h * 60 + m)
-}
-
-/// Wrap-aware window membership: `22:00-07:00` covers the night across
-/// midnight. Equal endpoints are an EMPTY window (a charter saying
-/// "09:00-09:00" quiets nothing rather than everything — lenient).
-fn in_quiet_window(now_minute: u32, start: u32, end: u32) -> bool {
-    match start.cmp(&end) {
-        CmpOrdering::Less => now_minute >= start && now_minute < end,
-        CmpOrdering::Greater => now_minute >= start || now_minute < end,
-        CmpOrdering::Equal => false,
-    }
-}
+// `parse_quiet_hours` / `in_quiet_window` MOVED to
+// `personas_core::quiet_hours` on 2026-09-24 and are re-exported here under
+// their old names so every call site in this file reads unchanged. Two more
+// readers of the same `"HH:MM-HH:MM"` spelling arrived that day - Curator's
+// tick and `settings_keys::validate_value` - and `db` cannot reach this crate,
+// so the parser came DOWN rather than being written a second and third time.
+// The grammar is unchanged; the fixtures that proved it moved with it.
+use personas_core::quiet_hours::contains as in_quiet_window;
+use personas_core::quiet_hours::parse as parse_quiet_hours;
 
 // ── Task briefs ────────────────────────────────────────────────────────────
 

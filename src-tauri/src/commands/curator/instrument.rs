@@ -385,7 +385,7 @@ pub(super) fn parse_json<T: serde::de::DeserializeOwned>(
 ///
 /// Degraded rather than fatal: a corpus read without a version is still a
 /// correct read, it just cannot be cached.
-async fn git_head_short(dir: &Path) -> Option<String> {
+pub(super) async fn git_head_short(dir: &Path) -> Option<String> {
     crate::engine::git_checkpoint::run_git(dir, &["rev-parse", "--short", "HEAD"])
         .await
         .ok()
@@ -495,6 +495,29 @@ pub async fn read(registry_root: &Path) -> Result<Arc<InstrumentReading>, AppErr
         *guard = Some((key, Instant::now(), Arc::clone(&reading)));
     }
     Ok(reading)
+}
+
+/// Drop both cached readings, so the next read goes to disk.
+///
+/// Called by the reconcile sleep and by nothing else. The caches are keyed on
+/// the registry HEAD and on the checkout path and both expire after
+/// [`CACHE_TTL`], so nothing here is *stale* in the ordinary sense - what the
+/// sleep pass needs is the guarantee that the projection it is about to write
+/// was computed from a read taken AFTER her workers finished committing, and a
+/// five-minute TTL cannot promise that. A cache that might answer from before
+/// the work it is reconciling would make the whole pass a no-op that looked
+/// like a pass.
+///
+/// Deliberately not exposed as a command: a person cannot want this, and a
+/// surface that offered "drop the cache" would be offering a button whose only
+/// effect is an eleven-second wait.
+pub(super) fn invalidate() {
+    if let Some(cache) = INSTRUMENT_CACHE.get() {
+        *cache.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    }
+    if let Some(cache) = SKILLS_CACHE.get() {
+        *cache.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    }
 }
 
 /// Just the fleet - which checkouts the registry declares for this machine.

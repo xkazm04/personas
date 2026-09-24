@@ -12,9 +12,13 @@
  *    hid itself until something was spent would hide the brake as well.
  *
  * The ceiling comes from `CuratorPolicy` when that door answered, because the
- * policy is the OPERATOR'S declaration and carries an undeclared cap as null -
- * a fact the runtime's plain `number` cannot express. The runtime's own figure
- * is the fallback for when the policy read failed.
+ * policy is the OPERATOR'S declaration. **The runtime's own figures are now
+ * nullable too** (2026-09-24), so the fallback path - the one that runs when
+ * the policy read failed - is honest for the first time: it used to receive a
+ * `0` standing for "no ceiling declared", which is indistinguishable from the
+ * declared ceiling of zero the validator accepts and which means the opposite
+ * ("she may not run today"). Both sources now say `null` for undeclared, and
+ * this strip draws the operator's own words for it either way.
  */
 import type { CuratorPolicy } from '@/lib/bindings/CuratorPolicy';
 import type { CuratorRuntime } from '@/lib/bindings/CuratorRuntime';
@@ -79,8 +83,10 @@ export function RuntimeStrip({ runtime, policy }: {
 
   const lane = isLane(runtime.lane) ? w.console.lane[runtime.lane] : w.console.lane_unnamed;
   // The declared ceiling is the operator's, and `null` there means "none
-  // declared". Only when that read failed does the runtime's own number stand.
-  const cap = (declared: number | null, live: number) => (policy ? declared : live);
+  // declared". Only when that read failed does the runtime's own figure stand -
+  // and that figure carries the same `null` now, so the fallback can no longer
+  // turn an undeclared cap into a cap of nothing.
+  const cap = (declared: number | null, live: number | null) => (policy ? declared : live);
   const budget = cap(policy?.dailyBudgetUsd ?? null, runtime.dailyBudgetUsd);
   const runs = cap(policy?.dailyRunCap ?? null, runtime.dailyRunCap);
   const commits = cap(policy?.dailyCommitCap ?? null, runtime.dailyCommitCap);

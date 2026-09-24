@@ -28,10 +28,10 @@ use std::collections::HashMap;
 use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
-    CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDemand, CuratorEngine,
-    CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy, CuratorProject,
-    CuratorQuietBundle, CuratorReason, CuratorReasonCode, CuratorRequest, CuratorRequestState,
-    CURATOR_SATURATION_THRESHOLD,
+    CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDecisionLevel, CuratorDemand,
+    CuratorEngine, CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy,
+    CuratorProject, CuratorQuietBundle, CuratorReason, CuratorReasonCode, CuratorRequest,
+    CuratorRequestState, CURATOR_SATURATION_THRESHOLD,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -783,6 +783,365 @@ pub fn commits_today(pool: &DbPool) -> Result<u32, AppError> {
             |r| r.get("n"),
         )?;
         Ok(n.max(0) as u32)
+    })
+}
+
+// ---------------------------------------------------------------------------
+// The loop's own surface
+//
+// Everything below has exactly one caller - `commands::curator::tick` and the
+// reconcile pass beside it - and every one of them exists for the reason
+// `claim_next_queued` above gives: the operation cannot be composed out of a
+// read plus a write without opening a window in which two terminals take the
+// same work, or a brake counts the same commit twice.
+// ---------------------------------------------------------------------------
+
+/// Bind the fleet session a claimed request was dispatched as.
+///
+/// Split from [`claim_next_queued`] because the session id does not exist
+/// until AFTER the claim: the fleet's admission door mints it. The claim is
+/// what stops two terminals taking one request, and it has to happen first;
+/// the binding is bookkeeping that follows. A request that is `dispatched`
+/// with no `session_id` for a few milliseconds is honest - a request handed to
+/// two workers would not be.
+pub fn bind_request_session(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
+    timed_query!("curator_request", "curator::bind_request_session", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE curator_request SET session_id = ?2 WHERE id = ?1 AND state = 'dispatched'",
+            params![id, session_id],
+        )?;
+        Ok(())
+    })
+}
+
+/// Every request she has dispatched and not settled.
+pub fn dispatched_requests(pool: &DbPool) -> Result<Vec<CuratorRequest>, AppError> {
+    timed_query!("curator_request", "curator::dispatched_requests", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {REQUEST_COLUMNS} FROM curator_request
+              WHERE state = 'dispatched'
+              ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map([], row_to_request)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Take the highest-scoring `planned` item of the STANDING run whose engine is
+/// one she can actually invoke, and mark it dispatched - atomically.
+///
+/// `engines` is the caller's list of engines for which a documented invocation
+/// can be derived from the item itself. It is a parameter rather than a rule
+/// here because the derivation reads the registry's `SKILL.md` files, which
+/// this crate cannot see; what this function owns is that the claim cannot
+/// hand one item to two ticks.
+///
+/// An item `suppressed_by_saturation` is skipped: that is her own measured dry
+/// streak, and re-running it is the thing the brake exists to stop. An empty
+/// `engines` list claims NOTHING rather than everything - the arm that fires
+/// when the registry documents no invocation she can use, which must read as
+/// "no work she can take" and never as "take anything".
+///
+/// `Immediate` for [`claim_next_queued`]'s reason: a read informs the write.
+pub fn claim_next_plan_item(
+    pool: &DbPool,
+    engines: &[CuratorEngine],
+    now: &str,
+) -> Result<Option<CuratorPlanItem>, AppError> {
+    timed_query!("curator_plan_item", "curator::claim_next_plan_item", {
+        if engines.is_empty() {
+            return Ok(None);
+        }
+        let tokens: Vec<String> = engines.iter().map(|e| e.as_str().to_string()).collect();
+        let placeholders = tokens
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let next: Option<String> = {
+            let sql = format!(
+                "SELECT i.id FROM curator_plan_item i
+                   JOIN curator_plan_run r ON r.id = i.plan_run_id
+                  WHERE r.superseded_by IS NULL
+                    AND i.state = 'planned'
+                    AND i.suppressed_by_saturation = 0
+                    AND i.engine IN ({placeholders})
+                  ORDER BY i.points DESC, i.subject_id ASC
+                  LIMIT 1"
+            );
+            let bound: Vec<&dyn rusqlite::ToSql> =
+                tokens.iter().map(|t| t as &dyn rusqlite::ToSql).collect();
+            tx.query_row(&sql, bound.as_slice(), |r| r.get("id"))
+                .optional()?
+        };
+        let Some(id) = next else {
+            tx.commit()?;
+            return Ok(None);
+        };
+        // Compare-and-set, and the affected count is the only evidence it
+        // held - the same reasoning `claim_next_queued` spells out above.
+        let claimed = tx.execute(
+            "UPDATE curator_plan_item SET state = 'dispatched', updated_at = ?2
+              WHERE id = ?1 AND state = 'planned'",
+            params![id, now],
+        )?;
+        if claimed != 1 {
+            return Err(AppError::Internal(format!(
+                "curator plan item '{id}' read as planned and then claimed {claimed} rows - the \
+                 plan's own transaction is not isolating"
+            )));
+        }
+        let item = tx.query_row(
+            &format!("SELECT {ITEM_COLUMNS} FROM curator_plan_item WHERE id = ?1"),
+            params![id],
+            row_to_item,
+        )?;
+        tx.commit()?;
+        Ok(Some(item))
+    })
+}
+
+/// Bind the fleet session a claimed plan item was dispatched as.
+pub fn bind_plan_item_session(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
+    timed_query!("curator_plan_item", "curator::bind_plan_item_session", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE curator_plan_item SET dispatched_run_id = ?2
+              WHERE id = ?1 AND state = 'dispatched'",
+            params![id, session_id],
+        )?;
+        Ok(())
+    })
+}
+
+/// Settle one plan item with the outcome and the evidence for it.
+///
+/// **`evidence` is not optional, and the signature says so.** A terminal state
+/// on a plan item feeds the saturation streak, which decides whether she ever
+/// looks at that subject again; a `landed` or an `idled` with no evidence is a
+/// brake nobody can audit. The state must be terminal - a settle that wrote
+/// `planned` back would erase a dispatch.
+pub fn settle_plan_item(
+    pool: &DbPool,
+    id: &str,
+    state: CuratorPlanItemState,
+    evidence: &str,
+    now: &str,
+) -> Result<(), AppError> {
+    timed_query!("curator_plan_item", "curator::settle_plan_item", {
+        if !state.is_terminal() {
+            return Err(AppError::Validation(format!(
+                "curator plan item '{id}': '{}' is not a terminal state - a settle writes \
+                 landed, declined, idled or blocked",
+                state.as_str()
+            )));
+        }
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE curator_plan_item
+                SET state = ?2, evidence_ref = ?3, updated_at = ?4
+              WHERE id = ?1 AND state IN ('planned','dispatched')",
+            params![id, state.as_str(), evidence, now],
+        )?;
+        Ok(())
+    })
+}
+
+/// How many of her decisions are waiting for a person.
+///
+/// `curator_decision` has no writer in this tree yet, so this reads `0` - and
+/// that zero is a MEASUREMENT for [`commits_today`]'s reason: the table
+/// exists, the query runs, and the day the first decision is raised the
+/// backpressure brake moves without anything here changing.
+pub fn awaiting_decisions(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("curator_decision", "curator::awaiting_decisions", {
+        let conn = pool.get()?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(id) AS n FROM curator_decision WHERE status = 'awaiting'",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.max(0) as u32)
+    })
+}
+
+// ---------------------------------------------------------------------------
+// The dispatch ledger (`e52`)
+// ---------------------------------------------------------------------------
+
+/// One worker she started: which lane asked for it, what it was told to run,
+/// which level authorised it, and the registry HEAD it started from.
+///
+/// The HEAD is why this row exists at all - see the `e52` header. Without it
+/// the commit ledger can only be written from a time window, and a time window
+/// attributes a human's commit to her.
+pub struct CuratorDispatchInput<'a> {
+    pub lane: &'a str,
+    pub request_id: Option<&'a str>,
+    pub plan_item_id: Option<&'a str>,
+    pub session_id: &'a str,
+    pub skill: &'a str,
+    pub argument: Option<&'a str>,
+    pub level_that_authorised: CuratorDecisionLevel,
+    pub repo_path: &'a str,
+    pub head_at_dispatch: Option<&'a str>,
+    pub created_at: &'a str,
+}
+
+/// One row of the ledger, as the tick reads it back.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CuratorDispatchRow {
+    pub id: String,
+    pub lane: String,
+    pub request_id: Option<String>,
+    pub plan_item_id: Option<String>,
+    pub session_id: String,
+    pub skill: String,
+    pub argument: Option<String>,
+    pub level_that_authorised: CuratorDecisionLevel,
+    pub repo_path: String,
+    pub head_at_dispatch: Option<String>,
+    pub created_at: String,
+}
+
+const DISPATCH_COLUMNS: &str = "id, lane, request_id, plan_item_id, session_id, skill, argument, \
+                                level_that_authorised, repo_path, head_at_dispatch, created_at";
+
+fn row_to_dispatch(row: &Row) -> rusqlite::Result<CuratorDispatchRow> {
+    let level_raw: String = row.get("level_that_authorised")?;
+    Ok(CuratorDispatchRow {
+        id: row.get("id")?,
+        lane: row.get("lane")?,
+        request_id: row.get("request_id")?,
+        plan_item_id: row.get("plan_item_id")?,
+        session_id: row.get("session_id")?,
+        skill: row.get("skill")?,
+        argument: row.get("argument")?,
+        // A level outside the CHECK cannot be written through this app. `L0`
+        // is the reading that claims least, exactly as `load_policy` decides.
+        level_that_authorised: CuratorDecisionLevel::parse(&level_raw)
+            .unwrap_or(CuratorDecisionLevel::L0),
+        repo_path: row.get("repo_path")?,
+        head_at_dispatch: row.get("head_at_dispatch")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+/// Record a dispatch. Called immediately after the fleet's door returns.
+pub fn record_dispatch(
+    pool: &DbPool,
+    id: &str,
+    input: &CuratorDispatchInput<'_>,
+) -> Result<(), AppError> {
+    timed_query!("curator_dispatch", "curator::record_dispatch", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO curator_dispatch
+                (id, lane, request_id, plan_item_id, session_id, skill, argument,
+                 level_that_authorised, repo_path, head_at_dispatch, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![
+                id,
+                input.lane,
+                input.request_id,
+                input.plan_item_id,
+                input.session_id,
+                input.skill,
+                input.argument,
+                input.level_that_authorised.as_str(),
+                input.repo_path,
+                input.head_at_dispatch,
+                input.created_at,
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+/// Every dispatch nothing has settled yet, oldest first.
+pub fn open_dispatches(pool: &DbPool) -> Result<Vec<CuratorDispatchRow>, AppError> {
+    timed_query!("curator_dispatch", "curator::open_dispatches", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {DISPATCH_COLUMNS} FROM curator_dispatch
+              WHERE settled_at IS NULL
+              ORDER BY created_at ASC, id ASC"
+        ))?;
+        let rows = stmt.query_map([], row_to_dispatch)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Close a dispatch. Returns whether THIS call closed it: a row already
+/// settled stays as it was, which is what keeps a second sweep over the same
+/// ended session from writing its commits a second time.
+pub fn settle_dispatch(pool: &DbPool, id: &str, now: &str) -> Result<bool, AppError> {
+    timed_query!("curator_dispatch", "curator::settle_dispatch", {
+        let conn = pool.get()?;
+        let changed = conn.execute(
+            "UPDATE curator_dispatch SET settled_at = ?2 WHERE id = ?1 AND settled_at IS NULL",
+            params![id, now],
+        )?;
+        Ok(changed == 1)
+    })
+}
+
+/// One commit she caused, with the level that authorised it.
+pub struct CuratorCommitInput<'a> {
+    pub project_slug: &'a str,
+    pub repo_path: &'a str,
+    pub branch: &'a str,
+    pub sha: &'a str,
+    /// The files the commit touched, as a JSON array. `[]` when git could not
+    /// list them - an empty inventory, never an absent one.
+    pub files_json: &'a str,
+    pub level_that_authorised: CuratorDecisionLevel,
+    /// The fleet session whose worker made it.
+    pub run_id: Option<&'a str>,
+    pub created_at: &'a str,
+}
+
+/// Record a commit she caused, **once**.
+///
+/// `INSERT OR IGNORE` against the `(project_slug, sha)` unique index `e52`
+/// adds: two of her terminals can be open on one checkout, so two settles can
+/// see overlapping `<head>..HEAD` ranges. A double-counted commit moves the
+/// daily commit cap, which is the operator's hardest brake.
+///
+/// Returns whether a row was actually written, so a caller logs what it landed
+/// rather than what it attempted.
+pub fn record_commit(
+    pool: &DbPool,
+    id: &str,
+    input: &CuratorCommitInput<'_>,
+) -> Result<bool, AppError> {
+    timed_query!("curator_commit", "curator::record_commit", {
+        let conn = pool.get()?;
+        let written = conn.execute(
+            "INSERT OR IGNORE INTO curator_commit
+                (id, project_slug, repo_path, branch, sha, files_json, decision_id,
+                 level_that_authorised, run_id, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, ?9)",
+            params![
+                id,
+                input.project_slug,
+                input.repo_path,
+                input.branch,
+                input.sha,
+                input.files_json,
+                input.level_that_authorised.as_str(),
+                input.run_id,
+                input.created_at,
+            ],
+        )?;
+        Ok(written == 1)
     })
 }
 
@@ -1657,6 +2016,12 @@ mod tests {
     /// Seeds two commit rows. An inner `Result` fn so the pooled checkout
     /// propagates rather than panicking - the shape `land_run_inner` above
     /// already uses, and the one `pool-get-unwrapped` exists to keep.
+    /// Seed commit rows. **Each row gets its own sha, derived from its id** -
+    /// it used to share one, which stopped working when `e52` made
+    /// `(project_slug, sha)` unique. That is the index doing its job: two rows
+    /// for one commit is the shape that would double-count against the daily
+    /// commit cap, and a fixture that modelled two commits as one sha was
+    /// describing a state the store must refuse.
     fn land_commits_inner(pool: &DbPool, at: &[(&str, &str)]) -> Result<(), AppError> {
         let conn = pool.get()?;
         for (id, created_at) in at {
@@ -1664,9 +2029,9 @@ mod tests {
                 "INSERT INTO curator_commit
                     (id, project_slug, repo_path, branch, sha, files_json,
                      level_that_authorised, created_at)
-                 VALUES (?1, 'personas', 'C:/checkouts/personas', 'master', 'abc1234',
+                 VALUES (?1, 'personas', 'C:/checkouts/personas', 'master', ?3,
                          '[]', 'L1', ?2)",
-                params![id, created_at],
+                params![id, created_at, format!("sha-{id}")],
             )?;
         }
         Ok(())
@@ -1718,5 +2083,264 @@ mod tests {
 
         // The limit is a limit, not a suggestion.
         assert_eq!(list_requests(&pool, 2).unwrap().len(), 2);
+    }
+
+    // -----------------------------------------------------------------------
+    // The loop's own surface
+    // -----------------------------------------------------------------------
+
+    /// A plan whose one item routes to `engine`, with the item's score.
+    fn seed_plan_item(pool: &DbPool, engine: CuratorEngine, suppressed: bool) -> String {
+        let run_id = uuid::Uuid::new_v4().to_string();
+        let mut only = item("localization/czech");
+        only.engine = engine;
+        only.domain = "localization".into();
+        only.suppressed_by_saturation = suppressed;
+        let plan = insert_plan(pool, &run_id, &run_input("2026-09-24T12:00:00Z"), &[only]).unwrap();
+        plan.items[0].id.clone()
+    }
+
+    /// The claim is what stops two ticks taking one item, so it must be a
+    /// compare-and-set: the second call sees nothing, not the same row again.
+    #[test]
+    fn a_plan_item_is_claimed_once_and_only_for_an_engine_she_can_run() {
+        let pool = init_test_db().unwrap();
+        let item_id = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+
+        // An engine she cannot invoke is not claimed - and an EMPTY list claims
+        // nothing rather than everything, which is the arm that fires when the
+        // registry documents no invocation she can use.
+        assert!(claim_next_plan_item(&pool, &[], "2026-09-24T13:00:00Z")
+            .unwrap()
+            .is_none());
+        assert!(
+            claim_next_plan_item(&pool, &[CuratorEngine::Deepen], "2026-09-24T13:00:00Z")
+                .unwrap()
+                .is_none()
+        );
+
+        let claimed =
+            claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T13:00:00Z")
+                .unwrap()
+                .expect("the item routes to an engine she can run");
+        assert_eq!(claimed.id, item_id);
+        assert_eq!(claimed.state, CuratorPlanItemState::Dispatched);
+
+        // The second tick finds nothing: the row is no longer `planned`.
+        assert!(
+            claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T13:01:00Z")
+                .unwrap()
+                .is_none(),
+            "two ticks must never hand one subject to two terminals"
+        );
+    }
+
+    /// Her own measured dry streak is a brake at the CLAIM, because anything
+    /// later is already a dispatch.
+    #[test]
+    fn a_saturated_item_is_never_claimed() {
+        let pool = init_test_db().unwrap();
+        seed_plan_item(&pool, CuratorEngine::Reconcile, true);
+        assert!(
+            claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T13:00:00Z")
+                .unwrap()
+                .is_none(),
+            "settled ground is not re-run"
+        );
+    }
+
+    /// A superseded run's items are not work any more, whatever state they are
+    /// in: the claim joins on the STANDING run.
+    #[test]
+    fn only_the_standing_runs_items_are_claimable() {
+        let pool = init_test_db().unwrap();
+        seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        // A second projection supersedes the first - and carries no claimable
+        // item of its own.
+        let mut quiet_item = item("localization/czech");
+        quiet_item.engine = CuratorEngine::Deepen;
+        insert_plan(
+            &pool,
+            "run-2",
+            &run_input("2026-09-24T14:00:00Z"),
+            &[quiet_item],
+        )
+        .unwrap();
+
+        assert!(
+            claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T15:00:00Z")
+                .unwrap()
+                .is_none(),
+            "a superseded plan is a record, not a worklist"
+        );
+    }
+
+    /// The settle writes the outcome AND the evidence, refuses a non-terminal
+    /// state, and is what the saturation streak is then computed from.
+    #[test]
+    fn a_settle_carries_its_evidence_and_feeds_the_streak() {
+        let pool = init_test_db().unwrap();
+        let item_id = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
+        claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T13:00:00Z").unwrap();
+        bind_plan_item_session(&pool, &item_id, "session-1").unwrap();
+
+        // A state that is not terminal is refused: it would erase a dispatch.
+        let refused = settle_plan_item(
+            &pool,
+            &item_id,
+            CuratorPlanItemState::Planned,
+            "nothing",
+            "2026-09-24T14:00:00Z",
+        )
+        .unwrap_err();
+        assert!(matches!(refused, AppError::Validation(_)), "{refused:?}");
+
+        settle_plan_item(
+            &pool,
+            &item_id,
+            CuratorPlanItemState::Idled,
+            "at def5678 the scan still scores localization/czech - a dry pass",
+            "2026-09-24T14:00:00Z",
+        )
+        .unwrap();
+
+        let settled = current_plan(&pool).unwrap().unwrap();
+        assert_eq!(settled.items[0].state, CuratorPlanItemState::Idled);
+        assert_eq!(
+            settled.items[0].dispatched_run_id.as_deref(),
+            Some("session-1")
+        );
+        assert!(settled.items[0]
+            .evidence_ref
+            .as_deref()
+            .is_some_and(|e| e.contains("def5678")));
+
+        // One `idled` is one dry pass. The streak is measured from the rows,
+        // which is the whole reason the settle is not optional.
+        let streaks = idle_streaks(&pool).unwrap();
+        assert_eq!(streaks.get("localization/czech"), Some(&1));
+        assert!(
+            !suppressed(&streaks, "localization/czech"),
+            "one dry pass is not saturation; the threshold is two"
+        );
+    }
+
+    /// The lane claim hands a request out once, the binding attaches the
+    /// session the fleet minted, and the open list is what the tick walks.
+    #[test]
+    fn a_request_is_claimed_then_bound_then_settled() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+
+        let claimed = claim_next_queued(&pool, None, "2026-09-24T12:00:00Z")
+            .unwrap()
+            .expect("the oldest queued request");
+        assert_eq!(claimed.id, "r1");
+        assert_eq!(claimed.state, CuratorRequestState::Dispatched);
+        assert_eq!(
+            claimed.session_id, None,
+            "the fleet has not minted a session id yet, and claiming first is what \
+             stops two terminals taking one request"
+        );
+
+        bind_request_session(&pool, "r1", "session-1").unwrap();
+        let open = dispatched_requests(&pool).unwrap();
+        assert_eq!(open.len(), 1);
+        assert_eq!(open[0].session_id.as_deref(), Some("session-1"));
+
+        settle_request(
+            &pool,
+            "r1",
+            CuratorRequestState::Landed,
+            Some("session session-1"),
+            None,
+            None,
+            "2026-09-24T12:30:00Z",
+        )
+        .unwrap();
+        assert!(dispatched_requests(&pool).unwrap().is_empty());
+    }
+
+    /// The backpressure brake reads `0` today because nothing raises a
+    /// decision yet - and that zero is a MEASUREMENT, the same call
+    /// `commits_today` makes: the table exists and the query runs.
+    #[test]
+    fn the_backpressure_brake_reads_the_table_that_has_no_writer_yet() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(awaiting_decisions(&pool).unwrap(), 0);
+    }
+
+    fn dispatch_input<'a>(session: &'a str, head: Option<&'a str>) -> CuratorDispatchInput<'a> {
+        CuratorDispatchInput {
+            lane: "refill",
+            request_id: None,
+            plan_item_id: None,
+            session_id: session,
+            skill: "harvest",
+            argument: Some("research"),
+            level_that_authorised: CuratorDecisionLevel::L2,
+            repo_path: "C:/checkouts/ai-registry",
+            head_at_dispatch: head,
+            created_at: "2026-09-24T12:00:00Z",
+        }
+    }
+
+    /// The ledger records the HEAD a worker started from - which is the only
+    /// reason it exists - and the settle is a claim, so a second sweep over the
+    /// same ended session writes nothing.
+    #[test]
+    fn the_dispatch_ledger_records_the_head_and_settles_once() {
+        let pool = init_test_db().unwrap();
+        record_dispatch(&pool, "d1", &dispatch_input("session-1", Some("abc1234"))).unwrap();
+        record_dispatch(&pool, "d2", &dispatch_input("session-2", None)).unwrap();
+
+        let open = open_dispatches(&pool).unwrap();
+        assert_eq!(open.len(), 2);
+        assert_eq!(open[0].head_at_dispatch.as_deref(), Some("abc1234"));
+        assert_eq!(
+            open[1].head_at_dispatch, None,
+            "a HEAD git could not answer is absent, never a guessed one"
+        );
+        assert_eq!(open[0].level_that_authorised, CuratorDecisionLevel::L2);
+
+        assert!(settle_dispatch(&pool, "d1", "2026-09-24T13:00:00Z").unwrap());
+        assert!(
+            !settle_dispatch(&pool, "d1", "2026-09-24T13:05:00Z").unwrap(),
+            "a second settle must not re-open a closed dispatch - its commits would be \
+             written twice and counted twice against the daily cap"
+        );
+        assert_eq!(open_dispatches(&pool).unwrap().len(), 1);
+    }
+
+    /// **One commit is one row.** Two of her terminals can be open on one
+    /// checkout, so two settles can see overlapping ranges; a double-counted
+    /// commit moves the operator's hardest brake.
+    #[test]
+    fn a_commit_seen_twice_is_counted_once() {
+        let pool = init_test_db().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        let commit = |sha: &'static str| CuratorCommitInput {
+            project_slug: "ai-registry",
+            repo_path: "C:/checkouts/ai-registry",
+            branch: "master",
+            sha,
+            files_json: "[]",
+            level_that_authorised: CuratorDecisionLevel::L2,
+            run_id: Some("session-1"),
+            created_at: &now,
+        };
+
+        assert!(record_commit(&pool, "c1", &commit("abc1234")).unwrap());
+        assert!(
+            !record_commit(&pool, "c2", &commit("abc1234")).unwrap(),
+            "the store refuses the second row rather than trusting both writers to dedupe"
+        );
+        assert!(record_commit(&pool, "c3", &commit("def5678")).unwrap());
+
+        assert_eq!(
+            commits_today(&pool).unwrap(),
+            2,
+            "two commits, three attempts - the brake counts commits, not writes"
+        );
     }
 }
