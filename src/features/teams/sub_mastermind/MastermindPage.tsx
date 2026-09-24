@@ -3,7 +3,7 @@
 // relations as edges, Factory KPI rollups as the KPI dimension, and open Fleet
 // CLI sessions as clickable dock nodes per island. The Hex Mosaic is the final
 // view mode (Grid Board and Inverse Grid prototypes retired).
-import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -71,16 +71,6 @@ import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
-import { ViewPanel, ViewSwitcher, type MastermindView } from './lib/ViewSwitcher';
-import { lazyRetry } from '@/lib/lazyRetry';
-import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
-
-// The 3D prototypes carry three.js — lazy so the baseline canvas never pays
-// for them. lazyRetry, not React.lazy (see PersonasPage for why).
-const WorldCanvas = lazyRetry(() => import('./three/WorldCanvas'));
-// The design board is dev-only and heavier still (it renders every recipe in
-// turn); its own chunk, loaded only when its tab is chosen.
-const DesignBoard = lazyRetry(() => import('./three/board/DesignBoard'));
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
@@ -158,11 +148,6 @@ function MastermindInner() {
   const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [mode, setMode] = useState<CanvasMode>('edit');
-  // Canvas view: the shipped 2D mosaic, or one of the three 3D prototypes
-  // (mock dataset, own theming). Session-local on purpose — a prototype is
-  // not a preference yet.
-  const [view, setView] = useState<MastermindView>('baseline');
-  const is3d = view !== 'baseline';
   // Durable layout hydrates once per session from the DB (async IPC). Until it
   // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
   // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
@@ -896,16 +881,7 @@ function MastermindInner() {
           The layout gate stays. It is a single durable-doc read, and dropping
           it would let islands paint at their spiral fallback positions and then
           JUMP when the persisted layout arrives. */}
-      <ViewPanel view={view}>
-      {view === 'board' ? (
-        <Suspense fallback={<RouteChunkSkeleton />}>
-          <DesignBoard />
-        </Suspense>
-      ) : is3d ? (
-        <Suspense fallback={<RouteChunkSkeleton />}>
-          <WorldCanvas variant={view} />
-        </Suspense>
-      ) : layoutReady ? (
+      {layoutReady ? (
         <MastermindHexMosaic
           scene={canvasScene}
           mode={mode}
@@ -930,11 +906,8 @@ function MastermindInner() {
         // this app bans as a surface loading state (docs/design/overview-loading.md).
         <LoadingSpinner label={t.mastermind.loading_layout} />
       )}
-      </ViewPanel>
 
-      <ViewSwitcher view={view} onChange={setView} />
-
-      {!is3d && <ProjectListSidebar
+      <ProjectListSidebar
         islands={positioned.islands}
         hidden={hiddenSlugs}
         open={projectsOpen}
@@ -942,9 +915,9 @@ function MastermindInner() {
         onToggleVisible={toggleVisible}
         onNewProject={() => setNewProjectOpen(true)}
         onProjectOpen={openProject}
-      />}
+      />
 
-      {!is3d && <CanvasToolbar mode={mode} onModeChange={setMode} />}
+      <CanvasToolbar mode={mode} onModeChange={setMode} />
 
       {previewId && (
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
@@ -1118,7 +1091,7 @@ function MastermindInner() {
         editProject={null}
       />
 
-      {!is3d && scene.demo && layoutReady && !demoDismissed && (
+      {scene.demo && layoutReady && !demoDismissed && (
         <DemoNotice
           scanning={rescanning}
           onScan={rescan}
@@ -1126,7 +1099,7 @@ function MastermindInner() {
           onDismiss={() => setDemoDismissed(true)}
         />
       )}
-      {!is3d && scene.demo && demoDismissed && (
+      {scene.demo && demoDismissed && (
         // The badge is the way BACK to the notice: once dismissed, the canvas
         // is a wall of cells that quietly refuse every click (demo islands have
         // no passport, so nothing resolves an action). Clicking it re-opens the
@@ -1146,14 +1119,14 @@ function MastermindInner() {
           children self-hide, so a healthy workspace with nothing in flight
           renders an empty (invisible) stack — and neither can be positioned
           on top of the other by a constant drifting in the wrong file. */}
-      {!is3d && <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none [&>*]:pointer-events-auto">
+      <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none [&>*]:pointer-events-auto">
         <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
         <MilestoneStatusBar
           islands={positioned.islands}
           focusedSlug={focusedSlug ?? openSlug}
           onOpenShip={openNotepadForProject}
         />
-      </div>}
+      </div>
     </div>
     </ImproveProvider>
   );

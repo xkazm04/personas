@@ -185,68 +185,18 @@ Sizing discipline (why this shape survived where two prototype rounds died): eve
 
 Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, Inverse Grid (+ its `DimTile` renderer and the variant switcher), fleet "Cells", stats Panels/Strip/Gauges.
 
-### 7b. 3D prototypes - the "Jarvis" audition (view switcher, 2026-09-09)
+### 7b. The 3D audition, retired (2026-09-24)
 
-The canvas header carries a **view switcher** (`lib/ViewSwitcher.tsx`, top-centre, `SegmentedTabs` plus its declared `ViewPanel`): **Baseline** is the shipped Hex Mosaic above; **Strata** and **Holo** are two 3D worlds auditioning a layered, Iron-Man-style experience. Session-local state (not a preference yet); the 2D-only chrome (mode toolbar, project list, demo notice, bottom stack) hides while a 3D view is up. Everything 3D lives in `three/` and is lazy-loaded, so the baseline never pays for three.js.
-
-> **Round 1 shipped a third variant, ORBIT** - a constellation with each project a glowing core and its fifteen dimensions as satellites on four category rings. Descoped by the operator on 2026-09-09 and deleted (it is in git history at `958b47ebb`): the planetary metaphor was the most spectacular of the three from orbit and the worst to orient inside, because a satellite position carries no stable meaning. It drifts, and which ring a dimension belongs to is not recoverable from where it happens to be.
-
-**Shared across both worlds - written once (`three/worldModel.ts`, `three/useWorldNav.ts`, `three/worldLayout.ts`, `three/WorldHud.tsx`):**
-
-| Layer | What you see | How you get there |
-|---|---|---|
-| **L0 portfolio** | every project as an abstract shape with its rough state; relation and similarity edges between them | default; `Portfolio` crumb, `Esc` from L1, click on empty sea |
-| **L1 project** | one project with all 15 dimensions exploded into their four categories, labelled; right-dock project card (scores, ship, live work, dimension chips) | click a project (world label or shape) |
-| **L2 dimension** | one dimension only: status, progress, tooling, headline figure; siblings ghosted | click a dimension (world label, shape or card chip) |
-
-The camera **flies** between layer poses (`CameraRig`, 1.1 s ease) and the user owns it between flights (OrbitControls). **Athena operates** from a bar at the bottom: four scripted commands (what is at risk / what ships next / open Brainiac security / wire monitoring on Brainiac) that fly the camera, point at nodes, narrate in a transcript, and in the last case *change the world* (the Monitoring tile or prism turns healthy). The scripts are plain reducer actions (`three/athenaOps.ts`) - the shape the real companion would drive through `canvasActionStore` later.
-
-**Dataset:** `three/mockWorld.ts` - **ten projects**. Two are hand-authored cell by cell (Personas Desktop: healthy, shipping; Brainiac: warning, a real security alert, no monitoring) because they are what L1 and L2 are read against. The other eight are *sketched*: a maturity profile plus named exceptions (`broken` / `weak` / `missing` / `strong`), expanded deterministically into the same fifteen registry dimensions. 150 hand-written cells would be a wall nobody could keep coherent, and what L0 is judged on is whether ten projects stay legible and distinguishable, which needs variety rather than authored detail.
-
-**Portfolio layout and camera fit (`three/worldLayout.ts`).** Projects sit on a centred grid, near-square and wider than deep, with the last row centred on the ones above it. The L0 camera is DERIVED from that grid bounds, so an eleventh project reframes the shot by itself. `fitPortfolio` fits the footprint RECTANGLE - width horizontally, depth foreshortened by the pitch plus the stack height vertically, whichever needs more distance winning. The first implementation fitted the bounding SPHERE, which cannot under-shoot and consequently used about a third of the frame for ten projects.
-
-**Density discipline.** `isDensePortfolio` (count-based, not distance-based) shrinks every project label that is not the open one, and each label carries a count of dimensions in alert or risk so the portfolio layer answers "where is the trouble" without drilling. Per-dimension labels **mount only on the opened project**: they are drei `<Html>` portals, one React root each, and ten projects would otherwise put 150 of them in the DOM to render at opacity 0. Edge labels appear only when one of their endpoints is hovered or open.
-
-**What differs - the variables under test (`three/palettes.ts` holds every colour, font and the surface profile):**
-
-| | **Strata** | **Holo** |
-|---|---|---|
-| Node design | stack of four glass decks (one per category) with status tiles; explodes on focus, tile height = progress | hex platform (the 2D identity in depth), spire = automation score, 15 hex prisms whose height = progress |
-| World sizing | 11.5 units between projects, decks 5.6 wide | 12.6 units, platforms r=4.6 |
-| Background | graphite plus infinite grid plus fog | slate, dust sparkles, scanning radar ring, scanline film |
-| Colour | sand primary, dusty teal accent | frosted ice cyan, pale gold accent |
-| Connector | ground-level beam with a travelling pulse | floor trace bowed sideways so parallel edges stay tellable apart |
-| Typography | Bahnschrift wide caps | serif names (Iowan/Palatino, the canvas voice) plus mono |
-
-**Frosted, not neon (round 2).** The first pass lit every surface with an emissive material and stacked additive glow sprites on top. Desaturating the palette alone would not have fixed that: *a surface that emits its own light has no shading, so it cannot read as a material at all.* Both halves of the fix live in `palettes.ts` - chalky ramps on grounds lifted off pure black, and a `frost` profile (high roughness, near-zero emissive, a little clearcoat, low slab opacity, quiet halos) that both worlds pass straight into their materials. Each world also carries a small local `Environment` of `Lightformer`s for the clearcoat to catch; no remote HDRI is fetched, which matters under this app CSP.
-
-A WebGL failure is caught by a boundary around the canvas (`data-testid="mm3d-failed"` carries the reason) so the switcher stays reachable. Verified live through the test-automation server: both views drill L0 to L1 to L2 by click on the ten-project world, the Athena risks tour spans seven projects, and switching back to Baseline restores the 2D chrome.
-
-**Two gotchas, both measured, both of which produced plausible-looking wrong output rather than an error:**
-
-1. **R3F attaches its DOM listeners to the canvas PARENT div**, and drei `<Html>` labels are siblings of the canvas inside it - so a click on a label bubbled into R3F with a ray that hit nothing and fired `onPointerMissed`, undoing the drill-down a frame later. `WorldCanvas` only walks up when `event.target` is the canvas, and `WorldLabel` stops propagation.
-2. **Screenshotting this app can silently capture the wrong thing.** `PrintWindow(PW_RENDERFULLCONTENT)` returns pure black (WebView2 stops compositing while occluded); `SetForegroundWindow` plus a screen grab captures THE TERMINAL (Windows refuses foreground activation from a background process, and that failure is a return value nobody checks); the test-automation `/screenshot` endpoint matches on window title and **silently falls back to a whole-monitor grab** when it misses, which it does because this window title can be empty. And when the app sits on another virtual desktop, no OS-level grab can see it at all. The route that always works is to read the frame back from inside the page: `preserveDrawingBuffer: true` on the Canvas, `toDataURL` in an `/eval`, and the base64 pulled out through `/query` in 280-character chunks.
-### 7c. The design board - breeding the Strata look (dev-only, 2026-09-09)
-
-"Dull it down" did not land on the first try, and the operator said the useful thing: they could not name the direction, only recognise it. So the fourth switcher tab in dev builds, **Board**, is a contact sheet: the same Strata scene rendered under N *recipes*, at the two frames that matter (L0 portfolio, L1 one project exploded), laid out for pointing at. The operator names cells; the next board is bred from the winners.
-
-**A recipe is data, not code** (`three/board/recipes.ts`): every knob that decides how the world looks - `ground`, `light`, `surface`, `edges`, `ramp`, `finish` - in one plain object with a short id (`b1-4`). `StrataScene` takes a recipe; the product tab passes `STRATA_RECIPE`, which reproduces the shipped look exactly and is always cell 0 so the sheet has an anchor. Changing the product look is: pick a recipe, copy its values into `STRATA_RECIPE`.
-
-**One live canvas, two jobs** (`three/board/DesignBoard.tsx`). The stage walks the queue - mount recipe x frame, wait ~40 frames for the decks to settle, read the buffer back as JPEG, next - then becomes the expanded, orbitable view of whichever cell was clicked. A grid of live scenes was the obvious design and the wrong one: ten-project scenes are a few thousand draw calls each, and a board is static until you orbit. Twenty cells render in about 35 s. A 2D canvas below composes every cell into one sheet, wrapped into bands of five (a ten-wide strip shrinks below legibility on any screen), labelled with id and axis values; `scripts/capture-canvas.mjs` grabs it, and the stage can be captured per cell at full size.
-
-**Discipline that makes the sheet readable:** a board varies AT MOST TWO axes and holds the rest - nine cells on one axis pair is what an eye can compare. Recipe names are developer vocabulary in mono, deliberately not translated: they change every round. The board chrome is.
-
-**Board 1 (material family x ground tone) - what it taught before anyone picked anything.** Material family is a WEAK axis at this scale: clay, frosted and ceramic tiles are barely distinguishable in either frame, because the tiles are small and the outlines and the light dominate. Ground tone and finish are STRONG axes: slate vs charcoal reads instantly, and cells with contact shadows and neutral tone mapping (all of b1-1..9) sit on their plinths where the anchor (b1-0) floats. The most dominant element in every cell is the coloured `Edges` outline on decks and tiles - which is the neon residue the dulling never touched. Board 2 should vary edges (off / neutral / own) against deck slab opacity or light exposure, not materials.
-
-**Board 2 (six art directions at L1) - the round the operator asked for.** The verdict on board 1 was exact: "the artstyle, node colouring and surface is still the same, only reshaped, slightly different tone." Varying NUMBERS inside one physically-lit look cannot produce a new picture. So a recipe now chooses the SWITCHES: a surface mode (`physical` / `flat` unlit / `wire`), a deck style (`slab` / `solid` / `frame` / `none`), a floor (`grid` / `plane` / `mirror` - a real reflection via drei's reflector), where status colour may live (`fill` the tile, or a `cap` on a neutral body - which is what lets a white world stay white), and an `attentionGlow` so only trouble glows. The test `designBoard.test.ts` asserts the six recipes are six distinct switch-sets, none equal to the shipped look, spanning light and dark grounds, lit and unlit surfaces, a mirror, a cap, a frame. The six: **ivory maquette** (architect model on a cream table, matte clay, no outlines), **blueprint** (one ink on drafting blue, everything is line), **obsidian & brass** (black mirror floor, smoked glass, status in metals), **flat infographic** (unlit vector illustration, one ink outline), **porcelain** (white ceramic product render, status only as a cap), **ember** (warm black, matte and quiet, only risk and alert glow).
-
-**The board is now driven by the operator, not by a queue.** The stage is live from the first frame: one recipe, orbit controls, and the camera is KEPT across recipe switches because comparing six looks from the same angle is the point (it re-flies only when the frame changes). Arrow keys step, digit keys jump, Previous/Next buttons and a recipe strip do the same with a mouse; all registered on the app keyboard ladder at route priority and declined while a sheet is rendering. *Render sheet* is on demand and hands the stage back when done. Frames are per board (`Board.frames`); board 2 judges L1 only.
-
-**Board 3 (three realistic materials + three L0 bodies) - the round after "pastel and neon are bad directions".** Board 2 changed paint on the same structure; the operator asked for two different things and this board varies ONE per group. Group A keeps the shipped structure and goes for REALISTIC materials in Strata's own hues, toned down: `anodised graphite` (dark anodised decks, painted-metal tiles, a faintly reflective floor), `frosted glass & sandstone` (decks that transmit light - real `transmission` on the physical material), `concrete & brass` (matte concrete, brushed brass, a low warm key). No outlines - real objects do not have them - and the test asserts every status hue stays within 25° of the shipped one, no more saturated, no lighter. Group B keeps the shipped palette and materials and changes what a project IS at L0 (`node.l0`): a `slab` (one closed block with hairlines where it will split), a `disc` (a medallion with a state ring), or an upright `card` with the name on its face - no dimensions in sight, joined by `ribbon` lanes on the floor or `arc` lanes in the air, labelled at L0 because the relationship is the reading. Every body carries an `open` value the layer drives: the body flattens away as the decks rise out of it, so the L0→L1 transition happens in front of the operator. The stage grew a layer toggle (↑ ↓, or the L0/L1 buttons) that is a real camera flight for exactly that reason.
-
-**Board 3 was trimmed to its first two recipes the same day** (`anodised graphite`, `frosted glass & sandstone`); concrete & brass and the three closed L0 bodies came out of the board. The operator: "we are not getting close to the point I would wish" - the next direction is theirs to think through. The scene keeps every `NodeShape` and `LaneStyle`, so a body returns as one recipe entry, not a rebuild.
-
-**Two gotchas the board added to the pile:** (1) `import.meta.env.DEV` tab gating is compile-time, so a stale Vite graph shows three tabs no matter what the source says - reload before concluding the code is wrong; (2) a `location.reload()` sent through the bridge while the Vite dev server is DOWN leaves the webview on a browser error page with the JS bridge gone, and every later bridge call hangs. `/eval` is a raw `webview.eval` from Rust and still works on that page, so `location.replace("http://localhost:1420/")` revives it once the server is back.
+Strata and Holo (react-three-fiber worlds) and the dev-only design Board auditioned a layered,
+"Jarvis" experience from 2026-09-09. The owner ended the line on 2026-09-24: "The three.js approach
+capped us into what we can do with design quality." Text in WebGL was either blurry or a DOM label
+floating in front of a scene it did not belong to, and every label was its own React root, so
+density had to be cut instead of designed. A static HTML/CSS contest replaced it
+(`docs/design/mastermind-soundings.md`); its winner, **Soundings**, is the second view beside the
+Baseline. Everything 3D (`three/`, the `three` and `@react-three/*` packages, the `vendor-three`
+chunk) was deleted; it is in git history before this change. What the audition taught and still
+holds: position must carry stable meaning (the planetary Orbit variant failed on it), levels beat
+one layer, and palette changes over an unchanged structure do not read as a new design.
 
 ## 8. Interaction model (Figma-like, edit-first)
 

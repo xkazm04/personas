@@ -8,7 +8,7 @@
    `typo-*` / `rounded-*` / `bg-secondary/*` tokens is EXACTLY how the first
    promotion lost every property the owner chose the winner for (measured: 69
    computed-style deviations from the winner, tsc/eslint/tests/census/build all
-   green). Precedent for a component stylesheet: `sub_mastermind/three/board`.
+   green).
 
    Every value below was taken from the winner's stylesheet and checked in a
    real browser against its computed style by `.contest/harness/style-contract.py`.

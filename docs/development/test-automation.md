@@ -62,7 +62,7 @@ per-project outlines that read as noise once repeated ten times. So visual
 verification is part of the loop for canvas work, not a nicety.
 
 ```bash
-node scripts/capture-canvas.mjs --name strata-L0 --selector '.mm3d canvas'
+node scripts/capture-canvas.mjs --name chart-L0 --selector 'canvas'
 node scripts/capture-canvas.mjs --clean          # wipe the shot directory
 ```
 

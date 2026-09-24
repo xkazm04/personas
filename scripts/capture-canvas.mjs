@@ -40,7 +40,7 @@
 //
 // Usage:
 //   node scripts/capture-canvas.mjs --name strata-L0
-//   node scripts/capture-canvas.mjs --selector '.mm3d canvas' --out tmp/foo
+//   node scripts/capture-canvas.mjs --selector '[data-testid="my-canvas"]' --out tmp/foo
 //   node scripts/capture-canvas.mjs --clean            # wipe and exit
 //
 // Programmatic:
