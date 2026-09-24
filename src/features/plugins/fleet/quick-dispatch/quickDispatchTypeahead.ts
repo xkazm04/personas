@@ -1,5 +1,5 @@
 import { fuzzyScore } from '@/features/shared/chrome/commandPaletteUtils';
-import type { DevProject, SkillEntry } from '@/api/devTools/devTools';
+import type { DevProject } from '@/api/devTools/devTools';
 
 /**
  * Pure typeahead logic for the Quick Dispatch composer — extracted from the
@@ -67,12 +67,21 @@ export function filterQuickDispatchProjects(
 /**
  * Rank skills for the `/` typeahead: fuzzyScore over the skill name, with the
  * description as a discounted secondary signal.
+ *
+ * Generic over the skill shape rather than bound to `SkillEntry`, because the
+ * ranking only ever reads `name` and `description`. The second consumer is
+ * Curator's request composer, whose skills come off her own door as
+ * `CuratorSkill`; widening this signature is what stops that surface growing a
+ * SECOND ranker that drifts from this one. `SkillEntry` callers keep their
+ * exact return type through the type parameter.
  */
-export function filterQuickDispatchSkills(
-  skills: readonly SkillEntry[],
+export function filterQuickDispatchSkills<
+  T extends { name: string; description?: string | null },
+>(
+  skills: readonly T[],
   query: string,
   max: number = QUICK_DISPATCH_MAX_SUGGESTIONS,
-): SkillEntry[] {
+): T[] {
   const q = query.trim();
   if (!q) return skills.slice(0, max);
   return skills

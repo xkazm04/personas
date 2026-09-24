@@ -10,6 +10,9 @@
 import type { CuratorPlan } from "@/lib/bindings/CuratorPlan";
 import type { CuratorPolicy } from "@/lib/bindings/CuratorPolicy";
 import type { CuratorProject } from "@/lib/bindings/CuratorProject";
+import type { CuratorRequest } from "@/lib/bindings/CuratorRequest";
+import type { CuratorRuntime } from "@/lib/bindings/CuratorRuntime";
+import type { CuratorSkill } from "@/lib/bindings/CuratorSkill";
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 /**
@@ -36,4 +39,59 @@ export async function curatorPolicyGet(): Promise<CuratorPolicy> {
 /** Every checkout Curator may look at, with the operator's switches on it. */
 export async function curatorProjectsList(): Promise<CuratorProject[]> {
   return invoke<CuratorProject[]>("curator_projects_list");
+}
+
+// ---------------------------------------------------------------------------
+// The loop: her human lane, the skills she may dispatch, and what she is doing
+// ---------------------------------------------------------------------------
+
+/**
+ * The operator's own lane, oldest first, in the order they wrote it.
+ *
+ * She drains this BEFORE her own plan, which is why the surface draws it above
+ * the ledger rather than beside it.
+ */
+export async function curatorRequestsList(): Promise<CuratorRequest[]> {
+  return invoke<CuratorRequest[]>("curator_requests_list");
+}
+
+/**
+ * File one request against a registry skill.
+ *
+ * `argument` is `null` only for a skill that DOCUMENTS running bare. A skill
+ * whose invocation is undocumented (`runsBare === null`) is not bare-runnable -
+ * it is unknown, and the composer makes the operator state the argument rather
+ * than letting the UI guess one. See `blueprint/console/skillInvocation.ts`.
+ */
+export async function curatorRequestCreate(input: {
+  skill: string;
+  argument: string | null;
+  note: string | null;
+}): Promise<CuratorRequest> {
+  return invoke<CuratorRequest>("curator_request_create", input);
+}
+
+/** Withdraw a request that has not been picked up. Only `queued` may cancel. */
+export async function curatorRequestCancel(id: string): Promise<CuratorRequest> {
+  return invoke<CuratorRequest>("curator_request_cancel", { id });
+}
+
+/**
+ * Every registry skill she can dispatch, discovered by READING the lane on
+ * disk. Carries `runsBare`, which is `boolean | null` - and the null arm is
+ * load-bearing, not a missing value to default away.
+ */
+export async function curatorSkillsList(): Promise<CuratorSkill[]> {
+  return invoke<CuratorSkill[]>("curator_skills_list");
+}
+
+/**
+ * What her loop is doing, and every brake on it.
+ *
+ * `fannedOut` is nullable because a dispatcher skill spawns its own pool: when
+ * she cannot see inside a worker the answer is UNKNOWN and must be drawn as
+ * such, never as a zero.
+ */
+export async function curatorRuntimeGet(): Promise<CuratorRuntime> {
+  return invoke<CuratorRuntime>("curator_runtime_get");
 }
