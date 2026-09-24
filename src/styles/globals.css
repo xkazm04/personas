@@ -313,11 +313,14 @@
      agent = an agent made, proposed or is doing this; human = you made this or
      it waits on you; external = a connector, service or webhook; highlight =
      look here, nothing more. Every theme sets the -raw value; the outer name
-     is what brightness tiers re-mix, exactly like the status colours. */
+     is what brightness tiers re-mix, exactly like the status colours. Each
+     role sits at least CIEDE2000 10 from every status and every other role in
+     its theme (WP4c, 2026-09-24; check:themes enforces it), so light's
+     highlight is a deep cyan and no longer its status-info blue. */
   --role-agent-raw: #a78bfa;
   --role-human-raw: #f472b6;
   --role-external-raw: #38bdf8;
-  --role-highlight-raw: #06b6d4;
+  --role-highlight-raw: #19b5cd;
   --status-success: var(--status-success-raw);
   --status-warning: var(--status-warning-raw);
   --status-error: var(--status-error-raw);
@@ -2388,8 +2391,8 @@ html[data-motion="reduce"] .animate-map-spin {
   /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
   --role-agent-raw: #a78bfa;
   --role-human-raw: #f472b6;
-  --role-external-raw: #7dd3fc;
-  --role-highlight-raw: #06b6d4;
+  --role-external-raw: #87d0fb;
+  --role-highlight-raw: #2aa9c2;
 }
 
 /* Dark: Bronze — "Foundry". Restrained pattern (à la Red/Matrix): warm-graphite
@@ -2430,7 +2433,7 @@ html[data-motion="reduce"] .animate-map-spin {
   --role-agent-raw: #b9a3e6;
   --role-human-raw: #e59bb8;
   --role-external-raw: #9cc9d0;
-  --role-highlight-raw: #e0820a;
+  --role-highlight-raw: #dd7a00;
 }
 
 /* Dark: Frost -- intentionally desaturated neutral slate; full surface coverage
@@ -2500,7 +2503,7 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-neutral: #968ca6;
 
   /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
-  --role-agent-raw: #cdbdfd;
+  --role-agent-raw: #818cf8;
   --role-human-raw: #eaa2c9;
   --role-external-raw: #9ec0ef;
   --role-highlight-raw: #b667f7;
@@ -2542,7 +2545,7 @@ html[data-motion="reduce"] .animate-map-spin {
 
   /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
   --role-agent-raw: #c1a7f0;
-  --role-human-raw: #fbc0dd;
+  --role-human-raw: #febcce;
   --role-external-raw: #9ec3e8;
   --role-highlight-raw: #f0529e;
 }
@@ -2580,7 +2583,7 @@ html[data-motion="reduce"] .animate-map-spin {
   --role-agent-raw: #c8c8c8;
   --role-human-raw: #f0f0f0;
   --role-external-raw: #a8a8a8;
-  --role-highlight-raw: #ff4d4d;
+  --role-highlight-raw: #fe6b6d;
 }
 
 /* Matrix -- deep black canvas with green phosphor reserved for accents */
@@ -2613,10 +2616,10 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-neutral: #808080;
 
   /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
-  --role-agent-raw: #b3ff99;
-  --role-human-raw: #e6ff80;
+  --role-agent-raw: #b9f9a4;
+  --role-human-raw: #fafb90;
   --role-external-raw: #66ffcc;
-  --role-highlight-raw: #00ff41;
+  --role-highlight-raw: #0ad062;
 }
 
 /* Light -- "Paper Pro" — high-contrast neutral slate palette.
@@ -2675,7 +2678,7 @@ html[data-motion="reduce"] .animate-map-spin {
   --role-agent-raw: #6d28d9;
   --role-human-raw: #9d174d;
   --role-external-raw: #075985;
-  --role-highlight-raw: #1d4ed8;
+  --role-highlight-raw: #036d7d;
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
@@ -2729,8 +2732,8 @@ html[data-motion="reduce"] .animate-map-spin {
   /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
   --role-agent-raw: #6d28d9;
   --role-human-raw: #9d174d;
-  --role-external-raw: #075985;
-  --role-highlight-raw: #1d4ed8;
+  --role-external-raw: #004861;
+  --role-highlight-raw: #036d7d;
 }
 
 [data-theme="light"] * {
