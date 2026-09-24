@@ -20,10 +20,12 @@ const GuideGoalsRail = forwardRef<
     placeholder: boolean;
     /** A planning step is running: the goals are genuinely on their way. */
     drafting: boolean;
+    /** The sketch lane's draft goals, shown until the real plan lands. */
+    draftGoals?: { title: string; note: string }[];
     canAdd: boolean;
     onAddGoal: (goal: string) => void;
   }
->(function GuideGoalsRail({ phases, placeholder, drafting, canAdd, onAddGoal }, ref) {
+>(function GuideGoalsRail({ phases, placeholder, drafting, draftGoals, canAdd, onAddGoal }, ref) {
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
   const [adding, setAdding] = useState(false);
@@ -58,7 +60,23 @@ const GuideGoalsRail = forwardRef<
           </span>
         )}
       </div>
-      {placeholder ? (
+      {placeholder && draftGoals && draftGoals.length > 0 ? (
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3">
+          <p className="mb-3 typo-caption text-foreground/90">{g.goals_draft_hint}</p>
+          <ol>
+            {draftGoals.map((d, i) => (
+              <li key={`${i}-${d.title}`} className="relative flex gap-3 pb-4">
+                {i < draftGoals.length - 1 && <span aria-hidden className="absolute left-[7px] top-5 h-[calc(100%-12px)] w-px bg-border" />}
+                <span className="relative mt-1 h-4 w-4 shrink-0 rounded-full border border-dashed border-primary/60" />
+                <div className="min-w-0">
+                  <p className="typo-body text-foreground">{d.title}</p>
+                  {d.note && <p className="typo-caption text-foreground/90">{d.note}</p>}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : placeholder ? (
         <div className="px-4">
           <p className="typo-body text-foreground/90">{drafting ? g.goals_drafting : g.goals_none}</p>
           {/* Ghost rows only while goals are really on their way; an idle

@@ -13,6 +13,7 @@ import {
   webbuildScaffold,
   webbuildSessionSend,
   webbuildSessionStop,
+  webbuildSketch,
   webbuildStatus,
   type BuildEffort,
   type BuildStyle,
@@ -21,6 +22,24 @@ import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 import { useStudioHistory } from './studioHistory';
 import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
+import type { SiteSketch } from '@/lib/bindings/SiteSketch';
+import { answerNote, buildSeed, QUEUED_NOTES_TURN } from './studioSeed';
+
+export type SketchState = 'loading' | 'ready' | 'failed';
+
+/**
+ * A new project from the moment the user submits until its scaffold returns.
+ * The runtime cannot exist before the project row does, but the screen should
+ * not wait: the sketch lane runs in parallel and the Guide layout draws it.
+ */
+export interface StudioDraft {
+  name: string;
+  vision: string;
+  startedAt: number;
+  sketch: SiteSketch | null;
+  sketchState: SketchState;
+  answers: Record<number, string>;
+}
 
 // Studio runs multiple projects in parallel like browser tabs. Each project's
 // full build runtime lives HERE (not in a component) so a project keeps building
@@ -78,6 +97,12 @@ export interface ProjectRuntime {
   turnDurations: number[];
   /** Notes the user typed while a turn was running; sent with the next turn. */
   queuedNotes: string[];
+  /** The sketch lane's first reading of the vision, carried over from the draft. */
+  sketch: SiteSketch | null;
+  sketchState: SketchState | null;
+  sketchAnswers: Record<number, string>;
+  /** When the user submitted the vision (setup timeline), or null for an opened project. */
+  setupStartedAt: number | null;
 }
 
 // Exported for the test that pins the chain's stop condition. An autonomous run
@@ -164,6 +189,10 @@ interface StudioStore {
   /** Last scaffold/create failure (H9) — surfaced on the vision-start screen so
    *  a failed "Build with Athena" isn't just a transient toast (e.g. missing Bun). */
   lastCreateError: string | null;
+  /** A project being created (scaffold still running), shown before its runtime exists. */
+  draft: StudioDraft | null;
+  /** Answer one of the sketch's questions, for the draft or an open project. */
+  answerSketch: (projectId: string | null, index: number, answer: string) => void;
   initStream: () => void;
   /** Re-open the tabs that were open before a WebView reload (H10), re-attaching
    *  to their still-running dev servers instead of showing a blank Studio. */
@@ -280,6 +309,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         turnStartedAt: null,
         turnDurations: [],
         queuedNotes: [],
+        sketch: null,
+        sketchState: null,
+        sketchAnswers: {},
+        setupStartedAt: null,
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -537,6 +570,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         saveHistory(id);
         // Chain the next autonomous turn.
         const cur = get().runtimes[id];
+        // Queue pump (Athena's pattern): notes that waited out this turn go
+        // with the next one on their own, instead of sitting until the user
+        // happens to send something. One pumped turn per finished turn.
+        if (cur && !cur.autonomous && !cur.question && (cur.queuedNotes?.length ?? 0) > 0) {
+          const timer = window.setTimeout(() => {
+            const r = get().runtimes[id];
+            if (r && !r.busy && !r.autonomous && (r.queuedNotes?.length ?? 0) > 0) void runTurn(id, QUEUED_NOTES_TURN);
+          }, 900);
+          autoTimers.set(id, timer);
+        }
         if (cur?.autonomous) {
           const done = cur.phases.length > 0 && cur.phases.every((p) => p.status === 'done');
           if (done || cur.autoTurns >= AUTO_MAX_TURNS) {
@@ -561,6 +604,24 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     tabOrder: [],
     activeId: null,
     lastCreateError: null,
+    draft: null,
+
+    answerSketch: (projectId, index, answer) => {
+      const text = answer.trim();
+      if (!text) return;
+      if (!projectId) {
+        const d = get().draft;
+        if (d) set({ draft: { ...d, answers: { ...d.answers, [index]: text } } });
+        return;
+      }
+      const rt = get().runtimes[projectId];
+      if (!rt) return;
+      patch(projectId, { sketchAnswers: { ...rt.sketchAnswers, [index]: text } });
+      // The seed turn already started with this question marked open, so the
+      // answer reaches her as a note on her next step.
+      const q = rt.sketch?.questions[index]?.question;
+      if (q) get().queueNote(projectId, answerNote(q, text));
+    },
 
     initStream: () => {
       if (streamUnlisten) return;
@@ -691,23 +752,55 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     },
 
     createWithVision: async (name, vision) => {
-      set({ lastCreateError: null });
+      // Three things start at once instead of one after another: the draft
+      // (so the screen moves on immediately), the sketch lane (seconds, on the
+      // micro tier), and the scaffold (a minute or more). See webbuild::sketch.
+      const startedAt = Date.now();
+      set({
+        lastCreateError: null,
+        draft: { name, vision, startedAt, sketch: null, sketchState: 'loading', answers: {} },
+      });
+      let projectId: string | null = null;
+      const landSketch = (sketch: SiteSketch | null, state: SketchState) => {
+        const d = get().draft;
+        if (d && d.startedAt === startedAt) set({ draft: { ...d, sketch, sketchState: state } });
+        else if (projectId) patch(projectId, { sketch, sketchState: state });
+      };
+      webbuildSketch(vision)
+        .then((sk) => landSketch(sk, 'ready'))
+        .catch((e) => {
+          silentCatch('studioStore:sketch')(e);
+          landSketch(null, 'failed');
+        });
+
       let project;
       try {
         project = await webbuildScaffold(name);
       } catch (e) {
-        // H9 — scaffold failure was previously a transient toast only; the
-        // vision-start screen shows nothing about WHY (e.g. missing Bun). Keep it.
-        set({ lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
+        // H9: keep WHY the scaffold failed on the vision screen (e.g. missing Bun).
+        set({ draft: null, lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
         toastCatch('scaffold project')(e);
         return;
       }
+      projectId = project.id;
+      const d = get().draft;
       ensure(project.id, project.name);
       patch(project.id, {
         phases: MOCK_PHASES,
-        seedPending: `Here's the project vision:\n\n${vision}\n\nPlan it out (emit your BUILD_PLAN), then start building — the foundation first, then the most important section. Keep me posted in a sentence or two.`,
+        sketch: d?.sketch ?? null,
+        sketchState: d?.sketchState ?? null,
+        sketchAnswers: d?.answers ?? {},
+        setupStartedAt: startedAt,
+        seedPending: null,
       });
+      set({ draft: null });
+      // The seed turn no longer waits for the dev server: planning and research
+      // need the project folder, not a running preview, so the boot and the
+      // first (longest) turn overlap.
       await start(project.id);
+      const rt = get().runtimes[project.id];
+      const seed = buildSeed({ vision, sketch: rt?.sketch ?? null, answers: rt?.sketchAnswers ?? {} });
+      void runTurn(project.id, rt?.gatePlan ? planFirstSeed(seed) : seed);
     },
 
     sendTurn: (id, text) => runTurn(id, text),

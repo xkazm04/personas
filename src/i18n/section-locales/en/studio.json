@@ -184,6 +184,21 @@
     "act_command": "Running a setup step",
     "act_other": "Working",
     "goals_none": "No plan yet. Ask Athena to plan it, or tell her what to change.",
-    "preview_loading": "Loading your site"
+    "preview_loading": "Loading your site",
+    "setup_label": "Getting your project ready",
+    "setup_step_sketch": "Sketching the site",
+    "setup_step_create": "Creating the project on this computer",
+    "setup_step_preview": "Starting the live preview",
+    "setup_step_plan": "Planning the build",
+    "setup_elapsed": "{elapsed} so far",
+    "sketch_understood": "What I understood",
+    "sketch_loading": "Reading your idea. A first sketch of the site appears here in a few seconds.",
+    "sketch_failed": "The quick sketch did not come back. The full plan appears here when Athena has thought it through.",
+    "sketch_draft": "A first sketch from your words. Athena turns it into the real plan while the project is set up.",
+    "goals_draft_hint": "Draft goals from the sketch. The real plan replaces them.",
+    "question_counter": "{n} of {total}",
+    "answer_placeholder": "Type your answer",
+    "answer_send": "Answer",
+    "answer_inline": "Pick one or type your own answer. Setup keeps running while you decide."
   }
 }

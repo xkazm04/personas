@@ -18146,7 +18146,22 @@
       "yes": "Có",
       "your_call": "Tùy bạn quyết định",
       "goals_none": "Chưa có kế hoạch. Hãy nhờ Athena lập kế hoạch, hoặc cho cô ấy biết cần thay đổi gì.",
-      "preview_loading": "Đang tải trang web của bạn"
+      "preview_loading": "Đang tải trang web của bạn",
+      "answer_inline": "Chọn một câu trả lời hoặc tự nhập. Quá trình thiết lập vẫn tiếp tục trong khi bạn quyết định.",
+      "answer_placeholder": "Nhập câu trả lời của bạn",
+      "answer_send": "Trả lời",
+      "goals_draft_hint": "Mục tiêu nháp từ bản phác thảo. Kế hoạch thật sẽ thay thế chúng.",
+      "question_counter": "{n} / {total}",
+      "setup_elapsed": "{elapsed} đã trôi qua",
+      "setup_label": "Đang chuẩn bị dự án của bạn",
+      "setup_step_create": "Đang tạo dự án trên máy tính này",
+      "setup_step_plan": "Đang lập kế hoạch xây dựng",
+      "setup_step_preview": "Đang khởi động bản xem trước trực tiếp",
+      "setup_step_sketch": "Đang phác thảo trang web",
+      "sketch_draft": "Bản phác thảo đầu tiên từ những gì bạn viết. Athena biến nó thành kế hoạch thật trong khi dự án được thiết lập.",
+      "sketch_failed": "Bản phác thảo nhanh chưa trả về. Kế hoạch đầy đủ sẽ xuất hiện ở đây khi Athena đã suy nghĩ kỹ.",
+      "sketch_loading": "Đang đọc ý tưởng của bạn. Bản phác thảo đầu tiên của trang web sẽ xuất hiện ở đây sau vài giây.",
+      "sketch_understood": "Những gì tôi hiểu được"
     }
   },
   "system_health": {

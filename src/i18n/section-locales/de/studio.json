@@ -184,6 +184,21 @@
     "yes": "Ja",
     "your_call": "Deine Entscheidung",
     "goals_none": "Noch kein Plan. Bitte Athena, ihn zu erstellen, oder sag ihr, was sie ändern soll.",
-    "preview_loading": "Deine Website wird geladen"
+    "preview_loading": "Deine Website wird geladen",
+    "answer_inline": "Wählen Sie eine Antwort oder geben Sie Ihre eigene ein. Die Einrichtung läuft weiter, während Sie sich entscheiden.",
+    "answer_placeholder": "Antwort eingeben",
+    "answer_send": "Antworten",
+    "goals_draft_hint": "Vorläufige Ziele aus der Skizze. Der endgültige Plan ersetzt sie.",
+    "question_counter": "{n} von {total}",
+    "setup_elapsed": "{elapsed} bisher",
+    "setup_label": "Ihr Projekt wird vorbereitet",
+    "setup_step_create": "Projekt wird auf diesem Computer erstellt",
+    "setup_step_plan": "Build wird geplant",
+    "setup_step_preview": "Live-Vorschau wird gestartet",
+    "setup_step_sketch": "Website wird skizziert",
+    "sketch_draft": "Eine erste Skizze aus Ihren Worten. Athena macht daraus den endgültigen Plan, während das Projekt eingerichtet wird.",
+    "sketch_failed": "Die Schnellskizze kam nicht zurück. Der vollständige Plan erscheint hier, sobald Athena ihn durchdacht hat.",
+    "sketch_loading": "Ihre Idee wird gelesen. Eine erste Skizze der Website erscheint hier in wenigen Sekunden.",
+    "sketch_understood": "Was ich verstanden habe"
   }
 }

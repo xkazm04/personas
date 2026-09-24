@@ -184,6 +184,21 @@
     "yes": "好",
     "your_call": "由你决定",
     "goals_none": "还没有计划。请 Athena 制定计划，或告诉她要修改什么。",
-    "preview_loading": "正在加载你的网站"
+    "preview_loading": "正在加载你的网站",
+    "answer_inline": "选择一个选项或输入你自己的回答。你决定的同时设置仍在继续。",
+    "answer_placeholder": "输入你的回答",
+    "answer_send": "回答",
+    "goals_draft_hint": "根据草图起草的目标。真正的计划会取代它们。",
+    "question_counter": "{n} / {total}",
+    "setup_elapsed": "已用时 {elapsed}",
+    "setup_label": "正在准备你的项目",
+    "setup_step_create": "正在此电脑上创建项目",
+    "setup_step_plan": "正在规划构建",
+    "setup_step_preview": "正在启动实时预览",
+    "setup_step_sketch": "正在勾勒网站草图",
+    "sketch_draft": "根据你的描述生成的初步草图。项目设置期间,Athena 会将它变成真正的计划。",
+    "sketch_failed": "快速草图未能返回。完整计划会在 Athena 深思熟虑后显示在这里。",
+    "sketch_loading": "正在读取你的想法。网站的初步草图会在几秒后显示在这里。",
+    "sketch_understood": "我理解到的内容"
   }
 }

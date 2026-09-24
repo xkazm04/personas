@@ -184,6 +184,21 @@
     "yes": "はい",
     "your_call": "あなたの判断で",
     "goals_none": "まだ計画がありません。Athena に計画を頼むか、変更したい点を伝えてください。",
-    "preview_loading": "サイトを読み込んでいます"
+    "preview_loading": "サイトを読み込んでいます",
+    "answer_inline": "選択肢を選ぶか、自分で答えを入力してください。決めている間もセットアップは進みます。",
+    "answer_placeholder": "回答を入力",
+    "answer_send": "回答する",
+    "goals_draft_hint": "スケッチから作成した仮のゴールです。実際のプランができ次第置き換わります。",
+    "question_counter": "{total}件中{n}件目",
+    "setup_elapsed": "経過時間 {elapsed}",
+    "setup_label": "プロジェクトを準備しています",
+    "setup_step_create": "このコンピューターにプロジェクトを作成しています",
+    "setup_step_plan": "ビルドを計画しています",
+    "setup_step_preview": "ライブプレビューを起動しています",
+    "setup_step_sketch": "サイトのスケッチを作成しています",
+    "sketch_draft": "あなたの言葉から作った最初のスケッチです。プロジェクトの準備が整う間に、Athenaがこれを実際のプランへ仕上げます。",
+    "sketch_failed": "クイックスケッチを取得できませんでした。Athenaが検討し終わると、ここに完全なプランが表示されます。",
+    "sketch_loading": "アイデアを読み込んでいます。数秒でサイトの最初のスケッチがここに表示されます。",
+    "sketch_understood": "理解した内容"
   }
 }

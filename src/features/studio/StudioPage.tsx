@@ -31,6 +31,7 @@ export default function StudioPage() {
   const initStream = useStudioStore((s) => s.initStream);
   const createWithVision = useStudioStore((s) => s.createWithVision);
   const tabCount = useStudioStore((s) => s.tabOrder.length);
+  const hasDraft = useStudioStore((s) => s.draft !== null);
   const layout = useStudioHistory((s) => s.layout);
   const setLayout = useStudioHistory((s) => s.setLayout);
 
@@ -54,10 +55,14 @@ export default function StudioPage() {
   const onCreate = useCallback(
     async (name: string, vision: string) => {
       setSubmitting(true);
+      // The vision screen gives way at once: the draft (sketch + setup) takes
+      // the stage while the scaffold runs. A failed scaffold brings it back
+      // with the reason (lastCreateError).
+      setCreating(false);
       try {
         await createWithVision(name, vision);
-        await refreshProjects();
-        setCreating(false);
+        if (useStudioStore.getState().lastCreateError) setCreating(true);
+        else await refreshProjects();
       } finally {
         setSubmitting(false);
       }
@@ -65,7 +70,7 @@ export default function StudioPage() {
     [createWithVision, refreshProjects],
   );
 
-  const showVision = creating || tabCount === 0;
+  const showVision = (creating || tabCount === 0) && !hasDraft;
   const layoutTabs: { id: StudioLayout; label: string }[] = [
     { id: 'guide', label: guideStrings(t).layout_guide },
     { id: 'current', label: guideStrings(t).layout_current },
@@ -103,7 +108,7 @@ export default function StudioPage() {
               onCancelCreate={tabCount > 0 ? () => setCreating(false) : undefined}
             />
           ) : (
-            <StudioCurrentLayout showVision={showVision} submitting={submitting} onCreate={onCreate} />
+            <StudioCurrentLayout showVision={creating || tabCount === 0} submitting={submitting} onCreate={onCreate} />
           )}
         </Suspense>
       </div>

@@ -8,12 +8,13 @@ import { useStudioPreview } from '../useStudioPreview';
 import { isPlaceholderPlan } from '../studioBuildModel';
 import GuideGoalsRail, { type GuideGoalsRailHandle } from './GuideGoalsRail';
 import GuideBlueprint from './GuideBlueprint';
+import GuideSketchSheet from './GuideSketchSheet';
 import GuideFrame from './GuideFrame';
 import GuideNowLine from './GuideNowLine';
 import GuideQuestionCard from './GuideQuestionCard';
 import GuideDeck from './GuideDeck';
 import GuideToolArc from './GuideToolArc';
-import { addGoalPrompt, deriveDeck, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
+import { addGoalPrompt, deriveDeck, setupSteps, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
 import { estimateText, guideStrings } from './guideCopy';
 import { useGuideRuntime } from './useGuideRuntime';
 import { useGuideReadAloud } from './useGuideReadAloud';
@@ -41,6 +42,8 @@ export default function GuideStudio({
   const preview = useStudioPreview();
   const sendTurn = useStudioStore((s) => s.sendTurn);
   const setBuildSettings = useStudioStore((s) => s.setBuildSettings);
+  const draft = useStudioStore((s) => s.draft);
+  const answerSketch = useStudioStore((s) => s.answerSketch);
   const railRef = useRef<GuideGoalsRailHandle>(null);
   const [arcOpen, setArcOpen] = useState(false);
   const [questionHidden, setQuestionHidden] = useState(false);
@@ -63,12 +66,30 @@ export default function GuideStudio({
   const planning = !!rt && rt.busy && placeholder;
   const awaitingApproval = !!rt && !!question && doneCount === 0 && !rt.activity.some((a) => a.kind === 'build');
   const showBlueprint = !showVision && !!rt && (blueprintPinned ?? (!live || planning || awaitingApproval));
+  // A project being created (scaffold still running) takes the stage before
+  // its runtime exists: the sketch lane draws it and asks its questions.
+  const drafting = !!draft && !showVision;
+  const sketchSrc = drafting
+    ? { name: draft.name, sketch: draft.sketch, state: draft.sketchState, answers: draft.answers, startedAt: draft.startedAt }
+    : rt && (rt.sketch || rt.sketchState)
+      ? { name: rt.name, sketch: rt.sketch, state: rt.sketchState, answers: rt.sketchAnswers, startedAt: rt.setupStartedAt }
+      : null;
+  const sketchQuestions = sketchSrc?.sketch?.questions ?? [];
+  const nextSketchQ = sketchQuestions.findIndex((_, i) => !sketchSrc?.answers[i]);
+  const sketchMode = drafting || (showBlueprint && placeholder && !!sketchSrc);
+  const steps = setupSteps({
+    sketchState: sketchSrc?.state ?? null,
+    created: !drafting,
+    phase: drafting ? null : (rt?.phase ?? null),
+    planning,
+    planned: !drafting && !placeholder,
+  });
   const step = (rt?.turnDurations.length ?? 0) + (rt?.busy ? 1 : 0);
   const lastTurnSecs = rt && rt.turnDurations.length ? rt.turnDurations[rt.turnDurations.length - 1]! : null;
   const estimate = estimateText(g, tx, rt?.turnDurations ?? []);
 
   // A new question always arrives visible; a new project starts on its own terms.
-  useEffect(() => setQuestionHidden(false), [question]);
+  useEffect(() => setQuestionHidden(false), [question, nextSketchQ]);
   useEffect(() => {
     setBlueprintPinned(null);
     setArcOpen(false);
@@ -124,25 +145,52 @@ export default function GuideStudio({
       <GuideGoalsRail
         ref={railRef}
         phases={rt?.phases ?? []}
-        placeholder={placeholder || showVision}
-        drafting={!showVision && planning}
+        placeholder={placeholder || showVision || drafting}
+        drafting={!showVision && !drafting && planning && !sketchSrc?.sketch}
+        draftGoals={!showVision && (placeholder || drafting) ? sketchSrc?.sketch?.goals : undefined}
         canAdd={!!rt && live && !showVision}
         onAddGoal={(goal) => (working && id ? useStudioStore.getState().queueNote(id, goal) : run(addGoalPrompt(goal)))}
       />
       <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[5.25rem]">
         <GuideFrame
           preview={preview}
-          blueprint={showBlueprint}
+          blueprint={showBlueprint || drafting}
           vision={showVision}
           working={working}
           submitting={submitting}
           onCreate={onCreate}
           onCancelCreate={onCancelCreate}
         >
-          {rt && !showVision && (
+          {sketchSrc && (drafting || sketchMode) && !showVision && (
+            <GuideSketchSheet
+              name={sketchSrc.name}
+              sketch={sketchSrc.sketch}
+              sketchState={sketchSrc.state}
+              steps={steps}
+              startedAt={sketchSrc.startedAt}
+            />
+          )}
+          {drafting && nextSketchQ >= 0 && !questionHidden && sketchSrc?.sketch && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
+              <GuideQuestionCard
+                key={`sq-${nextSketchQ}`}
+                question={sketchQuestions[nextSketchQ]!.question}
+                options={sketchQuestions[nextSketchQ]!.options}
+                reason={sketchQuestions[nextSketchQ]!.why || null}
+                step={0}
+                lastTurnSecs={null}
+                pointsAtElement={false}
+                counter={tx(g.question_counter, { n: nextSketchQ + 1, total: sketchQuestions.length })}
+                inlineAnswer
+                onAnswer={(a) => answerSketch(null, nextSketchQ, a)}
+                onHide={() => setQuestionHidden(true)}
+              />
+            </div>
+          )}
+          {rt && !showVision && !drafting && (
             <>
               {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} />}
-              {showBlueprint && (
+              {showBlueprint && !sketchMode && (
                 <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} placeholder={placeholder} messages={rt.messages} />
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
@@ -159,6 +207,20 @@ export default function GuideStudio({
                       onAnswer={(a) => id && void sendTurn(id, a)}
                       onHide={() => setQuestionHidden(true)}
                     />
+                  ) : nextSketchQ >= 0 && !questionHidden && sketchSrc?.sketch ? (
+                    <GuideQuestionCard
+                      key={`sq-${nextSketchQ}`}
+                      question={sketchQuestions[nextSketchQ]!.question}
+                      options={sketchQuestions[nextSketchQ]!.options}
+                      reason={sketchQuestions[nextSketchQ]!.why || null}
+                      step={0}
+                      lastTurnSecs={null}
+                      pointsAtElement={false}
+                      counter={tx(g.question_counter, { n: nextSketchQ + 1, total: sketchQuestions.length })}
+                      inlineAnswer
+                      onAnswer={(a) => id && answerSketch(id, nextSketchQ, a)}
+                      onHide={() => setQuestionHidden(true)}
+                    />
                   ) : deck.length > 0 ? (
                     <GuideDeck key="d" cards={deck} estimate={estimate} onAccept={accept} onDecline={decline} />
                   ) : null}
@@ -167,7 +229,7 @@ export default function GuideStudio({
             </>
           )}
         </GuideFrame>
-        {rt && !showVision && (
+        {rt && !showVision && !drafting && (
           <GuideNowLine
             name={rt.name}
             settingUp={!live}
@@ -186,7 +248,7 @@ export default function GuideStudio({
             onShowQuestion={() => setQuestionHidden(false)}
           />
         )}
-        {rt && live && !showVision && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
+        {rt && !showVision && !drafting && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
         {arcOpen && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
       </div>
     </div>

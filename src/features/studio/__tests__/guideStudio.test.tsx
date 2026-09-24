@@ -18,6 +18,7 @@ vi.mock('@/api/webbuild', () => ({
   webbuildListRoutes: () => Promise.resolve(['/']),
   webbuildListProjects: () => Promise.resolve([]),
   webbuildSessionSend: vi.fn(() => new Promise(() => {})),
+  webbuildSketch: vi.fn(() => new Promise(() => {})),
 }));
 vi.mock('@/features/plugins/companion/useTtsVoiceSelection', () => ({
   useTtsVoiceSelection: () => ({ engine: 'kokoro', voiceId: null, credentialId: null, configured: false }),
@@ -46,7 +47,7 @@ const mount = () => render(<GuideStudio showVision={false} submitting={false} on
 
 afterEach(() => {
   cleanup();
-  useStudioStore.setState({ runtimes: {}, tabOrder: [], activeId: null });
+  useStudioStore.setState({ runtimes: {}, tabOrder: [], activeId: null, draft: null });
 });
 
 describe('Guide layout', () => {
@@ -55,7 +56,33 @@ describe('Guide layout', () => {
     mount();
     expect(screen.getByText('setup_starting')).toBeTruthy();
     expect(screen.getByText('frame_blueprint')).toBeTruthy();
-    expect(screen.queryByTestId('dock')).toBeNull();
+    // The dock is open during setup: notes left now go with the next step.
+    expect(screen.getByTestId('dock')).toBeTruthy();
+  });
+
+  it('draws the sketch and asks its questions while the project is still being created', () => {
+    useStudioStore.setState({
+      draft: {
+        name: 'Hearth',
+        vision: 'A bakery',
+        startedAt: Date.now() - 20_000,
+        sketchState: 'ready',
+        answers: {},
+        sketch: {
+          summary: 'A bakery that takes pickup orders.',
+          pages: [{ title: 'Home', route: '/', regions: [{ title: 'Top bar', purpose: 'brand and ordering' }] }],
+          goals: [{ title: 'Daily menu', note: 'prices' }],
+          questions: [{ question: 'Pickup only?', options: ['Yes', 'Delivery too'], why: 'business model' }],
+        },
+      },
+    });
+    mount();
+    expect(screen.getByText('Top bar')).toBeTruthy();
+    expect(screen.getByText('A bakery that takes pickup orders.')).toBeTruthy();
+    expect(screen.getByText('Daily menu')).toBeTruthy();
+    expect(screen.getByText('setup_step_create')).toBeTruthy();
+    fireEvent.click(screen.getByText('Yes'));
+    expect(useStudioStore.getState().draft?.answers[0]).toBe('Yes');
   });
 
   it('never holds a loading sheet over an idle project with no plan', () => {

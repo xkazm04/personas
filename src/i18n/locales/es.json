@@ -18146,7 +18146,22 @@
       "yes": "Sí",
       "your_call": "Tú decides",
       "goals_none": "Aún no hay plan. Pide a Athena que lo prepare o dile qué cambiar.",
-      "preview_loading": "Cargando tu sitio"
+      "preview_loading": "Cargando tu sitio",
+      "answer_inline": "Elige una opción o escribe tu propia respuesta. La configuración sigue en curso mientras decides.",
+      "answer_placeholder": "Escribe tu respuesta",
+      "answer_send": "Responder",
+      "goals_draft_hint": "Metas preliminares a partir del boceto. El plan definitivo las reemplaza.",
+      "question_counter": "{n} de {total}",
+      "setup_elapsed": "{elapsed} transcurridos",
+      "setup_label": "Preparando tu proyecto",
+      "setup_step_create": "Creando el proyecto en este equipo",
+      "setup_step_plan": "Planificando la construcción",
+      "setup_step_preview": "Iniciando la vista previa en vivo",
+      "setup_step_sketch": "Bocetando el sitio",
+      "sketch_draft": "Un primer boceto a partir de tus palabras. Athena lo convierte en el plan definitivo mientras se configura el proyecto.",
+      "sketch_failed": "El boceto rápido no llegó. El plan completo aparecerá aquí cuando Athena lo haya pensado bien.",
+      "sketch_loading": "Leyendo tu idea. Un primer boceto del sitio aparecerá aquí en unos segundos.",
+      "sketch_understood": "Lo que entendí"
     }
   },
   "system_health": {

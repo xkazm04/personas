@@ -184,6 +184,21 @@
     "yes": "Ya",
     "your_call": "Terserah kamu",
     "goals_none": "Belum ada rencana. Minta Athena menyusunnya, atau beri tahu apa yang perlu diubah.",
-    "preview_loading": "Memuat situs Anda"
+    "preview_loading": "Memuat situs Anda",
+    "answer_inline": "Pilih salah satu atau ketik jawabanmu sendiri. Pengaturan tetap berjalan selagi kamu memutuskan.",
+    "answer_placeholder": "Ketik jawabanmu",
+    "answer_send": "Jawab",
+    "goals_draft_hint": "Draf goal dari sketsa. Rencana sebenarnya akan menggantikannya.",
+    "question_counter": "{n} dari {total}",
+    "setup_elapsed": "{elapsed} berjalan",
+    "setup_label": "Menyiapkan proyekmu",
+    "setup_step_create": "Membuat proyek di komputer ini",
+    "setup_step_plan": "Merencanakan pembuatan",
+    "setup_step_preview": "Memulai pratinjau langsung",
+    "setup_step_sketch": "Membuat sketsa situs",
+    "sketch_draft": "Sketsa awal dari kata-katamu. Athena mengubahnya menjadi rencana sebenarnya selama proyek disiapkan.",
+    "sketch_failed": "Sketsa cepat tidak muncul. Rencana lengkap akan tampil di sini setelah Athena selesai memikirkannya.",
+    "sketch_loading": "Membaca idemu. Sketsa awal situs akan muncul di sini dalam beberapa detik.",
+    "sketch_understood": "Yang saya pahami"
   }
 }

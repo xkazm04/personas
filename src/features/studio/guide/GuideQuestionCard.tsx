@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guideCopy';
@@ -17,6 +18,8 @@ export default function GuideQuestionCard({
   pointsAtElement,
   onAnswer,
   onHide,
+  counter,
+  inlineAnswer = false,
 }: {
   question: string;
   options: string[];
@@ -26,7 +29,12 @@ export default function GuideQuestionCard({
   pointsAtElement: boolean;
   onAnswer: (answer: string) => void;
   onHide: () => void;
+  /** "1 of 3" when this card is one of a queue. */
+  counter?: string;
+  /** Answer free text right on the card (no dock yet, or not a build turn). */
+  inlineAnswer?: boolean;
 }) {
+  const [draft, setDraft] = useState('');
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
@@ -46,6 +54,7 @@ export default function GuideQuestionCard({
       <header className="flex items-center gap-2 border-b border-border px-5 py-3">
         <span className="h-2 w-2 rounded-full bg-status-warning" />
         <span className="typo-title text-status-warning">{g.needs_you}</span>
+        {counter && <span className="typo-caption text-foreground/90">{counter}</span>}
         {lastTurnSecs !== null && (
           <span className="typo-caption text-foreground/90">
             {tx(g.after_step, { step, minutes: Math.max(1, Math.round(lastTurnSecs / 60)) })}
@@ -82,8 +91,28 @@ export default function GuideQuestionCard({
             ))}
           </ol>
         ) : null}
+        {inlineAnswer && (
+          <form
+            className="mt-3 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (draft.trim()) onAnswer(draft.trim());
+            }}
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={g.answer_placeholder}
+              aria-label={g.answer_placeholder}
+              className="min-w-0 flex-1 rounded-input border border-border bg-background/60 px-3 py-2 typo-body text-foreground outline-none focus:border-primary/60"
+            />
+            <button type="submit" disabled={!draft.trim()} className="rounded-interactive bg-primary px-3 py-2 typo-title text-background disabled:is-disabled">
+              {g.answer_send}
+            </button>
+          </form>
+        )}
         <p className="mt-3 typo-caption text-foreground/90">
-          {options.length > 0 ? tx(g.answer_keys, { count: options.length }) : g.answer_free}
+          {options.length > 0 ? tx(g.answer_keys, { count: options.length }) : inlineAnswer ? g.answer_inline : g.answer_free}
         </p>
       </div>
     </motion.section>

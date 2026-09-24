@@ -23260,6 +23260,21 @@ export type Translations = {
       act_other: string;
       goals_none: string;
       preview_loading: string;
+      setup_label: string;
+      setup_step_sketch: string;
+      setup_step_create: string;
+      setup_step_preview: string;
+      setup_step_plan: string;
+      setup_elapsed: string;
+      sketch_understood: string;
+      sketch_loading: string;
+      sketch_failed: string;
+      sketch_draft: string;
+      goals_draft_hint: string;
+      question_counter: string;
+      answer_placeholder: string;
+      answer_send: string;
+      answer_inline: string;
     };
   };
   notepad: {

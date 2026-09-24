@@ -184,6 +184,21 @@
     "yes": "Oui",
     "your_call": "À vous de décider",
     "goals_none": "Pas encore de plan. Demandez à Athena de le préparer, ou dites-lui quoi changer.",
-    "preview_loading": "Chargement de votre site"
+    "preview_loading": "Chargement de votre site",
+    "answer_inline": "Choisissez une option ou saisissez votre propre réponse. La configuration continue pendant que vous décidez.",
+    "answer_placeholder": "Saisissez votre réponse",
+    "answer_send": "Répondre",
+    "goals_draft_hint": "Objectifs provisoires à partir du croquis. Le plan définitif les remplace.",
+    "question_counter": "{n} sur {total}",
+    "setup_elapsed": "{elapsed} écoulées",
+    "setup_label": "Préparation de votre projet",
+    "setup_step_create": "Création du projet sur cet ordinateur",
+    "setup_step_plan": "Planification de la construction",
+    "setup_step_preview": "Démarrage de l'aperçu en direct",
+    "setup_step_sketch": "Esquisse du site",
+    "sketch_draft": "Un premier croquis d'après vos mots. Athena le transforme en plan définitif pendant la configuration du projet.",
+    "sketch_failed": "Le croquis rapide n'est pas arrivé. Le plan complet apparaîtra ici une fois qu'Athena l'aura bien réfléchi.",
+    "sketch_loading": "Lecture de votre idée. Un premier croquis du site apparaîtra ici dans quelques secondes.",
+    "sketch_understood": "Ce que j'ai compris"
   }
 }

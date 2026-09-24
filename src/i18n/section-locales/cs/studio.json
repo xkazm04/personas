@@ -184,6 +184,21 @@
     "yes": "Ano",
     "your_call": "Rozhodnutí je na tobě",
     "goals_none": "Zatím žádný plán. Požádejte Athenu, ať ho připraví, nebo jí řekněte, co změnit.",
-    "preview_loading": "Načítání vašeho webu"
+    "preview_loading": "Načítání vašeho webu",
+    "answer_inline": "Vyberte jednu možnost nebo napište vlastní odpověď. Nastavení běží dál, zatímco se rozhodujete.",
+    "answer_placeholder": "Napište svou odpověď",
+    "answer_send": "Odeslat",
+    "goals_draft_hint": "Předběžné cíle ze skici. Skutečný plán je nahradí.",
+    "question_counter": "{n} z {total}",
+    "setup_elapsed": "{elapsed} zatím",
+    "setup_label": "Připravujeme váš projekt",
+    "setup_step_create": "Vytváření projektu v tomto počítači",
+    "setup_step_plan": "Plánování sestavení",
+    "setup_step_preview": "Spouštění živého náhledu",
+    "setup_step_sketch": "Vytváření skici webu",
+    "sketch_draft": "První skica podle vašich slov. Athena ji během přípravy projektu promění ve skutečný plán.",
+    "sketch_failed": "Rychlá skica se nevrátila. Úplný plán se tu objeví, jakmile ho Athena promyslí.",
+    "sketch_loading": "Čtu váš nápad. První skica webu se tu objeví během několika sekund.",
+    "sketch_understood": "Co jsem pochopila"
   }
 }

@@ -22,6 +22,7 @@ import StudioMessages from './StudioMessages';
 import StudioPlanDrawer from './StudioPlanDrawer';
 import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
+import { classifyMidTurnIntent } from '@/features/plugins/companion/midTurnIntent';
 
 // The Studio dock — Athena's conversation + input, docked bottom-center over the
 // immersive preview. Collapsed by default (latest message only) so the preview +
@@ -93,6 +94,10 @@ export default function StudioChatInput({
       if (!guide) return;
       setInput('');
       queueNote(activeId, text);
+      // Athena's mid-turn rule: a clear redirect ("stop", "actually,",
+      // "instead,") interrupts the running step; anything else waits for the
+      // next one. The note is sent by the queue pump when the step ends.
+      if (classifyMidTurnIntent(text) === 'interrupt' && busy) stopTurn(activeId);
       return;
     }
     setInput('');

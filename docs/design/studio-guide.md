@@ -39,6 +39,27 @@ Rust change.
 | Tool arc | The orb opens her tools; each is a real turn with a purpose-built prompt: Research, Try three looks (the doctrine's direction step), Check on phone/tablet/desktop (enables the Browser connector for that turn), Walk me through it (a narrated reply), Connect real data (a turn that asks what data and where). Tweak this element is shown as coming in phase 2. |
 | Queued notes | While a turn runs, a typed note is queued and prepended to the next turn instead of being refused. |
 
+## Phase 1.5: no dead waiting (shipped 2026-09-24)
+
+A new project was three waits in a row (scaffold up to 10 min with no progress, dev-server boot,
+then a ~15 min seed turn whose plan and one question arrived on its last line) and nothing
+overlapped. Athena's own answer to dead time is side lanes on cheaper tiers, a queue that sends
+itself, and questions gathered while work continues; Studio now uses the same pieces.
+
+| Piece | What it does |
+|---|---|
+| Sketch lane (`webbuild_sketch`, `webbuild::sketch`) | On submit, a stateless MICRO-tier call (`athena_reaction::cli_text_tracked`, trigger `studio_sketch`) returns pages + regions with purposes, draft goals and up to 3 owner-only questions in seconds, **in parallel with the scaffold**. No project, directory or server needed. |
+| Draft stage | `studioStore.draft` exists from submit until the scaffold returns, so the screen moves on at once: the plan sheet draws the sketch's pages region by region (GuideSketchSheet), the rail shows draft goals, and the setup timeline shows what is really running. |
+| Questions during setup | Sketch questions are answered on the card while setup runs (inline answer, counter). Answers before the seed ride in the seed; answers after it arrive as notes. |
+| Early seed | The seed turn starts right after the scaffold, **overlapping the dev-server boot** (planning and research need the folder, not the preview). It carries the sketch, the answers, and the open questions marked "do not ask again, assume a default" (`studioSeed.buildSeed`). |
+| Queue pump | Notes that waited out a turn are sent as the next turn automatically (one per finished turn), as Athena's chat queue does. |
+| Mid-turn intent | A dock message during a turn is queued; a clear redirect (`classifyMidTurnIntent`) also stops the running step. The dock is open from project creation, not only once the preview is live. |
+
+Next in this line (not built): **read-only side lanes during a build turn** (research, device
+checks, walk-throughs on a `webbuild:<id>:side` key with no git snapshot, a separate Stop path and
+stream routing), and **batched decisions** (collect every NEEDS_INPUT, a decision queue with
+Later/Skip, the model deciding defaults and continuing).
+
 ## Phase 2: protocol and preview-agent work (Rust + frontend)
 
 - **Element picking** in the preview agent (`preview_agent.rs`: hover outline + click reports a

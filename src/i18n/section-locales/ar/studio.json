@@ -184,6 +184,21 @@
     "yes": "نعم",
     "your_call": "القرار لك",
     "goals_none": "لا توجد خطة بعد. اطلب من Athena وضعها، أو أخبرها بما تريد تغييره.",
-    "preview_loading": "جارٍ تحميل موقعك"
+    "preview_loading": "جارٍ تحميل موقعك",
+    "answer_inline": "اختر إجابة أو اكتب إجابتك الخاصة. يستمر الإعداد أثناء اتخاذ قرارك.",
+    "answer_placeholder": "اكتب إجابتك",
+    "answer_send": "إرسال",
+    "goals_draft_hint": "أهداف أولية من المخطط. الخطة الفعلية تحل محلها.",
+    "question_counter": "{n} من {total}",
+    "setup_elapsed": "{elapsed} حتى الآن",
+    "setup_label": "جارٍ تجهيز مشروعك",
+    "setup_step_create": "إنشاء المشروع على هذا الجهاز",
+    "setup_step_plan": "التخطيط للبناء",
+    "setup_step_preview": "بدء المعاينة المباشرة",
+    "setup_step_sketch": "رسم مخطط الموقع",
+    "sketch_draft": "مخطط أولي من كلماتك. تحوله Athena إلى الخطة الفعلية أثناء إعداد المشروع.",
+    "sketch_failed": "لم يصل المخطط السريع. تظهر الخطة الكاملة هنا بعد أن تنتهي Athena من التفكير فيها.",
+    "sketch_loading": "جارٍ قراءة فكرتك. يظهر هنا مخطط أولي للموقع خلال ثوانٍ.",
+    "sketch_understood": "ما فهمته"
   }
 }

@@ -144,3 +144,37 @@ export function deriveDeck(input: {
 export function addGoalPrompt(goal: string): string {
   return `Add this goal to the plan: "${goal}". Decide where it belongs among the existing goals, say in one sentence where you placed it and why, and emit the updated BUILD_PLAN. Do not start building it yet.`;
 }
+
+export type SetupStepKey = 'sketch' | 'create' | 'preview' | 'plan';
+export type SetupStepState = 'done' | 'running' | 'pending' | 'failed';
+
+/**
+ * The setup timeline a new project shows while it gets ready. Four things, of
+ * which three now run at the same time: the sketch (seconds), creating the
+ * project (a minute or more), then the preview booting while the first
+ * planning step already runs. Each state comes from a real signal.
+ */
+export function setupSteps(s: {
+  sketchState: 'loading' | 'ready' | 'failed' | null;
+  created: boolean;
+  phase: 'idle' | 'scaffolding' | 'starting' | 'live' | 'error' | null;
+  planning: boolean;
+  planned: boolean;
+}): { key: SetupStepKey; state: SetupStepState }[] {
+  const sketch: SetupStepState =
+    s.sketchState === 'ready' ? 'done' : s.sketchState === 'failed' ? 'failed' : s.sketchState === 'loading' ? 'running' : 'done';
+  const preview: SetupStepState = !s.created
+    ? 'pending'
+    : s.phase === 'live'
+      ? 'done'
+      : s.phase === 'error'
+        ? 'failed'
+        : 'running';
+  const plan: SetupStepState = s.planned ? 'done' : s.planning ? 'running' : 'pending';
+  return [
+    { key: 'sketch', state: sketch },
+    { key: 'create', state: s.created ? 'done' : 'running' },
+    { key: 'preview', state: preview },
+    { key: 'plan', state: plan },
+  ];
+}

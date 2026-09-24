@@ -28,6 +28,10 @@ export function useGuideRuntime() {
         turnDurations: r.turnDurations,
         queuedNotes: r.queuedNotes,
         mcp: r.mcp,
+        sketch: r.sketch,
+        sketchState: r.sketchState,
+        sketchAnswers: r.sketchAnswers,
+        setupStartedAt: r.setupStartedAt,
       };
     }),
   );
