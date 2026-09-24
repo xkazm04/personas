@@ -23,6 +23,7 @@ import StudioPlanDrawer from './StudioPlanDrawer';
 import StudioQuickActions from './StudioQuickActions';
 import { phaseProgress } from './studioBuildModel';
 import { classifyMidTurnIntent } from '@/features/plugins/companion/midTurnIntent';
+import { isStopOnly } from './studioSeed';
 
 // The Studio dock — Athena's conversation + input, docked bottom-center over the
 // immersive preview. Collapsed by default (latest message only) so the preview +
@@ -93,11 +94,17 @@ export default function StudioChatInput({
     if (working) {
       if (!guide) return;
       setInput('');
+      // A bare stop word only stops: queued, it became the sole note of a new
+      // turn told to carry on.
+      if (isStopOnly(text)) {
+        if (busy) stopTurn(activeId);
+        return;
+      }
       queueNote(activeId, text);
-      // Athena's mid-turn rule: a clear redirect ("stop", "actually,",
-      // "instead,") interrupts the running step; anything else waits for the
-      // next one. The note is sent by the queue pump when the step ends.
-      if (classifyMidTurnIntent(text) === 'interrupt' && busy) stopTurn(activeId);
+      // Athena's mid-turn rule: a clear redirect ("actually,", "instead,")
+      // interrupts the running step and its note goes with the next one (the
+      // queue pump sends it); anything else waits for the step to end.
+      if (classifyMidTurnIntent(text) === 'interrupt' && busy) stopTurn(activeId, { pumpNotes: true });
       return;
     }
     setInput('');

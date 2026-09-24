@@ -51,3 +51,12 @@ export function answerNote(question: string, answer: string): string {
 
 /** The turn the queue pump sends when notes waited out a turn. */
 export const QUEUED_NOTES_TURN = 'Here are the notes I left while you were working. Take them into account and carry on.';
+
+/**
+ * A mid-turn message that is only a stop word ("stop", "wait", "cancel").
+ * It stops the running step and is NOT queued: queued, it became the only note
+ * of a new turn that was told to carry on.
+ */
+export function isStopOnly(text: string): boolean {
+  return /^\s*(stop|cancel|abort|halt|wait|hold (on|up)|nvm|never ?mind)[\s.!]*$/i.test(text);
+}

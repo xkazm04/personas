@@ -178,6 +178,11 @@ let streamUnlisten: (() => void) | null = null;
 // the runtime while its sequence number is still the current one.
 const turnSeq = new Map<string, number>();
 
+// Projects whose running turn the user stopped. The queue pump must not treat
+// a Stop as "the turn finished": it used to start a fresh (paid) turn with the
+// waiting notes 900 ms after the user pressed Stop. Cleared by the next turn.
+const haltedByUser = new Set<string>();
+
 // Stream deltas arrive many times per second during a build turn; committing a
 // store `set` per chunk re-renders every `stream` subscriber per chunk. Buffer
 // deltas per project and flush them in ONE `set` per animation frame instead.
@@ -215,7 +220,10 @@ interface StudioStore {
   ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
-  stopTurn: (id: string) => void;
+  /** Interrupt the running turn. `pumpNotes`: the interrupt carries a note the
+   *  queue pump should deliver right after (a mid-turn redirect); a plain Stop
+   *  leaves waiting notes for the user's next send. */
+  stopTurn: (id: string, opts?: { pumpNotes?: boolean }) => void;
   /** Keep a note for the next turn instead of refusing input mid-turn. */
   queueNote: (id: string, text: string) => void;
   removeQueuedNote: (id: string, index: number) => void;
@@ -526,6 +534,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       ? [typed, '', 'Notes I left while you were working:', ...queued.map((n) => `- ${n}`)].join('\n')
       : typed;
     const startedAt = Date.now();
+    haltedByUser.delete(id);
     const seq = (turnSeq.get(id) ?? 0) + 1;
     turnSeq.set(id, seq);
     pendingStream.delete(id); // fresh turn — drop any unflushed tail
@@ -604,7 +613,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         // Queue pump (Athena's pattern): notes that waited out this turn go
         // with the next one on their own, instead of sitting until the user
         // happens to send something. One pumped turn per finished turn.
-        if (cur && !cur.autonomous && !cur.question && (cur.queuedNotes?.length ?? 0) > 0) {
+        if (cur && !cur.autonomous && !cur.question && !haltedByUser.has(id) && (cur.queuedNotes?.length ?? 0) > 0) {
           const timer = window.setTimeout(() => {
             const r = get().runtimes[id];
             if (r && !r.busy && !r.autonomous && (r.queuedNotes?.length ?? 0) > 0) void runTurn(id, QUEUED_NOTES_TURN);
@@ -855,7 +864,9 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       patch(id, { autonomous: false, resumeAuto: false });
     },
 
-    stopTurn: (id) => {
+    stopTurn: (id, opts) => {
+      if (opts?.pumpNotes) haltedByUser.delete(id);
+      else haltedByUser.add(id);
       // Interrupt the running CLI turn now + halt any autonomous loop. The
       // pending runTurn resolves with whatever partial reply streamed and clears
       // `busy`; autonomous is already off so it won't chain another turn.

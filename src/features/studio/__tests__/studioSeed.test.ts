@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { answerNote, buildSeed } from '../studioSeed';
+import { answerNote, buildSeed, isStopOnly } from '../studioSeed';
 import { setupSteps } from '../guide/guideModel';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
 
@@ -54,5 +54,12 @@ describe('the setup timeline', () => {
     const steps = setupSteps({ sketchState: 'failed', created: true, phase: 'error', planning: false, planned: false });
     expect(steps[0]!.state).toBe('failed');
     expect(steps[2]!.state).toBe('failed');
+  });
+});
+
+describe('a mid-turn stop word', () => {
+  it('is recognised alone, never inside a real instruction', () => {
+    for (const t of ['stop', 'Stop!', '  wait ', 'hold on', 'never mind.', 'cancel']) expect(isStopOnly(t)).toBe(true);
+    for (const t of ['stop using blue', 'actually, use blue', 'wait for the menu first', 'go']) expect(isStopOnly(t)).toBe(false);
   });
 });

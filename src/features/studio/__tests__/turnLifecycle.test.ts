@@ -247,6 +247,34 @@ describe('Stop reads whether it actually stopped anything', () => {
     expect(rt?.stopNoop).toBe(false);
   });
 
+  it('a Stop never pumps waiting notes into a new turn', async () => {
+    // The queue pump sends notes that waited out a turn. A Stop must not count
+    // as "the turn finished": it used to start a fresh (paid) turn 900 ms later.
+    let resolveTurn!: (v: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(() => new Promise((r) => { resolveTurn = r; }));
+    seedRuntime({ queuedNotes: [] });
+    void useStudioStore.getState().sendTurn(ID, 'go');
+    useStudioStore.getState().queueNote(ID, 'make it blue');
+    useStudioStore.getState().stopTurn(ID);
+    resolveTurn(reply());
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(webbuildSessionSend).toHaveBeenCalledTimes(1);
+    expect(useStudioStore.getState().runtimes[ID]?.queuedNotes).toEqual(['make it blue']);
+  });
+
+  it('an interrupt that carries content still delivers its note', async () => {
+    let resolveTurn!: (v: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(() => new Promise((r) => { resolveTurn = r; }));
+    seedRuntime({ queuedNotes: [] });
+    void useStudioStore.getState().sendTurn(ID, 'go');
+    useStudioStore.getState().queueNote(ID, 'actually, use blue');
+    useStudioStore.getState().stopTurn(ID, { pumpNotes: true });
+    resolveTurn(reply());
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(webbuildSessionSend).toHaveBeenCalledTimes(2);
+    expect(String(webbuildSessionSend.mock.calls[1]?.[1])).toContain('actually, use blue');
+  });
+
   it('fences off the abandoned turn so it cannot release the next one', async () => {
     let resolveGhost!: (v: unknown) => void;
     webbuildSessionSend.mockImplementationOnce(
