@@ -48,6 +48,13 @@ function mount() {
 }
 
 describe('SoundingsView', () => {
+  it('while the scene settles: chrome and a loading line, no ghost stations, no empty message', () => {
+    render(<SoundingsView scene={{ islands: [], edges: [], demo: false }} settling onDimOpen={vi.fn()} onFleetOpen={vi.fn()} onPersonasOpen={vi.fn()} onShipOpen={vi.fn()} onFactoryOpen={vi.fn()} onDispatchFleet={vi.fn()} onOpenTerminal={vi.fn()} canOpenTerminal={() => true} />);
+    expect(screen.queryAllByTestId(/^sd-buoy-/)).toHaveLength(0);
+    expect(document.querySelector('.sd-empty')).toBeNull();
+    expect(document.querySelector('.sd-reading')?.textContent).toMatch(/\S/);
+  });
+
   it('draws one buoy per project, and walks L0 -> L1 -> L2 and back by keyboard', async () => {
     const { root, handlers } = mount();
     expect(screen.getByTestId('sd-buoy-alpha')).toBeTruthy();

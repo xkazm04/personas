@@ -154,7 +154,7 @@
 
 /* stations */
 .sd-stations { position: absolute; inset: 0; z-index: 3; }
-.sd-st { position: absolute; top: 0; bottom: 0; transition: left var(--sd-move) var(--sd-ease), width var(--sd-move) var(--sd-ease); }
+.sd-st { position: absolute; top: 0; bottom: 0; transition: left var(--sd-move) var(--sd-ease), width var(--sd-move) var(--sd-ease); animation: sd-col-in .4s calc(var(--i) * 30ms) both; }
 .sd-st .sd-pl { position: absolute; inset: 0 1px; border-radius: 2px; transition: background .35s; }
 .sd-st.sd-hov .sd-pl, .sd-st.sd-foc .sd-pl { background: linear-gradient(180deg, transparent 0%, var(--sd-plate-cur) 30%, var(--sd-hair) 60%, transparent 100%); }
 /* Buoy, mooring line and tick MOVE BY TRANSFORM, never by `top`: a data arrival
@@ -166,6 +166,13 @@
 .sd-buoy { position: absolute; left: -40px; right: -40px; height: 40px; top: 0; transform: translateY(calc(var(--y) * 1px - 32px)); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; text-align: center; transition: transform var(--sd-sink) var(--sd-ease), opacity .3s, visibility 0s; will-change: transform; border-radius: var(--radius-interactive); }
 .sd-buoy .sd-nm { white-space: nowrap; color: var(--sd-ink); padding: 0 5px; border-radius: var(--radius-interactive); transition: color .6s, background .6s, box-shadow .2s; }
 .sd-st[data-band="2"] .sd-buoy .sd-nm, .sd-st[data-band="3"] .sd-buoy .sd-nm { color: var(--sd-ink2); font-weight: 500; }
+/* Names placed by placeLabels: below the mark when the space above is taken,
+   or hidden until the station is hovered or focused. Moved by transform, so
+   the mark never shifts with its label. */
+.sd-st.sd-hov, .sd-st.sd-foc { z-index: 2; }
+.sd-st.sd-lbl-below .sd-buoy .sd-nm { transform: translateY(44px); }
+.sd-st.sd-lbl-hidden .sd-buoy .sd-nm { opacity: 0; }
+.sd-st.sd-lbl-hidden.sd-hov .sd-buoy .sd-nm, .sd-st.sd-lbl-hidden.sd-foc .sd-buoy .sd-nm { opacity: 1; position: relative; z-index: 2; }
 .sd-bm { position: relative; width: 15px; height: 15px; display: grid; place-items: center; }
 .sd-bm .sd-mk { width: 13px; height: 13px; }
 .sd-bm .sd-mk[data-s="alert"] { width: 10px; height: 10px; }

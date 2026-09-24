@@ -100,6 +100,263 @@ const CACHE_FRESH_MS = 60_000;
 let lastSweepAt = 0;
 const SWEEP_MIN_INTERVAL_MS = 15 * 60_000;
 
+/** Where one passport build reports to: the mounted hook's state, or nothing
+ *  but the module cache (a prefetch). */
+interface BuildSink {
+  /** False once a newer build has started (latest-wins). */
+  isCurrent: () => boolean;
+  /** The transient one-IPC-deep skeleton frame (never cached). */
+  skeleton: (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>) => void;
+  publish: (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null, measured: boolean) => void;
+}
+
+/** One full passport build: skeleton, phase 0, phase 1, phase 2. Module-level
+ *  so a prefetch can run it before any surface mounts (see prefetchPassportData). */
+async function runPassportBuild(regen: boolean, projectId: string | undefined, sink: BuildSink): Promise<void> {
+    // Every publish also refreshes the module cache so the NEXT mount paints
+  // from it instantly. Guarded: if a newer build has since started, this
+  // build's data is stale and must not overwrite the cache or state.
+  const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null, measured: boolean) => {
+    if (!sink.isCurrent()) return;
+    cachedSnapshot = { passports, rawByProject, generatedAt, measured, at: Date.now() };
+    sink.publish(passports, rawByProject, generatedAt, measured);
+  };
+  // PHASE -1 — the SKELETON paint, one IPC deep.
+  //
+  // `listProjects()` and the metadata read used to be awaited together, so
+  // the first frame could not arrive until the SLOWER of the two did — and on
+  // a workspace with no cached scan the metadata arm is a full cross-project
+  // generation. The Mastermind canvas held itself behind that with a
+  // `LoadingSpinner` fallback that renders `null`, which made the cold open a
+  // blank rectangle for as long as the slowest project took.
+  //
+  // The project list alone is enough to place every island. Fire both, but
+  // publish off the list the moment IT lands rather than waiting for its
+  // partner. Guarded to the first-ever load of an app session: a cached
+  // snapshot or an explicit rescan already has real data on screen, and
+  // painting placeholders over it would be a regression dressed as progress.
+  const projectsP = listProjects();
+  const cachedP = regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata();
+  if (!cachedSnapshot && !regen) {
+    const early = await projectsP.catch(() => [] as DevProject[]);
+    if (early.length > 0 && sink.isCurrent()) {
+      const skeletons = sortByNameAsc(early.map(derivePassportSkeleton));
+      const rawSk = new Map<string, ImproveRaw>();
+      // NOT published through `publish()`: that writes `cachedSnapshot`, and
+      // caching placeholders would make the NEXT mount paint unmeasured cells
+      // from cache and never learn better. This frame is deliberately
+      // transient — it exists on screen and nowhere else.
+      sink.skeleton(skeletons, rawSk);
+    }
+  }
+  const [projects, cached] = await Promise.all([projectsP, cachedP]);
+  // First run (no cached scan yet) → generate one so the Wall is never empty
+  // when projects exist but have never been cross-scanned.
+  const map = cached ?? (await generateCrossProjectMetadata());
+  const byId = new Map(projects.map((p) => [p.id, p]));
+
+  // PHASE 0 — metadata-only paint (2 IPC total): covers render immediately
+  // with no skills/telemetry extras (derives fall back to their heuristics;
+  // those cells fill in on the phase-1 publish moments later). Only for the
+  // first-ever load of an app session — a cached snapshot or a rescan means
+  // real data is already on screen, and painting a degraded frame over it
+  // would be a regression, not progress.
+  if (!cachedSnapshot && !regen) {
+    const p0: AppPassport[] = [];
+    const raw0 = new Map<string, ImproveRaw>();
+    for (const meta of map.projects) {
+      const project = byId.get(meta.project_id);
+      if (!project) continue;
+      raw0.set(project.id, { project, meta });
+      p0.push(derivePassportFromMetadata(meta, project));
+    }
+    publish(sortByNameAsc(p0), raw0, map.generated_at, false);
+  }
+
+  // Reusable skills: each project's .claude/skills + the global library. Build a
+  // catalog (name → first source) so a project can adopt skills its siblings have.
+  const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows, credentials] = await Promise.all([
+    listSkillsGlobal().catch((err) => { silentCatch('usePassportData:listSkillsGlobal')(err); return []; }),
+    mapWithConcurrency(map.projects, PROBE_CONCURRENCY, (m) =>
+      listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch((err) => { silentCatch('usePassportData:listSkills')(err); return [m.project_id, []] as const; })),
+    getSkillUsageOverview().catch((err) => { silentCatch('usePassportData:getSkillUsageOverview')(err); return [] as SkillUsageRow[]; }),
+    getDocRotOverview().catch((err) => { silentCatch('usePassportData:getDocRotOverview')(err); return [] as DocRotRow[]; }),
+    getMemoryHealthOverview().catch((err) => { silentCatch('usePassportData:getMemoryHealthOverview')(err); return [] as MemoryHealthRow[]; }),
+    // Vault credentials — resolve each project's bound support connector to
+    // its channel type (Support dimension). Tolerant: no vault, no channels.
+    listCredentials().catch((err) => { silentCatch('usePassportData:listCredentials')(err); return []; }),
+  ]);
+  const credServiceById = new Map(credentials.map((c) => [c.id, c.serviceType.toLowerCase()]));
+  // Doc-rot rollup per project (P2). Four independent tallies, not a
+  // pass/fail split: `unverifiable` docs are ones the scan could not judge
+  // (no coupling), and they must never disappear into the clean remainder.
+  // Absent rows = scan hasn't run for that project → no rollup, never a
+  // guessed zero.
+  const docRotByProject = new Map<string, DocRotRollup>();
+  for (const r of docRotRows) {
+    let agg = docRotByProject.get(r.project_id);
+    if (!agg) {
+      agg = { tracked: 0, dirty: 0, broken: 0, unverifiable: 0, neverRead: 0 };
+      docRotByProject.set(r.project_id, agg);
+    }
+    agg.tracked += 1;
+    if (r.dirty_since) agg.dirty += 1;
+    if (r.broken_refs.length > 0) agg.broken += 1;
+    // `status` already applies the precedence (broken > stale >
+    // unverifiable), so this counts only docs with no other verdict.
+    if (r.status === 'unverifiable') agg.unverifiable += 1;
+    if (r.last_read_at === null) agg.neverRead += 1;
+  }
+  // Memory-health rollup per project (P3) — the latest snapshot + live
+  // disputed count. Absent = the project has no bound team or the sweep
+  // hasn't run; the memory row then omits its health sub-label.
+  const memHealthByProject = new Map(memHealthRows.map((r) => [r.project_id, r]));
+  // Usage telemetry (P1) — registry rows keyed for the two lookups the wall
+  // needs: this project's copy first, the global library copy as fallback.
+  const usageByProject = new Map<string, Map<string, SkillUsageRow>>();
+  const usageGlobal = new Map<string, SkillUsageRow>();
+  for (const r of usageRows) {
+    if (r.scope === 'project' && r.project_id) {
+      let m = usageByProject.get(r.project_id);
+      if (!m) { m = new Map(); usageByProject.set(r.project_id, m); }
+      m.set(r.name, r);
+    } else if (r.scope === 'global') {
+      usageGlobal.set(r.name, r);
+    }
+  }
+  // hash → global name, for the "your library already has this content under
+  // another name" share-dedup (Brainiac's proposal guardrail, localized).
+  const globalByHash = new Map<string, string>();
+  for (const r of usageRows) {
+    if (r.scope === 'global' && r.content_hash && !r.missing_since) globalByHash.set(r.content_hash, r.name);
+  }
+  const skillCatalog = new Map<string, { source: string | null; description: string | null; category: string | null }>();
+  for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description, category: g.category });
+  for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description, category: s.category });
+  const installedByProject = new Map(projectSkillLists.map(([pid, list]) => [pid, new Set(list.map((s) => s.name))]));
+  // Shared-vs-specific split: a skill counts as SHARED (reused) when its name
+  // also exists in the global library or in a sibling project; the rest are
+  // specific to that codebase — the split the skills cell + modal render.
+  const globalNames = new Set(globalSkills.map((g) => g.name));
+  const nameOwners = new Map<string, number>();
+  for (const [, list] of projectSkillLists) for (const s of list) nameOwners.set(s.name, (nameOwners.get(s.name) ?? 0) + 1);
+  const isShared = (name: string) => globalNames.has(name) || (nameOwners.get(name) ?? 0) > 1;
+
+  // Assemble passports + raw rows from everything above, for a given
+  // evidence map — called twice (see TWO-PHASE PUBLISH below).
+  const assemble = (evidenceById: Map<string, RepoEvidence | null>) => {
+  const rawByProject = new Map<string, ImproveRaw>();
+  const passports: AppPassport[] = [];
+  for (const meta of map.projects) {
+    const project = byId.get(meta.project_id);
+    if (!project) continue;
+    const installed = installedByProject.get(meta.project_id) ?? new Set<string>();
+    const installedList = projectSkillLists.find(([pid]) => pid === meta.project_id)?.[1] ?? [];
+    const hasSkills = installed.size > 0;
+    const reused = [...installed].filter(isShared).length;
+    // Usage per installed skill: the project copy's registry row, else the
+    // global copy's. Dormancy is Brainiac's age-guarded rule, computed in Rust.
+    const projUsage = usageByProject.get(meta.project_id);
+    const usageFor = (name: string) => projUsage?.get(name) ?? usageGlobal.get(name);
+    const skillUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }> = {};
+    let dormant = 0;
+    for (const name of installed) {
+      const u = usageFor(name);
+      if (!u) continue;
+      skillUsage[name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at, dormant: u.dormant };
+      if (u.dormant) dormant += 1;
+    }
+    const skillCounts = { reused, own: installed.size - reused, dormant };
+    const evidence = evidenceById.get(meta.project_id) ?? null;
+    const skillsToAdd = [...skillCatalog.entries()]
+      .filter(([name, info]) => !installed.has(name) && info.source !== meta.project_id)
+      .map(([name, info]) => ({ name, source: info.source, description: info.description, category: info.category }));
+    // Liveliness of adopt candidates at their SOURCE — a skill used 12× in 30d
+    // elsewhere is a better adoption bet than one nobody invokes.
+    const catalogUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null }> = {};
+    for (const c of skillsToAdd) {
+      const u = usageGlobal.get(c.name) ?? (c.source ? usageByProject.get(c.source)?.get(c.name) : undefined);
+      if (u) catalogUsage[c.name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at };
+    }
+    // Share candidates: this project's skills the global library doesn't have —
+    // by name AND by content (an identical library skill under another name
+    // means the library already decided; don't re-generalize it).
+    const skillsToShare = installedList
+      .filter((s) => !globalNames.has(s.name))
+      .filter((s) => {
+        const hash = projUsage?.get(s.name)?.content_hash;
+        return !(hash && globalByHash.has(hash));
+      })
+      .map((s) => ({ name: s.name, description: s.description, category: s.category }));
+    const docRot = docRotByProject.get(meta.project_id);
+    const mh = memHealthByProject.get(meta.project_id);
+    const memHealth = mh ? { score: mh.score, prevScore: mh.prev_score, disputed: mh.disputed, capturedAt: mh.captured_at } : undefined;
+    // Support dimension: the bound support credential's serviceType → the
+    // incoming channel type it represents.
+    const supportService = project.support_credential_id ? credServiceById.get(project.support_credential_id) : undefined;
+    const supportChannels = supportService ? [SUPPORT_CHANNEL[supportService] ?? supportService] : [];
+    // Data-analysis dimension: user-declared related project ids → names.
+    // Unknown ids (deleted projects) drop out rather than rendering stale.
+    const dataLinks = parseDataLinkIds(project.data_links)
+      .map((id) => byId.get(id)?.name)
+      .filter((n): n is string => Boolean(n));
+    rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot, memHealth });
+    passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth, dataLinks, supportChannels }));
+  }
+  return { passports: sortByNameAsc(passports), rawByProject };
+  };
+
+  // TWO-PHASE PUBLISH (optimizer pass): the evidence probe is the slowest
+  // fan-out (N local-FS IPC calls) and used to gate the ENTIRE first paint.
+  // Phase 1 publishes evidence-less passports the moment the metadata +
+  // skills resolve (derives fall back to their heuristics); phase 2 merges
+  // real evidence in as one second commit. History snapshots only record the
+  // final, evidence-complete build.
+  const phase1 = assemble(new Map());
+  publish(phase1.passports, phase1.rawByProject, map.generated_at, false);
+
+  // Deep evidence (D1): a deterministic file probe per project, in parallel.
+  // Defensive — null on older builds (command unregistered) or unreadable paths,
+  // in which case the derive falls back to its heuristics.
+  const evidenceById = new Map<string, RepoEvidence | null>();
+  await mapWithConcurrency(map.projects, PROBE_FS_CONCURRENCY, async (m) => {
+    const proj = byId.get(m.project_id);
+    const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch((err) => { silentCatch('usePassportData:probeRepoEvidence')(err); return null; }) : null;
+    evidenceById.set(m.project_id, ev);
+  });
+  const phase2 = assemble(evidenceById);
+  // Append to the local readiness history (deduped) so the cover sparkline +
+  // "since last scan" delta accrue across scans. Best-effort, never blocks.
+  recordSnapshot(phase2.passports, Date.now());
+  publish(phase2.passports, phase2.rawByProject, map.generated_at, true);
+}
+
+/** A prefetch build in flight (hover / idle intent before navigation). A hook
+ *  that mounts meanwhile adopts its result instead of starting a second build. */
+let prefetchInflight: Promise<void> | null = null;
+
+const NO_SINK: BuildSink = { isCurrent: () => true, skeleton: () => {}, publish: () => {} };
+
+/**
+ * Warm the passport cache ahead of navigation, the way a browser's preload
+ * scanner fetches what the next page will need. No-op when a measured cache is
+ * fresh or a prefetch is already running. Resolves when the measured (phase 2)
+ * passports are cached; never rejects.
+ */
+export function prefetchPassportData(): Promise<void> {
+  if (cachedSnapshot?.measured && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return Promise.resolve();
+  if (prefetchInflight) return prefetchInflight;
+  prefetchInflight = runPassportBuild(false, undefined, NO_SINK)
+    .catch(silentCatch('usePassportData:prefetch'))
+    .finally(() => { prefetchInflight = null; });
+  return prefetchInflight;
+}
+
+/** Slugs of the cached passports (a prefetch's input to the per-project loads). */
+export function cachedPassportSlugs(): string[] {
+  return cachedSnapshot ? cachedSnapshot.passports.map((p) => p.identity.slug) : [];
+}
+
 export function usePassportData(): PassportData {
   const [state, setState] = useState<{ passports: AppPassport[]; rawByProject: Map<string, ImproveRaw>; loading: boolean; error: string | null; generatedAt: string | null; measured: boolean }>(
     () => cachedSnapshot
@@ -115,224 +372,13 @@ export function usePassportData(): PassportData {
   // createLatestWins() for the mechanism.
   const buildLatestWins = useRef(createLatestWins()).current;
 
-  const build = useCallback(async (regen: boolean, projectId?: string) => {
+  const build = useCallback((regen: boolean, projectId?: string) => {
     const token = buildLatestWins.next();
-    // Every publish also refreshes the module cache so the NEXT mount paints
-    // from it instantly. Guarded: if a newer build has since started, this
-    // build's data is stale and must not overwrite the cache or state.
-    const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null, measured: boolean) => {
-      if (!buildLatestWins.isCurrent(token)) return;
-      cachedSnapshot = { passports, rawByProject, generatedAt, measured, at: Date.now() };
-      setState({ passports, rawByProject, loading: false, error: null, generatedAt, measured });
-    };
-    // PHASE -1 — the SKELETON paint, one IPC deep.
-    //
-    // `listProjects()` and the metadata read used to be awaited together, so
-    // the first frame could not arrive until the SLOWER of the two did — and on
-    // a workspace with no cached scan the metadata arm is a full cross-project
-    // generation. The Mastermind canvas held itself behind that with a
-    // `LoadingSpinner` fallback that renders `null`, which made the cold open a
-    // blank rectangle for as long as the slowest project took.
-    //
-    // The project list alone is enough to place every island. Fire both, but
-    // publish off the list the moment IT lands rather than waiting for its
-    // partner. Guarded to the first-ever load of an app session: a cached
-    // snapshot or an explicit rescan already has real data on screen, and
-    // painting placeholders over it would be a regression dressed as progress.
-    const projectsP = listProjects();
-    const cachedP = regen ? generateCrossProjectMetadata(projectId) : getCrossProjectMetadata();
-    if (!cachedSnapshot && !regen) {
-      const early = await projectsP.catch(() => [] as DevProject[]);
-      if (early.length > 0 && buildLatestWins.isCurrent(token)) {
-        const skeletons = sortByNameAsc(early.map(derivePassportSkeleton));
-        const rawSk = new Map<string, ImproveRaw>();
-        // NOT published through `publish()`: that writes `cachedSnapshot`, and
-        // caching placeholders would make the NEXT mount paint unmeasured cells
-        // from cache and never learn better. This frame is deliberately
-        // transient — it exists on screen and nowhere else.
-        setState({ passports: skeletons, rawByProject: rawSk, loading: true, error: null, generatedAt: null, measured: false });
-      }
-    }
-    const [projects, cached] = await Promise.all([projectsP, cachedP]);
-    // First run (no cached scan yet) → generate one so the Wall is never empty
-    // when projects exist but have never been cross-scanned.
-    const map = cached ?? (await generateCrossProjectMetadata());
-    const byId = new Map(projects.map((p) => [p.id, p]));
-
-    // PHASE 0 — metadata-only paint (2 IPC total): covers render immediately
-    // with no skills/telemetry extras (derives fall back to their heuristics;
-    // those cells fill in on the phase-1 publish moments later). Only for the
-    // first-ever load of an app session — a cached snapshot or a rescan means
-    // real data is already on screen, and painting a degraded frame over it
-    // would be a regression, not progress.
-    if (!cachedSnapshot && !regen) {
-      const p0: AppPassport[] = [];
-      const raw0 = new Map<string, ImproveRaw>();
-      for (const meta of map.projects) {
-        const project = byId.get(meta.project_id);
-        if (!project) continue;
-        raw0.set(project.id, { project, meta });
-        p0.push(derivePassportFromMetadata(meta, project));
-      }
-      publish(sortByNameAsc(p0), raw0, map.generated_at, false);
-    }
-
-    // Reusable skills: each project's .claude/skills + the global library. Build a
-    // catalog (name → first source) so a project can adopt skills its siblings have.
-    const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows, credentials] = await Promise.all([
-      listSkillsGlobal().catch((err) => { silentCatch('usePassportData:listSkillsGlobal')(err); return []; }),
-      mapWithConcurrency(map.projects, PROBE_CONCURRENCY, (m) =>
-        listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch((err) => { silentCatch('usePassportData:listSkills')(err); return [m.project_id, []] as const; })),
-      getSkillUsageOverview().catch((err) => { silentCatch('usePassportData:getSkillUsageOverview')(err); return [] as SkillUsageRow[]; }),
-      getDocRotOverview().catch((err) => { silentCatch('usePassportData:getDocRotOverview')(err); return [] as DocRotRow[]; }),
-      getMemoryHealthOverview().catch((err) => { silentCatch('usePassportData:getMemoryHealthOverview')(err); return [] as MemoryHealthRow[]; }),
-      // Vault credentials — resolve each project's bound support connector to
-      // its channel type (Support dimension). Tolerant: no vault, no channels.
-      listCredentials().catch((err) => { silentCatch('usePassportData:listCredentials')(err); return []; }),
-    ]);
-    const credServiceById = new Map(credentials.map((c) => [c.id, c.serviceType.toLowerCase()]));
-    // Doc-rot rollup per project (P2). Four independent tallies, not a
-    // pass/fail split: `unverifiable` docs are ones the scan could not judge
-    // (no coupling), and they must never disappear into the clean remainder.
-    // Absent rows = scan hasn't run for that project → no rollup, never a
-    // guessed zero.
-    const docRotByProject = new Map<string, DocRotRollup>();
-    for (const r of docRotRows) {
-      let agg = docRotByProject.get(r.project_id);
-      if (!agg) {
-        agg = { tracked: 0, dirty: 0, broken: 0, unverifiable: 0, neverRead: 0 };
-        docRotByProject.set(r.project_id, agg);
-      }
-      agg.tracked += 1;
-      if (r.dirty_since) agg.dirty += 1;
-      if (r.broken_refs.length > 0) agg.broken += 1;
-      // `status` already applies the precedence (broken > stale >
-      // unverifiable), so this counts only docs with no other verdict.
-      if (r.status === 'unverifiable') agg.unverifiable += 1;
-      if (r.last_read_at === null) agg.neverRead += 1;
-    }
-    // Memory-health rollup per project (P3) — the latest snapshot + live
-    // disputed count. Absent = the project has no bound team or the sweep
-    // hasn't run; the memory row then omits its health sub-label.
-    const memHealthByProject = new Map(memHealthRows.map((r) => [r.project_id, r]));
-    // Usage telemetry (P1) — registry rows keyed for the two lookups the wall
-    // needs: this project's copy first, the global library copy as fallback.
-    const usageByProject = new Map<string, Map<string, SkillUsageRow>>();
-    const usageGlobal = new Map<string, SkillUsageRow>();
-    for (const r of usageRows) {
-      if (r.scope === 'project' && r.project_id) {
-        let m = usageByProject.get(r.project_id);
-        if (!m) { m = new Map(); usageByProject.set(r.project_id, m); }
-        m.set(r.name, r);
-      } else if (r.scope === 'global') {
-        usageGlobal.set(r.name, r);
-      }
-    }
-    // hash → global name, for the "your library already has this content under
-    // another name" share-dedup (Brainiac's proposal guardrail, localized).
-    const globalByHash = new Map<string, string>();
-    for (const r of usageRows) {
-      if (r.scope === 'global' && r.content_hash && !r.missing_since) globalByHash.set(r.content_hash, r.name);
-    }
-    const skillCatalog = new Map<string, { source: string | null; description: string | null; category: string | null }>();
-    for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description, category: g.category });
-    for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description, category: s.category });
-    const installedByProject = new Map(projectSkillLists.map(([pid, list]) => [pid, new Set(list.map((s) => s.name))]));
-    // Shared-vs-specific split: a skill counts as SHARED (reused) when its name
-    // also exists in the global library or in a sibling project; the rest are
-    // specific to that codebase — the split the skills cell + modal render.
-    const globalNames = new Set(globalSkills.map((g) => g.name));
-    const nameOwners = new Map<string, number>();
-    for (const [, list] of projectSkillLists) for (const s of list) nameOwners.set(s.name, (nameOwners.get(s.name) ?? 0) + 1);
-    const isShared = (name: string) => globalNames.has(name) || (nameOwners.get(name) ?? 0) > 1;
-
-    // Assemble passports + raw rows from everything above, for a given
-    // evidence map — called twice (see TWO-PHASE PUBLISH below).
-    const assemble = (evidenceById: Map<string, RepoEvidence | null>) => {
-    const rawByProject = new Map<string, ImproveRaw>();
-    const passports: AppPassport[] = [];
-    for (const meta of map.projects) {
-      const project = byId.get(meta.project_id);
-      if (!project) continue;
-      const installed = installedByProject.get(meta.project_id) ?? new Set<string>();
-      const installedList = projectSkillLists.find(([pid]) => pid === meta.project_id)?.[1] ?? [];
-      const hasSkills = installed.size > 0;
-      const reused = [...installed].filter(isShared).length;
-      // Usage per installed skill: the project copy's registry row, else the
-      // global copy's. Dormancy is Brainiac's age-guarded rule, computed in Rust.
-      const projUsage = usageByProject.get(meta.project_id);
-      const usageFor = (name: string) => projUsage?.get(name) ?? usageGlobal.get(name);
-      const skillUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }> = {};
-      let dormant = 0;
-      for (const name of installed) {
-        const u = usageFor(name);
-        if (!u) continue;
-        skillUsage[name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at, dormant: u.dormant };
-        if (u.dormant) dormant += 1;
-      }
-      const skillCounts = { reused, own: installed.size - reused, dormant };
-      const evidence = evidenceById.get(meta.project_id) ?? null;
-      const skillsToAdd = [...skillCatalog.entries()]
-        .filter(([name, info]) => !installed.has(name) && info.source !== meta.project_id)
-        .map(([name, info]) => ({ name, source: info.source, description: info.description, category: info.category }));
-      // Liveliness of adopt candidates at their SOURCE — a skill used 12× in 30d
-      // elsewhere is a better adoption bet than one nobody invokes.
-      const catalogUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null }> = {};
-      for (const c of skillsToAdd) {
-        const u = usageGlobal.get(c.name) ?? (c.source ? usageByProject.get(c.source)?.get(c.name) : undefined);
-        if (u) catalogUsage[c.name] = { invokes30d: u.invokes_30d, lastInvokedAt: u.last_invoked_at };
-      }
-      // Share candidates: this project's skills the global library doesn't have —
-      // by name AND by content (an identical library skill under another name
-      // means the library already decided; don't re-generalize it).
-      const skillsToShare = installedList
-        .filter((s) => !globalNames.has(s.name))
-        .filter((s) => {
-          const hash = projUsage?.get(s.name)?.content_hash;
-          return !(hash && globalByHash.has(hash));
-        })
-        .map((s) => ({ name: s.name, description: s.description, category: s.category }));
-      const docRot = docRotByProject.get(meta.project_id);
-      const mh = memHealthByProject.get(meta.project_id);
-      const memHealth = mh ? { score: mh.score, prevScore: mh.prev_score, disputed: mh.disputed, capturedAt: mh.captured_at } : undefined;
-      // Support dimension: the bound support credential's serviceType → the
-      // incoming channel type it represents.
-      const supportService = project.support_credential_id ? credServiceById.get(project.support_credential_id) : undefined;
-      const supportChannels = supportService ? [SUPPORT_CHANNEL[supportService] ?? supportService] : [];
-      // Data-analysis dimension: user-declared related project ids → names.
-      // Unknown ids (deleted projects) drop out rather than rendering stale.
-      const dataLinks = parseDataLinkIds(project.data_links)
-        .map((id) => byId.get(id)?.name)
-        .filter((n): n is string => Boolean(n));
-      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot, memHealth });
-      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth, dataLinks, supportChannels }));
-    }
-    return { passports: sortByNameAsc(passports), rawByProject };
-    };
-
-    // TWO-PHASE PUBLISH (optimizer pass): the evidence probe is the slowest
-    // fan-out (N local-FS IPC calls) and used to gate the ENTIRE first paint.
-    // Phase 1 publishes evidence-less passports the moment the metadata +
-    // skills resolve (derives fall back to their heuristics); phase 2 merges
-    // real evidence in as one second commit. History snapshots only record the
-    // final, evidence-complete build.
-    const phase1 = assemble(new Map());
-    publish(phase1.passports, phase1.rawByProject, map.generated_at, false);
-
-    // Deep evidence (D1): a deterministic file probe per project, in parallel.
-    // Defensive — null on older builds (command unregistered) or unreadable paths,
-    // in which case the derive falls back to its heuristics.
-    const evidenceById = new Map<string, RepoEvidence | null>();
-    await mapWithConcurrency(map.projects, PROBE_FS_CONCURRENCY, async (m) => {
-      const proj = byId.get(m.project_id);
-      const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch((err) => { silentCatch('usePassportData:probeRepoEvidence')(err); return null; }) : null;
-      evidenceById.set(m.project_id, ev);
+    return runPassportBuild(regen, projectId, {
+      isCurrent: () => buildLatestWins.isCurrent(token),
+      skeleton: (passports, rawByProject) => setState({ passports, rawByProject, loading: true, error: null, generatedAt: null, measured: false }),
+      publish: (passports, rawByProject, generatedAt, measured) => setState({ passports, rawByProject, loading: false, error: null, generatedAt, measured }),
     });
-    const phase2 = assemble(evidenceById);
-    // Append to the local readiness history (deduped) so the cover sparkline +
-    // "since last scan" delta accrue across scans. Best-effort, never blocks.
-    recordSnapshot(phase2.passports, Date.now());
-    publish(phase2.passports, phase2.rawByProject, map.generated_at, true);
   }, [buildLatestWins]);
 
   useEffect(() => {
@@ -340,8 +386,18 @@ export function usePassportData(): PassportData {
     // useState initializer. A fresh cache (< CACHE_FRESH_MS) skips the rebuild
     // entirely (rapid tab toggles cost zero IPC); a stale one refreshes in the
     // background behind the instantly-painted data.
-    if (cachedSnapshot && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return;
     let cancelled = false;
+    // A prefetch (nav hover / section idle) is already building: adopt its
+    // result rather than racing it with a second N-project fan-out.
+    const pending = prefetchInflight;
+    if (pending) {
+      void pending.then(() => {
+        const snap = cachedSnapshot;
+        if (!cancelled && snap) setState({ passports: snap.passports, rawByProject: snap.rawByProject, loading: false, error: null, generatedAt: snap.generatedAt, measured: snap.measured });
+      });
+      return () => { cancelled = true; };
+    }
+    if (cachedSnapshot?.measured && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return;
     build(false).catch((e) => {
       silentCatch('usePassportData:initialBuild')(e);
       if (!cancelled) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));

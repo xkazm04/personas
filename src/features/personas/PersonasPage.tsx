@@ -320,7 +320,10 @@ export default function PersonasPage() {
         return <ErrorBoundary onGoHome={goHome} name="Council"><Suspense fallback={<RouteChunkSkeleton />}><CouncilPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'mastermind') {
-        return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={<RouteChunkSkeleton />}><MastermindPage /></Suspense></ErrorBoundary>;
+        // Mastermind has no page header, so the header-band ghost matched nothing
+        // and blinked into a full-bleed canvas. Its fallback is the canvas frame
+        // itself (the page root's own geometry), empty until the chunk lands.
+        return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={<div aria-hidden className="relative h-[calc(100dvh-120px)] min-h-[480px] rounded-card border border-primary/[0.08]" />}><MastermindPage /></Suspense></ErrorBoundary>;
       }
       // Browser group (agent web-app control): the Whitelist gate and the
       // embedded Webview. See docs/features/browser.md.

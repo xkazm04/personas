@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
@@ -85,6 +86,17 @@ const BROWSER_ITEMS: Array<{
   { id: 'webview', icon: Globe, labelKey: 'webview', testId: 'teams-webview-nav' },
 ];
 
+/** Surfaces whose first paint waits on the Mastermind data families. */
+const PREFETCH_ON_INTENT: ReadonlySet<TeamsTab> = new Set<TeamsTab>(['mastermind', 'factory']);
+
+/** Start loading the canvas's code and data before the click lands. Dynamic
+ *  import: the sidebar is in the main bundle, the canvas's data layer is not. */
+function prefetchMastermindIntent() {
+  void import('@/features/teams/sub_mastermind/lib/prefetchMastermind')
+    .then((m) => m.prefetchMastermind())
+    .catch(silentCatch('sidebar mastermind prefetch'));
+}
+
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
   const teamsTab = useSystemStore((s) => s.teamsTab);
@@ -105,6 +117,19 @@ export function TeamsSidebarNav() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   // A golden-standard upgrade fired from the Factory readiness matrix is running.
   const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
+
+  // Entering the Projects section is intent for its canvases: warm them at idle
+  // so an open lands on final data (prefetchMastermind is throttled and cheap
+  // to repeat).
+  useEffect(() => {
+    const idle = typeof requestIdleCallback === 'function'
+      ? requestIdleCallback(prefetchMastermindIntent, { timeout: 3000 })
+      : window.setTimeout(prefetchMastermindIntent, 1500);
+    return () => {
+      if (typeof requestIdleCallback === 'function') cancelIdleCallback(idle as number);
+      else window.clearTimeout(idle as number);
+    };
+  }, []);
 
   // Teams are no longer listed here, but the store still backs the team detail
   // entered from a project row — keep it warm so that hop paints instantly.
@@ -269,6 +294,8 @@ export function TeamsSidebarNav() {
                 data-testid={item.testId}
                 data-experimental={item.devOnly ? 'true' : undefined}
                 onClick={() => go(item.id)}
+                onPointerEnter={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
+                onFocus={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
                 aria-current={active ? 'page' : undefined}
                 // The golden rail is `border-l-2` ON THE ROW, drawn just inside
                 // the group's own grey rail, plus a squared left corner so the

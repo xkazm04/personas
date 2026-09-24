@@ -272,3 +272,55 @@ export function cardBox(g: ChartGeo, tall = false): Box {
 
 /** The comparison strip's marker top for a band (the strip under the card). */
 export const compareY = (band: Band): number => 22 + band * 15;
+
+// ── Buoy labels at scale ─────────────────────────────────────────────────────
+
+export type LabelSlot = 'above' | 'below' | 'hidden';
+
+export interface LabelItem {
+  /** Station index. */
+  i: number;
+  /** Station centre x. */
+  cx: number;
+  /** Buoy depth (the mark's y). */
+  y: number;
+  /** Rendered name width. */
+  w: number;
+}
+
+/** Name band heights around the mark, from the buoy's own layout (name 17 px
+ *  above a 15 px mark with a 5 px gap; below mirrors it). */
+const NAME_H = 18;
+const ABOVE_TOP = -32;
+const BELOW_TOP = 12;
+const LABEL_GAP = 8;
+
+/**
+ * Place station names so none overlap. The prototype was reviewed at ten
+ * projects, where every name fit above its buoy; at twenty (the owner's real
+ * portfolio) stations are ~50 px wide, names are 90-200 px, and buoys at similar
+ * depths printed names on top of each other.
+ *
+ * Greedy in URGENCY order (`order` = rank): the most urgent name always sits
+ * above its mark; each next name takes `above` if that box clears every placed
+ * box, else `below`, else `hidden` (the name then shows only while its station
+ * is hovered or focused; the mark, the floats and the reading line still carry
+ * the signal). Deterministic for a given layout.
+ */
+export function placeLabels(items: readonly LabelItem[], order: readonly number[]): Record<number, LabelSlot> {
+  const byIndex = new Map(items.map((it) => [it.i, it]));
+  const placed: Array<{ l: number; r: number; t: number; b: number }> = [];
+  const out: Record<number, LabelSlot> = {};
+  const box = (it: LabelItem, top: number) => ({ l: it.cx - it.w / 2 - LABEL_GAP / 2, r: it.cx + it.w / 2 + LABEL_GAP / 2, t: it.y + top, b: it.y + top + NAME_H });
+  const clear = (b: { l: number; r: number; t: number; b: number }) => placed.every((p) => b.r <= p.l || p.r <= b.l || b.b <= p.t || p.b <= b.t);
+  for (const i of order) {
+    const it = byIndex.get(i);
+    if (!it) continue;
+    const above = box(it, ABOVE_TOP);
+    if (placed.length === 0 || clear(above)) { placed.push(above); out[i] = 'above'; continue; }
+    const below = box(it, BELOW_TOP);
+    if (clear(below)) { placed.push(below); out[i] = 'below'; continue; }
+    out[i] = 'hidden';
+  }
+  return out;
+}
