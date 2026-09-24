@@ -15,6 +15,14 @@ running: number, workerCap: number,
  * spawns its own pool - `librarian` and `forge` cap at 10, `harvest` at 5,
  * `hygiene` at 6 - so a worker cap of 2 is not a cap of 2 processes. Null when
  * she cannot see inside a worker.
+ *
+ * **Measured 2026-09-24, and the answer got worse rather than better when a
+ * loop was finally attached:** her workers are headless `claude` sessions and
+ * a dispatcher skill fans out through the Task tool, which runs its agents
+ * IN-PROCESS. There is no child process to count, so no OS-level reading of
+ * the pool exists at all - not merely one this app has not written. The only
+ * figure that is ever knowable from here is the zero, when she holds no
+ * terminal.
  */
 fannedOut: number | null, 
 /**
@@ -25,4 +33,17 @@ lane: string,
 /**
  * Why she is stopped, when she is. Null while she is working.
  */
-haltedReason: string | null, spentTodayUsd: number, dailyBudgetUsd: number, runsToday: number, dailyRunCap: number, commitsToday: number, dailyCommitCap: number, lastSleepAt: string | null, };
+haltedReason: string | null, spentTodayUsd: number, 
+/**
+ * Dollars she may spend today. `None` = no ceiling declared;
+ * `Some(0.0)` = declared, and none.
+ */
+dailyBudgetUsd: number | null, runsToday: number, 
+/**
+ * Dispatches she may start today. `None` = no cap declared.
+ */
+dailyRunCap: number | null, commitsToday: number, 
+/**
+ * Commits she may land today. `None` = no cap declared.
+ */
+dailyCommitCap: number | null, lastSleepAt: string | null, };

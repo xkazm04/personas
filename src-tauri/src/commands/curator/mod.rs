@@ -34,9 +34,12 @@
 //! `app_settings.knowledge_registry_root` scalar is NOT used: it is a derived
 //! convenience for the consult lane, and it carries no stat.
 
+pub mod dispatch;
 pub mod instrument;
 pub mod process;
 pub mod projection;
+pub mod sleep;
+pub mod tick;
 
 use std::sync::Arc;
 
@@ -49,7 +52,7 @@ use crate::AppState;
 
 use personas_core::models::{
     curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorPlan, CuratorPolicy,
-    CuratorProject, CuratorRequest, CuratorRuntime, CuratorSkill, CURATOR_SPEND_SOURCE,
+    CuratorProject, CuratorRequest, CuratorRuntime, CuratorSkill,
 };
 
 /// Run a blocking read/write off the IPC worker. The curator lane touches
@@ -71,7 +74,13 @@ where
 /// nothing is denied to the caller, a prerequisite is missing, and the message
 /// says which and where to fix it.
 fn registry_root(state: &Arc<AppState>) -> Result<std::path::PathBuf, AppError> {
-    crate::commands::companions::curator_registry(&state.db)
+    registry_root_of(&state.db)
+}
+
+/// [`registry_root`] for a caller that holds a pool rather than the whole app
+/// state - her loop, which never sees an `AppState`.
+pub(super) fn registry_root_of(db: &crate::db::DbPool) -> Result<std::path::PathBuf, AppError> {
+    crate::commands::companions::curator_registry(db)
         .map(|r| std::path::PathBuf::from(r.clone_path))
         .ok_or_else(|| {
             AppError::Validation(
@@ -427,14 +436,21 @@ pub async fn curator_request_create(
     let db = state.db.clone();
     let now = chrono::Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();
-    blocking("curator_request_create", move || {
+    let created = blocking("curator_request_create", move || {
         let skills = instrument::read_skills(&root)?;
         let argument = typed(argument);
         let note = typed(note);
         vet_request(&skills, &skill, argument.as_deref())?;
         repo::create_request(&db, &id, &skill, argument.as_deref(), note.as_deref(), &now)
     })
-    .await
+    .await?;
+    // Wake her loop. The lane the operator can SEE is the one she drains
+    // first, so making it also the slowest - up to a whole poll interval
+    // behind - would be the worst pairing available. The signal is not the
+    // request: the row is durable, so a wake nobody is listening for costs
+    // latency and never the dispatch.
+    crate::engine::subscription::curator_wake_signal().notify_one();
+    Ok(created)
 }
 
 /// The operator withdrawing a request. Only a queued one can be withdrawn -
@@ -459,6 +475,10 @@ pub async fn curator_request_cancel(
 
 /// Why she is stopped, in the order the brakes bind.
 ///
+/// **These are the ONLY things that stop her**, which is not a figure of
+/// speech: her loop never idles by design, so on an empty queue it dispatches
+/// the refill pass and keeps going. Every one of them is re-read each tick.
+///
 /// The worker cap is deliberately NOT among them: every terminal being busy is
 /// what she looks like while she is WORKING, and reporting it as a halt would
 /// put the word "halted" on the screen at exactly the moment she is at full
@@ -466,35 +486,61 @@ pub async fn curator_request_cancel(
 ///
 /// A cap the operator has not declared is `None` in the policy and brakes
 /// nothing - never a ceiling of zero, which would read as a companion that may
-/// never run.
-fn halted_reason(
-    enabled: bool,
-    has_registry: bool,
-    policy: &CuratorPolicy,
-    spent_today_usd: f64,
-    runs_today: u32,
-    commits_today: u32,
-) -> Option<String> {
-    if !enabled {
+/// never run. A DECLARED zero is a different, legitimate answer and does brake.
+///
+/// **Order.** The durable reasons come before the transient ones: a spent
+/// budget is a better answer than "it is 23:10" when both are true, because one
+/// of them ends by itself. Quiet hours therefore bind last.
+fn halted_reason(brakes: &tick::BrakeReading, policy: &CuratorPolicy) -> Option<String> {
+    if !brakes.enabled {
         return Some("she is switched off".into());
     }
-    if !has_registry {
+    if !brakes.has_registry {
         return Some("no knowledge registry is mapped on this disk".into());
     }
     if policy
         .daily_budget_usd
-        .is_some_and(|cap| spent_today_usd >= cap)
+        .is_some_and(|cap| brakes.spent_today_usd >= cap)
     {
         return Some("today's budget is spent".into());
     }
-    if policy.daily_run_cap.is_some_and(|cap| runs_today >= cap) {
+    if policy
+        .daily_run_cap
+        .is_some_and(|cap| brakes.runs_today >= cap)
+    {
         return Some("today's run cap is reached".into());
     }
     if policy
         .daily_commit_cap
-        .is_some_and(|cap| commits_today >= cap)
+        .is_some_and(|cap| brakes.commits_today >= cap)
     {
         return Some("today's commit cap is reached".into());
+    }
+    // Backpressure is on the OPERATOR, not on the machine: a queue of
+    // decisions nobody is answering is a queue that should stop growing.
+    if brakes.awaiting_decisions >= policy.backpressure_n {
+        return Some(format!(
+            "{} decisions are waiting for an answer",
+            brakes.awaiting_decisions
+        ));
+    }
+    // An UNREADABLE window is not a quiet one and not a busy one - it is a
+    // brake that cannot be evaluated, and `quiet_hours::now_is_quiet` answers
+    // `None` rather than `false` precisely so this arm can say so instead of
+    // silently running through a window the operator believes is set. The
+    // settings door refuses such a value since 2026-09-24, so the only way to
+    // reach it is a hand-edited database.
+    if let Some(window) = policy.quiet_hours.as_deref() {
+        match personas_core::quiet_hours::now_is_quiet(window, brakes.now_minute) {
+            Some(true) => return Some(format!("it is quiet hours ({window})")),
+            Some(false) => {}
+            None => {
+                return Some(format!(
+                    "her quiet-hours window ({window}) cannot be read, so she is holding \
+                     rather than guessing it is over"
+                ))
+            }
+        }
     }
     None
 }
@@ -521,10 +567,9 @@ fn fanned_out(running: u32) -> Option<u32> {
 /// a stored copy of "how many terminals are live" would be a second answer to
 /// a question the registry already owns.
 ///
-/// **This package has no loop**, so `running` is whatever a terminal somebody
-/// else started with her origin reports - today, nothing. `lane` is still
-/// computed rather than stubbed, because the precedence it expresses is real:
-/// she drains the operator's lane before her own plan.
+/// `lane` is computed rather than stored, and the precedence it expresses is
+/// the operator's own rule: she drains his lane before her own plan, and when
+/// both are empty she refills rather than idling.
 #[tauri::command]
 pub async fn curator_runtime_get(
     state: State<'_, Arc<AppState>>,
@@ -535,18 +580,12 @@ pub async fn curator_runtime_get(
     let running = crate::commands::fleet::queue::live_count_for_origin(
         crate::commands::fleet::queue::DispatchOrigin::Curator,
     );
+    let refilling = tick::refill_in_flight();
+    let sleeping = sleep::is_sleeping();
     let db = state.db.clone();
     blocking("curator_runtime_get", move || {
         let policy = load_policy(&db);
-        let enabled = crate::commands::companions::curator_enabled(&db);
-        let has_registry = crate::commands::companions::curator_registry(&db).is_some();
-        let spent_today_usd =
-            crate::db::repos::llm_spend::source_today(&db, CURATOR_SPEND_SOURCE)?.0;
-        let runs_today = crate::db::repos::fleet_sessions::count_started_today_for_origin(
-            &db,
-            crate::commands::fleet::queue::DispatchOrigin::Curator.token(),
-        )?;
-        let commits_today = repo::commits_today(&db)?;
+        let brakes = tick::read_brakes(&db)?;
         // She drains the operator's lane before her own plan, so an open
         // request IS the lane she is serving. Open, not queued: a dispatched
         // request is one she is still carrying out.
@@ -554,37 +593,35 @@ pub async fn curator_runtime_get(
             .into_iter()
             .any(|r| !r.state.is_settled());
         Ok(CuratorRuntime {
-            enabled,
+            enabled: brakes.enabled,
             running,
             worker_cap: policy.worker_cap,
             fanned_out: fanned_out(running),
-            lane: if open_requests {
+            // Reported in the order the loop itself resolves them, except that
+            // the sleep wins: a reconcile holds the whole pass, so while it
+            // runs it IS what she is doing.
+            lane: if sleeping {
+                curator_lane::SLEEP.into()
+            } else if open_requests {
                 curator_lane::QUEUE.into()
+            } else if refilling {
+                curator_lane::REFILL.into()
             } else {
                 curator_lane::PLAN.into()
             },
-            halted_reason: halted_reason(
-                enabled,
-                has_registry,
-                &policy,
-                spent_today_usd,
-                runs_today,
-                commits_today,
-            ),
-            spent_today_usd,
-            // A cap the operator never declared is `None` in the policy and
-            // `0` on this wire, which every consumer of it reads as "no
-            // ceiling" - the convention `monthly_cost_ceiling_usd` already
-            // ships. The policy door beside this one carries the nullable
-            // truth, and the console prefers it for exactly that reason.
-            daily_budget_usd: policy.daily_budget_usd.unwrap_or(0.0),
-            runs_today,
-            daily_run_cap: policy.daily_run_cap.unwrap_or(0),
-            commits_today,
-            daily_commit_cap: policy.daily_commit_cap.unwrap_or(0),
-            // No loop, so no sleep has ever happened. `None` is the honest
-            // answer and never an epoch-zero timestamp.
-            last_sleep_at: None,
+            halted_reason: halted_reason(&brakes, &policy),
+            spent_today_usd: brakes.spent_today_usd,
+            // **Nullable since 2026-09-24**, and the policy's own values are
+            // what travel: an undeclared ceiling is `None` here exactly as it
+            // is there. The `0` this wire used to carry could not be told
+            // apart from a declared ceiling of zero, which the validator
+            // accepts and which means the opposite.
+            daily_budget_usd: policy.daily_budget_usd,
+            runs_today: brakes.runs_today,
+            daily_run_cap: policy.daily_run_cap,
+            commits_today: brakes.commits_today,
+            daily_commit_cap: policy.daily_commit_cap,
+            last_sleep_at: setting(&db, settings_keys::CURATOR_LAST_SLEEP_AT),
         })
     })
     .await
@@ -738,50 +775,125 @@ mod tests {
         assert!(vet_request(&lane, "deepen", Some("anything")).is_ok());
     }
 
+    /// Nothing braking, at noon, with nothing spent and nothing awaiting.
+    fn quiet_day() -> tick::BrakeReading {
+        tick::BrakeReading {
+            enabled: true,
+            has_registry: true,
+            spent_today_usd: 0.0,
+            runs_today: 0,
+            commits_today: 0,
+            awaiting_decisions: 0,
+            now_minute: 12 * 60,
+        }
+    }
+
     /// The brakes bind in order, an undeclared cap brakes nothing, and a busy
     /// worker pool is NOT a halt.
+    ///
+    /// **These are the only things that stop her**, so each of the five gets
+    /// its own arm and each names the reason a console will print.
     #[test]
     fn the_brakes_bind_in_order_and_a_full_pool_is_not_one() {
         let mut policy = CuratorPolicy::default();
 
+        let mut off = quiet_day();
+        off.enabled = false;
         assert_eq!(
-            halted_reason(false, true, &policy, 0.0, 0, 0).as_deref(),
+            halted_reason(&off, &policy).as_deref(),
             Some("she is switched off")
         );
+        let mut unmapped = quiet_day();
+        unmapped.has_registry = false;
         assert_eq!(
-            halted_reason(true, false, &policy, 0.0, 0, 0).as_deref(),
+            halted_reason(&unmapped, &policy).as_deref(),
             Some("no knowledge registry is mapped on this disk")
         );
+
         // The shipped policy declares no ceilings, so nothing else brakes -
         // however much has been spent or run.
-        assert_eq!(halted_reason(true, true, &policy, 999.0, 999, 999), None);
+        let mut busy = quiet_day();
+        busy.spent_today_usd = 999.0;
+        busy.runs_today = 999;
+        busy.commits_today = 999;
+        assert_eq!(halted_reason(&busy, &policy), None);
 
         policy.daily_budget_usd = Some(5.0);
-        assert_eq!(halted_reason(true, true, &policy, 4.99, 0, 0), None);
+        let mut spent = quiet_day();
+        spent.spent_today_usd = 4.99;
+        assert_eq!(halted_reason(&spent, &policy), None);
+        spent.spent_today_usd = 5.0;
         assert_eq!(
-            halted_reason(true, true, &policy, 5.0, 0, 0).as_deref(),
+            halted_reason(&spent, &policy).as_deref(),
             Some("today's budget is spent")
         );
 
         policy.daily_budget_usd = None;
         policy.daily_run_cap = Some(3);
-        assert_eq!(halted_reason(true, true, &policy, 0.0, 2, 0), None);
+        let mut runs = quiet_day();
+        runs.runs_today = 2;
+        assert_eq!(halted_reason(&runs, &policy), None);
+        runs.runs_today = 3;
         assert_eq!(
-            halted_reason(true, true, &policy, 0.0, 3, 0).as_deref(),
+            halted_reason(&runs, &policy).as_deref(),
             Some("today's run cap is reached")
         );
 
         policy.daily_run_cap = None;
         policy.daily_commit_cap = Some(1);
+        let mut commits = quiet_day();
+        commits.commits_today = 1;
         assert_eq!(
-            halted_reason(true, true, &policy, 0.0, 0, 1).as_deref(),
+            halted_reason(&commits, &policy).as_deref(),
             Some("today's commit cap is reached")
         );
 
         // A declared ceiling of ZERO is a real answer - "not today" - and it
-        // brakes from the first unit.
+        // brakes from the first unit. This is exactly the reading the wire
+        // could not express while these three caps were plain numbers.
         policy.daily_commit_cap = Some(0);
-        assert!(halted_reason(true, true, &policy, 0.0, 0, 0).is_some());
+        assert!(halted_reason(&quiet_day(), &policy).is_some());
+        policy.daily_commit_cap = None;
+
+        // Backpressure is on the OPERATOR: she stops producing decisions once
+        // N of them are waiting for an answer.
+        let mut waiting = quiet_day();
+        waiting.awaiting_decisions = policy.backpressure_n - 1;
+        assert_eq!(halted_reason(&waiting, &policy), None);
+        waiting.awaiting_decisions = policy.backpressure_n;
+        assert_eq!(
+            halted_reason(&waiting, &policy).as_deref(),
+            Some("8 decisions are waiting for an answer")
+        );
+
+        // Quiet hours bind LAST, and only inside the window.
+        policy.quiet_hours = Some("22:00-07:00".into());
+        assert_eq!(
+            halted_reason(&quiet_day(), &policy),
+            None,
+            "noon is not quiet"
+        );
+        let mut night = quiet_day();
+        night.now_minute = 23 * 60;
+        assert_eq!(
+            halted_reason(&night, &policy).as_deref(),
+            Some("it is quiet hours (22:00-07:00)")
+        );
+        // A durable reason still outranks the transient one when both hold.
+        policy.daily_run_cap = Some(1);
+        night.runs_today = 1;
+        assert_eq!(
+            halted_reason(&night, &policy).as_deref(),
+            Some("today's run cap is reached")
+        );
+        policy.daily_run_cap = None;
+
+        // A window nobody can read HOLDS her rather than running through it.
+        // Only a hand-edited database can produce one - the settings door has
+        // refused it since 2026-09-24.
+        policy.quiet_hours = Some("evenings".into());
+        let held = halted_reason(&quiet_day(), &policy).unwrap_or_default();
+        assert!(held.contains("cannot be read"), "{held}");
     }
 
     /// **Only the zero is knowable.** No terminal is no process; one terminal

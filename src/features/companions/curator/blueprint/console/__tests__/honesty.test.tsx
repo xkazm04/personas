@@ -137,4 +137,33 @@ describe('a cap is drawn even when nothing has been consumed against it', () => 
     expect(brakes[1]?.textContent ?? '').not.toMatch(/12/);
     expect(brakes[2]?.textContent ?? '').not.toMatch(/3/);
   });
+
+  // The fallback arm, which is the one the 2026-09-24 contract fix reaches.
+  // Until then the runtime's three caps were plain numbers and an undeclared
+  // ceiling arrived here as `0`; with the policy door down, the strip had no
+  // way to tell that apart from a DECLARED ceiling of zero, which the settings
+  // validator accepts and which means the opposite - "not today".
+  it('still says undeclared when the policy door failed and the runtime carries null', () => {
+    const { container } = draw(
+      <RuntimeStrip
+        runtime={runtime({ dailyBudgetUsd: null, dailyRunCap: null, dailyCommitCap: null })}
+        policy={null}
+      />,
+    );
+    const brakes = [...container.querySelectorAll('[data-role="cb-brake-value"]')];
+    expect(brakes).toHaveLength(3);
+    for (const b of brakes) expect(b.textContent ?? '').toContain(NO_CAP);
+  });
+
+  it('draws a declared ceiling of zero as a real ceiling, not as undeclared', () => {
+    const { container } = draw(
+      <RuntimeStrip
+        runtime={runtime({ dailyRunCap: 0, runsToday: 0 })}
+        policy={null}
+      />,
+    );
+    const brakes = [...container.querySelectorAll('[data-role="cb-brake-value"]')];
+    expect(brakes[1]?.textContent).toBe(interpolate(W.used_of, { used: '0', cap: '0' }));
+    expect(brakes[1]?.textContent ?? '').not.toContain(NO_CAP);
+  });
 });

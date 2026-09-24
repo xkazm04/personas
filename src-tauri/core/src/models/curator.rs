@@ -899,6 +899,14 @@ pub struct CuratorRuntime {
     /// spawns its own pool - `librarian` and `forge` cap at 10, `harvest` at 5,
     /// `hygiene` at 6 - so a worker cap of 2 is not a cap of 2 processes. Null when
     /// she cannot see inside a worker.
+    ///
+    /// **Measured 2026-09-24, and the answer got worse rather than better when a
+    /// loop was finally attached:** her workers are headless `claude` sessions and
+    /// a dispatcher skill fans out through the Task tool, which runs its agents
+    /// IN-PROCESS. There is no child process to count, so no OS-level reading of
+    /// the pool exists at all - not merely one this app has not written. The only
+    /// figure that is ever knowable from here is the zero, when she holds no
+    /// terminal.
     pub fanned_out: Option<u32>,
     /// Which lane she is serving: the operator's queue, her own plan, the refill
     /// research pass, or her reconcile sleep.
@@ -906,17 +914,28 @@ pub struct CuratorRuntime {
     /// Why she is stopped, when she is. Null while she is working.
     pub halted_reason: Option<String>,
     pub spent_today_usd: f64,
-    // The three caps below are NOT `Option` on this wire, and `0` is the
-    // reading for "no ceiling declared" - the same convention
-    // `monthly_cost_ceiling_usd` already ships. It is the one place in this
-    // feature where an absence is spelled as a zero, and it is the wire's call
-    // rather than this type's: see the freeze commit. A surface must render `0`
-    // as "no ceiling", never as "may never run".
-    pub daily_budget_usd: f64,
+    // The three caps below were NOT `Option` on this wire until 2026-09-24, and
+    // `0` was the reading for "no ceiling declared" - borrowed from
+    // `monthly_cost_ceiling_usd`. **That borrowing was the mistake, and it is
+    // corrected here.** For a COST CEILING, zero-means-unlimited is merely
+    // unusual; for a BRAKE it inverts the meaning, because `0` is also a
+    // perfectly legal declared value ("she may not run today", which
+    // `CuratorPolicy` carries as `Some(0)` and the validator accepts). The wire
+    // therefore collapsed "no ceiling" and "never" into one number in the one
+    // place where they are opposites, and a reader had no way to tell them
+    // apart without also fetching the policy. `None` here is "no ceiling
+    // declared"; `Some(0)` is "not today". This is the same unknown-is-not-zero
+    // rule the rest of this file is built on, applied to the field that had been
+    // exempted from it.
+    /// Dollars she may spend today. `None` = no ceiling declared;
+    /// `Some(0.0)` = declared, and none.
+    pub daily_budget_usd: Option<f64>,
     pub runs_today: u32,
-    pub daily_run_cap: u32,
+    /// Dispatches she may start today. `None` = no cap declared.
+    pub daily_run_cap: Option<u32>,
     pub commits_today: u32,
-    pub daily_commit_cap: u32,
+    /// Commits she may land today. `None` = no cap declared.
+    pub daily_commit_cap: Option<u32>,
     pub last_sleep_at: Option<String>,
 }
 

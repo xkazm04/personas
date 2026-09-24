@@ -192,6 +192,16 @@ pub fn start_loops(
                 pool: pool.clone(),
             },
         ),
+        // Curator's loop: drain the operator's request lane, then her own
+        // plan, and when both are empty dispatch the registry's refill pass
+        // rather than idling. Default-OFF - gated on `curator_enabled` INSIDE
+        // the tick, re-read every time, so the switch takes effect within one
+        // interval rather than at the next app start. A disabled Curator costs
+        // one settings read per tick.
+        Box::new(crate::commands::curator::tick::CuratorLoopSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Periodic MCP gateway-member healthcheck: probes each enabled gateway
         // member and records per-member status into its credential metadata so a
         // dead member surfaces as an explicit "failed" instead of just silently
