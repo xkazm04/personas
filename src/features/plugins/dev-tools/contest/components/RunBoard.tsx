@@ -34,11 +34,15 @@ export interface RunBoardProps {
   className?: string;
 }
 
-/** Open a fleet session in the Monitor — the same door Athena's refs use. */
+/** Open a fleet session in the PersonaMonitor's Activity (fleet board) view. */
 export function openSessionInMonitor(sessionId: string): void {
+  // The PersonaMonitor overlay (title bar) is the fleet's home in every build;
+  // the standalone grid overlay is dev-only. Its Activity view is the fleet
+  // board where contest seats sit in their own per-contest column.
   const sys = useSystemStore.getState();
   sys.fleetSetActiveSession(sessionId);
-  sys.fleetSetGridOpen(true);
+  sys.setMonitorInitialView('fleet');
+  sys.setHeaderOverlay('monitor');
 }
 
 /** Steps worth offering as a retry: judging steps only when judges ran. */

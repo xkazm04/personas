@@ -45,6 +45,7 @@ beforeEach(() => {
     problems: ['instrument-missing', 'codex-missing'],
   });
   api.getContestLineups.mockResolvedValue([{ name: 'Frontier', seats: ['claude:claude-opus-5-5@xhigh'] }]);
+  api.getContest.mockResolvedValue(detailFixture());
 });
 
 afterEach(() => {
