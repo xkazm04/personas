@@ -35,6 +35,7 @@ const GuideGoalsRail = forwardRef<
 
   useImperativeHandle(ref, () => ({
     startAdding: () => {
+      if (!canAdd) return;
       setAdding(true);
       window.requestAnimationFrame(() => inputRef.current?.focus());
     },

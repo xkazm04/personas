@@ -137,7 +137,7 @@ export default function GuideStudio({
   };
 
   useGuideKeys({
-    enabled: !!rt && !showVision && !arcOpen,
+    enabled: !!rt && !showVision && !drafting && !arcOpen,
     onTools: () => setArcOpen(true),
     onAddGoal: () => railRef.current?.startAdding(),
     onToggleBlueprint: () => setBlueprintPinned((p) => !(p ?? showBlueprint)),
@@ -154,7 +154,7 @@ export default function GuideStudio({
         placeholder={placeholder || showVision || drafting}
         drafting={!showVision && !drafting && planning && !sketchSrc?.sketch}
         draftGoals={!showVision && (placeholder || drafting) ? sketchSrc?.sketch?.goals : undefined}
-        canAdd={!!rt && live && !showVision}
+        canAdd={!!rt && live && !showVision && !drafting}
         onAddGoal={(goal) => (working && id ? useStudioStore.getState().queueNote(id, goal) : run(addGoalPrompt(goal)))}
       />
       <div className="relative flex min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_60%)] p-3 pb-[5.25rem]">
@@ -255,7 +255,7 @@ export default function GuideStudio({
           />
         )}
         {rt && !showVision && !drafting && <StudioChatInput variant="guide" onPlanClick={() => railRef.current?.focusActive()} />}
-        {arcOpen && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
+        {arcOpen && !drafting && <GuideToolArc unavailable={unavailable} onPick={pickTool} onClose={() => setArcOpen(false)} />}
       </div>
     </div>
   );

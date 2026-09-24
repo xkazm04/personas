@@ -102,6 +102,21 @@ describe('Guide layout', () => {
     expect(screen.queryByText('template_home')).toBeNull();
   });
 
+  it('while a new project is drafted, the tools and goals cannot act on the project behind it', () => {
+    // activeId still names the previous (live) project during a draft.
+    seed({ phases: [{ id: 'm', title: 'Menu', status: 'active', note: null }] });
+    useStudioStore.setState({
+      draft: { name: 'B', vision: 'x', startedAt: Date.now(), sketchState: 'loading', answers: {}, sketch: null },
+    });
+    mount();
+    fireEvent.keyDown(window, { key: 'o' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    const add = screen.getByText('add_goal').closest('button') as HTMLButtonElement;
+    expect(add.disabled).toBe(true);
+    fireEvent.keyDown(window, { key: 'g' });
+    expect(screen.queryByPlaceholderText('add_goal_placeholder')).toBeNull();
+  });
+
   it('never holds a loading sheet over an idle project with no plan', () => {
     // Measured live 2026-09-24: an idle live project with no plan kept its
     // drafting ghosts forever over a running site, which read as frozen.
