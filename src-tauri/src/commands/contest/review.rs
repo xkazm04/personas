@@ -27,15 +27,37 @@ fn pct(v: f64) -> String {
     }
 }
 
+/// Owner text inside `REVIEW.md`, with every line that would open a section
+/// demoted to `### `. `refine` reads the file through the instrument's
+/// `feedbackSection`, which cuts a section at the next line starting `## `
+/// and takes the FIRST `## <key>` line as that key's section, so an owner's
+/// `## Layout notes` would end the section early and `## B/2 …` would hijack
+/// B/2. A `# ` line is demoted too, so no owner line reads as a heading above
+/// the file's own.
+fn demote_headings(text: &str) -> String {
+    text.split('\n')
+        .map(|line| {
+            if let Some(rest) = line.strip_prefix("## ") {
+                format!("### {rest}")
+            } else if let Some(rest) = line.strip_prefix("# ") {
+                format!("### {rest}")
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// `REVIEW.md` from the review: `## All` is the whole-field note; then one
 /// `## <letter>/<n>` per variant with a bucket, a note or pins — `Bucket:` first
-/// when set, the owner's note verbatim, then each pin as
+/// when set, the owner's note (verbatim but for demoted headings), then each pin as
 /// `- pin at (x%, y%) @ <w>x<h>: <note>`.
 pub fn render_review_markdown(review: &ContestReview) -> String {
     let mut out = String::from("## All\n\n");
-    let field = review.field.trim_end();
+    let field = demote_headings(review.field.trim_end());
     if !field.is_empty() {
-        out.push_str(field);
+        out.push_str(&field);
         out.push('\n');
     }
     for v in &review.variants {
@@ -51,7 +73,7 @@ pub fn render_review_markdown(review: &ContestReview) -> String {
             }
         }
         if !note.trim().is_empty() {
-            out.push_str(note);
+            out.push_str(&demote_headings(note));
             out.push('\n');
             if !v.pins.is_empty() {
                 out.push('\n');
@@ -195,6 +217,55 @@ mod tests {
         assert_eq!(md, want);
         // B/2 has nothing to say and gets no section.
         assert!(!md.contains("## B/2"));
+    }
+
+    /// The port of the instrument's `feedbackSection` (`lib/judging.mjs`):
+    /// the body from the first `## ` line whose first token is `name` to the
+    /// next `## ` line.
+    fn feedback_section(text: &str, name: &str) -> String {
+        let lines: Vec<&str> = text.split('\n').collect();
+        let Some(start) = lines
+            .iter()
+            .position(|l| l.starts_with("## ") && l[3..].split_whitespace().next() == Some(name))
+        else {
+            return String::new();
+        };
+        let rest = &lines[start + 1..];
+        let end = rest
+            .iter()
+            .position(|l| l.starts_with("## "))
+            .unwrap_or(rest.len());
+        rest[..end].join("\n").trim().to_string()
+    }
+
+    #[test]
+    fn owner_headings_cannot_cut_or_hijack_a_feedback_section() {
+        let r = ContestReview {
+            field: "Keep it calm.\n## Layout notes\nThe rail is too wide.".into(),
+            variants: vec![
+                ContestVariantReview {
+                    key: "A/1".into(),
+                    bucket: None,
+                    note: "Nice.\n## B/2 is better\n# Big".into(),
+                    pins: vec![],
+                },
+                ContestVariantReview {
+                    key: "B/2".into(),
+                    bucket: None,
+                    note: "The real B/2 note.".into(),
+                    pins: vec![],
+                },
+            ],
+        };
+        let md = render_review_markdown(&r);
+        let all = feedback_section(&md, "All");
+        assert!(
+            all.contains("The rail is too wide."),
+            "All was cut: {all:?}"
+        );
+        let a = feedback_section(&md, "A/1");
+        assert!(a.contains("# Big") && a.contains("B/2 is better"), "{a:?}");
+        assert_eq!(feedback_section(&md, "B/2"), "The real B/2 note.");
     }
 
     #[test]
