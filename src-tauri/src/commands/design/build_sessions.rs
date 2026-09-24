@@ -1228,11 +1228,23 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
                 if event_type.is_empty() {
                     return None;
                 }
-                Some(serde_json::json!({
+                let mut sub = serde_json::json!({
                     "event_type": event_type,
                     "source_filter": e.source_filter.as_deref(),
                     "enabled": true,
-                }))
+                });
+                // Carry the declared direction: `create_event_subscriptions_in_tx`
+                // and `collect_persona_emit_event_types` both key off it, and an
+                // emit that loses it becomes a listen on the persona's own output.
+                if let Some(d) = e
+                    .direction
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|d| !d.is_empty())
+                {
+                    sub["direction"] = serde_json::Value::String(d.to_string());
+                }
+                Some(sub)
             })
             .collect();
 
@@ -1493,32 +1505,48 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
         if t.trigger_type.as_deref() != Some("webhook") {
             continue;
         }
-
-        let needs_secret = match &t.config {
-            None => true,
-            Some(cfg) => {
-                let secret = cfg
-                    .get("webhook_secret")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                secret.trim().is_empty()
-            }
-        };
-
-        if needs_secret {
-            let generated = uuid::Uuid::new_v4().to_string();
-            let config = t.config.get_or_insert_with(|| serde_json::json!({}));
-            if let Some(obj) = config.as_object_mut() {
-                obj.insert(
-                    "webhook_secret".to_string(),
-                    serde_json::Value::String(generated.clone()),
-                );
-            }
+        if mint_webhook_secret_if_missing(&mut t.config) {
             tracing::info!(
                 "Auto-generated webhook_secret for webhook trigger (description: {:?})",
                 t.description
             );
         }
+    }
+}
+
+/// Mint a random `webhook_secret` into a webhook trigger's config when it has
+/// none (absent, null or blank). Returns whether one was minted.
+///
+/// Shared by every materializer of MODEL-authored triggers — promote and the
+/// n8n / instant-adopt import — because a template or LLM draft has no UI to
+/// supply a secret, and `engine/webhook.rs` rejects every secretless call.
+/// The human door (`trigger_repo::create`) deliberately does not mint.
+pub(crate) fn mint_webhook_secret_if_missing(config: &mut Option<serde_json::Value>) -> bool {
+    let needs_secret = match config.as_ref() {
+        None | Some(serde_json::Value::Null) => true,
+        Some(cfg) => cfg
+            .get("webhook_secret")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .is_empty(),
+    };
+    if !needs_secret {
+        return false;
+    }
+    if matches!(config, None | Some(serde_json::Value::Null)) {
+        *config = Some(serde_json::json!({}));
+    }
+    match config.as_mut().and_then(|c| c.as_object_mut()) {
+        Some(obj) => {
+            obj.insert(
+                "webhook_secret".to_string(),
+                serde_json::Value::String(uuid::Uuid::new_v4().to_string()),
+            );
+            true
+        }
+        // A non-object config is left for the door to refuse by name.
+        None => false,
     }
 }
 
@@ -2134,7 +2162,6 @@ fn create_triggers_in_tx(
     ir: &crate::db::models::AgentIr,
     responsibility_ids: &[String],
     persona_emits: &std::collections::HashSet<String>,
-    now: &str,
 ) -> Result<(u32, Vec<String>), AppError> {
     let mut triggers_created = 0u32;
     let mut created_trigger_ids = Vec::new();
@@ -2193,54 +2220,23 @@ fn create_triggers_in_tx(
             .get(idx)
             .or_else(|| responsibility_ids.last())
             .cloned();
-        let encrypted_config = config
-            .as_deref()
-            .map(trigger_repo::encrypt_config)
-            .transpose()?;
 
-        let trigger_id = uuid::Uuid::new_v4().to_string();
-        let status = "active";
-
-        // Arm the trigger in the same statement that creates it.
-        //
-        // This INSERT does not go through `trigger_repo::create` (it is inside
-        // the build transaction, alongside the use-case rows), and until
-        // 2026-08-17 it never named `next_trigger_at` — so EVERY schedule and
-        // polling trigger a build session produced was written NULL, which
-        // `get_due` skips forever. The row rendered `armed` and never ran. This
-        // is the single largest producer of the "born dead" population.
-        //
-        // `validate_triggers` (step 3) has already refused a schedule with
-        // neither cron nor interval and a polling URL that fails the SSRF
-        // guard, so a `None` here is an unresolvable timezone/cron or a polling
-        // trigger with no interval. Either way the build refuses rather than
-        // persisting a row that can never become due.
-        let parsed_cfg =
-            crate::db::models::TriggerConfig::from_raw(&trigger_type, config.as_deref());
-        let next_trigger_at = personas_core::scheduler::compute_next_from_config(
-            &parsed_cfg,
-            chrono::Utc::now(),
-            personas_core::cron::seed_hash(&trigger_id),
-        );
-        if next_trigger_at.is_none()
-            && personas_core::models::TriggerKind::from_wire(&trigger_type)
-                .is_some_and(|k| k.is_time_based())
-        {
-            return Err(AppError::Validation(
-                crate::validation::trigger::unschedulable_error(&trigger_type, config.as_deref())
-                    .message,
-            ));
-        }
-
-        tx.execute(
-            "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, status, responsibility_id, next_trigger_at, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?8)",
-            rusqlite::params![
-                trigger_id, persona_id, trigger_type, encrypted_config,
-                status, responsibility_id, next_trigger_at, now,
-            ],
-        ).map_err(AppError::Database)?;
+        // Through the one write door, not a hand-rolled INSERT: `create_in`
+        // validates (incl. the SSRF guard), encrypts, arms a time-based trigger
+        // or refuses it by name, and pairs the Fix-4a auto-listener in this
+        // same transaction. This INSERT used to re-implement the arming inline
+        // and skipped the listener, so a promoted schedule/polling/webhook
+        // trigger published into a bus nothing listened on until the hourly
+        // backfill sweep. Stage B WP4: `use_case_id` is no longer written —
+        // new triggers carry `responsibility_id` only.
+        let input = crate::db::models::CreateTriggerInput {
+            persona_id: persona_id.to_string(),
+            trigger_type,
+            config,
+            enabled: Some(true),
+            use_case_id: None,
+        };
+        let trigger_id = trigger_repo::create_in(tx, &input, responsibility_id.as_deref())?;
 
         created_trigger_ids.push(trigger_id);
         triggers_created += 1;
@@ -3041,7 +3037,7 @@ pub async fn promote_build_draft_inner(
         // promote path can default `source_filter = "*"` for chain inbounds.
         let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
         let (triggers_created, created_trigger_ids) =
-            create_triggers_in_tx(tx, &persona_id, &ir, &charter_ids, &persona_emits, &now)?;
+            create_triggers_in_tx(tx, &persona_id, &ir, &charter_ids, &persona_emits)?;
         let subscriptions_created = create_event_subscriptions_in_tx(
             tx,
             &persona_id,
@@ -3666,6 +3662,104 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir), 0);
+    }
+
+    // ----------------------------------------------------------------------
+    // One trigger write door: promote goes through `trigger_repo::create_in`
+    // ----------------------------------------------------------------------
+
+    #[test]
+    fn create_triggers_in_tx_pairs_a_schedule_with_its_auto_listener() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_sched");
+        let ir = AgentIr {
+            triggers: vec![schedule_trigger()],
+            ..Default::default()
+        };
+        let now = chrono::Utc::now().to_rfc3339();
+        let (created, ids) = {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            let out =
+                create_triggers_in_tx(&tx, "p_sched", &ir, &[], &std::collections::HashSet::new())
+                    .unwrap();
+            tx.commit().unwrap();
+            out
+        };
+        assert_eq!(created, 1, "the auto-listener is not a requested trigger");
+        let schedule_id = &ids[0];
+        let conn = pool.get()?;
+        let listener_cfgs: Vec<String> = conn
+            .prepare(
+                "SELECT config FROM persona_triggers
+                 WHERE persona_id = 'p_sched' AND trigger_type = 'event_listener'",
+            )
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(
+            listener_cfgs.len(),
+            1,
+            "a promoted schedule must not wait for the hourly backfill to be heard"
+        );
+        let cfg: serde_json::Value = serde_json::from_str(&listener_cfgs[0]).unwrap();
+        assert_eq!(
+            cfg["_auto_for_trigger"].as_str(),
+            Some(schedule_id.as_str())
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn event_subscriptions_honour_per_uc_direction() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_dir");
+        // Parsed from JSON, as the build LLM's output is: the production
+        // builder must carry `direction`, not a hand-built `use_cases` value.
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "use_cases": [{
+                "id": "uc_dir",
+                "title": "Directional",
+                "event_subscriptions": [
+                    {"event_type": "x.y.done", "direction": "emit"},
+                    {"event_type": "a.b.c", "direction": "listen"}
+                ]
+            }]
+        }))
+        .unwrap();
+        let use_cases = build_structured_use_cases(&ir);
+        let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert!(
+            persona_emits.contains("x.y.done"),
+            "per-UC emit is seen: {persona_emits:?}"
+        );
+        let now = chrono::Utc::now().to_rfc3339();
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            create_event_subscriptions_in_tx(&tx, "p_dir", &ir, &use_cases, &persona_emits, &now)
+                .unwrap();
+            tx.commit().unwrap();
+        }
+        let conn = pool.get()?;
+        let rows: Vec<(String, Option<String>)> = conn
+            .prepare(
+                "SELECT event_type, source_filter FROM persona_event_subscriptions
+                 WHERE persona_id = 'p_dir'",
+            )
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(
+            rows,
+            vec![("a.b.c".to_string(), Some("*".to_string()))],
+            "an emit must not become a listen on the persona's own output"
+        );
+        Ok(())
     }
 }
 // touch 1777378957

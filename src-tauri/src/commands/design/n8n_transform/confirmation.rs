@@ -175,74 +175,53 @@ pub fn create_persona_atomically(
                 }
             };
 
-            let trigger_id = uuid::Uuid::new_v4().to_string();
-            let trigger_config = trigger_draft
-                .config
-                .as_ref()
-                .and_then(|c| serde_json::to_string(c).ok());
-            let trigger_enabled = 1i32;
-
-            // Arm time-based triggers at insert. This INSERT never named
-            // `next_trigger_at`, so an imported schedule/polling trigger was
-            // written NULL and `get_due` skipped it forever — imported, shown as
-            // armed, dead. Refuse the row instead of importing a corpse.
-            let parsed_cfg = crate::db::models::TriggerConfig::from_raw(
-                &trigger_type,
-                trigger_config.as_deref(),
-            );
-            let next_trigger_at = personas_core::scheduler::compute_next_from_config(
-                &parsed_cfg,
-                chrono::Utc::now(),
-                personas_core::cron::seed_hash(&trigger_id),
-            );
-            if next_trigger_at.is_none()
-                && personas_core::models::TriggerKind::from_wire(&trigger_type)
-                    .is_some_and(|k| k.is_time_based())
-            {
-                entity_errors.push(EntityError {
-                    entity_type: "trigger".into(),
-                    entity_name: trigger_draft
-                        .use_case_id
-                        .clone()
-                        .unwrap_or_else(|| trigger_type.clone()),
-                    error: personas_core::validation::trigger::unschedulable_error(
-                        &trigger_type,
-                        trigger_config.as_deref(),
-                    )
-                    .message,
-                });
-                continue;
+            // A model-authored draft has no UI to supply a webhook secret, and
+            // `engine/webhook.rs` rejects every secretless call with 401 — so
+            // an imported/adopted webhook was born dead. Mint one here, the way
+            // promote does; the door itself stays strict for the human path.
+            let mut config_value = trigger_draft.config.clone();
+            if trigger_type == personas_core::models::TriggerKind::Webhook.as_str() {
+                crate::commands::design::build_sessions::mint_webhook_secret_if_missing(
+                    &mut config_value,
+                );
             }
+            let input = crate::db::models::CreateTriggerInput {
+                persona_id: persona_id.clone(),
+                trigger_type: trigger_type.clone(),
+                config: config_value
+                    .as_ref()
+                    .and_then(|c| serde_json::to_string(c).ok()),
+                enabled: Some(true),
+                use_case_id: trigger_draft.use_case_id.clone(),
+            };
 
-            match tx.execute(
-                "INSERT INTO persona_triggers
-                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
-                params![
-                    trigger_id, persona_id, trigger_type, trigger_config,
-                    trigger_enabled,
-                    // `status` is what BOTH dispatch predicates read; omitting it
-                    // let the NOT NULL DEFAULT 'active' contradict an imported
-                    // enabled=0 row — off in the UI, on to the engine.
-                    if trigger_enabled == 1 { "active" } else { "disabled" },
-                    trigger_draft.use_case_id, next_trigger_at, now,
-                ],
-            ) {
+            // Through the one write door (validate_all incl. the SSRF guard,
+            // secret encryption, arm-or-refuse, the paired Fix-4a
+            // auto-listener). This INSERT used to write the draft config
+            // verbatim: no validation, plaintext secrets, and no listener until
+            // the hourly backfill. A refusal becomes a per-entity error.
+            match create_trigger_in_savepoint(&tx, &input) {
                 Ok(_) => triggers_created += 1,
                 Err(e) => {
-                    let name = trigger_draft.use_case_id.as_deref()
+                    let name = trigger_draft
+                        .use_case_id
+                        .as_deref()
                         .unwrap_or(&trigger_type);
-                    entity_errors.push(EntityError {
-                        entity_type: "trigger".into(),
-                        entity_name: name.to_string(),
-                        error: e.to_string(),
-                    });
+                    let error = match e {
+                        AppError::Validation(msg) => msg,
+                        other => other.to_string(),
+                    };
                     tracing::warn!(
                         persona_id = %persona_id,
                         trigger_type = %trigger_type,
-                        error = %e,
-                        "Transactional import: trigger insert failed"
+                        error = %error,
+                        "Transactional import: trigger refused"
                     );
+                    entity_errors.push(EntityError {
+                        entity_type: "trigger".into(),
+                        entity_name: name.to_string(),
+                        error,
+                    });
                 }
             }
         }
@@ -450,6 +429,29 @@ pub fn create_persona_atomically(
     });
 
     Ok((response, import_result))
+}
+
+/// Run the trigger write door under a SAVEPOINT so a refusal (or a failure
+/// after the row INSERT, e.g. in the auto-listener) leaves nothing half-written
+/// while the rest of the import still commits.
+fn create_trigger_in_savepoint(
+    tx: &rusqlite::Transaction<'_>,
+    input: &crate::db::models::CreateTriggerInput,
+) -> Result<String, AppError> {
+    tx.execute_batch("SAVEPOINT import_trigger")?;
+    match trigger_repo::create_in(tx, input, None) {
+        Ok(id) => {
+            tx.execute_batch("RELEASE import_trigger")?;
+            Ok(id)
+        }
+        Err(e) => {
+            if let Err(rb) = tx.execute_batch("ROLLBACK TO import_trigger; RELEASE import_trigger")
+            {
+                tracing::warn!(error = %rb, "Transactional import: savepoint rollback failed");
+            }
+            Err(e)
+        }
+    }
 }
 
 /// Update import_transactions status (outside the main transaction).
@@ -666,4 +668,163 @@ fn was_import_rolled_back(pool: &DbPool, persona_id: &str) -> bool {
     )
     .map(|status| status == "rolled_back")
     .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    //! `create_persona_atomically` is the materializer behind BOTH the n8n
+    //! confirm and instant template adoption (and so every team-preset member).
+    //! These pin that its trigger rows get the same five rules the repo door
+    //! (`trigger_repo::create`) enforces: validate_all incl. the SSRF guard,
+    //! secret encryption, arming, the Fix-4a auto-listener, and — because a
+    //! model-authored draft has no UI to supply one — a minted webhook secret.
+    use super::*;
+
+    fn draft_with_triggers(triggers: serde_json::Value) -> N8nPersonaOutput {
+        // Invariant: every omitted field is an `Option`, which serde fills with
+        // `None`; `system_prompt` is the only required key.
+        serde_json::from_value(serde_json::json!({
+            "name": "Import Test",
+            "system_prompt": "You are a test persona.",
+            "triggers": triggers,
+        }))
+        .expect("test draft deserializes")
+    }
+
+    /// `(id, trigger_type, raw stored config, next_trigger_at)` for every row.
+    fn trigger_rows(
+        pool: &DbPool,
+        persona_id: &str,
+    ) -> Result<Vec<(String, String, Option<String>, Option<String>)>, AppError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, trigger_type, config, next_trigger_at FROM persona_triggers
+                 WHERE persona_id = ?1 ORDER BY created_at",
+        )?;
+        let rows = stmt.query_map(params![persona_id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    fn persona_id_of(response: &serde_json::Value) -> String {
+        response["persona"]["id"].as_str().unwrap().to_string()
+    }
+
+    #[test]
+    fn create_persona_atomically_mints_and_encrypts_a_webhook_secret() {
+        let pool = crate::db::init_test_db().unwrap();
+        let draft = draft_with_triggers(serde_json::json!([
+            {"trigger_type": "webhook", "config": {"event_type": "order.created"}}
+        ]));
+        let (response, result) = create_persona_atomically(&pool, &draft, None).unwrap();
+        assert!(
+            result.entity_errors.is_empty(),
+            "{:?}",
+            result.entity_errors
+        );
+        let rows = trigger_rows(&pool, &persona_id_of(&response)).unwrap();
+        let webhooks: Vec<_> = rows.iter().filter(|r| r.1 == "webhook").collect();
+        assert_eq!(webhooks.len(), 1, "exactly one webhook row: {rows:?}");
+        let cfg = webhooks[0].2.as_deref().unwrap_or("");
+        assert!(
+            cfg.contains("webhook_secret_enc"),
+            "a secretless webhook is rejected with 401 forever; the import must mint + encrypt one: {cfg}"
+        );
+    }
+
+    #[test]
+    fn create_persona_atomically_encrypts_polling_headers() {
+        let pool = crate::db::init_test_db().unwrap();
+        // A public IP literal, not a hostname: `validate_polling_url` resolves
+        // hostnames and a unit test must not depend on DNS.
+        let draft = draft_with_triggers(serde_json::json!([{
+            "trigger_type": "polling",
+            "config": {
+                "url": "https://93.184.216.34/items",
+                "interval_seconds": 300,
+                "headers": {"Authorization": "Bearer sk-live-123"}
+            }
+        }]));
+        let (response, result) = create_persona_atomically(&pool, &draft, None).unwrap();
+        assert!(
+            result.entity_errors.is_empty(),
+            "{:?}",
+            result.entity_errors
+        );
+        let rows = trigger_rows(&pool, &persona_id_of(&response)).unwrap();
+        let polling: Vec<_> = rows.iter().filter(|r| r.1 == "polling").collect();
+        assert_eq!(polling.len(), 1, "{rows:?}");
+        let cfg = polling[0].2.as_deref().unwrap_or("");
+        assert!(
+            cfg.contains("headers_enc"),
+            "headers must be encrypted: {cfg}"
+        );
+        assert!(
+            !cfg.contains("sk-live-123"),
+            "plaintext bearer token stored: {cfg}"
+        );
+    }
+
+    #[test]
+    fn create_persona_atomically_refuses_a_link_local_polling_url() {
+        let pool = crate::db::init_test_db().unwrap();
+        // A second, valid trigger keeps the import from rolling back whole, so
+        // the refusal is observable as a per-entity error.
+        let draft = draft_with_triggers(serde_json::json!([
+            {
+                "trigger_type": "polling",
+                "config": {"url": "http://169.254.169.254/latest/meta-data", "interval_seconds": 300}
+            },
+            {"trigger_type": "manual"}
+        ]));
+        let (response, result) = create_persona_atomically(&pool, &draft, None).unwrap();
+        let rows = trigger_rows(&pool, &persona_id_of(&response)).unwrap();
+        assert_eq!(
+            rows.iter().filter(|r| r.1 == "polling").count(),
+            0,
+            "SSRF target must not be stored: {rows:?}"
+        );
+        let first = result
+            .entity_errors
+            .first()
+            .expect("an entity error for the refused trigger");
+        assert_eq!(first.entity_type, "trigger");
+        assert!(
+            first.error.contains("Polling URL blocked"),
+            "error names the SSRF refusal: {}",
+            first.error
+        );
+    }
+
+    #[test]
+    fn create_persona_atomically_pairs_a_schedule_with_its_auto_listener() {
+        let pool = crate::db::init_test_db().unwrap();
+        let draft = draft_with_triggers(serde_json::json!([
+            {"trigger_type": "schedule", "config": {"cron": "0 9 * * *"}}
+        ]));
+        let (response, result) = create_persona_atomically(&pool, &draft, None).unwrap();
+        assert!(
+            result.entity_errors.is_empty(),
+            "{:?}",
+            result.entity_errors
+        );
+        assert_eq!(
+            result.triggers_created, 1,
+            "the auto-listener is not a requested entity"
+        );
+        let rows = trigger_rows(&pool, &persona_id_of(&response)).unwrap();
+        assert_eq!(rows.len(), 2, "schedule + its paired listener: {rows:?}");
+        let schedule = rows
+            .iter()
+            .find(|r| r.1 == "schedule")
+            .expect("schedule row");
+        assert!(schedule.3.is_some(), "schedule must be armed at insert");
+        let listener = rows
+            .iter()
+            .find(|r| r.1 == "event_listener")
+            .expect("paired auto-listener row");
+        let cfg: serde_json::Value = serde_json::from_str(listener.2.as_deref().unwrap()).unwrap();
+        assert_eq!(cfg["_auto_for_trigger"].as_str(), Some(schedule.0.as_str()));
+    }
 }

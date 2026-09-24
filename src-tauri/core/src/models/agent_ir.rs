@@ -444,6 +444,12 @@ pub struct AgentIrUseCaseEvent {
     pub event_type: Option<String>,
     #[serde(default)]
     pub source_filter: Option<String>,
+    /// `emit` | `listen` (v3.1) or `subscribe` (legacy). The build prompt asks
+    /// for it on every per-capability entry; without this field serde dropped
+    /// it, so promote turned every emit into a listen on the persona's own
+    /// output event. Absent stays absent on the wire.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<String>,
 }
 
 // ---- Accessor helpers ----
