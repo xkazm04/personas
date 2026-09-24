@@ -108,8 +108,9 @@ export default function FleetGridPage() {
         actions={<FleetGridHeaderActions onShowHotkeys={() => setHotkeysHelpOpen(true)} />}
       />
       <ContentBody flex>
-        {/* ContentBody's own padding, on a column the grid below can fill. */}
-        <div className="flex-1 min-h-0 flex flex-col py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5">
+        {/* ContentBody's own padding, on a column the grid below can fill. A dense
+            tool surface: compact type density (typography.css). */}
+        <div data-type-density="compact" className="flex-1 min-h-0 flex flex-col py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5">
           <div data-testid="fleet-grid-page" />
           <FleetSummaryPills counts={stateCounts} activeFilter={nav.filter} onToggle={nav.toggleFilter} />
           <FleetNeedsYouBanner waiting={nav.waitingSessions} onJump={handleActivate} onReply={ops.handleReply} onCycleNext={nav.handleCycleNext} />

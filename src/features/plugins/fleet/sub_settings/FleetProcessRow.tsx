@@ -33,12 +33,13 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
       ) : (
         <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" aria-hidden="true" />
       )}
-      <span className="typo-code text-foreground w-14 flex-shrink-0">{pid}</span>
-      <span className="typo-data text-foreground w-16 flex-shrink-0 text-right">{fmtMem(memoryBytes)}</span>
+      <span className="typo-caption tabular-nums w-14 flex-shrink-0">{pid}</span>
+      <span className="typo-caption tabular-nums w-16 flex-shrink-0 text-right">{fmtMem(memoryBytes)}</span>
       <span className="flex-1 min-w-0">
-        <TruncateWithTooltip text={cwd ?? cmd} className="typo-code text-foreground" />
+        {/* The row's one emphasis: which folder the process runs in. Pid and memory are quiet figures. */}
+        <TruncateWithTooltip text={cwd ?? cmd} className="typo-body font-mono font-semibold text-foreground" />
       </span>
-      <span className={`typo-label flex-shrink-0 ${tracked ? 'text-status-success' : 'text-status-warning'}`}>
+      <span className={`typo-caption flex-shrink-0 ${tracked ? 'text-status-success' : 'text-status-warning'}`}>
         {tracked ? 'Fleet' : 'orphan'}
       </span>
       {!tracked && cwd && (

@@ -67,7 +67,7 @@ export function FleetTerminalSettings() {
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </Button>
-            <span className="w-10 text-center typo-data text-foreground" data-testid="fleet-settings-font-value">
+            <span className="w-10 text-center typo-body tabular-nums text-foreground" data-testid="fleet-settings-font-value">
               {fontSize}px
             </span>
             <Button

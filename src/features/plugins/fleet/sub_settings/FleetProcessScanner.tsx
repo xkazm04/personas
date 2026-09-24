@@ -120,7 +120,7 @@ export function FleetProcessScanner() {
         <>
           {orphans > 0 && (
             <span
-              className="typo-label px-1.5 py-0.5 rounded-interactive border border-status-warning/30 bg-status-warning/10 text-status-warning"
+              className="typo-caption px-1.5 py-0.5 rounded-interactive border border-status-warning/30 bg-status-warning/10 text-status-warning"
               data-testid="fleet-orphan-count"
             >
               {orphans} orphaned

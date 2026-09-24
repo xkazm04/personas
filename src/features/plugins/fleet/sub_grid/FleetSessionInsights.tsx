@@ -144,7 +144,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
             {summary.tools.map((tool) => (
               <span
                 key={tool.name}
-                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 typo-label"
+                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 typo-body text-foreground"
               >
                 <span>{tool.name}</span>
                 <span className="typo-caption">×{tool.count}</span>

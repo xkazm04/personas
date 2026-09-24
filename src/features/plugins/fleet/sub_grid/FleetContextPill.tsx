@@ -86,7 +86,7 @@ export function FleetContextPill({ claudeSessionId, sessionId, canCompact = fals
   return (
     <span className="inline-flex items-center gap-2">
       <Tooltip content={f.context_size_hint}>
-        <span data-testid="fleet-context-pill" className={`inline-flex items-center gap-1 typo-data ${tone}`}>
+        <span data-testid="fleet-context-pill" className={`inline-flex items-center gap-1 typo-body tabular-nums ${tone}`}>
           <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
           <span>{f.context_size_label}</span>
           <Numeric value={ctx} unit="count" />

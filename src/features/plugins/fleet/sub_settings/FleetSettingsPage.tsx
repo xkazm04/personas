@@ -82,7 +82,7 @@ export default function FleetSettingsPage() {
         subtitle="Hook diagnostics and uninstall (install lives in the Sessions tab header)"
       />
       <ContentBody>
-        <div className="max-w-5xl mx-auto space-y-4" data-testid="fleet-settings-page">
+        <div data-type-density="compact" className="max-w-5xl mx-auto space-y-4" data-testid="fleet-settings-page">
           <FleetHookBanner status={status} />
 
           {/* Actions */}

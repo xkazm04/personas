@@ -83,47 +83,50 @@ export default function FleetActivityPage({ onOpenSessions }: {
         subtitle={tx(rows.length === 1 ? f.activity_subtitle_one : f.activity_subtitle_other, { count: rows.length })}
       />
       <ContentBody>
-        {/* Filter and refresh share one row: the Refresh button stood alone on a band of its own. */}
-        <div className="flex items-center gap-2 mb-3">
-          <FleetSearchField
-            className="flex-1"
-            data-testid="fleet-activity-search"
-            value={query}
-            onChange={setQuery}
-            placeholder={f.activity_search_placeholder}
-          />
-          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={load} loading={loading}>
-            {t.common.refresh}
-          </Button>
-        </div>
+        {/* A dense tool surface: compact type density (typography.css). */}
+        <div data-type-density="compact">
+          {/* Filter and refresh share one row: the Refresh button stood alone on a band of its own. */}
+          <div className="flex items-center gap-2 mb-3">
+            <FleetSearchField
+              className="flex-1"
+              data-testid="fleet-activity-search"
+              value={query}
+              onChange={setQuery}
+              placeholder={f.activity_search_placeholder}
+            />
+            <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={load} loading={loading}>
+              {t.common.refresh}
+            </Button>
+          </div>
 
-        {loading && rows.length === 0 ? (
-          <div className="space-y-2" aria-busy="true" aria-label={f.activity_loading}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                aria-hidden
-                className="rounded-card border border-primary/10 bg-card/30 h-[100px] 2xl:h-[72px] animate-fade-in"
-                style={{ animationDelay: '150ms' }}
-              />
-            ))}
-          </div>
-        ) : failed ? (
-          <div className="text-center py-10">
-            <AlertCircle className="w-7 h-7 text-status-warning mx-auto mb-2" aria-hidden="true" />
-            <p className="typo-caption text-foreground">{f.activity_error}</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-10 typo-caption text-foreground" data-testid="fleet-activity-empty">
-            {rows.length === 0 ? f.activity_empty : f.activity_no_matches}
-          </div>
-        ) : (
-          <div className="space-y-2" data-testid="fleet-activity-list">
-            {filtered.map((r) => (
-              <FleetActivityRow key={r.path} row={r} query={q} onOpen={openRow} />
-            ))}
-          </div>
-        )}
+          {loading && rows.length === 0 ? (
+            <div className="space-y-2" aria-busy="true" aria-label={f.activity_loading}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  aria-hidden
+                  className="rounded-card border border-primary/10 bg-card/30 h-[100px] 2xl:h-[72px] animate-fade-in"
+                  style={{ animationDelay: '150ms' }}
+                />
+              ))}
+            </div>
+          ) : failed ? (
+            <div className="text-center py-10">
+              <AlertCircle className="w-7 h-7 text-status-warning mx-auto mb-2" aria-hidden="true" />
+              <p className="typo-caption text-foreground">{f.activity_error}</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-10 typo-caption text-foreground" data-testid="fleet-activity-empty">
+              {rows.length === 0 ? f.activity_empty : f.activity_no_matches}
+            </div>
+          ) : (
+            <div className="space-y-2" data-testid="fleet-activity-list">
+              {filtered.map((r) => (
+                <FleetActivityRow key={r.path} row={r} query={q} onOpen={openRow} />
+              ))}
+            </div>
+          )}
+        </div>
       </ContentBody>
 
       <BaseModal

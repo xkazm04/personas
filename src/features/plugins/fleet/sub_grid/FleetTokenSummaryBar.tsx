@@ -77,12 +77,12 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
         <span className="inline-flex items-center gap-1.5">
           <Coins className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
           <span className="typo-caption">{f.fleet_total_tokens}</span>
-          <span className="typo-data"><Numeric value={billable} unit="count" /></span>
+          <span className="tabular-nums"><Numeric value={billable} unit="count" /></span>
         </span>
       </Tooltip>
 
       <Tooltip content={f.fleet_cache_hit_hint}>
-        <span className={`inline-flex items-center gap-1.5 typo-data ${cacheTone}`}>
+        <span className={`inline-flex items-center gap-1.5 tabular-nums ${cacheTone}`}>
           <Database className="w-3.5 h-3.5" aria-hidden="true" />
           <span>{tx(f.fleet_cache_hit, { percent: cacheHitPct })}</span>
         </span>
@@ -90,7 +90,7 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
 
       {bloated > 0 && (
         <Tooltip content={f.fleet_heavy_hint}>
-          <span className="inline-flex items-center gap-1.5 typo-data text-status-warning">
+          <span className="inline-flex items-center gap-1.5 tabular-nums text-status-warning">
             <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
             <span>{tx(f.fleet_heavy_sessions, { count: bloated })}</span>
           </span>

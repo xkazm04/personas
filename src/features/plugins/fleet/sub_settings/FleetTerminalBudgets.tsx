@@ -37,7 +37,7 @@ export function TerminalBudgets() {
       <dl className="space-y-0.5">
         <div className="flex items-baseline justify-between gap-3">
           <dt className="typo-body text-foreground">{f.settings_budgets_terminals}</dt>
-          <dd className="typo-data text-foreground" data-testid="fleet-budget-terminals">
+          <dd className="typo-body tabular-nums text-foreground" data-testid="fleet-budget-terminals">
             {tx(f.settings_budgets_terminals_value, {
               live: stats.live,
               parked: stats.parked,
@@ -48,7 +48,7 @@ export function TerminalBudgets() {
         </div>
         <div className="flex items-baseline justify-between gap-3">
           <dt className="typo-body text-foreground">{f.settings_budgets_renderers}</dt>
-          <dd className="typo-data text-foreground" data-testid="fleet-budget-renderers">
+          <dd className="typo-body tabular-nums text-foreground" data-testid="fleet-budget-renderers">
             {tx(f.settings_budgets_renderers_value, {
               active: stats.webglContexts,
               max: stats.maxWebgl,

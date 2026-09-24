@@ -18,6 +18,11 @@ function baseName(path: string): string {
  * that are always drawn (empty when the run used none), so every row is the
  * same height. From 2xl the tools and files share the second line.
  *
+ * One emphasis per row (Gate 3b): the project name carries the weight
+ * (typo-title, the theme's tint); figures, model, time and file names are
+ * regular weight and muted, tool chips regular, so the eye lands on which
+ * project ran before how much it cost.
+ *
  * Files show their name, not their path: three paths cut at 220px all read
  * "src/features/plugins/flee..." and told the rows nothing. The full path is
  * in the tooltip, and a search still matches against it.
@@ -47,12 +52,12 @@ export function FleetActivityRow({ row, query, onOpen }: {
       className="block w-full rounded-card border border-primary/10 bg-card/30 px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-secondary/30"
     >
       <div className="flex items-baseline gap-3 min-w-0">
-        <span className="typo-card-label truncate">{projectLabel(row.cwd)}</span>
+        <span className="typo-title truncate">{projectLabel(row.cwd)}</span>
         {row.models.length > 0 && <span className="typo-caption truncate">{row.models[0]}</span>}
-        <span className="ml-auto flex shrink-0 items-baseline gap-3 typo-data text-foreground">
+        <span className="ml-auto flex shrink-0 items-baseline gap-3 typo-caption tabular-nums">
           <span><Numeric value={tokens} unit="count" /> {f.insights_tokens.toLowerCase()}</span>
           <span><Numeric value={row.assistantMessages} unit="count" /> {f.insights_turns.toLowerCase()}</span>
-          <span className="typo-caption w-24 text-right"><RelativeTime timestamp={row.lastTimestamp} /></span>
+          <span className="w-24 text-right"><RelativeTime timestamp={row.lastTimestamp} /></span>
         </span>
       </div>
 
@@ -60,7 +65,7 @@ export function FleetActivityRow({ row, query, onOpen }: {
         <div className="flex h-6 items-center gap-1 min-w-0 overflow-hidden">
           {row.tools.length > 0 && <Wrench className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden="true" />}
           {row.tools.slice(0, 6).map((tool) => (
-            <span key={tool.name} className="inline-flex shrink-0 items-center gap-1 rounded-interactive border border-primary/10 bg-secondary/30 px-1.5 typo-label text-foreground">
+            <span key={tool.name} className="inline-flex shrink-0 items-center gap-1 rounded-interactive border border-primary/10 bg-secondary/30 px-1.5 typo-body text-foreground">
               {tool.name}<span className="typo-caption">×{tool.count}</span>
             </span>
           ))}
@@ -69,7 +74,7 @@ export function FleetActivityRow({ row, query, onOpen }: {
           {shownFiles.length > 0 && <FileText className="w-3.5 h-3.5 shrink-0 text-foreground" aria-hidden="true" />}
           {shownFiles.map((file) => (
             <Tooltip key={file} content={file}>
-              <span className="typo-code text-foreground truncate">{baseName(file)}</span>
+              <span className="typo-caption font-mono truncate">{baseName(file)}</span>
             </Tooltip>
           ))}
           {extraFiles > 0 && <span className="typo-caption shrink-0">{tx(f.activity_files_more, { count: extraFiles })}</span>}
