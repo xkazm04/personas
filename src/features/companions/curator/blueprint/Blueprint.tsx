@@ -153,8 +153,13 @@ export function Blueprint({
           onQuery={state.setQuery}
           onHelp={state.toggleHelp}
         />
-        <Verdict model={model} />
-        <div className="cb-console-slot">{operatorConsole}</div>
+        {/* Both collapse during the descent - they are about the corpus and
+            about her queue, not about the row being read - so they are hidden
+            from a screen reader there exactly as the ledger below already is. */}
+        <Verdict model={model} hidden={deep} />
+        <div className="cb-console-slot" aria-hidden={deep}>
+          {operatorConsole}
+        </div>
         <main className="cb-stage" ref={deepRef}>
           <section className="cb-ledger" aria-label={words.w.ledger_region} aria-hidden={deep}>
             <div className="cb-lscroll" ref={ledgerRef}>

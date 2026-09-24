@@ -80,6 +80,26 @@
   grid-template-columns: minmax(0, 1fr);
   position: relative;
   overflow: hidden;
+  transition: grid-template-rows var(--duration-normal) ease;
+}
+
+/* The descent gives the page to the row.
+   The corpus verdict and the operator's console stayed on screen through the
+   whole descent and took 400 of 1080px with them, so the row the operator had
+   just zoomed into got 620px and its side panel was cut mid-line. Neither
+   region is about the subject being read; both come back with Esc, along with
+   the ledger, which was already hidden here. The run control's "exactly one,
+   in every PHASE" rule is untouched: a layer is not a phase, and the deep
+   layer is a transient the operator dismisses. */
+.cb-root[data-layer='deep'] {
+  grid-template-rows: auto 0fr 0fr minmax(0, 1fr) auto;
+}
+.cb-root[data-layer='deep'] .cb-verdict,
+.cb-root[data-layer='deep'] .cb-console-slot {
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) ease;
 }
 
 /* The channel ramp carries TEXT in the light themes (a strip's name is its
@@ -1026,21 +1046,16 @@
   white-space: nowrap;
   color: var(--muted);
 }
+/* The two bar controls ARE the app's Button (variant ghost / secondary,
+   `cb-keep` so the element reset leaves them alone). What is left here is the
+   bar's own rhythm - its height and its gap - and the pressed tint, which
+   says "this drawer is open" and no Button variant carries. Everything the
+   page used to re-derive by hand (border, background, hover, focus ring,
+   press response, coarse-pointer target) is the primitive's now. */
 .cb-root .cb-tbtn {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
   height: 27px;
-  padding: 0 9px;
-  border-radius: var(--radius-interactive);
-  border: 1px solid var(--cb-rule);
-  background: var(--card-bg);
-  color: var(--muted-foreground);
   white-space: nowrap;
-}
-.cb-root .cb-tbtn:hover {
-  border-color: var(--cb-rule-2);
-  color: var(--foreground);
 }
 .cb-root .cb-tbtn[aria-pressed='true'] {
   background: color-mix(in srgb, var(--accent) 16%, transparent);

@@ -97,10 +97,16 @@ function CorpusBlock({ model }: { model: BlueprintModel }) {
   );
 }
 
-export function Verdict({ model }: { model: BlueprintModel }) {
+/**
+ * `hidden` is the DESCENT, not a phase: while the operator is inside one row,
+ * the corpus verdict is not what they are reading, so it collapses with the
+ * console and comes back with Esc. It stays rendered - the collapse is a grid
+ * row going to `0fr`, which animates - and only leaves the accessibility tree.
+ */
+export function Verdict({ model, hidden }: { model: BlueprintModel; hidden?: boolean }) {
   const { w } = useWords();
   return (
-    <section className="cb-verdict" aria-label={w.verdict_region}>
+    <section className="cb-verdict" aria-label={w.verdict_region} aria-hidden={hidden}>
       <CorpusBlock model={model} />
       <JudgedBlock model={model} />
       <ProjectsBlock model={model} />

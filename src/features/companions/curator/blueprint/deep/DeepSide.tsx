@@ -15,12 +15,19 @@ import { useWords } from '../words';
 /** How far Curator may reach into a checkout. `unknown` is not `refused`. */
 type Reach = 'granted' | 'refused' | 'never_asked' | 'off' | 'unknown';
 
-const REACH_GLYPH: Record<Reach, string> = {
+/**
+ * Four of the five are marks in the same family - a filled dot, a barred dot,
+ * a hollow dot, a dotted dot. `unknown` used to be a literal `?`, which reads
+ * as a stray character beside a project name ("personas ?") rather than as a
+ * reading, so it wears the ledger's own UNKNOWN ink instead: the see-through
+ * dotted box the nine columns use for "nobody looked". The operator has
+ * already learned that mark on this page.
+ */
+const REACH_GLYPH: Record<Exclude<Reach, 'unknown'>, string> = {
   granted: '●',
   refused: '⊘',
   never_asked: '○',
   off: '◌',
-  unknown: '?',
 };
 
 function reachMark(reach: ConsumerProject['reach']): Reach {
@@ -47,7 +54,13 @@ function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
     >
       <span className="cb-pn typo-caption">
         {p.slug}
-        <i className={`cb-reach cb-reach-${reachMark(p.reach)}`}>{REACH_GLYPH[reachMark(p.reach)]}</i>
+        <i className={`cb-reach cb-reach-${reachMark(p.reach)}`}>
+          {reachMark(p.reach) === 'unknown' ? (
+            <span className="cb-unkbox" />
+          ) : (
+            REACH_GLYPH[reachMark(p.reach) as Exclude<Reach, 'unknown'>]
+          )}
+        </i>
       </span>
       <span className="cb-bar" style={{ height: '9px' }}>
         <i

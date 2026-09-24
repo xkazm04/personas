@@ -87,6 +87,32 @@ describe('the descent grows the row you clicked, and Esc gives it back', () => {
     expect(container.querySelector('[data-cb-row="1"]')?.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('gives the page to the row: the verdict and the console leave with the ledger', async () => {
+    const { container } = renderPage();
+    const verdict = () => container.querySelector('.cb-verdict')!;
+    const consoleSlot = () => container.querySelector('.cb-console-slot')!;
+    const ledger = () => container.querySelector('.cb-ledger')!;
+    expect(verdict().getAttribute('aria-hidden')).not.toBe('true');
+    expect(consoleSlot().getAttribute('aria-hidden')).not.toBe('true');
+
+    fireEvent.click(container.querySelector('[data-cb-row="0"]')!);
+    await waitFor(() => {
+      expect(root().getAttribute('data-layer')).toBe('deep');
+    });
+    // All three, together: the corpus verdict and her queue are no more about
+    // the subject being read than the rest of the ledger is.
+    expect(verdict().getAttribute('aria-hidden')).toBe('true');
+    expect(consoleSlot().getAttribute('aria-hidden')).toBe('true');
+    expect(ledger().getAttribute('aria-hidden')).toBe('true');
+
+    fireEvent.keyDown(root(), { key: 'Escape' });
+    await waitFor(() => {
+      expect(verdict().getAttribute('aria-hidden')).not.toBe('true');
+    });
+    expect(consoleSlot().getAttribute('aria-hidden')).not.toBe('true');
+    expect(ledger().getAttribute('aria-hidden')).not.toBe('true');
+  });
+
   it('opens from the keyboard alone', async () => {
     renderPage();
     fireEvent.keyDown(root(), { key: 'ArrowDown' });

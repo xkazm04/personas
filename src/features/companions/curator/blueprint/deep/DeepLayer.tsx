@@ -9,6 +9,8 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 import { CHANNEL_ORDER } from '../model/channels';
 import type { BlueprintModel, BlueprintRow } from '../model/types';
 import { say } from '../format';
@@ -36,10 +38,16 @@ function DeepHead({ row, model, onBack }: { row: BlueprintRow; model: BlueprintM
         <h2 className="typo-heading-lg">{row.slug}</h2>
         <div className="cb-at typo-code">{`${row.domain} / ${row.at}`}</div>
       </div>
-      <button type="button" className="cb-tbtn typo-caption" data-role="cb-back" onClick={onBack}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="cb-keep cb-tbtn typo-caption"
+        data-role="cb-back"
+        onClick={onBack}
+      >
         <kbd>Esc</kbd>
         {w.deep_back}
-      </button>
+      </Button>
       <div className="cb-facts typo-caption">
         <span>
           <b className="typo-data-lg" style={{ color: 'var(--foreground)' }}>
