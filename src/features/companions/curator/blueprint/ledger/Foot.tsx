@@ -1,9 +1,12 @@
 /**
- * The legend and the gauges.
+ * The gauges.
  *
- * The legend names the nine channels AND the three ways a column can be empty,
- * because those three are the page's whole argument and a reader meets them
- * before they meet a tooltip.
+ * The legend that named the nine channels and the three empty inks was removed
+ * on the operator's instruction (2026-09-24). The inks still carry their own
+ * tooltips at every cell, so the fact is on demand rather than standing; the
+ * `legend_*` keys are deliberately left in the locales, because taking them out
+ * across fourteen files would be the expensive half of a decision that may yet
+ * be reversed.
  *
  * The gauges show the operator's DECLARED ceilings, read LIVE from
  * `curator_policy_get`. `CuratorPolicy` carries the caps as `Option`, and an
@@ -16,7 +19,6 @@
  * says which value the plan was made under. The plan is what a person agreed
  * to; silently showing only today's number would erase that.
  */
-import { channelColour, CHANNELS } from '../model/channels';
 import type { BlueprintModel } from '../model/types';
 import { fmt, usd } from '../format';
 import { useWords } from '../words';
@@ -74,30 +76,6 @@ export function Foot({ model, waiting }: { model: BlueprintModel; waiting: numbe
 
   return (
     <footer className="cb-foot">
-      <div className="cb-legend typo-caption">
-        {CHANNELS.map((spec) => (
-          <span
-            key={spec.id}
-            className="cb-lg"
-            style={{ ['--cb-cc']: channelColour(spec.id) } as React.CSSProperties}
-          >
-            <span className="cb-gl">{spec.glyph}</span>
-            {w.channel[`c${String(spec.id)}` as keyof typeof w.channel]}
-          </span>
-        ))}
-        <span className="cb-lg" data-cb-tip={w.legend_measured_nothing_tip}>
-          <span className="cb-flat" />
-          {w.legend_measured_nothing}
-        </span>
-        <span className="cb-lg" data-cb-tip={w.legend_unknown_tip}>
-          <span className="cb-unkbox" />
-          {w.legend_unknown}
-        </span>
-        <span className="cb-lg" data-cb-tip={w.legend_unmeasurable_tip}>
-          <span className="cb-swatch cb-ink-unmeasurable" />
-          {w.legend_unmeasurable}
-        </span>
-      </div>
       <div className="cb-gauge typo-caption">
         {/* The queue depth is real, but a depth without the ceiling it is
             measured against says nothing - so the pair goes unknown together
