@@ -49,6 +49,23 @@ export function answerNote(question: string, answer: string): string {
   return `Answer to your early question "${question}": ${answer}`;
 }
 
+/** An element of the page a change is aimed at (right-click targeting). */
+export interface AimedTarget {
+  selector: string;
+  label: string;
+  path: string;
+}
+
+/**
+ * A change aimed at one element: the owner right-clicked it in the preview and
+ * wrote what should change. The selector lets her find it; the label is what
+ * the owner saw, so her reply can name it the same way.
+ */
+export function aimedNote(target: AimedTarget, text: string): string {
+  const what = target.label ? `"${target.label}"` : 'the element';
+  return `On the page ${target.path}, change ${what} (CSS selector: ${target.selector}): ${text.trim()}\nChange only this element unless the request says otherwise.`;
+}
+
 /** The turn the queue pump sends when notes waited out a turn. */
 export const QUEUED_NOTES_TURN = 'Here are the notes I left while you were working. Take them into account and carry on.';
 

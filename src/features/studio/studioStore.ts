@@ -25,7 +25,7 @@ import { isPlaceholderPlan, MOCK_PHASES, type BuildPhase } from './studioBuildMo
 import { useStudioHistory } from './studioHistory';
 import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
-import { answerNote, buildSeed, QUEUED_NOTES_TURN } from './studioSeed';
+import { aimedNote, answerNote, buildSeed, QUEUED_NOTES_TURN, type AimedTarget } from './studioSeed';
 
 export type SketchState = 'loading' | 'ready' | 'failed';
 
@@ -230,6 +230,11 @@ interface StudioStore {
   /** Keep a note for the next turn instead of refusing input mid-turn. */
   /** False when the note was not queued (empty, no project, or the queue is full). */
   queueNote: (id: string, text: string) => boolean;
+  /**
+   * Send a change aimed at one element: a turn now when she is idle, else a
+   * note for her next step. 'full' when the note queue refused it.
+   */
+  sendAimed: (id: string, target: AimedTarget, text: string) => 'sent' | 'queued' | 'full';
   removeQueuedNote: (id: string, index: number) => void;
 }
 
@@ -928,6 +933,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (!rt || !note || queued.length >= QUEUED_NOTES_MAX) return false;
       patch(id, { queuedNotes: [...queued, note] });
       return true;
+    },
+
+    sendAimed: (id, target, text) => {
+      const rt = get().runtimes[id];
+      const note = aimedNote(target, text);
+      if (rt && (rt.busy || rt.autonomous)) return get().queueNote(id, note) ? 'queued' : 'full';
+      void get().sendTurn(id, note);
+      return 'sent';
     },
 
     removeQueuedNote: (id, index) => {

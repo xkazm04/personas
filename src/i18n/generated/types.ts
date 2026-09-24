@@ -23158,6 +23158,9 @@ export type Translations = {
     reload_preview: string;
     preview_path: string;
     preview_frame_title: string;
+    pick_prompt: string;
+    pick_queued: string;
+    pick_mode_hint: string;
     knob_spacing: string;
     knob_tighter: string;
     knob_airier: string;
@@ -23322,7 +23325,6 @@ export type Translations = {
       tool_read_what: string;
       tool_needs_live: string;
       tool_busy: string;
-      tool_soon: string;
       tool_read_setup: string;
       tool_read_nothing: string;
       placeholder_queue: string;

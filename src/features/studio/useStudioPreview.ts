@@ -13,6 +13,16 @@ export interface PreviewRect {
   height: number;
 }
 
+/** The element the user right-clicked (or picked in pick mode) in a preview. */
+export interface PreviewPick {
+  projectId: string;
+  selector: string;
+  label: string;
+  tag: string;
+  rect: PreviewRect;
+  path: string;
+}
+
 function sameRect(a: PreviewRect | null, b: PreviewRect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -68,6 +78,10 @@ export function useStudioPreview() {
   const [pointerRect, setPointerRect] = useState<PreviewRect | null>(null);
   // Stops the running locate ping; the agent's first answer ends the retries.
   const stopLocateRef = useRef<(() => void) | null>(null);
+  // Right-click targeting: the element picked in the active preview, and
+  // whether the preview is waiting for a click to pick one (the Tweak tool).
+  const [pick, setPick] = useState<PreviewPick | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const activeNonce = activeId ? (iframeNonces[activeId] ?? 0) : 0;
   // The window `message` listener is registered once, so it reads the active
@@ -92,7 +106,17 @@ export function useStudioPreview() {
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const d = e.data as
-        | { source?: string; type?: string; found?: boolean; path?: string; rect?: PreviewRect | null }
+        | {
+            source?: string;
+            type?: string;
+            found?: boolean;
+            path?: string;
+            rect?: PreviewRect | null;
+            selector?: string;
+            label?: string;
+            tag?: string;
+            on?: boolean;
+          }
         | null;
       if (!d || d.source !== 'athena-agent') return;
       // `source: 'athena-agent'` is a claim, not proof: window `message` fires
@@ -111,6 +135,22 @@ export function useStudioPreview() {
         if (next) stopLocateRef.current?.();
         // The same rect again keeps the same object: no re-render, no new orb flight.
         setPointerRect((prev) => (sameRect(prev, next) ? prev : next));
+      } else if (d.type === 'picked') {
+        // Only the tab the user is looking at can be pointed at, and only with
+        // a selector that is plausibly one (the frame's site is untrusted).
+        if (id !== activeIdRef.current || typeof d.selector !== 'string' || !d.rect) return;
+        if (!d.selector || d.selector.length > 500) return;
+        setPicking(false);
+        setPick({
+          projectId: id,
+          selector: d.selector,
+          label: typeof d.label === 'string' ? d.label.slice(0, 80) : '',
+          tag: typeof d.tag === 'string' ? d.tag.slice(0, 20) : '',
+          rect: d.rect,
+          path: typeof d.path === 'string' ? d.path.slice(0, 200) : '/',
+        });
+      } else if (d.type === 'pickmode') {
+        if (id === activeIdRef.current) setPicking(!!d.on);
       } else if (d.type === 'route' && typeof d.path === 'string') {
         const path = d.path;
         setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
@@ -179,6 +219,25 @@ export function useStudioPreview() {
     [activeId],
   );
   const navRoutes = ((activeId && routesByTab[activeId]) || []).filter((r) => !r.includes('['));
+
+  // A pick belongs to the tab it was made in; switching tabs drops it.
+  useEffect(() => {
+    setPick(null);
+    setPicking(false);
+  }, [activeId]);
+  const clearPick = useCallback(() => setPick(null), []);
+  // Ask the active preview to pick the next element clicked (or stop asking).
+  const startPickMode = useCallback(
+    (on = true) => {
+      const targetOrigin = previewTargetOrigin(activeId ? previewUrls[activeId] : null);
+      if (!activeId || !targetOrigin) return;
+      const iframe = document.querySelector<HTMLIFrameElement>(`iframe[data-tab="${CSS.escape(activeId)}"]`);
+      iframe?.contentWindow?.postMessage({ source: 'athena', type: 'pickmode', on }, targetOrigin);
+      setPicking(on);
+      if (on) setPick(null);
+    },
+    [activeId, previewUrls],
+  );
   const live = !!active && active.phase === 'live' && active.healthy;
 
   return {
@@ -193,6 +252,10 @@ export function useStudioPreview() {
     navRoutes,
     navigateTo,
     reloadActive,
+    pick,
+    clearPick,
+    picking,
+    startPickMode,
   };
 }
 
