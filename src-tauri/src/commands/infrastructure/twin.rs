@@ -8,9 +8,8 @@ use ts_rs::TS;
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::models::{
-    SetupTurnMessage, SetupTurnResult, TwinChannel, TwinCommunication, TwinContact,
-    TwinDistilledFact, TwinPageContext, TwinPageDraft, TwinPendingMemory, TwinProfile,
-    TwinReflection, TwinSteer, TwinTone, TwinVoiceProfile,
+    TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPageContext, TwinPageDraft,
+    TwinPendingMemory, TwinProfile, TwinReflection, TwinSteer, TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
 use crate::engine::event_registry::event_name;
@@ -3188,73 +3187,23 @@ mod kb_grounding_tests {
 }
 
 // ============================================================================
-// Guided Setup — twin_setup_turn (twin-atelier-v2 WP1)
+// Guided Setup — the prompt blocks the setup engine reuses
 //
-// The Setup module's one generator door. It owns its OWN prompt on purpose:
-// the pre-v2 guided interview routed through `twin_generate_bio`, whose prompt
-// frames every call as "write a 2-3 sentence first-person bio". Asking that
-// envelope for an interview question returns a bio-shaped sentence, so the
-// questions came back distorted and the answers were unusable as tone or
-// channel material. Nothing here reuses that wrapper; only the CLI spawn
-// envelope (`spawn_claude_logged`) is shared.
-//
-// Contract: the model proposes CONTENT (a question, some suggested answers,
-// typed field proposals). The CLIENT owns STRUCTURE — which slot is being
-// worked, and whether it is finished. `done_hint` is advisory and the client
-// derives completion from readiness, so a generator failure must surface as an
-// error and leave the slot OPEN. It must never be reported as "done".
+// `engine::twin_setup::prompts` builds the plan / assess / refill prompts from
+// these: the two languages, the tone-per-channel block, the channels a tone
+// question may name, and each setup slot's brief. The one-question-per-call
+// `twin_setup_turn` they were written for is gone (spark `twin-setup-plan`);
+// the setup engine is the only caller.
 // ============================================================================
 
-/// Approved memories handed to the guide as "what this twin already knows".
-/// Enough to stop it re-asking a settled question, small enough not to crowd
-/// out the profile and tone material.
-const SETUP_MEMORY_LIMIT: usize = 8;
-
-/// Transcript window replayed to the generator. The client keeps the full
-/// history; the prompt only needs enough not to repeat itself.
-const SETUP_HISTORY_LIMIT: usize = 12;
-
-/// Preview length for one grounding line (a tone register, a memory).
+/// Preview length for one grounding line (a tone register).
 const SETUP_PREVIEW_CHARS: usize = 200;
 
 /// Rules on file per tone row the guide is shown, so it does not propose one
 /// the person already accepted.
 const SETUP_RULES_SHOWN: usize = 6;
 
-/// The most suggestions a turn may carry. The client deals three cards.
-const SETUP_SUGGESTIONS_MAX: usize = 3;
-
-/// The four slots the guided conversation can work on, mirroring
-/// `SETUP_FOCUS_ORDER` in `setupContract.ts`.
-const SETUP_FOCUS_SLOTS: [&str; 4] = ["identity", "tone", "channels", "memories"];
-
-/// Normalise a caller-supplied stage to the two the prompt understands.
-fn setup_stage_of(stage: &str) -> &'static str {
-    if stage.trim().eq_ignore_ascii_case("training") {
-        "training"
-    } else {
-        "setup"
-    }
-}
-
-/// Clamp a focus string to a slot the contract declares. An unknown value from
-/// the model falls back to the slot the CLIENT asked for — the flow owns
-/// structure, so the generator never gets to redirect the conversation into a
-/// slot that does not exist.
-fn setup_focus_of(candidate: &str, requested: Option<&str>) -> String {
-    fn pick(s: &str) -> Option<&'static str> {
-        SETUP_FOCUS_SLOTS
-            .iter()
-            .find(|f| s.trim().eq_ignore_ascii_case(f))
-            .copied()
-    }
-    pick(candidate)
-        .or_else(|| requested.and_then(pick))
-        .unwrap_or("identity")
-        .to_string()
-}
-
-/// The two languages a turn is written in: the app's language for what the
+/// The two languages a setup prompt is written in: the app's language for what the
 /// guide says TO the person (the question, the incoming message), and the
 /// twin's primary language for everything written AS the person (suggested
 /// answers, proposed values). Before this the prompt named no language at all,
@@ -3328,30 +3277,12 @@ pub(crate) fn setup_tone_channels(channels: &[TwinChannel], tones: &[TwinTone]) 
     out
 }
 
-/// What this turn is for. Each slot's brief follows the research in
-/// `experience/RESEARCH.md`: people describe their own style badly and show
+/// What a setup slot's questions are after. Each brief follows the research
+/// in `experience/RESEARCH.md`: people describe their own style badly and show
 /// it well, so the tone slot asks for checkable habits and real replies rather
 /// than adjectives, and the memories slot asks for scenes rather than
-/// summaries.
-pub(crate) fn setup_task_block(
-    stage: &str,
-    focus: Option<&str>,
-    topic: Option<&str>,
-    tone_channels: &[String],
-) -> String {
-    if stage == "training" {
-        let topic = topic
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .unwrap_or("their work and how they go about it");
-        return format!(
-            "This is a training round on: {topic}\n\
-             Ask one question on that topic that only they could answer, from their own life. A specific scene, \
-             a real example, or a realistic message to reply to works better than a general \"what do you think \
-             about\". Their answer is saved word for word as a memory, so ask for something worth keeping. \
-             Set \"focus\" to \"memories\"."
-        );
-    }
+/// summaries. Training slots are briefed by `engine::twin_setup::skeleton`.
+pub(crate) fn setup_task_block(focus: Option<&str>, tone_channels: &[String]) -> String {
     match focus.map(str::trim).filter(|s| !s.is_empty()).unwrap_or("identity") {
         "tone" => format!(
             "Right now you're working on how they write. Take one channel at a time from: {channels}. Start \
@@ -3384,456 +3315,9 @@ pub(crate) fn setup_task_block(
     }
 }
 
-/// Build the guided-setup prompt. `repair` carries the parser's complaint on
-/// the single retry, so the second attempt is told exactly what was wrong with
-/// the first rather than simply being asked again.
-///
-/// The prompt is written in the register it asks for — plain sentences, what
-/// to do rather than what to avoid — because a model imitates the voice of its
-/// instructions. The previous version opened "You are a warm, efficient
-/// interviewer" and got back warm, efficient interviewer copy.
-#[allow(clippy::too_many_arguments)]
-fn build_setup_turn_prompt(
-    profile: &TwinProfile,
-    tones: &[TwinTone],
-    channels: &[TwinChannel],
-    memories: &[TwinPendingMemory],
-    stage: &str,
-    focus: Option<&str>,
-    topic: Option<&str>,
-    locale: Option<&str>,
-    history: &[SetupTurnMessage],
-    last_answer: Option<&str>,
-    repair: Option<&str>,
-) -> String {
-    let name = profile.name.trim();
-    let (guide_language, twin_language) = setup_languages(profile, locale);
-
-    let role = profile
-        .role
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .unwrap_or("not given");
-    let bio = profile
-        .bio
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .unwrap_or("nothing written yet");
-
-    let channel_block = if channels.is_empty() {
-        "Channels they're connected on: none yet.".to_string()
-    } else {
-        let lines = channels
-            .iter()
-            .map(|c| {
-                let label = c
-                    .label
-                    .as_deref()
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .unwrap_or("unlabelled");
-                let state = if c.is_active { "active" } else { "paused" };
-                format!("- {} ({label}, {state})", c.channel_type)
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        format!("Channels they're connected on:\n{lines}")
-    };
-
-    let memory_block = if memories.is_empty() {
-        String::new()
-    } else {
-        let lines = memories
-            .iter()
-            .take(SETUP_MEMORY_LIMIT)
-            .map(|m| {
-                let head = m
-                    .title
-                    .as_deref()
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(|t| format!("{t}: "))
-                    .unwrap_or_default();
-                format!(
-                    "- {head}{}",
-                    personas_core::utils::text::truncate_on_char_boundary(
-                        m.content.trim(),
-                        SETUP_PREVIEW_CHARS,
-                    )
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        format!("\nAlready known about them (don't ask these again):\n{lines}")
-    };
-
-    let history_block = if history.is_empty() {
-        String::new()
-    } else {
-        let start = history.len().saturating_sub(SETUP_HISTORY_LIMIT);
-        let lines = history[start..]
-            .iter()
-            .map(|m| {
-                let who = if m.role == "user" { "Them" } else { "You" };
-                format!("{who}: {}", m.text.trim())
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        format!("\n\nConversation so far, oldest first (never ask the same thing twice):\n{lines}")
-    };
-
-    let last_answer_block = last_answer
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|a| format!("\n\nTheir last answer, which your next question should build on:\n{a}"))
-        .unwrap_or_default();
-
-    let repair_block = repair
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|r| {
-            format!(
-                "\n\nYour previous reply could not be used: {r}\nReply again with ONLY the JSON object, every key present and correctly typed. No prose, no code fence."
-            )
-        })
-        .unwrap_or_default();
-
-    let task_block = setup_task_block(stage, focus, topic, &setup_tone_channels(channels, tones));
-
-    let proposal_rule = if stage == "training" {
-        "Return \"proposals\": []. A training answer is saved as they wrote it and never changes a profile field."
-            .to_string()
-    } else {
-        "When their answers so far support a concrete value for a real field, add it to \"proposals\". Nothing \
-         is saved until they accept it.\n\
-         - kind \"bio\": first person, their facts and their phrasing, two or three sentences, under 500 \
-         characters. No adjectives or achievements they didn't give you.\n\
-         - kind \"role\": a short title, under 50 characters.\n\
-         - kind \"tone\", part \"voice\", with a channel id: how they write there, as one to three short \
-         instructions to the twin, under 300 characters. Say what to do, like: Lowercase, one line, no \
-         sign-off. Says \"yep\", not \"yes\".\n\
-         - kind \"tone\", part \"constraints\", with a channel id: one rule for that channel starting with Always \
-         or Never, under 120 characters, like: Never agree to a meeting time without checking with me.\n\
-         Only propose what their own words support, and never invent dates, numbers, names or places. Don't \
-         propose example messages; those come from what they type. When nothing is solid yet, return []."
-            .to_string()
-    };
-
-    format!(
-        "You're interviewing {name} to set up their digital twin, a stand-in that will later write messages \
-         in their voice. Work like a good ghostwriter in a first session: people describe their own style badly \
-         and show it well, so ask what they actually do and write, not which adjectives fit them.\n\n\
-         What's on file\n\
-         Name: {name}\nRole: {role}\nBio: {bio}\nWrites in: {twin_language}\n\
-         {tone_block}\n{channel_block}{memory_block}{history_block}{last_answer_block}\n\n\
-         This turn\n{task_block}\n\n\
-         How to ask\n\
-         One question about one thing, in a sentence if you can (a reply drill may need two), under 30 words. \
-         Open with the question itself: no greeting, no thanks, no comment on their last answer. If they \
-         skipped the last question, take a different angle and don't mention it. Set \"focus\" to the slot you \
-         worked on, and when the question is about one channel, put its id in \"toneChannel\".\n\n\
-         Set \"answerMode\" to \"write\" when their answer will itself be a writing sample, like a reply drill or \
-         \"paste the last message you sent your team\". Put the message they're replying to in \"incoming\", \
-         written exactly as it would arrive, and return \"suggestions\": [], because a sample you wrote would \
-         teach the twin your voice instead of theirs. Otherwise set \"answerMode\" to \"pick\", set \"incoming\" \
-         to null, and offer two or three suggestions.\n\n\
-         A suggestion is an answer they could send back as it is. Make the options genuinely different from \
-         each other (different choices, not one answer reworded), keep each as short as their real answer would \
-         be, and write it the way {name} would, using what's on file. Give each a \"reason\" of a few words \
-         saying what picking it tells the twin, like \"sets the email sign-off\" or \"keeps Slack lowercase\".\n\n\
-         {proposal_rule}\n\n\
-         Language\n\
-         Write \"question\" and \"incoming\" in {guide_language}. Write every suggestion and every proposal value \
-         in {twin_language}, the way {name} writes. Write natively in each language instead of translating from \
-         English: its own word order, idioms and punctuation.\n\n\
-         Voice\n{plain}\n\n\
-         Reply with ONLY this JSON object, no prose and no code fence:\n\
-         {{\n  \"question\": \"the next question\",\n  \"focus\": \"identity\" | \"tone\" | \"channels\" | \"memories\",\n  \
-         \"toneChannel\": \"channel id\" | null,\n  \"answerMode\": \"pick\" | \"write\",\n  \
-         \"incoming\": \"the message they are replying to\" | null,\n  \
-         \"suggestions\": [{{ \"text\": \"an answer they could send\", \"reason\": \"what picking it tells the twin\" }}],\n  \
-         \"proposals\": [{{ \"kind\": \"bio\" | \"role\" | \"tone\", \"part\": \"voice\" | \"constraints\" | null, \
-         \"channel\": \"channel id\" | null, \"value\": \"the exact text to save\", \"lengthHint\": \"like one line\" | null, \
-         \"reason\": \"why this value\" }}],\n  \"doneHint\": false\n}}\n\
-         Every key must be present. \"suggestions\" and \"proposals\" are arrays; use [] when you have none. \
-         \"doneHint\" is only your impression that this slot now has enough; it decides nothing, so it never \
-         changes the question you ask.{repair_block}",
-        tone_block = setup_tone_block(tones),
-        plain = super::twin_voice::plain_voice(),
-    )
-}
-
-/// Parse a generator reply into a `SetupTurnResult`, then re-impose the part of
-/// the contract the CLIENT owns, and fix the mechanical tells in code:
-///
-/// - the focus is clamped to a real slot, and a training turn carries no
-///   proposals regardless of what the model returned;
-/// - a `write` turn carries no suggestions (the answer is a writing sample and
-///   has to be typed), and only a `write` turn carries an incoming message;
-/// - a proposal must name a real field: unknown kinds, and any model-written
-///   example message, are dropped;
-/// - a praise opener is cut from the question, clause dashes become commas
-///   unless the person's own answers use them (`dashes_are_theirs`), and a
-///   suggestion written in assistant-speak is dropped rather than dealt.
-fn parse_setup_turn(
-    raw: &str,
-    stage: &str,
-    requested_focus: Option<&str>,
-    dashes_are_theirs: bool,
-) -> Result<SetupTurnResult, String> {
-    use super::twin_voice::{reads_as_assistant, soften_dashes, strip_filler_opener};
-
-    let span = crate::companion::brain::oneshot::extract_json_span(raw, "twin setup turn")
-        .map_err(|e| e.to_string())?;
-    let mut parsed: SetupTurnResult =
-        serde_json::from_str(span).map_err(|e| format!("invalid JSON: {e}"))?;
-
-    let their_voice = |text: &str| -> String {
-        let text = text.trim();
-        if dashes_are_theirs {
-            text.to_string()
-        } else {
-            soften_dashes(text)
-        }
-    };
-
-    parsed.question = soften_dashes(&strip_filler_opener(&parsed.question));
-    if parsed.question.trim().is_empty() {
-        return Err("\"question\" was empty".to_string());
-    }
-
-    parsed.answer_mode = if parsed.answer_mode.trim().eq_ignore_ascii_case("write") {
-        "write".to_string()
-    } else {
-        "pick".to_string()
-    };
-    if parsed.answer_mode == "write" {
-        parsed.suggestions.clear();
-        parsed.incoming = parsed
-            .incoming
-            .as_deref()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(str::to_string);
-    } else {
-        parsed.incoming = None;
-    }
-
-    let mut seen: Vec<String> = Vec::new();
-    parsed.suggestions.retain_mut(|s| {
-        s.text = their_voice(&s.text);
-        s.reason = soften_dashes(s.reason.trim());
-        let key = s.text.to_lowercase();
-        if s.text.is_empty() || reads_as_assistant(&s.text) || seen.contains(&key) {
-            return false;
-        }
-        seen.push(key);
-        true
-    });
-    parsed.suggestions.truncate(SETUP_SUGGESTIONS_MAX);
-
-    parsed.proposals.retain_mut(|p| {
-        p.kind = p.kind.trim().to_lowercase();
-        p.value = their_voice(&p.value);
-        p.reason = soften_dashes(p.reason.trim());
-        if p.value.is_empty() {
-            return false;
-        }
-        match p.kind.as_str() {
-            "bio" | "role" => {
-                p.part = None;
-                p.channel = None;
-                true
-            }
-            "tone" => {
-                let part = p.part.as_deref().map(|s| s.trim().to_lowercase());
-                p.part = match part.as_deref() {
-                    None | Some("") | Some("voice") => Some("voice".to_string()),
-                    Some("constraints") | Some("constraint") => Some("constraints".to_string()),
-                    // "examples" included: a sample message is the person's
-                    // own words or it is nothing.
-                    Some(_) => return false,
-                };
-                let channel = p.channel.as_deref().map(str::trim).unwrap_or("");
-                p.channel = Some(if channel.is_empty() {
-                    "generic".to_string()
-                } else {
-                    channel.to_string()
-                });
-                true
-            }
-            _ => false,
-        }
-    });
-
-    // The id is ours, not the model's: the client keys each proposal's verdict
-    // (accepted / edited / dismissed) by it, and two tone proposals for one
-    // channel in the same turn would otherwise share a key and overwrite each
-    // other's verdict. Assigned here unconditionally so a model that invents
-    // an id cannot collide either.
-    for proposal in &mut parsed.proposals {
-        proposal.id = uuid::Uuid::new_v4().to_string();
-    }
-
-    parsed.focus = setup_focus_of(&parsed.focus, requested_focus);
-    if stage == "training" {
-        // A training answer is recorded verbatim as a memory; folding one into
-        // a profile field would rewrite identity from an interview answer.
-        parsed.proposals.clear();
-        parsed.focus = "memories".to_string();
-    }
-    Ok(parsed)
-}
-
-#[tauri::command]
-#[allow(clippy::too_many_arguments)]
-pub async fn twin_setup_turn(
-    state: State<'_, Arc<AppState>>,
-    twin_id: String,
-    stage: String,
-    focus: Option<String>,
-    topic: Option<String>,
-    history: Vec<SetupTurnMessage>,
-    last_answer: Option<String>,
-    locale: Option<String>,
-) -> Result<SetupTurnResult, AppError> {
-    require_auth(&state).await?;
-
-    let stage = setup_stage_of(&stage);
-    let focus_ref = focus.as_deref().map(str::trim).filter(|s| !s.is_empty());
-    let topic_ref = topic.as_deref();
-    let last_ref = last_answer.as_deref();
-    let locale_ref = locale.as_deref();
-
-    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
-    let tones = repo::list_tones(&state.db, &twin_id)?;
-    let channels = repo::list_channels(&state.db, &twin_id)?;
-    let memories = repo::list_pending_memories(&state.db, &twin_id, Some("approved"), None)?;
-
-    // The dash fix yields to the person's own habit: if anything they typed
-    // uses a clause dash, the answers offered back to them may too.
-    let dashes_are_theirs = super::twin_voice::uses_dashes(
-        history
-            .iter()
-            .filter(|m| m.role == "user")
-            .map(|m| m.text.as_str())
-            .chain(last_ref),
-    );
-
-    let prompt_for = |repair: Option<&str>| {
-        build_setup_turn_prompt(
-            &profile, &tones, &channels, &memories, stage, focus_ref, topic_ref, locale_ref,
-            &history, last_ref, repair,
-        )
-    };
-
-    let raw =
-        spawn_claude_logged(&state.db, TwinCall::legacy("setup_turn"), prompt_for(None)).await?;
-    let first_error = match parse_setup_turn(&raw, stage, focus_ref, dashes_are_theirs) {
-        Ok(result) => return Ok(result),
-        Err(e) => e,
-    };
-
-    // ONE repair attempt, told what was wrong. Two failures is a generator that
-    // cannot hold the contract: the caller then keeps the slot OPEN and the
-    // typed form stays the way through. An error here must never read as
-    // completion.
-    let repaired = spawn_claude_logged(
-        &state.db,
-        TwinCall::legacy("setup_turn"),
-        prompt_for(Some(&first_error)),
-    )
-    .await?;
-    parse_setup_turn(&repaired, stage, focus_ref, dashes_are_theirs).map_err(|second_error| {
-        AppError::External(format!(
-            "The setup guide returned unusable output twice ({first_error}; then {second_error}). Nothing was saved — fill the field in directly, or ask again."
-        ))
-    })
-}
-
 #[cfg(test)]
-mod setup_turn_tests {
+mod setup_block_tests {
     use super::*;
-
-    fn turn_json() -> &'static str {
-        r#"Here you go:
-```json
-{
-  "question": "What do you want people to take away from working with you?",
-  "focus": "identity",
-  "toneChannel": null,
-  "suggestions": [{ "text": "That I ship.", "reason": "Matches the bio's emphasis." }],
-  "proposals": [{ "kind": "bio", "channel": null, "value": "I build tools.", "lengthHint": null, "reason": "Their own words." }],
-  "doneHint": true
-}
-```"#
-    }
-
-    #[test]
-    fn parses_a_fenced_reply_and_keeps_proposals_in_setup_stage() {
-        let parsed =
-            parse_setup_turn(turn_json(), "setup", Some("identity"), false).expect("parses");
-        assert_eq!(parsed.focus, "identity");
-        assert_eq!(parsed.proposals.len(), 1);
-        assert_eq!(parsed.suggestions.len(), 1);
-        // The backend stamps the proposal id; the model never supplies one.
-        assert!(
-            !parsed.proposals[0].id.is_empty(),
-            "a proposal must carry the key the client records its verdict under"
-        );
-        // done_hint round-trips as DATA. It is advisory — the client derives
-        // completion from readiness — but the wire must carry what was said.
-        assert!(parsed.done_hint);
-    }
-
-    #[test]
-    fn training_stage_drops_proposals_and_pins_focus() {
-        let parsed = parse_setup_turn(turn_json(), "training", None, false).expect("parses");
-        assert!(
-            parsed.proposals.is_empty(),
-            "a training answer is recorded verbatim; it must never propose a profile field"
-        );
-        assert_eq!(parsed.focus, "memories");
-    }
-
-    #[test]
-    fn two_tone_proposals_for_one_channel_get_distinct_ids() {
-        let raw = r#"{"question":"q","focus":"tone","toneChannel":"slack","suggestions":[],
-          "proposals":[
-            {"kind":"tone","channel":"slack","value":"Short and dry.","lengthHint":"1-2 sentences","reason":"a"},
-            {"kind":"tone","channel":"slack","value":"Warmer on Fridays.","lengthHint":null,"reason":"b"}
-          ],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", None, false).expect("parses");
-        assert_eq!(parsed.proposals.len(), 2);
-        assert_ne!(
-            parsed.proposals[0].id, parsed.proposals[1].id,
-            "same channel, two offers — the ids must differ or one verdict overwrites the other"
-        );
-    }
-
-    #[test]
-    fn an_unknown_focus_falls_back_to_the_slot_the_client_asked_for() {
-        let raw = r#"{"question":"q","focus":"vibes","toneChannel":null,"suggestions":[],"proposals":[],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", Some("tone"), false).expect("parses");
-        assert_eq!(parsed.focus, "tone");
-    }
-
-    #[test]
-    fn a_non_json_reply_is_an_error_not_an_empty_turn() {
-        // The failure mode this guards: a generator that answers in prose must
-        // NOT resolve to a blank question the UI renders as a finished slot.
-        let err = parse_setup_turn("I'd love to help! What's your name?", "setup", None, false)
-            .expect_err("prose must not parse");
-        assert!(!err.is_empty());
-    }
-
-    #[test]
-    fn an_empty_question_is_rejected() {
-        let raw = r#"{"question":"  ","focus":"identity","toneChannel":null,"suggestions":[],"proposals":[],"doneHint":true}"#;
-        parse_setup_turn(raw, "setup", None, false).expect_err("a blank question is not a turn");
-    }
 
     fn ada(languages: Option<&str>) -> TwinProfile {
         TwinProfile {
@@ -3854,169 +3338,31 @@ mod setup_turn_tests {
     }
 
     #[test]
-    fn the_training_prompt_asks_for_the_topic_and_forbids_proposals() {
-        let prompt = build_setup_turn_prompt(
-            &ada(None),
-            &[],
-            &[],
-            &[],
-            "training",
-            None,
-            Some("how they debug"),
-            None,
-            &[],
-            None,
-            None,
-        );
-        assert!(prompt.contains("how they debug"));
-        assert!(prompt.contains("training round"));
-        assert!(prompt.contains("\"proposals\": []"));
-        // The bug this command exists to fix: nothing may frame the turn as a bio.
-        assert!(!prompt.contains("2-3 sentences, first person"));
-    }
-
-    #[test]
-    fn the_prompt_names_both_languages_and_asks_for_them_natively() {
-        let prompt = build_setup_turn_prompt(
-            &ada(Some(r#"["cs","en"]"#)),
-            &[],
-            &[],
-            &[],
-            "setup",
-            Some("identity"),
-            None,
-            Some("de"),
-            &[],
-            None,
-            None,
-        );
+    fn setup_languages_names_the_guide_and_the_twin_language() {
         // The guide speaks the app's language; the person's answers are theirs.
-        assert!(prompt.contains("Write \"question\" and \"incoming\" in German (de)"));
-        assert!(prompt.contains("in Czech (cs), the way Ada writes"));
-        assert!(prompt.contains("Writes in: Czech (cs)"));
-        assert!(prompt.contains("instead of translating from English"));
-        // With no app language the guide falls back to the twin's.
-        let fallback = build_setup_turn_prompt(
-            &ada(None),
-            &[],
-            &[],
-            &[],
-            "setup",
-            None,
-            None,
-            None,
-            &[],
-            None,
-            None,
+        let (guide, twin) = setup_languages(&ada(Some(r#"["cs","en"]"#)), Some("de"));
+        assert_eq!(
+            (guide.as_str(), twin.as_str()),
+            ("German (de)", "Czech (cs)")
         );
-        assert!(fallback.contains("Write \"question\" and \"incoming\" in English (en)"));
+        // With no app language the guide falls back to the twin's.
+        let (guide, twin) = setup_languages(&ada(None), None);
+        assert_eq!(
+            (guide.as_str(), twin.as_str()),
+            ("English (en)", "English (en)")
+        );
     }
 
     #[test]
     fn the_tone_brief_asks_for_habits_and_reply_drills_not_adjectives() {
-        let prompt = build_setup_turn_prompt(
-            &ada(None),
-            &[],
-            &[],
-            &[],
-            "setup",
-            Some("tone"),
-            None,
-            None,
-            &[],
-            None,
-            None,
-        );
-        assert!(prompt.contains("reply drill"));
-        assert!(prompt.contains("how they open and sign off"));
-        assert!(prompt.contains("\"answerMode\""));
-        assert!(prompt.contains("Take one channel at a time from: generic."));
-        // The shared writing brief rides along, written in the register it asks for.
-        assert!(prompt.contains(crate::commands::infrastructure::twin_voice::MACHINE_TELLS));
-        assert!(!prompt.contains("warm, efficient interviewer"));
+        let brief = setup_task_block(Some("tone"), &setup_tone_channels(&[], &[]));
+        assert!(brief.contains("reply drill"));
+        assert!(brief.contains("how they open and sign off"));
+        assert!(brief.contains("Take one channel at a time from: generic."));
+        // An unknown or missing slot reads as identity.
+        assert!(setup_task_block(None, &[]).contains("who they are"));
     }
 
-    #[test]
-    fn a_write_turn_carries_its_incoming_message_and_no_suggestions() {
-        let raw = r#"{"question":"Your manager on Slack asks this. Reply the way you would.","focus":"tone",
-          "toneChannel":"slack","answerMode":"write","incoming":"  can we push the review to thursday?  ",
-          "suggestions":[{"text":"sure, thursday works","reason":"a model wrote this"}],
-          "proposals":[],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", Some("tone"), false).expect("parses");
-        assert_eq!(parsed.answer_mode, "write");
-        assert!(
-            parsed.suggestions.is_empty(),
-            "a writing sample the model wrote would teach the twin the model's voice"
-        );
-        assert_eq!(
-            parsed.incoming.as_deref(),
-            Some("can we push the review to thursday?")
-        );
-    }
-
-    #[test]
-    fn a_pick_turn_has_no_incoming_and_an_unknown_mode_reads_as_pick() {
-        let raw = r#"{"question":"Which is more you?","focus":"tone","toneChannel":null,"answerMode":"essay",
-          "incoming":"stray","suggestions":[{"text":"sg","reason":"short"}],"proposals":[],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", None, false).expect("parses");
-        assert_eq!(parsed.answer_mode, "pick");
-        assert_eq!(parsed.incoming, None);
-        // A reply from before the field existed still parses, as a pick turn.
-        let parsed = parse_setup_turn(turn_json(), "setup", None, false).expect("parses");
-        assert_eq!(parsed.answer_mode, "pick");
-    }
-
-    #[test]
-    fn proposals_must_name_a_real_field_and_never_carry_a_model_written_sample() {
-        let raw = r#"{"question":"q?","focus":"tone","toneChannel":"email","suggestions":[],"proposals":[
-            {"kind":"tone","part":"examples","channel":"email","value":"Hi team, quick one","lengthHint":null,"reason":"x"},
-            {"kind":"tone","part":"constraint","channel":"","value":"Never promise a date without asking me.","lengthHint":null,"reason":"x"},
-            {"kind":"Tone","channel":"email","value":"Short. Signs off with just M.","lengthHint":null,"reason":"x"},
-            {"kind":"hobby","channel":null,"value":"Climbing","lengthHint":null,"reason":"x"},
-            {"kind":"role","part":"voice","channel":"slack","value":"Staff engineer","lengthHint":null,"reason":"x"}
-          ],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", Some("tone"), false).expect("parses");
-        let shape: Vec<(&str, Option<&str>, Option<&str>)> = parsed
-            .proposals
-            .iter()
-            .map(|p| (p.kind.as_str(), p.part.as_deref(), p.channel.as_deref()))
-            .collect();
-        assert_eq!(
-            shape,
-            vec![
-                ("tone", Some("constraints"), Some("generic")),
-                ("tone", Some("voice"), Some("email")),
-                ("role", None, None),
-            ]
-        );
-    }
-
-    #[test]
-    fn mechanical_tells_are_fixed_in_code_and_assistant_speak_is_not_dealt() {
-        let raw = r#"{"question":"Great, that helps! How do you sign off in email — if at all?","focus":"tone",
-          "toneChannel":"email","suggestions":[
-            {"text":"Cheers — M","reason":"warm"},
-            {"text":"I'd be happy to help with sign-offs!","reason":"x"},
-            {"text":"Best,","reason":"formal"},
-            {"text":"best,","reason":"dupe"},
-            {"text":"Nothing, I just stop","reason":"x"},
-            {"text":"Thanks","reason":"a fourth card"}
-          ],"proposals":[],"doneHint":false}"#;
-        let parsed = parse_setup_turn(raw, "setup", Some("tone"), false).expect("parses");
-        assert_eq!(parsed.question, "How do you sign off in email, if at all?");
-        let texts: Vec<&str> = parsed.suggestions.iter().map(|s| s.text.as_str()).collect();
-        assert_eq!(texts, vec!["Cheers, M", "Best,", "Nothing, I just stop"]);
-
-        // A person who writes with dashes gets offered dashes back.
-        let theirs = parse_setup_turn(raw, "setup", Some("tone"), true).expect("parses");
-        assert_eq!(theirs.suggestions[0].text, "Cheers — M");
-    }
-
-    // The two fixtures are Claude CLI stdout captured verbatim from real runs
-    // (identifiers zeroed, every envelope key as sent). A hand-written envelope
-    // would only encode what this parser already assumes, which is the belief
-    // under test -- and is what census rule invented-stream-envelope-fixture
-    // exists to stop. See docs/concepts/golden-paths/model-output-streaming.md.
     const PROSE_ANSWER_STREAM: &str =
         include_str!("../../../tests/fixtures/twin_stream_prose_answer.jsonl");
     const JSON_ANSWER_STREAM: &str =
@@ -4053,24 +3399,25 @@ mod setup_turn_tests {
 
     #[test]
     fn claude_text_from_stream_leaves_a_json_reply_parseable() {
-        // The shape twin_setup_turn depends on: the answer is a JSON object
-        // INSIDE the result event, so a span from the first hook record's brace
-        // to the last event's brace can never parse.
+        // The shape every JSON-answering twin call depends on (the setup
+        // engine's plan / assess / refill): the answer is a JSON object INSIDE
+        // the result event, so a span from the first hook record's brace to the
+        // last event's brace can never parse.
         let raw = fixture(JSON_ANSWER_STREAM);
         assert!(
             crate::companion::brain::oneshot::extract_json_span(&raw, "raw stream")
                 .ok()
-                .and_then(|span| serde_json::from_str::<SetupTurnResult>(span).ok())
+                .and_then(|span| serde_json::from_str::<serde_json::Value>(span).ok())
                 .is_none(),
             "the raw stream must NOT parse; that was the bug"
         );
 
         let text = claude_text_from_stream(&raw);
-        let span = crate::companion::brain::oneshot::extract_json_span(&text, "setup turn")
+        let span = crate::companion::brain::oneshot::extract_json_span(&text, "setup answer")
             .expect("the extracted answer is a JSON span");
-        let turn: SetupTurnResult = serde_json::from_str(span).expect("parses as a turn");
-        assert_eq!(turn.focus, "identity");
-        assert!(!turn.question.is_empty());
+        let answer: serde_json::Value = serde_json::from_str(span).expect("parses as JSON");
+        assert_eq!(answer["focus"], "identity");
+        assert!(answer["question"].as_str().is_some_and(|q| !q.is_empty()));
     }
 
     #[test]

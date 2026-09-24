@@ -1020,3 +1020,366 @@ async fn twin_setup_repair_retry_recovers_a_bad_first_reply() -> Result<(), AppE
     );
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// LIVE probe (spends real subscription tokens; never in the normal run)
+// ---------------------------------------------------------------------------
+
+/// One real model call as the probe saw it.
+#[derive(Debug, Clone)]
+struct LiveCall {
+    site: &'static str,
+    model: &'static str,
+    effort: &'static str,
+    repair: bool,
+    wall_ms: u128,
+    prompt_chars: usize,
+    raw: Result<String, String>,
+}
+
+/// The whole engine against the REAL CLI: a realistic twin, the engine's own
+/// prompt builders, the real `spawn_claude_logged` on the real tiers, the
+/// engine's own parsers and appliers, the real spend rows.
+///
+/// Every other engine test scripts the model; this is the one that proves the
+/// model's actual output gets through the three doors. It costs real tokens
+/// (three to six Opus 5.5 calls), so it only runs when asked:
+///
+/// ```text
+/// CARGO_TARGET_DIR="$PWD/src-tauri/target-wt" npm run test:rust -- live_opus_round_trip --ignored --nocapture
+/// ```
+#[tokio::test]
+#[ignore = "live: spawns the real Claude CLI and spends subscription tokens"]
+async fn live_opus_round_trip() -> Result<(), AppError> {
+    use crate::db::repos::twin as twin_repo;
+    use std::time::Instant;
+
+    use super::llm::real_llm;
+    use super::parse::parse_plan;
+    use super::skeleton::SETUP_SLOTS;
+
+    const REPAIR_MARK: &str = "Your previous reply could not be used";
+
+    // A realistic twin: a name, a two-sentence bio, one generic tone row, no
+    // memories, no channels.
+    let pool = crate::db::init_test_db()?;
+    let profile = twin_repo::create_profile(
+        &pool,
+        "Mara Lindqvist",
+        Some(
+            "I run a small product design studio in Gothenburg that helps hardware startups turn \
+             prototypes into things people want to hold. Most of my week is client calls, sketch \
+             reviews and long emails explaining why the second option is the right one.",
+        ),
+        None,
+        None,
+        None,
+    )?;
+    let twin = profile.id.clone();
+    twin_repo::upsert_tone(
+        &pool,
+        &twin,
+        "generic",
+        "Warm but direct. Short paragraphs. Gets to the point in the first line.",
+        None,
+        None,
+        Some("a few short paragraphs"),
+    )?;
+    let readiness = || SetupReadiness {
+        identity: "partial".into(),
+        tone: "partial".into(),
+        channels: "empty".into(),
+        memories: "empty".into(),
+    };
+
+    // The production LLM, instrumented: wall time, repair or first try, the raw reply.
+    let calls: Arc<Mutex<Vec<LiveCall>>> = Arc::new(Mutex::new(Vec::new()));
+    let calls_in = calls.clone();
+    let real = real_llm();
+    let llm: LlmFn = Arc::new(move |pool, call: TwinCall, prompt: String| {
+        let real = real.clone();
+        let calls = calls_in.clone();
+        Box::pin(async move {
+            let repair = prompt.contains(REPAIR_MARK);
+            let prompt_chars = prompt.chars().count();
+            let started = Instant::now();
+            let out = real(pool, call, prompt).await;
+            let wall_ms = started.elapsed().as_millis();
+            eprintln!(
+                "[live] {} ({} @ {}){}: {} ms, prompt {} chars, {}",
+                call.site,
+                call.model,
+                call.effort,
+                if repair { " REPAIR" } else { "" },
+                wall_ms,
+                prompt_chars,
+                match &out {
+                    Ok(t) => format!("reply {} chars", t.chars().count()),
+                    Err(e) => format!("ERROR {e}"),
+                }
+            );
+            calls
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .push(LiveCall {
+                    site: call.site,
+                    model: call.model,
+                    effort: call.effort,
+                    repair,
+                    wall_ms,
+                    prompt_chars,
+                    raw: out.as_ref().map(Clone::clone).map_err(|e| e.to_string()),
+                });
+            out
+        })
+    });
+    let events: Events = Arc::new(Mutex::new(Vec::new()));
+    let events_in = events.clone();
+    let ctx = JobCtx {
+        pool: pool.clone(),
+        llm,
+        emit: Arc::new(move |e| events_in.lock().unwrap_or_else(|p| p.into_inner()).push(e)),
+    };
+    let site_calls = |site: &str| -> Vec<LiveCall> {
+        calls
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .filter(|c| c.site == site)
+            .cloned()
+            .collect()
+    };
+    let last_ok_raw = |site: &str| -> Option<String> {
+        site_calls(site).into_iter().rev().find_map(|c| c.raw.ok())
+    };
+    let first_parse = |site: &str, door: &dyn Fn(&str) -> Result<(), String>| {
+        for c in site_calls(site) {
+            let verdict = match &c.raw {
+                Ok(raw) => match door(raw) {
+                    Ok(()) => "parsed".to_string(),
+                    Err(e) => format!("REJECTED: {e}"),
+                },
+                Err(e) => format!("call failed: {e}"),
+            };
+            eprintln!(
+                "[live] {} {}: {verdict}",
+                site,
+                if c.repair { "repair" } else { "first try" }
+            );
+        }
+    };
+
+    // 1. First open, no plan: the deep pass (OPUS_5_5 @ medium).
+    let opened = session::open(&pool, &twin, Some("en"), readiness(), None, false)?;
+    assert!(
+        opened.wants.contains(&Want::Plan),
+        "a twin with no plan wants one"
+    );
+    let handle = jobs::schedule(&ctx, &twin, &opened.wants)
+        .ok_or_else(|| AppError::Internal("open starts a worker".into()))?;
+    handle
+        .await
+        .map_err(|e| AppError::Internal(format!("plan worker: {e}")))?;
+    first_parse("setup_plan", &|raw| parse_plan(raw, false).map(|_| ()));
+
+    let snap = repo::snapshot(&pool, &twin)?;
+    assert_eq!(
+        snap.plan_status, "ready",
+        "the plan failed: {:?}",
+        snap.plan_error
+    );
+    let plan_raw =
+        last_ok_raw("setup_plan").ok_or_else(|| AppError::Internal("no plan reply".into()))?;
+    let parsed_plan = parse_plan(&plan_raw, false).map_err(AppError::Validation)?;
+    for slot in SETUP_SLOTS {
+        let from_model = parsed_plan.goals.iter().filter(|g| g.slot == slot).count();
+        let applied = snap.goals.iter().filter(|g| g.slot == slot).count();
+        eprintln!("[live] plan goals for {slot}: model {from_model}, applied {applied}");
+        assert!(
+            from_model >= 1,
+            "the model wrote no goal for setup slot {slot}"
+        );
+    }
+    let training_goals = parsed_plan
+        .goals
+        .iter()
+        .filter(|g| g.slot.starts_with("training:"))
+        .count();
+    let path: Vec<&crate::db::models::SetupStep> =
+        snap.live.iter().chain(snap.upcoming.iter()).collect();
+    eprintln!(
+        "[live] plan: {} goals from the model ({} training), {} goals applied, {} steps drafted, \
+         {} on the path (live {} + queued {}), {} observations, changeNote {:?}",
+        parsed_plan.goals.len(),
+        training_goals,
+        snap.goals.len(),
+        parsed_plan.steps.len(),
+        path.len(),
+        usize::from(snap.live.is_some()),
+        snap.upcoming.len(),
+        snap.observations.len(),
+        snap.change_note
+    );
+    for s in &path {
+        eprintln!(
+            "[live]   {} [{} / {}] {}",
+            s.status, s.kind, s.answer_mode, s.question
+        );
+    }
+    assert!(
+        path.len() >= 3,
+        "the plan put fewer than 3 steps on the path"
+    );
+    assert!(path.iter().all(|s| !s.question.trim().is_empty()));
+
+    // 2. Answer the live step: reconcile = assess ∥ refill (OPUS_5_5 @ low).
+    let live = snap
+        .live
+        .clone()
+        .ok_or_else(|| AppError::Internal("nothing live after the plan".into()))?;
+    let goal_id = live
+        .goal_id
+        .clone()
+        .ok_or_else(|| AppError::Internal("the live plan step has no goal".into()))?;
+    let answer = if live.answer_mode == "write" {
+        "Hi Jonas, thanks for sending the renders over. The grip on version B is the one. \
+         It reads as a tool, not a toy, and the thumb rest solves the complaint from the last \
+         test group. Can we get a printed model by Thursday so I can put it in people's hands?"
+            .to_string()
+    } else {
+        live.suggestions
+            .first()
+            .map(|s| s.text.clone())
+            .unwrap_or_else(|| {
+                "Mostly founders who have a working prototype and a deadline, and need someone \
+                 to tell them honestly what to cut."
+                    .to_string()
+            })
+    };
+    eprintln!("[live] answering {:?} with {:?}", live.question, answer);
+    let answered = session::answer(
+        &pool,
+        &twin,
+        &live.id,
+        Some(&answer),
+        Some("en"),
+        readiness(),
+    )?;
+    let queued_before = answered.snapshot.upcoming.len();
+    assert!(answered.wants.contains(&Want::Reconcile));
+    let handle = jobs::schedule(&ctx, &twin, &answered.wants)
+        .ok_or_else(|| AppError::Internal("answer starts a worker".into()))?;
+    handle
+        .await
+        .map_err(|e| AppError::Internal(format!("reconcile worker: {e}")))?;
+    first_parse("setup_assess", &|raw| parse_assess(raw, false).map(|_| ()));
+    first_parse("setup_refill", &|raw| parse_refill(raw, false).map(|_| ()));
+
+    let assess_raw =
+        last_ok_raw("setup_assess").ok_or_else(|| AppError::Internal("no assess reply".into()))?;
+    let assess = parse_assess(&assess_raw, false).map_err(AppError::Validation)?;
+    eprintln!(
+        "[live] assess: {} coverage entries {:?}, {} offers, follow-up {:?}, observation {:?}",
+        assess.coverage.len(),
+        assess.coverage,
+        assess.offers.len(),
+        assess.follow_up.as_ref().map(|f| f.question.clone()),
+        assess.observation
+    );
+    for o in &assess.offers {
+        eprintln!(
+            "[live]   offer {} {:?} {:?}: {}",
+            o.kind, o.part, o.channel, o.value
+        );
+    }
+    assert!(
+        assess.coverage.iter().any(|(id, _)| id == &goal_id),
+        "assess gave no coverage for the answered goal {goal_id}"
+    );
+
+    let after = repo::snapshot(&pool, &twin)?;
+    let refills = site_calls("setup_refill");
+    match last_ok_raw("setup_refill") {
+        Some(raw) => {
+            let refill = parse_refill(&raw, false).map_err(AppError::Validation)?;
+            eprintln!(
+                "[live] refill: {} steps, {} obsolete; queue {} -> {}",
+                refill.steps.len(),
+                refill.obsolete.len(),
+                queued_before,
+                after.upcoming.len()
+            );
+            for s in &refill.steps {
+                eprintln!("[live]   [{} / {}] {}", s.kind, s.answer_mode, s.question);
+            }
+            assert!(
+                !refill.steps.is_empty(),
+                "refill was due (queue {queued_before} < 3) and wrote nothing"
+            );
+        }
+        None => {
+            assert!(
+                refills.is_empty(),
+                "every refill call failed: {:?}",
+                refills.iter().map(|c| c.raw.clone()).collect::<Vec<_>>()
+            );
+            eprintln!("[live] refill: not called (queue {queued_before}, nothing due)");
+        }
+    }
+    let conn = pool.get()?;
+    let reconciled: i64 = conn.query_row(
+        "SELECT reconciled FROM twin_setup_steps WHERE id = ?1",
+        rusqlite::params![live.id],
+        |r| r.get("reconciled"),
+    )?;
+    assert_eq!(reconciled, 1, "the answered step was not reconciled");
+
+    // 3. The ledger: what the probe really cost.
+    let mut stmt = conn.prepare(
+        "SELECT trigger_kind, model, cost_usd, duration_ms, input_tokens, output_tokens,
+                cache_read_tokens, cache_creation_tokens, is_error
+           FROM dev_llm_spend WHERE source = 'twin' ORDER BY created_at, rowid",
+    )?;
+    let rows = stmt
+        .query_map([], |r| {
+            Ok(format!(
+                "{} | {} | {} | {} ms | in {} out {} cache_read {} cache_write {} | error {}",
+                r.get::<_, String>("trigger_kind")?,
+                r.get::<_, Option<String>>("model")?.unwrap_or_default(),
+                // An unreported cost reads as unknown, never as $0.
+                r.get::<_, Option<f64>>("cost_usd")?
+                    .map_or_else(|| "cost unknown".to_string(), |c| format!("${c:.4}")),
+                r.get::<_, Option<i64>>("duration_ms")?.unwrap_or(0),
+                r.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
+                r.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
+                r.get::<_, Option<i64>>("cache_read_tokens")?.unwrap_or(0),
+                r.get::<_, Option<i64>>("cache_creation_tokens")?
+                    .unwrap_or(0),
+                r.get::<_, i64>("is_error")?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    for row in &rows {
+        eprintln!("[live] spend: {row}");
+    }
+    let all = calls.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    for c in &all {
+        eprintln!(
+            "[live] call {} {} @ {} repair={} wall={} ms prompt={} chars",
+            c.site, c.model, c.effort, c.repair, c.wall_ms, c.prompt_chars
+        );
+    }
+    assert_eq!(
+        rows.len(),
+        all.iter().filter(|c| c.raw.is_ok()).count(),
+        "one spend row per answered call"
+    );
+    let reasons: Vec<String> = events
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .map(|e| e.reason.clone())
+        .collect();
+    eprintln!("[live] events: {reasons:?}");
+    Ok(())
+}

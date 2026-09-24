@@ -353,7 +353,7 @@ fn clean_step(raw: RawStep, dashes_are_theirs: bool) -> Option<DraftStep> {
     })
 }
 
-/// An offer through the same validation `parse_setup_turn` gave proposals:
+/// An offer through the validation the old per-turn setup parser gave proposals:
 /// kind `bio` | `role` | `tone`, tone part `voice` | `constraints` — an
 /// `examples` part is dropped, because a sample message is the person's own
 /// words or it is nothing — and a tone channel defaulting to `generic`.

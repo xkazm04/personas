@@ -5,10 +5,16 @@
  * never read the wire types directly. The plan-side fields reuse the bindings
  * rather than re-declaring them.
  *
+ * The backend is the setup plan engine (the `twin_setup_*` commands, Rust
+ * `engine::twin_setup`): a persisted plan per twin, a queue of questions
+ * written ahead, and a background reconcile after each answer. It replaced
+ * the per-turn `twin_setup_turn`, which is gone.
+ *
  * The governing rule (wizard-flows / ai-driven-elicitation): the generator
- * proposes CONTENT; this flow owns STRUCTURE. `doneHint` is advisory. A slot
- * is complete only when `deriveReadiness` says so, and a generator failure
- * leaves the slot open rather than reading as finished.
+ * proposes CONTENT; this flow owns STRUCTURE. Goal coverage only steers which
+ * question comes next. A slot is complete only when `deriveReadiness` says
+ * so, and a generator failure leaves the slot open rather than reading as
+ * finished.
  */
 
 import type { SetupGoal } from '@/lib/bindings/SetupGoal';
@@ -23,11 +29,6 @@ export type SetupFocus = 'identity' | 'tone' | 'channels' | 'memories';
 export const SETUP_FOCUS_ORDER: readonly SetupFocus[] = ['identity', 'tone', 'channels', 'memories'] as const;
 
 export type SetupStage = 'setup' | 'training';
-
-export interface SetupTurnMessage {
-  role: 'guide' | 'user';
-  text: string;
-}
 
 /** One offered answer. A suggestion is a position, never a silent default. */
 export interface SetupSuggestion {
@@ -54,7 +55,7 @@ export type SetupProposalPart = 'voice' | 'examples' | 'constraints';
  * until the user accepts it, and an accepted value stays editable.
  */
 export interface SetupProposal {
-  /** Stable per-turn id. Two tone proposals for one channel must not collide. */
+  /** The stored offer's id (`SetupOffer.id`). Two tone offers for one channel never collide. */
   id: string;
   kind: 'bio' | 'role' | 'tone';
   /** Tone proposals only; absent or null reads as `'voice'`. */
@@ -72,19 +73,6 @@ export interface SetupProposal {
  * drill, a pasted message), so it is typed, and the hand is empty by contract.
  */
 export type SetupAnswerMode = 'pick' | 'write';
-
-export interface SetupTurnResult {
-  question: string;
-  focus: SetupFocus;
-  toneChannel: string | null;
-  answerMode: SetupAnswerMode;
-  /** The message a `write` turn asks them to reply to; null otherwise. */
-  incoming: string | null;
-  suggestions: SetupSuggestion[];
-  proposals: SetupProposal[];
-  /** ADVISORY. Never the completion authority — see the file header. */
-  doneHint: boolean;
-}
 
 /** One row of the thin readiness strip that replaces the old readiness panel. */
 export interface SetupChecklistItem {

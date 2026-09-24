@@ -278,7 +278,7 @@ fn slot_briefs(slots: &[&str], tone_channels: &[String]) -> String {
         } else {
             out.push(format!(
                 "{slot}: {}",
-                setup_task_block("setup", Some(slot), None, tone_channels)
+                setup_task_block(Some(slot), tone_channels)
             ));
         }
     }

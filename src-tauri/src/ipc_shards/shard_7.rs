@@ -41,9 +41,6 @@ pub(super) fn shard(
         commands::infrastructure::twin::twin_generate_bio,
         // Twin plugin -- Training Studio: twin-simulated answer drafting
         commands::infrastructure::twin::twin_simulate_answer,
-        // Twin plugin -- guided Setup: one conversation turn (own prompt,
-        // deliberately NOT routed through twin_generate_bio)
-        commands::infrastructure::twin::twin_setup_turn,
         // Twin plugin -- setup plan (spark twin-setup-plan): the planned,
         // durable guided setup; every command returns the whole snapshot
         commands::infrastructure::twin_setup::twin_setup_get,
