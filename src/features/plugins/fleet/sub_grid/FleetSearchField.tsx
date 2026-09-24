@@ -13,7 +13,7 @@ interface FleetSearchFieldProps {
 /**
  * The Fleet pages' filter field: a search glyph inside a token-styled input.
  * The Sessions list and the Activity feed each hand-rolled one at a different
- * size (text-[14px], two paddings); both now render this. There is no shared
+ * size (an arbitrary 14px, two paddings); both now render this. There is no shared
  * search input in `shared/components` yet, which is why it lives here.
  */
 export const FleetSearchField = forwardRef<HTMLInputElement, FleetSearchFieldProps>(function FleetSearchField(

@@ -12,7 +12,7 @@ import { FleetPaneToolbar, type FleetRightView } from './FleetPaneToolbar';
 import { stateText } from './fleetStateTone';
 
 // The pane's frame sits on the page ground (`bg-background`). It was the dark
-// terminal field as a raw `bg-[#0a0a0c]` in every theme, so in a light theme
+// terminal field, a raw near-black hex, in every theme, so in a light theme
 // its toolbar, the Insights panel and the placeholders drew dark ink on near
 // black. The terminal itself still paints its own field (FleetTerminalPane).
 const FRAME = 'h-full border rounded-modal bg-background';
