@@ -8,13 +8,9 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  useMcpRequestStore,
-  type McpApprovalPayload,
-  type McpGuidancePayload,
-  type McpPendingRequest,
-} from './mcpRequestStore';
+import { useMcpRequestStore, type McpPendingRequest } from './mcpRequestStore';
 import { resolveMcpRequest } from './useMcpRequestBridge';
+import { useMcpRequestCard } from './useMcpRequestCard';
 
 /**
  * Stack of inline cards for in-flight MCP requests. Mounted inside
@@ -134,16 +130,10 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
 
 function GuidanceCard({ request }: { request: McpPendingRequest }) {
   const { t } = useTranslation();
-  const payload = request.payload as McpGuidancePayload;
-  const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
-
-  const onSubmit = async () => {
-    if (!text.trim() || sending) return;
-    setSending(true);
-    const ok = await resolveMcpRequest(request.requestId, { text: text.trim() });
-    if (!ok) setSending(false);
-  };
+  // Verbs live in `useMcpRequestCard` so card-native surfaces share them.
+  const { guidance, answer: text, setAnswer: setText, sending, sendAnswer: onSubmit } = useMcpRequestCard(request);
+  if (!guidance) return null;
+  const payload = guidance;
 
   return (
     <div className="rounded-card border border-border bg-card p-3 shadow-elevation-1">
@@ -168,12 +158,12 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
           placeholder={t.plugins.companion.orchestration.guidance_placeholder}
           className="flex-1 rounded-input border border-border bg-background px-2 py-1.5 typo-body resize-none min-h-[2.25rem]"
           rows={2}
-          disabled={sending}
+          disabled={sending !== null}
         />
         <button
           type="button"
           onClick={onSubmit}
-          disabled={!text.trim() || sending}
+          disabled={!text.trim() || sending !== null}
           className="rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-button disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
         >
           <Send className="size-3.5" />
@@ -186,28 +176,9 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
 
 function ApprovalCard({ request }: { request: McpPendingRequest }) {
   const { t } = useTranslation();
-  const payload = request.payload as McpApprovalPayload;
-  const [note, setNote] = useState('');
-  const [sending, setSending] = useState<'approve' | 'deny' | null>(null);
-
-  const onApprove = async () => {
-    if (sending) return;
-    setSending('approve');
-    const ok = await resolveMcpRequest(request.requestId, {
-      approved: true,
-      note: note.trim(),
-    });
-    if (!ok) setSending(null);
-  };
-  const onDeny = async () => {
-    if (sending) return;
-    setSending('deny');
-    const ok = await resolveMcpRequest(request.requestId, {
-      approved: false,
-      note: note.trim(),
-    });
-    if (!ok) setSending(null);
-  };
+  const { approval, note, setNote, sending, approve: onApprove, deny: onDeny } = useMcpRequestCard(request);
+  if (!approval) return null;
+  const payload = approval;
 
   return (
     <div className="rounded-card border border-border bg-card p-3 shadow-elevation-1">

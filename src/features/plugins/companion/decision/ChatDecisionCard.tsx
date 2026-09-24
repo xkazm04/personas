@@ -1,9 +1,7 @@
 import { Lightbulb, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '../companionStore';
-import { explainDecision, runDecisionOption } from './resolveDecision';
+import { useDecisionCard } from './useDecisionCard';
 
 /**
  * The CHAT-side face of a pending orb decision.
@@ -27,17 +25,11 @@ import { explainDecision, runDecisionOption } from './resolveDecision';
  */
 export function ChatDecisionCard() {
   const { t } = useTranslation();
-  const decision = useCompanionStore((s) => s.pendingDecision);
-  const companionState = useCompanionStore((s) => s.state);
-  const explained = useCompanionStore((s) => s.decisionExplained);
-  const composing = useCompanionStore((s) => s.explainComposing);
-  const composeError = useCompanionStore((s) => s.explainComposeError);
-  const runError = useCompanionStore((s) => s.decisionError);
-  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
-
-  // Exact complement of `OrbDecisionBubble`'s visibility predicate — never both,
-  // never neither.
-  const bubbleShowing = companionState === 'minimized' || fleetGridOpen;
+  // The logic lives in `useDecisionCard` so card-native surfaces share the
+  // same verbs; `bubbleShowing` is the exact complement of
+  // `OrbDecisionBubble`'s visibility predicate — never both, never neither.
+  const { decision, bubbleShowing, explained, composing, composeError, runError, pickOption, explain } =
+    useDecisionCard();
   if (!decision || bubbleShowing) return null;
 
   return (
@@ -113,7 +105,7 @@ export function ChatDecisionCard() {
             key={opt.key}
             type="button"
             data-testid={`athena-chat-decision-option-${i + 1}`}
-            onClick={() => runDecisionOption(opt)}
+            onClick={() => pickOption(opt)}
             title={opt.hint ?? opt.label}
             className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring ${
               opt.danger
@@ -135,7 +127,7 @@ export function ChatDecisionCard() {
         <button
           type="button"
           data-testid="athena-chat-decision-option-0"
-          onClick={() => explainDecision()}
+          onClick={() => explain()}
           disabled={composing}
           aria-label={t.plugins.companion.decision_explain}
           title={t.plugins.companion.decision_explain_hint}

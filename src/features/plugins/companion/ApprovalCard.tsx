@@ -1,16 +1,10 @@
-import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  companionApproveAction,
-  companionRejectAction,
-  type ApprovalOutcome,
-  type PendingApproval,
-} from '@/api/companion';
-import { applyClientAction } from './applyClientAction';
+import type { ApprovalOutcome, PendingApproval } from '@/api/companion';
 import { actionLabel } from './athenaLabels';
+import { useApprovalCard } from './useApprovalCard';
 
 /**
  * Inline card rendered in the chat for each `propose_action` op Athena
@@ -25,45 +19,8 @@ export function ApprovalCard({
   onResolved: (id: string, status: ApprovalOutcome['status']) => void;
 }) {
   const { t } = useTranslation();
-  const [busy, setBusy] = useState<'approve' | 'reject' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [failedOutcome, setFailedOutcome] = useState<string | null>(null);
-
-  const handle = async (kind: 'approve' | 'reject') => {
-    setBusy(kind);
-    setError(null);
-    setFailedOutcome(null);
-    try {
-      if (kind === 'approve') {
-        const result = await companionApproveAction(approval.id);
-        if (result.status === 'approved_failed') {
-          setFailedOutcome(result.message);
-          setBusy(null);
-          return;
-        }
-        // UI-only ops (open_route) carry their follow-up here; we
-        // dispatch BEFORE marking resolved so the panel collapses
-        // smoothly rather than re-rendering with the card disappearing.
-        if (result.clientAction) {
-          applyClientAction(result.clientAction);
-        }
-      } else {
-        await companionRejectAction(approval.id);
-      }
-      onResolved(approval.id, kind === 'approve' ? 'approved' : 'rejected');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-      setBusy(null);
-    }
-  };
-
-  // Pretty-print the JSON params; fall back to raw on parse failure.
-  let prettyParams: string;
-  try {
-    prettyParams = JSON.stringify(JSON.parse(approval.paramsJson), null, 2);
-  } catch {
-    prettyParams = approval.paramsJson;
-  }
+  // The verbs live in `useApprovalCard` so card-native surfaces share them.
+  const { busy, error, failedOutcome, prettyParams, approve, reject } = useApprovalCard(approval, onResolved);
 
   return (
     <div
@@ -111,7 +68,7 @@ export function ApprovalCard({
         <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 typo-caption text-amber-300">
           {t.plugins.companion.approved_failed.replace(
             '{message}',
-            failedOutcome.replace(/^Execution failed:\s*/i, ''),
+            failedOutcome,
           )}
         </div>
       )}
@@ -120,7 +77,7 @@ export function ApprovalCard({
         <Button
           variant="primary"
           size="sm"
-          onClick={() => handle('approve')}
+          onClick={approve}
           disabled={busy !== null}
           loading={busy === 'approve'}
           icon={<Check className="w-3.5 h-3.5" />}
@@ -131,7 +88,7 @@ export function ApprovalCard({
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => handle('reject')}
+          onClick={reject}
           disabled={busy !== null}
           loading={busy === 'reject'}
           icon={<X className="w-3.5 h-3.5" />}
