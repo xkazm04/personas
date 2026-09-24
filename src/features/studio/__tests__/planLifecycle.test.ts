@@ -162,3 +162,39 @@ describe('creating a project', () => {
     expect(rt.queuedNotes).toEqual([answerNote('Pickup only?', 'Yes')]);
   });
 });
+
+describe('Plan first', () => {
+  const sent = () => String(api.webbuildSessionSend.mock.calls.at(-1)?.[1]);
+
+  it('when on, a new request asks for plan approval before any file is edited', async () => {
+    api.webbuildGetPlan.mockResolvedValue(null);
+    await useStudioStore.getState().startExisting('p1', 'Hearth');
+    useStudioStore.getState().setBuildSettings('p1', { gatePlan: true });
+    void useStudioStore.getState().sendTurn('p1', 'Add a blog');
+    expect(sent()).toContain('Add a blog');
+    expect(sent()).toMatch(/Plan first/);
+  });
+
+  it('answering her question goes through as the answer, not as a new request', async () => {
+    api.webbuildGetPlan.mockResolvedValue(null);
+    await useStudioStore.getState().startExisting('p1', 'Hearth');
+    useStudioStore.getState().setBuildSettings('p1', { gatePlan: true });
+    useStudioStore.setState((s) => ({ runtimes: { ...s.runtimes, p1: { ...s.runtimes.p1!, question: 'Approve this plan and start building?' } } }));
+    void useStudioStore.getState().sendTurn('p1', 'Build it');
+    expect(sent()).toBe('Build it');
+  });
+
+  it('the choice is remembered for new projects, so the first build is gated too', async () => {
+    api.webbuildGetPlan.mockResolvedValue(null);
+    await useStudioStore.getState().startExisting('p1', 'Hearth');
+    useStudioStore.getState().setBuildSettings('p1', { gatePlan: true });
+    api.webbuildSketch.mockReturnValue(new Promise(() => {}));
+    api.webbuildScaffold.mockResolvedValue({ id: 'p2', name: 'Florist' });
+    await useStudioStore.getState().createWithVision('Florist', 'A flower shop');
+    expect(useStudioStore.getState().runtimes.p2!.gatePlan).toBe(true);
+    expect(sent()).toContain('A flower shop');
+    expect(sent()).toMatch(/Plan first/);
+    useStudioHistory.setState({ gatePlanDefault: false } as never);
+  });
+});
+

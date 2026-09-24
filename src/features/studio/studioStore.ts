@@ -126,8 +126,9 @@ export const QUEUED_NOTES_MAX = 10;
 export const POLL_INTERVAL_MS = 1500;
 export const POLL_MAX_ATTEMPTS = 160;
 
-// C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
-// before editing any files. "Build it" (an A1 decision option) resumes the build.
+// C2 — plan-first gate: wrap a new request (the seed vision included) so Athena
+// plans + asks approval before editing any files. "Build it" (an A1 decision
+// option) resumes the build.
 const planFirstSeed = (vision: string) =>
   `${vision}\n\n[Plan first — before editing ANY files this turn: reply with your proposed build plan and a 1-2 sentence approach, emit the BUILD_PLAN line, and end with NEEDS_INPUT {"question":"Approve this plan and start building?","options":["Build it","Let me adjust"]}. Do not edit files yet.]`;
 const AUTO_INSTRUCTION =
@@ -314,7 +315,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         options: h?.options ?? [],
         decisionArea: null,
         decisionSelector: null,
-        gatePlan: false,
+        gatePlan: useStudioHistory.getState().gatePlanDefault ?? false,
         mcp: [],
         stopNoop: false,
         activity: [],
@@ -758,7 +759,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       })();
     },
 
-    setBuildSettings: (id, p) => patch(id, p),
+    setBuildSettings: (id, p) => {
+      if (p.gatePlan !== undefined) useStudioHistory.getState().setGatePlanDefault(p.gatePlan);
+      patch(id, p);
+    },
 
     closeTab: (id) => {
       stopPoll(id);
@@ -871,7 +875,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       void runTurn(project.id, rt?.gatePlan ? planFirstSeed(seed) : seed);
     },
 
-    sendTurn: (id, text) => runTurn(id, text),
+    // Plan first gates every new request: she proposes the plan change and asks
+    // for approval before editing. Answering her pending question (the approval
+    // itself included) goes through as the answer.
+    sendTurn: (id, text) => {
+      const rt = get().runtimes[id];
+      const gated = !!rt?.gatePlan && !rt.question && !rt.autonomous;
+      return runTurn(id, gated ? planFirstSeed(text) : text);
+    },
 
     startAutonomous: (id) => {
       const rt = get().runtimes[id];
