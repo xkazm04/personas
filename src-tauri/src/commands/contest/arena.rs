@@ -641,6 +641,13 @@ pub fn build_summary(
             inputs.participant_live.push(live);
         }
     }
+    // A seat the app never launched but whose record is on disk (the CLI ran
+    // it) has run: it counts as settled, so the contest is not a draft.
+    for p in &c.participants {
+        if !sidecar.seat_sessions.contains_key(&p.id) && paths.record_json(&p.id).is_file() {
+            inputs.participant_live.push(SeatLive::Settled);
+        }
+    }
     ContestSummary {
         project_id: project_id.to_string(),
         project_name: project_name.to_string(),
@@ -744,6 +751,42 @@ mod tests {
             ..PhaseInputs::default()
         };
         assert_eq!(derive_phase(&i), ContestPhase::Queued);
+    }
+
+    /// A contest the CLI ran (records on disk, no app sessions) is not a
+    /// draft: its seats have run.
+    #[test]
+    fn a_cli_run_arena_reads_its_recorded_seats_as_settled() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = ArenaPaths::new(tmp.path(), "cli").unwrap();
+        let c = ContestFile {
+            participants: vec![
+                ContestParticipant {
+                    id: "claude-opus_high".into(),
+                    spec: "claude:opus@high".into(),
+                },
+                ContestParticipant {
+                    id: "grok-grok-4.6_low".into(),
+                    spec: "grok:grok-4.6@low".into(),
+                },
+            ],
+            ..ContestFile::default()
+        };
+        let none = |_: &str| None;
+        let draft = build_summary("p", "P", &paths, &c, &Sidecar::default(), &none);
+        assert_eq!(draft.phase, ContestPhase::Draft, "nothing ran yet");
+        for p in &c.participants {
+            write_text(&paths.record_json(&p.id), "{\"outcome\":\"completed\"}").unwrap();
+        }
+        let ran = build_summary("p", "P", &paths, &c, &Sidecar::default(), &none);
+        assert_eq!(
+            ran.phase,
+            ContestPhase::Queued,
+            "recorded, not yet collected"
+        );
+        write_text(&paths.manifest_json(), "{}").unwrap();
+        let collected = build_summary("p", "P", &paths, &c, &Sidecar::default(), &none);
+        assert_eq!(collected.phase, ContestPhase::Review);
     }
 
     #[test]

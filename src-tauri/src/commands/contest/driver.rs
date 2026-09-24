@@ -301,6 +301,20 @@ struct PlanSeat {
     prompt: String,
 }
 
+/// Whether a launch skips this seat because its record already says
+/// `completed` (the instrument's `runSeats` rule). A named retry (`only`)
+/// always runs.
+fn skips_completed(
+    kind: ContestSeatKind,
+    only: Option<&[String]>,
+    record: Option<&RecordView>,
+) -> bool {
+    let retry = only.is_some_and(|o| !o.is_empty());
+    matches!(kind, ContestSeatKind::Participant)
+        && !retry
+        && record.is_some_and(|r| r.outcome == record::OUTCOME_COMPLETED)
+}
+
 /// One seat under watch.
 #[derive(Debug, Clone)]
 struct SeatJob {
@@ -405,6 +419,8 @@ async fn launch_seats_from(
     }
 
     let mut launched = 0usize;
+    let mut already_completed = 0usize;
+    let planned = plan.seats.len();
     for seat in plan.seats {
         let key = Path::new(&seat.log_dir)
             .file_name()
@@ -416,6 +432,16 @@ async fn launch_seats_from(
         if current.chain.step == ContestChainStep::Failed {
             tracing::info!(seat = %key, "contest: cancelled mid-launch, no more seats");
             break;
+        }
+        if skips_completed(
+            kind,
+            only.as_deref(),
+            read_record(&ctx.paths, &key).as_ref(),
+        ) {
+            // What `contest.mjs run` does without --force; a named retry reruns it.
+            tracing::info!(seat = %key, "contest: seat already completed, not relaunched");
+            already_completed += 1;
+            continue;
         }
         if let Some(prev) = current.seat_sessions.get(&key) {
             let recorded = current.recorded_sessions.get(&key) == Some(prev);
@@ -473,6 +499,11 @@ async fn launch_seats_from(
             },
         );
         launched += 1;
+    }
+    // Every seat had already completed (a contest the CLI ran): no watcher
+    // will settle to move the chain on, so collect now.
+    if planned > 0 && already_completed == planned {
+        spawn_chain(app.clone(), ctx.clone(), ChainFrom::Collect);
     }
     Ok(launched)
 }
@@ -1051,6 +1082,29 @@ mod tests {
             .await
             .unwrap());
         assert_eq!(arena::read_sidecar(&paths).chain.step, C::Ready);
+    }
+
+    #[test]
+    fn a_launch_skips_completed_seats_unless_it_is_a_retry() {
+        let done = RecordView {
+            outcome: "completed".into(),
+            ..RecordView::default()
+        };
+        let errored = RecordView {
+            outcome: "errored".into(),
+            ..RecordView::default()
+        };
+        let p = ContestSeatKind::Participant;
+        assert!(skips_completed(p, None, Some(&done)));
+        assert!(
+            skips_completed(p, Some(&[]), Some(&done)),
+            "empty only = all"
+        );
+        assert!(!skips_completed(p, Some(&["a".to_string()]), Some(&done)));
+        assert!(!skips_completed(p, None, Some(&errored)));
+        assert!(!skips_completed(p, None, None));
+        // Judges keep relaunching: the chain has no CLI-recorded judge path.
+        assert!(!skips_completed(ContestSeatKind::Judge, None, Some(&done)));
     }
 
     /// Seats restored by the fleet at boot must get a watcher without anyone
