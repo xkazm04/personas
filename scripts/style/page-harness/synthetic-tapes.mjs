@@ -141,6 +141,10 @@ function subReleases(repoRoot) {
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
+  // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
+  ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
+    id, () => ({ version: 1, module: id, source: 'synthetic', recordedAt: RECORDED_AT, note: 'Synthetic props, no IPC.', calls: [] }),
+  ])),
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),

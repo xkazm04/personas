@@ -12,6 +12,7 @@ import { useEffect, type ComponentType, type ReactNode } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { TONE_MODULES } from './toneSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -52,6 +53,7 @@ export const MODULES: Record<string, HarnessModule> = {
       useSystemStore.setState({ sidebarSection: 'home', homeTab: 'roadmap' });
     },
   },
+  ...TONE_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),
