@@ -37,7 +37,7 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
       <span className="typo-caption tabular-nums w-16 flex-shrink-0 text-right">{fmtMem(memoryBytes)}</span>
       <span className="flex-1 min-w-0">
         {/* The row's one emphasis: which folder the process runs in. Pid and memory are quiet figures. */}
-        <TruncateWithTooltip text={cwd ?? cmd} className="typo-body font-mono font-semibold text-foreground" />
+        <TruncateWithTooltip text={cwd ?? cmd} className="typo-title" />
       </span>
       <span className={`typo-caption flex-shrink-0 ${tracked ? 'text-status-success' : 'text-status-warning'}`}>
         {tracked ? 'Fleet' : 'orphan'}

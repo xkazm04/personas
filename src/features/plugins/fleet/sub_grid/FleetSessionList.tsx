@@ -72,8 +72,8 @@ export function FleetSessionList(p: FleetSessionListProps) {
               <div className="flex items-center gap-1.5 px-2 mb-1">
                 <GroupIcon className={`w-3.5 h-3.5 ${tone} ${g.id === 'running' ? 'animate-spin' : ''}`} aria-hidden="true" />
                 <span className="typo-label text-foreground">{f[g.labelKey]}</span>
-                {/* The group name is the head's one emphasis; its count is a figure, regular weight. */}
-                <span className={`ml-auto typo-label font-normal tabular-nums ${tone}`} aria-label={count(g.sessions.length)}>
+                {/* The group name is the head's one emphasis; its count is a figure at 400 (typo-code: tabular digits on the floor step). */}
+                <span className={`ml-auto typo-code ${tone}`} aria-label={count(g.sessions.length)}>
                   {g.sessions.length}
                 </span>
               </div>
