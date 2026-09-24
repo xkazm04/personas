@@ -11,9 +11,42 @@ import { SpineSummary } from './SpineSummary';
 import { SpineStation } from './SpineStation';
 import { SpineOutcomes } from './SpineOutcomes';
 import { ProcessGhost } from './ProcessGhost';
+import { ProcessLanes, type LanesVariant } from './ProcessLanes';
+import { PROTO } from './lanes';
 
 const MODES: DevMode[] = ['interactive', 'headless'];
 const MODE_TABS = 'process-mode';
+
+// TODO(prototype, 2026-09-24): consolidate the Process variant switcher (baseline vs side-by-side lanes).
+type Variant = 'baseline' | LanesVariant;
+const VARIANTS: Variant[] = ['baseline', 'rivers', 'transit', 'instruments'];
+const PROTO_TABS = 'process-proto';
+
+export default function ProcessPage() {
+  const [variant, setVariant] = useState<Variant>(() => {
+    const v = new URLSearchParams(window.location.search).get('variant') as Variant | null;
+    return v && VARIANTS.includes(v) ? v : 'baseline';
+  });
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center gap-4 border-b border-primary/10 px-4 py-2">
+        <SegmentedTabs<Variant>
+          tabs={VARIANTS.map((v) => ({ id: v, label: PROTO.variants[v][0], testId: `process-variant-${v}` }))}
+          activeTab={variant}
+          onTabChange={setVariant}
+          ariaLabel={PROTO.heading}
+          idPrefix={PROTO_TABS}
+          size="sm"
+          fullWidth={false}
+        />
+        <span className="typo-caption">{PROTO.variants[variant][1]}</span>
+      </div>
+      <div role="tabpanel" id={`${PROTO_TABS}-panel-${variant}`} aria-labelledby={`${PROTO_TABS}-tab-${variant}`} className="flex min-h-0 flex-1">
+        {variant === 'baseline' ? <ProcessBaseline /> : <ProcessLanes variant={variant} />}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Curator > Process: the strategic layer over the fleet's development sessions.
@@ -22,7 +55,7 @@ const MODE_TABS = 'process-mode';
  * standard path is derived from the sessions themselves. Interactive and headless sessions are
  * different processes and are never pooled; a repository is a filter, measured against its mode.
  */
-export default function ProcessPage() {
+export function ProcessBaseline() {
   const { t, tx } = useTranslation();
   const p = t.companions.process;
   const { reading, loading, error } = useProcessData();

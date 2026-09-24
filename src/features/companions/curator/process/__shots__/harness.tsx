@@ -10,12 +10,20 @@ import '@/styles/globals.css';
 
 import ProcessPage from '../ProcessPage';
 import { primeProcessReading } from '../useProcessData';
+import { primeExtraLanes, type ProcessLane } from '../lanes';
+import { ascentSampleLane, hiringLane } from './sampleLanes';
 
 const params = new URLSearchParams(window.location.search);
 useThemeStore.getState().setTheme(params.get('theme') === 'light' ? 'light' : 'dark-midnight');
 await preloadSectionsAsync('en', ['companions', 'sidebar', 'common', 'empty_states']);
 const url = params.get('reading');
 if (url) primeProcessReading((await (await fetch(url)).json()) as CuratorProcess);
+// `?kp=<url>` adds the KP hiring lane (the contest's projected cohort); `?sample=1` the Ascent sample.
+const extra: ProcessLane[] = [];
+const kp = params.get('kp');
+if (kp) extra.push(hiringLane((await (await fetch(kp)).json()) as Parameters<typeof hiringLane>[0]));
+if (params.get('sample')) extra.push(ascentSampleLane());
+primeExtraLanes(extra);
 
 const root = document.getElementById('root');
 if (root) {
