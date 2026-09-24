@@ -36,19 +36,36 @@ pub async fn webbuild_sketch(
     webbuild::sketch::parse_sketch(&text)
 }
 
-/// Check a new project's name before submit: the folder it becomes, whether
-/// that folder already exists (what the scaffold refuses on), and a free
-/// variant. The form asks on every edit, so the name is refused inline.
+/// Check a new project's name before submit: the folder it becomes, whether it
+/// is taken (its folder exists, which the scaffold refuses on, or a registered
+/// project already has that name), and a free variant. The form asks on every
+/// edit, so the name is refused inline.
 #[tauri::command]
-pub fn webbuild_check_name(
+pub async fn webbuild_check_name(
     state: State<'_, Arc<AppState>>,
     name: String,
 ) -> Result<webbuild::project::ProjectNameCheck, AppError> {
-    require_auth_sync(&state)?;
-    let root = webbuild::project::projects_root()?;
-    Ok(webbuild::project::check_project_name(&name, |slug| {
-        root.join(slug).exists()
-    }))
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let task = tokio::task::spawn_blocking(move || {
+        let registered: Vec<String> = repo::list_projects(&db, None)?
+            .into_iter()
+            .map(|p| p.name)
+            .collect();
+        let root = webbuild::project::projects_root()?;
+        Ok(webbuild::project::check_project_name(
+            &name,
+            |slug| root.join(slug).exists(),
+            &registered,
+        ))
+    });
+    match task.await {
+        Ok(result) => result,
+        Err(e) if e.is_panic() => Err(AppError::Internal(format!(
+            "webbuild_check_name panicked: {e}"
+        ))),
+        Err(e) => Err(AppError::Internal(format!("webbuild_check_name: {e}"))),
+    }
 }
 
 /// A project's stored plan (`webbuild_plans`): phases + sketch, or `None` for a

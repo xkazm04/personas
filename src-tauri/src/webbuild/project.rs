@@ -77,8 +77,18 @@ pub struct ProjectNameCheck {
     pub suggestion: Option<String>,
 }
 
-/// Check `name` against `exists` (the projects root on disk in production).
-pub fn check_project_name(name: &str, exists: impl Fn(&str) -> bool) -> ProjectNameCheck {
+/// Check `name`: taken when its folder `exists` (the projects root on disk in
+/// production, the scaffold's own refusal) or when an already registered
+/// project's name makes the same folder name (an imported project elsewhere
+/// on disk would not collide on disk, but two projects of one name would).
+pub fn check_project_name(
+    name: &str,
+    exists: impl Fn(&str) -> bool,
+    registered: &[String],
+) -> ProjectNameCheck {
+    let registered: std::collections::HashSet<String> =
+        registered.iter().filter_map(|n| slugify(n).ok()).collect();
+    let exists = |slug: &str| exists(slug) || registered.contains(slug);
     let Ok(slug) = slugify(name) else {
         return ProjectNameCheck {
             slug: None,
@@ -194,17 +204,22 @@ mod tests {
     fn name_check_matches_the_scaffold_and_suggests_a_free_folder() {
         let taken = ["portfolio", "portfolio-2"];
         let exists = |slug: &str| taken.contains(&slug);
-        let c = super::check_project_name("Portfolio", exists);
+        let c = super::check_project_name("Portfolio", exists, &[]);
         assert_eq!(c.slug.as_deref(), Some("portfolio"));
         assert!(c.taken);
         assert_eq!(c.suggestion.as_deref(), Some("portfolio-3"));
-        let free = super::check_project_name("Hearth & Grain", exists);
+        let free = super::check_project_name("Hearth & Grain", exists, &[]);
         assert_eq!(
             (free.slug.as_deref(), free.taken, free.suggestion),
             (Some("hearth-grain"), false, None)
         );
-        let unsafe_name = super::check_project_name("***", exists);
+        let unsafe_name = super::check_project_name("***", exists, &[]);
         assert_eq!(unsafe_name.slug, None);
+        // An imported project elsewhere on disk: no folder clash, still a name clash.
+        let named =
+            super::check_project_name("Auto Invoicer", |_| false, &["auto-invoicer".to_string()]);
+        assert!(named.taken);
+        assert_eq!(named.suggestion.as_deref(), Some("auto-invoicer-2"));
     }
 
     use super::*;
