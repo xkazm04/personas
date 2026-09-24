@@ -1,0 +1,208 @@
+/* Entry D, "Lights-out room". Every class is scoped under `ed-` and every
+   colour is a theme variable (or color-mix over one), so all themes repaint
+   it. Type stays on the typo-* tokens in the markup; this sheet owns layout,
+   light and geometry only. */
+
+.ed-root {
+  container-type: inline-size;
+  --ed-hair: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --ed-hair-strong: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --ed-glass: color-mix(in srgb, var(--background) 62%, transparent);
+  --ed-well: color-mix(in srgb, var(--background) 80%, transparent);
+}
+
+/* ── Lamps: the only saturated light in the room ─────────────────────── */
+[data-lamp] { --lamp: color-mix(in srgb, var(--foreground) 30%, transparent); }
+[data-lamp='running'], [data-lamp='live'] { --lamp: var(--primary); }
+[data-lamp='attention'], [data-lamp='input'] { --lamp: var(--status-warning); }
+[data-lamp='failed'] { --lamp: var(--status-error); }
+[data-lamp='stale'] { --lamp: color-mix(in srgb, var(--status-warning) 55%, var(--foreground)); }
+[data-lamp='done'] { --lamp: var(--status-success); }
+[data-lamp='sleep'] { --lamp: var(--status-info); }
+[data-lamp='quiet'] { --lamp: color-mix(in srgb, var(--foreground) 55%, transparent); }
+
+.ed-lamp {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--lamp);
+}
+.ed-lamp[data-lamp='idle'], .ed-lamp[data-lamp='queued'], .ed-lamp[data-lamp='gone'] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+.ed-lamp[data-lamp='running'], .ed-lamp[data-lamp='attention'], .ed-lamp[data-lamp='failed'],
+.ed-lamp[data-lamp='live'], .ed-lamp[data-lamp='input'] {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lamp) 22%, transparent),
+    0 0 10px color-mix(in srgb, var(--lamp) 60%, transparent);
+}
+
+/* A lit row spills its lamp's light to the right, fading into the dark. */
+.ed-spill { position: relative; }
+.ed-spill[data-lamp='running'], .ed-spill[data-lamp='attention'], .ed-spill[data-lamp='failed'],
+.ed-spill[data-lamp='live'], .ed-spill[data-lamp='input'] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--lamp) 15%, transparent), transparent 70%);
+}
+
+/* ── Chassis: one project, one enclosure ─────────────────────────────── */
+.ed-board { columns: 250px auto; column-gap: 14px; }
+.ed-chassis {
+  break-inside: avoid;
+  margin-bottom: 14px;
+  position: relative;
+  border: 1px solid var(--ed-hair-strong);
+  background: var(--ed-glass);
+  box-shadow: inset 3px 0 0 var(--ed-cable, var(--ed-hair-strong)),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
+    0 10px 24px -18px color-mix(in srgb, var(--background) 90%, transparent);
+}
+.ed-chassis[data-group='true'] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  background: color-mix(in srgb, var(--primary) 4%, var(--ed-glass));
+}
+.ed-chassis[data-off='true'] .ed-chassis-body { opacity: 0.45; filter: grayscale(1); }
+.ed-chassis[data-scoped='true'] {
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--ed-cable, var(--primary)), 0 0 18px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+.ed-chassis-body { max-height: 380px; overflow-y: auto; }
+
+/* The share bar: a chassis' roster, drawn as states, idle as bare rail. */
+.ed-share { display: flex; height: 3px; gap: 1px; background: var(--ed-hair); }
+.ed-share > span { background: var(--lamp); }
+.ed-share > span[data-lamp='idle'] { background: color-mix(in srgb, var(--foreground) 14%, transparent); }
+
+/* ── Rows (module = persona, unit = session) ─────────────────────────── */
+.ed-row { border-top: 1px solid var(--ed-hair); transition: background-color 120ms ease; }
+.ed-row:hover { background-color: color-mix(in srgb, var(--foreground) 5%, transparent); }
+.ed-row[data-selected='true'] {
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+.ed-row[data-hot='true'] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 70%, transparent); }
+.ed-row[data-off='true'] { opacity: 0.5; }
+
+/* The slot plate: a session's seat number in the rack. */
+.ed-plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid color-mix(in srgb, var(--lamp) 55%, transparent);
+  background: color-mix(in srgb, var(--lamp) 10%, var(--ed-well));
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.ed-plate[data-over='true'] {
+  border-style: dashed;
+  border-color: var(--status-warning);
+  color: var(--status-warning);
+}
+.ed-plate[data-kind='queue'] { border-style: dashed; background: transparent; }
+
+/* ── The rack gauge in the console ───────────────────────────────────── */
+.ed-bays { display: flex; align-items: stretch; gap: 3px; min-width: 0; flex: 1 1 auto; overflow: hidden; padding: 4px 2px; }
+.ed-bay {
+  flex: 1 1 0;
+  min-width: 4px;
+  max-width: 56px;
+  height: 30px;
+  position: relative;
+  border: 1px solid var(--ed-hair-strong);
+  background: var(--ed-well);
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.ed-bay[data-lamp]:not([data-lamp='free']) {
+  border-color: color-mix(in srgb, var(--lamp) 60%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lamp) 32%, transparent), color-mix(in srgb, var(--lamp) 8%, var(--ed-well)));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--lamp) 22%, transparent);
+}
+.ed-bay[data-lamp='free'] { border-style: dashed; background: transparent; }
+.ed-bay[data-over='true'] {
+  border: 1px dashed var(--status-warning);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--status-warning) 22%, transparent) 0 4px, transparent 4px 8px);
+}
+.ed-bay[data-hot='true'] { border-color: var(--foreground); }
+.ed-bay-num { position: absolute; left: 4px; bottom: 1px; line-height: 1; }
+.ed-capline { width: 2px; align-self: stretch; margin: -4px 3px; background: var(--status-warning); border-radius: 2px; }
+.ed-capline[data-quiet='true'] { background: var(--ed-hair-strong); }
+.ed-qtick { width: 6px; height: 18px; align-self: center; border: 1px dashed color-mix(in srgb, var(--foreground) 35%, transparent); }
+
+/* ── Meters: supply drawn, pace as the gap between fill and elapsed ──── */
+.ed-meter { position: relative; height: 6px; background: var(--ed-hair-strong); overflow: visible; }
+.ed-meter > .ed-fill { position: absolute; inset: 0 auto 0 0; background: var(--primary); }
+.ed-meter[data-tone='warning'] > .ed-fill { background: var(--status-warning); }
+.ed-meter[data-tone='error'] > .ed-fill { background: var(--status-error); }
+.ed-meter > .ed-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--foreground); opacity: 0.7; }
+
+/* ── Runway bays and queue ───────────────────────────────────────────── */
+.ed-runway-bays { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.ed-bigbay {
+  position: relative;
+  height: 100px;
+  border: 1px solid color-mix(in srgb, var(--lamp) 50%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--lamp) 14%, transparent), var(--ed-glass) 65%);
+}
+.ed-bigbay[data-lamp='free'] { border: 1px dashed var(--ed-hair-strong); background: transparent; }
+.ed-bigbay[data-over='true'] {
+  border: 1px dashed var(--status-warning);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--status-warning) 9%, transparent) 0 6px, transparent 6px 12px);
+}
+.ed-wait { height: 4px; background: var(--ed-hair); position: relative; }
+.ed-wait > span { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--foreground) 45%, transparent); }
+
+/* ── Intake rows: verdicts surface on hover or focus, never over text ── */
+.ed-verdicts { opacity: 0; transition: opacity 120ms ease; }
+.ed-intake-row:hover .ed-verdicts, .ed-intake-row:focus-within .ed-verdicts, .ed-intake-row:focus .ed-verdicts { opacity: 1; }
+.ed-intake-row:focus-visible { outline: none; box-shadow: inset 2px 0 0 var(--primary), inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
+
+.ed-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ed-hair-strong);
+  border-bottom-width: 2px;
+  background: var(--ed-well);
+}
+
+/* ── Motion: entrance once, flash once, nothing ambient ──────────────── */
+@keyframes ed-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ed-flash {
+  0% { box-shadow: inset 0 0 0 2px var(--primary), 0 0 22px color-mix(in srgb, var(--primary) 55%, transparent); }
+  100% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 transparent; }
+}
+.ed-rise { animation: ed-rise 320ms ease-out both; animation-delay: calc(var(--i, 0) * 28ms); }
+.ed-flash { animation: ed-flash 1400ms ease-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  .ed-rise, .ed-flash { animation: none; }
+}
+
+/* Ghost geometry while cold: calm bars, no shimmer. */
+.ed-ghost { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+
+/* ── Narrow windows: labels step back, numbers stay ──────────────────── */
+@container (max-width: 1250px) {
+  .ed-hide-md { display: none; }
+}
+@container (max-width: 980px) {
+  .ed-hide-sm { display: none; }
+}
+
+/* The console's lower edge is a light strip: primary at the centre, gone at the ends. */
+.ed-console::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 55%, transparent), transparent);
+  pointer-events: none;
+}
