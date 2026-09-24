@@ -93,6 +93,30 @@ pub(crate) fn real_llm() -> LlmFn {
     })
 }
 
+/// An empty working directory for every twin CLI call.
+///
+/// The CLI loads project context from its working directory: the repo's
+/// CLAUDE.md files, `.claude/rules`, project memory, and the project's own
+/// hooks. With no `exec_dir` the child inherits the app's cwd, which in
+/// development IS this repository — so every twin call paid to cache the
+/// whole repo law and fired the repo's session hooks. Measured 2026-09-24 on
+/// one identical one-word call at Opus 5.5 @ low: repo cwd 49,161 cache-write
+/// tokens and $0.396; empty cwd 10,771 tokens and $0.089 (4.4x). A twin
+/// interview needs none of that context — its prompt carries everything.
+///
+/// Best effort: if the directory cannot be created the call falls back to the
+/// inherited cwd rather than failing, because a costlier call beats no call.
+fn neutral_cwd() -> Option<std::path::PathBuf> {
+    let dir = std::env::temp_dir().join("personas-twin-cli");
+    match std::fs::create_dir_all(&dir) {
+        Ok(()) => Some(dir),
+        Err(e) => {
+            tracing::warn!(error = %e, "twin: could not create the neutral CLI cwd; using the inherited one");
+            None
+        }
+    }
+}
+
 /// Spawn the Claude CLI on `call`'s tier, wait at most `call.timeout`, record
 /// the spend row, and return the assistant's text.
 ///
@@ -104,12 +128,13 @@ pub(crate) async fn spawn_claude_logged(
     call: TwinCall,
     prompt: String,
 ) -> Result<String, AppError> {
+    let dir = neutral_cwd();
     let mut child = crate::engine::cli_process::spawn_headless_claude_tier(
         prompt,
         call.model,
         call.effort,
         &[],
-        None,
+        dir.as_deref(),
         false,
     )?;
 
