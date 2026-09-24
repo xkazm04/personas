@@ -793,7 +793,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "blocker": {},
     "identity": {},
     "landing": {},
-    "setup": {},
+    "setup": {
+      "curator_level": {},
+      "curator_level_gloss": {}
+    },
     "errors": {},
     "blueprint": {
       "channel": {},
@@ -801,7 +804,12 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "engine": {},
       "kind": {},
       "keys": {},
-      "reach": {}
+      "reach": {},
+      "console": {
+        "lane": {},
+        "request_state": {},
+        "lane_tag": {}
+      }
     },
     "process": {}
   }

@@ -522,8 +522,16 @@ pub const CURATOR_BACKPRESSURE_N_MAX: u32 = 100;
 
 /// How many workers Curator may hold at once.
 pub const CURATOR_WORKER_CAP: &str = "curator_worker_cap";
-/// Default for [`CURATOR_WORKER_CAP`] — one.
-pub const CURATOR_WORKER_CAP_DEFAULT: u32 = 1;
+/// Default for [`CURATOR_WORKER_CAP`] — TWO concurrent terminals.
+///
+/// One until 2026-09-24. **Two is not a cap of two processes**: a
+/// dispatcher skill spawns its own pool (`librarian` and `forge` cap at 10,
+/// `harvest` at 5, `hygiene` at 6), which is why `CuratorRuntime.fanned_out`
+/// is reported separately and is nullable.
+///
+/// Mirrored by `CuratorPolicy::default()` in the `core` crate, which cannot
+/// depend on this one; both carry an assertion for this value.
+pub const CURATOR_WORKER_CAP_DEFAULT: u32 = 2;
 /// Upper bound accepted by the validator. The registry's own librarian caps a
 /// dispatch fan-out at 10 concurrent workers, which is the number two existing
 /// skills converged on across measured runs; this app must not exceed it.
@@ -2202,7 +2210,7 @@ mod tests {
         assert!(validate_value(CURATOR_WORKER_CAP, "11").is_err());
 
         assert_eq!(CURATOR_BACKPRESSURE_N_DEFAULT, 8);
-        assert_eq!(CURATOR_WORKER_CAP_DEFAULT, 1);
+        assert_eq!(CURATOR_WORKER_CAP_DEFAULT, 2);
     }
 
     #[test]

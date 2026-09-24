@@ -11,7 +11,7 @@
  * rendered against the product's real stylesheet outside the shell and held to
  * the winner's measured style contract.
  */
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 
 import { AnchoredTooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -41,9 +41,20 @@ export interface BlueprintProps {
   model: BlueprintModel;
   docket: DocketFeed;
   words: BlueprintWords;
+  /**
+   * The operator's console, rendered as its own grid row between the verdict
+   * and the ledger - the order the work happens in: she drains the human lane
+   * BEFORE the plan below it.
+   *
+   * A node rather than data, because the console reaches IPC and this
+   * component reaches nothing. The slot element is always rendered so the
+   * grid's row placement does not depend on whether a host passed one; with
+   * no node it collapses to nothing.
+   */
+  console?: ReactNode;
 }
 
-export function Blueprint({ model, docket, words }: BlueprintProps) {
+export function Blueprint({ model, docket, words, console: operatorConsole }: BlueprintProps) {
   const state = useBlueprintState(model, docket);
   const rootRef = useRef<HTMLDivElement>(null);
   const ledgerRef = useRef<HTMLDivElement>(null);
@@ -123,6 +134,7 @@ export function Blueprint({ model, docket, words }: BlueprintProps) {
           onHelp={state.toggleHelp}
         />
         <Verdict model={model} />
+        <div className="cb-console-slot">{operatorConsole}</div>
         <main className="cb-stage" ref={deepRef}>
           <section className="cb-ledger" aria-label={words.w.ledger_region} aria-hidden={deep}>
             <div className="cb-lscroll" ref={ledgerRef}>

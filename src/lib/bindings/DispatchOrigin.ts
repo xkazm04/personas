@@ -4,4 +4,4 @@
  * Who asked for a session. Stored on the row as its snake_case token so the
  * queue can say "Autopilot's, cycle 7" a restart later.
  */
-export type DispatchOrigin = "manual" | "dev_runner" | "dispatch_ideas" | "athena" | "autopilot" | "night_shift" | "feed_impact" | "orphan_resume" | "remote";
+export type DispatchOrigin = "manual" | "dev_runner" | "dispatch_ideas" | "athena" | "autopilot" | "night_shift" | "feed_impact" | "orphan_resume" | "remote" | "curator";

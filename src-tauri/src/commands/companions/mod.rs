@@ -153,8 +153,9 @@ pub fn overseer_enabled(db: &DbPool) -> bool {
 }
 
 /// Whether Curator is switched on. Nothing in the backend acts on this yet —
-/// she has no loop (a later stage builds one); the status door and her Setup
-/// page are the only readers.
+/// she has no loop (a later stage builds one). The readers are the status door,
+/// her Setup page and `curator_runtime_get`, which reports it as the first of
+/// her brakes.
 pub fn curator_enabled(db: &DbPool) -> bool {
     settings_repo::get_bool(
         db,

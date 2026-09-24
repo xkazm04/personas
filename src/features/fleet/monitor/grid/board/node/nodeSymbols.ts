@@ -25,7 +25,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Lightbulb, MessageSquare, Moon,
+  AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Laptop, Library, Lightbulb, MessageSquare, Moon,
   Play, RotateCcw, Rss, Sparkles, Square,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
@@ -127,7 +127,16 @@ export const PERSONA_STATE_MARK: Record<SquareState, StateMark> = {
   failed: { kind: 'icon', icon: AlertTriangle },
 };
 
-/** Who asked for the session. `night_shift`'s moon is told from `hibernated`'s by hue: an origin never wears the state hue. */
+/**
+ * Who asked for the session. `night_shift`'s moon is told from `hibernated`'s by hue: an origin never wears the state hue.
+ *
+ * This is the FOURTH hand-kept mirror of `DispatchOrigin`, after the Rust enum's
+ * `token`/`parse` pair, `ORIGINS` in `useQueueModel` and the switch in `originLabel` —
+ * and the only one that fails loudly: an exhaustive `Record` is a tsc error when a
+ * variant is added without a glyph, where the other two silently answer `manual`.
+ * Keep it exhaustive; a lookup miss here renders `undefined` as a component and
+ * throws inside `NodeRows`, which is how the gap was found.
+ */
 export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   manual: Hand,
   dev_runner: Play,
@@ -139,6 +148,8 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   orphan_resume: RotateCcw,
   // A paired device dispatched this session here.
   remote: Laptop,
+  // Curator, draining the operator's request lane or acting on her plan.
+  curator: Library,
 };
 
 // The colour half — hues, swatch, the one treatment — lives in `nodeHues`;

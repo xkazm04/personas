@@ -43,6 +43,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+use personas_core::models::{CuratorSkill, CuratorSkillLane};
 use personas_core::types::CliArgs;
 use serde::Deserialize;
 
@@ -631,6 +632,345 @@ pub(super) fn script(registry_root: &Path, name: &str) -> Result<String, AppErro
     Ok(path.to_string_lossy().into_owned())
 }
 
+// ---------------------------------------------------------------------------
+// The skills lane
+//
+// **There is no manifest.** Measured 2026-09-24 against the registry checkout:
+// `catalog.json` enumerates the 36 SHARED skills and NONE of the eight native
+// ones (`assay`, `deepen`, `forge`, `harvest`, `hygiene`, `intake`,
+// `librarian`, `reconcile`), which exist only as prose `SKILL.md` directories
+// under `.claude/skills/`. A reader that trusted the catalogue would report a
+// registry whose own maintenance set does not exist, so this reads the lane.
+//
+// Everything below is a PARSE of prose somebody else writes, which is why every
+// field it fills is optional and why the one boolean it computes has three
+// states. The rule the whole feature is built around applies hardest here: a
+// skill whose invocation is undocumented is UNKNOWN, not "takes an argument".
+// ---------------------------------------------------------------------------
+
+/// The registry's own maintenance set. Linked entries are skipped - see
+/// [`read_skills_uncached`].
+const NATIVE_LANE: [&str; 2] = [".claude", "skills"];
+/// The lane the registry publishes to consuming repos.
+const SHARED_LANE: [&str; 1] = ["skills"];
+
+type SkillsSlot = Option<(String, Instant, Arc<Vec<CuratorSkill>>)>;
+/// One slot, overwritten on the next distinct registry, so it names its reaper.
+/// Keyed on the checkout path alone rather than on HEAD: the lane is a
+/// directory of files, a `git rev-parse` would cost a child process for a read
+/// that costs none, and [`CACHE_TTL`] already bounds a working copy edited
+/// without a commit - which is the usual way a skill changes.
+static SKILLS_CACHE: OnceLock<Mutex<SkillsSlot>> = OnceLock::new();
+
+/// Every skill in both lanes, native first, each lane by name.
+///
+/// Cheap enough to be uncached (44 small files) and cached anyway for the
+/// reason the instrument's other reads are: a panel re-reads on navigation, and
+/// a read that costs nothing still costs a syscall storm on a cold disk.
+pub(super) fn read_skills(registry_root: &Path) -> Result<Arc<Vec<CuratorSkill>>, AppError> {
+    let key = registry_root.to_string_lossy().into_owned();
+    {
+        let cache = SKILLS_CACHE.get_or_init(|| Mutex::new(None));
+        let guard = cache.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some((k, at, skills)) = guard.as_ref() {
+            if *k == key && at.elapsed() < CACHE_TTL {
+                return Ok(Arc::clone(skills));
+            }
+        }
+    }
+    let skills = Arc::new(read_skills_uncached(registry_root)?);
+    let cache = SKILLS_CACHE.get_or_init(|| Mutex::new(None));
+    let mut guard = cache.lock().unwrap_or_else(|p| p.into_inner());
+    *guard = Some((key, Instant::now(), Arc::clone(&skills)));
+    Ok(skills)
+}
+
+/// Walk both lanes. A lane that is not there yields nothing rather than an
+/// error: a registry with no native lane is a registry with no native skills,
+/// which is a real answer about a younger checkout.
+///
+/// **A linked entry in the native lane is skipped.** Measured 2026-09-24,
+/// `explorer` and `perfect` are shared skills linked INTO `.claude/skills/`, so
+/// reading them there would report each one twice and attribute a published
+/// skill to the registry's private maintenance set. The test is the resolved
+/// path rather than `is_symlink()` alone, because a Windows junction is a
+/// reparse point that not every std version reports the same way.
+fn read_skills_uncached(registry_root: &Path) -> Result<Vec<CuratorSkill>, AppError> {
+    let mut out = Vec::new();
+    for (lane, segments) in [
+        (CuratorSkillLane::Native, &NATIVE_LANE[..]),
+        (CuratorSkillLane::Shared, &SHARED_LANE[..]),
+    ] {
+        let mut dir = registry_root.to_path_buf();
+        for seg in segments {
+            dir.push(seg);
+        }
+        let real_dir = std::fs::canonicalize(&dir).ok();
+        let entries = match std::fs::read_dir(&dir) {
+            Ok(entries) => entries,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => {
+                tracing::warn!(error = %e, path = %dir.display(),
+                    "curator: a skills lane could not be listed - reporting it as empty");
+                continue;
+            }
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            if lane == CuratorSkillLane::Native && is_linked_in(&path, real_dir.as_deref()) {
+                continue;
+            }
+            let Some(file) = skill_file(&path) else {
+                continue;
+            };
+            let raw = match std::fs::read_to_string(&file) {
+                Ok(raw) => raw,
+                Err(e) => {
+                    tracing::warn!(error = %e, path = %file.display(),
+                        "curator: a SKILL.md could not be read - leaving it out of the lane");
+                    continue;
+                }
+            };
+            let dir_name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            out.push(parse_skill(
+                lane,
+                &dir_name,
+                &relative_to(registry_root, &file),
+                &raw,
+            ));
+        }
+    }
+    // Native before shared, then by name: the order the operator reads them in
+    // and the order the test asserts, rather than whatever the directory hands
+    // back on this filesystem.
+    out.sort_by(|a, b| (a.lane, &a.name).cmp(&(b.lane, &b.name)));
+    Ok(out)
+}
+
+/// Whether a native-lane entry actually lives somewhere else.
+fn is_linked_in(entry: &Path, real_lane: Option<&Path>) -> bool {
+    if std::fs::symlink_metadata(entry).is_ok_and(|m| m.file_type().is_symlink()) {
+        return true;
+    }
+    match (std::fs::canonicalize(entry).ok(), real_lane) {
+        (Some(resolved), Some(lane)) => !resolved.starts_with(lane),
+        _ => false,
+    }
+}
+
+/// `SKILL.md`, whatever the repository spelled it. Eleven of one managed repo's
+/// thirty-six skills are tracked lowercase, and a case-sensitive match would
+/// read a lane as empty on Linux while finding it on Windows.
+fn skill_file(dir: &Path) -> Option<PathBuf> {
+    for candidate in ["SKILL.md", "skill.md"] {
+        let path = dir.join(candidate);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    let entries = std::fs::read_dir(dir).ok()?;
+    entries.flatten().map(|e| e.path()).find(|p| {
+        p.is_file()
+            && p.file_name()
+                .is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case("skill.md"))
+    })
+}
+
+/// The path as the registry states it, with forward slashes so the string reads
+/// the same on both platforms.
+fn relative_to(root: &Path, file: &Path) -> String {
+    file.strip_prefix(root)
+        .unwrap_or(file)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+/// One `SKILL.md`, read for what it states and nothing more.
+fn parse_skill(lane: CuratorSkillLane, dir_name: &str, path: &str, raw: &str) -> CuratorSkill {
+    let front = frontmatter(raw);
+    let name = front
+        .iter()
+        .find(|(k, _)| k == "name")
+        .map(|(_, v)| v.clone())
+        .filter(|v| !v.is_empty())
+        // The directory is the name the operator types, so it is the fallback
+        // rather than an error: a skill with no `name:` is still dispatchable.
+        .unwrap_or_else(|| dir_name.to_string());
+    let field = |key: &str| {
+        front
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.clone())
+            .filter(|v| !v.is_empty())
+    };
+    let invocation = invocation_lines(raw, &name);
+    let (invocation_documented, runs_bare, line_hint) = match invocation {
+        Some(lines) if !lines.is_empty() => {
+            let bare = lines.iter().any(|l| l == &format!("/{name}"));
+            let hint = lines
+                .iter()
+                .find(|l| {
+                    let rest = l[format!("/{name}").len()..].trim();
+                    rest.contains('<') || rest.contains('[')
+                })
+                .cloned();
+            (true, Some(bare), hint)
+        }
+        // A heading with no usable block, or no heading at all. Both mean the
+        // file documents no invocation, and `runs_bare` stays NULL: measured
+        // 2026-09-24, `deepen` and `forge` are in exactly this state, and
+        // "unknown" must never be read as "no".
+        _ => (false, None, None),
+    };
+    CuratorSkill {
+        name,
+        lane,
+        path: path.to_string(),
+        title: heading(raw),
+        description: field("description"),
+        version: field("version"),
+        invocation_documented,
+        runs_bare,
+        // The frontmatter's own `argument-hint:` wins when the file declares
+        // one - it is the file stating the argument directly rather than this
+        // reader inferring it from a usage line.
+        argument_hint: field("argument-hint").or(line_hint),
+    }
+}
+
+/// The `---`-fenced YAML header, as flat `key: value` pairs.
+///
+/// Deliberately not a YAML parser: measured 2026-09-24 across all 44 files in
+/// both lanes, every header is flat single-line scalars, and a real parser
+/// would be a dependency and a failure mode for a shape that does not need
+/// one. A nested or folded value is skipped rather than guessed at.
+fn frontmatter(raw: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut lines = raw.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return out;
+    }
+    for line in lines {
+        if line.trim() == "---" {
+            break;
+        }
+        // A continuation or a nested key belongs to the value above it, which
+        // this reader does not carry.
+        if line.starts_with(' ') || line.starts_with('\t') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        out.push((key.trim().to_string(), unquote(value.trim())));
+    }
+    out
+}
+
+/// Strip one matching pair of surrounding quotes, and nothing else.
+fn unquote(value: &str) -> String {
+    let bytes = value.as_bytes();
+    if bytes.len() >= 2 {
+        let first = bytes[0];
+        if (first == b'"' || first == b'\'') && bytes[bytes.len() - 1] == first {
+            let inner = &value[1..value.len() - 1];
+            return if first == b'"' {
+                inner.replace("\\\"", "\"")
+            } else {
+                inner.to_string()
+            };
+        }
+    }
+    value.to_string()
+}
+
+/// The file's first `# ` heading, which is the title every skill in both lanes
+/// opens with.
+fn heading(raw: &str) -> Option<String> {
+    raw.lines()
+        .find(|l| l.starts_with("# "))
+        .map(|l| l[2..].trim().to_string())
+        .filter(|t| !t.is_empty())
+}
+
+/// The invocation lines a file documents, or `None` when it documents none.
+///
+/// `None` and `Some(empty)` are both "undocumented" to the caller, and they are
+/// kept apart here only so the shape of the failure is readable: no heading at
+/// all versus a heading whose block names no invocation.
+fn invocation_lines(raw: &str, name: &str) -> Option<Vec<String>> {
+    let lines: Vec<&str> = raw.lines().collect();
+    let start = lines.iter().position(|l| is_invocation_heading(l))?;
+    let mut collected = Vec::new();
+    let mut in_fence = false;
+    let prefix = format!("/{name}");
+    for line in lines.iter().skip(start + 1) {
+        let trimmed = line.trim_start();
+        let fence = trimmed.starts_with("```") || trimmed.starts_with("~~~");
+        if !in_fence {
+            if fence {
+                in_fence = true;
+                continue;
+            }
+            // Another heading before any block: the section documents prose,
+            // not an invocation.
+            if trimmed.starts_with('#') {
+                return Some(Vec::new());
+            }
+            continue;
+        }
+        if fence {
+            break;
+        }
+        let Some(stated) = invocation_line(trimmed, &prefix) else {
+            continue;
+        };
+        collected.push(stated);
+    }
+    Some(collected)
+}
+
+fn is_invocation_heading(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    let hashes = trimmed.chars().take_while(|c| *c == '#').count();
+    if hashes == 0 || hashes > 6 {
+        return false;
+    }
+    trimmed[hashes..]
+        .trim_start()
+        .to_ascii_lowercase()
+        .starts_with("invocation")
+}
+
+/// One line of an invocation block, as the file states it, with the trailing
+/// `#` annotation dropped.
+///
+/// The annotation is the file's commentary ON the line rather than part of it,
+/// and carrying it would put a sentence of prose in a field a surface renders
+/// beside an input box.
+fn invocation_line(trimmed: &str, prefix: &str) -> Option<String> {
+    let rest = trimmed.strip_prefix(prefix)?;
+    // `/harvest` must not match a line for `/harvest-backlog`.
+    if !rest.is_empty() && !rest.starts_with(char::is_whitespace) {
+        return None;
+    }
+    let without_comment = match rest.find(" #") {
+        Some(at) => &rest[..at],
+        None => rest,
+    };
+    Some(
+        format!("{prefix}{}", without_comment.trim_end())
+            .trim_end()
+            .to_string(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -837,5 +1177,246 @@ mod tests {
             MAP_TIMEOUT >= Duration::from_secs(90),
             "10x the measured 8.7s"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // The skills lane
+    //
+    // The fixtures below are the measured shapes, not invented ones: each is
+    // the frontmatter and the `## Invocation` block of the real file as it
+    // stood on 2026-09-24, trimmed to the lines the reader looks at. `deepen`
+    // and `forge` carry no Invocation section because they carry none.
+    // -----------------------------------------------------------------------
+
+    fn write_skill(root: &Path, lane: &str, name: &str, body: &str) {
+        let dir = root.join(lane).join(name);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("SKILL.md"), body).unwrap();
+    }
+
+    /// The eight native skills as they really read, plus one shared skill.
+    fn measured_registry() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let native = ".claude/skills";
+
+        write_skill(root, native, "hygiene", concat!(
+            "---\nname: hygiene\ndescription: \"Start-of-day fleet sweep before any development\"\n",
+            "category: ai-native\nversion: 1.0.5\n---\n\n# Hygiene\n\n## Invocation\n\n```\n",
+            "/hygiene                  # full run: scan -> mechanical -> dispatch -> verify -> report\n",
+            "/hygiene scan             # plan only, touches nothing\n",
+            "/hygiene kp,ascent        # full run limited to these project slugs\n",
+            "```\n\n## Modes\n\nprose\n",
+        ));
+        write_skill(root, native, "librarian", concat!(
+            "---\nname: librarian\ndescription: \"Maintain the registry as a whole\"\nversion: 1.6.2\n---\n\n",
+            "# Librarian\n\n## Invocation\n\n```\n",
+            "/librarian              # sweep + report, writes no content\n",
+            "/librarian run [domain] # the full loop, dispatches workers\n",
+            "```\n",
+        ));
+        write_skill(root, native, "harvest", concat!(
+            "---\nname: harvest\ndescription: \"Drain the graded source queue\"\nversion: 0.5.2\n---\n\n",
+            "# Harvest\n\n## Invocation\n\n```\n",
+            "/harvest                     # plan only: map queue vs live gaps\n",
+            "/harvest run [domain]        # one attended pass\n",
+            "```\n",
+        ));
+        write_skill(
+            root,
+            native,
+            "assay",
+            concat!(
+            "---\nname: assay\ndescription: \"Mine an external source\"\nversion: 2.2.1\n---\n\n",
+            "# Assay\n\n## Invocation\n\n```\n",
+            "/assay <url|path|->              # the full loop\n",
+            "/assay status                    # read the source ledger\n",
+            "```\n",
+        ),
+        );
+        write_skill(root, native, "intake", concat!(
+            "---\nname: intake\ndescription: \"Mine an external source for what it should change\"\nversion: 2.14.1\n---\n\n",
+            "# Intake\n\n## Invocation\n\n```\n",
+            "/intake <url|path|->          # the full loop: ingest, map, triage, land\n",
+            "/intake board                 # read the run board\n",
+            "```\n",
+        ));
+        write_skill(root, native, "reconcile", concat!(
+            "---\nname: reconcile\ndescription: \"Run the external-reconcile lane as its director\"\nversion: 1.0.1\n---\n\n",
+            "# Reconcile - direct the external-evidence lane\n\n## Invocation\n\n```\n",
+            "/reconcile <bundle>              # profile the bundle, propose a wave\n",
+            "/reconcile status                # read the vault\n",
+            "```\n",
+        ));
+        // The two that document NOTHING. Both have a body; neither has an
+        // Invocation section anywhere in it.
+        write_skill(root, native, "deepen", concat!(
+            "---\nname: deepen\ndescription: \"Review and widen an existing knowledge-bundle topic\"\nversion: 1.3.1\n---\n\n",
+            "# Deepen\n\n## What it is\n\nprose about lanes and saturation\n",
+        ));
+        write_skill(root, native, "forge", concat!(
+            "---\nname: forge\ndescription: \"Extract a repository's domain knowledge\"\nversion: 1.4.0\n---\n\n",
+            "# Forge - domain knowledge extraction\n\n## Failure modes observed (do not rediscover)\n\nprose\n",
+        ));
+        // The shared lane, including the one shape that states its argument in
+        // the frontmatter rather than in a usage line.
+        write_skill(
+            root,
+            "skills",
+            "leonardo",
+            concat!(
+                "---\nname: leonardo\ndescription: \"Generate images\"\nversion: 1.0.0\n",
+                "argument-hint: <description of visual asset to create>\n---\n\n# Leonardo\n",
+            ),
+        );
+        dir
+    }
+
+    fn by_name(skills: &[CuratorSkill], name: &str) -> CuratorSkill {
+        skills
+            .iter()
+            .find(|s| s.name == name)
+            .unwrap_or_else(|| panic!("no skill named {name} in {skills:?}"))
+            .clone()
+    }
+
+    /// **`runs_bare` is NULL for an undocumented invocation and `Some(true)`
+    /// for the three that document a bare one.** This is the rule the whole
+    /// feature is built around: unknown and no are different facts, and a
+    /// dispatcher that read `deepen` as "false" would refuse to run it for a
+    /// reason nobody wrote down.
+    #[test]
+    fn runs_bare_is_unknown_when_the_file_documents_no_invocation() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+
+        for bare in ["hygiene", "librarian", "harvest"] {
+            let s = by_name(&skills, bare);
+            assert!(s.invocation_documented, "{bare} documents an invocation");
+            assert_eq!(s.runs_bare, Some(true), "{bare} runs bare");
+        }
+        for needs_argument in ["assay", "intake", "reconcile"] {
+            let s = by_name(&skills, needs_argument);
+            assert!(s.invocation_documented);
+            assert_eq!(
+                s.runs_bare,
+                Some(false),
+                "{needs_argument} documents an invocation and none of its lines is bare"
+            );
+        }
+        for undocumented in ["deepen", "forge"] {
+            let s = by_name(&skills, undocumented);
+            assert!(
+                !s.invocation_documented,
+                "{undocumented} documents no invocation"
+            );
+            assert_eq!(
+                s.runs_bare, None,
+                "{undocumented} is UNKNOWN, not false - a caller inventing an \
+                 invocation for it is guessing"
+            );
+        }
+    }
+
+    /// The argument hint is the line the file states, with the file's own
+    /// commentary on that line dropped - and the frontmatter's declaration
+    /// wins over an inferred usage line.
+    #[test]
+    fn the_argument_hint_is_what_the_file_states() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+        assert_eq!(
+            by_name(&skills, "assay").argument_hint.as_deref(),
+            Some("/assay <url|path|->")
+        );
+        assert_eq!(
+            by_name(&skills, "reconcile").argument_hint.as_deref(),
+            Some("/reconcile <bundle>")
+        );
+        // A bare-runnable skill still names its optional argument.
+        assert_eq!(
+            by_name(&skills, "harvest").argument_hint.as_deref(),
+            Some("/harvest run [domain]")
+        );
+        // `/hygiene scan` and `/hygiene kp,ascent` name no placeholder, so
+        // there is nothing to hint at.
+        assert_eq!(by_name(&skills, "hygiene").argument_hint, None);
+        // The frontmatter's own declaration, used as written.
+        assert_eq!(
+            by_name(&skills, "leonardo").argument_hint.as_deref(),
+            Some("<description of visual asset to create>")
+        );
+    }
+
+    /// Both lanes are read, native first, and every field the header states
+    /// reaches the row.
+    #[test]
+    fn both_lanes_are_read_and_the_header_reaches_the_row() {
+        let dir = measured_registry();
+        let skills = read_skills_uncached(dir.path()).unwrap();
+        assert_eq!(skills.len(), 9);
+        assert_eq!(skills[0].lane, CuratorSkillLane::Native);
+        assert_eq!(skills.last().unwrap().lane, CuratorSkillLane::Shared);
+        assert_eq!(skills.last().unwrap().name, "leonardo");
+
+        let forge = by_name(&skills, "forge");
+        assert_eq!(forge.version.as_deref(), Some("1.4.0"));
+        assert_eq!(
+            forge.description.as_deref(),
+            Some("Extract a repository's domain knowledge")
+        );
+        assert_eq!(
+            forge.title.as_deref(),
+            Some("Forge - domain knowledge extraction")
+        );
+        assert_eq!(forge.path, ".claude/skills/forge/SKILL.md");
+        assert_eq!(
+            by_name(&skills, "leonardo").path,
+            "skills/leonardo/SKILL.md"
+        );
+    }
+
+    /// A registry with no native lane is a registry with no native skills -
+    /// a real answer about a younger checkout, not an error.
+    #[test]
+    fn a_missing_lane_is_empty_rather_than_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(read_skills_uncached(dir.path()).unwrap().is_empty());
+    }
+
+    /// A native entry that resolves outside the native lane is a shared skill
+    /// linked in - measured 2026-09-24, `explorer` and `perfect` are exactly
+    /// that - and reading it there would report it twice and attribute a
+    /// published skill to the registry's private maintenance set.
+    #[test]
+    fn a_native_entry_resolving_outside_the_lane_is_linked_in() {
+        let dir = tempfile::tempdir().unwrap();
+        let lane = dir.path().join(".claude").join("skills");
+        let shared = dir.path().join("skills");
+        std::fs::create_dir_all(lane.join("assay")).unwrap();
+        std::fs::create_dir_all(shared.join("explorer")).unwrap();
+        let real_lane = std::fs::canonicalize(&lane).unwrap();
+        assert!(!is_linked_in(&lane.join("assay"), Some(&real_lane)));
+        assert!(is_linked_in(&shared.join("explorer"), Some(&real_lane)));
+    }
+
+    /// A `#` inside a fenced block is not a heading, and a name that is a
+    /// prefix of another is not a match for it.
+    #[test]
+    fn the_invocation_reader_does_not_confuse_a_comment_or_a_prefix() {
+        let raw = concat!(
+            "---\nname: harvest\n---\n\n# Harvest\n\n## Invocation\n\n```\n",
+            "# a shell comment that is not a heading\n",
+            "/harvest-backlog run\n",
+            "/harvest run [domain]\n",
+            "```\n",
+        );
+        let lines = invocation_lines(raw, "harvest").unwrap();
+        assert_eq!(lines, vec!["/harvest run [domain]".to_string()]);
+
+        // A section that is prose rather than a block documents nothing.
+        let prose = "# X\n\n## Invocation\n\nRun it however you like.\n\n## Next\n";
+        assert_eq!(invocation_lines(prose, "x"), Some(Vec::new()));
+        assert_eq!(invocation_lines("# X\n\nno section\n", "x"), None);
     }
 }

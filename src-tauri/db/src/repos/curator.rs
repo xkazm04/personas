@@ -30,7 +30,8 @@ use rusqlite::{params, OptionalExtension, Row};
 use crate::models::{
     CuratorConsentState, CuratorConsumers, CuratorCorpus, CuratorDemand, CuratorEngine,
     CuratorPlan, CuratorPlanItem, CuratorPlanItemState, CuratorPolicy, CuratorProject,
-    CuratorQuietBundle, CuratorReason, CuratorReasonCode, CURATOR_SATURATION_THRESHOLD,
+    CuratorQuietBundle, CuratorReason, CuratorReasonCode, CuratorRequest, CuratorRequestState,
+    CURATOR_SATURATION_THRESHOLD,
 };
 use crate::DbPool;
 use personas_core::error::AppError;
@@ -518,6 +519,271 @@ pub fn suppressed(streaks: &HashMap<String, u32>, subject_id: &str) -> bool {
     streaks
         .get(subject_id)
         .is_some_and(|n| *n >= CURATOR_SATURATION_THRESHOLD)
+}
+
+// ---------------------------------------------------------------------------
+// The operator's lane
+//
+// `curator_request` is the other direction from `curator_decision`: a person
+// writes here and Curator carries it out. Nothing in THIS package drains it -
+// [`claim_next_queued`] and [`settle_request`] exist so the loop package cannot
+// invent a second claiming rule, and both are tested here rather than trusted
+// to a caller that does not exist yet.
+// ---------------------------------------------------------------------------
+
+/// The one read order the lane has: oldest `queued` first. Spelled once, used
+/// by the list, by the claim and by the test that proves they agree.
+const REQUEST_COLUMNS: &str = "id, skill, argument, note, state, created_at, started_at, \
+                               settled_at, session_id, outcome, result_ref, failure_reason";
+
+/// Hand-written for the reason this module's other three mappers give: `state`
+/// is a closed set the model carries as an enum, which `row_mapper!` has no
+/// arm for.
+fn row_to_request(row: &Row) -> rusqlite::Result<CuratorRequest> {
+    let state_raw: String = row.get("state")?;
+    Ok(CuratorRequest {
+        id: row.get("id")?,
+        skill: row.get("skill")?,
+        argument: row.get("argument")?,
+        note: row.get("note")?,
+        // A value outside the CHECK cannot be written through this app. If a
+        // hand-edited row carries one, `Failed` is the reading that claims
+        // least: it is settled, so nothing will dispatch it, and it is visible
+        // rather than silently drained.
+        state: CuratorRequestState::parse(&state_raw).unwrap_or(CuratorRequestState::Failed),
+        created_at: row.get("created_at")?,
+        started_at: row.get("started_at")?,
+        settled_at: row.get("settled_at")?,
+        session_id: row.get("session_id")?,
+        outcome: row.get("outcome")?,
+        result_ref: row.get("result_ref")?,
+        failure_reason: row.get("failure_reason")?,
+    })
+}
+
+/// The lane, oldest first.
+///
+/// Open rows (`queued`, `dispatched`) come before settled ones, and within each
+/// half the order is the order they were written. That is the operator's
+/// promise made visible: the request they wrote first runs first, and the two
+/// they are waiting on do not sink under a week of landed ones.
+pub fn list_requests(pool: &DbPool, limit: u32) -> Result<Vec<CuratorRequest>, AppError> {
+    timed_query!("curator_request", "curator::list_requests", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {REQUEST_COLUMNS} FROM curator_request
+              ORDER BY CASE WHEN state IN ('queued','dispatched') THEN 0 ELSE 1 END,
+                       created_at ASC, id ASC
+              LIMIT ?1"
+        ))?;
+        let rows = stmt.query_map(params![limit], row_to_request)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Put one request in the lane. It always arrives `queued`; there is no door
+/// here for writing a row that is already in flight.
+///
+/// `skill` is stored as the caller gave it. This repo does not know which
+/// skills exist - that is read off the registry's disk by the instrument, and a
+/// repo that also held a list would be a second answer that goes stale the next
+/// time the registry adds one.
+pub fn create_request(
+    pool: &DbPool,
+    id: &str,
+    skill: &str,
+    argument: Option<&str>,
+    note: Option<&str>,
+    now: &str,
+) -> Result<CuratorRequest, AppError> {
+    timed_query!("curator_request", "curator::create_request", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO curator_request (id, skill, argument, note, state, created_at)
+             VALUES (?1, ?2, ?3, ?4, 'queued', ?5)",
+            params![id, skill, argument, note, now],
+        )?;
+        get_request(pool, id)?.ok_or_else(|| {
+            AppError::NotFound(format!("curator request '{id}' vanished after insert"))
+        })
+    })
+}
+
+/// One request. `Ok(None)` is "no such row", never an error.
+pub fn get_request(pool: &DbPool, id: &str) -> Result<Option<CuratorRequest>, AppError> {
+    timed_query!("curator_request", "curator::get_request", {
+        let conn = pool.get()?;
+        conn.query_row(
+            &format!("SELECT {REQUEST_COLUMNS} FROM curator_request WHERE id = ?1"),
+            params![id],
+            row_to_request,
+        )
+        .optional()
+        .map_err(AppError::Database)
+    })
+}
+
+/// The operator withdrawing a request.
+///
+/// Only a `queued` row can be cancelled, and the WHERE clause is what enforces
+/// it rather than a read-then-write: a row that is already dispatched has a
+/// terminal attached to it, and cancelling the row would leave the terminal
+/// running against a request that says it was never started. A caller that
+/// wants to stop a dispatched one stops the session, and the settle writes the
+/// outcome.
+pub fn cancel_request(pool: &DbPool, id: &str, now: &str) -> Result<CuratorRequest, AppError> {
+    timed_query!("curator_request", "curator::cancel_request", {
+        let conn = pool.get()?;
+        let changed = conn.execute(
+            "UPDATE curator_request
+                SET state = 'cancelled', settled_at = ?2
+              WHERE id = ?1 AND state = 'queued'",
+            params![id, now],
+        )?;
+        if changed == 0 {
+            // The two failures are told apart so the refusal names the real
+            // one: there is no such row, or there is one and it has moved on.
+            return match get_request(pool, id)? {
+                Some(row) => Err(AppError::Validation(format!(
+                    "curator request '{id}' is {} and can no longer be cancelled - only a \
+                     queued request can be withdrawn",
+                    row.state.as_str()
+                ))),
+                None => Err(AppError::NotFound(format!("no curator request '{id}'"))),
+            };
+        }
+        get_request(pool, id)?
+            .ok_or_else(|| AppError::NotFound(format!("no curator request '{id}'")))
+    })
+}
+
+/// Take the oldest queued request and mark it dispatched, atomically.
+///
+/// **Written for the loop package; called by nothing in this one.** It is here
+/// rather than there because the claim is the one operation in this lane that
+/// cannot be composed out of the others: a `list` followed by an `update` is
+/// two statements, and two loop ticks - or a tick and a retry - would hand the
+/// same request to two terminals.
+///
+/// `Immediate` because a read informs the write. A deferred transaction fails
+/// `SQLITE_BUSY_SNAPSHOT` in 0 ms and ignores `busy_timeout`, which is exactly
+/// the shape a second claimer produces.
+///
+/// `Ok(None)` means the lane is empty of queued work, which is the normal
+/// answer and never an error.
+pub fn claim_next_queued(
+    pool: &DbPool,
+    session_id: Option<&str>,
+    now: &str,
+) -> Result<Option<CuratorRequest>, AppError> {
+    timed_query!("curator_request", "curator::claim_next_queued", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let next: Option<String> = tx
+            .query_row(
+                "SELECT id FROM curator_request
+                  WHERE state = 'queued'
+                  ORDER BY created_at ASC, id ASC
+                  LIMIT 1",
+                [],
+                |r| r.get("id"),
+            )
+            .optional()?;
+        let Some(id) = next else {
+            tx.commit()?;
+            return Ok(None);
+        };
+        // The `AND state = 'queued'` is a compare-and-set and the affected-row
+        // count is the only evidence it held. Inside an `Immediate`
+        // transaction a second claimer cannot have moved the row - so a zero
+        // here is not a lost race, it is this function disagreeing with the
+        // SELECT three lines above it, and dropping the count would make that
+        // look exactly like a successful claim.
+        let claimed_rows = tx.execute(
+            "UPDATE curator_request
+                SET state = 'dispatched', started_at = ?2, session_id = ?3
+              WHERE id = ?1 AND state = 'queued'",
+            params![id, now, session_id],
+        )?;
+        if claimed_rows != 1 {
+            return Err(AppError::Internal(format!(
+                "curator request '{id}' read as queued and then claimed {claimed_rows} rows - the lane's own transaction is not isolating"
+            )));
+        }
+        let claimed = tx.query_row(
+            &format!("SELECT {REQUEST_COLUMNS} FROM curator_request WHERE id = ?1"),
+            params![id],
+            row_to_request,
+        )?;
+        tx.commit()?;
+        Ok(Some(claimed))
+    })
+}
+
+/// Settle a request with what the worker produced.
+///
+/// **Written for the loop package; called by nothing in this one.** A settle is
+/// refused for a state that is already settled - a landed request must not be
+/// re-landed by a late worker, and a cancelled one must not be resurrected by
+/// the terminal the operator stopped.
+pub fn settle_request(
+    pool: &DbPool,
+    id: &str,
+    state: CuratorRequestState,
+    outcome: Option<&str>,
+    result_ref: Option<&str>,
+    failure_reason: Option<&str>,
+    now: &str,
+) -> Result<CuratorRequest, AppError> {
+    timed_query!("curator_request", "curator::settle_request", {
+        if !state.is_settled() {
+            return Err(AppError::Validation(format!(
+                "curator request '{id}': '{}' is not a settled state - a settle writes landed, \
+                 declined, failed or cancelled",
+                state.as_str()
+            )));
+        }
+        let conn = pool.get()?;
+        let changed = conn.execute(
+            "UPDATE curator_request
+                SET state = ?2, settled_at = ?3, outcome = ?4, result_ref = ?5,
+                    failure_reason = ?6
+              WHERE id = ?1 AND state IN ('queued','dispatched')",
+            params![id, state.as_str(), now, outcome, result_ref, failure_reason],
+        )?;
+        if changed == 0 {
+            return match get_request(pool, id)? {
+                Some(row) => Err(AppError::Validation(format!(
+                    "curator request '{id}' is already {} - a settled request is never settled \
+                     twice",
+                    row.state.as_str()
+                ))),
+                None => Err(AppError::NotFound(format!("no curator request '{id}'"))),
+            };
+        }
+        get_request(pool, id)?
+            .ok_or_else(|| AppError::NotFound(format!("no curator request '{id}'")))
+    })
+}
+
+/// How many commits she landed today.
+///
+/// `curator_commit` has no writer in this tree yet, so this reads `0` - and
+/// that zero is a MEASUREMENT, not a placeholder: the table exists, the query
+/// runs, and the day the first writer lands a row the brake moves without
+/// anything here changing. The commit cap it is read against is the operator's
+/// hardest brake, which is why it is wired before the writer rather than after.
+pub fn commits_today(pool: &DbPool) -> Result<u32, AppError> {
+    timed_query!("curator_commit", "curator::commits_today", {
+        let conn = pool.get()?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(id) AS n FROM curator_commit WHERE date(created_at) = date('now')",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.max(0) as u32)
+    })
 }
 
 #[cfg(test)]
@@ -1188,5 +1454,269 @@ mod tests {
         assert_eq!(streaks.get("b/busy"), Some(&1));
         assert!(suppressed(&streaks, "a/dry"));
         assert!(!suppressed(&streaks, "b/busy"));
+    }
+
+    // -----------------------------------------------------------------------
+    // The operator's lane
+    // -----------------------------------------------------------------------
+
+    /// Three requests written in a known order, returned in that order.
+    fn seed_lane(pool: &DbPool) {
+        create_request(
+            pool,
+            "r1",
+            "hygiene",
+            None,
+            Some("first"),
+            "2026-09-24T09:00:00Z",
+        )
+        .unwrap();
+        create_request(
+            pool,
+            "r2",
+            "intake",
+            Some("https://example.test/a"),
+            None,
+            "2026-09-24T10:00:00Z",
+        )
+        .unwrap();
+        create_request(pool, "r3", "librarian", None, None, "2026-09-24T11:00:00Z").unwrap();
+    }
+
+    /// A request arrives queued, with the operator's own words intact and
+    /// nothing invented for the argument they did not give.
+    #[test]
+    fn a_new_request_is_queued_and_keeps_what_the_operator_wrote() {
+        let pool = init_test_db().unwrap();
+        let row = create_request(
+            &pool,
+            "r1",
+            "intake",
+            Some("https://example.test/a"),
+            Some("this one first"),
+            "2026-09-24T09:00:00Z",
+        )
+        .unwrap();
+        assert_eq!(row.state, CuratorRequestState::Queued);
+        assert_eq!(row.skill, "intake");
+        assert_eq!(row.argument.as_deref(), Some("https://example.test/a"));
+        assert_eq!(row.note.as_deref(), Some("this one first"));
+        assert_eq!(row.session_id, None);
+        assert_eq!(row.started_at, None);
+        assert_eq!(row.settled_at, None);
+
+        // A bare-runnable skill takes no argument, and NULL is the answer -
+        // never an empty string that a brief would then carry as a token.
+        let bare =
+            create_request(&pool, "r2", "hygiene", None, None, "2026-09-24T09:01:00Z").unwrap();
+        assert_eq!(bare.argument, None);
+        assert_eq!(bare.note, None);
+    }
+
+    /// **The lane drains oldest-first.** That ordering is the operator's
+    /// promise, not an implementation detail: the request they wrote first runs
+    /// first, whatever order the ids sort in.
+    #[test]
+    fn the_lane_drains_oldest_first() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        let first = claim_next_queued(&pool, Some("sess-1"), "2026-09-24T12:00:00Z")
+            .unwrap()
+            .unwrap();
+        assert_eq!(first.id, "r1");
+        assert_eq!(first.state, CuratorRequestState::Dispatched);
+        assert_eq!(first.session_id.as_deref(), Some("sess-1"));
+        assert_eq!(first.started_at.as_deref(), Some("2026-09-24T12:00:00Z"));
+
+        let second = claim_next_queued(&pool, None, "2026-09-24T12:05:00Z")
+            .unwrap()
+            .unwrap();
+        assert_eq!(second.id, "r2");
+
+        let third = claim_next_queued(&pool, None, "2026-09-24T12:10:00Z")
+            .unwrap()
+            .unwrap();
+        assert_eq!(third.id, "r3");
+
+        // An empty lane is `Ok(None)`, which is the normal answer.
+        assert!(claim_next_queued(&pool, None, "2026-09-24T12:15:00Z")
+            .unwrap()
+            .is_none());
+    }
+
+    /// A claim never hands the same row out twice: the second call skips the
+    /// one it already dispatched rather than re-reading it as queued.
+    #[test]
+    fn a_claimed_request_is_never_claimed_again() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        let a = claim_next_queued(&pool, Some("s1"), "2026-09-24T12:00:00Z")
+            .unwrap()
+            .unwrap();
+        let b = claim_next_queued(&pool, Some("s2"), "2026-09-24T12:00:01Z")
+            .unwrap()
+            .unwrap();
+        assert_ne!(a.id, b.id);
+    }
+
+    /// **A cancelled request is not claimable.** The operator withdrew it; a
+    /// loop that picked it up anyway would run work somebody had said no to.
+    #[test]
+    fn a_cancelled_request_is_not_claimable() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        let cancelled = cancel_request(&pool, "r1", "2026-09-24T11:30:00Z").unwrap();
+        assert_eq!(cancelled.state, CuratorRequestState::Cancelled);
+        assert_eq!(
+            cancelled.settled_at.as_deref(),
+            Some("2026-09-24T11:30:00Z")
+        );
+
+        let claimed = claim_next_queued(&pool, None, "2026-09-24T12:00:00Z")
+            .unwrap()
+            .unwrap();
+        assert_eq!(claimed.id, "r2", "the withdrawn head is skipped, not taken");
+    }
+
+    /// Only a queued request can be withdrawn, and the two ways a cancel fails
+    /// are told apart: no such row, or a row that has moved on.
+    #[test]
+    fn a_dispatched_request_can_no_longer_be_cancelled() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        claim_next_queued(&pool, Some("s1"), "2026-09-24T12:00:00Z").unwrap();
+
+        let err = cancel_request(&pool, "r1", "2026-09-24T12:01:00Z").unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        let missing = cancel_request(&pool, "nope", "2026-09-24T12:01:00Z").unwrap_err();
+        assert!(matches!(missing, AppError::NotFound(_)), "{missing:?}");
+
+        // The row is untouched by the refusal.
+        let row = get_request(&pool, "r1").unwrap().unwrap();
+        assert_eq!(row.state, CuratorRequestState::Dispatched);
+    }
+
+    /// A settle writes the outcome and the evidence, and a settled row is never
+    /// settled twice - a late worker must not re-land what the operator already
+    /// cancelled.
+    #[test]
+    fn a_settled_request_is_never_settled_twice() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        claim_next_queued(&pool, Some("s1"), "2026-09-24T12:00:00Z").unwrap();
+        let landed = settle_request(
+            &pool,
+            "r1",
+            CuratorRequestState::Landed,
+            Some("ok"),
+            Some("C:/runs/r1/result.json"),
+            None,
+            "2026-09-24T12:30:00Z",
+        )
+        .unwrap();
+        assert_eq!(landed.state, CuratorRequestState::Landed);
+        assert_eq!(landed.outcome.as_deref(), Some("ok"));
+        assert_eq!(landed.result_ref.as_deref(), Some("C:/runs/r1/result.json"));
+        assert_eq!(landed.settled_at.as_deref(), Some("2026-09-24T12:30:00Z"));
+
+        let again = settle_request(
+            &pool,
+            "r1",
+            CuratorRequestState::Failed,
+            None,
+            None,
+            Some("late worker"),
+            "2026-09-24T13:00:00Z",
+        )
+        .unwrap_err();
+        assert!(matches!(again, AppError::Validation(_)), "{again:?}");
+    }
+
+    /// A settle may only write a settled state. `dispatched` is what a claim
+    /// writes, and letting a settle write it would make "in flight" reachable
+    /// from a door that means "finished".
+    #[test]
+    fn a_settle_refuses_an_unsettled_state() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        for state in [CuratorRequestState::Queued, CuratorRequestState::Dispatched] {
+            let err = settle_request(&pool, "r1", state, None, None, None, "2026-09-24T12:00:00Z")
+                .unwrap_err();
+            assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        }
+    }
+
+    /// The daily commit brake reads `0` on a fresh database - a measurement,
+    /// because the table is there and the query runs - and counts a row landed
+    /// today.
+    ///
+    /// The row is stamped with the app's own `chrono::Utc::now().to_rfc3339()`
+    /// rather than a hand-written literal, which is the whole point: the
+    /// `date(created_at) = date('now')` shape has to work against the timestamp
+    /// format this app actually writes, fractional seconds and offset included.
+    /// Seeds two commit rows. An inner `Result` fn so the pooled checkout
+    /// propagates rather than panicking - the shape `land_run_inner` above
+    /// already uses, and the one `pool-get-unwrapped` exists to keep.
+    fn land_commits_inner(pool: &DbPool, at: &[(&str, &str)]) -> Result<(), AppError> {
+        let conn = pool.get()?;
+        for (id, created_at) in at {
+            conn.execute(
+                "INSERT INTO curator_commit
+                    (id, project_slug, repo_path, branch, sha, files_json,
+                     level_that_authorised, created_at)
+                 VALUES (?1, 'personas', 'C:/checkouts/personas', 'master', 'abc1234',
+                         '[]', 'L1', ?2)",
+                params![id, created_at],
+            )?;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn the_commit_brake_counts_todays_rows_and_ignores_older_ones() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(commits_today(&pool).unwrap(), 0);
+
+        let now = chrono::Utc::now().to_rfc3339();
+        land_commits_inner(&pool, &[("c1", &now), ("c2", "2026-01-01T00:00:00Z")])
+            .expect("seed two commit rows");
+
+        assert_eq!(
+            commits_today(&pool).unwrap(),
+            1,
+            "only today's row counts against today's cap"
+        );
+    }
+
+    /// The list puts the open half first and orders each half oldest-first, so
+    /// the two rows the operator is waiting on never sink under a week of
+    /// landed ones.
+    #[test]
+    fn the_list_puts_open_rows_first_and_each_half_oldest_first() {
+        let pool = init_test_db().unwrap();
+        seed_lane(&pool);
+        // r1 lands, r2 is claimed, r3 stays queued.
+        claim_next_queued(&pool, Some("s1"), "2026-09-24T12:00:00Z").unwrap();
+        settle_request(
+            &pool,
+            "r1",
+            CuratorRequestState::Landed,
+            Some("ok"),
+            None,
+            None,
+            "2026-09-24T12:30:00Z",
+        )
+        .unwrap();
+        claim_next_queued(&pool, Some("s2"), "2026-09-24T12:35:00Z").unwrap();
+
+        let ids: Vec<String> = list_requests(&pool, 50)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.id)
+            .collect();
+        assert_eq!(ids, vec!["r2", "r3", "r1"]);
+
+        // The limit is a limit, not a suggestion.
+        assert_eq!(list_requests(&pool, 2).unwrap().len(), 2);
     }
 }

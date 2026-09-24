@@ -464,6 +464,32 @@ pub fn max_queue_rank(pool: &DbPool) -> Result<u32, AppError> {
     })
 }
 
+/// How many sessions one producer STARTED today, whatever state they are in
+/// now.
+///
+/// The reading a daily dispatch cap is measured against, so it counts rows
+/// rather than live ones: a run that already finished still spent the
+/// allowance. `created_at_ms` is epoch milliseconds, so the day boundary is
+/// SQLite's own UTC day - the same clock `date('now')` gives every other
+/// daily reading in this tree.
+pub fn count_started_today_for_origin(pool: &DbPool, origin: &str) -> Result<u32, AppError> {
+    timed_query!(
+        "fleet_sessions",
+        "fleet_sessions::count_started_today_for_origin",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(id) AS n FROM fleet_sessions
+                  WHERE origin = ?1
+                    AND date(created_at_ms / 1000, 'unixepoch') = date('now')",
+                rusqlite::params![origin],
+                |r| r.get("n"),
+            )?;
+            Ok(n.max(0) as u32)
+        }
+    )
+}
+
 /// How many DURABLE rows sit in a live state ([`LIVE_STATES`]). The registry's
 /// in-memory count is the admission authority while the app runs; this is the
 /// restart-safe reading a test or a boot-time reconcile can reach.

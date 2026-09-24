@@ -2,6 +2,14 @@
 
 ## Active
 
+- **[2026-09-24 12:23]**
+- **Paths:** `src/features/companions/curator/**` · `src/api/curator.ts` · `src/i18n/**` · `src/lib/commandNames.overrides.ts` · `src/features/plugins/fleet/quick-dispatch/**`
+- **Status:** started
+
+- **[2026-09-24 12:06]**
+- **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/board/queue/originLabel.ts` · `src/features/fleet/monitor/grid/board/queue/useQueueModel.ts`
+- **Status:** started
+
 - **[2026-09-22 09:52]**
 - **Paths:** `src/features/teams/sub_kpis/**`
 - **Status:** started
@@ -999,6 +1007,10 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### curator-runtime-spine — Curator stage 2b spine: DispatchOrigin::Curator, e51 request lane, skill discovery, runtime read
+
+### curator-loop-ui — Curator loop UI: run the instrument, the human request lane, her setup brakes
 
 ### spark-features-board — /spark Features page: features + council state + context-map mirror + scenarios; delete sub_certification
 

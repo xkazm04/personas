@@ -48,7 +48,8 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use personas_core::models::{
-    CuratorConsentState, CuratorDecisionLevel, CuratorPlan, CuratorPolicy, CuratorProject,
+    curator_lane, CuratorConsentState, CuratorDecisionLevel, CuratorPlan, CuratorPolicy,
+    CuratorProject, CuratorRequest, CuratorRuntime, CuratorSkill, CURATOR_SPEND_SOURCE,
 };
 
 /// Run a blocking read/write off the IPC worker. The curator lane touches
@@ -307,6 +308,288 @@ pub async fn curator_plan_refresh(
     .await
 }
 
+// ---------------------------------------------------------------------------
+// The skills she can dispatch
+// ---------------------------------------------------------------------------
+
+/// Every skill in the registry's two lanes, read off its disk.
+///
+/// There is no manifest to read: measured 2026-09-24, `catalog.json` carries
+/// the 36 shared skills and NONE of the eight native ones. See
+/// [`instrument::read_skills`].
+#[tauri::command]
+pub async fn curator_skills_list(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CuratorSkill>, AppError> {
+    require_auth(&state).await?;
+    let root = registry_root(state.inner())?;
+    blocking("curator_skills_list", move || {
+        instrument::read_skills(&root).map(|s| (*s).clone())
+    })
+    .await
+}
+
+// ---------------------------------------------------------------------------
+// The operator's lane
+// ---------------------------------------------------------------------------
+
+/// How many requests one listing returns.
+///
+/// A person types into this lane, so the cap is a bound on a pathological
+/// database rather than a page size the surface pages through - there is no
+/// cursor and the list is ordered open-first for that reason.
+const REQUEST_PAGE: u32 = 200;
+
+/// Refuse a request the lane says cannot run, and refuse nothing else.
+///
+/// Two rules, and the difference between them is the rule this whole feature
+/// is built around:
+///
+/// - A skill the registry's disk does not have is refused. A queued row naming
+///   it could only ever fail at dispatch, one worker later.
+/// - A skill whose documented invocation takes an argument is refused without
+///   one. **A skill whose invocation is UNDOCUMENTED is not** - `runs_bare` is
+///   `None` there, that is unknown rather than no, and refusing on it would be
+///   this app inventing a rule the registry never wrote. Measured 2026-09-24,
+///   `deepen` and `forge` are in exactly that state.
+///
+/// `argument` arrives NORMALISED - [`typed`] has already turned a blank into
+/// `None` - so "the operator typed nothing" is one value here rather than
+/// three, and this function never asks an emptiness question it would then
+/// answer with a hand-written refusal. That sentence belongs to
+/// `personas_core::validation`, and the door above uses it for `skill`.
+pub(super) fn vet_request(
+    skills: &[CuratorSkill],
+    skill: &str,
+    argument: Option<&str>,
+) -> Result<(), AppError> {
+    let Some(found) = skills.iter().find(|s| s.name == skill) else {
+        let mut names: Vec<&str> = skills.iter().map(|s| s.name.as_str()).collect();
+        names.sort_unstable();
+        return Err(AppError::NotFound(format!(
+            "the registry has no skill called '{skill}' - it carries {}",
+            names.join(", ")
+        )));
+    };
+    if found.runs_bare == Some(false) && argument.is_none() {
+        return Err(AppError::Validation(format!(
+            "'{skill}' documents no bare invocation, so it needs an argument{}",
+            found
+                .argument_hint
+                .as_deref()
+                .map(|hint| format!(" - the file states `{hint}`"))
+                .unwrap_or_default()
+        )));
+    }
+    Ok(())
+}
+
+/// What the operator actually typed, or nothing.
+///
+/// A blank and an absent field are ONE value below this line. `""` in
+/// `argument` would put an empty token in a worker's brief, and `""` in `note`
+/// would claim the operator wrote something when they wrote nothing - which is
+/// the difference the whole lane's nullability exists to keep.
+fn typed(value: Option<String>) -> Option<String> {
+    value
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+/// The lane, open rows first and oldest first within each half.
+#[tauri::command]
+pub async fn curator_requests_list(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<CuratorRequest>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    blocking("curator_requests_list", move || {
+        repo::list_requests(&db, REQUEST_PAGE)
+    })
+    .await
+}
+
+/// Put one request in the lane, vetted against the registry's own disk.
+///
+/// A blank `note` or `argument` is stored as NULL rather than as `""`: the
+/// operator's words are carried into the worker's brief unchanged, and an
+/// empty string would put a token there that nobody typed.
+#[tauri::command]
+pub async fn curator_request_create(
+    state: State<'_, Arc<AppState>>,
+    skill: String,
+    argument: Option<String>,
+    note: Option<String>,
+) -> Result<CuratorRequest, AppError> {
+    require_auth(&state).await?;
+    personas_core::validation::require_non_empty("skill", &skill)?;
+    let root = registry_root(state.inner())?;
+    let db = state.db.clone();
+    let now = chrono::Utc::now().to_rfc3339();
+    let id = uuid::Uuid::new_v4().to_string();
+    blocking("curator_request_create", move || {
+        let skills = instrument::read_skills(&root)?;
+        let argument = typed(argument);
+        let note = typed(note);
+        vet_request(&skills, &skill, argument.as_deref())?;
+        repo::create_request(&db, &id, &skill, argument.as_deref(), note.as_deref(), &now)
+    })
+    .await
+}
+
+/// The operator withdrawing a request. Only a queued one can be withdrawn -
+/// see [`repo::cancel_request`].
+#[tauri::command]
+pub async fn curator_request_cancel(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<CuratorRequest, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let now = chrono::Utc::now().to_rfc3339();
+    blocking("curator_request_cancel", move || {
+        repo::cancel_request(&db, &id, &now)
+    })
+    .await
+}
+
+// ---------------------------------------------------------------------------
+// The runtime
+// ---------------------------------------------------------------------------
+
+/// Why she is stopped, in the order the brakes bind.
+///
+/// The worker cap is deliberately NOT among them: every terminal being busy is
+/// what she looks like while she is WORKING, and reporting it as a halt would
+/// put the word "halted" on the screen at exactly the moment she is at full
+/// stretch.
+///
+/// A cap the operator has not declared is `None` in the policy and brakes
+/// nothing - never a ceiling of zero, which would read as a companion that may
+/// never run.
+fn halted_reason(
+    enabled: bool,
+    has_registry: bool,
+    policy: &CuratorPolicy,
+    spent_today_usd: f64,
+    runs_today: u32,
+    commits_today: u32,
+) -> Option<String> {
+    if !enabled {
+        return Some("she is switched off".into());
+    }
+    if !has_registry {
+        return Some("no knowledge registry is mapped on this disk".into());
+    }
+    if policy
+        .daily_budget_usd
+        .is_some_and(|cap| spent_today_usd >= cap)
+    {
+        return Some("today's budget is spent".into());
+    }
+    if policy.daily_run_cap.is_some_and(|cap| runs_today >= cap) {
+        return Some("today's run cap is reached".into());
+    }
+    if policy
+        .daily_commit_cap
+        .is_some_and(|cap| commits_today >= cap)
+    {
+        return Some("today's commit cap is reached".into());
+    }
+    None
+}
+
+/// How many processes her terminals have fanned out to.
+///
+/// **Only one answer is knowable from here, and it is the zero.** No terminal
+/// is no process, which is a measurement. One terminal is a Claude session
+/// that may be `librarian` holding ten workers, `harvest` holding five or
+/// `hygiene` holding six, and this package holds none of their pids - so the
+/// honest answer is `None`, and reporting `running` would be reporting a
+/// dispatcher's whole pool as one process.
+///
+/// A worker cap of 2 is therefore not a cap of 2 processes, which is the
+/// reason this field is nullable at all.
+fn fanned_out(running: u32) -> Option<u32> {
+    (running == 0).then_some(0)
+}
+
+/// What her loop is doing right now, and every brake on it.
+///
+/// A READING, computed at call time from the policy, the fleet registry and
+/// today's ledgers. Nothing is cached and there is no `curator_runtime` row:
+/// a stored copy of "how many terminals are live" would be a second answer to
+/// a question the registry already owns.
+///
+/// **This package has no loop**, so `running` is whatever a terminal somebody
+/// else started with her origin reports - today, nothing. `lane` is still
+/// computed rather than stubbed, because the precedence it expresses is real:
+/// she drains the operator's lane before her own plan.
+#[tauri::command]
+pub async fn curator_runtime_get(
+    state: State<'_, Arc<AppState>>,
+) -> Result<CuratorRuntime, AppError> {
+    require_auth(&state).await?;
+    // The in-memory registry, not a row read: it is the admission authority
+    // while the app runs, and it needs no pool.
+    let running = crate::commands::fleet::queue::live_count_for_origin(
+        crate::commands::fleet::queue::DispatchOrigin::Curator,
+    );
+    let db = state.db.clone();
+    blocking("curator_runtime_get", move || {
+        let policy = load_policy(&db);
+        let enabled = crate::commands::companions::curator_enabled(&db);
+        let has_registry = crate::commands::companions::curator_registry(&db).is_some();
+        let spent_today_usd =
+            crate::db::repos::llm_spend::source_today(&db, CURATOR_SPEND_SOURCE)?.0;
+        let runs_today = crate::db::repos::fleet_sessions::count_started_today_for_origin(
+            &db,
+            crate::commands::fleet::queue::DispatchOrigin::Curator.token(),
+        )?;
+        let commits_today = repo::commits_today(&db)?;
+        // She drains the operator's lane before her own plan, so an open
+        // request IS the lane she is serving. Open, not queued: a dispatched
+        // request is one she is still carrying out.
+        let open_requests = repo::list_requests(&db, REQUEST_PAGE)?
+            .into_iter()
+            .any(|r| !r.state.is_settled());
+        Ok(CuratorRuntime {
+            enabled,
+            running,
+            worker_cap: policy.worker_cap,
+            fanned_out: fanned_out(running),
+            lane: if open_requests {
+                curator_lane::QUEUE.into()
+            } else {
+                curator_lane::PLAN.into()
+            },
+            halted_reason: halted_reason(
+                enabled,
+                has_registry,
+                &policy,
+                spent_today_usd,
+                runs_today,
+                commits_today,
+            ),
+            spent_today_usd,
+            // A cap the operator never declared is `None` in the policy and
+            // `0` on this wire, which every consumer of it reads as "no
+            // ceiling" - the convention `monthly_cost_ceiling_usd` already
+            // ships. The policy door beside this one carries the nullable
+            // truth, and the console prefers it for exactly that reason.
+            daily_budget_usd: policy.daily_budget_usd.unwrap_or(0.0),
+            runs_today,
+            daily_run_cap: policy.daily_run_cap.unwrap_or(0),
+            commits_today,
+            daily_commit_cap: policy.daily_commit_cap.unwrap_or(0),
+            // No loop, so no sleep has ever happened. `None` is the honest
+            // answer and never an epoch-zero timestamp.
+            last_sleep_at: None,
+        })
+    })
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -392,5 +675,143 @@ mod tests {
         drop(conn);
         assert_eq!(load_policy(&pool).level_sweep, CuratorDecisionLevel::L0);
         Ok(())
+    }
+
+    // -----------------------------------------------------------------------
+    // The runtime
+    // -----------------------------------------------------------------------
+
+    fn skill(name: &str, runs_bare: Option<bool>, hint: Option<&str>) -> CuratorSkill {
+        CuratorSkill {
+            name: name.into(),
+            lane: personas_core::models::CuratorSkillLane::Native,
+            path: format!(".claude/skills/{name}/SKILL.md"),
+            title: None,
+            description: None,
+            version: None,
+            invocation_documented: runs_bare.is_some(),
+            runs_bare,
+            argument_hint: hint.map(str::to_string),
+        }
+    }
+
+    /// The door refuses a skill the registry does not have, refuses a
+    /// documented argument-taker with no argument, and **accepts a skill whose
+    /// invocation is undocumented** - because `None` is unknown, not no.
+    #[test]
+    fn the_door_refuses_on_a_documented_no_and_never_on_an_unknown() {
+        let lane = [
+            skill("hygiene", Some(true), None),
+            skill("assay", Some(false), Some("/assay <url|path|->")),
+            skill("deepen", None, None),
+        ];
+
+        assert!(vet_request(&lane, "hygiene", None).is_ok());
+        assert!(vet_request(&lane, "assay", Some("https://example.test/a")).is_ok());
+
+        let missing = vet_request(&lane, "nonesuch", None).unwrap_err();
+        assert!(matches!(missing, AppError::NotFound(_)), "{missing:?}");
+
+        let bare = vet_request(&lane, "assay", None).unwrap_err();
+        match bare {
+            AppError::Validation(msg) => assert!(
+                msg.contains("/assay <url|path|->"),
+                "the refusal quotes the file's own line: {msg}"
+            ),
+            other => panic!("{other:?}"),
+        }
+        // Whitespace is not an argument - and it is the DOOR that decides
+        // that, once, so the vetting below only ever sees `None`.
+        assert_eq!(typed(Some("   ".into())), None);
+        assert_eq!(
+            typed(Some("  https://x.test  ".into())).as_deref(),
+            Some("https://x.test")
+        );
+        assert_eq!(typed(None), None);
+        assert!(vet_request(&lane, "assay", typed(Some("   ".into())).as_deref()).is_err());
+
+        // The one that matters: `deepen` documents NO invocation, so this app
+        // has no basis to refuse it. Reading `None` as "needs an argument" -
+        // or as "runs bare" - would both be inventing a rule the registry
+        // never wrote.
+        assert!(vet_request(&lane, "deepen", None).is_ok());
+        assert!(vet_request(&lane, "deepen", Some("anything")).is_ok());
+    }
+
+    /// The brakes bind in order, an undeclared cap brakes nothing, and a busy
+    /// worker pool is NOT a halt.
+    #[test]
+    fn the_brakes_bind_in_order_and_a_full_pool_is_not_one() {
+        let mut policy = CuratorPolicy::default();
+
+        assert_eq!(
+            halted_reason(false, true, &policy, 0.0, 0, 0).as_deref(),
+            Some("she is switched off")
+        );
+        assert_eq!(
+            halted_reason(true, false, &policy, 0.0, 0, 0).as_deref(),
+            Some("no knowledge registry is mapped on this disk")
+        );
+        // The shipped policy declares no ceilings, so nothing else brakes -
+        // however much has been spent or run.
+        assert_eq!(halted_reason(true, true, &policy, 999.0, 999, 999), None);
+
+        policy.daily_budget_usd = Some(5.0);
+        assert_eq!(halted_reason(true, true, &policy, 4.99, 0, 0), None);
+        assert_eq!(
+            halted_reason(true, true, &policy, 5.0, 0, 0).as_deref(),
+            Some("today's budget is spent")
+        );
+
+        policy.daily_budget_usd = None;
+        policy.daily_run_cap = Some(3);
+        assert_eq!(halted_reason(true, true, &policy, 0.0, 2, 0), None);
+        assert_eq!(
+            halted_reason(true, true, &policy, 0.0, 3, 0).as_deref(),
+            Some("today's run cap is reached")
+        );
+
+        policy.daily_run_cap = None;
+        policy.daily_commit_cap = Some(1);
+        assert_eq!(
+            halted_reason(true, true, &policy, 0.0, 0, 1).as_deref(),
+            Some("today's commit cap is reached")
+        );
+
+        // A declared ceiling of ZERO is a real answer - "not today" - and it
+        // brakes from the first unit.
+        policy.daily_commit_cap = Some(0);
+        assert!(halted_reason(true, true, &policy, 0.0, 0, 0).is_some());
+    }
+
+    /// **Only the zero is knowable.** No terminal is no process; one terminal
+    /// may be a dispatcher holding ten, and this package holds none of their
+    /// pids.
+    #[test]
+    fn fanned_out_is_zero_or_unknown_and_never_the_terminal_count() {
+        assert_eq!(fanned_out(0), Some(0));
+        for running in 1..=10 {
+            assert_eq!(
+                fanned_out(running),
+                None,
+                "a live terminal's pool is not visible from here"
+            );
+        }
+    }
+
+    /// The operator asked for two concurrent terminals. The default is spelled
+    /// twice - here through the policy, and in `settings_keys` as the
+    /// validator's own constant - because the `core` crate cannot depend on
+    /// `db`.
+    #[test]
+    fn the_shipped_worker_cap_is_two() {
+        let pool = init_test_db().unwrap();
+        assert_eq!(settings_keys::CURATOR_WORKER_CAP_DEFAULT, 2);
+        assert_eq!(load_policy(&pool).worker_cap, 2);
+        assert_eq!(
+            load_policy(&pool).worker_cap,
+            settings_keys::CURATOR_WORKER_CAP_DEFAULT,
+            "the two spellings of the default must agree"
+        );
     }
 }

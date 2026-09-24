@@ -90,9 +90,34 @@ pub enum DispatchOrigin {
     /// `fleet_session` remote job. The row also carries `remote_job_id` and
     /// `origin_peer_id`.
     Remote,
+    /// Curator dispatched this session - either draining the operator's own
+    /// request lane or acting on her plan. A worker she starts is HERS on the
+    /// board, and the fallback below is why that matters: an unrecognised
+    /// token reads as `Manual`, so a missing variant does not show up as an
+    /// unknown origin, it shows up as the operator's own dispatch on the one
+    /// board that exists to tell producers apart.
+    Curator,
 }
 
 impl DispatchOrigin {
+    /// Every variant, in declaration order.
+    ///
+    /// Exists so the round-trip test cannot be a hand-kept subset of the enum
+    /// — which is what it was until 2026-09-24, when `Remote` had never been
+    /// in it.
+    pub const ALL: [DispatchOrigin; 10] = [
+        DispatchOrigin::Manual,
+        DispatchOrigin::DevRunner,
+        DispatchOrigin::DispatchIdeas,
+        DispatchOrigin::Athena,
+        DispatchOrigin::Autopilot,
+        DispatchOrigin::NightShift,
+        DispatchOrigin::FeedImpact,
+        DispatchOrigin::OrphanResume,
+        DispatchOrigin::Remote,
+        DispatchOrigin::Curator,
+    ];
+
     /// The wire / row token — the same string `serde` writes.
     pub fn token(self) -> &'static str {
         match self {
@@ -105,23 +130,22 @@ impl DispatchOrigin {
             DispatchOrigin::FeedImpact => "feed_impact",
             DispatchOrigin::OrphanResume => "orphan_resume",
             DispatchOrigin::Remote => "remote",
+            DispatchOrigin::Curator => "curator",
         }
     }
 
     /// Inverse of [`Self::token`]; an unknown or absent token reads as
     /// `Manual`, which is what every pre-queue row was.
+    ///
+    /// Derived from [`Self::ALL`] and [`Self::token`] rather than written out
+    /// as a second match, because a second match is a second place to forget a
+    /// variant - and forgetting one here does not produce an unknown, it
+    /// produces the OPERATOR'S label on somebody else's session. Ten string
+    /// comparisons per row read; the rows are a board, not a hot loop.
     pub fn parse(token: Option<&str>) -> Self {
-        match token {
-            Some("dev_runner") => DispatchOrigin::DevRunner,
-            Some("dispatch_ideas") => DispatchOrigin::DispatchIdeas,
-            Some("athena") => DispatchOrigin::Athena,
-            Some("autopilot") => DispatchOrigin::Autopilot,
-            Some("night_shift") => DispatchOrigin::NightShift,
-            Some("feed_impact") => DispatchOrigin::FeedImpact,
-            Some("orphan_resume") => DispatchOrigin::OrphanResume,
-            Some("remote") => DispatchOrigin::Remote,
-            _ => DispatchOrigin::Manual,
-        }
+        token
+            .and_then(|raw| Self::ALL.into_iter().find(|o| o.token() == raw))
+            .unwrap_or(DispatchOrigin::Manual)
     }
 }
 
@@ -1467,6 +1491,29 @@ pub fn has_pending_autopilot_dispatch(persona_id: &str) -> bool {
     })
 }
 
+/// How many LIVE sessions one producer is holding right now.
+///
+/// Live, not live-plus-queued: a queued row holds no terminal, and the number
+/// this answers is "how many of her worker slots are occupied". The registry
+/// is the source - a row's `origin` is the token `DispatchOrigin::token` wrote,
+/// and a row from before the queue existed carries none, which reads as
+/// `Manual` exactly as [`DispatchOrigin::parse`] says.
+pub fn live_count_for_origin(origin: DispatchOrigin) -> u32 {
+    count_live_for_origin(registry(), origin)
+}
+
+/// [`live_count_for_origin`] against a given registry, so a test can hold one.
+fn count_live_for_origin(reg: &FleetRegistry, origin: DispatchOrigin) -> u32 {
+    let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
+    map.values()
+        .filter(|s| {
+            super::registry::is_live_state(s.state)
+                && DispatchOrigin::parse(s.origin.as_deref()) == origin
+        })
+        .count()
+        .min(u32::MAX as usize) as u32
+}
+
 /// Write the queue's ranks to the durable rows.
 fn persist_ranks(app: &AppHandle, ranks: &[(String, u32)]) {
     let Some(pool) = pool_of(app) else { return };
@@ -1839,6 +1886,48 @@ mod tests {
         s
     }
 
+    /// **Curator's dispatch is stored as HERS, end to end.** The enum, the row
+    /// token and the parse have to agree, because the fallback is `Manual`: a
+    /// variant that reaches only some of the three mirrors does not surface as
+    /// an unknown origin, it surfaces as the OPERATOR'S dispatch on the one
+    /// board that exists to tell producers apart. The two frontend mirrors are
+    /// covered by `board/queue/__tests__/originCurator.test.tsx`.
+    #[test]
+    fn a_curator_dispatch_is_stored_and_read_back_as_hers() {
+        let reg = FleetRegistry::default();
+        let request = DispatchRequest {
+            origin: DispatchOrigin::Curator,
+            ..req("C:/checkouts/ai-registry")
+        };
+        let (id, rank) = enqueue_into(&reg, &request, 1_000, 0, 2);
+        assert_eq!(rank, 1);
+
+        let dto = reg.list_dto().into_iter().find(|s| s.id == id).unwrap();
+        assert_eq!(dto.origin.as_deref(), Some("curator"));
+        assert_eq!(
+            DispatchOrigin::parse(dto.origin.as_deref()),
+            DispatchOrigin::Curator
+        );
+        assert_ne!(
+            DispatchOrigin::parse(dto.origin.as_deref()),
+            DispatchOrigin::Manual,
+            "the whole trap: a missing mirror reads as the operator's own dispatch"
+        );
+
+        // A queued row holds no terminal, so none of her worker slots is
+        // occupied yet; a live one occupies exactly one.
+        assert_eq!(count_live_for_origin(&reg, DispatchOrigin::Curator), 0);
+        let mut running = live("cur-1", S::Running);
+        running.origin = Some(DispatchOrigin::Curator.token().to_string());
+        reg.insert(running);
+        assert_eq!(count_live_for_origin(&reg, DispatchOrigin::Curator), 1);
+        assert_eq!(
+            count_live_for_origin(&reg, DispatchOrigin::Manual),
+            0,
+            "her terminal is not counted against anybody else"
+        );
+    }
+
     #[test]
     fn admit_at_cap_queues_with_a_dense_rank() {
         let reg = FleetRegistry::default();
@@ -2149,20 +2238,26 @@ mod tests {
 
     #[test]
     fn origin_tokens_match_serde_and_parse_back() {
-        for o in [
-            DispatchOrigin::Manual,
-            DispatchOrigin::DevRunner,
-            DispatchOrigin::DispatchIdeas,
-            DispatchOrigin::Athena,
-            DispatchOrigin::Autopilot,
-            DispatchOrigin::NightShift,
-            DispatchOrigin::FeedImpact,
-            DispatchOrigin::OrphanResume,
-        ] {
+        // Every variant, not a hand-kept subset: `Remote` was missing from
+        // this list for its whole life, and an origin whose token nobody
+        // round-trips is an origin the board renders as `manual`.
+        for o in DispatchOrigin::ALL {
             let wire = serde_json::to_value(o).unwrap();
             assert_eq!(wire, serde_json::Value::String(o.token().to_string()));
             assert_eq!(DispatchOrigin::parse(Some(o.token())), o);
         }
+        assert_eq!(DispatchOrigin::ALL.len(), 10);
+        // The trap this enum sets: an unrecognised token is NOT an unknown
+        // state, it is the operator's own dispatch. A variant that reaches
+        // only one of the three mirrors is invisible except as a wrong answer.
+        assert_eq!(
+            DispatchOrigin::parse(Some("curator")),
+            DispatchOrigin::Curator
+        );
+        assert_eq!(
+            DispatchOrigin::parse(Some("kurator")),
+            DispatchOrigin::Manual
+        );
         assert_eq!(DispatchOrigin::parse(None), DispatchOrigin::Manual);
         assert_eq!(over_admitted(3, 5), 0);
         assert_eq!(over_admitted(7, 5), 2);

@@ -435,7 +435,13 @@ pub struct CuratorPolicy {
 
 impl Default for CuratorPolicy {
     /// The shipped defaults: every level at `L0` (always ask), no ceiling
-    /// declared, backpressure 8, one worker.
+    /// declared, backpressure 8, TWO workers.
+    ///
+    /// Two rather than one since 2026-09-24, at the operator's request: she
+    /// holds two concurrent terminals. Kept in step with
+    /// `settings_keys::CURATOR_WORKER_CAP_DEFAULT` by hand, because the `core`
+    /// crate does not depend on `db` - the test below is what holds them
+    /// together.
     ///
     /// `L0` rather than a friendlier default is deliberate and is the same
     /// call `curator_enabled` makes - an autonomy setting that has never been
@@ -451,7 +457,7 @@ impl Default for CuratorPolicy {
             daily_commit_cap: None,
             quiet_hours: None,
             backpressure_n: 8,
-            worker_cap: 1,
+            worker_cap: 2,
         }
     }
 }
@@ -710,6 +716,239 @@ pub struct CuratorPlan {
 }
 
 // ---------------------------------------------------------------------------
+// The operator's lane
+//
+// `curator_request` is the one place a PERSON puts work INTO Curator, and it is
+// deliberately not a decision: a decision is something she raises and a person
+// answers, this is the opposite direction, and collapsing the two would make
+// "she asked" and "she was asked" the same row.
+//
+// Nothing in this package drains the lane. `CuratorRequestState` carries the
+// whole vocabulary anyway, because a CHECK written now is a CHECK the loop
+// package cannot forget, and the states it does not yet write are the ones a
+// half-built loop would otherwise invent.
+// ---------------------------------------------------------------------------
+
+/// `curator_request.state`.
+pub const CURATOR_REQUEST_STATES: [&str; 6] = [
+    "queued",
+    "dispatched",
+    "landed",
+    "declined",
+    "failed",
+    "cancelled",
+];
+
+/// Where an operator's request stands. `queued` is the only state she may pick
+/// up; everything else is settled or in flight.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum CuratorRequestState {
+    Queued,
+    Dispatched,
+    Landed,
+    Declined,
+    Failed,
+    Cancelled,
+}
+
+impl CuratorRequestState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Dispatched => "dispatched",
+            Self::Landed => "landed",
+            Self::Declined => "declined",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+        }
+    }
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw {
+            "queued" => Some(Self::Queued),
+            "dispatched" => Some(Self::Dispatched),
+            "landed" => Some(Self::Landed),
+            "declined" => Some(Self::Declined),
+            "failed" => Some(Self::Failed),
+            "cancelled" => Some(Self::Cancelled),
+            _ => None,
+        }
+    }
+    /// Whether the row is finished with. Asked rather than matched against a
+    /// hand-written list at each door, so a seventh state cannot be settled in
+    /// one place and open in another.
+    pub fn is_settled(self) -> bool {
+        matches!(
+            self,
+            Self::Landed | Self::Declined | Self::Failed | Self::Cancelled
+        )
+    }
+}
+
+/// One request the operator put in Curator's human lane, in the order they wrote
+/// it. She drains this lane before her own plan.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorRequest {
+    pub id: String,
+    /// The registry skill to run, e.g. `intake`.
+    pub skill: String,
+    /// What to run it on - a URL, a bundle, a domain. Null for a bare-runnable skill.
+    pub argument: Option<String>,
+    /// The operator's own words, carried into the worker's brief unchanged.
+    pub note: Option<String>,
+    pub state: CuratorRequestState,
+    pub created_at: String,
+    pub started_at: Option<String>,
+    pub settled_at: Option<String>,
+    /// The fleet session she dispatched for it, once admitted.
+    pub session_id: Option<String>,
+    /// The run-result outcome once the worker wrote one, else null.
+    pub outcome: Option<String>,
+    /// Where the worker's `result.json` landed, so the row can be traced to evidence.
+    pub result_ref: Option<String>,
+    pub failure_reason: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// The skills she can dispatch
+//
+// Discovered by READING the two lanes on disk, never from a manifest: measured
+// 2026-09-24 the registry's `catalog.json` enumerates the 36 shared skills and
+// NONE of the eight native ones, which exist only as prose `SKILL.md`
+// directories. The reader lives in `commands/curator/instrument.rs`; only the
+// vocabulary is here.
+// ---------------------------------------------------------------------------
+
+/// Which lane a registry skill lives in. `native` is the registry's own
+/// maintenance set under `.claude/skills/` - the standard every registry of this
+/// kind carries. `shared` is the lane it publishes to consuming repos, which
+/// `catalog.json` already enumerates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum CuratorSkillLane {
+    Native,
+    Shared,
+}
+
+impl CuratorSkillLane {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Native => "native",
+            Self::Shared => "shared",
+        }
+    }
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw {
+            "native" => Some(Self::Native),
+            "shared" => Some(Self::Shared),
+            _ => None,
+        }
+    }
+}
+
+/// One registry skill Curator can dispatch, discovered by reading the lane on
+/// disk rather than from a manifest - `catalog.json` carries the 36 shared
+/// skills and none of the eight native ones.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorSkill {
+    pub name: String,
+    pub lane: CuratorSkillLane,
+    /// Repo-relative path of the SKILL.md it was read from.
+    pub path: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub version: Option<String>,
+    /// Whether the file documents an invocation at all. Measured 2026-09-24:
+    /// `deepen` and `forge` document NONE, so a caller inventing one is guessing.
+    pub invocation_documented: bool,
+    /// Whether it can be dispatched with no argument. **NULL when the invocation is
+    /// undocumented** - that is unknown, not false, and the two must never collapse.
+    /// Bare-runnable today: `hygiene`, `librarian`, `harvest`.
+    pub runs_bare: Option<bool>,
+    /// The argument line as the file states it, verbatim, or null.
+    pub argument_hint: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// The runtime
+//
+// A READING, not a store: every field is computed at call time from the policy,
+// the fleet registry and today's ledgers. There is no `curator_runtime` table
+// and there must not be one - a cached copy of "how many terminals are live" is
+// a second answer to a question the registry already owns.
+// ---------------------------------------------------------------------------
+
+/// What her loop is doing right now. Every cap here is a real brake: the
+/// operator's standing instruction is that she never idles, so these are the
+/// only things that ever stop her.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratorRuntime {
+    pub enabled: bool,
+    /// Terminals she currently holds.
+    pub running: u32,
+    pub worker_cap: u32,
+    /// Processes those terminals have fanned out to, when known. A dispatcher skill
+    /// spawns its own pool - `librarian` and `forge` cap at 10, `harvest` at 5,
+    /// `hygiene` at 6 - so a worker cap of 2 is not a cap of 2 processes. Null when
+    /// she cannot see inside a worker.
+    pub fanned_out: Option<u32>,
+    /// Which lane she is serving: the operator's queue, her own plan, the refill
+    /// research pass, or her reconcile sleep.
+    pub lane: String,
+    /// Why she is stopped, when she is. Null while she is working.
+    pub halted_reason: Option<String>,
+    pub spent_today_usd: f64,
+    // The three caps below are NOT `Option` on this wire, and `0` is the
+    // reading for "no ceiling declared" - the same convention
+    // `monthly_cost_ceiling_usd` already ships. It is the one place in this
+    // feature where an absence is spelled as a zero, and it is the wire's call
+    // rather than this type's: see the freeze commit. A surface must render `0`
+    // as "no ceiling", never as "may never run".
+    pub daily_budget_usd: f64,
+    pub runs_today: u32,
+    pub daily_run_cap: u32,
+    pub commits_today: u32,
+    pub daily_commit_cap: u32,
+    pub last_sleep_at: Option<String>,
+}
+
+/// The four lanes [`CuratorRuntime::lane`] names.
+///
+/// The field is a `String` on the wire rather than an enum, so a surface can
+/// fall back rather than fail on a lane it does not know - but the vocabulary
+/// itself is closed, and it is spelled HERE so the backend and the console do
+/// not each keep their own list. This package answers with [`QUEUE`] and
+/// [`PLAN`]; the loop package that owns the refill pass and the reconcile
+/// sleep answers with the other two.
+pub mod curator_lane {
+    /// The operator's own request lane. She drains it before her plan, so a
+    /// lane with open work in it is the lane she is serving.
+    pub const QUEUE: &str = "queue";
+    /// Her own projection, once the operator's lane is empty.
+    pub const PLAN: &str = "plan";
+    /// The research pass that refills the corpus's coverage gaps.
+    pub const REFILL: &str = "refill";
+    /// Her reconcile sleep.
+    pub const SLEEP: &str = "sleep";
+}
+
+/// The `dev_llm_spend.source` every Curator dispatch is recorded under.
+///
+/// Spelled here rather than at the write site because the READER exists first:
+/// `curator_runtime_get` reports today's spend against her daily budget, and a
+/// writer that spelled the source differently would report a companion that
+/// spends nothing however much she spends.
+pub const CURATOR_SPEND_SOURCE: &str = "curator";
+
+// ---------------------------------------------------------------------------
 // The queue and the ledger
 //
 // Neither type carries `#[ts(export)]`, and that is deliberate rather than an
@@ -788,9 +1027,34 @@ mod tests {
         for raw in CURATOR_REASON_CODES {
             assert_eq!(CuratorReasonCode::parse(raw).unwrap().as_str(), raw);
         }
+        for raw in CURATOR_REQUEST_STATES {
+            assert_eq!(CuratorRequestState::parse(raw).unwrap().as_str(), raw);
+        }
+        for raw in ["native", "shared"] {
+            assert_eq!(CuratorSkillLane::parse(raw).unwrap().as_str(), raw);
+        }
         assert!(CuratorConsentState::parse("maybe").is_none());
         assert!(CuratorEngine::parse("compile").is_none());
         assert!(CuratorReasonCode::parse("vibes").is_none());
+        assert!(CuratorRequestState::parse("running").is_none());
+        assert!(CuratorSkillLane::parse("linked").is_none());
+    }
+
+    /// `queued` is the ONLY state a claim may pick up, and every other state is
+    /// settled. Asked of the enum rather than of a list at each door: a door
+    /// that spells its own set is a door that can disagree with the next one.
+    #[test]
+    fn only_queued_is_unsettled() {
+        assert!(!CuratorRequestState::Queued.is_settled());
+        assert!(!CuratorRequestState::Dispatched.is_settled());
+        for settled in [
+            CuratorRequestState::Landed,
+            CuratorRequestState::Declined,
+            CuratorRequestState::Failed,
+            CuratorRequestState::Cancelled,
+        ] {
+            assert!(settled.is_settled(), "{} is settled", settled.as_str());
+        }
     }
 
     /// The dominance order IS the weights' descending order. If a weight ever
@@ -852,6 +1116,9 @@ mod tests {
         assert_eq!(p.daily_commit_cap, None);
         assert_eq!(p.quiet_hours, None);
         assert_eq!(p.backpressure_n, 8);
-        assert_eq!(p.worker_cap, 1);
+        // Two terminals, at the operator's request. The twin of this number
+        // lives in `settings_keys::CURATOR_WORKER_CAP_DEFAULT`, which has its
+        // own assertion for the same value.
+        assert_eq!(p.worker_cap, 2);
     }
 }
