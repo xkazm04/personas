@@ -21179,7 +21179,9 @@
         "trailLabel": "Đã đánh đến nay",
         "earlier": "{count} trước đó",
         "earlierHide": "Ẩn phần trước",
-        "skipped": "Đã bỏ qua"
+        "skipped": "Đã bỏ qua",
+        "fromLastAnswer": "Từ câu trả lời gần nhất của bạn",
+        "reconciling": "Đang đọc câu trả lời của bạn"
       },
       "slots": {
         "identity": {
@@ -21254,6 +21256,35 @@
         "titleNoTwin": "Chưa có twin nào",
         "resume": "Tiếp tục thiết lập",
         "train": "Bắt đầu một ván huấn luyện"
+      },
+      "openers": {
+        "channels": "Bạn viết nhiều nhất ở đâu: email, chat, hay nơi khác?",
+        "identity": "Mọi người tìm đến bạn vì điều gì?",
+        "memories": "Có câu chuyện nào bạn thấy mình kể đi kể lại không?",
+        "tone": "Một người bạn sẽ mô tả cách bạn viết thế nào?"
+      },
+      "plan": {
+        "askNext": "Hỏi điều này tiếp theo",
+        "changeNote": "Điều gì đã thay đổi",
+        "coverage": "Đã phủ",
+        "drop": "Bỏ mục tiêu này",
+        "empty": "Chưa có mục tiêu nào. Chúng sẽ xuất hiện ở đây khi kế hoạch được lập.",
+        "hint": "Nó đang cố tìm hiểu điều gì về bạn, và sẽ hỏi gì tiếp theo.",
+        "noticed": "Điều tôi nhận thấy",
+        "noticedEmpty": "Chưa có gì. Sau vài câu trả lời, các khuôn mẫu bắt đầu hiện ra.",
+        "phaseSetup": "Thiết lập",
+        "phaseTraining": "Huấn luyện",
+        "pin": "Ghim mục tiêu này",
+        "rebuild": "Xây lại kế hoạch",
+        "rebuilding": "Đang xây lại",
+        "restore": "Khôi phục lại",
+        "retry": "Thử lại",
+        "statusBuilding": "Đang lập kế hoạch từ những gì đã ghi nhận",
+        "statusFailed": "Không thể lập được kế hoạch.",
+        "statusReady": "Kế hoạch đã sẵn sàng",
+        "title": "Kế hoạch",
+        "unpin": "Bỏ ghim mục tiêu này",
+        "upNext": "Sắp tới"
       }
     }
   },

@@ -12,7 +12,15 @@
  * person should be replying to something rather than describing a reply.
  *
  * While the next turn is in flight the card holds a calm ghost of itself — the
- * geometry of a question, never a spinner (loading pattern v2).
+ * geometry of a question, never a spinner (loading pattern v2). While the
+ * engine is reading the last answer (or drawing up the plan) behind a question
+ * that is already here, the corner carries a quiet pulsing dot beside the rank
+ * — it says work is happening without taking the question away.
+ *
+ * Neither state is announced from here: this card is keyed on the question and
+ * remounts with every deal, so a live region inside it would be born in the
+ * same commit as its text and never be heard. `CardTable` owns the one status
+ * region, outside the deal.
  */
 
 import { motion } from 'framer-motion';
@@ -34,6 +42,8 @@ interface DealerCardProps {
   answerMode: SetupAnswerMode;
   incoming: string | null;
   busy: boolean;
+  /** The engine is reading an answer or (re)building the plan in the background. */
+  working: boolean;
 }
 
 export function DealerCard({
@@ -46,6 +56,7 @@ export function DealerCard({
   answerMode,
   incoming,
   busy,
+  working,
 }: DealerCardProps) {
   const { t, tx: fmt } = useTranslation();
   const tx = t.twin.experience;
@@ -80,9 +91,6 @@ export function DealerCard({
             <>
               <span aria-hidden className="block h-4 w-36 rounded-interactive bg-secondary/50" />
               <span aria-hidden className="mt-3 block h-7 w-2/3 rounded-card bg-secondary/40" />
-              <span className="sr-only" role="status">
-                {tx.table.thinking}
-              </span>
             </>
           ) : (
             <>
@@ -119,8 +127,14 @@ export function DealerCard({
             </>
           )}
         </div>
-        <span aria-hidden className="self-start typo-data-lg text-primary/40 leading-none">
-          {suit.rank}
+        <span aria-hidden className="self-start flex items-center gap-1.5">
+          {working && (
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse motion-reduce:animate-none"
+              data-testid="setup-desk-working"
+            />
+          )}
+          <span className="typo-data-lg text-primary/40 leading-none">{suit.rank}</span>
         </span>
       </div>
     </motion.div>

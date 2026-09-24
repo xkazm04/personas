@@ -1,11 +1,9 @@
 /**
- * The Setup module's wire contract — hand-written mirror of the Rust types
- * behind `twin_setup_turn`, plus the shape the Setup Desk renders.
- *
- * Why a hand-written mirror rather than the generated bindings: the renderer
- * and the engine were built in parallel, and this file is the seam that lets
- * them compile independently. WP1 makes the Rust structs
- * match these names field for field (`#[serde(rename_all = "camelCase")]`).
+ * The Setup module's render contract — the shape the table and its layers
+ * consume. `useSetupSession` maps the persisted `SetupSessionSnapshot` (the
+ * generated bindings behind `@/api/twin/twinSetup`) onto it, so the surfaces
+ * never read the wire types directly. The plan-side fields reuse the bindings
+ * rather than re-declaring them.
  *
  * The governing rule (wizard-flows / ai-driven-elicitation): the generator
  * proposes CONTENT; this flow owns STRUCTURE. `doneHint` is advisory. A slot
@@ -13,6 +11,10 @@
  * leaves the slot open rather than reading as finished.
  */
 
+import type { SetupGoal } from '@/lib/bindings/SetupGoal';
+import type { SetupObservation } from '@/lib/bindings/SetupObservation';
+import type { SetupSteer } from '@/lib/bindings/SetupSteer';
+import type { SetupStep } from '@/lib/bindings/SetupStep';
 import type { TwinSlotId, TwinSlotStatus } from '../shared/twinStatus';
 
 /** Which slots the guided conversation itself can fill. */
@@ -117,6 +119,36 @@ export interface SetupHistoryEntry {
  */
 export type SetupTonePart = 'voice' | 'examples' | 'constraints' | 'lengthHint';
 
+/** What the person did with one offer. */
+export type SetupOfferVerdict = 'accepted' | 'edited' | 'dismissed';
+
+/**
+ * One offer as the table shows it: still open (`resolution === null`), or
+ * resolved since the live question was dealt and wearing its verdict — so a
+ * verdict survives closing and reopening the overlay.
+ */
+export interface SetupOfferView {
+  proposal: SetupProposal;
+  resolution: SetupOfferVerdict | null;
+}
+
+/**
+ * The persisted plan behind the table (spark twin-setup-plan). A STEERING
+ * signal only: goal coverage decides what is asked next, never whether a slot
+ * is complete — that stays `deriveReadiness`'s call.
+ */
+export interface SetupPlanView {
+  status: 'building' | 'ready' | 'failed';
+  version: number;
+  error: string | null;
+  /** One line on what the last re-plan changed. */
+  changeNote: string | null;
+  goals: SetupGoal[];
+  /** Queued questions, in the order they will be asked. */
+  upcoming: SetupStep[];
+  observations: SetupObservation[];
+}
+
 /** Direct-edit surface: every slot is reachable without saying a word. */
 export interface SetupFieldEdit {
   field: 'name' | 'role' | 'bio' | 'obsidianSubpath' | 'tone';
@@ -191,6 +223,30 @@ export interface SetupSessionApi {
    */
   topicPreset: string | null;
   setTopic: (topic: string | null, presetId?: string | null) => void;
+
+  // -- The persisted plan (spark twin-setup-plan) ---------------------------
+
+  /** Null until the first snapshot for the active twin has arrived. */
+  plan: SetupPlanView | null;
+  /** The plan is being (re)built in the background. */
+  planning: boolean;
+  /** An answer is being read in the background; its offers are on the way. */
+  reconciling: boolean;
+  /** Offers produced by the most recently answered question. */
+  lastAnswerOfferIds: string[];
+  /**
+   * Every offer the table should show: the open ones, plus those resolved
+   * since the live question was dealt. `proposals` is the open subset.
+   */
+  offerRecord: SetupOfferView[];
+  /**
+   * The person took an offer's value into the composer to rewrite it: record
+   * the `edited` verdict. Writes no field — their answer is what gets read.
+   */
+  editOffer: (proposal: SetupProposal) => Promise<void>;
+  steer: (steer: SetupSteer) => Promise<void>;
+  /** A fresh deep pass over everything on file. Nothing is deleted. */
+  rebuild: () => Promise<void>;
 }
 
 export interface SetupVoiceApi {

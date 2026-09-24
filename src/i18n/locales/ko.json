@@ -21179,7 +21179,9 @@
         "trailLabel": "지금까지 낸 카드",
         "earlier": "이전 {count}개",
         "earlierHide": "이전 숨기기",
-        "skipped": "건너뜀"
+        "skipped": "건너뜀",
+        "fromLastAnswer": "방금 답변에서",
+        "reconciling": "답변을 읽는 중"
       },
       "slots": {
         "identity": {
@@ -21254,6 +21256,35 @@
         "titleNoTwin": "아직 트윈이 없어요",
         "resume": "설정 이어하기",
         "train": "트레이닝 라운드 시작"
+      },
+      "openers": {
+        "channels": "가장 많이 글을 쓰는 곳은 어디인가요: 이메일, 채팅, 아니면 다른 곳인가요?",
+        "identity": "사람들은 무엇 때문에 당신을 찾나요?",
+        "memories": "자꾸 반복해서 하게 되는 이야기가 있나요?",
+        "tone": "친구라면 당신의 글쓰기 방식을 어떻게 표현할까요?"
+      },
+      "plan": {
+        "askNext": "다음에 이걸 물어보기",
+        "changeNote": "무엇이 바뀌었는지",
+        "coverage": "채워짐",
+        "drop": "이 목표 제외하기",
+        "empty": "아직 목표가 없어요. 계획이 세워지면 여기 나타납니다.",
+        "hint": "당신에 대해 무엇을 알아내려 하는지, 다음에 무엇을 물을지.",
+        "noticed": "제가 알아챈 것",
+        "noticedEmpty": "아직 없어요. 몇 개의 답변이 쌓이면 패턴이 보이기 시작해요.",
+        "phaseSetup": "설정",
+        "phaseTraining": "훈련",
+        "pin": "이 목표 고정하기",
+        "rebuild": "계획 다시 세우기",
+        "rebuilding": "다시 세우는 중",
+        "restore": "다시 가져오기",
+        "retry": "다시 시도",
+        "statusBuilding": "기록된 내용으로 계획을 세우는 중",
+        "statusFailed": "계획을 세우지 못했어요.",
+        "statusReady": "계획 준비 완료",
+        "title": "계획",
+        "unpin": "이 목표 고정 해제하기",
+        "upNext": "다음 순서"
       }
     }
   },

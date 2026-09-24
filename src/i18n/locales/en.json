@@ -21564,7 +21564,9 @@
         "trailLabel": "Played so far",
         "earlier": "{count} earlier",
         "earlierHide": "Hide earlier",
-        "skipped": "Skipped"
+        "skipped": "Skipped",
+        "reconciling": "Reading your answer",
+        "fromLastAnswer": "From your last answer"
       },
       "slots": {
         "identity": {
@@ -21639,6 +21641,35 @@
         "titleNoTwin": "No twin yet",
         "resume": "Carry on setting up",
         "train": "Start a training round"
+      },
+      "plan": {
+        "title": "The plan",
+        "hint": "What it is trying to learn about you, and what it will ask next.",
+        "statusBuilding": "Drawing up a plan from what is on file",
+        "statusReady": "Plan ready",
+        "statusFailed": "The plan could not be drawn up.",
+        "retry": "Try again",
+        "changeNote": "What changed",
+        "phaseSetup": "Setting up",
+        "phaseTraining": "Training",
+        "coverage": "Covered",
+        "pin": "Pin this goal",
+        "unpin": "Unpin this goal",
+        "drop": "Drop this goal",
+        "restore": "Bring it back",
+        "upNext": "Up next",
+        "askNext": "Ask this next",
+        "noticed": "What I have noticed",
+        "noticedEmpty": "Nothing yet. A few answers in, patterns start to show.",
+        "rebuild": "Rebuild plan",
+        "rebuilding": "Rebuilding",
+        "empty": "No goals yet. They appear here once the plan is drawn up."
+      },
+      "openers": {
+        "identity": "What do people come to you for?",
+        "tone": "How would a friend describe the way you write?",
+        "channels": "Where do you do most of your writing: email, chat, or somewhere else?",
+        "memories": "What is a story you find yourself telling again and again?"
       }
     }
   },

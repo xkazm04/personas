@@ -737,7 +737,9 @@
       "trailLabel": "Joué jusqu'ici",
       "earlier": "{count} plus tôt",
       "earlierHide": "Masquer plus tôt",
-      "skipped": "Passé"
+      "skipped": "Passé",
+      "fromLastAnswer": "D'après ta dernière réponse",
+      "reconciling": "Lecture de ta réponse"
     },
     "slots": {
       "identity": {
@@ -812,6 +814,35 @@
       "titleNoTwin": "Pas encore de twin",
       "resume": "Continuer la configuration",
       "train": "Lancer une manche d'entraînement"
+    },
+    "openers": {
+      "channels": "Où écris-tu le plus : e-mail, chat, ou ailleurs ?",
+      "identity": "Pour quoi les gens viennent-ils vers toi ?",
+      "memories": "Quelle histoire te retrouves-tu à raconter encore et encore ?",
+      "tone": "Comment un ami décrirait-il ta façon d'écrire ?"
+    },
+    "plan": {
+      "askNext": "Poser cette question ensuite",
+      "changeNote": "Ce qui a changé",
+      "coverage": "Couvert",
+      "drop": "Abandonner cet objectif",
+      "empty": "Pas encore d'objectifs. Ils apparaîtront ici une fois le plan établi.",
+      "hint": "Ce qu'il essaie d'apprendre sur toi, et ce qu'il demandera ensuite.",
+      "noticed": "Ce que j'ai remarqué",
+      "noticedEmpty": "Rien pour l'instant. Après quelques réponses, des tendances commencent à se dessiner.",
+      "phaseSetup": "Configuration",
+      "phaseTraining": "Entraînement",
+      "pin": "Épingler cet objectif",
+      "rebuild": "Reconstruire le plan",
+      "rebuilding": "Reconstruction en cours",
+      "restore": "Le récupérer",
+      "retry": "Réessayer",
+      "statusBuilding": "Élaboration d'un plan à partir de ce qui est enregistré",
+      "statusFailed": "Le plan n'a pas pu être établi.",
+      "statusReady": "Plan prêt",
+      "title": "Le plan",
+      "unpin": "Désépingler cet objectif",
+      "upNext": "À suivre"
     }
   }
 }

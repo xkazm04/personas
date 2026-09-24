@@ -30,6 +30,7 @@ import { CompleteNotice, GuideDownNotice, TrainingInvite } from './table/Notices
 import { useTurn } from './table/useTurn';
 import { DeckLayer } from './layers/DeckLayer';
 import { FieldsLayer } from './layers/FieldsLayer';
+import { PlanLayer } from './layers/PlanLayer';
 import { SheetLayer } from './layers/SheetLayer';
 import { VoiceLayer } from './layers/VoiceLayer';
 import { useCoverage } from './layers/useCoverage';
@@ -68,7 +69,8 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
   const { chooseStage } = turn;
   useEffect(() => {
     if (request.mode === 'train' && request.stage) chooseStage(request.stage);
-    // Once, for the stage the entry point asked for.
+    // Once, for the stage the entry point asked for. One steer (or none, when
+    // the stored session is already there) — never a second LLM turn.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -152,7 +154,15 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
       >
         {session.generatorError && (
           <div className="flex-shrink-0 px-4 md:px-8 pt-4">
-            <GuideDownNotice onRetry={session.redeal} onFields={() => setDoor('fields')} />
+            <GuideDownNotice
+              // A failed plan is retried by building it again; anything else
+              // by dealing again from the plan that exists.
+              onRetry={() => {
+                if (session.plan?.status === 'failed') void session.rebuild();
+                else session.redeal();
+              }}
+              onFields={() => setDoor('fields')}
+            />
           </div>
         )}
         {setupDone ? (
@@ -177,6 +187,7 @@ export default function ExperienceBody({ request, onClose, onOpenHub }: Experien
         )}
       </div>
 
+      <PlanLayer open={door === 'plan'} onClose={() => setDoor(null)} session={session} />
       <SheetLayer
         open={door === 'sheet'}
         onClose={() => setDoor(null)}

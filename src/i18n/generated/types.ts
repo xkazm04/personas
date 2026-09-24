@@ -21571,6 +21571,8 @@ export type Translations = {
         earlier: string;
         earlierHide: string;
         skipped: string;
+        reconciling: string;
+        fromLastAnswer: string;
       };
       slots: {
         identity: {
@@ -21645,6 +21647,35 @@ export type Translations = {
         titleNoTwin: string;
         resume: string;
         train: string;
+      };
+      plan: {
+        title: string;
+        hint: string;
+        statusBuilding: string;
+        statusReady: string;
+        statusFailed: string;
+        retry: string;
+        changeNote: string;
+        phaseSetup: string;
+        phaseTraining: string;
+        coverage: string;
+        pin: string;
+        unpin: string;
+        drop: string;
+        restore: string;
+        upNext: string;
+        askNext: string;
+        noticed: string;
+        noticedEmpty: string;
+        rebuild: string;
+        rebuilding: string;
+        empty: string;
+      };
+      openers: {
+        identity: string;
+        tone: string;
+        channels: string;
+        memories: string;
       };
     };
   };

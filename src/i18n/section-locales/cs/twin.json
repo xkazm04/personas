@@ -737,7 +737,9 @@
       "trailLabel": "Zahráno dosud",
       "earlier": "{count} dříve",
       "earlierHide": "Skrýt dřívější",
-      "skipped": "Přeskočeno"
+      "skipped": "Přeskočeno",
+      "fromLastAnswer": "Z tvé poslední odpovědi",
+      "reconciling": "Čte se tvá odpověď"
     },
     "slots": {
       "identity": {
@@ -812,6 +814,35 @@
       "titleNoTwin": "Zatím žádný dvojník",
       "resume": "Pokračovat v nastavení",
       "train": "Začít tréninkové kolo"
+    },
+    "openers": {
+      "channels": "Kde nejvíc píšeš: e-mail, chat, nebo něco jiného?",
+      "identity": "Kvůli čemu za tebou lidé chodí?",
+      "memories": "Jaký příběh si pořád znovu vyprávíš?",
+      "tone": "Jak by kamarád popsal tvůj styl psaní?"
+    },
+    "plan": {
+      "askNext": "Zeptat se na tohle dál",
+      "changeNote": "Co se změnilo",
+      "coverage": "Pokryto",
+      "drop": "Zahodit tento cíl",
+      "empty": "Zatím žádné cíle. Objeví se tady, jakmile bude plán hotový.",
+      "hint": "Co se o tobě snaží zjistit a na co se zeptá dál.",
+      "noticed": "Co jsem si všiml",
+      "noticedEmpty": "Zatím nic. Po pár odpovědích se začnou objevovat vzorce.",
+      "phaseSetup": "Nastavení",
+      "phaseTraining": "Trénink",
+      "pin": "Připnout tento cíl",
+      "rebuild": "Přestavět plán",
+      "rebuilding": "Přestavuje se",
+      "restore": "Vrátit zpět",
+      "retry": "Zkusit znovu",
+      "statusBuilding": "Sestavuje se plán z toho, co je zaznamenané",
+      "statusFailed": "Plán se nepodařilo sestavit.",
+      "statusReady": "Plán je hotový",
+      "title": "Plán",
+      "unpin": "Odepnout tento cíl",
+      "upNext": "Na řadě"
     }
   }
 }

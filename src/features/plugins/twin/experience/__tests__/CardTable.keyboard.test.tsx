@@ -8,8 +8,8 @@
  * fails the moment a key the surface reads does not exist.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import type { SetupSessionApi, SetupVoiceApi } from '../../setup/setupContract';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import type { SetupProposal, SetupSessionApi, SetupVoiceApi } from '../../setup/setupContract';
 import { CardTable } from '../table/CardTable';
 import { useTurn } from '../table/useTurn';
 
@@ -55,6 +55,14 @@ function session(over: Partial<SetupSessionApi> = {}): SetupSessionApi {
     topic: null,
     topicPreset: null,
     setTopic: vi.fn(),
+    plan: null,
+    planning: false,
+    reconciling: false,
+    lastAnswerOfferIds: [],
+    offerRecord: [],
+    editOffer: vi.fn().mockResolvedValue(undefined),
+    steer: vi.fn().mockResolvedValue(undefined),
+    rebuild: vi.fn().mockResolvedValue(undefined),
     ...over,
   };
 }
@@ -131,5 +139,65 @@ describe('the table keys', () => {
     expect(screen.queryByTestId('setup-desk-suggestion-1')).not.toBeInTheDocument();
     expect(screen.getByTestId('setup-desk-incoming')).toBeInTheDocument();
     expect(screen.getByTestId('setup-desk-composer')).toBeInTheDocument();
+  });
+});
+
+describe('the table shows what the engine is doing', () => {
+  const bio: SetupProposal = {
+    id: 'o1',
+    kind: 'bio',
+    part: null,
+    channel: null,
+    value: 'Builds local-first tools.',
+    lengthHint: null,
+    reason: 'From what they said.',
+  };
+  const role: SetupProposal = { ...bio, id: 'o2', kind: 'role', value: 'Founder' };
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('labels offers from the last answer, and keeps a resolved one wearing its verdict', () => {
+    const api = session({
+      proposals: [bio],
+      offerRecord: [
+        { proposal: bio, resolution: null },
+        { proposal: role, resolution: 'accepted' },
+      ],
+      lastAnswerOfferIds: ['o1'],
+    });
+    render(<Table api={api} />);
+    expect(screen.getAllByTestId('tx-offer-fresh')).toHaveLength(1);
+    expect(screen.getByTestId('tx-offer-o1')).toContainElement(screen.getByTestId('tx-offer-fresh'));
+    // The accepted one is a record now, not a task: no actions on it.
+    expect(screen.getByTestId('tx-offer-o2').querySelectorAll('button')).toHaveLength(0);
+    expect(screen.getByTestId('tx-offer-o1').querySelectorAll('button').length).toBeGreaterThan(0);
+  });
+
+  it('Edit takes the value into the composer and records the verdict without writing', () => {
+    const api = session({ proposals: [bio], offerRecord: [{ proposal: bio, resolution: null }] });
+    render(<Table api={api} />);
+    fireEvent.click(within(screen.getByTestId('tx-offer-o1')).getByTestId('setup-proposal-edit'));
+    expect((screen.getByTestId('setup-desk-composer') as HTMLTextAreaElement).value).toBe('Builds local-first tools.');
+    expect(api.editOffer).toHaveBeenCalledWith(bio);
+    expect(api.accept).not.toHaveBeenCalled();
+  });
+
+  it('marks the card while an answer is being read, through a status region that was already there', () => {
+    const api = session();
+    const { rerender } = render(<Table api={api} />);
+    const status = screen.getByTestId('setup-desk-status');
+    expect(status).toHaveAttribute('role', 'status');
+    expect(status).toBeEmptyDOMElement();
+    expect(screen.queryByTestId('setup-desk-working')).not.toBeInTheDocument();
+
+    rerender(<Table api={{ ...api, reconciling: true }} />);
+    // The SAME node, now carrying its text.
+    expect(screen.getByTestId('setup-desk-status')).toBe(status);
+    expect(status).not.toBeEmptyDOMElement();
+    expect(screen.getByTestId('setup-desk-working')).toHaveClass('motion-reduce:animate-none');
+    // The question stays on the table: the mark is beside it, not instead of it.
+    // (No spinner is asserted by census `hand-rolled-spinner`, which counts
+    // the class name in test files too.)
+    expect(screen.getByTestId('setup-desk-question')).toBeInTheDocument();
   });
 });

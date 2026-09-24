@@ -21179,7 +21179,9 @@
         "trailLabel": "已打出",
         "earlier": "更早的 {count} 条",
         "earlierHide": "收起更早的",
-        "skipped": "已跳过"
+        "skipped": "已跳过",
+        "fromLastAnswer": "来自你上一次的回答",
+        "reconciling": "正在读取你的回答"
       },
       "slots": {
         "identity": {
@@ -21254,6 +21256,35 @@
         "titleNoTwin": "还没有分身",
         "resume": "继续设置",
         "train": "开始新一轮训练"
+      },
+      "openers": {
+        "channels": "你大部分时候在哪里写作：邮件、聊天，还是别的地方？",
+        "identity": "别人来找你，通常是为了什么？",
+        "memories": "有没有什么故事，你发现自己一直反复讲？",
+        "tone": "朋友会怎么形容你的写作方式？"
+      },
+      "plan": {
+        "askNext": "接下来问这个",
+        "changeNote": "有什么变化",
+        "coverage": "已覆盖",
+        "drop": "放弃这个目标",
+        "empty": "还没有目标。计划制定好后会显示在这里。",
+        "hint": "它想了解你的哪些方面，以及接下来会问什么。",
+        "noticed": "我注意到的",
+        "noticedEmpty": "还没有内容。回答几个问题后，规律会开始显现。",
+        "phaseSetup": "设置",
+        "phaseTraining": "训练",
+        "pin": "置顶这个目标",
+        "rebuild": "重新制定计划",
+        "rebuilding": "正在重新制定",
+        "restore": "找回来",
+        "retry": "重试",
+        "statusBuilding": "正在根据已记录的内容制定计划",
+        "statusFailed": "无法制定计划。",
+        "statusReady": "计划已就绪",
+        "title": "计划",
+        "unpin": "取消置顶这个目标",
+        "upNext": "接下来"
       }
     }
   },
