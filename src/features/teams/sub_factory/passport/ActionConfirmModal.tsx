@@ -44,7 +44,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           <div className="min-w-0 flex-1">
             <h2 id={TITLE_ID} className="typo-title-lg">{spec.title}</h2>
             <span
-              className="mt-1 inline-flex items-center gap-1.5 rounded-input px-2 py-0.5 typo-caption font-medium"
+              className="mt-1 inline-flex items-center gap-1.5 rounded-input px-2 py-0.5 typo-caption"
               style={{ color: impact.hue, background: `${impact.hue}14`, border: `1px solid ${impact.hue}3d` }}
               data-testid="passport-action-impact"
             >
@@ -66,7 +66,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
                 style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.12)' }}
               >
                 <dt className="typo-caption uppercase tracking-[0.08em] text-foreground/45 truncate">{f.label}</dt>
-                <dd className="typo-body-lg font-medium text-foreground truncate" title={f.value}>{f.value}</dd>
+                <dd className="typo-body-lg text-foreground truncate" title={f.value}>{f.value}</dd>
               </div>
             ))}
           </dl>
@@ -84,7 +84,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
                 {spec.steps.map((step, i) => (
                   <li key={step} className="flex items-start gap-2.5 min-w-0">
                     <span
-                      className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0 typo-caption font-semibold tabular-nums mt-px"
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0 typo-caption tabular-nums mt-px"
                       style={{ background: `${impact.hue}1a`, color: impact.hue, border: `1px solid ${impact.hue}3d` }}
                       aria-hidden
                     >
@@ -115,7 +115,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-interactive typo-body-lg font-medium text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors focus-ring"
+            className="px-3.5 py-1.5 rounded-interactive typo-body-lg text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors focus-ring"
             data-testid="passport-action-confirm-cancel"
           >
             {t.common.cancel}
@@ -124,7 +124,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
             type="button"
             disabled={confirmDisabled}
             onClick={() => { onClose(); onConfirm(); }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-interactive typo-body-lg font-semibold transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-interactive typo-body-lg transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ color: impact.hue, background: `${impact.hue}22`, border: `1px solid ${impact.hue}55` }}
             data-testid="passport-action-confirm-yes"
           >

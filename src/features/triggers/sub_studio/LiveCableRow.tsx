@@ -74,7 +74,7 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
         {connection ? (
           <span className="flex items-center gap-2 min-w-0 shrink">
             <PersonaIcon icon={connection.persona?.icon} color={connection.persona?.color} display="framed" frameSize="sm" />
-            <span className="typo-body font-medium text-foreground truncate">{connection.persona?.name ?? connection.personaId.slice(0, 8)}</span>
+            <span className="typo-body text-foreground truncate">{connection.persona?.name ?? connection.personaId.slice(0, 8)}</span>
           </span>
         ) : (
           <span className="typo-body text-foreground italic">{st.proto_no_listeners}</span>

@@ -58,7 +58,7 @@ export function PersonaWalkthroughWidget({ config, title }: CockpitWidgetProps) 
           <button
             type="button"
             onClick={() => commitWalkthroughToBuild(intent)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 focus-ring"
             data-testid="companion-walkthrough-commit"
           >
             <Rocket className="w-3.5 h-3.5" />

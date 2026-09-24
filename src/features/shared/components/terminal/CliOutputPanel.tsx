@@ -54,7 +54,7 @@ export default function CliOutputPanel({
       {healingStrip}
 
       {lines.length === 0 ? (
-        <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code leading-5`}>
+        <div className={`${maxHeightClassName} overflow-y-auto px-4 py-3 typo-code`}>
           {phase === 'idle' ? (
             <div className="text-foreground text-center py-4">{idleText}</div>
           ) : isSettled ? (

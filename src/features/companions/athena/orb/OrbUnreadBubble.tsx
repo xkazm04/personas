@@ -73,7 +73,7 @@ export function OrbUnreadBubble() {
       <div className="relative rounded-card bg-background/95 border border-primary/25 shadow-elevation-3 p-3">
         <div className="flex items-center gap-1.5 pr-5">
           <MessageSquareText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
-          <span className="typo-caption font-medium text-primary">{c.orb_unread_title}</span>
+          <span className="typo-caption text-primary">{c.orb_unread_title}</span>
           {unreadReplies > 1 && (
             <span className="typo-caption text-foreground opacity-70 tabular-nums">
               {tx(c.orb_unread_more, { count: unreadReplies - 1 })}
@@ -92,7 +92,7 @@ export function OrbUnreadBubble() {
         >
           <MarkdownRenderer
             content={shown}
-            className="athena-chat-md typo-caption leading-relaxed max-h-32 overflow-hidden"
+            className="athena-chat-md typo-caption max-h-32 overflow-hidden"
           />
         </button>
 
@@ -106,7 +106,7 @@ export function OrbUnreadBubble() {
             type="button"
             onClick={openChat}
             data-testid="athena-unread-open-chat"
-            className="inline-flex items-center gap-1 rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 typo-caption font-medium text-primary transition-colors focus-ring"
+            className="inline-flex items-center gap-1 rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 typo-caption text-primary transition-colors focus-ring"
           >
             {c.orb_unread_open}
           </button>

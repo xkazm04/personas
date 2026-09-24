@@ -171,7 +171,7 @@ export function ConsoleTab({ credentialId, language, serviceType }: ConsoleTabPr
               <button
                 type="button"
                 onClick={() => setSafeMode((v) => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body border transition-all ${
                   safeMode
                     ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
                     : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'
@@ -192,7 +192,7 @@ export function ConsoleTab({ credentialId, language, serviceType }: ConsoleTabPr
                 <button
                   type="button"
                   onClick={() => handleHistoryClick(h.query)}
-                  className="px-2 py-0.5 rounded typo-code font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
+                  className="px-2 py-0.5 rounded typo-code text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"
                 >
                   {h.query.length > 40 ? h.query.slice(0, 40) + '...' : h.query}
                 </button>

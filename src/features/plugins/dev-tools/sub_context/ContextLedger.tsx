@@ -263,7 +263,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
         {cols.length === 0 && (
           <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
             <Layers className="w-7 h-7 text-primary/40" />
-            <p className="typo-body font-medium text-foreground">{t.uc_empty}</p>
+            <p className="typo-body text-foreground">{t.uc_empty}</p>
             <p className="typo-caption text-foreground/60 max-w-sm">
               {hasMap ? t.uc_scan_tooltip : t.uc_empty_no_map}
             </p>

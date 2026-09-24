@@ -143,7 +143,7 @@ function EngineButton({ active, onClick, icon, label, caption, disabled = false 
     >
       <div className="flex items-center gap-2">
         <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
-        <span className={`typo-body font-medium ${active ? 'text-cyan-200' : 'text-foreground'}`}>
+        <span className={`typo-body ${active ? 'text-cyan-200' : 'text-foreground'}`}>
           {label}
         </span>
       </div>
@@ -409,7 +409,7 @@ function WhisperConfig() {
                             type="button"
                             onClick={() => setModelId(m.modelId)}
                             disabled={selected}
-                            className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
+                            className="px-2.5 py-1.5 rounded-interactive typo-caption bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
                           >
                             {t.athena.stt_model_select}
                           </button>
@@ -432,7 +432,7 @@ function WhisperConfig() {
                         <button
                           type="button"
                           onClick={() => void onDownload(m.modelId)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-secondary/50 hover:bg-secondary/70 border border-foreground/10 text-foreground transition-colors focus-ring"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption bg-secondary/50 hover:bg-secondary/70 border border-foreground/10 text-foreground transition-colors focus-ring"
                         >
                           {failed ? <XCircle className="w-3.5 h-3.5 text-rose-400" /> : <Download className="w-3.5 h-3.5" />}
                           {failed

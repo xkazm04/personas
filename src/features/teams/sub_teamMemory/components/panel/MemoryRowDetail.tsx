@@ -50,7 +50,7 @@ export default function MemoryRowDetail({
   return (
     <div className="px-2.5 py-2 rounded-modal border border-violet-500/25 bg-violet-500/5 space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="typo-body font-medium text-violet-400">{pt.edit_memory_title}</span>
+        <span className="typo-body text-violet-400">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
           <Tooltip content={t.common.save}>
             <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" aria-label={t.common.save}>

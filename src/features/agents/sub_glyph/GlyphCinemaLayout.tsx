@@ -330,7 +330,7 @@ function CrownedIdentity({
             <Sparkles className="w-4 h-4" style={{ color: accent }} />
           </motion.span>
         </motion.span>
-        <span className="typo-title-lg text-foreground" data-testid="cinema-winner">{agentName?.trim() || "Your agent"}</span>
+        <span className="typo-title-lg" data-testid="cinema-winner">{agentName?.trim() || "Your agent"}</span>
         {/* real identity streams in via B2 — skeleton until it lands */}
         {role ? (
           <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="typo-caption text-center" style={{ color: accent }} data-testid="cinema-role">{role}</motion.span>

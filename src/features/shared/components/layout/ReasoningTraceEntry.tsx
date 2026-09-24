@@ -39,7 +39,7 @@ export function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; base
         <div className="flex items-start gap-2 py-1">
           <span className="text-blue-400 shrink-0">{"\u25CF"}</span>
           <div className="min-w-0 flex-1">
-            <span className="typo-caption font-medium">{t.shared.reasoning_trace.system_init}</span>
+            <span className="typo-caption">{t.shared.reasoning_trace.system_init}</span>
             <span className="typo-caption text-foreground ml-2">{entry.model}</span>
             {entry.sessionId != null && (
               <span className="typo-caption text-foreground ml-1">({String(entry.sessionId).slice(0, 8)})</span>

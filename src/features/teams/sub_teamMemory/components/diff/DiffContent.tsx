@@ -21,7 +21,7 @@ function DiffMemoryItem({ memory, variant }: { memory: TeamMemory; variant: 'add
 
   return (
     <div className={`px-2 py-1.5 rounded-card border ${borderColor} ${bgColor}`}>
-      <p className="typo-caption font-medium text-foreground truncate">{memory.title}</p>
+      <p className="typo-caption text-foreground truncate">{memory.title}</p>
       <p className="typo-caption text-foreground line-clamp-1 mt-0.5">{memory.content}</p>
       <div className="flex items-center gap-2 mt-1">
         <span className={`typo-caption ${catColor}`}>{tokenLabel(t, 'memory_category', memory.category)}</span>
@@ -69,7 +69,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Category diffs */}
       {diff.categoryDiffs.length > 0 && (
         <div className="px-1">
-          <p className="typo-caption font-medium text-foreground mb-1">{pt.category_changes}</p>
+          <p className="typo-caption text-foreground mb-1">{pt.category_changes}</p>
           <div className="space-y-0.5">
             {diff.categoryDiffs.map((cd) => (
               <div key={cd.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
@@ -87,7 +87,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Importance shifts */}
       {diff.importanceShifts.some((s) => Math.abs(s.delta) >= 0.1) && (
         <div className="px-1">
-          <p className="typo-caption font-medium text-foreground mb-1">{pt.importance_shifts}</p>
+          <p className="typo-caption text-foreground mb-1">{pt.importance_shifts}</p>
           <div className="space-y-0.5">
             {diff.importanceShifts.filter((s) => Math.abs(s.delta) >= 0.1).map((s) => (
               <div key={s.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
@@ -105,7 +105,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Added memories */}
       {diff.added.length > 0 && (
         <div className="px-1">
-          <button type="button" onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
+          <button type="button" onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
             <Plus className="w-3 h-3" />{tx(diff.added.length === 1 ? pt.new_memories_one : pt.new_memories_other, { count: diff.added.length })}
           </button>
           {expandedSection === 'added' && (
@@ -119,7 +119,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Removed memories */}
       {diff.removed.length > 0 && (
         <div className="px-1">
-          <button type="button" onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
+          <button type="button" onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption text-red-400 mb-1 hover:text-red-300 transition-colors">
             <Minus className="w-3 h-3" />{tx(diff.removed.length === 1 ? pt.removed_memories_one : pt.removed_memories_other, { count: diff.removed.length })}
           </button>
           {expandedSection === 'removed' && (

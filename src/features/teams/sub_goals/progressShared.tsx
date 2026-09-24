@@ -385,7 +385,7 @@ export function ProgressEmpty({ dl }: { dl: DevLifecycleT }) {
     <div className="relative flex flex-col items-center justify-center py-16 text-center">
       <GoalAtmosphere />
       <ChartNoAxesGantt className="w-10 h-10 text-foreground mb-3" />
-      <h3 className="typo-section-title text-foreground">{dl.progress_empty_title}</h3>
+      <h3 className="typo-section-title">{dl.progress_empty_title}</h3>
       <p className="typo-body text-foreground mt-1 max-w-md">{dl.progress_empty_sub}</p>
     </div>
   );

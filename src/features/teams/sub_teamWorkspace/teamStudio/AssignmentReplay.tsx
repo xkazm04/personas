@@ -102,7 +102,7 @@ export function AssignmentReplay({ steps, personaIndex, onExit }: {
       <div className="rounded-card border border-primary/15 bg-secondary/15 px-4 py-3 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="typo-caption font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">#{step.stepOrder + 1}</span>
-          <h4 className="typo-body font-semibold text-foreground min-w-0 flex-1 truncate">{step.title}</h4>
+          <h4 className="typo-body text-foreground min-w-0 flex-1 truncate">{step.title}</h4>
           <PersonaChip persona={persona} />
           <span className={`typo-caption ${meta.tone}`}>{meta.label}</span>
           {step.retryCount > 0 && (

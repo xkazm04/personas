@@ -21,7 +21,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
 
   return (
     <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-3 py-2 rounded-modal glass-md border border-primary/15 shadow-elevation-3 max-w-[90%]">
-      <span className="typo-body font-medium text-foreground whitespace-nowrap">
+      <span className="typo-body text-foreground whitespace-nowrap">
         {tx(t.templates.compare.selected, { count: selected.length })}
       </span>
 

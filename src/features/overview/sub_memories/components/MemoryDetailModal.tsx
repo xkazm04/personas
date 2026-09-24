@@ -76,29 +76,29 @@ export default function MemoryDetailModal({
         <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.title_label}</div>
+            <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.title_label}</div>
             <p className="typo-heading text-foreground/90">{stripHtml(memory.title)}</p>
           </div>
 
           {/* Content */}
           <div>
-            <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.content_label}</div>
-            <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{stripHtml(memory.content)}</p>
+            <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.content_label}</div>
+            <p className="typo-body text-foreground whitespace-pre-wrap">{stripHtml(memory.content)}</p>
           </div>
 
           {/* Meta row */}
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.category_label}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.category_label}</div>
               <CategoryChip category={memory.category} />
             </div>
             <div>
-              <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.importance_label}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider mb-1">{t.overview.memory_detail.importance_label}</div>
               <ImportanceBar value={memory.importance} />
             </div>
             {memory.use_case_id && (
               <div>
-                <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1">Scope</div>
+                <div className="typo-code text-foreground uppercase tracking-wider mb-1">Scope</div>
                 <span
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-violet-500/15 border border-violet-500/30 text-violet-300 typo-body"
                   title={`Capability: ${memory.use_case_id}`}
@@ -113,11 +113,11 @@ export default function MemoryDetailModal({
           {/* Tags */}
           {tags.length > 0 && (
             <div>
-              <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.tags_label}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.tags_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Tag className="w-3 h-3 text-foreground" />
                 {tags.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 typo-code font-mono bg-secondary/40 text-foreground rounded border border-primary/10">{tag}</span>
+                  <span key={tag} className="px-2 py-0.5 typo-code bg-secondary/40 text-foreground rounded border border-primary/10">{tag}</span>
                 ))}
               </div>
             </div>
@@ -126,13 +126,13 @@ export default function MemoryDetailModal({
           {/* Reflection provenance — which memories this insight was synthesized from */}
           {memory.derived_from && memory.derived_from.length > 0 && (
             <div>
-              <div className="typo-code font-mono text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.derived_from_label}</div>
+              <div className="typo-code text-foreground uppercase tracking-wider mb-1.5">{t.overview.memory_detail.derived_from_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Layers className="w-3 h-3 text-amber-400/70" />
                 {memory.derived_from.map((sourceId) => (
                   <span
                     key={sourceId}
-                    className="px-2 py-0.5 typo-code font-mono bg-amber-500/10 text-amber-300/80 rounded border border-amber-500/20"
+                    className="px-2 py-0.5 typo-code bg-amber-500/10 text-amber-300/80 rounded border border-amber-500/20"
                     title={sourceId}
                   >
                     {sourceId.slice(0, 8)}

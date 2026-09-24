@@ -54,12 +54,12 @@ function DecisionCards({ decisions }: { decisions: DecisionItem[] }) {
         <div key={d.id} className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {d.category && (
-              <span className="typo-caption font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
+              <span className="typo-caption text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
             )}
-            <span className="typo-body font-medium text-foreground">{d.label}</span>
+            <span className="typo-body text-foreground">{d.label}</span>
           </div>
           {d.description && (
-            <p className="typo-body text-foreground mt-1 leading-relaxed">{d.description}</p>
+            <p className="typo-body text-foreground mt-1">{d.description}</p>
           )}
         </div>
       ))}
@@ -86,7 +86,7 @@ export function ContextDataPreview({ raw }: { raw: string | null | undefined }) 
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
           return (
             <div key={key}>
-              <div className="typo-code font-mono text-foreground uppercase mb-1">{key}</div>
+              <div className="typo-code text-foreground uppercase mb-1">{key}</div>
               <DecisionCards decisions={val as DecisionItem[]} />
             </div>
           );

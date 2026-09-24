@@ -39,8 +39,8 @@ export function AutoCredErrorDisplay({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-heading font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
-            <span className={`typo-body font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+            <p className="typo-heading text-foreground">{t.vault.auto_cred.browser_error_title}</p>
+            <span className={`typo-body px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
           </div>
@@ -56,7 +56,7 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setContextOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 typo-body font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>{t.vault.auto_cred.what_happened}</span>
             {contextOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -108,14 +108,14 @@ export function AutoCredErrorDisplay({
           <button
             type="button"
             onClick={() => setLogOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-2.5 typo-body font-medium text-foreground hover:text-muted-foreground/90 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground/90 transition-colors"
           >
             <span>{tx(t.vault.auto_cred.session_log, { count: logs.length })}</span>
             {logOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {logOpen && (
             <div className="border-t border-primary/10">
-              <div className="max-h-[26rem] overflow-y-auto p-3 font-mono typo-code space-y-1">
+              <div className="max-h-[26rem] overflow-y-auto p-3 typo-code space-y-1">
                 {logs.map((entry, i) => (
                   <div key={i} className={`flex items-start gap-2 ${
                     entry.type === 'error' ? 'text-red-400' :
@@ -153,7 +153,7 @@ export function AutoCredErrorDisplay({
             onClick={onRetry}
             // text-foreground is deliberate on saturated bg-cyan-600 — see
             // AutoCredConsent for the same exception.
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body font-medium transition-colors"
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body transition-colors"
           >
             {t.vault.auto_cred.retry}
           </button>

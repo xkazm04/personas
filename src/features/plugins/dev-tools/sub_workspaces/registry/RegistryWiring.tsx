@@ -154,7 +154,7 @@ export function RegistryWiring({
       <div className="flex flex-col gap-3">
         <p className="typo-body text-foreground">{tr.no_credential}</p>
         <div className="border-t border-border pt-3">
-          <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+          <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
           <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
         </div>
       </div>
@@ -231,7 +231,7 @@ export function RegistryWiring({
       </div>
 
       <div className="border-t border-border pt-3">
-        <p className="typo-caption font-medium text-foreground mb-2">{tr.local_heading}</p>
+        <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
         <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />
       </div>
     </div>

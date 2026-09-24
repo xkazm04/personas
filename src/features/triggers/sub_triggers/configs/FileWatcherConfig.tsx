@@ -38,7 +38,7 @@ export function FileWatcherConfig({
               placeholder={t.triggers.file_watcher_path_placeholder}
               aria-invalid={!!validationError}
               aria-describedby={validationError ? 'watch-paths-error' : undefined}
-              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
+              className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
                 validationError ? 'border-red-500/30' : 'border-primary/15'
               }`}
             />
@@ -60,7 +60,7 @@ export function FileWatcherConfig({
               key={evt}
               type="button"
               onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
-              className={`px-2.5 py-1 rounded-modal typo-body font-medium transition-all border ${
+              className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
                 watchEvents.includes(evt)
                   ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
                   : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
@@ -83,7 +83,7 @@ export function FileWatcherConfig({
           value={globFilter}
           onChange={(e) => setGlobFilter(e.target.value)}
           placeholder={t.triggers.file_watcher_pattern_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
     </div>

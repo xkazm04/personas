@@ -265,7 +265,7 @@ export default function SetupPanel() {
             <button
               type="button"
               onClick={() => setSignalsModalOpen(true)}
-              className="inline-flex items-center gap-2 typo-caption font-medium text-primary hover:underline focus-ring rounded"
+              className="inline-flex items-center gap-2 typo-caption text-primary hover:underline focus-ring rounded"
             >
               <Eye className="w-3.5 h-3.5" />
               {c.setup_desktop_view_signals}
@@ -293,7 +293,7 @@ export default function SetupPanel() {
             </div>
           </div>
           <span
-            className={`shrink-0 typo-caption font-medium px-2 py-0.5 rounded-full border ${
+            className={`shrink-0 typo-caption px-2 py-0.5 rounded-full border ${
               devAvailable && devMode
                 ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
                 : 'border-foreground/10 bg-foreground/5 text-foreground'

@@ -48,7 +48,7 @@ function BuilderBranches({ item, onBranch }: { item: TriageItem; onBranch: (id: 
           onClick={() => onBranch(branch.id)}
           title={branch.hint}
           aria-label={branch.label}
-          className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-3 py-1.5 typo-body font-medium transition-colors ${TONE_CHIP.accent} ${TONE_HOVER.accent}`}
+          className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-3 py-1.5 typo-body transition-colors ${TONE_CHIP.accent} ${TONE_HOVER.accent}`}
         >
           {branch.icon ? <branch.icon className="h-4 w-4" aria-hidden /> : null}
           {branch.label}
@@ -84,7 +84,7 @@ function QuestionField({
   const { t } = useTranslation();
 
   const prompt = showPrompt ? (
-    <p className="typo-body font-medium text-foreground">{field.prompt}</p>
+    <p className="typo-body text-foreground">{field.prompt}</p>
   ) : null;
 
   if (field.deferred) {

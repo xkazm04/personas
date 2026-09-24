@@ -101,7 +101,7 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
-      <p className="typo-caption font-medium text-foreground">{title}</p>
+      <p className="typo-caption text-foreground">{title}</p>
       <p className="text-[11px] text-foreground/50 max-w-sm">{subtitle}</p>
     </div>
   );

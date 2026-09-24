@@ -90,7 +90,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
                   value={field.key}
                   onChange={(e) => updateField(index, { key: e.target.value })}
                   placeholder={t.recipes.schema.placeholders.key}
-                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50 font-mono"
+                  className="w-full rounded-card border border-border/60 bg-background/50 px-2.5 py-1.5 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/50"
                 />
 
                 <select

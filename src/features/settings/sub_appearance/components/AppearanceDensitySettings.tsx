@@ -35,10 +35,10 @@ export default function AppearanceDensitySettings() {
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-foreground'}`} />
-              <span className={`typo-heading ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+              <span className={`typo-heading ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                 {label}
               </span>
-              <span className="typo-caption text-foreground leading-snug">{description}</span>
+              <span className="typo-caption text-foreground">{description}</span>
               {isActive && (
                 <div className="absolute top-2 right-2">
                   <Check className="w-3.5 h-3.5 text-primary" />

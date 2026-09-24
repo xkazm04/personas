@@ -61,7 +61,7 @@ function BucketBtn({ label, on, onClick, bucket }: {
       type="button"
       onClick={onClick}
       className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${
-        on ? 'text-foreground font-semibold' : 'text-foreground/60 hover:text-foreground/80'
+        on ? 'text-foreground' : 'text-foreground/60 hover:text-foreground/80'
       } ${on && bucket ? BUCKET_BORDER[bucket] : 'border-status-neutral/15'}`}
     >
       {label}

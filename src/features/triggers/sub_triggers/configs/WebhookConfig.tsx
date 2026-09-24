@@ -39,7 +39,7 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               value={hmacSecret}
               onChange={(e) => setHmacSecret(e.target.value)}
               placeholder={t.triggers.auto_generated_hint}
-              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'font-mono typo-code' : ''}`}
+              className={`w-full px-3 py-2 pr-10 bg-background/50 border border-primary/15 rounded-modal text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'typo-code' : ''}`}
             />
             <button
               type="button"

@@ -135,7 +135,7 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
           const isHidden = hidden.has(i.slug);
           return (
             <li key={i.slug}>
-              <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading font-normal transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground ${isHidden ? 'opacity-50' : ''}`}>
+              <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground ${isHidden ? 'opacity-50' : ''}`}>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: STATE_INK[i.state] }} aria-hidden />
                 <button
                   type="button"

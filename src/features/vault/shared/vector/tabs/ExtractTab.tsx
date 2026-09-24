@@ -144,7 +144,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
       {schema && (
         <div>
-          <h3 className="typo-title text-primary mb-1">{sh.extract_schema_heading}</h3>
+          <h3 className="typo-title mb-1">{sh.extract_schema_heading}</h3>
           <p className="typo-caption text-foreground mb-2">{sh.extract_schema_hint}</p>
           <SchemaEditor schema={schema} onChange={setSchema} />
         </div>

@@ -107,7 +107,7 @@ export function McpServerInfoPanel() {
       }
     >
       <div className="space-y-3" data-testid="mcp-server-info-panel">
-      <p className="typo-caption text-foreground leading-relaxed">{s.server_panel_description}</p>
+      <p className="typo-caption text-foreground">{s.server_panel_description}</p>
 
       <div className="flex items-center gap-2">
         <code className="flex-1 typo-code text-foreground bg-background/60 border border-border/30 rounded-input px-2.5 py-1.5 truncate">
@@ -161,7 +161,7 @@ export function McpServerInfoPanel() {
         </div>
       </details>
 
-      <p className="typo-caption text-foreground leading-relaxed bg-background/40 rounded p-2">
+      <p className="typo-caption text-foreground bg-background/40 rounded p-2">
         <span className="font-medium text-foreground">{s.server_auth_label}:</span>{' '}
         {s.server_auth_description}
       </p>

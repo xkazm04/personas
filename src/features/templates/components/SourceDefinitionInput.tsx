@@ -242,7 +242,7 @@ export function SourceDefinitionInput({
               title={disabled ? disabledHint : undefined}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg border transition-all ${
                 active && !disabled
-                  ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                  ? 'bg-primary/20 border-primary/30 text-primary'
                   : disabled
                     ? 'bg-white/[0.02] border-white/[0.04] text-foreground cursor-not-allowed'
                     : 'bg-white/[0.03] border-white/[0.06] text-foreground hover:bg-white/[0.06] hover:border-white/[0.1]'

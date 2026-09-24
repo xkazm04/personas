@@ -37,7 +37,7 @@ export function QuickAnswerReviewCard({ review, busy, onAction }: QuickAnswerRev
       <div className="flex items-center gap-2 min-w-0">
         <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sev.dot}`} aria-hidden />
-        <span className="typo-body font-semibold text-foreground truncate min-w-0">{review.title}</span>
+        <span className="typo-body text-foreground truncate min-w-0">{review.title}</span>
       </div>
       {review.persona_name && (
         <span className="typo-caption text-foreground truncate">{review.persona_name}</span>

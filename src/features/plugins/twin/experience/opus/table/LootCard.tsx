@@ -48,7 +48,7 @@ export function LootCard({ proposal, resolution, onKeep, onEdit, onPass }: LootC
       data-testid={`xo-loot-${part ?? proposal.kind}`}
     >
       <div className="flex items-center gap-2 px-4 pt-3">
-        <span className="typo-label uppercase tracking-[0.18em] text-[var(--xo-hue)]">{label}</span>
+        <span className="typo-label uppercase text-[var(--xo-hue)]">{label}</span>
         {proposal.lengthHint && <span className="typo-caption">{proposal.lengthHint}</span>}
         {resolution && (
           <span

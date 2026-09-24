@@ -78,7 +78,7 @@ export function TriggerSetWidget({ config, title }: CockpitWidgetProps) {
             >
               <div className="flex items-center gap-2">
                 <SourceIcon className="w-3.5 h-3.5 text-foreground shrink-0" />
-                <span className="typo-body font-medium text-foreground/95 flex-1">
+                <span className="typo-body text-foreground/95 flex-1">
                   {tr.label}
                 </span>
                 <span className="typo-caption text-foreground shrink-0 truncate max-w-[40%]">

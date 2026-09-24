@@ -32,7 +32,7 @@ export function ProjectStep({
     <div className="space-y-5">
       {/* Folder picker (read-only in edit mode) */}
       <div>
-        <label className="typo-caption font-medium text-foreground mb-1.5 block">{dp.project_folder}</label>
+        <label className="typo-caption text-foreground mb-1.5 block">{dp.project_folder}</label>
         <div className="flex gap-2">
           <div
             onClick={isEdit ? undefined : onSelectFolder}
@@ -57,10 +57,10 @@ export function ProjectStep({
 
       {/* Project name */}
       <div>
-        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
           {dp.project_name}
           {!isEdit && path && !nameEdited && (
-            <span className="typo-caption text-foreground font-normal">({dp.auto_filled_from_folder})</span>
+            <span className="typo-caption text-foreground">({dp.auto_filled_from_folder})</span>
           )}
         </label>
         <div className="relative">
@@ -76,9 +76,9 @@ export function ProjectStep({
 
       {/* Project type */}
       <div>
-        <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+        <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
           {dp.project_type}
-          <span className="typo-caption text-foreground font-normal">({dp.project_type_optional})</span>
+          <span className="typo-caption text-foreground">({dp.project_type_optional})</span>
         </label>
         <div className="flex flex-wrap gap-1.5">
           {PROJECT_TYPES.map((pt) => (
@@ -86,7 +86,7 @@ export function ProjectStep({
               key={pt.id}
               type="button"
               onClick={() => onTypeChange(pt.id)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border transition-all ${
                 projectType === pt.id
                   ? `${pt.color} ring-1 ring-current/20`
                   : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'

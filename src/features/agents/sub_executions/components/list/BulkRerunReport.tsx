@@ -172,7 +172,7 @@ function Section({ title, tone, children }: SectionProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <span className={`typo-heading uppercase tracking-wider ${headerTone}`}>{title}</span>
+        <span className={`typo-heading uppercase ${headerTone}`}>{title}</span>
       </div>
       {children}
     </div>

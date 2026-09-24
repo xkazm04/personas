@@ -312,7 +312,7 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Brain className="w-4 h-4" />
-              <span className="typo-body font-medium">{mui.tab_memories}</span>
+              <span className="typo-body">{mui.tab_memories}</span>
             </button>
             <button
               type="button"
@@ -320,7 +320,7 @@ export default function MemoriesPageDense() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
               <Shield className="w-4 h-4" />
-              <span className="typo-body font-medium">{mui.tab_conflicts}</span>
+              <span className="typo-body">{mui.tab_conflicts}</span>
             </button>
             <div className="w-px h-6 bg-primary/10" />
             {/* `Button loading` renders a REAL spinner and sets aria-busy.
@@ -466,7 +466,7 @@ export default function MemoriesPageDense() {
                 type="button"
                 key={cat}
                 onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body font-medium transition-all border ${
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body transition-all border ${
                   active
                     ? `${colors.bg} ${colors.text} border-current/30`
                     : 'text-foreground hover:text-foreground hover:bg-secondary/30 border-transparent'
@@ -703,7 +703,7 @@ function DenseRow({
         <CategoryChip category={memory.category} className="!px-1.5" label="" />
       </div>
       <div className={`${COL_WIDTHS.title} px-2 py-2 min-w-0`}>
-        <p className="typo-body font-medium text-foreground truncate">{stripHtml(memory.title)}</p>
+        <p className="typo-body text-foreground truncate">{stripHtml(memory.title)}</p>
       </div>
       <div className={`${COL_WIDTHS.persona} px-2 py-2 flex items-center gap-1.5 min-w-0`}>
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: personaColor }} />
@@ -714,7 +714,7 @@ function DenseRow({
           <div className="flex-1 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${importancePct}%`, backgroundColor: importanceHex }} />
           </div>
-          <span className="typo-code font-mono tabular-nums text-foreground w-7 text-right">{memory.importance}/5</span>
+          <span className="typo-code tabular-nums text-foreground w-7 text-right">{memory.importance}/5</span>
         </div>
       </div>
       <div className={`${COL_WIDTHS.tier} px-2 py-2`}>
@@ -722,12 +722,12 @@ function DenseRow({
             ("core"/"active"/"working"/"archive"); rendering it raw showed
             English in all 14 locales and gave a backend rename no compile-time
             link to this cell. tokenLabel is the contract's resolver. */}
-        <span className={`inline-flex items-center px-1.5 py-0.5 typo-caption font-medium rounded-input border ${tierClass}`}>
+        <span className={`inline-flex items-center px-1.5 py-0.5 typo-caption rounded-input border ${tierClass}`}>
           {tokenLabel(t, 'memory_tier', memory.tier)}
         </span>
       </div>
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>
-        <span className="typo-code font-mono tabular-nums text-emerald-300">{memory.access_count}</span>
+        <span className="typo-code tabular-nums text-emerald-300">{memory.access_count}</span>
       </div>
       {/* A hand-rolled " ago" strip stood here to squeeze the label into a
           w-20 track, and it trimmed inconsistently: "5m ago" became "5m" but
@@ -738,10 +738,10 @@ function DenseRow({
           live-updates on the shared ticker and puts the absolute timestamp in
           a tooltip, neither of which the raw call did. */}
       <div className={`${COL_WIDTHS.lastSeen} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={lastSeen} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={lastSeen} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
       </div>
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={memory.created_at} className="typo-code font-mono tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={memory.created_at} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
       </div>
     </RevealItem>
   );
@@ -750,7 +750,7 @@ function DenseRow({
 function KpiMetric({ label, value, tone = 'text-foreground' }: { label: string; value: string | number; tone?: string }) {
   return (
     <span className="typo-body text-foreground whitespace-nowrap">
-      {label} <span className={`${tone} font-bold tabular-nums typo-data`}>{value}</span>
+      {label} <span className={`${tone} typo-data`}>{value}</span>
     </span>
   );
 }

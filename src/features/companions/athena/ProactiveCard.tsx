@@ -101,7 +101,7 @@ export function ProactiveCard({
       data-companion-proactive-kind={message.triggerKind}
     >
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-foreground">
+        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
           <Bell className="w-3.5 h-3.5" />
           {t.athena.proactive_label}
         </span>
@@ -109,7 +109,7 @@ export function ProactiveCard({
           · {triggerKindLabel(t, message.triggerKind)}
         </span>
       </div>
-      <p className="typo-body text-foreground/90 leading-relaxed">
+      <p className="typo-body text-foreground/90">
         {message.message}
       </p>
       {error && (
@@ -125,7 +125,7 @@ export function ProactiveCard({
           onClick={() => handle('engage')}
           disabled={busy !== null}
           data-testid="companion-proactive-engage"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/25 bg-primary/15 text-primary hover:bg-primary/25 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/25 bg-primary/15 text-primary hover:bg-primary/25 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
         >
           {busy === 'engage' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -139,7 +139,7 @@ export function ProactiveCard({
           onClick={() => handle('dismiss')}
           disabled={busy !== null}
           data-testid="companion-proactive-dismiss"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
         >
           {busy === 'dismiss' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -112,7 +112,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
           <div className="typo-caption text-foreground mb-1">
             {t.athena.persona_ready_intent_label}
           </div>
-          <p className="typo-body text-foreground/95 leading-relaxed">
+          <p className="typo-body text-foreground/95">
             {summary.intent_line}
           </p>
         </div>
@@ -149,7 +149,7 @@ export function PersonaReadyWidget({ config, title }: CockpitWidgetProps) {
         <button
           type="button"
           onClick={handleCommit}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-emerald-500/85 hover:bg-emerald-500 text-emerald-950 typo-caption font-semibold focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-emerald-500/85 hover:bg-emerald-500 text-emerald-950 typo-caption focus-ring"
           data-testid="companion-persona-ready-commit"
         >
           <Rocket className="w-3.5 h-3.5" />

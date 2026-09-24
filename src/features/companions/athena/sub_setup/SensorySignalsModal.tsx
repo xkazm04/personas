@@ -128,7 +128,7 @@ export function SensorySignalsModal({
           <div>
             <h2
               id="sensory-signals-modal-title"
-              className="typo-heading font-semibold"
+              className="typo-heading"
             >
               {t.athena.sensory_signals_title}
             </h2>
@@ -152,7 +152,7 @@ export function SensorySignalsModal({
               key={chip.id}
               type="button"
               onClick={() => setFilter(chip.id)}
-              className={`px-2.5 py-1 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
+              className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors focus-ring ${
                 filter === chip.id
                   ? 'bg-primary/15 text-primary'
                   : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
@@ -244,7 +244,7 @@ function SignalRow({
         </div>
         {signal.redactedContent ? (
           <div className="mt-2 px-2.5 py-1.5 rounded-interactive bg-foreground/[0.04] border border-foreground/5">
-            <div className="typo-caption font-medium text-foreground mb-1">
+            <div className="typo-caption text-foreground mb-1">
               {t.athena.sensory_signals_redacted_label}
             </div>
             <div className="typo-caption font-mono text-foreground break-all whitespace-pre-wrap">

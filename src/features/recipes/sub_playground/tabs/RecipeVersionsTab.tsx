@@ -113,7 +113,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     <div className="flex flex-col h-full">
       {/* Generate Section */}
       <div className="p-4 border-b border-border/40 space-y-3">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
+        <h3 className="typo-heading text-foreground uppercase">
           {t.recipes.create_new_version}
         </h3>
 
@@ -136,7 +136,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
             type="button"
             onClick={handleGenerate}
             disabled={!requirements.trim()}
-            className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             {t.recipes.generate_new_version}
@@ -185,7 +185,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               />
             )}
 
-            <h4 className="typo-heading font-semibold text-foreground">{t.recipes.generated_version}</h4>
+            <h4 className="typo-heading text-foreground">{t.recipes.generated_version}</h4>
 
             {versioning.draft.changes_summary && (
               <div>
@@ -204,7 +204,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 type="button"
                 onClick={handleAccept}
                 disabled={accepting}
-                className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
               >
                 {accepting ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                 {t.recipes.accept_apply}
@@ -234,7 +234,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
       {/* {t.recipes.version_history} */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide mb-3">
+        <h3 className="typo-heading text-foreground uppercase mb-3">
           {t.recipes.version_history} {!loading && versions.length > 0 && `(${versions.length})`}
         </h3>
 
@@ -278,11 +278,11 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                     <div className="flex-1 rounded-modal border border-border/40 bg-card/30 px-4 py-3 hover:border-border/60 transition-colors">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="typo-heading font-semibold text-foreground">
+                          <span className="typo-heading text-foreground">
                             v{version.version_number}
                           </span>
                           {isLatest && (
-                            <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 typo-body text-primary font-medium">
+                            <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 typo-body text-primary">
                               {t.recipes.latest}
                             </span>
                           )}

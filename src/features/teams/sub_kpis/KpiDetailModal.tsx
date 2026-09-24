@@ -147,7 +147,7 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
         </span>
         <div className="min-w-0">
           <p className="typo-caption text-foreground truncate">{projectName}</p>
-          <h2 id={TITLE_ID} className="typo-title text-foreground truncate">{kpi.name}</h2>
+          <h2 id={TITLE_ID} className="typo-title truncate">{kpi.name}</h2>
           <p className="typo-caption text-foreground/70">
             {cat.label(t)} · {kind.label(t)} · {cad.label(t)}
           </p>
@@ -293,11 +293,11 @@ function HowMeasured({ kpi }: { kpi: DevKpi }) {
       {/* The description is AUTHORED - the KPI scan writes it, an agent can
           rewrite it - so it renders as RichMarkdown: a scan may put a gauge,
           a card or a table of evidence in it, in the app's one block vocabulary. */}
-      {kpi.description && <RichMarkdown content={kpi.description} className="typo-body-lg leading-relaxed" />}
+      {kpi.description && <RichMarkdown content={kpi.description} className="typo-body-lg" />}
       <p className="typo-body">{describeMeasurement(kpi, t, tx)}</p>
       <details className="typo-caption">
         <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
-        <code className="mt-1 block rounded-card bg-secondary/30 px-2.5 py-2 font-mono typo-code break-all">
+        <code className="mt-1 block rounded-card bg-secondary/30 px-2.5 py-2 typo-code break-all">
           {kpi.measure_config}
         </code>
       </details>
@@ -324,7 +324,7 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
             return (
               <li key={m.id} className="px-3 py-2">
                 <div className="flex items-center gap-3">
-                  <span className="typo-data tabular-nums">
+                  <span className="typo-data">
                     <Numeric value={m.value} /> <span className="typo-caption">{kpi.unit}</span>
                   </span>
                   <span className="typo-caption">

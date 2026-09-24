@@ -22,7 +22,7 @@ export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
       </button>
       {config.headerIcon}
       <div>
-        <h3 className="typo-heading font-semibold text-foreground">{config.title}</h3>
+        <h3 className="typo-heading text-foreground">{config.title}</h3>
         <p className="typo-body text-foreground">{config.subtitle}</p>
       </div>
     </div>
@@ -41,7 +41,7 @@ export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder
   const inputId = useId();
   return (
     <div>
-      <label htmlFor={inputId} className="block typo-body font-medium text-foreground mb-1.5">
+      <label htmlFor={inputId} className="block typo-body text-foreground mb-1.5">
         {nameLabel} <span className="text-red-400 ml-1">*</span>
       </label>
       <input
@@ -71,7 +71,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
 
   return (
     <div data-testid="vault-schema-subtype">
-      <label className="block typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
+      <label className="block typo-heading uppercase text-foreground mb-3">
         {config.subTypeLabel}
       </label>
 
@@ -84,7 +84,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
                 type="button"
                 aria-pressed={subTypeId === st.id}
                 onClick={() => onSubTypeChange(st.id)}
-                className={`flex-1 px-4 py-2.5 rounded-modal typo-body font-medium border transition-all ${
+                className={`flex-1 px-4 py-2.5 rounded-modal typo-body border transition-all ${
                   subTypeId === st.id
                     ? config.subTypeActiveClass
                     : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
@@ -110,7 +110,7 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
                   : 'bg-secondary/25 border-primary/15 text-foreground hover:bg-secondary/40'
               }`}
             >
-              <div className="font-medium typo-body flex items-center gap-2">
+              <div className="typo-body flex items-center gap-2">
                 {st.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />}
                 {st.label}
               </div>

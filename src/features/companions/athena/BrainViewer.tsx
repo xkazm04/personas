@@ -766,7 +766,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             onChange={(e) => setDraft(e.target.value)}
             spellCheck={false}
             aria-label={t.athena.identity_edit}
-            className="w-full h-full min-h-[24rem] rounded-card border border-primary/20 bg-secondary/30 p-3 typo-code font-mono text-foreground resize-none focus-ring"
+            className="w-full h-full min-h-[24rem] rounded-card border border-primary/20 bg-secondary/30 p-3 typo-code text-foreground resize-none focus-ring"
           />
         ) : (
           <>

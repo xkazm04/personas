@@ -155,7 +155,7 @@ export function ShipControlBar({
           <Rocket className="w-3.5 h-3.5" aria-hidden />
           {cutting ? t.ship.certify_cut : t.ship.certify_ship}
           <span
-            className={`ml-0.5 px-1.5 rounded-full typo-data tabular-nums ${PLAN_INK[CRIT_ROLE[verdict]]} ${PLAN_TINT[CRIT_ROLE[verdict]]}`}
+            className={`ml-0.5 px-1.5 rounded-full typo-data ${PLAN_INK[CRIT_ROLE[verdict]]} ${PLAN_TINT[CRIT_ROLE[verdict]]}`}
             aria-label={tx(t.ship.criteria_badge_aria, { unmet, total: vm.criteria.length })}
           >
             {unmet === 0 ? `${vm.criteria.length}/${vm.criteria.length}` : `${vm.criteria.length - unmet}/${vm.criteria.length}`}

@@ -29,7 +29,7 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink, boxShadow: `0 0 6px ${mix(ink, 60)}` }} aria-hidden />
-        <span className="typo-body font-medium text-foreground truncate">{label}</span>
+        <span className="typo-body text-foreground truncate">{label}</span>
         <span className="typo-caption text-foreground/55 shrink-0" style={{ fontFamily: MONO }}>
           {stateLabel(t, session?.state ?? 'exited')}
         </span>

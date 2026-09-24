@@ -108,7 +108,7 @@ const DossierRow = memo(function DossierRow({
         <div className="flex items-start justify-between gap-3">
           {/* Body-lg at NORMAL weight: the source tile and the stamps carry the
               emphasis, so the title reads as prose above them, not a headline. */}
-          <span className={`typo-body-lg font-normal ${isClosed ? 'text-foreground/70' : 'text-foreground'}`}>{incident.title}</span>
+          <span className={`typo-body-lg ${isClosed ? 'text-foreground/70' : 'text-foreground'}`}>{incident.title}</span>
           <span className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
             {isOpen && <Act icon={Check} label={t.overview.incidents.action_acknowledge} onClick={() => onAcknowledge(incident.id)} />}
             {(isOpen || isAck) && <Act icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={() => onResolve(incident.id)} />}
@@ -117,7 +117,7 @@ const DossierRow = memo(function DossierRow({
           </span>
         </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className={`inline-flex items-center rounded-card border px-1.5 py-0.5 typo-caption font-medium ${severityBadgeClass(incident.severity)}`}>
+          <span className={`inline-flex items-center rounded-card border px-1.5 py-0.5 typo-caption ${severityBadgeClass(incident.severity)}`}>
             {tokenLabel(t, 'severity', incident.severity)}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-card border border-primary/15 bg-secondary/30 px-1.5 py-0.5 typo-caption text-foreground">
@@ -135,7 +135,7 @@ const DossierRow = memo(function DossierRow({
           }`}>
             <Clock className="h-3 w-3" aria-hidden="true" />{days < 1 ? '<1d' : `${days}d`}
           </span>
-          {isNew && <span className="inline-flex items-center rounded-card bg-primary/15 px-1.5 py-0.5 typo-caption font-medium text-primary">{t.overview.incidents.ledger.new_badge}</span>}
+          {isNew && <span className="inline-flex items-center rounded-card bg-primary/15 px-1.5 py-0.5 typo-caption text-primary">{t.overview.incidents.ledger.new_badge}</span>}
         </div>
       </div>
     </div>

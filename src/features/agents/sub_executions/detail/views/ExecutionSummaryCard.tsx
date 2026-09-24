@@ -116,7 +116,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
               printing it raw left the run's headline word untranslated in all
               13 non-English locales (and CSS `capitalize` is not a substitute
               for a label). */}
-          <span className={`${compact ? 'typo-body font-medium' : 'typo-heading'} ${presentation.text}`}>
+          <span className={`${compact ? 'typo-body' : 'typo-heading'} ${presentation.text}`}>
             {tokenLabel(t, 'execution', summary.status)}
           </span>
         </div>

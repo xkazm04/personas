@@ -48,29 +48,29 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
         >
           <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} />
         </div>
-        <span className="typo-code font-mono uppercase tracking-wider text-foreground">{typeMeta.label}</span>
+        <span className="typo-code uppercase tracking-wider text-foreground">{typeMeta.label}</span>
         <button type="button" onClick={onClose} className="ml-auto w-5 h-5 rounded flex items-center justify-center hover:bg-secondary/60 transition-colors">
           <X className="w-3 h-3 text-foreground" />
         </button>
       </div>
 
-      <div className="typo-body font-medium text-foreground/90">{node.label}</div>
+      <div className="typo-body text-foreground/90">{node.label}</div>
 
       {node.detail && (
-        <p className="typo-body text-foreground leading-relaxed">{node.detail}</p>
+        <p className="typo-body text-foreground">{node.detail}</p>
       )}
 
       {node.error_message && (
         <div className="px-3 py-2 rounded-modal bg-status-error/10 border border-status-error/15">
-          <div className="typo-code font-mono uppercase tracking-wider text-status-error/60 mb-1">{t.templates.diagram.error_label}</div>
-          <p className="typo-body text-status-error/90 leading-relaxed">{node.error_message}</p>
+          <div className="typo-code uppercase tracking-wider text-status-error/60 mb-1">{t.templates.diagram.error_label}</div>
+          <p className="typo-body text-status-error/90">{node.error_message}</p>
         </div>
       )}
 
       {requestData && (
         <div>
-          <div className="typo-code font-mono uppercase tracking-wider text-status-info/50 mb-1">{t.templates.diagram.request_label}</div>
-          <pre className="typo-code text-status-info/70 bg-status-info/5 border border-status-info/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="typo-code uppercase tracking-wider text-status-info/50 mb-1">{t.templates.diagram.request_label}</div>
+          <pre className="typo-code text-status-info/70 bg-status-info/5 border border-status-info/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words">
             {typeof requestData === 'string' ? requestData : JSON.stringify(requestData, null, 2)}
           </pre>
         </div>
@@ -78,8 +78,8 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
       {responseData && (
         <div>
-          <div className="typo-code font-mono uppercase tracking-wider text-status-success/50 mb-1">{t.templates.diagram.response_label}</div>
-          <pre className="typo-code text-status-success/70 bg-status-success/5 border border-status-success/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="typo-code uppercase tracking-wider text-status-success/50 mb-1">{t.templates.diagram.response_label}</div>
+          <pre className="typo-code text-status-success/70 bg-status-success/5 border border-status-success/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words">
             {typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
           </pre>
         </div>

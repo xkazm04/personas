@@ -75,7 +75,7 @@ const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, chips, onC
         {/* Module name overlaid at bottom of illustration. The "go" arrow lives
             here (not a top corner) so it never collides with the corner stats. */}
         <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-12 bg-gradient-to-t dark:from-black/50 from-transparent to-transparent pointer-events-none z-10 flex items-end justify-between gap-2">
-          <h3 className="typo-heading-lg font-semibold tracking-wide uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">{cardT.label}</h3>
+          <h3 className="typo-heading-lg uppercase dark:text-white text-foreground/85 drop-shadow-elevation-1">{cardT.label}</h3>
           <ArrowRight className={`w-5 h-5 mb-0.5 flex-shrink-0 ${card.iconText} opacity-0 group-hover:opacity-80 group-focus-visible:opacity-80 translate-x-[-6px] group-hover:translate-x-0 group-focus-visible:translate-x-0 transition-all duration-300`} />
         </div>
 

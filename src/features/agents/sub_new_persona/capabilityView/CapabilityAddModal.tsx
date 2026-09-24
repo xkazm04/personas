@@ -42,7 +42,7 @@ function FieldRow({
       <label className="flex items-center gap-2 typo-label text-foreground" htmlFor={id}>
         {label}
         {optional ? (
-          <span className="typo-caption font-normal text-foreground">
+          <span className="typo-caption text-foreground">
             {optionalLabel}
           </span>
         ) : null}

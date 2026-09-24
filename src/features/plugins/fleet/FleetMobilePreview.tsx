@@ -92,7 +92,7 @@ export function FleetMobilePreview() {
     >
       <div className="flex items-center gap-2 mb-1">
         <Smartphone className="w-4 h-4 text-primary" aria-hidden="true" />
-        <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.preview_title}</p>
+        <p className="typo-caption text-foreground">{t.plugins.fleet.preview_title}</p>
       </div>
       <p className="text-[14px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.preview_desc}</p>
 

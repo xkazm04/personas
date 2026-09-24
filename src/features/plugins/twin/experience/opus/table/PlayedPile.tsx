@@ -57,7 +57,7 @@ export function PlayedPile({ trail }: { trail: DeskTrail }) {
   return (
     <section aria-label={xo.label} className="space-y-2" data-testid="xo-pile">
       <p className="flex items-baseline justify-between px-1">
-        <span className="typo-label uppercase tracking-[0.18em]">{xo.label}</span>
+        <span className="typo-label uppercase">{xo.label}</span>
         <span className="typo-caption tabular-nums">{tx(xo.tally, { played, kept })}</span>
       </p>
       {trail.exchanges.length === 0 ? (

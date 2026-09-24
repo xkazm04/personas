@@ -52,7 +52,7 @@ export function DispatchFleetModal({ name, targetCount, onDispatch, onClose }: {
         </div>
 
         <div className="px-4 py-3 space-y-2.5">
-          <p className="typo-caption text-foreground/55 leading-snug" style={{ fontWeight: 400 }}>
+          <p className="typo-caption text-foreground/55" style={{ fontWeight: 400 }}>
             {t.mastermind.dispatch_modal_desc}
           </p>
           <textarea
@@ -81,7 +81,7 @@ export function DispatchFleetModal({ name, targetCount, onDispatch, onClose }: {
             type="button"
             onClick={dispatch}
             disabled={!instruction || dispatching}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="mm-dispatch-submit"
           >
             <Rocket className="w-3 h-3" aria-hidden />

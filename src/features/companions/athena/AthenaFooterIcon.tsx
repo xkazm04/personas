@@ -259,7 +259,7 @@ export default function AthenaFooterIcon() {
         {attentionCount > 0 && (
           <span
             data-testid="companion-thread-attention"
-            className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-status-success text-background typo-caption font-semibold inline-flex items-center justify-center ring-1 ring-background tabular-nums"
+            className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-status-success text-background typo-caption inline-flex items-center justify-center ring-1 ring-background tabular-nums"
             aria-label={`${attentionCount} ${t.athena.thread_status_awaiting}`}
           >
             {attentionCount}

@@ -42,7 +42,7 @@ export function VersionRatingCell({ row }: { row: VersionRow }) {
   return (
     <Tooltip content={tip}>
       <span className="inline-flex items-center gap-1 tabular-nums">
-        <span className={`typo-body font-semibold ${scoreColor(c)}`}>{c}</span>
+        <span className={`typo-body ${scoreColor(c)}`}>{c}</span>
         {(degraded || partial) && (
           <TriangleAlert className="w-3 h-3 text-amber-400" aria-label={lab.vr_score_caution} />
         )}

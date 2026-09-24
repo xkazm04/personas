@@ -75,7 +75,7 @@ export function PersonaRunner() {
 
   return (
     <div ref={state.runnerRef} className="space-y-4">
-      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         <Play className="w-3.5 h-3.5" />{t.agents.executions.run_persona}
       </h4>
@@ -143,7 +143,7 @@ export function PersonaRunner() {
           <span className="typo-body text-amber-200/90 flex-1">
             {t.agents.executions.verification_failed}
           </span>
-          <button type="button" onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
+          <button type="button" onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
             <RefreshCw className="w-3 h-3" /> Retry
           </button>
           <button type="button" onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title={t.agents.executions.dismiss_abandon}>
@@ -215,7 +215,7 @@ export function PersonaRunner() {
       {/* Empty state */}
       {!(state.isThisPersonasExecution && (isExecuting || state.outputLines.length > 0)) && (
           <div className="animate-fade-slide-in flex flex-col items-center justify-center py-16 gap-4" data-testid="runner-empty-state">
-            {selectedPersona.icon ? (sanitizeIconUrl(selectedPersona.icon) ? <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-modal opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" /> : isIconUrl(selectedPersona.icon) ? null : <span className="typo-hero leading-none opacity-60">{selectedPersona.icon}</span>) : (
+            {selectedPersona.icon ? (sanitizeIconUrl(selectedPersona.icon) ? <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-modal opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" /> : isIconUrl(selectedPersona.icon) ? null : <span className="typo-hero opacity-60">{selectedPersona.icon}</span>) : (
               <div className="w-12 h-12 rounded-modal flex items-center justify-center typo-heading-lg opacity-50" style={{ backgroundColor: `${selectedPersona.color || '#6B7280'}20`, border: `1px solid ${selectedPersona.color || '#6B7280'}40`, color: selectedPersona.color || '#6B7280' }}>{selectedPersona.name.charAt(0).toUpperCase()}</div>
             )}
             <div className="text-center space-y-1.5">

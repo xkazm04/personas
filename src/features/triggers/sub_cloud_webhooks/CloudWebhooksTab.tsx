@@ -206,7 +206,7 @@ export function CloudWebhooksTab() {
         {showCreate && (
           <div className="rounded-modal border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
             <div>
-              <label className="block typo-caption font-medium text-foreground mb-1.5">
+              <label className="block typo-caption text-foreground mb-1.5">
                 {t.triggers.deployed_persona_label}
               </label>
               <ThemedSelect
@@ -280,7 +280,7 @@ export function CloudWebhooksTab() {
                       {row.personaIcon || <Cloud className="w-4 h-4 text-foreground" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="typo-body font-medium text-foreground/90 truncate">{row.personaName}</p>
+                      <p className="typo-body text-foreground/90 truncate">{row.personaName}</p>
                       <p className="text-xs text-foreground font-mono truncate">{row.webhookUrl}</p>
                     </div>
                   </div>

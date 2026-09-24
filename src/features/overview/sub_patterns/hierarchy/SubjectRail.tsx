@@ -92,7 +92,7 @@ export function SubjectRail({
         <div key={group.id ?? '__unassigned'} className="py-2">
           <div className="flex items-baseline justify-between px-3 py-1.5">
             {/* muted-ok: structural group header (category band), not body copy */}
-            <h3 className="typo-label uppercase tracking-wide text-foreground/50">
+            <h3 className="typo-label uppercase text-foreground/50">
               {group.id === null ? p.category_unassigned : group.title}
             </h3>
             {/* muted-ok: group-band count, structural micro-label */}

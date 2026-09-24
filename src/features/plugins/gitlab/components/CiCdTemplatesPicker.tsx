@@ -27,7 +27,7 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         className="flex items-center gap-2 w-full text-left"
       >
         <Cpu className="w-4 h-4 text-orange-400" />
-        <span className="typo-body font-medium text-foreground">{t.gitlab.cicd_agent_templates}</span>
+        <span className="typo-body text-foreground">{t.gitlab.cicd_agent_templates}</span>
         {expanded
           ? <ChevronUp className="w-3.5 h-3.5 text-foreground ml-auto" />
           : <ChevronDown className="w-3.5 h-3.5 text-foreground ml-auto" />
@@ -70,10 +70,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
-                    <span className="typo-heading-lg leading-none mt-0.5">{template.icon}</span>
+                    <span className="typo-heading-lg mt-0.5">{template.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="typo-body font-medium text-foreground/90">
+                        <span className="typo-body text-foreground/90">
                           {template.name}
                         </span>
                         {template.minTier !== 'free' && (

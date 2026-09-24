@@ -42,7 +42,7 @@ export function CapabilityRowSummary({ capability }: Props) {
         </div>
         <span
           id={`capability-progress-label-${capability.id}`}
-          className="typo-caption font-medium text-foreground"
+          className="typo-caption text-foreground"
         >
           {resolved}/{total}
         </span>

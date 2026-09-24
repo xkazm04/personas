@@ -80,7 +80,7 @@ export function WireFeedToPersonaModal({ entry, onClose }: WireFeedToPersonaModa
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-4 py-3">
-          <p className="typo-caption text-foreground/90 leading-snug mb-2">{m.wire_hint}</p>
+          <p className="typo-caption text-foreground/90 mb-2">{m.wire_hint}</p>
           {sorted.length === 0 ? (
             <p className="py-4 typo-caption text-foreground/90 text-center">{m.wire_empty}</p>
           ) : (

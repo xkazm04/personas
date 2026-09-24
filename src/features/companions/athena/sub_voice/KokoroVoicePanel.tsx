@@ -247,7 +247,7 @@ function KokoroVoiceRow({ voice, selected, previewable, onSelect }: KokoroVoiceR
             type="button"
             onClick={onSelect}
             disabled={selected}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption font-medium transition-colors focus-ring disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption transition-colors focus-ring disabled:opacity-40"
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected

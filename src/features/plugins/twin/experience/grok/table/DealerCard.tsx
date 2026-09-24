@@ -50,7 +50,7 @@ export function DealerCard({ focus, greeting, question, busy }: DealerCardProps)
           ) : (
             <>
               {greeting && (
-                <p className="typo-body text-foreground leading-relaxed" data-testid="setup-desk-greeting">
+                <p className="typo-body text-foreground" data-testid="setup-desk-greeting">
                   {greeting}
                 </p>
               )}
@@ -64,7 +64,7 @@ export function DealerCard({ focus, greeting, question, busy }: DealerCardProps)
             </>
           )}
         </div>
-        <span aria-hidden className={`self-start typo-hero ${suit.pip} leading-none`}>
+        <span aria-hidden className={`self-start typo-hero ${suit.pip}`}>
           {suit.rank}
         </span>
       </div>

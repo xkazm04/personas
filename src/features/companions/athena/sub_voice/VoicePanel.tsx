@@ -139,7 +139,7 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
       <div className="flex items-center gap-2">
         <span className={active ? 'text-cyan-300' : 'text-foreground'}>{icon}</span>
         <span
-          className={`typo-body font-medium ${active ? 'text-cyan-200' : 'text-foreground'}`}
+          className={`typo-body ${active ? 'text-cyan-200' : 'text-foreground'}`}
         >
           {label}
         </span>

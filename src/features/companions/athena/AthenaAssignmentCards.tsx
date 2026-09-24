@@ -27,7 +27,7 @@ export function AthenaAssignmentCards() {
 
   return (
     <div className="border-b border-primary/10 px-3 py-2 space-y-1.5">
-      <div className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
+      <div className="flex items-center gap-1.5 typo-caption text-foreground">
         <ListChecks className="w-3.5 h-3.5 text-orange-400" />
         {t.athena.athena_assignments_title}
       </div>
@@ -79,7 +79,7 @@ function AssignmentCardRow({
     >
       <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${color} ${spin ? 'animate-spin' : ''}`} />
       <div className="flex-1 min-w-0">
-        <p className="typo-caption font-medium text-foreground/90 truncate">{card.title}</p>
+        <p className="typo-caption text-foreground/90 truncate">{card.title}</p>
         <p className="typo-caption text-foreground truncate">
           {card.doneSteps}/{card.totalSteps} steps
           {card.failedSteps > 0 ? ` · ${card.failedSteps} failed` : ''}

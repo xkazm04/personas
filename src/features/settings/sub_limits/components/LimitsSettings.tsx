@@ -346,7 +346,7 @@ export default function LimitsSettings() {
                 const over = ceilingNum > 0 && m.spend >= ceilingNum;
                 return (
                   <div key={m.key} className="flex items-center gap-3 px-3 py-1.5">
-                    <span className={`typo-caption w-24 shrink-0 ${isCurrent ? 'text-foreground font-medium' : 'text-foreground/70'}`}>
+                    <span className={`typo-caption w-24 shrink-0 ${isCurrent ? 'text-foreground' : 'text-foreground/70'}`}>
                       {m.label}
                     </span>
                     <div className="flex-1 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
@@ -355,7 +355,7 @@ export default function LimitsSettings() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className={`typo-caption tabular-nums w-16 text-right ${isCurrent ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                    <span className={`typo-caption tabular-nums w-16 text-right ${isCurrent ? 'text-foreground' : 'text-foreground/80'}`}>
                       {formatCost(m.spend)}
                     </span>
                   </div>
@@ -418,7 +418,7 @@ export default function LimitsSettings() {
       />
       <ContentBody>
         <div className="max-w-5xl mx-auto space-y-4">
-          <p className="typo-body text-foreground leading-relaxed">{s.description}</p>
+          <p className="typo-body text-foreground">{s.description}</p>
           <SettingsScaffold sections={sections} navAriaLabel={s.title} />
         </div>
       </ContentBody>

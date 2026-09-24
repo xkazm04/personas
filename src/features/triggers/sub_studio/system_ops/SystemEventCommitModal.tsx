@@ -137,7 +137,7 @@ export function SystemEventCommitModal({
         <div className="px-5 py-4 space-y-4">
           {needsProject && (
             <div className="space-y-1.5">
-              <label className="typo-caption font-medium text-foreground">{st.commit_project_label}</label>
+              <label className="typo-caption text-foreground">{st.commit_project_label}</label>
               {projects.length === 0 ? (
                 <p className="typo-caption text-foreground">{st.commit_no_projects}</p>
               ) : (
@@ -150,7 +150,7 @@ export function SystemEventCommitModal({
 
           {isReflection && (
             <div className="space-y-1.5">
-              <label className="typo-caption font-medium text-foreground">{st.reflect_scope_label}</label>
+              <label className="typo-caption text-foreground">{st.reflect_scope_label}</label>
               <div className="grid grid-cols-2 gap-2">
                 <ThemedSelect value={reflectScope} onValueChange={(v) => setReflectScope(v === 'team' ? 'team' : 'agent')}>
                   <option value="agent">{st.reflect_scope_agent}</option>
@@ -174,7 +174,7 @@ export function SystemEventCommitModal({
 
           {isSchedule ? (
             <div className="space-y-1.5">
-              <label className="typo-caption font-medium text-foreground">{st.commit_cadence_label}</label>
+              <label className="typo-caption text-foreground">{st.commit_cadence_label}</label>
               <ThemedSelect value={cadence} onValueChange={setCadence}>
                 <option value="weekly">{st.cadence_weekly}</option>
                 <option value="daily">{st.cadence_daily}</option>
@@ -192,7 +192,7 @@ export function SystemEventCommitModal({
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="typo-caption font-medium text-foreground">{st.commit_event_label}</label>
+              <label className="typo-caption text-foreground">{st.commit_event_label}</label>
               {/* Typed picker over the event registry — free text here produced
                   permanently-silent automations on the first typo. */}
               <ThemedSelect value={eventType} onValueChange={setEventType}>
@@ -206,7 +206,7 @@ export function SystemEventCommitModal({
 
           {isDispatch && (
             <div className="space-y-1.5">
-              <label className="typo-caption font-medium text-foreground">{t.triggers.unattended.title}</label>
+              <label className="typo-caption text-foreground">{t.triggers.unattended.title}</label>
               <ThemedSelect
                 value={unattendedMode}
                 onValueChange={(v) => setUnattendedMode(v === 'approval' ? 'approval' : 'auto')}

@@ -98,7 +98,7 @@ export function PersonaSigilSummary({
               />
               <Icon className={`w-5 h-5 shrink-0 ${meta.colorClass}`} />
               <span
-                className={`typo-body-lg leading-snug min-w-0 break-words ${meta.colorClass}`}
+                className={`typo-body-lg min-w-0 break-words ${meta.colorClass}`}
                 style={{ filter: 'brightness(1.1)' }}
               >
                 {entry?.value ?? <span className="opacity-40">—</span>}

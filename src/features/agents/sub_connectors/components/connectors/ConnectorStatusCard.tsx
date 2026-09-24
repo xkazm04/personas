@@ -51,12 +51,12 @@ export function ConnectorStatusCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body font-medium text-foreground truncate" title={status.name}>{status.name}</p>
+            <p className="typo-body text-foreground truncate" title={status.name}>{status.name}</p>
             {roleLabel && (
               <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-sky-500/10 border border-sky-500/15 text-sky-400/70 whitespace-nowrap">{roleLabel}</span>
             )}
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 typo-body font-medium rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
+              className={`inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full border transition-all duration-300 ease-in-out ${config.bg} ${config.color}`}>
               <span className="inline-flex transition-transform duration-300 ease-in-out">
                 {(() => { const Icon = STATUS_ICON[statusKey]; return <Icon className={`w-2.5 h-2.5 ${statusKey === 'testing' ? 'animate-spin' : ''}`} />; })()}
               </span>

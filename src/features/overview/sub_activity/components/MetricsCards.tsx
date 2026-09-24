@@ -52,12 +52,12 @@ export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: Ano
                   key={id}
                   type="button"
                   onClick={() => onClickExecution(id)}
-                  className="typo-code font-mono text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 cursor-pointer"
+                  className="typo-code text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 cursor-pointer"
                 >
                   {id.slice(0, 8)}
                 </button>
               ) : (
-                <span key={id} className="typo-code font-mono text-foreground">{id.slice(0, 8)}</span>
+                <span key={id} className="typo-code text-foreground">{id.slice(0, 8)}</span>
               )
             ))}
           </div>

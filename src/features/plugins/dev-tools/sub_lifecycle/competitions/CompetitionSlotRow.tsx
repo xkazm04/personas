@@ -169,20 +169,20 @@ export function CompetitionSlotRow({
               {slot.strategy_label}
             </span>
             {isWinner && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
                 <Trophy className="w-3 h-3" /> {t.plugins.dev_tools.winner}
               </span>
             )}
             {isDq && (
               <span
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/25"
                 title={slot.disqualify_reason ?? undefined}
               >
                 <BanIcon className="w-3 h-3" /> {t.plugins.dev_tools.disqualified_label}
               </span>
             )}
             {diffStats && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-primary/10 text-foreground border border-primary/20">
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption bg-primary/10 text-foreground border border-primary/20">
                 <FileDiff className="w-3 h-3" /> {tx(dt.slot_files_count, { count: diffStats.files_changed })}
                 <span className="text-emerald-400 ml-1">{tx(dt.slot_lines_added, { count: diffStats.lines_added })}</span>
                 <span className="text-red-400">{tx(dt.slot_lines_removed, { count: diffStats.lines_removed })}</span>
@@ -190,7 +190,7 @@ export function CompetitionSlotRow({
             )}
             {qScore && (
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border ${
                   qScore.total >= 85 ? 'bg-emerald-500/10 border-emerald-500/25'
                   : qScore.total >= 70 ? 'bg-amber-500/10 border-amber-500/25'
                   : 'bg-red-500/10 border-red-500/25'

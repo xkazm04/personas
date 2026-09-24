@@ -94,7 +94,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
       label: t.templates.compare.col_complexity,
       signature: (col) => col.difficulty,
       render: (col) => (
-        <span className={`inline-flex items-center px-2 py-0.5 typo-caption font-medium rounded-card border ${DIFFICULTY_META[col.difficulty].bgClass}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 typo-caption rounded-card border ${DIFFICULTY_META[col.difficulty].bgClass}`}>
           {t.templates.complexity[col.difficulty]}
         </span>
       ),
@@ -157,7 +157,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
       <div className="flex flex-col max-h-[85vh]">
         <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-primary/10 flex-shrink-0">
           <div>
-            <h2 id={TITLE_ID} className="typo-heading font-semibold text-foreground">
+            <h2 id={TITLE_ID} className="typo-heading text-foreground">
               {t.templates.compare.title}
             </h2>
             <p className="typo-body text-foreground mt-0.5">
@@ -181,7 +181,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                 <th className="w-32 text-left align-bottom" />
                 {columns.map((col) => (
                   <th key={col.id} className="text-left align-bottom px-3 pb-3 min-w-[180px]">
-                    <span className="typo-body-lg font-semibold template-name-themed line-clamp-2">{col.name}</span>
+                    <span className="typo-body-lg template-name-themed line-clamp-2">{col.name}</span>
                     {(onAdopt || onTryIt) && (
                       <div className="flex items-center gap-1.5 mt-2">
                         {onAdopt && (
@@ -189,7 +189,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                             type="button"
                             onClick={() => onAdopt(col.id)}
                             data-testid={`compare-adopt-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption font-medium rounded-interactive bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
                           >
                             <Download className="w-3 h-3" />
                             {t.templates.actions.adopt}
@@ -200,7 +200,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                             type="button"
                             onClick={() => onTryIt(col.id)}
                             data-testid={`compare-tryit-${col.id}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption font-medium rounded-interactive bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                           >
                             <Play className="w-3 h-3" />
                             {t.templates.actions.try_it}
@@ -217,7 +217,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                 const differs = columns.length >= 2 && new Set(columns.map(dim.signature)).size > 1;
                 return (
                   <tr key={dim.label} className={`border-t border-primary/5 ${differs ? 'bg-amber-500/[0.05]' : ''}`}>
-                    <th scope="row" className="text-left align-top py-3 pr-3 typo-caption font-medium text-foreground uppercase tracking-wide">
+                    <th scope="row" className="text-left align-top py-3 pr-3 typo-caption text-foreground uppercase tracking-wide">
                       <span className="inline-flex items-center gap-1.5">
                         {differs && (
                           <Tooltip content={t.templates.compare.differs} placement="right">

@@ -151,9 +151,9 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
       <table className="w-full border-collapse mb-1.5">
         <thead>
           <tr className="text-left border-b border-foreground/10">
-            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-3.5 py-1">KPI</th>
-            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-2 py-1 text-right">Baseline</th>
-            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-2 py-1 text-right">Target</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 px-3.5 py-1">KPI</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 px-2 py-1 text-right">Baseline</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 px-2 py-1 text-right">Target</th>
             <th className="w-px px-2 py-1" aria-label="Actions" />
           </tr>
         </thead>
@@ -237,7 +237,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
   const stat = (Icon: typeof AlertTriangle, v: string | null, statHue: string) => (
     <span className="flex items-center gap-1 min-w-0" style={{ color: v === null ? INK.blue : statHue }}>
       <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
-      <span className="typo-caption font-medium tabular-nums truncate">{v ?? '·'}</span>
+      <span className="typo-caption tabular-nums truncate">{v ?? '·'}</span>
     </span>
   );
 
@@ -254,7 +254,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
         {cell.kind === 'setup'
           ? <Wrench className="w-3.5 h-3.5 shrink-0" style={{ color: INK.blue }} aria-hidden />
           : <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hue, boxShadow: receded ? undefined : `0 0 5px ${hue}88` }} />}
-        <span className="typo-caption font-medium text-foreground/90 truncate">{cell.ctx.name}</span>
+        <span className="typo-caption text-foreground/90 truncate">{cell.ctx.name}</span>
         <span className="ml-auto shrink-0 flex items-center gap-1.5">
           <Indicator icon={Layers} n={features} hue="rgba(148,163,184,.8)" title={`${features} features slice this context`} />
           <Indicator icon={Target} n={goals} hue="#38BDF8" title={`${goals} goals attached`} />
@@ -277,7 +277,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
         <KpiLine c={cell} />
         <span className="flex items-center gap-2.5 min-w-0">
           {cell.kind === 'setup' ? (
-            <span className="typo-caption font-medium italic truncate" style={{ color: INK.blue }}>{t.kpis.define_kpi}</span>
+            <span className="typo-caption italic truncate" style={{ color: INK.blue }}>{t.kpis.define_kpi}</span>
           ) : (
             <>
               {stat(AlertTriangle, cell.errs === null ? null : String(cell.errs), TONE_HUE[cell.dims.errors])}
@@ -370,7 +370,7 @@ function Toolbar({ data, summary, onNote }: { data: FactoryL2Data; summary: stri
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption font-medium transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50"
       style={{ color: hue, border: `1px solid ${hue}55` }}
       data-testid={testid}
     >
@@ -530,7 +530,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
             <div key={g.id} className="rounded-modal p-3" style={{ border: `1px solid ${KIND_HUE[worst]}2e`, background: 'rgba(148,163,184,.025)' }}>
               <div className="flex items-baseline gap-2 mb-2 min-w-0">
                 <span className="w-2 h-2 rounded-full shrink-0 self-center" style={{ background: KIND_HUE[worst], boxShadow: `0 0 5px ${KIND_HUE[worst]}88` }} />
-                <h3 className="typo-title font-semibold tracking-tight truncate">{g.name}</h3>
+                <h3 className="typo-title truncate">{g.name}</h3>
                 <span className="ml-auto typo-caption tabular-nums shrink-0 flex items-center gap-2">
                   {crit > 0 && <span style={{ color: INK.red }}>{crit} critical</span>}
                   {warn > 0 && <span style={{ color: INK.amber }}>{warn} warning</span>}

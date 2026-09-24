@@ -34,7 +34,7 @@ export function HierarchyStatusChip({
 
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-interactive border px-1.5 py-0.5 typo-caption font-medium ${classes}${className ? ` ${className}` : ''}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-interactive border px-1.5 py-0.5 typo-caption ${classes}${className ? ` ${className}` : ''}`}
     >
       {label}
     </span>

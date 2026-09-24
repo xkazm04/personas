@@ -33,7 +33,7 @@ export function RecommendedModal({
       <div className="px-5 py-3.5 border-b border-primary/10 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400/70" />
-          <h2 id="recommended-modal-title" className="typo-heading font-semibold text-foreground/90">
+          <h2 id="recommended-modal-title" className="typo-heading text-foreground/90">
             {t.templates.recommended.title}
           </h2>
           <span className="typo-caption text-foreground">
@@ -67,7 +67,7 @@ export function RecommendedModal({
                 >
                   {/* Name + description */}
                   <div className="flex-1 min-w-0">
-                    <div className="typo-body font-medium text-foreground group-hover:text-amber-300 truncate">
+                    <div className="typo-body text-foreground group-hover:text-amber-300 truncate">
                       {t.test_case_name}
                     </div>
                     <div className="typo-caption text-foreground truncate mt-0.5">
@@ -97,7 +97,7 @@ export function RecommendedModal({
 
                   {/* Adoption count */}
                   {t.adoption_count > 0 && (
-                    <span className="inline-flex items-center gap-1 typo-code font-mono text-emerald-400/60 flex-shrink-0">
+                    <span className="inline-flex items-center gap-1 typo-code text-emerald-400/60 flex-shrink-0">
                       <Download className="w-2.5 h-2.5" />
                       {t.adoption_count}
                     </span>

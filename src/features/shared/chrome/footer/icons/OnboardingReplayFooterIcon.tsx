@@ -51,7 +51,7 @@ export default function OnboardingReplayFooterIcon() {
       aria-label={label}
     >
       <Compass className="w-4 h-4" />
-      <span className="typo-caption font-medium">{label}</span>
+      <span className="typo-caption">{label}</span>
     </button>
   );
 }

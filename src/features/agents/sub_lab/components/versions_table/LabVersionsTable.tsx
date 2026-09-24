@@ -283,7 +283,7 @@ export function LabVersionsTable() {
       <div className="flex items-center gap-2">
         <GitBranch className="w-4 h-4 text-primary/70" />
         <div className="min-w-0">
-          <h3 className="typo-section-title text-foreground">{lab.vr_title}</h3>
+          <h3 className="typo-section-title">{lab.vr_title}</h3>
           <p className="typo-caption text-foreground">{lab.vr_subtitle}</p>
         </div>
         {/* Export a client-presentable "v3 vs v4" comparison from the measured
@@ -300,7 +300,7 @@ export function LabVersionsTable() {
                 const safe = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
                 downloadHtmlReport(html, `${safe}-version-comparison.html`);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
             >
               <FileDown className="w-3.5 h-3.5" />
               {t.agent_lab.export_download_html}
@@ -314,7 +314,7 @@ export function LabVersionsTable() {
                 setReportCopied(true);
                 setTimeout(() => setReportCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
             >
               {reportCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
               {reportCopied ? t.agent_lab.export_copied : t.agent_lab.export_copy_markdown}
@@ -337,7 +337,7 @@ export function LabVersionsTable() {
 
       <BaseModal isOpen={!!diffRow} onClose={() => setDiffRow(null)} titleId="vr-diff-modal" maxWidthClass="max-w-3xl">
         <div className="p-4 space-y-3">
-          <h3 className="typo-section-title text-foreground">
+          <h3 className="typo-section-title">
             {diffRow ? tx(lab.vr_diff_title, { version: diffRow.versionNumber }) : ''}
           </h3>
           {diffRow && activeVersion ? (
@@ -358,7 +358,7 @@ export function LabVersionsTable() {
         maxWidthClass="max-w-5xl"
       >
         <div className="p-4 space-y-3">
-          <h3 className="typo-section-title text-foreground">
+          <h3 className="typo-section-title">
             {measureRow ? tx(lab.vr_measure_modal_title, { version: measureRow.versionNumber }) : ''}
           </h3>
           {measureRow && (
@@ -386,7 +386,7 @@ function DeltaCell({ delta }: { delta: number | null }) {
   const positive = rounded > 0;
   const regression = rounded <= -REGRESSION_DROP;
   return (
-    <span className={`inline-flex items-center gap-1 typo-caption font-medium tabular-nums ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
+    <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${positive ? 'text-emerald-400' : 'text-red-400'}`}>
       {regression && <AlertTriangle className="w-3 h-3" aria-hidden />}
       {positive ? `+${rounded}` : rounded}
     </span>

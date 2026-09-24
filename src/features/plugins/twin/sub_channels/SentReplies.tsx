@@ -67,7 +67,7 @@ export function SentReplies({ channels, onReuse }: { channels: TwinChannel[]; on
               {labelByChannel.get(c.channel) ?? c.channel}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="typo-caption text-foreground leading-snug line-clamp-2">{c.content}</p>
+              <p className="typo-caption text-foreground line-clamp-2">{c.content}</p>
               <div className="flex items-center gap-2 mt-1">
                 {c.contact_handle && (
                   <span className="text-[10px] text-foreground truncate">{tx(t.sentTo, { handle: c.contact_handle })}</span>

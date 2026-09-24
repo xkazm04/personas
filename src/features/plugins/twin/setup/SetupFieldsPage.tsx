@@ -117,7 +117,7 @@ export function SetupFieldsPage({
     <div className="flex-1 min-h-0 overflow-y-auto" data-testid="setup-fields-page">
       <div className="px-4 md:px-6 xl:px-8 py-5">
         <div className="mb-4">
-          <h2 className="typo-section-title text-foreground">{ts.fieldsTitle}</h2>
+          <h2 className="typo-section-title">{ts.fieldsTitle}</h2>
           <p className="typo-caption">{ts.fieldsHint}</p>
         </div>
 

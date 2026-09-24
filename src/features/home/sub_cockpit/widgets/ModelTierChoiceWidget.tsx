@@ -88,7 +88,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
             >
               <div className="flex items-center gap-1.5">
                 <Zap className="w-3 h-3 text-foreground" />
-                <span className="typo-body font-medium text-foreground/95">
+                <span className="typo-body text-foreground/95">
                   {tierLabel(entry.tier, t)}
                 </span>
                 {isReco && (
@@ -98,7 +98,7 @@ export function ModelTierChoiceWidget({ config, title }: CockpitWidgetProps) {
                   </span>
                 )}
               </div>
-              <p className="typo-caption text-foreground leading-snug">
+              <p className="typo-caption text-foreground">
                 {entry.rationale}
               </p>
             </div>

@@ -66,11 +66,11 @@ function RoadmapHero({ item, enter, t }: { item: DisplayItem; enter: RevealTrack
           <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
         </div>
         <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
-          <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
+          <h2 className="typo-heading text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
             {item.title}
           </h2>
           {item.description && (
-            <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
+            <p className="typo-body mt-4 max-w-prose text-foreground">{item.description}</p>
           )}
         </div>
       </article>
@@ -83,7 +83,7 @@ function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriori
   return (
     <div className="flex flex-col gap-3">
       <header className="flex items-center justify-between border-b border-primary/8 pb-2">
-        <span className={`typo-label font-semibold ${accent.label}`}>{t.priority[priority]}</span>
+        <span className={`typo-label ${accent.label}`}>{t.priority[priority]}</span>
         <span className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-medium ${accent.bg} ${accent.border} ${accent.chip}`}>
           {items.length}
         </span>
@@ -101,9 +101,9 @@ function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriori
             <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
               <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-4 pl-5">
                 <div className={`absolute inset-y-3 left-1.5 w-[3px] rounded-full ${statusDot[item.status]}`} />
-                <h3 className="typo-heading text-base font-semibold leading-tight text-primary">{item.title}</h3>
+                <h3 className="typo-heading text-primary">{item.title}</h3>
                 <div className="mt-1.5 font-mono text-xs uppercase tracking-wider text-foreground">{t.itemStatus[item.status]}</div>
-                {item.description && <p className="typo-body mt-2 text-sm leading-relaxed text-foreground">{item.description}</p>}
+                {item.description && <p className="typo-body mt-2 text-foreground">{item.description}</p>}
               </div>
             </RevealItem>
           ))}
@@ -121,7 +121,7 @@ function BundledReleaseCard({ release, t }: { release: Release; t: ReleasesTrans
   return (
     <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5">
       <div className="flex flex-wrap items-baseline gap-3">
-        <h3 className="typo-heading text-lg font-semibold text-primary [text-shadow:_0_0_12px_color-mix(in_oklab,var(--primary)_32%,transparent)]">
+        <h3 className="typo-heading text-primary [text-shadow:_0_0_12px_color-mix(in_oklab,var(--primary)_32%,transparent)]">
           {i18n?.label ?? release.version}
         </h3>
         <span className="font-mono text-xs text-foreground">{release.version}</span>
@@ -130,7 +130,7 @@ function BundledReleaseCard({ release, t }: { release: Release; t: ReleasesTrans
         </span>
         {release.released_at && <span className="font-mono text-[11px] text-foreground">{release.released_at}</span>}
       </div>
-      {i18n?.summary && <p className="typo-body mt-2 text-[13px] leading-relaxed text-foreground">{i18n.summary}</p>}
+      {i18n?.summary && <p className="typo-body mt-2 text-[13px] text-foreground">{i18n.summary}</p>}
       <ul className="mt-3 space-y-1.5">
         {release.items.map((item) => {
           const typeMeta = RELEASE_TYPE_META[item.type];

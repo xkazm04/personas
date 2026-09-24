@@ -45,7 +45,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           <Globe className="w-6 h-6" style={{ color: designResult.connector.color }} />
         </div>
         <div>
-          <h3 className="typo-body-lg font-semibold text-foreground">
+          <h3 className="typo-body-lg text-foreground">
             {isGuided ? ac.guided_setup : ac.auto_setup}: {designResult.connector.label}
           </h3>
           <p className="typo-body text-foreground mt-1">
@@ -59,7 +59,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 
       {/* What will happen */}
       <div className="space-y-2.5">
-        <p className="typo-body font-medium text-foreground/90">{ac.what_will_happen}</p>
+        <p className="typo-body text-foreground/90">{ac.what_will_happen}</p>
         <div className="space-y-2">
           {isGuided ? (
             <>
@@ -91,7 +91,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
       {/* Setup instructions summary */}
       {designResult.setup_instructions && (
         <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
-          <p className="typo-body font-medium text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
+          <p className="typo-body text-foreground mb-1.5">{t.vault.auto_cred_extra.setup_context}</p>
           <MarkdownRenderer
             content={designResult.setup_instructions}
             className="[&_p]:typo-body [&_p]:text-foreground [&_p]:mb-1.5 [&_ul]:typo-body [&_ol]:typo-body [&_li]:text-foreground [&_code]:typo-body"
@@ -149,7 +149,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           // and theme-stable. text-foreground would render dark-on-saturated on
           // light theme — passes WCAG but visually weaker. Keep until a
           // text-foreground-on-primary token lands.
-          className={`flex items-center gap-2 px-5 py-2.5 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 ${
+          className={`flex items-center gap-2 px-5 py-2.5 text-foreground rounded-modal typo-body transition-all shadow-elevation-3 ${
             isGuided
               ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-600/20'
               : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-600/20'
@@ -171,7 +171,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 function Step({ number, text, guided = false }: { number: number; text: string; guided?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={`w-5 h-5 rounded-full typo-body font-medium flex items-center justify-center shrink-0 ${
+      <span className={`w-5 h-5 rounded-full typo-body flex items-center justify-center shrink-0 ${
         guided ? 'bg-violet-500/15 text-violet-400' : 'bg-cyan-500/15 text-cyan-400'
       }`}>
         {number}

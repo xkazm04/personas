@@ -85,7 +85,7 @@ export function TaskModal({
 
         <div className="space-y-4">
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">{dr.task_title_label}</label>
+            <label className="typo-caption text-foreground mb-1.5 block">{dr.task_title_label}</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -94,7 +94,7 @@ export function TaskModal({
             />
           </div>
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.common.description}</label>
+            <label className="typo-caption text-foreground mb-1.5 block">{t.common.description}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -106,7 +106,7 @@ export function TaskModal({
 
           {/* Task depth selector */}
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">{dr.task_depth}</label>
+            <label className="typo-caption text-foreground mb-1.5 block">{dr.task_depth}</label>
             <div className="grid grid-cols-3 gap-2">
               {DEPTH_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
@@ -121,7 +121,7 @@ export function TaskModal({
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
                   >
                     <Icon className={`w-4 h-4 ${selected ? tw.selectedIcon : 'text-foreground'}`} />
-                    <span className="typo-caption font-medium text-foreground">{dr[opt.labelKey]}</span>
+                    <span className="typo-caption text-foreground">{dr[opt.labelKey]}</span>
                   </button>
                 );
               })}
@@ -132,7 +132,7 @@ export function TaskModal({
           </div>
 
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">
+            <label className="typo-caption text-foreground mb-1.5 block">
               {dr.goal_link} <span className="text-foreground">{dr.optional}</span>
             </label>
             <div className="relative">

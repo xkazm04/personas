@@ -60,7 +60,7 @@ export function Composer({ value, onChange, onSubmit, voice, answerMode, toneCha
       className="w-full max-w-3xl mx-auto xo-card xo-card-raised xo-foil xo-foil-live xo-suit-tone xo-glow rounded-modal p-4 space-y-3"
       data-testid="xo-composer-card"
     >
-      <p className="flex items-center gap-2 typo-title text-foreground">
+      <p className="flex items-center gap-2 typo-title">
         <PenLine className="w-4 h-4 text-[var(--xo-hue)]" aria-hidden />
         {toneChannel && toneChannel !== 'generic'
           ? tx(xo.yourReplyOn, { channel: channelName(toneChannel, '') })

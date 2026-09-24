@@ -200,7 +200,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
         sortable: true,
         sortFn: (a, b) => rowTime(a) - rowTime(b),
         render: (e) => (
-          <RelativeTime timestamp={e.startedAt || e.createdAt} className="typo-code text-foreground font-mono" />
+          <RelativeTime timestamp={e.startedAt || e.createdAt} className="typo-code text-foreground" />
         ),
       },
       {
@@ -228,10 +228,10 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
             <span className="flex items-center gap-1.5 min-w-0">
               {short ? (
                 <Tooltip content={resolved ?? ''}>
-                  <span className="typo-code text-foreground font-mono truncate">{short}</span>
+                  <span className="typo-code text-foreground truncate">{short}</span>
                 </Tooltip>
               ) : (
-                <span className="typo-code text-foreground font-mono">{'—'}</span>
+                <span className="typo-code text-foreground">{'—'}</span>
               )}
               {e.thinkingLevel && (
                 <span
@@ -256,7 +256,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
           e.inputTokens > 0 ? (
             <Numeric value={e.inputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
           ) : (
-            <span className="typo-code text-foreground font-mono">{'—'}</span>
+            <span className="typo-code text-foreground">{'—'}</span>
           ),
       },
       {
@@ -270,7 +270,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
           e.outputTokens > 0 ? (
             <Numeric value={e.outputTokens} unit="compact" language={language} align="right" className="typo-code text-foreground" />
           ) : (
-            <span className="typo-code text-foreground font-mono">{'—'}</span>
+            <span className="typo-code text-foreground">{'—'}</span>
           ),
       },
       {
@@ -286,7 +286,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
           e.costUsd !== null && e.costUsd > 0 ? (
             <Numeric value={e.costUsd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
           ) : (
-            <span className="typo-code text-foreground font-mono">{'—'}</span>
+            <span className="typo-code text-foreground">{'—'}</span>
           ),
       },
     ],

@@ -131,7 +131,7 @@ export function ImportSuccessCelebration({ importResult }: { importResult: { imp
     >
       <PackageUnwrapSvg />
       <div className="text-center space-y-1">
-        <div className="typo-body font-medium text-emerald-400">
+        <div className="typo-body text-emerald-400">
           {st.import_complete}
         </div>
         <div className="typo-caption text-foreground space-y-0.5">

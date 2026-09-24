@@ -140,7 +140,7 @@ export function FleetTerminalSettings() {
       <div className="flex items-center gap-2">
         <TerminalIcon className="w-4 h-4 text-primary" />
         <div>
-          <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.settings_terminal_title}</p>
+          <p className="typo-caption text-foreground">{t.plugins.fleet.settings_terminal_title}</p>
           <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_terminal_desc}</p>
         </div>
       </div>

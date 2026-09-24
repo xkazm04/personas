@@ -100,7 +100,7 @@ export function DrawerReviewCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`typo-caption font-medium uppercase ${M.text}`}>{severityLabel(t, sev)}</span>
+            <span className={`typo-caption uppercase ${M.text}`}>{severityLabel(t, sev)}</span>
             {review.source === 'cloud' && (
               <>
                 <span className="typo-caption text-foreground">·</span>
@@ -111,11 +111,11 @@ export function DrawerReviewCard({
             <Clock className="w-3 h-3 text-foreground" />
             <span className="typo-caption text-foreground">{formatRelativeTime(review.created_at)}</span>
           </div>
-          <h5 className="typo-body font-semibold text-foreground leading-snug">
+          <h5 className="typo-body text-foreground">
             {stripPersonaPrefix(review.title, personaName) || t.monitor.untitled}
           </h5>
           {review.content && (
-            <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">{review.content}</p>
+            <p className="typo-body text-foreground/85 whitespace-pre-wrap mt-1">{review.content}</p>
           )}
           {review.context_data && (
             <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2 mt-2">
@@ -154,7 +154,7 @@ export function DrawerReviewCard({
               data-testid={`monitor-drawer-action-${review.id}-${i}`}
               className="justify-start text-left"
             >
-              <span className="typo-body leading-snug">{action}</span>
+              <span className="typo-body">{action}</span>
             </Button>
           ))}
         </div>
@@ -171,7 +171,7 @@ export function DrawerReviewCard({
           onClick={() => void act('rejected' as ManualReviewStatus)}
           data-testid={`monitor-drawer-reject-${review.id}`}
         >
-          <span className="typo-heading font-medium">{t.monitor.reject}</span>
+          <span className="typo-heading">{t.monitor.reject}</span>
         </Button>
         <button
           type="button"
@@ -183,7 +183,7 @@ export function DrawerReviewCard({
           }`}
         >
           <MessageSquare className="w-4 h-4" />
-          <span className="typo-heading font-medium">{t.monitor.notes}</span>
+          <span className="typo-heading">{t.monitor.notes}</span>
         </button>
         <Button
           variant="accent"
@@ -195,7 +195,7 @@ export function DrawerReviewCard({
           onClick={() => void act('approved' as ManualReviewStatus)}
           data-testid={`monitor-drawer-approve-${review.id}`}
         >
-          <span className="typo-heading font-medium">{t.monitor.approve}</span>
+          <span className="typo-heading">{t.monitor.approve}</span>
         </Button>
       </div>
     </div>

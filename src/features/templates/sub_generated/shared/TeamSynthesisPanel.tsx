@@ -59,7 +59,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               <Users className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h2 id="team-synthesis-title" className="typo-heading font-semibold text-foreground/90">{t.templates.team_synthesis.title}</h2>
+              <h2 id="team-synthesis-title" className="typo-heading text-foreground/90">{t.templates.team_synthesis.title}</h2>
               <p className="typo-body text-foreground">
                 {t.templates.team_synthesis.subtitle}
               </p>
@@ -75,7 +75,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
           {!result ? (
             <>
               <div>
-                <label className="typo-body font-medium text-foreground block mb-1.5">
+                <label className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.team_name_label}
                 </label>
                 <input
@@ -89,7 +89,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </div>
 
               <div>
-                <label className="typo-body font-medium text-foreground block mb-1.5">
+                <label className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.describe_team}
                 </label>
                 <textarea
@@ -115,13 +115,13 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
                 <CheckCircle2 className="w-7 h-7 text-emerald-400" />
               </div>
               <div className="text-center">
-                <h3 className="typo-body-lg font-semibold text-foreground/90">
+                <h3 className="typo-body-lg text-foreground/90">
                   {result.team_name}
                 </h3>
                 <p className="typo-body text-foreground mt-1">
                   {t.templates.team_synthesis.personas_created.replace('{count}', String(result.member_count))}
                 </p>
-                <p className="typo-body text-foreground mt-2 max-w-sm leading-relaxed">
+                <p className="typo-body text-foreground mt-2 max-w-sm">
                   {result.description}
                 </p>
               </div>
@@ -136,7 +136,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               type="button"
               onClick={handleSynthesize}
               disabled={loading || !query.trim() || !teamName.trim()}
-              className="px-4 py-2.5 typo-body font-medium rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -154,7 +154,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 typo-body font-medium rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
+              className="px-4 py-2.5 typo-body rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
             >
               {t.templates.team_synthesis.done}
               <ArrowRight className="w-4 h-4" />

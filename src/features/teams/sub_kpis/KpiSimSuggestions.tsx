@@ -204,7 +204,7 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="typo-data">{headline.label}</span>
-          {headline.detail && <span className="typo-code font-mono truncate">{headline.detail}</span>}
+          {headline.detail && <span className="typo-code truncate">{headline.detail}</span>}
           {s.citations.length > 0 && (
             <Tooltip content={s.citations.join('\n')} placement="top">
               <span className="typo-caption text-violet-300/90 cursor-help">
@@ -220,7 +220,7 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
           type="button"
           onClick={onApply}
           disabled={busy}
-          className="inline-flex items-center gap-1 typo-caption font-medium rounded-interactive border border-violet-400/40 bg-violet-500/15 text-violet-200 px-2 py-0.5 hover:bg-violet-500/25 disabled:opacity-50 transition-colors focus-ring"
+          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-violet-400/40 bg-violet-500/15 text-violet-200 px-2 py-0.5 hover:bg-violet-500/25 disabled:opacity-50 transition-colors focus-ring"
           data-testid={`kpi-suggest-apply-${s.kind}`}
         >
           <Check className="w-3 h-3" aria-hidden />

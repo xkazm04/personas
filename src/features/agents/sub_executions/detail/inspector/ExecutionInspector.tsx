@@ -70,7 +70,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                 }`}
               >
                 <span className="typo-code text-foreground w-4 text-right flex-shrink-0">{step.step_index}</span>
-                <span className="typo-code font-medium text-foreground/90 truncate flex-1">{step.tool_name}</span>
+                <span className="typo-code text-foreground/90 truncate flex-1">{step.tool_name}</span>
                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-code border flex-shrink-0 ${durationColor(durMs)}`}>
                   <Clock className="w-2.5 h-2.5" />
                   {durMs != null ? formatDuration(durMs) : e.pending}
@@ -86,7 +86,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
             <div className="w-6 h-6 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
               <Wrench className="w-3 h-3 text-primary/70" />
             </div>
-            <span className="typo-code font-medium text-foreground/90 truncate">{active.tool_name}</span>
+            <span className="typo-code text-foreground/90 truncate">{active.tool_name}</span>
             <span className="ml-auto typo-code text-foreground tabular-nums">
               {active.duration_ms != null ? formatDuration(Number(active.duration_ms)) : e.pending}
             </span>

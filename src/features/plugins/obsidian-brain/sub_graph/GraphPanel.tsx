@@ -330,7 +330,7 @@ export default function GraphPanel() {
                     className="group w-full text-left px-3 py-2.5 rounded-modal border border-primary/10 hover:border-violet-500/30 hover:bg-secondary/20 transition-colors focus-ring"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="typo-heading typo-card-label truncate group-hover:text-violet-300 transition-colors">{hit.title}</p>
+                      <p className="typo-heading typo-card-label truncate transition-colors">{hit.title}</p>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
                         <span className="typo-caption text-foreground tabular-nums">{t.plugins.obsidian_brain.score_label} {hit.score}</span>
                         <ExternalLink className="w-3 h-3 text-violet-400/70 opacity-0 group-hover:opacity-100 transition-opacity" />

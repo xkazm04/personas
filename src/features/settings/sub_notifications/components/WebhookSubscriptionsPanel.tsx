@@ -144,7 +144,7 @@ export function WebhookSubscriptionsPanel() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-1 rounded-interactive px-2.5 py-1 typo-caption font-medium text-foreground hover:bg-primary/10"
+          className="inline-flex items-center gap-1 rounded-interactive px-2.5 py-1 typo-caption text-foreground hover:bg-primary/10"
           data-testid="webhook-subscriptions-add"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -163,7 +163,7 @@ export function WebhookSubscriptionsPanel() {
           <div key={sub.id} className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="typo-body font-medium text-foreground truncate">{sub.label}</span>
+                <span className="typo-body text-foreground truncate">{sub.label}</span>
                 <span className="typo-caption text-foreground uppercase tracking-wider">
                   {sub.provider}
                 </span>

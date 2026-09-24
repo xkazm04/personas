@@ -122,7 +122,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
       <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
         <Workflow className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
         <Tooltip content={d.skills_pipeline_subtitle} placement="top">
-          <span className="inline-flex items-center gap-1.5 typo-body font-semibold text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-body text-foreground">
             {d.skills_pipeline_title}
             <Info className="w-3 h-3 text-foreground/35" aria-hidden />
           </span>
@@ -160,7 +160,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                     className="accent-[var(--color-primary)] flex-shrink-0"
                     aria-label={r.context.name}
                   />
-                  <span className="typo-caption font-medium text-foreground truncate flex-1 min-w-0">{r.context.name}</span>
+                  <span className="typo-caption text-foreground truncate flex-1 min-w-0">{r.context.name}</span>
                   <span className="typo-label text-foreground/45 tabular-nums flex-shrink-0">
                     {tx(d.skills_pipeline_fresh_nodes, { n: r.freshNodes })}
                   </span>

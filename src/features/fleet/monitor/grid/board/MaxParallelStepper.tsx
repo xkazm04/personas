@@ -74,7 +74,7 @@ export function MaxParallelStepper({
         <button type="button" className={btn} onClick={() => write(cap - 1)} disabled={!canEdit || cap <= BOUND.min} aria-label={s.queue_cap_decrease}>
           <Minus className="h-3 w-3" aria-hidden />
         </button>
-        <span className={`px-0.5 typo-caption tabular-nums ${over ? 'text-status-warning font-semibold' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
+        <span className={`px-0.5 typo-caption tabular-nums ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
           <Numeric value={running} /> / <Numeric value={cap} />
         </span>
         <button type="button" className={btn} onClick={() => write(cap + 1)} disabled={!canEdit || cap >= BOUND.max} aria-label={s.queue_cap_increase}>

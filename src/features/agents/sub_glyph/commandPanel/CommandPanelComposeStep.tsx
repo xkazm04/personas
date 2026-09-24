@@ -99,7 +99,7 @@ export function CommandPanelComposeStep({
                 placeholder={row.placeholder}
                 rows={2}
                 data-testid={`composer-row-${row.key}`}
-                className="w-full bg-transparent typo-body-lg text-foreground placeholder:text-foreground/35 placeholder:italic focus:outline-none resize-none leading-relaxed"
+                className="w-full bg-transparent typo-body-lg text-foreground placeholder:text-foreground/35 placeholder:italic focus:outline-none resize-none"
               />
             ) : (
               <input

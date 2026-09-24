@@ -63,7 +63,7 @@ export default function CreateAthenaStage({ engine }: CreateAthenaVariantProps) 
               lineId={line.id}
               text={line.text}
               onDone={markDone}
-              className="typo-title text-foreground/85 leading-relaxed max-w-[560px] min-h-[1.75em]"
+              className="typo-title max-w-[560px] min-h-[1.75em]"
             />
             {lineDone && (
               <motion.div

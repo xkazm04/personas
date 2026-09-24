@@ -111,7 +111,7 @@ export function CliConnectionPanel({
     <div className="space-y-4">
       {/* Credential name input */}
       <div>
-        <label htmlFor={nameId} className="block typo-caption font-medium text-foreground mb-1">
+        <label htmlFor={nameId} className="block typo-caption text-foreground mb-1">
           {l.credential_name}
         </label>
         <input
@@ -128,7 +128,7 @@ export function CliConnectionPanel({
       <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-card">
         <Terminal className="w-4 h-4 text-amber-400 shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="typo-body font-medium text-foreground">{spec.display_label}</div>
+          <div className="typo-body text-foreground">{spec.display_label}</div>
           <div className="typo-caption text-foreground">{l.binary_label}: <code className="font-mono">{spec.binary}</code></div>
         </div>
         <a
@@ -161,7 +161,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="typo-body font-medium text-foreground">{l.not_installed_title}</div>
+              <div className="typo-body text-foreground">{l.not_installed_title}</div>
               <div className="typo-caption text-foreground">{tx(l.not_installed_desc, { label: spec.display_label })}</div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="typo-body font-medium text-foreground">{l.installed_title}</div>
+              <div className="typo-body text-foreground">{l.installed_title}</div>
               <div className="typo-caption text-foreground">
                 {state.status.version ?? state.status.binary_path}
               </div>
@@ -221,7 +221,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="typo-body font-medium text-foreground">{l.not_authenticated_title}</div>
+              <div className="typo-body text-foreground">{l.not_authenticated_title}</div>
               <div className="typo-caption text-foreground">{state.verify.message}</div>
             </div>
           </div>
@@ -240,7 +240,7 @@ export function CliConnectionPanel({
           <div className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="typo-body font-medium text-foreground">{l.authenticated_title}</div>
+              <div className="typo-body text-foreground">{l.authenticated_title}</div>
               <div className="typo-caption text-foreground break-all">{state.verify.message}</div>
             </div>
           </div>
@@ -294,7 +294,7 @@ function StateBlock({
     <div className="flex items-start gap-2 p-3 bg-secondary/25 border border-primary/15 rounded-card">
       <div className="shrink-0 mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
-        <div className="typo-body font-medium text-foreground">{title}</div>
+        <div className="typo-body text-foreground">{title}</div>
         {description && <div className="typo-caption text-foreground break-words">{description}</div>}
       </div>
       {action}

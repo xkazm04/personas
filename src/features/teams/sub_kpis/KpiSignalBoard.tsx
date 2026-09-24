@@ -138,7 +138,7 @@ function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) 
       {isHeadline(row) && (
         <Star className="w-3 h-3 text-status-error flex-shrink-0" aria-hidden />
       )}
-      <span className="typo-caption text-foreground font-medium">{row.name}</span>
+      <span className="typo-caption text-foreground">{row.name}</span>
       <span className="typo-caption text-foreground/80 tabular-nums">
         {row.current ?? '—'}/{row.target ?? '—'} {row.unit}
       </span>

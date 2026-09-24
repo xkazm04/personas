@@ -195,7 +195,7 @@ export const LedgerRow = memo(function LedgerRow({
         <button
           type="button"
           onClick={() => onSelectCtx(selected ? null : ctx.id)}
-          className="typo-body font-medium text-foreground truncate text-left hover:text-primary"
+          className="typo-body text-foreground truncate text-left hover:text-primary"
         >
           {ctx.name}
         </button>
@@ -344,7 +344,7 @@ export const RosterTile = memo(function RosterTile({
         <Tooltip content={t[KPI_STATUS_LABEL_KEY[status]]}>
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${KPI_STATUS_DOT[status]}`} />
         </Tooltip>
-        <span className="typo-body font-medium text-foreground truncate">{ctx.name}</span>
+        <span className="typo-body text-foreground truncate">{ctx.name}</span>
       </button>
 
       {/* the divider, then the indicators */}

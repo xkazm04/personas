@@ -73,7 +73,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
               <summary className="typo-body text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
                 {dm.technical_details}
               </summary>
-              <p className="mt-1 typo-code text-red-400/30 font-mono break-all">
+              <p className="mt-1 typo-code text-red-400/30 break-all">
                 {error}
               </p>
             </details>
@@ -85,7 +85,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/15 rounded-modal space-y-2">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-          <span className="typo-body font-medium text-amber-300/80">{dm.how_to_fix}</span>
+          <span className="typo-body text-amber-300/80">{dm.how_to_fix}</span>
         </div>
         <ul className="space-y-1.5 pl-6">
           {tips.map((tip, i) => (
@@ -115,7 +115,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
         <button
           type="button"
           onClick={onRetry}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal typo-body font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal typo-body transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {hasInstruction ? dm.try_again_with : t.common.try_again}

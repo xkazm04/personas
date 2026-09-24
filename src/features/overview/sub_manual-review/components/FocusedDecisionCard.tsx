@@ -26,9 +26,9 @@ export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: F
           <MediaPanel url={imageUrl!} alt={decision.label} />
           <div className="md:flex-1 p-4 pr-32">
             <DecisionMeta category={decision.category} mediaType={isVideoUrl(imageUrl!) ? 'video' : 'image'} />
-            <h3 className="typo-body-lg font-semibold text-foreground mb-2">{decision.label}</h3>
+            <h3 className="typo-body-lg text-foreground mb-2">{decision.label}</h3>
             {decision.description && (
-              <RichMarkdown content={decision.description} className="typo-body text-foreground leading-relaxed" />
+              <RichMarkdown content={decision.description} className="typo-body text-foreground" />
             )}
           </div>
         </div>
@@ -36,9 +36,9 @@ export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: F
         /* ---- Text-only layout (full width) ---- */
         <div className="p-4 pr-32">
           <DecisionMeta category={decision.category} />
-          <h3 className="typo-body-lg font-semibold text-foreground mb-1">{decision.label}</h3>
+          <h3 className="typo-body-lg text-foreground mb-1">{decision.label}</h3>
           {decision.description && (
-            <RichMarkdown content={decision.description} className="typo-body text-foreground leading-relaxed" />
+            <RichMarkdown content={decision.description} className="typo-body text-foreground" />
           )}
         </div>
       )}
@@ -53,7 +53,7 @@ function DecisionMeta({ category, mediaType }: { category?: string; mediaType?: 
   return (
     <div className="flex items-center gap-2 mb-1.5">
       {category && (
-        <span className="typo-caption font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
+        <span className="typo-caption text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
       )}
       {mediaType === 'video' ? (
         <Video className="w-3 h-3 text-foreground" />
@@ -96,7 +96,7 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
         title={t.overview.focused_decision.reject}
         aria-label={t.overview.focused_decision.reject}
         aria-pressed={verdict === 'reject'}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'reject'
             ? 'bg-red-500/30 text-red-400 ring-1 ring-red-500/40'
             : 'bg-background/80 text-foreground hover:bg-red-500/15 hover:text-red-400 ring-1 ring-primary/15'
@@ -110,7 +110,7 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
         title={t.overview.focused_decision.accept}
         aria-label={t.overview.focused_decision.accept}
         aria-pressed={verdict === 'accept'}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'accept'
             ? 'bg-emerald-500/30 text-emerald-400 ring-1 ring-emerald-500/40'
             : 'bg-background/80 text-foreground hover:bg-emerald-500/15 hover:text-emerald-400 ring-1 ring-primary/15'

@@ -312,8 +312,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             className={`w-full flex items-start gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors text-left ${
               isActive
                 ? needsAnswers
-                  ? 'bg-amber-500/10 text-amber-300 font-medium'
-                  : 'bg-violet-500/10 text-violet-300 font-medium'
+                  ? 'bg-amber-500/10 text-amber-300'
+                  : 'bg-violet-500/10 text-violet-300'
                 : needsAnswers
                   ? 'text-foreground/70 hover:bg-amber-500/5 hover:text-amber-300'
                   : 'text-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
@@ -462,7 +462,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <button
             type="button"
             onClick={onCreatePersona}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg typo-caption font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
             {t.sidebar.create}

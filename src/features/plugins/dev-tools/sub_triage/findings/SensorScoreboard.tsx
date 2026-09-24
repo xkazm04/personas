@@ -69,7 +69,7 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
         <thead>
           <tr className="text-left">
             {['Sensor', 'Raised', 'Shipped', 'Cleared', 'Moved', 'Unchanged', 'Regressed', 'Verify'].map((h) => (
-              <th key={h} className="px-3 py-1.5 typo-label text-foreground/45 font-normal">
+              <th key={h} className="px-3 py-1.5 typo-label text-foreground/45">
                 {h}
               </th>
             ))}
@@ -102,7 +102,7 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
                 <td className="px-3 py-1.5 typo-caption text-sky-300 tabular-nums">{s.moved || '·'}</td>
                 <td className="px-3 py-1.5 typo-caption text-amber-300 tabular-nums">{s.unchanged || '·'}</td>
                 <td className="px-3 py-1.5 typo-caption text-red-300 tabular-nums">{s.regressed || '·'}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums font-medium ${rateColor(s)}`}>
+                <td className={`px-3 py-1.5 typo-caption tabular-nums ${rateColor(s)}`}>
                   {ratePct(s)}
                   {!s.hasEnoughSignal && s.verifyRate !== null && (
                     <span className="ml-1 text-foreground/35 typo-label">(low n)</span>

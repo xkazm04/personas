@@ -93,7 +93,7 @@ export function ComposerEventTemplateList({
                   {subscribed && <Check className="w-3 h-3 text-foreground" strokeWidth={3} />}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="typo-body text-foreground font-medium">{tpl.label}</div>
+                  <div className="typo-body text-foreground">{tpl.label}</div>
                   <div className="typo-caption text-foreground mt-0.5">
                     {tpl.description}
                   </div>

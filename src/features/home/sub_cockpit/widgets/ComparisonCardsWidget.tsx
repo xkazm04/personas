@@ -70,7 +70,7 @@ export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className={`typo-body font-semibold truncate ${intentTextClass(opt.intent, 'info')}`}
+                  className={`typo-body truncate ${intentTextClass(opt.intent, 'info')}`}
                 >
                   {opt.label}
                 </span>
@@ -82,12 +82,12 @@ export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
                 )}
               </div>
               {opt.summary && (
-                <p className="typo-caption leading-relaxed mt-1">{opt.summary}</p>
+                <p className="typo-caption mt-1">{opt.summary}</p>
               )}
               {(opt.pros?.length ?? 0) > 0 && (
                 <ul className="mt-2 space-y-1">
                   {opt.pros!.map((p, j) => (
-                    <li key={j} className="flex items-start gap-1.5 typo-caption leading-relaxed">
+                    <li key={j} className="flex items-start gap-1.5 typo-caption">
                       <Check className="w-3 h-3 text-emerald-400 mt-0.5 shrink-0" aria-hidden />
                       <span className="min-w-0">{p}</span>
                     </li>
@@ -97,7 +97,7 @@ export function ComparisonCardsWidget({ config, title }: CockpitWidgetProps) {
               {(opt.cons?.length ?? 0) > 0 && (
                 <ul className="mt-1.5 space-y-1">
                   {opt.cons!.map((c, j) => (
-                    <li key={j} className="flex items-start gap-1.5 typo-caption leading-relaxed">
+                    <li key={j} className="flex items-start gap-1.5 typo-caption">
                       <Minus className="w-3 h-3 text-rose-400 mt-0.5 shrink-0" aria-hidden />
                       <span className="min-w-0">{c}</span>
                     </li>

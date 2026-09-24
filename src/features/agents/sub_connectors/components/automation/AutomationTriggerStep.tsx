@@ -74,7 +74,7 @@ export function AutomationTriggerStep({
       <div className="flex items-center gap-3">
         <label className="typo-body text-foreground">{t.agents.connectors.auto_target_platform}</label>
         {editAutomation ? (
-          <span className={`inline-flex items-center px-2.5 py-1 typo-body font-medium rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
+          <span className={`inline-flex items-center px-2.5 py-1 typo-body rounded-modal border ${PLATFORM_CONFIG[platform]?.bg ?? ''} ${PLATFORM_CONFIG[platform]?.color ?? ''}`}>
             {PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : platform}
           </span>
         ) : (
@@ -119,13 +119,13 @@ export function AutomationTriggerStep({
         <div className="flex items-start gap-3 p-3.5 rounded-modal bg-brand-amber/5 border border-brand-amber/15">
           <KeyRound className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="typo-body font-medium text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
+            <p className="typo-body text-foreground">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             {platformConnector && (
               <button
                 type="button"
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
               >
                 <KeyRound className="w-3 h-3" />
                 {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}
@@ -169,7 +169,7 @@ export function AutomationTriggerStep({
             <div className="flex items-start gap-2.5 p-3 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
               <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="typo-body font-medium text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
+                <p className="typo-body text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
                 <p className="typo-body text-foreground mt-0.5">
                   {tx(t.agents.connectors.auto_github_token_needs, { scopes: [
                     !githubPerms.hasRepo ? "'repo'" : '',
@@ -180,7 +180,7 @@ export function AutomationTriggerStep({
             </div>
           )}
           <div>
-            <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_repo_required}</label>
+            <label className="typo-body text-foreground">{t.agents.connectors.auto_repo_required}</label>
             <div className="mt-1.5">
               {loadingRepos ? (
                 // Ghost in the select's geometry, delayed so a fast fetch never paints it.
@@ -207,7 +207,7 @@ export function AutomationTriggerStep({
       {/* Zapier: Existing zaps listing */}
       {platform === 'zapier' && hasPlatformCredential && (
         <div className="space-y-2">
-          <label className="typo-body font-medium text-foreground">{t.agents.connectors.auto_your_zaps}</label>
+          <label className="typo-body text-foreground">{t.agents.connectors.auto_your_zaps}</label>
           {loadingZaps ? (
             <div className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
               <span className="sr-only">{t.agents.connectors.auto_loading_zaps}</span>
@@ -242,7 +242,7 @@ export function AutomationTriggerStep({
           onClick={onDesign}
           disabled={!canDesign}
           title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
-          className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 typo-body rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3.5 h-3.5" />
           {t.agents.connectors.auto_design_ai}

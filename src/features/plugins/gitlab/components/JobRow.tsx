@@ -61,7 +61,7 @@ function JobLogViewer({ log }: { log: string | null }) {
   return (
     <pre
       ref={scrollRef}
-      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed scrollbar-thin"
+      className="max-h-72 overflow-auto rounded-card bg-black/40 p-3 typo-code text-foreground whitespace-pre-wrap break-all scrollbar-thin"
     >
       {painted}
     </pre>
@@ -105,7 +105,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
         )}
         <StatusIcon status={job.status} />
         <div className="flex-1 min-w-0">
-          <span className="typo-body font-medium text-foreground/85">{job.name}</span>
+          <span className="typo-body text-foreground/85">{job.name}</span>
           <span className="typo-caption text-foreground ml-2">{job.stage}</span>
         </div>
         {job.duration != null && (

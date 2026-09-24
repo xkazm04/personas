@@ -126,7 +126,7 @@ function KpiTile({
         {icon}
         <span className="truncate">{label}</span>
       </div>
-      <div className={`mt-0.5 typo-body font-medium ${valueTone} ${mono ? 'font-mono' : ''} truncate`}>
+      <div className={`mt-0.5 typo-body ${valueTone} ${mono ? 'font-mono' : ''} truncate`}>
         {value}
       </div>
     </div>

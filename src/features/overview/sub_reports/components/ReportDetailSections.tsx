@@ -83,7 +83,7 @@ type Tx = ReturnType<typeof useTranslation>['tx'];
  * now delivers what these two lines were asking for, on the element itself.
  */
 const REPORT_CONTENT_MD_CLASS = [
-  'typo-body-lg leading-[1.8] text-foreground',
+  'typo-body-lg text-foreground',
   '[&_p]:mb-5 [&_p:last-child]:mb-0',
   '[&_p:first-of-type:first-letter]:float-left',
   '[&_p:first-of-type:first-letter]:typo-heading-lg',
@@ -115,7 +115,7 @@ export function SectionMark({
   const ruleTone    = muted ? 'bg-foreground/10'   : 'bg-primary/20';
   return (
     <div className="flex items-baseline gap-3 mb-4">
-      <span className={`font-serif typo-heading-lg font-light leading-none ${numeralTone}`}>
+      <span className={`font-serif typo-heading-lg ${numeralTone}`}>
         {index}
       </span>
       {icon}
@@ -210,7 +210,7 @@ export function ReportSubtitle({
         type="button"
         data-testid="msg-detail-persona-link"
         onClick={onOpenPersona}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 -mx-0.5 rounded-input typo-body font-medium text-primary hover:text-primary/80 hover:bg-primary/[0.08] transition-colors focus-ring"
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 -mx-0.5 rounded-input typo-body text-primary hover:text-primary/80 hover:bg-primary/[0.08] transition-colors focus-ring"
         title={t.overview.reports_view.persona_link_title}
       >
         {personaName}
@@ -300,7 +300,7 @@ function ContentActionButton({
   highlight?: boolean;
 }) {
   const baseCls =
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-colors';
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption transition-colors';
   const toneCls = highlight
     ? 'text-primary bg-primary/[0.08] hover:bg-primary/[0.14] border border-primary/15'
     : 'text-foreground bg-secondary/[0.05] hover:bg-secondary/[0.1] border border-primary/10';
@@ -477,7 +477,7 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
       {improving === 'sent' ? (
         <div className="flex items-center gap-3 px-5 py-4 mt-3 rounded-2xl bg-emerald-500/[0.08] border-l-[3px] border-emerald-400/70">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span className="typo-body-lg text-emerald-300 font-medium">
+          <span className="typo-body-lg text-emerald-300">
             {t.overview.reports_view.improvement_started}
           </span>
         </div>
@@ -506,14 +506,14 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
             placeholder={t.overview.reports_view.improve_placeholder}
             rows={3}
             autoFocus
-            className="w-full px-4 py-3 rounded-modal border border-amber-400/15 bg-background/30 typo-body-lg leading-relaxed text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
+            className="w-full px-4 py-3 rounded-modal border border-amber-400/15 bg-background/30 typo-body-lg text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
           />
           <div className="flex items-center gap-2 mt-3">
             <button
               type="button"
               onClick={onImprove}
               disabled={!feedbackText.trim() || improving === 'loading'}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-card typo-caption font-semibold bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 disabled:opacity-40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-card typo-caption bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 disabled:opacity-40 transition-colors"
             >
               {improving === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
               {improving === 'loading' ? t.overview.reports_view.starting : t.overview.reports_view.submit_improvement}
@@ -661,12 +661,12 @@ function PendingDecisionCard({
         <SeverityIndicator severity={review.severity} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <p className="typo-body-lg font-medium text-foreground break-words">
+            <p className="typo-body-lg text-foreground break-words">
               {review.title}
             </p>
             {hasChildren && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption font-semibold text-primary/85 bg-primary/10 border border-primary/15"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption text-primary/85 bg-primary/10 border border-primary/15"
                 data-testid={`pending-review-decisions-count-${review.id}`}
               >
                 {decisions.length} decisions
@@ -713,7 +713,7 @@ function PendingDecisionCard({
           data-testid={`pending-review-approve-${review.id}`}
           onClick={onApprove}
           disabled={resolving || (hasChildren && anyRejected)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption font-semibold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
           title={hasChildren && anyRejected ? 'Clear rejections before approving the whole review' : undefined}
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsUp className="w-3 h-3" />}
@@ -728,7 +728,7 @@ function PendingDecisionCard({
           data-testid={`pending-review-reject-${review.id}`}
           onClick={onReject}
           disabled={resolving}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption font-semibold bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsDown className="w-3 h-3" />}
           {hasChildren && anyRejected

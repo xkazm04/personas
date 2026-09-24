@@ -28,7 +28,7 @@ export function FleetStateCutoffSettings() {
     >
       <div className="flex items-center gap-2 mb-1">
         <Clock className="w-4 h-4 text-orange-400" aria-hidden="true" />
-        <p className="typo-caption font-medium text-foreground">{f.state_cutoffs_title}</p>
+        <p className="typo-caption text-foreground">{f.state_cutoffs_title}</p>
       </div>
       <p className="text-[14px] text-foreground leading-relaxed mb-3 opacity-80">{f.state_cutoffs_desc}</p>
 

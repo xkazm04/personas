@@ -40,8 +40,8 @@ export function QueryToolbar({
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/8 bg-secondary/5 shrink-0">
-      <span className="typo-heading font-semibold text-foreground flex-1 truncate">{selectedTitle}</span>
-      <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8 font-medium">
+      <span className="typo-heading text-foreground flex-1 truncate">{selectedTitle}</span>
+      <span className="typo-body uppercase tracking-wider text-foreground px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/8">
         {language}
       </span>
       <ConnectorCapabilityNote serviceType={serviceType} />
@@ -114,7 +114,7 @@ export function QueryToolbar({
         <button
           type="button"
           onClick={onToggleSafeMode}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body border transition-all ${
             safeMode
               ? 'bg-emerald-500/8 text-emerald-400/80 border-emerald-500/20 hover:bg-emerald-500/15'
               : 'bg-amber-500/8 text-amber-400/80 border-amber-500/20 hover:bg-amber-500/15'

@@ -105,7 +105,7 @@ export function FormFieldGroup({
         {icon && <span className="flex-shrink-0 text-foreground">{icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-caption uppercase tracking-wider text-foreground font-semibold">
+            <span className="typo-caption uppercase tracking-wider text-foreground">
               {label}
             </span>
             {showBadge && (

@@ -46,7 +46,7 @@ export function WarningBadge({
         className="inline-flex items-center gap-1 rounded-input border border-red-500/40 bg-red-500/12 hover:bg-red-500/20 px-1.5 py-0.5 transition-colors flex-shrink-0"
       >
         <AlertTriangle className="w-5 h-5 text-red-400" aria-hidden />
-        <span className="typo-body-lg tabular-nums font-semibold text-red-400">{items.length}</span>
+        <span className="typo-body-lg tabular-nums text-red-400">{items.length}</span>
       </button>
       <WarningPopover
         open={open}
@@ -111,7 +111,7 @@ function WarningPopover({
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-red-500/[0.06]">
         <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-400" aria-hidden />
-        <span className="typo-body-lg font-semibold text-foreground truncate">{projectName}</span>
+        <span className="typo-body-lg text-foreground truncate">{projectName}</span>
         <span className="typo-body-lg text-foreground/55 ml-auto whitespace-nowrap">{items.length} off track</span>
       </div>
       <ul className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">

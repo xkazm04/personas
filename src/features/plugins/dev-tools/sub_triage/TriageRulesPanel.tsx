@@ -146,7 +146,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
-        className="flex items-center gap-2 w-full px-3 py-2 typo-caption font-medium text-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 w-full px-3 py-2 typo-caption text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Zap className="w-3 h-3" />
@@ -259,17 +259,17 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                 <button type="button" onClick={() => setAction('reject')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'reject' ? 'bg-red-500/20 text-red-400' : 'bg-secondary/40 text-foreground'}`}>Reject</button>
               </div>
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={handleCreate} className="px-3 py-1 typo-caption font-medium rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors">Save</button>
+                <button type="button" onClick={handleCreate} className="px-3 py-1 typo-caption rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors">Save</button>
                 <button type="button" onClick={() => setCreating(false)} className="px-3 py-1 typo-caption text-foreground hover:text-foreground transition-colors">Cancel</button>
               </div>
             </div>
           ) : (
             <div className="flex gap-2">
-              <button type="button" onClick={() => setCreating(true)} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+              <button type="button" onClick={() => setCreating(true)} className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
                 <Plus className="w-3 h-3" /> {t.plugins.dev_triage.new_rule}
               </button>
               {rules.length > 0 && (
-                <button type="button" onClick={handleRun} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                <button type="button" onClick={handleRun} className="flex items-center gap-1 px-2.5 py-1 typo-caption rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                   <Zap className="w-3 h-3" /> {t.plugins.dev_triage.run_rules}
                 </button>
               )}

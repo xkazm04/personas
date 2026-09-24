@@ -43,7 +43,7 @@ import { DebtText } from '@/i18n/DebtText';
 function SeverityBadge({ severity }: { severity: string }) {
   const cfg = getSevCfg(severity);
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption border ${SEV_BADGE_COLORS[severity] ?? SEV_BADGE_COLORS.info!}`}>
       {cfg.icon}
       {cfg.label}
     </span>
@@ -306,7 +306,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[330px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
-          <span className="typo-label font-semibold text-foreground">{t.overview.review_focus.queue} ({pending.length})</span>
+          <span className="typo-label text-foreground">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
@@ -340,12 +340,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
               >
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sevDot(r.severity)}`} />
-                  <span className={`typo-caption truncate ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
+                  <span className={`typo-caption truncate ${isActive ? 'text-foreground' : 'text-foreground'}`}>
                     {stripPersonaPrefix(r.title, r.persona_name)}
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="typo-caption font-normal text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <span className="typo-caption text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
                 )}
               </button>
             );
@@ -357,7 +357,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Top nav bar */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-2 border-b border-primary/10 bg-background/80 backdrop-blur-sm">
-          <span className="typo-body font-medium text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
+          <span className="typo-body text-foreground">Review {reviewIdx + 1} of {pending.length}</span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon-sm" onClick={goPrevReview} disabled={reviewIdx === 0}>
               <ChevronLeft className="w-4 h-4" />
@@ -389,12 +389,12 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   {/* Header */}
                   <div className="flex items-start gap-3">
                     <PersonaIcon icon={current!.persona_icon ?? null} color={current!.persona_color ?? null} display="framed" frameSize={"lg"} />
-                    <span className="typo-body font-medium text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
+                    <span className="typo-body text-foreground mt-1">{current!.persona_name || 'Unknown'}</span>
                     <div className="mt-1"><SeverityBadge severity={current!.severity} /></div>
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="typo-label font-semibold text-foreground">
+                          <span className="typo-label text-foreground">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
                           <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
@@ -435,18 +435,18 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   </div>
 
                   {/* Title */}
-                  <h2 className="typo-heading-lg font-bold text-foreground leading-tight">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
+                  <h2 className="typo-heading-lg text-foreground">{stripPersonaPrefix(current!.title, current!.persona_name)}</h2>
 
                   {/* Description */}
                   {current!.description && (
-                    <MarkdownRenderer content={current!.description} className="typo-body text-foreground/90 leading-relaxed" />
+                    <MarkdownRenderer content={current!.description} className="typo-body text-foreground/90" />
                   )}
 
                   {/* Extra prose context preserved by the backend when
                       decisions are present — gives the user more than just
                       bare decision labels. */}
                   {contextText && (
-                    <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{contextText}</p>
+                    <p className="typo-body text-foreground whitespace-pre-wrap">{contextText}</p>
                   )}
 
                   {/* Gallery-level media (single image/video review like art director) */}
@@ -541,7 +541,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                             }}
                             className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 disabled:opacity-50 transition-colors text-left"
                           >
-                            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading font-bold flex-shrink-0">{i + 1}</span>
+                            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading flex-shrink-0">{i + 1}</span>
                             {action}
                           </button>
                         ))}

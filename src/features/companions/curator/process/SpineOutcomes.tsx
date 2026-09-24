@@ -21,7 +21,7 @@ export function SpineOutcomes({ outcomes, total }: { outcomes: Record<string, nu
           <li key={r.o} className="flex items-center gap-2 typo-body">
             <span className={`h-3 w-3 rounded-interactive ${OUTCOME_TONE[r.o]}`} />
             {outcomeName(p, r.o)}
-            <span className="typo-data tabular-nums">{r.n}</span>
+            <span className="typo-data">{r.n}</span>
             <span className="typo-caption tabular-nums">{pct(r.n, total)}%</span>
           </li>
         ))}

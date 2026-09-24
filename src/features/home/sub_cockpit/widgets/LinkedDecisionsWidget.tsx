@@ -134,7 +134,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
               <div className="flex items-start gap-2">
                 <SeverityIndicator severity={r.severity} />
                 <div className="min-w-0 flex-1">
-                  <p className="typo-body font-medium text-foreground/95 truncate">{r.title}</p>
+                  <p className="typo-body text-foreground/95 truncate">{r.title}</p>
                   {r.description && (
                     <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{r.description}</p>
                   )}
@@ -151,7 +151,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
                   data-testid={`cockpit-pending-review-approve-${r.id}`}
                   onClick={() => resolve(r, 'approved')}
                   disabled={resolvingId === r.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-semibold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
                 >
                   {resolvingId === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsUp className="w-3 h-3" />}
                   {t.overview.cockpit.linked_decisions_approve}
@@ -161,7 +161,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
                   data-testid={`cockpit-pending-review-reject-${r.id}`}
                   onClick={() => resolve(r, 'rejected')}
                   disabled={resolvingId === r.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-semibold bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
                 >
                   {resolvingId === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsDown className="w-3 h-3" />}
                   {t.overview.cockpit.linked_decisions_reject}

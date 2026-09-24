@@ -238,7 +238,7 @@ export default function RunDeskPage() {
           />
 
           <div>
-            <h3 className="typo-label font-semibold text-primary mb-3">
+            <h3 className="typo-label text-primary mb-3">
               {tx(dr.task_queue_count, { count: total })}
             </h3>
 

@@ -109,7 +109,7 @@ export function ProjectSidebar({ passport, name, onClose, onOpenFactory, onOpenS
           </>
         ) : (
           <>
-            <span className="typo-heading-lg tracking-tight block">{name}</span>
+            <span className="typo-heading-lg block">{name}</span>
             <p className="typo-caption text-foreground/55 mt-2">{t.mastermind.passport_demo}</p>
           </>
         )}

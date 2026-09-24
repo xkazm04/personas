@@ -87,7 +87,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
         {/* About */}
         <div className="px-4 py-4">
           <h4 className="typo-label text-foreground mb-2">{t.recipes_catalog.about_heading}</h4>
-          <p className="typo-body text-foreground/90 leading-relaxed whitespace-pre-line">{recipe.description}</p>
+          <p className="typo-body text-foreground/90 whitespace-pre-line">{recipe.description}</p>
           {recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {recipe.tags.map((tag) => onTagClick ? (

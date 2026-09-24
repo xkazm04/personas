@@ -172,7 +172,7 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
       />
       <ContentBody>
         <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
-          <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
+          <p className="typo-caption text-primary mb-1">{phase}</p>
           <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
         </div>
       </ContentBody>

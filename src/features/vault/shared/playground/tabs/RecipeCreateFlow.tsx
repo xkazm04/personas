@@ -40,7 +40,7 @@ export function RecipeCreateFlow({
       >
         <div className="rounded-modal border border-primary/10 bg-primary/5 p-4 mb-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="typo-heading font-semibold text-foreground flex items-center gap-1.5">
+            <h4 className="typo-heading text-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
               {sh.create_recipe}
             </h4>
@@ -71,7 +71,7 @@ export function RecipeCreateFlow({
             <button
               onClick={onGenerate}
               disabled={!description.trim()}
-              className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" />
               {sh.generate_with_ai}
@@ -117,7 +117,7 @@ export function RecipeCreateFlow({
               )}
 
               <div className="flex items-center justify-between">
-                <h5 className="typo-heading font-semibold text-foreground">{sh.generated_recipe}</h5>
+                <h5 className="typo-heading text-foreground">{sh.generated_recipe}</h5>
                 {generator.draft.category && (
                   <span className="rounded-card border border-border/40 bg-muted/20 px-2 py-0.5 typo-body text-foreground">
                     {generator.draft.category}
@@ -145,7 +145,7 @@ export function RecipeCreateFlow({
               {generator.draft.example_result && (
                 <div>
                   <p className="typo-body text-foreground mb-0.5">{sh.example_result}</p>
-                  <pre className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-3 typo-code font-mono text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  <pre className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-3 typo-code text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
                     {generator.draft.example_result}
                   </pre>
                 </div>
@@ -155,7 +155,7 @@ export function RecipeCreateFlow({
                 <button
                   onClick={onSaveDraft}
                   disabled={saving}
-                  className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
                 >
                   {saving ? <LoadingSpinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
                   {sh.accept_save}

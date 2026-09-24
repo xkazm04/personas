@@ -200,14 +200,14 @@ export function PersonaHero({
             <span className="typo-label text-foreground">
               {t.agents.use_cases.persona_label}
             </span>
-            <h2 className="typo-section-title text-foreground mt-0.5 truncate font-semibold">
+            <h2 className="typo-section-title mt-0.5 truncate">
               {personaName}
             </h2>
           </div>
 
           <div className="hidden md:flex items-center gap-4 flex-wrap shrink-0">
             <span className="inline-flex items-baseline gap-1.5">
-              <span className="typo-data text-foreground font-mono text-xl">
+              <span className="typo-data text-foreground font-mono">
                 {stats.total}
               </span>
               <span className="typo-label text-foreground">
@@ -242,7 +242,7 @@ export function PersonaHero({
         {/* Narrow screens — counts stack below the name */}
         <div className="md:hidden mt-3 flex items-center gap-3 flex-wrap">
           <span className="inline-flex items-baseline gap-1.5">
-            <span className="typo-data text-foreground font-mono text-lg">{stats.total}</span>
+            <span className="typo-data text-foreground font-mono">{stats.total}</span>
             <span className="typo-label text-foreground">
               {t.agents.use_cases.capabilities_label}
             </span>

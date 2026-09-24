@@ -40,7 +40,7 @@ export function CommandPanelAttachButton({
       style={active ? { boxShadow: "0 0 12px rgba(96,165,250,0.25)" } : undefined}
     >
       <Icon className="w-3.5 h-3.5" />
-      <span className="typo-caption font-medium">{children}</span>
+      <span className="typo-caption">{children}</span>
     </button>
   );
 }

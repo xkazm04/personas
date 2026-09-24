@@ -102,7 +102,7 @@ export function GroupHeaderRow({
           : { position: 'absolute', top: 0, left: 0, width: '100%', height, transform: `translateY(${start}px)` }
       }
     >
-      <span className="typo-section-title text-foreground">{label}</span>
+      <span className="typo-section-title">{label}</span>
       <span className="typo-caption text-foreground tabular-nums">{count}</span>
     </div>
   );

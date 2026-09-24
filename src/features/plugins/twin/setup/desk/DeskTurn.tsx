@@ -61,7 +61,7 @@ export function DeskTurn({
         ) : (
           <>
             {greeting && (
-              <p className="typo-body text-foreground leading-relaxed" data-testid="setup-desk-greeting">
+              <p className="typo-body text-foreground" data-testid="setup-desk-greeting">
                 {greeting}
               </p>
             )}
@@ -97,8 +97,8 @@ export function DeskTurn({
                     }`}
                   >
                     <span className="typo-caption tabular-nums">{i + 1}</span>
-                    <span className="typo-body text-foreground leading-relaxed">{card.text}</span>
-                    <span className="mt-auto pt-1 typo-caption leading-relaxed">{card.reason}</span>
+                    <span className="typo-body text-foreground">{card.text}</span>
+                    <span className="mt-auto pt-1 typo-caption">{card.reason}</span>
                   </button>
                 ))}
               </div>

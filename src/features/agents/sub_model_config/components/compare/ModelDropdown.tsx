@@ -30,7 +30,7 @@ export function ModelDropdown({
 
   return (
     <div className="space-y-1">
-      <label className={`typo-label font-medium ${accentColor} `}>{label}</label>
+      <label className={`typo-label ${accentColor} `}>{label}</label>
       {/* ThemedSelect, not a hand-classed native select: the provider picker
           forty lines away (CustomModelConfigForm) already uses it, and two
           treatments on one screen focus, disable and open differently. */}

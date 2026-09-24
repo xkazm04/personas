@@ -35,7 +35,7 @@ export function UnsavedChangesModal({
           {t.common.unsaved_title}
         </h2>
 
-        <p className="typo-body text-foreground leading-relaxed">
+        <p className="typo-body text-foreground">
           {changedSections.length > 0
             ? (() => {
                 const parts = t.common.unsaved_body_sections.split('{sections}');

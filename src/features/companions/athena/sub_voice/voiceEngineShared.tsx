@@ -67,7 +67,7 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors focus-ring"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption transition-colors focus-ring"
             >
               <ExternalLink className="w-3 h-3" />
               {t.athena.voice_kokoro_download}
@@ -239,7 +239,7 @@ export function VoiceEngineInstallBlock({
         <>
           <div className="flex items-center gap-2">
             {icon}
-            <span className="typo-title text-primary">{title}</span>
+            <span className="typo-title">{title}</span>
           </div>
           <p className="typo-caption">{desc}</p>
         </>
@@ -272,7 +272,7 @@ export function VoiceEngineInstallBlock({
         <button
           type="button"
           onClick={onInstall}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption transition-colors focus-ring"
         >
           <Download className="w-3.5 h-3.5" />
           {installButtonLabel}

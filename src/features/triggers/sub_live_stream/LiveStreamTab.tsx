@@ -339,7 +339,7 @@ export function LiveStreamTab() {
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
         return (
-          <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
+          <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {event.status}
           </span>
         );
@@ -374,7 +374,7 @@ export function LiveStreamTab() {
           type="button"
           onClick={() => isPaused ? handleResume() : setIsPaused(true)}
           disabled={!attached && !isPaused}
-          className={`relative inline-flex items-center h-9 pl-3 pr-3.5 rounded-full typo-label font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 disabled:opacity-60 disabled:cursor-not-allowed ${
+          className={`relative inline-flex items-center h-9 pl-3 pr-3.5 rounded-full typo-label transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 disabled:opacity-60 disabled:cursor-not-allowed ${
             isPaused
               ? 'bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'
               : attached
@@ -461,7 +461,7 @@ export function LiveStreamTab() {
             type="button"
             onClick={handleClear}
             disabled={events.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title={t.triggers.clear_stream_title}
           >
             <Trash2 className="w-3 h-3" />

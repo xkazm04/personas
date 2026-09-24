@@ -83,7 +83,7 @@ export function ReportSummaryWidget({ config, title }: CockpitWidgetProps) {
           frameSize="md"
         />
         <div className="min-w-0 flex-1">
-          <p className="typo-body-lg font-semibold text-foreground/95 truncate">
+          <p className="typo-body-lg text-foreground/95 truncate">
             {msg.title || t.overview.reports_view.report_label}
           </p>
           <p className="typo-caption text-foreground mt-0.5">
@@ -92,7 +92,7 @@ export function ReportSummaryWidget({ config, title }: CockpitWidgetProps) {
         </div>
       </div>
 
-      <p className="typo-body text-foreground leading-relaxed flex-1 overflow-y-auto min-h-0">
+      <p className="typo-body text-foreground flex-1 overflow-y-auto min-h-0">
         {excerpt || <span className="italic text-foreground">{t.overview.cockpit.report_empty}</span>}
       </p>
     </div>

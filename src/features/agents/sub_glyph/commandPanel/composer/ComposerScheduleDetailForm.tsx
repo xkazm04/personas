@@ -40,7 +40,7 @@ export function ComposerScheduleDetailForm({
           value={time}
           onChange={(e) => onTimeChange(e.target.value)}
           autoFocus
-          className="flex-1 max-w-[200px] px-3 py-2 rounded-interactive bg-foreground/5 border border-border/40 typo-body-lg text-foreground font-medium focus:outline-none focus:border-primary/50"
+          className="flex-1 max-w-[200px] px-3 py-2 rounded-interactive bg-foreground/5 border border-border/40 typo-body-lg text-foreground focus:outline-none focus:border-primary/50"
         />
       </div>
 
@@ -55,7 +55,7 @@ export function ComposerScheduleDetailForm({
                   key={d.id}
                   type="button"
                   onClick={() => onToggleDay(d.id)}
-                  className={`px-3 py-2 rounded-interactive typo-body font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-interactive typo-body transition-colors ${
                     active
                       ? "bg-primary/30 text-foreground border border-primary/50"
                       : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30 hover:text-foreground"
@@ -80,7 +80,7 @@ export function ComposerScheduleDetailForm({
                   key={n}
                   type="button"
                   onClick={() => onMonthDayChange(n)}
-                  className={`h-10 rounded-interactive typo-body font-medium transition-colors tabular-nums ${
+                  className={`h-10 rounded-interactive typo-body transition-colors tabular-nums ${
                     active
                       ? "bg-primary/30 text-foreground border border-primary/50"
                       : "bg-foreground/5 text-foreground border border-border/25 hover:border-primary/30 hover:text-foreground"

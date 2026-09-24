@@ -111,7 +111,7 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
             type="button"
             onClick={handleBatchApprove}
             disabled={batchSending}
-            className="inline-flex items-center gap-1 rounded-interactive bg-primary text-primary-foreground px-2 py-0.5 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1 rounded-interactive bg-primary text-primary-foreground px-2 py-0.5 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             data-testid="companion-mcp-batch-approve"
           >
             <Check className="size-3" />
@@ -150,7 +150,7 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
       <div className="flex items-start gap-2 mb-2">
         <HelpCircle className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-caption font-semibold text-foreground">
+          <div className="typo-caption text-foreground">
             {t.athena.orchestration.guidance_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.question}</div>
@@ -214,7 +214,7 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
       <div className="flex items-start gap-2 mb-2">
         <ShieldQuestion className="size-4 text-foreground shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <div className="typo-caption font-semibold text-foreground">
+          <div className="typo-caption text-foreground">
             {t.athena.orchestration.approval_from} {sessionLabel(request.fleetSessionId)}
           </div>
           <div className="typo-body text-foreground mt-1">{payload.action}</div>

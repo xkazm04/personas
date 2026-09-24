@@ -132,7 +132,7 @@ export default function ByomSettings() {
             <div className="rounded-modal border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <h3 className="typo-body font-medium text-red-300">{s.policy_corrupted}</h3>
+                <h3 className="typo-body text-red-300">{s.policy_corrupted}</h3>
                 <p className="typo-body text-red-300/80 mt-1">
                   {s.policy_corrupted_desc}
                 </p>

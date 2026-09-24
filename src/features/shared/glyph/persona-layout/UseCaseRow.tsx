@@ -180,7 +180,7 @@ export function UseCaseRow({
               </Tooltip>
             )}
             <div
-              className="typo-heading font-semibold leading-tight truncate"
+              className="typo-heading truncate"
               style={{
                 color: isDisabled
                   ? 'rgb(var(--foreground) / 0.55)'

@@ -37,7 +37,7 @@ export function LabResultModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10 bg-gradient-to-r from-secondary/50 via-background/95 to-secondary/50 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <h2 id="lab-result-modal" className="typo-heading font-semibold text-foreground/90 tracking-wide">{modeLabel} {t.agents.lab.results_suffix}</h2>
+            <h2 id="lab-result-modal" className="typo-heading text-foreground/90">{modeLabel} {t.agents.lab.results_suffix}</h2>
             <span className={statusBadge(run.status)}>{tokenLabel(t, 'execution', run.status)}</span>
             {headerChips}
           </div>

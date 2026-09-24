@@ -262,7 +262,7 @@ export function ProjectModal({
           <>
             <div className="flex items-start justify-between mb-5">
               <div className="min-w-0">
-                <h2 id="dev-tools-project-modal-title" className="typo-heading-lg font-semibold text-foreground">
+                <h2 id="dev-tools-project-modal-title" className="typo-heading-lg text-foreground">
                   {isEdit ? dp.edit_project : dp.new_project}
                 </h2>
                 <p className="typo-caption text-foreground mt-1">
@@ -335,8 +335,8 @@ export function ProjectModal({
                   ? <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                   : <span className="w-4 h-4 rounded border border-primary/30 flex-shrink-0 mt-0.5" />}
                 <span className="min-w-0">
-                  <span className="typo-caption font-medium text-foreground">{dp.create_codebase_connector_label}</span>
-                  <span className="block typo-caption text-foreground mt-0.5 leading-relaxed">
+                  <span className="typo-caption text-foreground">{dp.create_codebase_connector_label}</span>
+                  <span className="block typo-caption text-foreground mt-0.5">
                     {dp.create_codebase_connector_desc.replace('{name}', name.trim() || dp.project_name)}
                   </span>
                 </span>

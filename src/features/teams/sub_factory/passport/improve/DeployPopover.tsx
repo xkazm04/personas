@@ -59,7 +59,7 @@ export function DeployPopover({
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <Rocket className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">Upgrade {raw.project.name}</span>
+        <span className="typo-caption text-foreground truncate">Upgrade {raw.project.name}</span>
         <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>

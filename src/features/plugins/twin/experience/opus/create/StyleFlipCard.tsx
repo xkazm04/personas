@@ -44,7 +44,7 @@ export function StyleFlipCard({
         {icon}
         {picked && <Check className="ml-auto w-4 h-4" aria-hidden />}
       </span>
-      <span className="typo-title-lg text-foreground">{title}</span>
+      <span className="typo-title-lg">{title}</span>
       <span className="typo-body text-foreground">{summary}</span>
       {flipHint && <span className="mt-auto typo-caption">{flipHint}</span>}
     </span>

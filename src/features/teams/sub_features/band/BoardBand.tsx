@@ -75,7 +75,7 @@ export function BoardBand({
         <span className="typo-data-lg text-primary" data-testid="features-claimed-share">
           {claimed == null ? t.not_measured : <Numeric value={claimed} unit="ratio" precision={0} />}
         </span>
-        <span className="typo-caption max-w-[14rem] leading-snug">{t.claimed_share}</span>
+        <span className="typo-caption max-w-[14rem]">{t.claimed_share}</span>
       </div>
 
       <div ref={barRef} className="min-w-[8rem] flex-1 basis-40">

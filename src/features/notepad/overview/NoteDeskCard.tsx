@@ -326,7 +326,7 @@ export function NoteDeskCard({
         </div>
 
         <button type="button" onClick={onOpen} className="text-left rounded-input focus-ring">
-          <span className="block typo-title-lg text-foreground line-clamp-2">
+          <span className="block typo-title-lg line-clamp-2">
             {titleHit ? (
               <>
                 {titleHit.pre}

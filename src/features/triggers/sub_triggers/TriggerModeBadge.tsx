@@ -20,7 +20,7 @@ export function TriggerModeBadge({ trigger, className = '' }: TriggerModeBadgePr
   const isApproval = mode === 'approval';
   return (
     <span
-      className={`typo-code px-1.5 py-0.5 rounded-card font-mono border ${
+      className={`typo-code px-1.5 py-0.5 rounded-card border ${
         isApproval
           ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
           : 'bg-amber-500/15 text-amber-400 border-amber-500/20'

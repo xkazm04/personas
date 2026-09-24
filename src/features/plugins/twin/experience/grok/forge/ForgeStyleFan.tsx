@@ -41,7 +41,7 @@ function StyleTile({
     >
       <span className="mt-0.5 flex-shrink-0 text-primary" aria-hidden>{icon}</span>
       <span className="min-w-0">
-        <span className="block typo-title text-foreground">{title}</span>
+        <span className="block typo-title">{title}</span>
         <span className="block typo-caption text-primary">{body}</span>
       </span>
     </button>
@@ -56,7 +56,7 @@ export function ForgeStyleFan({ value, onChange }: ForgeStyleFanProps) {
 
   return (
     <fieldset className="space-y-2" data-testid="create-twin-style-step">
-      <legend className="typo-title text-foreground">{xg.forge.style}</legend>
+      <legend className="typo-title">{xg.forge.style}</legend>
       <p className="typo-caption text-primary">{xg.forge.styleHint}</p>
       <div className="grid gap-2 sm:grid-cols-2 max-h-72 overflow-y-auto pr-1">
         <StyleTile

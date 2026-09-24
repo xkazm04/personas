@@ -99,7 +99,7 @@ const CrossTabRow = memo(function CrossTabRow({ row, gridTemplate, isSelected, o
           className="accent-[var(--color-primary)] shrink-0"
           aria-label={row.name}
         />
-        <span className="typo-body font-medium text-foreground truncate">{row.name}</span>
+        <span className="typo-body text-foreground truncate">{row.name}</span>
         <span className="ml-auto shrink-0 inline-flex items-center gap-2">
           <Tooltip content={`${row.freshNodes} ${d.ctx_picker_fresh_nodes}`}>
             <span className={`typo-caption tabular-nums ${covered ? 'text-status-success' : 'text-foreground/25'}`}>

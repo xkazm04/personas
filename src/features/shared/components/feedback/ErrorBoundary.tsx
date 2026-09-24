@@ -201,7 +201,7 @@ function ErrorFallback({
 
           {showDetails && (
             <div className="mt-2 p-3 rounded-lg bg-background/60 border border-primary/10 overflow-hidden">
-              <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto leading-relaxed">
+              <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                 {error?.stack || t.common.no_stack_trace}
                 {errorInfo && (
                   <>

@@ -20,7 +20,7 @@ export function AddCapabilityRow({ onClick }: AddCapabilityRowProps) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border border-dashed border-foreground/30 text-foreground hover:border-primary/55 hover:text-primary transition-colors cursor-pointer"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-dashed border-foreground/30 text-foreground hover:border-primary/55 hover:text-primary transition-colors cursor-pointer"
     >
       <Plus className="w-3.5 h-3.5" />
       {t.agents.use_cases.recipe}

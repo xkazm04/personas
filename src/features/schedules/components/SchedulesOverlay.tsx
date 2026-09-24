@@ -243,7 +243,7 @@ export default function SchedulesOverlay() {
                 setFilter(null);
                 window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds: null } }));
               }}
-              className="ml-auto px-1.5 py-0.5 rounded-interactive typo-label font-medium hover:bg-blue-500/15 transition-colors"
+              className="ml-auto px-1.5 py-0.5 rounded-interactive typo-label hover:bg-blue-500/15 transition-colors"
             >
               {t.common.clear}
             </button>

@@ -88,7 +88,7 @@ export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: Error
         <div className="flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="typo-code font-medium text-red-400 mb-1.5 uppercase tracking-wider">{t.agents.executions.error_label}</div>
+            <div className="typo-code text-red-400 mb-1.5 uppercase tracking-wider">{t.agents.executions.error_label}</div>
             <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">
               {errorDisplay}
             </pre>

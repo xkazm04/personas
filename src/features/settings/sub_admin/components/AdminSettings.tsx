@@ -48,14 +48,14 @@ export default function AdminSettings() {
             <div className="space-y-4">
               <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                 <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.storage_key}</p>
-                <p className="typo-code font-mono text-foreground">{CONSENT_KEY}</p>
+                <p className="typo-code text-foreground">{CONSENT_KEY}</p>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={triggerConsentReset}
-                  className={`flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 typo-body rounded-modal border transition-colors ${
                     confirmConsentReset
                       ? 'bg-red-500/15 text-red-300 border-red-500/25 hover:bg-red-500/25'
                       : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20'
@@ -78,7 +78,7 @@ export default function AdminSettings() {
                   <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
+                    className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal
                       bg-amber-500/10 text-amber-400 border border-amber-500/20
                       hover:bg-amber-500/20 transition-colors"
                   >

@@ -17,9 +17,9 @@ export function TwinHero({ onCreate }: { onCreate: () => void }) {
         {/* Eyebrow + title */}
         <div className="flex items-center justify-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
-          <span className="typo-caption uppercase tracking-wider text-violet-400 font-medium">{t.hero.eyebrow}</span>
+          <span className="typo-caption uppercase tracking-wider text-violet-400">{t.hero.eyebrow}</span>
         </div>
-        <h1 className="typo-section-title text-2xl sm:text-3xl font-semibold text-center mb-2">{t.hero.title}</h1>
+        <h1 className="typo-section-title text-center mb-2">{t.hero.title}</h1>
         <p className="typo-body text-foreground text-center mb-10">{t.hero.tagline}</p>
 
         {/* Three-panel explainer */}

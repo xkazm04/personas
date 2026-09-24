@@ -43,7 +43,7 @@ export function ScoreMeter({ checklist, score }: { checklist: SetupChecklistItem
           </span>
         ))}
       </div>
-      <span className="typo-data text-foreground tabular-nums" aria-hidden>
+      <span className="typo-data text-foreground" aria-hidden>
         {label}
       </span>
     </div>

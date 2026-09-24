@@ -119,7 +119,7 @@ export function FleetProcessScanner() {
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-primary" />
           {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-          <p className="typo-caption font-medium text-foreground">Running Claude processes</p>
+          <p className="typo-caption text-foreground">Running Claude processes</p>
           {orphans > 0 && (
             <span
               className="text-[12px] px-1.5 py-0.5 rounded-interactive bg-orange-500/15 text-orange-300"

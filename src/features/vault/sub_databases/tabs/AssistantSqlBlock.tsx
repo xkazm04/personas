@@ -37,7 +37,7 @@ export function AssistantSqlBlock({
 
       <div className="rounded-modal border border-primary/10 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/40 border-b border-primary/10">
-          <span className="typo-label font-medium text-foreground">
+          <span className="typo-label text-foreground">
             {tx(db.generated_label, { language: language === 'sql' ? 'SQL' : language })}
           </span>
           <div className="flex items-center gap-1">
@@ -72,7 +72,7 @@ export function AssistantSqlBlock({
           type="button"
           data-testid="chat-run-sql"
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
         >
           <Play className="w-3 h-3" />
           {msg.result ? db.rerun_query : db.run_query}

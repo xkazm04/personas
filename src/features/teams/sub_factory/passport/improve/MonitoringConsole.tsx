@@ -217,7 +217,7 @@ function LevelStrip({ ladder }: { ladder: NonNullable<ReturnType<typeof ladderFo
           />
         ))}
       </span>
-      <span className={`typo-caption font-semibold ${tint.text} shrink-0`}>{ladder.steps[ladder.currentIndex]}</span>
+      <span className={`typo-caption ${tint.text} shrink-0`}>{ladder.steps[ladder.currentIndex]}</span>
     </div>
   );
 }
@@ -228,7 +228,7 @@ function FooterButton({ label, onClick, busy, primary }: { label: string; onClic
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={`px-2 py-1 rounded-interactive typo-caption font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ${
+      className={`px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ${
         primary
           ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25'
           : 'text-foreground hover:bg-secondary/40 border border-primary/10'

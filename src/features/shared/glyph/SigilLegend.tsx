@@ -77,9 +77,7 @@ export function SigilLegend({
               }}
             />
             <span
-              className={`typo-caption whitespace-nowrap text-foreground ${
-                isHovered ? 'font-semibold' : 'font-normal'
-              }`}
+              className={`typo-caption whitespace-nowrap text-foreground`}
             >
               {dimText.label[dim]}
             </span>

@@ -80,7 +80,7 @@ export const RemoteSessionTile = memo(function RemoteSessionTile({
   const body = (
     <>
       <Tooltip content={<span className="whitespace-pre-line">{summary}</span>}>
-        <span className="block min-w-0 truncate typo-body leading-5 text-foreground">{title}</span>
+        <span className="block min-w-0 truncate typo-body text-foreground">{title}</span>
       </Tooltip>
       <span aria-hidden className="h-px w-full bg-foreground/10" />
       <span className="flex h-[18px] min-w-0 items-center gap-1">

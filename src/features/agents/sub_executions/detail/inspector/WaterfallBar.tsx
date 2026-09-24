@@ -68,7 +68,7 @@ export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: nu
       {/* Duration label */}
       {span.duration_ms != null && (
         <span
-          className="absolute top-0 typo-code text-foreground leading-5 whitespace-nowrap"
+          className="absolute top-0 typo-code text-foreground whitespace-nowrap"
           style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}
         >
           {formatDuration(span.duration_ms)}

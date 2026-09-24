@@ -39,7 +39,7 @@ export function DonePhase({
         <CheckCircle className="w-6 h-6 text-emerald-400" />
       </div>
       <div className="text-center">
-        <h3 className="typo-heading font-semibold text-foreground">{dp.credential_created}</h3>
+        <h3 className="typo-heading text-foreground">{dp.credential_created}</h3>
         <p className="typo-body text-foreground mt-1">
           {tx(dp.credential_saved_message, { label: connectorLabel ?? '' })}
           {refinementCount > 0 && (
@@ -67,7 +67,7 @@ export function DonePhase({
           <button
             type="button"
             onClick={onViewCredential}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body transition-all"
           >
             {dp.view_credential}
             <ArrowRight className="w-3.5 h-3.5" />

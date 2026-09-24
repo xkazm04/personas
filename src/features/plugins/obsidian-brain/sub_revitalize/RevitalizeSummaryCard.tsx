@@ -98,7 +98,7 @@ export default function RevitalizeSummaryCard({
         {summary.summary && (
           <div>
             <p className="typo-label typo-section-title mb-1.5">{ob.revitalize_model_summary}</p>
-            <p className="typo-body text-foreground leading-relaxed">{summary.summary}</p>
+            <p className="typo-body text-foreground">{summary.summary}</p>
           </div>
         )}
 

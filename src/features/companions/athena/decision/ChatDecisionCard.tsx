@@ -47,13 +47,13 @@ export function ChatDecisionCard() {
       data-companion-decision-source={decision.source}
       className="rounded-card border border-primary/30 bg-primary/[0.05] p-3"
     >
-      <p className="typo-label font-medium text-primary">
+      <p className="typo-label text-primary">
         {t.athena.decision_title}
       </p>
       <div data-testid="athena-chat-decision-prompt" className="mt-1">
         <MarkdownRenderer
           content={decision.prompt}
-          className="typo-body text-foreground/90 leading-relaxed"
+          className="typo-body text-foreground/90"
         />
       </div>
 
@@ -92,15 +92,15 @@ export function ChatDecisionCard() {
           data-testid="athena-chat-decision-recommendation"
           className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
         >
-          <p className="typo-label font-medium text-primary">
+          <p className="typo-label text-primary">
             {t.athena.decision_recommend_prefix}
           </p>
           <MarkdownRenderer
             content={decision.recommendation}
-            className="mt-1 typo-body text-foreground/90 leading-relaxed"
+            className="mt-1 typo-body text-foreground/90"
           />
           {decision.detail && (
-            <p className="mt-1.5 typo-caption text-foreground leading-relaxed">
+            <p className="mt-1.5 typo-caption text-foreground">
               {decision.detail}
             </p>
           )}
@@ -115,7 +115,7 @@ export function ChatDecisionCard() {
             data-testid={`athena-chat-decision-option-${i + 1}`}
             onClick={() => runDecisionOption(opt)}
             title={opt.hint ?? opt.label}
-            className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring ${
+            className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
               opt.danger
                 ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400'
                 : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary'

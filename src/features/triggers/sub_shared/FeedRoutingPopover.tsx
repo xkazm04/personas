@@ -122,7 +122,7 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
         </button>
       </div>
 
-      <p className="px-3 pt-2 typo-caption text-foreground/90 leading-snug">{m.routing_hint}</p>
+      <p className="px-3 pt-2 typo-caption text-foreground/90">{m.routing_hint}</p>
 
       {loadFailed ? (
         <p className="px-3 py-4 typo-caption text-status-error text-center">{m.routing_load_failed}</p>

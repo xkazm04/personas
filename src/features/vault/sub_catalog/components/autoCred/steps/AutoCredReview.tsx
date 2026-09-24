@@ -53,7 +53,7 @@ export function AutoCredReview({
           <Plug className="w-5 h-5" style={{ color: designResult.connector.color }} />
         </div>
         <div>
-          <h3 className="typo-heading font-semibold text-foreground">
+          <h3 className="typo-heading text-foreground">
             {t.vault.auto_cred_extra.review_extracted}
           </h3>
           <p className="typo-body text-foreground">
@@ -67,7 +67,7 @@ export function AutoCredReview({
         <div className="flex items-start gap-2.5 p-3 rounded-card border border-amber-500/20 bg-amber-500/5">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="typo-body font-medium text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
+            <p className="typo-body text-amber-400">{t.vault.auto_cred_extra.partial_extraction}</p>
             <p className="typo-body text-foreground mt-0.5">
               {completeness
                 ? tx(t.vault.auto_cred_extra.completeness_partial, { filled: completeness.filledRequired, total: completeness.totalRequired })
@@ -79,7 +79,7 @@ export function AutoCredReview({
 
       {/* Credential name */}
       <div className="space-y-1.5">
-        <label className="typo-body font-medium text-foreground">{t.vault.auto_cred_extra.credential_name}</label>
+        <label className="typo-body text-foreground">{t.vault.auto_cred_extra.credential_name}</label>
         <input
           type="text"
           value={credentialName}

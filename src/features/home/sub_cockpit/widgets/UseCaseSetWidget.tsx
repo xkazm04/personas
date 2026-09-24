@@ -79,7 +79,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
             >
               <div className="flex items-center gap-2">
                 <Icon className="w-3.5 h-3.5 shrink-0" />
-                <span className="typo-body font-medium text-foreground/95 flex-1">
+                <span className="typo-body text-foreground/95 flex-1">
                   {uc.label}
                 </span>
                 <span className="typo-caption text-foreground shrink-0">
@@ -87,7 +87,7 @@ export function UseCaseSetWidget({ config, title }: CockpitWidgetProps) {
                 </span>
               </div>
               {uc.description && (
-                <p className="typo-caption text-foreground leading-relaxed pl-5">
+                <p className="typo-caption text-foreground pl-5">
                   {uc.description}
                 </p>
               )}

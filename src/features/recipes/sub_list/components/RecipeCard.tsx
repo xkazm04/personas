@@ -80,7 +80,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           {(() => { const Icon = getCategoryIcon(recipe.category); return <Icon className={`w-4 h-4 ${CATEGORY_ICON_COLORS[recipe.category?.toLowerCase() ?? ''] ?? 'text-primary'}`} />; })()}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="typo-body font-medium text-foreground truncate">{recipe.name}</h3>
+          <h3 className="typo-body text-foreground truncate">{recipe.name}</h3>
           {recipe.description && (
             <p className="typo-body text-foreground mt-0.5 line-clamp-2">{recipe.description}</p>
           )}
@@ -90,7 +90,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
       {/* Category & Tags */}
       <div className="flex flex-wrap gap-1.5 mt-3">
         {recipe.category && (
-          <span className={`inline-flex items-center rounded-card border px-1.5 py-0.5 typo-body font-medium ${getCategoryStyle(recipe.category)}`}>
+          <span className={`inline-flex items-center rounded-card border px-1.5 py-0.5 typo-body ${getCategoryStyle(recipe.category)}`}>
             {recipe.category}
           </span>
         )}
@@ -167,7 +167,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
                 <button
                   type="button"
                   onClick={() => { setShowDeleteConfirm(false); onDelete(recipe.id); }}
-                  className="rounded-card px-2.5 py-1 typo-body font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
+                  className="rounded-card px-2.5 py-1 typo-body bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
                 >
                   {t.recipes.confirm_delete}
                 </button>

@@ -64,7 +64,7 @@ export function NoteThreadButton({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
                 transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 30 }}
-                className="typo-data tabular-nums"
+                className="typo-data"
                 aria-hidden
               >
                 {unread}

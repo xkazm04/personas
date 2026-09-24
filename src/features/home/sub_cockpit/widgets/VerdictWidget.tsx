@@ -76,13 +76,13 @@ export function VerdictWidget({ config, title }: CockpitWidgetProps) {
         {reasoning && (
           <MarkdownRenderer
             content={reasoning}
-            className="typo-body text-foreground leading-relaxed mt-2"
+            className="typo-body text-foreground mt-2"
           />
         )}
         {caveat && (
           <div className="mt-2.5 flex items-start gap-2 rounded-input border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5">
             <TriangleAlert className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" aria-hidden />
-            <span className="typo-caption text-foreground leading-relaxed">{caveat}</span>
+            <span className="typo-caption text-foreground">{caveat}</span>
           </div>
         )}
       </motion.div>
@@ -105,7 +105,7 @@ export function VerdictWidget({ config, title }: CockpitWidgetProps) {
                   data-testid={`cockpit-verdict-option-${i + 1}`}
                   onClick={() => runDecisionOption(opt)}
                   title={opt.hint ?? opt.label}
-                  className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring border ${
+                  className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring border ${
                     opt.danger
                       ? 'bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 text-rose-400'
                       : recommended

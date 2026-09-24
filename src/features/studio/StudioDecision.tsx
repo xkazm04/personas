@@ -50,7 +50,7 @@ export default function StudioDecision({
     <div className="pointer-events-auto mt-2 overflow-hidden rounded-card border border-primary/40 bg-primary/[0.07] shadow-elevation-2">
       <div className="flex items-center gap-1.5 border-b border-primary/20 bg-primary/10 px-3 py-1.5">
         <Sparkles className="h-3.5 w-3.5 text-primary" />
-        <span className="typo-caption font-medium uppercase tracking-wide text-primary">{t.studio.your_call}</span>
+        <span className="typo-caption uppercase tracking-wide text-primary">{t.studio.your_call}</span>
       </div>
       <div className="px-3 py-2.5">
         <p className="text-md leading-snug text-foreground">{question}</p>

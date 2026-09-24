@@ -122,13 +122,13 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
 
   return (
     <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
-      <div className="typo-body font-medium text-foreground mb-2">
+      <div className="typo-body text-foreground mb-2">
         {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1">
           <div className="typo-caption text-foreground">{executionsLabel}</div>
-          <div className="typo-body font-medium text-foreground">{stat.execution_count}</div>
+          <div className="typo-body text-foreground">{stat.execution_count}</div>
           <ProviderSparkline
             data={trends?.executions ?? []}
             color={SPARKLINE_COLORS.executions}
@@ -137,7 +137,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
         </div>
         <div className="space-y-1">
           <div className="typo-caption text-foreground">{costLabel}</div>
-          <div className="typo-body font-medium text-foreground">{formattedCost}</div>
+          <div className="typo-body text-foreground">{formattedCost}</div>
           <ProviderSparkline
             data={trends?.cost ?? []}
             color={SPARKLINE_COLORS.cost}
@@ -146,7 +146,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
         </div>
         <div className="space-y-1">
           <div className="typo-caption text-foreground">{avgDurationLabel}</div>
-          <div className="typo-body font-medium text-foreground">{formattedDuration}</div>
+          <div className="typo-body text-foreground">{formattedDuration}</div>
           <ProviderSparkline
             data={trends?.duration ?? []}
             color={SPARKLINE_COLORS.duration}
@@ -386,7 +386,7 @@ function ProviderCard({
       >
         <span className="flex items-center gap-2">
           <Icon className={`w-5 h-5 shrink-0 ${enabled ? 'text-emerald-400' : 'text-foreground/70'}`} />
-          <span className="typo-body font-medium">{card.label}</span>
+          <span className="typo-body">{card.label}</span>
           {dotState && <HealthDot state={dotState} />}
         </span>
         {statusText && (

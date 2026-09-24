@@ -402,7 +402,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             <Activity className="w-4 h-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="typo-heading-lg text-foreground leading-tight">{t.monitor.title}</h2>
+            <h2 className="typo-heading-lg text-foreground">{t.monitor.title}</h2>
           </div>
         </div>
         <div className="flex items-center gap-2">

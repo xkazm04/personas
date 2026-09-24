@@ -88,7 +88,7 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
         </span>
 
         <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="typo-heading typo-card-label text-foreground/90">{headline}</span>
+          <span className="typo-heading typo-card-label">{headline}</span>
           <div className="flex flex-wrap items-center gap-1.5">
             {pills.map((p) => (
               <span

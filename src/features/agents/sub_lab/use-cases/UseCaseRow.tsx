@@ -109,7 +109,7 @@ export function UseCaseRow({
                 </span>
               )}
             </div>
-            <p className="typo-body text-foreground mt-1 leading-relaxed">{summary}</p>
+            <p className="typo-body text-foreground mt-1">{summary}</p>
             {/* Override indicators */}
             {hasAnyConfig && (
               <div className="flex items-center gap-2 mt-1.5">

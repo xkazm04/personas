@@ -157,7 +157,7 @@ export function PromptDiffModal({ open, onClose, left, right }: Props) {
         {/* Left header */}
         <div className="px-4 py-2.5 border-b border-primary/10 bg-primary/5 sticky top-0 z-10 flex items-center gap-2">
           {left.isWinner && <Trophy className="w-3.5 h-3.5 text-amber-400" />}
-          <span className="typo-caption font-medium text-foreground truncate">{left.slot.strategy_label}</span>
+          <span className="typo-caption text-foreground truncate">{left.slot.strategy_label}</span>
           {left.slot.disqualified && (
             <span className="typo-caption text-red-400 flex items-center gap-1 ml-auto"><AlertCircle className="w-3 h-3" />DQ</span>
           )}
@@ -165,7 +165,7 @@ export function PromptDiffModal({ open, onClose, left, right }: Props) {
         {/* Right header */}
         <div className="px-4 py-2.5 border-b border-primary/10 border-l border-l-primary/10 bg-primary/5 sticky top-0 z-10 flex items-center gap-2">
           {right.isWinner && <Trophy className="w-3.5 h-3.5 text-amber-400" />}
-          <span className="typo-caption font-medium text-foreground truncate">{right.slot.strategy_label}</span>
+          <span className="typo-caption text-foreground truncate">{right.slot.strategy_label}</span>
           {right.slot.disqualified && (
             <span className="typo-caption text-red-400 flex items-center gap-1 ml-auto"><AlertCircle className="w-3 h-3" />DQ</span>
           )}

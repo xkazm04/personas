@@ -144,13 +144,13 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
 
       {defects.length > 0 && (
         <section className="space-y-1.5">
-          <h4 className="typo-caption font-medium">{c.browser_report_defects}</h4>
+          <h4 className="typo-caption">{c.browser_report_defects}</h4>
           {defects.map((d, i) => (
             <div
               key={i}
               className={`rounded-interactive border p-2 ${SEVERITY_TONE[d.severity ?? 'low'] ?? SEVERITY_TONE.low}`}
             >
-              <p className="typo-body font-medium">{d.title}</p>
+              <p className="typo-body">{d.title}</p>
               {d.detail && <p className="typo-caption">{d.detail}</p>}
               {d.fix && <p className="typo-caption text-foreground/70">{d.fix}</p>}
             </div>
@@ -175,7 +175,7 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
 
       {consoleErrors.length > 0 && (
         <section>
-          <h4 className="typo-caption font-medium">{c.browser_report_console}</h4>
+          <h4 className="typo-caption">{c.browser_report_console}</h4>
           <pre className="mt-1 rounded-interactive bg-secondary/60 p-2 typo-caption whitespace-pre-wrap break-all">
             {consoleErrors.join('\n')}
           </pre>

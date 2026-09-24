@@ -68,7 +68,7 @@ export function MonitorRunSheet({ title, sample, onRun, onCancel }: MonitorRunSh
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-4 py-3">
-          <p className="typo-caption text-foreground/90 leading-snug mb-2">{t.monitor.run_sheet_hint}</p>
+          <p className="typo-caption text-foreground/90 mb-2">{t.monitor.run_sheet_hint}</p>
           <label htmlFor="monitor-run-input" className="typo-label text-foreground block mb-1">
             {t.monitor.run_sheet_input_label}
           </label>
@@ -79,7 +79,7 @@ export function MonitorRunSheet({ title, sample, onRun, onCancel }: MonitorRunSh
             onChange={(e) => setText(e.target.value)}
             rows={8}
             spellCheck={false}
-            className="w-full px-2.5 py-2 rounded-input border border-card-border bg-secondary/40 typo-code font-mono text-foreground focus:outline-none focus:border-primary/45 transition-colors resize-y"
+            className="w-full px-2.5 py-2 rounded-input border border-card-border bg-secondary/40 typo-code text-foreground focus:outline-none focus:border-primary/45 transition-colors resize-y"
           />
           {jsonWarning && (
             <p data-testid="monitor-run-json-warning" className="typo-caption text-status-warning mt-1">

@@ -90,7 +90,7 @@ export function PanelTabBar<T extends string>({
             className={[
               'px-4 py-2.5 typo-heading transition-colors relative focus-ring',
               active
-                ? 'text-foreground font-semibold'
+                ? 'text-foreground'
                 : 'text-foreground hover:text-foreground/80',
               tab.disabled ? 'text-foreground cursor-not-allowed' : 'cursor-pointer',
             ].join(' ')}

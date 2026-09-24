@@ -37,7 +37,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
       {/* Header bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <Globe className="w-4 h-4 text-foreground" />
-        <span className="typo-body font-medium text-foreground">
+        <span className="typo-body text-foreground">
           {endpointCountLabel}
         </span>
         <div className="flex-1" />
@@ -121,7 +121,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                 <div className={`grid gap-0 ${state.response || state.sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
                   <div className="space-y-4 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="typo-heading uppercase tracking-wider text-blue-400/70 font-semibold">{sh.request_builder}</span>
+                      <span className="typo-heading uppercase text-blue-400/70">{sh.request_builder}</span>
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" onClick={state.closeRequestPanel} className="text-foreground hover:text-muted-foreground/80">{t.common.close}</Button>
                     </div>
@@ -131,9 +131,9 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints, scopedResources
                   {(state.response || state.sendError) && <div className="bg-primary/25" />}
                   {(state.response || state.sendError) && (
                     <div className="min-w-0 pl-4">
-                      <span className="typo-heading uppercase tracking-wider text-emerald-400/70 font-semibold block mb-3">{sh.response}</span>
+                      <span className="typo-heading uppercase text-emerald-400/70 block mb-3">{sh.response}</span>
                       {state.sendError && (
-                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">{state.sendError}</div>
+                        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">{state.sendError}</div>
                       )}
                       {state.response && <ResponseViewer response={state.response} />}
                       {/* A working call is the raw material for an automation,

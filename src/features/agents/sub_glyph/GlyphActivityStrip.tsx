@@ -26,7 +26,7 @@ export function GlyphActivityStrip({ lines }: GlyphActivityStripProps) {
       <Collapse open={expanded} unmountWhenClosed>
         <div className="mt-2 p-3 rounded-modal bg-black/20 border border-border/20 max-h-48 overflow-y-auto">
           {lines.slice(-100).map((line, i) => (
-            <div key={i} className="typo-caption font-mono text-foreground leading-snug whitespace-pre-wrap break-words">
+            <div key={i} className="typo-caption font-mono text-foreground whitespace-pre-wrap break-words">
               {line}
             </div>
           ))}

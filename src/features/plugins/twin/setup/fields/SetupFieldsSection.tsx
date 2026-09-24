@@ -64,7 +64,7 @@ export function SetupFieldsSection({ item, spotlit, children }: SetupFieldsSecti
         >
           <Icon className="w-4 h-4 text-primary" />
         </span>
-        <h2 id={`${sectionDomId(item.id)}-title`} className="typo-section-title text-foreground truncate">
+        <h2 id={`${sectionDomId(item.id)}-title`} className="typo-section-title truncate">
           {ts.checklist[item.labelKey]}
         </h2>
         <span className="flex items-center gap-1.5 ml-auto flex-shrink-0">

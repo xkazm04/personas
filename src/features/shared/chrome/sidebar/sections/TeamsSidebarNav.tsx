@@ -146,8 +146,8 @@ export function TeamsSidebarNav() {
         aria-current={teamsTab === 'projects' ? 'page' : undefined}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
           teamsTab === 'projects'
-            ? 'bg-primary/10 text-foreground font-semibold'
-            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+            ? 'bg-primary/10 text-foreground'
+            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
         }`}
       >
         <FolderKanban className="w-4 h-4 flex-shrink-0" />
@@ -166,8 +166,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'goals'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Target className="w-4 h-4 flex-shrink-0" />
@@ -191,7 +191,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -213,8 +213,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'kpis'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Gauge className="w-4 h-4 flex-shrink-0" />
@@ -236,7 +236,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -280,7 +280,7 @@ export function TeamsSidebarNav() {
                     : 'rounded-md'
                 } ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -324,7 +324,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-input transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >

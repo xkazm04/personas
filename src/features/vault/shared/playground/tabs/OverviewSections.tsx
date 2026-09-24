@@ -72,7 +72,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
             iconRight={expandedSection === 'services' ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="typo-body font-medium text-foreground flex-1">{tx(sh.services, { count: connector.services.length })}</span>
+            <span className="typo-body text-foreground flex-1">{tx(sh.services, { count: connector.services.length })}</span>
           </Button>
           {expandedSection === 'services' && (
             <div className="px-4 pb-3 space-y-2">
@@ -85,7 +85,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
                   <Wrench className="w-3.5 h-3.5 text-foreground" />
                   <div>
                     <span className="typo-body text-foreground">{service.label}</span>
-                    <span className="ml-2 typo-code font-mono text-foreground">{service.toolName}</span>
+                    <span className="ml-2 typo-code text-foreground">{service.toolName}</span>
                   </div>
                 </div>
               ))}
@@ -105,7 +105,7 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
             iconRight={expandedSection === 'events' ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
             className="w-full flex items-center gap-2 px-4 py-3 text-left rounded-none"
           >
-            <span className="typo-body font-medium text-foreground flex-1">{tx(sh.events, { count: connector.events.length })}</span>
+            <span className="typo-body text-foreground flex-1">{tx(sh.events, { count: connector.events.length })}</span>
           </Button>
           {expandedSection === 'events' && (
             <div className="px-4 pb-3">

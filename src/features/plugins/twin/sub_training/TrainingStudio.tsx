@@ -220,7 +220,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             <GraduationCap className="w-3.5 h-3.5" /> {t.training.studioBack}
           </button>
           <span className="w-px h-3.5 bg-primary/15" aria-hidden />
-          <span className="typo-caption text-violet-300 font-medium inline-flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> {t.training.studioOpen}</span>
+          <span className="typo-caption text-violet-300 inline-flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> {t.training.studioOpen}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-2">
@@ -307,7 +307,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
           {rows.length === 0 ? (
             <div className="text-center py-16">
               <Sparkles className="w-8 h-8 text-violet-300/60 mx-auto mb-3" />
-              <p className="typo-card-label text-foreground mb-1">{t.training.studioEmptyTitle}</p>
+              <p className="typo-card-label mb-1">{t.training.studioEmptyTitle}</p>
               <p className="typo-caption text-foreground">{t.training.studioEmptyHint}</p>
             </div>
           ) : (

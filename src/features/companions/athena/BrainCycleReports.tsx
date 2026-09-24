@@ -172,7 +172,7 @@ function CycleCard({ cycle }: { cycle: CycleSummary }) {
     >
       <header className="flex items-center gap-2 mb-2">
         <Icon className={`w-4 h-4 shrink-0 ${accent}`} aria-hidden="true" />
-        <span className="typo-body font-medium">{statusLabel(t, cycle.status)}</span>
+        <span className="typo-body">{statusLabel(t, cycle.status)}</span>
         <span className="typo-caption text-foreground">
           <RelativeTime timestamp={cycle.startedAt} className="text-foreground" />
         </span>
@@ -241,7 +241,7 @@ function CycleStatChips({ stats }: { stats: CycleStats }) {
       {shown.map((entry) => (
         <div key={entry.key} className="flex items-baseline gap-1.5">
           <dt className="typo-caption text-foreground">{entry.label}</dt>
-          <dd className="typo-caption font-semibold text-foreground">
+          <dd className="typo-caption text-foreground">
             <Numeric value={entry.value ?? 0} unit="count" />
             {entry.hint ? (
               <Tooltip content={entry.hint}>

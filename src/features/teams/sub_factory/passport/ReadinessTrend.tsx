@@ -21,7 +21,7 @@ export function ReadinessTrend({ slug }: { slug: string }) {
           <Sparkline values={golden} width={42} height={12} />
         </span>
         {dg !== 0 && (
-          <span className={`typo-label tabular-nums font-semibold ${tone}`}>{dg > 0 ? '▲' : '▼'}{Math.abs(dg)}</span>
+          <span className={`typo-label tabular-nums ${tone}`}>{dg > 0 ? '▲' : '▼'}{Math.abs(dg)}</span>
         )}
       </span>
     </Tooltip>

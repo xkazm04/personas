@@ -101,7 +101,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
             <FolderOpen className="w-3.5 h-3.5 text-violet-400" />
           </div>
-          <h2 id="ingest-directory-title" className="typo-heading font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
+          <h2 id="ingest-directory-title" className="typo-heading text-foreground/90 flex-1">{sh.scan_directory}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -115,9 +115,9 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         {/* Body */}
         <div className="p-5 space-y-4">
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">{sh.directory_path}</label>
+            <label className="typo-caption text-foreground mb-1.5 block">{sh.directory_path}</label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono min-h-[36px] flex items-center">
+              <div className="flex-1 px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground min-h-[36px] flex items-center">
                 {dirPath ? (
                   <span className="truncate">{dirPath}</span>
                 ) : (
@@ -128,7 +128,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 type="button"
                 onClick={() => void handleBrowse()}
                 disabled={browsing || ingesting}
-                className="px-3 py-2 typo-body font-medium rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 typo-body rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 {browsing ? sh.browsing : sh.browse}
@@ -137,7 +137,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           </div>
 
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">
+            <label className="typo-caption text-foreground mb-1.5 block">
               {sh.file_patterns}
               <span className="text-foreground font-normal ml-1">{sh.file_patterns_hint}</span>
             </label>
@@ -177,7 +177,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 onChange={(e) => setCustomPattern(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPattern(); } }}
                 placeholder={sh.add_pattern_placeholder}
-                className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
+                className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               />
               <button
                 type="button"

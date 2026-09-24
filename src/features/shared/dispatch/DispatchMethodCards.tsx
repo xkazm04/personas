@@ -50,7 +50,7 @@ export function DispatchMethodCards({ methods, value, onChange, meta, disabledRe
               <Icon className={`w-4 h-4 ${on ? 'text-primary' : 'text-foreground'}`} aria-hidden />
               <span className={on ? 'typo-title' : 'typo-caption text-foreground'}>{meta[m].label}</span>
             </span>
-            <span className="typo-caption block leading-snug">{reason ?? meta[m].desc}</span>
+            <span className="typo-caption block">{reason ?? meta[m].desc}</span>
           </button>
         );
       })}

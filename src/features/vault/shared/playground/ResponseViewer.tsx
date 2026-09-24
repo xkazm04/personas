@@ -52,7 +52,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
     <div className="space-y-3">
       {/* Status bar */}
       <div className="flex items-center gap-3">
-        <span className={`px-2.5 py-1 rounded typo-heading font-bold border ${statusStyle(response.status)}`}>
+        <span className={`px-2.5 py-1 rounded typo-heading border ${statusStyle(response.status)}`}>
           {response.status} {response.status_text}
         </span>
         <span className="flex items-center gap-1 typo-body text-foreground">
@@ -77,7 +77,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
           <button
             key={tab}
             onClick={() => setSubTab(tab)}
-            className={`px-3 py-1.5 typo-body font-medium capitalize transition-colors border-b-2 ${
+            className={`px-3 py-1.5 typo-body capitalize transition-colors border-b-2 ${
               subTab === tab
                 ? 'text-foreground border-primary/50'
                 : 'text-foreground border-transparent hover:text-muted-foreground/80'
@@ -133,7 +133,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       )}
 
       {subTab === 'raw' && (
-        <pre className="typo-code font-mono text-foreground bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+        <pre className="typo-code text-foreground bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
           {response.body || t.vault.playground.response_empty}
         </pre>
       )}

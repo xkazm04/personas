@@ -174,7 +174,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
       {/* Label — 2-line clamp keeps card height stable whether label is 1 or 2 lines */}
       <motion.span
         variants={labelVariants}
-        className="typo-heading text-foreground/90 w-full leading-tight line-clamp-2 min-h-[2rem] flex items-center justify-center px-1"
+        className="typo-heading text-foreground/90 w-full line-clamp-2 min-h-[2rem] flex items-center justify-center px-1"
       >
         {connector.label}
       </motion.span>

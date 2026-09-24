@@ -107,7 +107,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
               </div>
               {/* Label + description */}
               <div className="flex-1 min-w-0">
-                <span className={`typo-body font-medium ${
+                <span className={`typo-body ${
                   step.status === 'completed'
                     ? 'text-foreground'
                     : step.status === 'active'

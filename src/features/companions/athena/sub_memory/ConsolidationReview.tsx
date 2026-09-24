@@ -116,7 +116,7 @@ export function ConsolidationReview({
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
-          <span className="typo-body font-medium">
+          <span className="typo-body">
             {t.athena.consolidation_runs_title}
           </span>
         </div>
@@ -124,7 +124,7 @@ export function ConsolidationReview({
           type="button"
           onClick={startRun}
           disabled={running}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
         >
           {running ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -139,7 +139,7 @@ export function ConsolidationReview({
         <div className="flex items-start gap-3 m-5 p-4 rounded-card border border-primary/30 bg-primary/5">
           <LoadingSpinner size="sm" />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium">
+            <div className="typo-body">
               {t.athena.consolidation_running}
             </div>
             <div className="typo-caption text-foreground mt-1">
@@ -178,7 +178,7 @@ export function ConsolidationReview({
                     className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="typo-caption font-medium text-foreground">
+                      <span className="typo-caption text-foreground">
                         {run.summary
                           ? run.summary
                           : `${run.episodesCount} episodes reviewed`}
@@ -288,7 +288,7 @@ function RunStatusBadge({ run }: { run: ConsolidationRun }) {
   }, [run.status, t]);
   return (
     <span
-      className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded typo-caption font-medium border ${cfg.tone}`}
+      className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded typo-caption border ${cfg.tone}`}
     >
       {cfg.label}
     </span>
@@ -339,7 +339,7 @@ function RunDetail({
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <span className="typo-body font-medium">
+          <span className="typo-body">
             {t.athena.consolidation_review_title}
           </span>
         </div>
@@ -475,7 +475,7 @@ function ItemCard({
     >
       <div className="flex items-center gap-2 flex-wrap">
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded typo-caption font-medium border ${kindTone}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded typo-caption border ${kindTone}`}
         >
           {kindLabel}
         </span>
@@ -530,7 +530,7 @@ function ItemCard({
           </label>
         </div>
       ) : (
-        <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed">
+        <p className="typo-body text-foreground/85 whitespace-pre-wrap">
           {item.proposedValue}
         </p>
       )}
@@ -540,7 +540,7 @@ function ItemCard({
           <summary className="cursor-pointer typo-caption hover:text-foreground">
             {t.athena.consolidation_rationale}
           </summary>
-          <p className="mt-1 typo-caption text-foreground leading-relaxed">
+          <p className="mt-1 typo-caption text-foreground">
             {item.rationale}
           </p>
         </details>
@@ -579,7 +579,7 @@ function ItemCard({
             type="button"
             onClick={apply}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
           >
             {busy === 'apply' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -594,7 +594,7 @@ function ItemCard({
             type="button"
             onClick={() => setEditing((v) => !v)}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
           >
             <Edit3 className="w-3.5 h-3.5" />
             {t.athena.consolidation_edit}
@@ -603,7 +603,7 @@ function ItemCard({
             type="button"
             onClick={reject}
             disabled={busy !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
           >
             {busy === 'reject' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

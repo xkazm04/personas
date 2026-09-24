@@ -32,7 +32,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                 setEntities(next);
               }}
               placeholder={sh.extract_entity_type_ph}
-              className="font-mono typo-code text-violet-400/90 bg-background/50 border border-primary/15 rounded-input px-2 py-1 w-48 focus-visible:outline-none focus-visible:border-primary/40"
+              className="typo-code text-violet-400/90 bg-background/50 border border-primary/15 rounded-input px-2 py-1 w-48 focus-visible:outline-none focus-visible:border-primary/40"
             />
             <input
               value={entity.description}
@@ -68,7 +68,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                     setEntities(next);
                   }}
                   placeholder={sh.extract_field_name_ph}
-                  className="font-mono typo-code text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-0.5 w-40 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="typo-code text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-0.5 w-40 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <input
                   value={field.description}

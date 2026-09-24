@@ -65,7 +65,7 @@ export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLi
       <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
         <MotionizedGlyph data={RATELIMIT_GLYPH.data} viewBox={RATELIMIT_GLYPH.viewBox} spread={1} className="w-28 h-28 -mb-1" />
         <div>
-          <p className="typo-body font-medium text-foreground">{t.triggers.no_rate_limits}</p>
+          <p className="typo-body text-foreground">{t.triggers.no_rate_limits}</p>
           <p className="typo-caption text-foreground mt-1 max-w-xs">
             {t.triggers.no_rate_limits_desc}
           </p>

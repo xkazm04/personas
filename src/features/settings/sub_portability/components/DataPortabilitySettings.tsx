@@ -16,7 +16,7 @@ function StatBadge({ icon: Icon, label, value, accent }: { icon: LucideIcon; lab
     <Tooltip content={label} placement="top">
       <div className="flex items-center justify-center gap-1.5 rounded-card border border-primary/10 bg-secondary/10 px-2 py-1.5">
         <Icon className={`w-4 h-4 flex-shrink-0 ${accent}`} aria-hidden />
-        <span className="typo-heading font-semibold text-foreground tabular-nums">{value}</span>
+        <span className="typo-heading text-foreground tabular-nums">{value}</span>
         <span className="sr-only">{label}</span>
       </div>
     </Tooltip>
@@ -67,7 +67,7 @@ export default function DataPortabilitySettings() {
               surfaced next to the counts they qualify. */}
           {dp.stats && dp.stats.warnings.length > 0 && (
             <div data-testid="portability-export-warnings" className="space-y-1">
-              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
+              <p className="typo-body text-amber-400">{s.warnings}</p>
               {dp.stats.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">
                   - {w}

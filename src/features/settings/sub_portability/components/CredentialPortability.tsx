@@ -84,7 +84,7 @@ export function CredentialPortability({
               type="button"
               onClick={() => setShowCredExportInput(true)}
               disabled={credExportStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
                 bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15
                 transition-colors disabled:opacity-50"
             >
@@ -102,7 +102,7 @@ export function CredentialPortability({
                 autoFocus
               />
               <button type="button" onClick={onCredExport} disabled={credExportStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors disabled:opacity-50">
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors disabled:opacity-50">
                 {credExportStatus === 'loading' ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
                 {s.export}
               </button>
@@ -121,7 +121,7 @@ export function CredentialPortability({
               type="button"
               onClick={() => setShowCredImportInput(true)}
               disabled={credImportStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
                 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
                 transition-colors disabled:opacity-50"
             >
@@ -139,7 +139,7 @@ export function CredentialPortability({
                 autoFocus
               />
               <button type="button" onClick={onCredImport} disabled={credImportStatus === 'loading'}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-50">
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-50">
                 {credImportStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
                 {s.import_label}
               </button>
@@ -155,7 +155,7 @@ export function CredentialPortability({
       {/* Conflict resolution UI */}
       {hasConflicts && (
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
-          <div className="flex items-center gap-2 typo-body font-medium text-amber-400">
+          <div className="flex items-center gap-2 typo-body text-amber-400">
             <AlertTriangle className="w-4 h-4" />
             {conflicts.length > 1 ? s.credentials_exist_plural.replace('{count}', String(conflicts.length)) : s.credentials_exist.replace('{count}', String(conflicts.length))}
           </div>
@@ -166,7 +166,7 @@ export function CredentialPortability({
             {conflicts.map((c) => (
               <div key={c.name} className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10">
                 <div className="flex-1 min-w-0">
-                  <span className="typo-body font-medium text-foreground truncate block">{c.name}</span>
+                  <span className="typo-body text-foreground truncate block">{c.name}</span>
                   <span className="typo-caption text-foreground">{c.serviceType}</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -183,7 +183,7 @@ export function CredentialPortability({
                         key={action}
                         type="button"
                         onClick={() => setResolution(c.name, action)}
-                        className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
+                        className={`px-2.5 py-1 rounded-input typo-caption border transition-colors ${
                           isActive ? colors[action] : `${colors[action]} border-transparent hover:border-primary/15`
                         }`}
                       >
@@ -199,7 +199,7 @@ export function CredentialPortability({
             type="button"
             onClick={handleApplyResolutions}
             disabled={!allResolved}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Upload className="w-4 h-4" />
             {s.import_with_resolutions}
@@ -210,7 +210,7 @@ export function CredentialPortability({
       {/* Import result (no conflicts) */}
       {credImportResult && !hasConflicts && credImportResult.created > 0 && (
         <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-          <div className="flex items-center gap-2 typo-body font-medium text-emerald-400">
+          <div className="flex items-center gap-2 typo-body text-emerald-400">
             <PackageCheck className="w-4 h-4" />
             {s.cred_import_complete}
           </div>
@@ -221,7 +221,7 @@ export function CredentialPortability({
           </p>
           {credImportResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
+              <p className="typo-body text-amber-400">{s.warnings}</p>
               {credImportResult.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">- {w}</p>
               ))}

@@ -240,7 +240,7 @@ export function ResourcePicker({
             <section key={spec.id}>
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="typo-body font-medium text-foreground">
+                  <h3 className="typo-body text-foreground">
                     {spec.label}
                     {spec.required && (
                       <span className="ml-1.5 text-status-warning">*</span>
@@ -286,7 +286,7 @@ export function ResourcePicker({
                 >
                   <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="typo-caption text-status-warning font-medium">
+                    <p className="typo-caption text-status-warning">
                       {stalePicks.length} pick{stalePicks.length === 1 ? '' : 's'} <DebtText k="auto_no_longer_exist_bcf3d173" />
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">

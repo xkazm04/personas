@@ -28,8 +28,8 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
             <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="typo-heading font-semibold text-foreground mb-1">{t.triggers.disconnect_persona_title}</h3>
-            <p className="typo-caption text-foreground leading-relaxed">
+            <h3 className="typo-heading text-foreground mb-1">{t.triggers.disconnect_persona_title}</h3>
+            <p className="typo-caption text-foreground">
               <span className="font-medium text-foreground">{personaName}</span> {t.triggers.disconnect_will_no_longer}{' '}
               <span className="font-medium text-foreground">{eventLabel}</span> {t.triggers.disconnect_events_reconnect}
             </p>
@@ -43,14 +43,14 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-card typo-caption font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="px-3 py-1.5 rounded-card typo-caption text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-3 py-1.5 rounded-card typo-caption font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
+            className="px-3 py-1.5 rounded-card typo-caption bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
           >
             Disconnect
           </button>

@@ -31,7 +31,7 @@ function Stat({ value }: { value: number }) {
       initial={reduced ? false : { scale: 1.5 }}
       animate={{ scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-      className="inline-block tabular-nums typo-data text-foreground"
+      className="inline-block typo-data text-foreground"
     >
       {value}
     </motion.span>
@@ -63,7 +63,7 @@ export function TwinCardPanel({ session }: { session: SetupSessionApi }) {
           <span className={`typo-heading-lg ${sigil.color}`}>{sigil.glyph}</span>
         </span>
         <div className="min-w-0">
-          <p className="typo-title-lg text-foreground truncate">{values.name || xo.unnamed}</p>
+          <p className="typo-title-lg truncate">{values.name || xo.unnamed}</p>
           <p className="typo-caption truncate">{values.role || xo.noRole}</p>
         </div>
       </div>

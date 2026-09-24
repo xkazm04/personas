@@ -93,7 +93,7 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
         </span>
       </header>
       {intro && (
-        <p className="typo-body text-foreground/85 leading-relaxed">{intro}</p>
+        <p className="typo-body text-foreground/85">{intro}</p>
       )}
       <ul className="space-y-2">
         {rows.map((row, i) => {
@@ -105,7 +105,7 @@ export function DesignCapabilitiesWidget({ config, title }: CockpitWidgetProps) 
             >
               <div className="flex items-center gap-1.5">
                 <Icon className="w-3.5 h-3.5 text-foreground shrink-0" />
-                <span className="typo-body font-medium text-foreground/95">
+                <span className="typo-body text-foreground/95">
                   {row.label}
                 </span>
               </div>

@@ -68,7 +68,7 @@ export function BusinessOutcomeBadge({ outcome, variant = 'icon-only', className
 
   return (
     <span
-      className={`inline-flex items-center gap-1 typo-code font-mono ${cfg.color} ${className}`}
+      className={`inline-flex items-center gap-1 typo-code ${cfg.color} ${className}`}
       title={cfg.title}
     >
       <Icon className="w-3 h-3" />

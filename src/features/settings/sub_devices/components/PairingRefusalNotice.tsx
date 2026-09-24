@@ -50,7 +50,7 @@ export function PairingRefusalNotice({ outcome, onDismiss }: PairingRefusalNotic
     >
       <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="typo-body font-medium text-foreground">
+        <p className="typo-body text-foreground">
           {tx(st.refusal_title, { device: outcome.displayName })}
         </p>
         <p className="typo-caption text-foreground">{copy.title}</p>

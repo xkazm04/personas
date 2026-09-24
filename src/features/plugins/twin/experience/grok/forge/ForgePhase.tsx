@@ -85,7 +85,7 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
         </motion.div>
 
         <motion.div variants={item} className="space-y-2">
-          <p className="typo-title text-foreground">{xg.forge.gender}</p>
+          <p className="typo-title">{xg.forge.gender}</p>
           <div className="grid grid-cols-3 gap-3">
             {GENDERS.map((g) => {
               const selected = gender === g.id;
@@ -101,7 +101,7 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
                       : 'border-primary/15 bg-card-bg hover:border-primary/40'
                   }`}
                 >
-                  <span aria-hidden className={`typo-hero leading-none ${g.color}`}>{g.glyph}</span>
+                  <span aria-hidden className={`typo-hero ${g.color}`}>{g.glyph}</span>
                   <span className="typo-label text-foreground">{identity[g.labelKey]}</span>
                 </button>
               );

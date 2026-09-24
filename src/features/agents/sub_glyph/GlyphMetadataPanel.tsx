@@ -56,7 +56,7 @@ export function GlyphMetadataPanel({ agentName }: { agentName: string }) {
       {/* persona identity */}
       <div className="flex flex-col gap-1.5 px-4 py-3.5 rounded-card border bg-card-bg" style={{ borderColor: colorWithAlpha(ACCENT, 0.3) }}>
         <span className="typo-label text-foreground">Persona</span>
-        <span className="typo-title-lg text-foreground" data-testid="metadata-name">{agentName?.trim() || "Your agent"}</span>
+        <span className="typo-title-lg" data-testid="metadata-name">{agentName?.trim() || "Your agent"}</span>
         {role && <span className="typo-caption" style={{ color: ACCENT }}>{role}</span>}
         {mission && <span className="typo-body text-foreground mt-0.5">{mission}</span>}
         {voiceStyle && (
@@ -85,7 +85,7 @@ export function GlyphMetadataPanel({ agentName }: { agentName: string }) {
                 <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(ACCENT, 0.2) }}>
                   <Check className="w-2.5 h-2.5" style={{ color: ACCENT }} />
                 </span>
-                <span className="typo-body font-medium text-foreground truncate">{cap.title}</span>
+                <span className="typo-body text-foreground truncate">{cap.title}</span>
               </div>
               {cap.capability_summary && (
                 <span className="typo-caption line-clamp-2 pl-6">{cap.capability_summary}</span>

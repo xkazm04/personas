@@ -97,7 +97,7 @@ export function QuestionnaireCategoryRail({
             <meta.Icon className={`w-3.5 h-3.5 ${meta.color}`} />
             <span className="typo-caption text-foreground">{bucket.label}</span>
             <span
-              className={`typo-data tabular-nums ${complete ? 'text-status-success' : 'text-foreground'}`}
+              className={`typo-data ${complete ? 'text-status-success' : 'text-foreground'}`}
             >
               {bucket.answered}/{bucket.total}
             </span>

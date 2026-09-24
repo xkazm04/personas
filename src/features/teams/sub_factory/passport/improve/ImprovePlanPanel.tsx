@@ -102,11 +102,11 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
           </div>
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
             <span className="typo-caption text-foreground/55">Fleet golden</span>
-            <span className="typo-data-lg font-bold tabular-nums text-foreground">{avgNow}%</span>
+            <span className="typo-data-lg text-foreground">{avgNow}%</span>
             {projected > avgNow && (
               <>
                 <span className="text-foreground/40">→</span>
-                <span className="typo-data-lg font-bold tabular-nums text-emerald-300">{projected}%</span>
+                <span className="typo-data-lg text-emerald-300">{projected}%</span>
               </>
             )}
           </div>
@@ -143,9 +143,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                       </span>
                       {it.action && <span className="typo-label text-foreground/45 block truncate">{it.action.label}</span>}
                     </div>
-                    <span className="typo-caption tabular-nums font-semibold text-emerald-300 flex-shrink-0">+{it.estGoldenLift}%</span>
+                    <span className="typo-caption tabular-nums text-emerald-300 flex-shrink-0">+{it.estGoldenLift}%</span>
                     {it.kind === 'scan' ? (
-                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors flex-shrink-0">Run</button>
+                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors flex-shrink-0">Run</button>
                     ) : it.kind !== 'task' ? (
                       <span className="typo-label text-foreground/35 flex-shrink-0 whitespace-nowrap">in&nbsp;matrix</span>
                     ) : (
@@ -170,7 +170,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
             type="button"
             onClick={queueSelected}
             disabled={selectableTasks.length === 0 || busy}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Rocket className="w-3.5 h-3.5" />
             {busy ? 'Queuing…' : `Queue ${selectableTasks.length || ''} selected`}

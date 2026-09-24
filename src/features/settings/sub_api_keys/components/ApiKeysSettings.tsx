@@ -175,7 +175,7 @@ export default function ApiKeysSettings() {
               type="button"
               onClick={() => setShowCreate(true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               <Plus className="w-3.5 h-3.5" />
               {s.create_key}
@@ -199,7 +199,7 @@ export default function ApiKeysSettings() {
           </div>
         )}
 
-        <p className="typo-body text-foreground leading-relaxed mb-4">{s.description}</p>
+        <p className="typo-body text-foreground mb-4">{s.description}</p>
 
         <McpServerInfoPanel />
 
@@ -314,7 +314,7 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">{apiKey.name}</span>
+          <span className="typo-body text-foreground truncate">{apiKey.name}</span>
           {isRevoked && (
             <span className="typo-caption text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
               {s.revoked}

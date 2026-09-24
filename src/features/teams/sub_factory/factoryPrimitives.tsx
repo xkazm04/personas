@@ -156,7 +156,7 @@ export function CalibrationTrack({ kpi, height = 30 }: { kpi: MockKpi; height?: 
 export function StatusPill({ status, className = '' }: { status: KpiStatus; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 typo-caption rounded-full px-2 py-0.5 font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 typo-caption rounded-full px-2 py-0.5 ${className}`}
       style={{ color: STATUS_COLOR[status], background: `color-mix(in srgb, ${STATUS_COLOR[status]} 16%, transparent)` }}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLOR[status] }} />
@@ -191,7 +191,7 @@ export function ThresholdSlider({
           <span className="w-2 h-2 rounded-full" style={{ background: color }} />
           {label}
         </span>
-        <span className="typo-data tabular-nums" style={{ color }}>{fmtUnit(value, unit)}</span>
+        <span className="typo-data" style={{ color }}>{fmtUnit(value, unit)}</span>
       </div>
       <input
         type="range"

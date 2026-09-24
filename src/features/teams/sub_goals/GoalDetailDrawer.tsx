@@ -370,7 +370,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
             <Target className="w-5 h-5 text-violet-400" />
           </div>
           <div className="min-w-0">
-            <h2 id="goal-detail-title" className="typo-section-title text-foreground">{goal.title}</h2>
+            <h2 id="goal-detail-title" className="typo-section-title">{goal.title}</h2>
             <div className="flex items-center gap-2 mt-1">
               <GoalStatusBadge status={goal.status} />
               <span className="typo-caption text-foreground tabular-nums">{goal.progress}%</span>
@@ -387,7 +387,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
 
       {goal.description && (
         <div className="mb-4 rounded-card border border-primary/10 bg-card/30 px-3.5 py-3">
-          <RichMarkdown content={goal.description} className="typo-body leading-relaxed" />
+          <RichMarkdown content={goal.description} className="typo-body" />
         </div>
       )}
 
@@ -415,7 +415,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
         <div className="mb-4 rounded-card bg-teal-500/10 px-4 py-3">
           <div className="flex items-center gap-2 mb-2.5">
             <BadgeCheck className="w-4 h-4 text-teal-300 shrink-0" />
-            <span className="typo-title text-foreground">{dl.goal_status_awaiting_acceptance}</span>
+            <span className="typo-title">{dl.goal_status_awaiting_acceptance}</span>
           </div>
           {/* accept/rejectGoal REJECT on a failed write (the store already
               toasted); catch here so the verdict doesn't escape a click handler

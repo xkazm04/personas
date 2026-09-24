@@ -122,7 +122,7 @@ function DraftReadyRefinePanel({
           <MessageCircle className="w-3.5 h-3.5 text-status-success relative z-10" />
         </div>
         <div className="flex flex-col">
-          <span className="typo-heading font-bold uppercase tracking-[0.12em] text-foreground">
+          <span className="typo-heading uppercase text-foreground">
             {c.hub_draft_ready_title}
           </span>
           <span className="typo-body text-foreground">
@@ -150,7 +150,7 @@ function DraftReadyRefinePanel({
           type="button"
           disabled={!text.trim()}
           onClick={submit}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-body text-foreground shadow-elevation-2 cursor-pointer"
         >
           <Send className="w-4 h-4" /> {c.hub_refine_send}
         </button>
@@ -158,7 +158,7 @@ function DraftReadyRefinePanel({
           <button
             type="button"
             onClick={onStartTest}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body shadow-elevation-3 shadow-emerald-500/25 cursor-pointer"
           >
             <Play className="w-4 h-4" /> {t.templates.matrix_variants.start_test}
           </button>
@@ -167,7 +167,7 @@ function DraftReadyRefinePanel({
           <button
             type="button"
             onClick={onDeleteDraft}
-            className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-modal border border-status-error/30 text-status-error hover:bg-status-error/10 typo-body font-medium cursor-pointer transition-colors"
+            className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-modal border border-status-error/30 text-status-error hover:bg-status-error/10 typo-body cursor-pointer transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" /> {c.hub_delete_draft}
           </button>
@@ -216,14 +216,14 @@ function HubTopBar({
       {/* Phase pill */}
       <div className="relative z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 shadow-elevation-1">
         {isRunning && <Loader2 className="w-3.5 h-3.5 text-foreground animate-spin" />}
-        <span className="typo-label font-bold text-foreground">
+        <span className="typo-label text-foreground">
           {phaseText}
         </span>
       </div>
 
       {/* Completeness */}
       <div className="relative z-10 flex items-center gap-2 flex-1 min-w-0 max-w-[320px]">
-        <span className="typo-label font-semibold text-foreground hidden md:inline">
+        <span className="typo-label text-foreground hidden md:inline">
           {t.templates.chronology.hub_completeness_label}
         </span>
         <div className="flex-1 h-2 rounded-full bg-primary/10 overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]">
@@ -235,7 +235,7 @@ function HubTopBar({
             transition={{ duration: 0.6, ease: 'easeOut' as const }}
           />
         </div>
-        <span className="typo-body font-bold text-foreground tabular-nums">{pct}%</span>
+        <span className="typo-body text-foreground tabular-nums">{pct}%</span>
       </div>
 
       {/* Activity */}
@@ -256,7 +256,7 @@ function HubTopBar({
           <button
             type="button"
             onClick={onStartTest}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
           >
             <Play className="w-4 h-4" /> {startTestLabelOverride ?? t.templates.matrix_variants.start_test}
           </button>
@@ -265,7 +265,7 @@ function HubTopBar({
           <button
             type="button"
             onClick={onViewAgent}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-primary/15 border border-primary/25 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-primary/15 border border-primary/25 hover:bg-primary/25 typo-body text-foreground shadow-elevation-2 cursor-pointer transition-all"
           >
             <Sparkles className="w-4 h-4" /> {t.templates.matrix_variants.view_agent_btn}
           </button>
@@ -342,7 +342,7 @@ function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
                 <button
                   type="button"
                   onClick={onSubmitAllAnswers}
-                  className="mt-2 self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
+                  className="mt-2 self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body text-foreground shadow-elevation-2 cursor-pointer"
                 >
                   {t.templates.chronology.hub_submit_answer}
                 </button>

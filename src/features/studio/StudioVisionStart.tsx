@@ -102,11 +102,11 @@ export default function StudioVisionStart({
             <Bot className="h-5 w-5 text-primary" />
           </span>
           <div>
-            <h2 className="typo-title leading-tight">{t.studio.build_with_athena}</h2>
+            <h2 className="typo-title">{t.studio.build_with_athena}</h2>
             <p className="typo-caption text-foreground/55">{t.studio.vision_tagline}</p>
           </div>
         </div>
-        <p className="typo-caption mb-4 leading-relaxed">{t.studio.vision_intro}</p>
+        <p className="typo-caption mb-4">{t.studio.vision_intro}</p>
 
         <div className="mb-5 flex flex-wrap gap-1.5">
           {STARTERS.map((s) => (

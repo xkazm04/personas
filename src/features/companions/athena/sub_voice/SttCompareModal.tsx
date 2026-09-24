@@ -176,7 +176,7 @@ function EngineColumn({
     >
       <div className="flex items-center gap-2 pb-2 border-b border-foreground/10">
         <span className="text-foreground">{icon}</span>
-        <span className="typo-body font-medium text-foreground">{label}</span>
+        <span className="typo-body text-foreground">{label}</span>
         <div className="flex-1" />
         {take.busy && <LoadingSpinner size="sm" />}
         {!take.busy && take.elapsedMs !== null && (

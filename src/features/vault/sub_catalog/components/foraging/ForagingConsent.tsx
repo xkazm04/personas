@@ -39,14 +39,14 @@ export function ForagingConsent({ onScan }: ForagingConsentProps) {
           <Radar className="w-6 h-6 text-violet-400" />
         </div>
         <div>
-          <h3 className="typo-body-lg font-semibold text-foreground">{fg.consent_heading}</h3>
+          <h3 className="typo-body-lg text-foreground">{fg.consent_heading}</h3>
           <p className="typo-body text-foreground mt-1">{fg.consent_body}</p>
         </div>
       </div>
 
       {/* What gets scanned */}
       <div className="space-y-2.5">
-        <p className="typo-body font-medium text-foreground/90">{fg.consent_what_scanned}</p>
+        <p className="typo-body text-foreground/90">{fg.consent_what_scanned}</p>
         <div className="space-y-1.5">
           {SOURCE_KEYS.map((key) => (
             <div key={key} className="flex items-center gap-2.5">

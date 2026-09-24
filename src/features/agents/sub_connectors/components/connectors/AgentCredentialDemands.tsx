@@ -121,7 +121,7 @@ export function AgentCredentialDemands() {
       <div className="flex items-start gap-2.5 p-3 rounded-modal bg-violet-500/5 border border-violet-500/15">
         <Key className="w-4 h-4 text-violet-400/70 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="typo-body font-medium text-violet-400/80">
+          <p className="typo-body text-violet-400/80">
             {tx(t.agents.connectors.dm_needed, { count: unfulfilledCount })}
           </p>
           <p className="typo-caption text-violet-400/50 mt-0.5">
@@ -221,7 +221,7 @@ function DemandCard({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="typo-body font-medium text-foreground/85">{demand.connectorLabel}</span>
+            <span className="typo-body text-foreground/85">{demand.connectorLabel}</span>
             <AlertTriangle className="w-3 h-3 text-amber-400/60" />
           </div>
           <p className="typo-caption text-foreground truncate">
@@ -235,7 +235,7 @@ function DemandCard({
             <button
               type="button"
               onClick={onToggleLinking}
-              className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border transition-colors cursor-pointer ${
                 isLinking
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
                   : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'
@@ -248,7 +248,7 @@ function DemandCard({
           <button
             type="button"
             onClick={onProvision}
-            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3" />
             {t.agents.connectors.dm_create}

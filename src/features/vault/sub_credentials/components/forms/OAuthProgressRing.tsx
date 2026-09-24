@@ -154,7 +154,7 @@ export function OAuthProgressRing({
       {/* Status message */}
       {message && (
         <p
-          className={`typo-body text-center max-w-[220px] leading-snug ${
+          className={`typo-body text-center max-w-[220px] ${
             phase === 'success'
               ? 'text-emerald-300'
               : 'text-foreground'

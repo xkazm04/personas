@@ -81,7 +81,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         )}
         <Wrench className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-body font-medium text-foreground truncate">{tool.name}</span>
+        <span className="typo-body text-foreground truncate">{tool.name}</span>
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
           <TypeIcon className="w-2.5 h-2.5" />
           {toolType}
@@ -118,7 +118,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {/* Input */}
               {!isBuiltin && (
               <div>
-                <label htmlFor={`tool-input-${tool.id}`} className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-1 block">
+                <label htmlFor={`tool-input-${tool.id}`} className="typo-heading text-foreground uppercase mb-1 block">
                   {t.agents.tool_runner.input_json}
                 </label>
                 <textarea
@@ -126,7 +126,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                   value={inputJson}
                   onChange={(e) => setInputJson(e.target.value)}
                   rows={4}
-                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 resize-y ${
+                  className={`w-full rounded-modal border bg-background/60 px-3 py-2 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 resize-y ${
                     jsonError
                       ? 'border-red-500/40 focus-visible:ring-red-500/30'
                       : 'border-primary/20 focus-visible:ring-violet-500/30'
@@ -181,7 +181,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
         </div>
-        <pre className="typo-code font-mono whitespace-pre-wrap break-all opacity-80">{error}</pre>
+        <pre className="typo-code whitespace-pre-wrap break-all opacity-80">{error}</pre>
       </div>
     );
   }
@@ -222,7 +222,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
             </span>
           )}
           {result.http_status != null && (
-            <span className="inline-flex items-center px-1.5 py-0.5 typo-code font-mono rounded border border-primary/15 bg-secondary/30 text-foreground">
+            <span className="inline-flex items-center px-1.5 py-0.5 typo-code rounded border border-primary/15 bg-secondary/30 text-foreground">
               {tx(t.agents.tool_runner.http_status_label, { status: result.http_status })}
             </span>
           )}
@@ -233,7 +233,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
       )}
 
       {result.output && (
-        <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
           {formatOutput(result.output)}
         </pre>
       )}
@@ -241,7 +241,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         <p className="mt-1 typo-body text-amber-400/80">{t.agents.tool_runner.output_truncated}</p>
       )}
       {result.error && (
-        <pre className="typo-code font-mono text-red-400/80 whitespace-pre-wrap break-all mt-1">
+        <pre className="typo-code text-red-400/80 whitespace-pre-wrap break-all mt-1">
           {result.error}
         </pre>
       )}

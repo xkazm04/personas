@@ -58,13 +58,13 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
           <StatusPill status={st} />
           <span className="ml-auto typo-caption">{TIER_LABEL[kpi.tier]} · {CATEGORY_LABEL[kpi.category]}</span>
         </div>
-        <h2 className="typo-section-title mb-3 leading-tight">{kpi.name}</h2>
+        <h2 className="typo-section-title mb-3">{kpi.name}</h2>
         <div className="flex items-end gap-2 mb-4">
           <span className="text-5xl font-bold tabular-nums" style={{ color: STATUS_COLOR[st] }}>{kpi.current ?? '—'}</span>
           <span className="typo-body mb-1.5">{kpi.unit}</span>
           {pct != null && (
             <span className="ml-auto mb-1 text-right leading-none">
-              <span className="typo-data-lg tabular-nums" style={{ color: STATUS_COLOR[st] }}>{pct}%</span>
+              <span className="typo-data-lg" style={{ color: STATUS_COLOR[st] }}>{pct}%</span>
               <span className="block typo-caption">to target</span>
             </span>
           )}

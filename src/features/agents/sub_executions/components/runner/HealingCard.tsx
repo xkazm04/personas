@@ -92,7 +92,7 @@ export function HealingCard({
         )}
 
         {notification.suggested_fix && (
-          <p className="typo-body text-foreground leading-relaxed pl-6.5">{notification.suggested_fix}</p>
+          <p className="typo-body text-foreground pl-6.5">{notification.suggested_fix}</p>
         )}
       </div>
     </div>

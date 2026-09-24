@@ -44,7 +44,7 @@ export function ServiceCheckbox({
         />
       </div>
       <div className="min-w-0">
-        <div className="typo-body font-medium text-foreground">{service.label}</div>
+        <div className="typo-body text-foreground">{service.label}</div>
         <div className="typo-caption text-foreground truncate">{service.description}</div>
       </div>
     </Button>
@@ -74,7 +74,7 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="typo-body font-medium text-foreground">{s.service.label}</div>
+            <div className="typo-body text-foreground">{s.service.label}</div>
             {s.status === 'failed' && s.error && (
               <div className="typo-caption text-red-400 truncate">{s.error}</div>
             )}

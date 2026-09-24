@@ -48,12 +48,12 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
         return (
           <button type="button" onClick={() => props.onOpenIncident(inc)} style={{ gridTemplateColumns: GRID }}
             className={`group grid w-full items-center gap-3 border-b border-b-primary/[0.06] px-4 py-2 text-left transition-colors hover:bg-secondary/25 focus-ring ${index % 2 === 1 ? 'bg-primary/[0.02]' : ''}`}>
-            <span className="text-right typo-data tabular-nums text-status-success">{latency ?? '—'}</span>
+            <span className="text-right typo-data text-status-success">{latency ?? '—'}</span>
             <span className={`flex h-7 w-7 items-center justify-center rounded-card border ${severityBadgeClass(inc.severity)}`} title={sourceTableLabel(t, inc.sourceTable)}>
               <SourceIcon className="h-3.5 w-3.5" />
             </span>
             <span className="truncate typo-body text-foreground" title={inc.title}>{inc.title}</span>
-            <span className="truncate typo-body font-semibold text-foreground">{inc.personaName ?? '—'}</span>
+            <span className="truncate typo-body text-foreground">{inc.personaName ?? '—'}</span>
             <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-foreground/40 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
           </button>
         );

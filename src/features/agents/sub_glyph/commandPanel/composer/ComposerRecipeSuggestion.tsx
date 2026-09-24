@@ -134,7 +134,7 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
                   logSuggestionEvent(match.recipe_id, "accept", match.score);
                   onApply(match);
                 }}
-                className="rounded-input border border-card-border bg-card-bg px-2 py-0.5 typo-caption font-medium hover:bg-secondary/60 transition-colors"
+                className="rounded-input border border-card-border bg-card-bg px-2 py-0.5 typo-caption hover:bg-secondary/60 transition-colors"
               >
                 {t.recipes.composer_suggestion.use_button}
               </button>
@@ -146,7 +146,7 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
                   logSuggestionEvent(match.recipe_id, "accept", match.score);
                   onRunDirect!(match);
                 }}
-                className="flex items-center gap-1 rounded-input border border-primary/40 bg-primary/10 px-2 py-0.5 typo-caption font-medium text-primary hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1 rounded-input border border-primary/40 bg-primary/10 px-2 py-0.5 typo-caption text-primary hover:bg-primary/20 transition-colors"
               >
                 <Zap className="h-3 w-3" aria-hidden />
                 {t.recipes.composer_suggestion.run_now}

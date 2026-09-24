@@ -111,20 +111,20 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       <div className="flex items-center gap-3">
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-modal ${colors.bg} border ${colors.border}`}>
           <Icon className={`w-4 h-4 ${colors.text}`} />
-          <span className={`typo-body font-medium ${colors.text}`}>{meta.label}</span>
+          <span className={`typo-body ${colors.text}`}>{meta.label}</span>
         </div>
         <span className="typo-body text-foreground">{t.templates.design.feasibility_assessment}</span>
       </div>
 
       {/* Plain-language explanation */}
-      <p className="typo-body text-foreground leading-relaxed">
+      <p className="typo-body text-foreground">
         {explanation}
       </p>
 
       {/* Confirmed capabilities */}
       {result.confirmed_capabilities.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code font-mono text-foreground uppercase tracking-wider">
+          <h4 className="typo-code text-foreground uppercase tracking-wider">
             {t.templates.design.confirmed_capabilities}
           </h4>
           <motion.div
@@ -146,7 +146,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Issues */}
       {result.issues.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code font-mono text-foreground uppercase tracking-wider">
+          <h4 className="typo-code text-foreground uppercase tracking-wider">
             Issues
           </h4>
           <motion.div
@@ -168,7 +168,7 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
       {/* Next steps (non-ready only) */}
       {nextSteps.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="typo-code font-mono text-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <h4 className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Lightbulb className="w-3 h-3" />
             {t.templates.design.suggested_next_steps}
           </h4>

@@ -430,7 +430,7 @@ export function DeadLetterTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Archive className="w-5 h-5 text-red-400" />
-            <h3 className="typo-heading font-semibold">{t.triggers.tab_dead_letter}</h3>
+            <h3 className="typo-heading">{t.triggers.tab_dead_letter}</h3>
             <span className="typo-caption text-foreground">
               ({totalEvents} event{totalEvents !== 1 ? 's' : ''})
             </span>
@@ -445,7 +445,7 @@ export function DeadLetterTab() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
                   viewMode === 'list' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
                 }`}
               >
@@ -455,7 +455,7 @@ export function DeadLetterTab() {
               <button
                 type="button"
                 onClick={() => setViewMode('grouped')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
                   viewMode === 'grouped' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
                 }`}
               >
@@ -466,7 +466,7 @@ export function DeadLetterTab() {
             <button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card transition-colors ${
                 filtersOpen || filtersDirty
                   ? 'bg-secondary text-foreground'
                   : 'text-foreground hover:bg-secondary/50'
@@ -478,7 +478,7 @@ export function DeadLetterTab() {
             <button
               type="button"
               onClick={() => void loadEvents()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:bg-secondary/50 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:bg-secondary/50 transition-colors"
             >
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
               {t.triggers.dead_letter_refresh}
@@ -549,7 +549,7 @@ export function DeadLetterTab() {
 
         {visibleSelectedCount > 0 && (
           <div className="flex items-center justify-between gap-2 rounded-card border border-primary/30 bg-primary/10 px-3 py-2">
-            <span className="typo-caption font-medium text-foreground">
+            <span className="typo-caption text-foreground">
               {tx(t.triggers.dead_letter_selected_count, { count: visibleSelectedCount })}
             </span>
             <div className="flex items-center gap-1.5">
@@ -652,7 +652,7 @@ export function DeadLetterTab() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                            <span className="typo-body font-medium truncate">{evt.event_type}</span>
+                            <span className="typo-body truncate">{evt.event_type}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
                               exhausted
                                 ? 'bg-orange-500/20 text-orange-300'
@@ -742,7 +742,7 @@ export function DeadLetterTab() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                          <span className="typo-body font-medium truncate">
+                          <span className="typo-body truncate">
                             {tx(
                               group.events.length === 1
                                 ? t.triggers.dead_letter_group_singular
@@ -804,7 +804,7 @@ export function DeadLetterTab() {
                               disabled={exhausted}
                               className="rounded-input border-border accent-primary disabled:opacity-40"
                             />
-                            <span className="typo-caption font-medium truncate flex-1">{evt.event_type}</span>
+                            <span className="typo-caption truncate flex-1">{evt.event_type}</span>
                             <span className="typo-caption text-foreground">
                               {evt.source_type} · {evt.retry_count}/{maxManualRetries}
                             </span>

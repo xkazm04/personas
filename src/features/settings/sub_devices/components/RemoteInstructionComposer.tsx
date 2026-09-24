@@ -59,7 +59,7 @@ export function RemoteInstructionComposer() {
 
   return (
     <div data-testid="remote-instruction-composer" className="space-y-2">
-      <p className="typo-caption text-foreground leading-relaxed">{st.send_instruction_hint}</p>
+      <p className="typo-caption text-foreground">{st.send_instruction_hint}</p>
 
       <div className="flex flex-wrap items-start gap-2">
         <Listbox

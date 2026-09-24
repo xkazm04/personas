@@ -135,7 +135,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
           <button
             type="button"
             onClick={() => openPersona(hero.id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption font-medium ${heroTier.btnClass} transition-colors`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption ${heroTier.btnClass} transition-colors`}
           >
             {t.athena.persona_overview_open_short}
             <ArrowRight className="w-3 h-3" />
@@ -209,7 +209,7 @@ function HeroCard({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input typo-caption font-medium ${tierAccent.bgSoftClass} ${tierAccent.borderClass} border ${tierAccent.textClass}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input typo-caption ${tierAccent.bgSoftClass} ${tierAccent.borderClass} border ${tierAccent.textClass}`}>
               {tierLabel}
             </span>
             {flag && (
@@ -297,7 +297,7 @@ function StoryStrip() {
               {i + 1}
             </span>
             <div className="min-w-0">
-              <p className="typo-caption text-foreground/95 font-medium leading-snug">{s.label}</p>
+              <p className="typo-caption text-foreground/95">{s.label}</p>
               <p className="text-[11px] text-foreground leading-snug">{s.body}</p>
             </div>
           </li>
@@ -360,7 +360,7 @@ function RosterThumb({ persona, onOpen }: { persona: Persona; onOpen: (id: strin
       className="w-full flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-foreground/[0.04] transition-colors text-left group"
     >
       <span
-        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 typo-caption font-semibold ${tier.bgSoftClass} ${tier.borderClass} border ${tier.textClass}`}
+        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 typo-caption ${tier.bgSoftClass} ${tier.borderClass} border ${tier.textClass}`}
       >
         {initial}
       </span>

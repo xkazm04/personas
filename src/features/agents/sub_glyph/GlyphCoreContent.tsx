@@ -94,7 +94,7 @@ function GlyphBuildingStatus({ hasPending }: { hasPending: boolean }) {
       {/* Backgroundability hint — surfaces only when the LLM is doing work
           the user can't help with. Stays subtle: muted, capped width. */}
       {!hasPending && (
-        <span className="mt-2 typo-caption text-foreground text-center max-w-[220px] leading-snug">
+        <span className="mt-2 typo-caption text-foreground text-center max-w-[220px]">
           <DebtText k="auto_you_can_use_the_app_freely_while_this_buil_c0d5f08b" />
         </span>
       )}
@@ -147,7 +147,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         <span className="typo-label text-foreground group-hover:text-foreground transition-colors">
           <DebtText k="auto_click_to_begin_a3efa65a" />
         </span>
-        <span className="typo-caption text-foreground max-w-[220px] leading-snug">
+        <span className="typo-caption text-foreground max-w-[220px]">
           <DebtText k="auto_describe_your_persona_276b0e90" />
         </span>
       </motion.button>

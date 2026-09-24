@@ -32,7 +32,7 @@ export function DirectorPanel() {
     <div className="mx-3 mt-2 flex items-center gap-3 rounded-card border border-violet-500/20 bg-violet-500/[0.04] px-4 py-2.5">
       <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-4 h-4" />
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground/90">{t.director.panel_title}</div>
+        <div className="typo-body text-foreground/90">{t.director.panel_title}</div>
         <div className="typo-caption text-foreground flex items-center gap-1.5 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <Star className="w-3 h-3 text-violet-400/70" />

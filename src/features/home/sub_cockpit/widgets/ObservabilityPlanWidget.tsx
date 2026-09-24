@@ -82,7 +82,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
           className="rounded-card border border-rose-500/30 bg-rose-500/[0.04] p-3 space-y-2"
           data-section="error-handling"
         >
-          <h4 className="flex items-center gap-1.5 typo-caption text-rose-300/85 font-medium">
+          <h4 className="flex items-center gap-1.5 typo-caption text-rose-300/85">
             <AlertTriangle className="w-3.5 h-3.5" />
             {t.athena.observability_plan_error_path}
           </h4>
@@ -112,7 +112,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
           className="rounded-card border border-emerald-500/30 bg-emerald-500/[0.04] p-3 space-y-2"
           data-section="success-metric"
         >
-          <h4 className="flex items-center gap-1.5 typo-caption text-emerald-300/85 font-medium">
+          <h4 className="flex items-center gap-1.5 typo-caption text-emerald-300/85">
             <Target className="w-3.5 h-3.5" />
             {t.athena.observability_plan_success_metric}
           </h4>
@@ -123,7 +123,7 @@ export function ObservabilityPlanWidget({ config, title }: CockpitWidgetProps) {
             </span>
           </div>
           {successMetric.description && (
-            <p className="typo-caption text-foreground leading-relaxed">
+            <p className="typo-caption text-foreground">
               {successMetric.description}
             </p>
           )}

@@ -43,7 +43,7 @@ export function GlyphDimensionSummaryCard({
         >
           <Icon className="w-3.5 h-3.5" style={{ color: "#fff" }} />
         </span>
-        <span className="typo-label font-bold text-foreground flex-1">
+        <span className="typo-label text-foreground flex-1">
           {label[activeDim]}
         </span>
         <button
@@ -58,7 +58,7 @@ export function GlyphDimensionSummaryCard({
       {summary.length > 0 ? (
         <ul className="flex flex-col gap-1">
           {summary.map((line, i) => (
-            <li key={i} className="typo-body text-foreground/85 leading-snug">· {line}</li>
+            <li key={i} className="typo-body text-foreground/85">· {line}</li>
           ))}
         </ul>
       ) : (

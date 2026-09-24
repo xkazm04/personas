@@ -60,7 +60,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
         >
           <Rocket className="w-4 h-4 shrink-0" />
           <span className="flex flex-col">
-            <span className="typo-body font-medium">{t.athena.offer_build}</span>
+            <span className="typo-body">{t.athena.offer_build}</span>
             <span className="typo-caption opacity-90">{t.athena.offer_build_hint}</span>
           </span>
         </button>
@@ -72,7 +72,7 @@ export function PersonaCreationOfferWidget({ config }: CockpitWidgetProps) {
         >
           <Compass className="w-4 h-4 shrink-0 text-primary" />
           <span className="flex flex-col">
-            <span className="typo-body font-medium">{t.athena.offer_show}</span>
+            <span className="typo-body">{t.athena.offer_show}</span>
             <span className="typo-caption text-foreground">{t.athena.offer_show_hint}</span>
           </span>
         </button>

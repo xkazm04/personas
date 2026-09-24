@@ -150,7 +150,7 @@ export function ChatMessageContent({
       <h3 className="typo-heading text-foreground/90 mb-1.5 mt-3 first:mt-0">{children}</h3>
     ),
     p: ({ children }) => (
-      <p className="typo-body text-foreground mb-2 last:mb-0 leading-relaxed">{children}</p>
+      <p className="typo-body text-foreground mb-2 last:mb-0">{children}</p>
     ),
     ul: ({ children }) => (
       <ul className="list-disc pl-5 space-y-1 mb-2 typo-body text-foreground">{children}</ul>

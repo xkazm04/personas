@@ -87,7 +87,7 @@ export function KbPickerDialog({
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-violet-500/40 transition-colors text-left disabled:opacity-50 focus-ring"
             >
               <Brain className="w-4 h-4 text-violet-200 shrink-0" />
-              <span className="flex-1 min-w-0 typo-body font-medium text-foreground truncate">
+              <span className="flex-1 min-w-0 typo-body text-foreground truncate">
                 {kb.name}
               </span>
               <span className="typo-caption text-foreground tabular-nums shrink-0">
@@ -114,7 +114,7 @@ export function KbPickerDialog({
                 type="button"
                 onClick={() => void handleCreate()}
                 disabled={!newName.trim() || pending}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-input bg-violet-500/20 border border-violet-500/45 typo-body font-semibold text-violet-50 hover:bg-violet-500/30 disabled:opacity-40 transition-colors focus-ring"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-input bg-violet-500/20 border border-violet-500/45 typo-body text-violet-50 hover:bg-violet-500/30 disabled:opacity-40 transition-colors focus-ring"
               >
                 {pending ? <LoadingSpinner className="text-violet-200" /> : null}
                 {d.kb_create}

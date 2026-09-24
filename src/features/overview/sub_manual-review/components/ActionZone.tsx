@@ -22,7 +22,7 @@ export function ActionZone({ active, onClick, icon, label, colorClasses, activeC
       <button
         onClick={onClick}
         disabled={isProcessing}
-        className={`flex items-center justify-center gap-2 py-4 typo-body font-medium transition-colors disabled:opacity-50 ${colorClasses}`}
+        className={`flex items-center justify-center gap-2 py-4 typo-body transition-colors disabled:opacity-50 ${colorClasses}`}
       >
         {icon}
         <span>{label}</span>
@@ -40,7 +40,7 @@ export function ActionZone({ active, onClick, icon, label, colorClasses, activeC
           <button
             onClick={onConfirm}
             disabled={isProcessing}
-            className={`w-full py-1.5 rounded-input typo-caption font-medium transition-colors disabled:opacity-50 ${confirmColor}`}
+            className={`w-full py-1.5 rounded-input typo-caption transition-colors disabled:opacity-50 ${confirmColor}`}
           >
             {isProcessing ? t.overview.review_extra.processing : t.overview.review_extra.confirm}
           </button>

@@ -90,7 +90,7 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
             className="rounded-card border border-primary/20 bg-background/95 shadow-elevation-3 backdrop-blur"
           >
             <div className="flex items-center gap-1.5 px-3 pt-2">
-              <span className="typo-caption font-medium text-primary">{c.name}</span>
+              <span className="typo-caption text-primary">{c.name}</span>
               {streaming && (
                 <span className="inline-flex items-center gap-1.5" role="status" aria-live="polite">
                   <span className="typo-caption text-foreground opacity-70">{c.working}</span>
@@ -120,7 +120,7 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
                 >
                   <MarkdownRenderer
                     content={lastReply}
-                    className="athena-chat-md typo-body leading-relaxed"
+                    className="athena-chat-md typo-body"
                     codeBlockActions
                   />
                 </div>

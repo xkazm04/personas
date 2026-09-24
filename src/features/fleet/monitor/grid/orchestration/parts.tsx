@@ -156,13 +156,13 @@ export function BudgetBand({ view }: { view: DispatchPreviewView }) {
         </StatusBadge>
       )}
       <span>
-        <span className="typo-title text-foreground tabular-nums">{view.preview.budget}</span> {s.orch_budget_starts}
+        <span className="typo-title tabular-nums">{view.preview.budget}</span> {s.orch_budget_starts}
       </span>
       <span>
-        <span className="typo-title text-foreground tabular-nums">{view.preview.wouldStart}</span> {s.orch_would_start}
+        <span className="typo-title tabular-nums">{view.preview.wouldStart}</span> {s.orch_would_start}
       </span>
       <span>
-        <span className="typo-title text-foreground tabular-nums">{view.preview.waiting}</span> {s.orch_waiting}
+        <span className="typo-title tabular-nums">{view.preview.waiting}</span> {s.orch_waiting}
       </span>
       <span>{tx(s.orch_running, { running: view.headroom.running, cap: view.headroom.cap })}</span>
       {hold && (

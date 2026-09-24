@@ -73,7 +73,7 @@ export function ApprovalCard({
       data-companion-approval-action={approval.action}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
+        <span className="inline-flex items-center gap-1.5 typo-caption text-primary">
           {t.athena.proposed_action}
         </span>
         <span

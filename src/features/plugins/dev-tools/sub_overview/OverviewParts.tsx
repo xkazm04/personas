@@ -55,7 +55,7 @@ export function StatCard({
         <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
       <div className="min-w-0">
-        <p className="typo-data-lg text-primary leading-tight truncate">{value}</p>
+        <p className="typo-data-lg text-primary truncate">{value}</p>
         <p className="typo-caption text-foreground truncate">{label}</p>
       </div>
     </div>
@@ -116,7 +116,7 @@ export function ConnectionCard({
       <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-5">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
-          <span className="typo-body font-medium text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
+          <span className="typo-body text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
         </div>
         {children}
       </div>
@@ -129,7 +129,7 @@ export function ConnectionCard({
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="typo-body font-medium text-foreground">{po.failed_to_load}</p>
+            <p className="typo-body text-foreground">{po.failed_to_load}</p>
             {errorMessage && (
               <p className="typo-caption text-foreground mt-1 break-words">{errorMessage}</p>
             )}
@@ -150,7 +150,7 @@ export function ConnectionCard({
     <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4">
       <div className="flex items-center gap-2 mb-3">
         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-        <span className="typo-body font-medium text-foreground">{serviceName}</span>
+        <span className="typo-body text-foreground">{serviceName}</span>
         <span className="typo-caption text-emerald-400 ml-auto">{po.connected}</span>
       </div>
       {children}

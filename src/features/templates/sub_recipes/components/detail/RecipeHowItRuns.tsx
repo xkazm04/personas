@@ -119,7 +119,7 @@ function ChannelChip({ channel }: { channel: string }) {
       style={{ borderColor: `${m.color}55` }}
     >
       <ConnectorIcon meta={m} size="w-3 h-3" />
-      <span className="typo-caption font-medium" style={{ color: m.color }}>{m.label}</span>
+      <span className="typo-caption" style={{ color: m.color }}>{m.label}</span>
     </span>
   );
 }

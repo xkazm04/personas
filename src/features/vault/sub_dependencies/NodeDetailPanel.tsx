@@ -30,7 +30,7 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4" style={{ color: node.color }} />
-          <span className="typo-body font-medium text-foreground/85">{node.label}</span>
+          <span className="typo-body text-foreground/85">{node.label}</span>
         </div>
         <button type="button" onClick={onClose} className="p-1 hover:bg-secondary/50 rounded transition-colors cursor-pointer">
           <X className="w-3.5 h-3.5 text-foreground" />

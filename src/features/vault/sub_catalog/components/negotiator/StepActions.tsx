@@ -78,7 +78,7 @@ export function StepExpandedContent({
             <ExternalLink className="w-3.5 h-3.5" />
             {neg.open_in_browser}
           </button>
-          <p className="typo-code text-foreground font-mono truncate pl-0.5">{step.url}</p>
+          <p className="typo-code text-foreground truncate pl-0.5">{step.url}</p>
         </motion.div>
       )}
 
@@ -125,7 +125,7 @@ export function StepExpandedContent({
             type="button"
             onClick={onComplete}
             disabled={step.field_fills ? !allFieldsCaptured : false}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-modal bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-modal bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid={`negotiator-step-${stepIndex}-complete-btn`}
           >
             <Check className="w-3.5 h-3.5" />

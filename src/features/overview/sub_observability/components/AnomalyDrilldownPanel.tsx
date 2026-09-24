@@ -63,7 +63,7 @@ const CorrelatedEventRow = memo(function CorrelatedEventRow({ event }: { event: 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground/90 truncate">{event.label}</span>
+          <span className="typo-body text-foreground/90 truncate">{event.label}</span>
           <span className="text-[10px] text-foreground flex-shrink-0">
             {formatSignedOffset(event.offsetSeconds)}
           </span>
@@ -93,16 +93,16 @@ const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: 
         <div className={`w-5 h-5 rounded-input ${config.bg} flex items-center justify-center`}>
           <Icon className={`w-3 h-3 ${config.color}`} />
         </div>
-        <span className="typo-heading font-semibold text-foreground/90">
+        <span className="typo-heading text-foreground/90">
           #{suggestion.rank} {suggestion.title}
         </span>
-        <span className={`ml-auto typo-caption font-medium ${
+        <span className={`ml-auto typo-caption ${
           pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-amber-400' : 'text-red-400'
         }`}>
           {pct}<DebtText k="auto_confidence_a89b4754" />
         </span>
       </div>
-      <p className="typo-caption text-foreground leading-relaxed">{suggestion.description}</p>
+      <p className="typo-caption text-foreground">{suggestion.description}</p>
       {suggestion.relatedEventTimestamp && (
         <div className="flex items-center gap-1.5 text-[10px] text-foreground">
           <Clock className="w-3 h-3" />
@@ -139,7 +139,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
               <Search className="w-4 h-4 text-red-400" />
             </div>
             <div>
-              <h2 id="anomaly-drilldown-title" className="typo-body-lg font-semibold text-foreground/90">
+              <h2 id="anomaly-drilldown-title" className="typo-body-lg text-foreground/90">
                 {t.overview.anomaly_drilldown_extra.title}
               </h2>
               <p className="typo-caption text-foreground">
@@ -190,7 +190,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
             {/* Root Cause Suggestions */}
             {data.rootCauseSuggestions.length > 0 && (
               <section>
-                <h3 className="typo-label font-semibold text-foreground mb-2">
+                <h3 className="typo-label text-foreground mb-2">
                   {t.overview.anomaly_drilldown_extra.likely_root_causes}
                 </h3>
                 <div className="space-y-2">
@@ -203,7 +203,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
 
             {/* Correlated Events Timeline */}
             <section>
-              <h3 className="typo-label font-semibold text-foreground mb-2">
+              <h3 className="typo-label text-foreground mb-2">
                 <DebtText k="auto_correlated_events_4a6b6c7a" />{data.correlatedEvents.length})
               </h3>
               {sortedEvents.length === 0 ? (

@@ -81,7 +81,7 @@ export function TwinExperienceHost({
       {phase === 'forge' ? (
         <>
           <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-primary/15">
-            <h1 id="twin-experience-title" className="typo-section-title text-foreground">
+            <h1 id="twin-experience-title" className="typo-section-title">
               {xg.title}
             </h1>
             <Button

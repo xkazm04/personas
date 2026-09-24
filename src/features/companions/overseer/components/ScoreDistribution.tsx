@@ -75,7 +75,7 @@ export function ScoreDistribution({
                   }}
                 />
               </div>
-              <span className="typo-caption tabular-nums px-1.5 rounded font-medium" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
+              <span className="typo-caption tabular-nums px-1.5 rounded" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
                 {band.score}
               </span>
             </button>

@@ -82,12 +82,12 @@ export default function RemoteApprovalPrompt() {
       <div className="p-6 space-y-5">
         {/* Header: queue position + provenance */}
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-sky-300/90">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-sky-300/90">
             <CloudDownload className="w-3.5 h-3.5" />
             {s.from_dashboard}
           </span>
           {queue.length > 1 && (
-            <span className="rounded-full bg-secondary/40 border border-primary/10 px-2 py-0.5 typo-caption font-medium text-foreground">
+            <span className="rounded-full bg-secondary/40 border border-primary/10 px-2 py-0.5 typo-caption text-foreground">
               {interpolate(s.queue_count, { index: 1, total: queue.length })}
             </span>
           )}
@@ -96,10 +96,10 @@ export default function RemoteApprovalPrompt() {
         {/* Persona identity */}
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-primary/15 border border-primary/20 flex items-center justify-center flex-shrink-0">
-            <span className="typo-body-lg font-semibold text-primary">{initial(personaLabel)}</span>
+            <span className="typo-body-lg text-primary">{initial(personaLabel)}</span>
           </div>
           <div className="min-w-0">
-            <h2 id="remote-approval-title" className="typo-body-lg font-semibold text-foreground truncate">
+            <h2 id="remote-approval-title" className="typo-body-lg text-foreground truncate">
               {personaLabel}
             </h2>
             <p className="typo-caption text-foreground">
@@ -114,7 +114,7 @@ export default function RemoteApprovalPrompt() {
 
         {/* Prompt detail */}
         <div className="space-y-1.5">
-          <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
+          <p className="typo-caption text-foreground uppercase tracking-wide">
             {s.prompt_label}
           </p>
           <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 max-h-40 overflow-y-auto">

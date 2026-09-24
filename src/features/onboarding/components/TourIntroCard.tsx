@@ -30,7 +30,7 @@ export function TourIntroCard({ tourId, stepCount }: TourIntroCardProps) {
         <Compass className={`w-3.5 h-3.5 ${colors.text} flex-shrink-0`} />
         <span className={`typo-heading ${colors.text}`}>{t.onboarding.tour_intro_heading}</span>
       </div>
-      <p className="typo-body text-foreground leading-relaxed mt-1.5">{tourDef.description}</p>
+      <p className="typo-body text-foreground mt-1.5">{tourDef.description}</p>
       <p className="typo-caption text-foreground mt-2">
         {tx(t.onboarding.tour_intro_steps, { count: stepCount })}
       </p>

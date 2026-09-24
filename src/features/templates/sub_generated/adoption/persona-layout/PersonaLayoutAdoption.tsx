@@ -32,7 +32,7 @@ function HeaderChip({ impact }: { impact: DimImpact | undefined }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-interactive border border-card-border/50 bg-secondary/25 px-2 py-1">
       <Icon className="h-3 w-3" style={{ color: meta.color }} />
-      <span className={`typo-caption font-medium ${VAL[impact.tone]}`}>{impact.value}</span>
+      <span className={`typo-caption ${VAL[impact.tone]}`}>{impact.value}</span>
     </span>
   );
 }
@@ -135,7 +135,7 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
         <div className="rounded-card border border-card-border/40 bg-secondary/12 px-4 py-3">
           <h3 className="typo-heading text-foreground">{model.activeUc.title}</h3>
           {model.activeUc.description && (
-            <p className="typo-body text-foreground/85 mt-1 leading-relaxed">{model.activeUc.description}</p>
+            <p className="typo-body text-foreground/85 mt-1">{model.activeUc.description}</p>
           )}
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <HeaderChip impact={impactByDim('trigger')} />

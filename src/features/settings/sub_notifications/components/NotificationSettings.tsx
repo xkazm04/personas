@@ -161,7 +161,7 @@ export default function NotificationSettings() {
               {SEVERITY_ROWS.map(({ key, severity, labelKey, descKey, color }) => (
                 <div key={key} className="flex items-center justify-between py-2.5 gap-3 first:pt-0 last:pb-0">
                   <div className="space-y-0.5 min-w-0 flex-1">
-                    <span className={`typo-body font-medium ${color}`}>{s[labelKey]}</span>
+                    <span className={`typo-body ${color}`}>{s[labelKey]}</span>
                     <p className="typo-caption text-foreground">{s[descKey]}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

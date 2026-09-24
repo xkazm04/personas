@@ -31,7 +31,7 @@ export function ExecutionListToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
         <Clock className="w-3.5 h-3.5" />
         {e.history}

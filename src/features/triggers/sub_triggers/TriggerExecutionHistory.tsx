@@ -45,7 +45,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
           <div className="w-3 h-3 flex-shrink-0" />
         )}
         <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusEntry.text} ${statusEntry.pulse ? 'animate-pulse' : ''}`} />
-        <span className={`px-1.5 py-0.5 rounded typo-body font-medium ${badgeClass(statusEntry)}`}>
+        <span className={`px-1.5 py-0.5 rounded typo-body ${badgeClass(statusEntry)}`}>
           {statusEntry.label}
         </span>
         <span className="text-foreground font-mono">
@@ -80,8 +80,8 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               <JsonPayloadBlock label="Output" data={exec.output_data} labelClassName="typo-body" />
               {exec.error_message && (
                 <div className="space-y-1">
-                  <div className="typo-body font-medium text-red-400/70 uppercase tracking-wide">Error</div>
-                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 font-mono whitespace-pre-wrap break-all">
+                  <div className="typo-body text-red-400/70 uppercase tracking-wide">Error</div>
+                  <div className="px-2.5 py-2 rounded-card bg-red-500/5 border border-red-500/10 typo-code text-red-400/90 whitespace-pre-wrap break-all">
                     {exec.error_message}
                   </div>
                 </div>

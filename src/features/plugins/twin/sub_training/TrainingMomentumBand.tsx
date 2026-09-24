@@ -97,7 +97,7 @@ export function TrainingMomentumBand({ twinId, topic, onPickTopic, refreshToken 
     >
       <span className="flex items-center gap-2 flex-shrink-0">
         <GraduationCap className="w-3.5 h-3.5 text-violet-300" aria-hidden />
-        <span className="typo-card-label text-foreground" data-testid="training-momentum-sessions">
+        <span className="typo-card-label" data-testid="training-momentum-sessions">
           {momentum.sessions} {tt.momentumSessions}
         </span>
         {momentum.lastTrainedAt ? (

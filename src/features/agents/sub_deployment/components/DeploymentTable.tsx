@@ -148,10 +148,10 @@ export function DeploymentTable({
                 />
               </td>
               <td className="px-4 py-3">
-                <span className="typo-body font-medium text-foreground/90">{row.name}</span>
+                <span className="typo-body text-foreground/90">{row.name}</span>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${tb.cls}`}>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${tb.cls}`}>
                   <TargetIcon className="w-3 h-3" />
                   {tb.label}
                 </span>
@@ -160,13 +160,13 @@ export function DeploymentTable({
                 <span
                   data-testid={`deploy-status-${row.id}`}
                   data-status={row.status}
-                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${statusBadge(row.status)}`}
                 >
                   {statusIcon(row.status)}
                   {tokenLabel(t, 'deployment', row.status)}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right typo-data text-foreground tabular-nums">
+              <td className="px-4 py-3 text-right typo-data text-foreground">
                 {row.invocations > 0 ? <Numeric value={row.invocations} align="right" /> : '-'}
               </td>
               <td className="px-4 py-3">
@@ -203,7 +203,7 @@ export function DeploymentTable({
                   )}
                   {testResult && (
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${
                         testResult.status === 'pass'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'

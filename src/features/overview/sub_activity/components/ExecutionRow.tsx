@@ -56,12 +56,12 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         )}
 
         {execution.retry_count > 0 && (
-          <StatusBadge accent="cyan" size="sm" className="typo-code font-mono rounded-card" icon={<RotateCw className="w-2.5 h-2.5" />} title={`Healing retry #${execution.retry_count}`}>
+          <StatusBadge accent="cyan" size="sm" className="typo-code rounded-card" icon={<RotateCw className="w-2.5 h-2.5" />} title={`Healing retry #${execution.retry_count}`}>
             #{execution.retry_count}
           </StatusBadge>
         )}
 
-        <span className="typo-code text-foreground min-w-[60px] text-right font-mono">
+        <span className="typo-code text-foreground min-w-[60px] text-right">
           {formatDuration(execution.duration_ms)}
         </span>
 

@@ -120,7 +120,7 @@ export default function StationPicker({
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
-              <p className="typo-body font-medium truncate">{station.name}</p>
+              <p className="typo-body truncate">{station.name}</p>
               {station.sourceLabel && (
                 <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
                   {isYt ? (
@@ -187,7 +187,7 @@ export default function StationPicker({
     >
       <div className="px-3 py-2 border-b border-primary/8 flex items-center gap-2">
         <Radio className="w-3.5 h-3.5 text-foreground" />
-        <span className="typo-caption font-medium text-foreground/85">
+        <span className="typo-caption text-foreground/85">
           {t.radio.stations_label}
         </span>
       </div>

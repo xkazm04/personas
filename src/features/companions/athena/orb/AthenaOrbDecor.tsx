@@ -77,7 +77,7 @@ export function OrbUnreadBadge({
       {!reduceMotion && <span className="absolute inset-0 rounded-full bg-primary/60 animate-ping" />}
       <MessageSquareText className="relative w-3 h-3 shrink-0" />
       {count > 1 && (
-        <span className="relative typo-caption font-semibold leading-none tabular-nums">
+        <span className="relative typo-caption tabular-nums">
           {count > 9 ? '9+' : count}
         </span>
       )}

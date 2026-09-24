@@ -131,7 +131,7 @@ export function VoiceControlPopover() {
           aria-label={c.voice_controls_label}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
-            <span className="typo-body font-medium text-primary">{c.voice_controls_title}</span>
+            <span className="typo-body text-primary">{c.voice_controls_title}</span>
             <AccessibleToggle
               checked={voiceEnabled}
               onChange={() => setVoiceEnabled(!voiceEnabled)}
@@ -142,7 +142,7 @@ export function VoiceControlPopover() {
           {/* Volume */}
           <div className="space-y-1.5 mb-3">
             <div className="flex items-center justify-between">
-              <label className="typo-caption text-foreground font-medium">{c.voice_volume_label}</label>
+              <label className="typo-caption text-foreground">{c.voice_volume_label}</label>
               <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
             </div>
             <Slider
@@ -162,7 +162,7 @@ export function VoiceControlPopover() {
             onClick={() => void runTest()}
             disabled={!voiceConfigured || testState === 'synthesizing'}
             data-testid="companion-voice-test"
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium bg-primary/15 hover:bg-primary/25 text-primary transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 hover:bg-primary/25 text-primary transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {testState === 'synthesizing' ? (
               <>

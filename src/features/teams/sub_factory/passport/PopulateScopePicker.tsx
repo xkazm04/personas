@@ -69,10 +69,10 @@ export function PopulateScopePicker({ gates, lanes, onChange }: {
                 {on ? <Check className="w-3.5 h-3.5 text-primary" /> : null}
               </span>
               <span className="min-w-0">
-                <span className={`typo-body-lg font-medium block ${on ? 'text-foreground' : 'text-foreground/75'}`}>
+                <span className={`typo-body-lg block ${on ? 'text-foreground' : 'text-foreground/75'}`}>
                   {m.label}
                 </span>
-                <span className="typo-caption block leading-snug text-foreground">{m.detail}</span>
+                <span className="typo-caption block text-foreground">{m.detail}</span>
               </span>
             </button>
           );

@@ -226,7 +226,7 @@ export function RunDeskControls({
           >
             <Minus className="w-3 h-3" />
           </Button>
-          <span className="typo-caption font-medium tabular-nums w-4 text-center">{maxParallelTasks}</span>
+          <span className="typo-caption tabular-nums w-4 text-center">{maxParallelTasks}</span>
           <Button
             variant="ghost"
             size="icon-sm"

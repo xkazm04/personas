@@ -30,7 +30,7 @@ export function TopicRail({ topicPreset, coverage, sessions, lastTrainedAt, onPi
   return (
     <nav aria-label={xo.topics.label} className="space-y-2.5" data-testid="xo-topics">
       <div className="px-1 space-y-0.5">
-        <p className="typo-label uppercase tracking-[0.18em]">{xo.topics.label}</p>
+        <p className="typo-label uppercase">{xo.topics.label}</p>
         <p className="typo-caption flex items-center gap-1.5">
           <GraduationCap className="w-3.5 h-3.5 text-primary" aria-hidden />
           {tx(xo.topics.sessions, { count: sessions })}
@@ -61,7 +61,7 @@ export function TopicRail({ topicPreset, coverage, sessions, lastTrainedAt, onPi
           >
             <card.Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-[var(--xo-hue)]" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block typo-title text-foreground">{copy.label}</span>
+              <span className="block typo-title">{copy.label}</span>
               <span className="block typo-caption line-clamp-2">{copy.blurb}</span>
             </span>
             <span className="flex flex-col items-end gap-1 flex-shrink-0">

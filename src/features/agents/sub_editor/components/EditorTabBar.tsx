@@ -37,7 +37,7 @@ function TabBadge({ variant, count, srLabel }: { variant: TabBadgeVariant; count
   const sr = srLabel ? <span className="sr-only">{srLabel}</span> : null;
   if (variant === 'error') {
     return (
-      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption leading-4 text-center">
+      <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption text-center">
         {count ?? '!'}{sr}
       </span>
     );

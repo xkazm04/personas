@@ -30,7 +30,7 @@ export function SuitRail({ items, focus, flare, onFocus, onOpenHub }: SuitRailPr
 
   return (
     <nav aria-label={xo.suits.label} className="space-y-3" data-testid="xo-suits">
-      <p className="typo-label uppercase tracking-[0.18em] px-1">{xo.suits.label}</p>
+      <p className="typo-label uppercase px-1">{xo.suits.label}</p>
       {items.map((item) => {
         const suit = SUITS[item.id];
         const entry = twinStatusEntry(item.status);
@@ -58,7 +58,7 @@ export function SuitRail({ items, focus, flare, onFocus, onOpenHub }: SuitRailPr
             >
               <suit.Icon className={`w-5 h-5 flex-shrink-0 ${SUIT_TEXT}`} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block typo-title-lg text-foreground truncate">{xo.suits[item.id]}</span>
+                <span className="block typo-title-lg truncate">{xo.suits[item.id]}</span>
                 <span className={`flex items-center gap-1.5 typo-caption tabular-nums ${entry.text}`}>
                   <span aria-hidden className={`w-2 h-2 rounded-full ${entry.dot}`} />
                   {tx(xo.suits.statusLine, { status: t.twin.status[entry.labelKey], detail: item.detail })}

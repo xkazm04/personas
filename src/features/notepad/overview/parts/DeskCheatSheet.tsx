@@ -46,7 +46,7 @@ const ACT: Row[] = [
 function Group({ title, rows, t }: { title: string; rows: Row[]; t: Translations }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="typo-title text-primary">{title}</h3>
+      <h3 className="typo-title">{title}</h3>
       <ul className="flex flex-col gap-1.5">
         {rows.map((row) => (
           <li key={row.keys.join(' ')} className="flex items-center gap-3">

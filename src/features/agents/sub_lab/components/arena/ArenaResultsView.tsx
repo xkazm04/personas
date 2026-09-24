@@ -49,7 +49,7 @@ function ScoreBar({ value, label, icon: Icon }: { value: number; label: string; 
         <span className="flex items-center gap-1.5 typo-caption text-foreground">
           <Icon className="w-3 h-3" />{label}
         </span>
-        <span className={`typo-caption font-semibold ${scoreColor(value)}`}>{value}/100</span>
+        <span className={`typo-caption ${scoreColor(value)}`}>{value}/100</span>
       </div>
       <div className="h-1.5 rounded-full bg-primary/5 overflow-hidden">
         <div
@@ -150,12 +150,12 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="typo-heading font-semibold text-foreground/90">{t.agents.lab.test_summary}</h4>
+              <h4 className="typo-heading text-foreground/90">{t.agents.lab.test_summary}</h4>
               <p className="typo-caption text-foreground">{scenarios.length} <DebtText k="auto_scenarios_across_e82c5962" /> {models.length} models</p>
             </div>
           </div>
           {(llmSummary || summary) && (
-            <p className="typo-body text-foreground leading-relaxed"
+            <p className="typo-body text-foreground"
               dangerouslySetInnerHTML={{ __html: sanitizeRichSummary(llmSummary ?? summary ?? '') }}
             />
           )}
@@ -164,7 +164,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
       {/* Model comparison cards */}
       <div className="space-y-3">
-        <h4 className="typo-label font-semibold text-foreground px-1">{t.agents.lab.model_performance}</h4>
+        <h4 className="typo-label text-foreground px-1">{t.agents.lab.model_performance}</h4>
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(aggregates.length, 3)}, 1fr)` }}>
           {aggregates.map((agg, idx) => {
             const isWinner = agg.modelId === bestModelId;
@@ -182,10 +182,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                 <div className={`px-4 py-3 bg-gradient-to-r ${isWinner ? 'from-primary/15 via-primary/10 to-accent/10' : 'from-secondary/40 to-secondary/20'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`typo-heading-lg font-bold ${isWinner ? 'text-primary' : 'text-foreground'}`}>
+                      <span className={`typo-heading-lg ${isWinner ? 'text-primary' : 'text-foreground'}`}>
                         #{idx + 1}
                       </span>
-                      <span className="typo-heading font-semibold text-foreground/90 capitalize">{agg.modelId}</span>
+                      <span className="typo-heading text-foreground/90 capitalize">{agg.modelId}</span>
                     </div>
                     {isWinner && (
                       <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
@@ -199,9 +199,9 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                 <div className="px-4 py-3 space-y-3 bg-background/40">
                   {/* Big composite score */}
                   <div className={`flex items-center gap-3 p-3 rounded-card bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
-                    <span className={`typo-hero font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
+                    <span className={`typo-hero ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
                     <div className="flex-1 min-w-0">
-                      <span className={`typo-caption font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
+                      <span className={`typo-caption ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
                       <p className="text-[10px] text-foreground"><DebtText k="auto_composite_score_b7a389bd" /></p>
                     </div>
                     {idx > 0 && aggregates[0] && (
@@ -240,19 +240,19 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
         <details className="group">
           <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
             <ChevronDown className="w-3.5 h-3.5 text-foreground transition-transform group-open:rotate-180" />
-            <h4 className="typo-label font-semibold text-foreground">{t.agents.lab.insights_suggestions}</h4>
+            <h4 className="typo-label text-foreground">{t.agents.lab.insights_suggestions}</h4>
           </summary>
           <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {topRationale.length > 0 && (
               <div className="rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
-                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-foreground">
+                  <h4 className="flex items-center gap-1.5 typo-label text-foreground">
                     <MessageSquare className="w-3 h-3" /> {t.agents.lab.evaluation_insights}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2.5">
                   {topRationale.map((r, i) => (
-                    <div key={i} className="typo-body leading-relaxed">
+                    <div key={i} className="typo-body">
                       <span className="text-[10px] font-semibold text-foreground uppercase">{r.model} — {r.scenario}</span>
                       <p className="text-foreground mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
                     </div>
@@ -263,13 +263,13 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             {topSuggestions.length > 0 && (
               <div className="rounded-modal border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
-                  <h4 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/70">
+                  <h4 className="flex items-center gap-1.5 typo-label text-amber-400/70">
                     <Lightbulb className="w-3 h-3" /> {t.agents.lab.improvement_suggestions}
                   </h4>
                 </div>
                 <div className="px-4 py-3 space-y-2">
                   {topSuggestions.map((s, i) => (
-                    <p key={i} className="typo-body text-foreground leading-relaxed">
+                    <p key={i} className="typo-body text-foreground">
                       {s.length > 200 ? s.slice(0, 200) + '...' : s}
                     </p>
                   ))}
@@ -283,16 +283,16 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
       {/* Scenario breakdown */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <h4 className="typo-label font-semibold text-foreground">{t.agents.lab.scenario_breakdown}</h4>
+          <h4 className="typo-label text-foreground">{t.agents.lab.scenario_breakdown}</h4>
           <span className="text-[10px] text-foreground">{t.agents.lab.click_cell_details}</span>
         </div>
         <div data-virtual-scroll className="overflow-x-auto max-h-[70vh] overflow-y-auto border border-primary/10 rounded-modal">
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/20">
-                <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label">Scenario</th>
+                <th className="text-left px-3 py-2.5 text-foreground typo-label">Scenario</th>
                 {models.map((mid) => (
-                  <th key={mid} className={`text-center px-3 py-2.5 font-medium typo-label ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
+                  <th key={mid} className={`text-center px-3 py-2.5 typo-label ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
                     <span className="inline-flex items-center justify-center gap-1">
                       {mid === bestModelId && <Trophy className="w-3 h-3" aria-label={t.agents.lab.best_badge} />}
                       {mid}
@@ -338,7 +338,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                             </span>
                           ) : (
                             <>
-                              <span className={`typo-body-lg font-bold ${scoreColor(comp)}`}>{comp ?? '—'}</span>
+                              <span className={`typo-body-lg ${scoreColor(comp)}`}>{comp ?? '—'}</span>
                               <div className="flex gap-2 text-[10px] text-foreground">
                                 <span>TA {ta ?? '—'}</span>
                                 <span>OQ {oq ?? '—'}</span>

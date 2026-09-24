@@ -79,7 +79,7 @@ export function AthenaSidePanel({
         <div className="flex flex-col h-full min-h-0 overflow-hidden pt-3">
           <div className="flex items-center gap-1.5 px-3 pb-2 shrink-0" aria-hidden="true">
             {icon}
-            <span className="typo-caption font-semibold text-foreground truncate">{label}</span>
+            <span className="typo-caption text-foreground truncate">{label}</span>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-2 pb-2 space-y-1.5">
             {children}

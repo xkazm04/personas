@@ -101,7 +101,7 @@ export function N8nWizardFooter({
 
         {/* Test error message */}
         {step === 'edit' && testStatus === 'failed' && testError && (
-          <span className="typo-body text-red-400/80 max-w-[400px] line-clamp-2 leading-tight" title={testError}>
+          <span className="typo-body text-red-400/80 max-w-[400px] line-clamp-2" title={testError}>
             {testError}
           </span>
         )}

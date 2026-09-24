@@ -153,7 +153,7 @@ function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, act
           }`}
         >
           <span
-            className={`typo-caption leading-none max-h-[4.75rem] min-h-0 overflow-hidden text-ellipsis whitespace-nowrap transition-colors ${
+            className={`typo-caption max-h-[4.75rem] min-h-0 overflow-hidden text-ellipsis whitespace-nowrap transition-colors ${
               selected ? 'text-primary' : 'text-foreground group-hover/col:text-primary'
             }`}
             style={VERTICAL}

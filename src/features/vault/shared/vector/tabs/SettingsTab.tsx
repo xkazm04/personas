@@ -42,7 +42,7 @@ export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Info card */}
       <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
+        <h3 className="typo-heading text-foreground/90 flex items-center gap-2">
           <Brain className="w-4 h-4 text-violet-400" />
           {sh.kb_info}
         </h3>
@@ -63,7 +63,7 @@ export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
 
       {/* Stats */}
       <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="typo-heading font-semibold text-foreground/90">{sh.statistics}</h3>
+        <h3 className="typo-heading text-foreground/90">{sh.statistics}</h3>
         <div className="grid grid-cols-2 gap-4">
           <StatCard label={sh.label_documents} value={kb.documentCount} />
           <StatCard label={sh.label_chunks} value={kb.chunkCount} />
@@ -72,22 +72,22 @@ export function SettingsTab({ kb, onRefresh }: SettingsTabProps) {
 
       {/* Model info */}
       <div className="rounded-modal border border-violet-500/10 bg-violet-500/5 p-5 space-y-2">
-        <h3 className="typo-heading font-semibold text-violet-300/90 flex items-center gap-2">
+        <h3 className="typo-heading text-violet-300/90 flex items-center gap-2">
           <Cpu className="w-4 h-4" />
           {sh.local_embedding}
         </h3>
-        <p className="typo-caption text-foreground leading-relaxed">
+        <p className="typo-caption text-foreground">
           {tx(sh.local_embedding_hint, { model: kb.embeddingModel, dims: kb.embeddingDims })}
         </p>
       </div>
 
       {/* Maintenance */}
       <div className="rounded-modal border border-primary/10 bg-secondary/20 p-5 space-y-4">
-        <h3 className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
+        <h3 className="typo-heading text-foreground/90 flex items-center gap-2">
           <Wrench className="w-4 h-4 text-violet-400" />
           {sh.reindex_title}
         </h3>
-        <p className="typo-caption text-foreground leading-relaxed">{sh.reindex_hint}</p>
+        <p className="typo-caption text-foreground">{sh.reindex_hint}</p>
 
         {reindexJobId ? (
           <IngestProgressBar kbId={kb.id} jobId={reindexJobId} onComplete={handleReindexComplete} />
@@ -124,7 +124,7 @@ function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label
         <Icon className="w-3 h-3" />
         {label}
       </p>
-      <p className={`typo-code text-foreground truncate ${mono ? 'font-mono typo-code' : ''}`}>
+      <p className={`typo-code text-foreground truncate ${mono ? 'typo-code' : ''}`}>
         {value}
       </p>
     </div>
@@ -134,7 +134,7 @@ function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 text-center">
-      <Numeric as="p" value={value} className="typo-heading-lg font-semibold text-foreground/90" />
+      <Numeric as="p" value={value} className="typo-heading-lg text-foreground/90" />
       <p className="typo-caption text-foreground mt-1">{label}</p>
     </div>
   );

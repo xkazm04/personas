@@ -91,7 +91,7 @@ export function SlashPalette({
                 type="button"
                 onClick={() => onSelect(preset)}
                 onMouseEnter={() => onHoverIndex(idx)}
-                className={`w-full text-left px-3 py-1.5 typo-caption font-normal transition-colors ${
+                className={`w-full text-left px-3 py-1.5 typo-caption transition-colors ${
                   active
                     ? 'bg-primary/10 text-foreground'
                     : 'text-foreground hover:bg-foreground/[0.04]'

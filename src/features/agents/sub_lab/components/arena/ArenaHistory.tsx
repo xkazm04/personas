@@ -66,7 +66,7 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
       key: 'models',
       label: t.agents.lab.models_column,
       render: (run) => (
-        <span className="typo-body text-foreground font-medium">{parseModels(run).join(', ') || '--'}</span>
+        <span className="typo-body text-foreground">{parseModels(run).join(', ') || '--'}</span>
       ),
     },
     {

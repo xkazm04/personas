@@ -185,7 +185,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
           <div className="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5">
             <Lock className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
             <div>
-              <p className="typo-body font-medium text-foreground">{c.reassure_title}</p>
+              <p className="typo-body text-foreground">{c.reassure_title}</p>
               <p className="typo-body text-foreground mt-0.5">{c.reassure_body}</p>
             </div>
           </div>

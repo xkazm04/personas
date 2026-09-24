@@ -97,7 +97,7 @@ export function BuildTemplateSuggestion({
               <p className="typo-caption uppercase tracking-wide text-primary/80">
                 {t.agents.build_template_match_label}
               </p>
-              <p className="typo-body font-semibold text-foreground">
+              <p className="typo-body text-foreground">
                 {tx(t.agents.build_template_match_title, { name: top.name })}
               </p>
               <p className="typo-caption mt-0.5 text-foreground/85">

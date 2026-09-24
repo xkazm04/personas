@@ -82,7 +82,7 @@ export function AthenaChatSystemNote({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <Icon className={`w-3 h-3 shrink-0 ${tone.label}`} aria-hidden />
-          <span className={`typo-caption font-medium ${tone.label}`}>{note.label}</span>
+          <span className={`typo-caption ${tone.label}`}>{note.label}</span>
           {note.meta && (
             <span className="typo-caption text-foreground opacity-60 truncate tabular-nums">
               {note.meta}

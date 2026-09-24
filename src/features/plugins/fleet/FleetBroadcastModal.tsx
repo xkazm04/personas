@@ -245,7 +245,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
         </div>
 
         <label className="block mb-3">
-          <span className="typo-caption font-medium text-foreground mb-1.5 block">
+          <span className="typo-caption text-foreground mb-1.5 block">
             {t.plugins.fleet.broadcast_message_label}
           </span>
           <textarea
@@ -300,7 +300,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                 The concatenated form fixed English word order and the position
                 of the parenthesis in all 14 locales; a locale that puts the
                 count first, or uses different brackets, had nowhere to say so. */}
-            <span className="typo-caption font-medium text-foreground">
+            <span className="typo-caption text-foreground">
               {tx(t.plugins.fleet.broadcast_targets_count, {
                 selected: selected.size,
                 total: targetable.length,

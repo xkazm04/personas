@@ -51,7 +51,7 @@ export function SpineStation({ station: s, total, cohort, cohortTotal, rank, las
         <section>
           <h3 className="typo-caption uppercase tracking-wider">{p.coverage}</h3>
           <div className="mt-1 flex items-baseline gap-3">
-            <span className="typo-data-lg tabular-nums">{pct(s.reached, total)}%</span>
+            <span className="typo-data-lg">{pct(s.reached, total)}%</span>
             <span className="typo-body tabular-nums">{tx(p.reached, { reached: s.reached, total })}</span>
           </div>
           <Bar value={share} tone="bg-primary" tick={cohort && cohortTotal ? cohort.reached / cohortTotal : undefined} />
@@ -100,7 +100,7 @@ function FailureLine({ label, value, tone }: { label: string; value: number | nu
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="typo-body">{label}</span>
-        <span className="typo-data tabular-nums">{value == null ? '–' : `${value}%`}</span>
+        <span className="typo-data">{value == null ? '–' : `${value}%`}</span>
       </div>
       <Bar value={(value ?? 0) / 100} tone={tone} />
     </div>

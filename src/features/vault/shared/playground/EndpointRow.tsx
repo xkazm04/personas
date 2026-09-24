@@ -46,12 +46,12 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
         )}
 
         <span
-          className={`px-2 py-0.5 rounded typo-heading font-bold uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
+          className={`px-2 py-0.5 rounded typo-heading uppercase border ${methodStyle} shrink-0 min-w-[52px] text-center`}
         >
           {endpoint.method.toUpperCase()}
         </span>
 
-        <span className="font-mono typo-code text-foreground truncate flex-1">
+        <span className="typo-code text-foreground truncate flex-1">
           {endpoint.path}
         </span>
 
@@ -66,7 +66,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
         <button
           onClick={(e) => { e.stopPropagation(); onTry(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
           Try
@@ -77,7 +77,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
           {endpoint.description && (
-            <p className="typo-body text-foreground leading-relaxed">
+            <p className="typo-body text-foreground">
               {endpoint.description}
             </p>
           )}
@@ -97,7 +97,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.parameters.length > 0 && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase tracking-wider text-cyan-400/70 font-semibold">
+              <span className="typo-heading uppercase text-cyan-400/70">
                 Parameters
               </span>
               <div className="space-y-0.5">
@@ -123,7 +123,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
 
           {endpoint.request_body && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase tracking-wider text-cyan-400/70 font-semibold">
+              <span className="typo-heading uppercase text-cyan-400/70">
                 {t.vault.shared.request_body}
               </span>
               <div className="typo-body text-foreground">
@@ -131,7 +131,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
                 {endpoint.request_body.required && ' · required'}
               </div>
               {endpoint.request_body.schema_json && (
-                <pre className="typo-code text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
+                <pre className="typo-code text-foreground bg-secondary/20 rounded p-2 overflow-x-auto max-h-[120px]">
                   {prettyJson(endpoint.request_body.schema_json)}
                 </pre>
               )}

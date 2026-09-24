@@ -89,7 +89,7 @@ function ModalContent({ config, busy, onClose, onConfirm }: {
           <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <h3 id="confirm-destructive-title" className="typo-heading font-semibold text-foreground/90">
+          <h3 id="confirm-destructive-title" className="typo-heading text-foreground/90">
             {config.title}
           </h3>
           <p className="typo-body text-foreground mt-1">{config.message}</p>
@@ -156,7 +156,7 @@ function ModalContent({ config, busy, onClose, onConfirm }: {
           disabled={!typingMatches || busy}
           loading={busy}
           aria-busy={busy}
-          className="px-4 py-2 typo-body font-medium rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+          className="px-4 py-2 typo-body rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
         >
           {confirmLabel}
         </Button>

@@ -66,7 +66,7 @@ export function RecipeOutputSection({
         {/* Left: Rendered Prompt */}
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
+            <h3 className="typo-heading text-foreground uppercase">
               {t.recipes.rendered_prompt}
             </h3>
             {result && (
@@ -95,7 +95,7 @@ export function RecipeOutputSection({
         {/* Right: Execution Result */}
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
+            <h3 className="typo-heading text-foreground uppercase">
               {t.recipes.execution_result}
             </h3>
             {llmOutput && (

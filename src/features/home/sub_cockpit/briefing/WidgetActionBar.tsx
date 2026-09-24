@@ -117,7 +117,7 @@ function ActionButton({ action }: { action: CockpitWidgetAction }) {
         onClick={onClick}
         disabled={state === 'busy' || state === 'done'}
         title={label}
-        className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring border disabled:opacity-60 ${
+        className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring border disabled:opacity-60 ${
           state === 'done'
             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             : state === 'failed'

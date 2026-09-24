@@ -173,7 +173,7 @@ export default function MemoriesPageGraph() {
                   type="button"
                   key={cat}
                   onClick={() => { setActiveCategory(cat); setSelected(null); }}
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body font-medium transition-all border ${
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body transition-all border ${
                     active
                       ? `${colors.bg} ${colors.text} border-current/30`
                       : 'text-foreground hover:text-foreground hover:bg-secondary/30 border-transparent'
@@ -526,7 +526,7 @@ function DetailPanel({
             <Brain className={`h-3.5 w-3.5 ${colors?.text ?? 'text-foreground'}`} />
           </div>
           <div className="min-w-0">
-            <p className="typo-body font-semibold text-foreground leading-tight line-clamp-2">{stripHtml(memory.title)}</p>
+            <p className="typo-body text-foreground line-clamp-2">{stripHtml(memory.title)}</p>
             <p className="typo-caption text-foreground mt-0.5">{personaName}</p>
           </div>
         </div>
@@ -561,14 +561,14 @@ function DetailStat({ label, value, tone = 'text-foreground' }: { label: string;
   return (
     <div className="rounded-input bg-secondary/40 px-2 py-1.5 text-center border border-primary/10">
       <p className="typo-label text-foreground">{label}</p>
-      <p className={`typo-data font-semibold tabular-nums ${tone}`}>{value}</p>
+      <p className={`typo-data ${tone}`}>{value}</p>
     </div>
   );
 }
 
 function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 typo-body font-medium transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
+    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 typo-body transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
       {children}
     </button>
   );
@@ -577,7 +577,7 @@ function FilterPill({ active, onClick, children }: { active: boolean; onClick: (
 function KpiMetric({ label, value, tone = 'text-foreground' }: { label: string; value: string | number; tone?: string }) {
   return (
     <span className="typo-body text-foreground whitespace-nowrap">
-      {label} <span className={`${tone} font-bold tabular-nums typo-data`}>{value}</span>
+      {label} <span className={`${tone} typo-data`}>{value}</span>
     </span>
   );
 }

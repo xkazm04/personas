@@ -50,7 +50,7 @@ export function ReviewExpandedDetail({
       {/* 1. Summary Card */}
       {designResult.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
-          <p className="typo-body text-foreground/90 leading-relaxed">{designResult.summary}</p>
+          <p className="typo-body text-foreground/90">{designResult.summary}</p>
         </div>
       )}
 
@@ -74,7 +74,7 @@ export function ReviewExpandedDetail({
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="typo-body font-medium text-foreground group-hover:text-foreground/95 truncate">
+                  <span className="typo-body text-foreground group-hover:text-foreground/95 truncate">
                     {flow.name}
                   </span>
                 </div>
@@ -97,7 +97,7 @@ export function ReviewExpandedDetail({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-amber-400/80" />
-              <h4 className="typo-body font-medium text-amber-400/80 uppercase">
+              <h4 className="typo-body text-amber-400/80 uppercase">
                 {t.templates.overview_tab.suggested_adjustment}
                 {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                   <span className="ml-1.5 text-foreground normal-case">

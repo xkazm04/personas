@@ -80,7 +80,7 @@ export function ComponentFilterDropdown({
         <Layers className="w-3.5 h-3.5" />
         {t.templates.search.components_label}
         {componentFilter.length > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 typo-body font-medium">
+          <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 typo-body">
             {componentFilter.length}
           </span>
         )}
@@ -123,7 +123,7 @@ export function ComponentFilterDropdown({
                     <CatIcon className="w-4 h-4" style={{ color: cat.color }} />
                   </div>
                   <span className="typo-body text-foreground/90 flex-1">{highlightMatch(cat.label, debouncedSearch.trim())}</span>
-                  <span className="typo-data text-foreground tabular-nums px-1.5 py-0.5 rounded-full bg-secondary/60">
+                  <span className="typo-data text-foreground px-1.5 py-0.5 rounded-full bg-secondary/60">
                     {item.count}
                   </span>
                   <div

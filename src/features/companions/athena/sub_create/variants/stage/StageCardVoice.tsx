@@ -86,7 +86,7 @@ export function StageCardVoice({ card, actions }: { card: VoiceCard; actions: Cr
 
   return (
     <div className="space-y-3">
-      <h3 className="typo-title text-foreground">{c.create_step_voice_pick}</h3>
+      <h3 className="typo-title">{c.create_step_voice_pick}</h3>
       {card.loading && card.voices.length === 0 ? (
         <GhostTiles />
       ) : card.voices.length === 0 ? (

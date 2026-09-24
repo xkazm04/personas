@@ -79,7 +79,7 @@ export const TalkBubble = memo(function TalkBubble({ item, onOpen }: { item: Tea
                 const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director' | 'slack'];
                 return <M.Icon className={`w-3 h-3 ${M.iconColor}`} />;
               })()}
-            <span className="typo-caption font-medium" style={{ color: accent }}>
+            <span className="typo-caption" style={{ color: accent }}>
               {authorName(item, persona)}
             </span>
             <span className="typo-caption text-foreground opacity-35">
@@ -139,7 +139,7 @@ export const AssignmentCard = memo(function AssignmentCard({
       <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-status-info/[0.1] transition-colors">
         <Wand2 className="w-4 h-4 flex-shrink-0 text-status-info" />
         <span className="min-w-0 flex-1">
-          <span className="block typo-body font-medium text-foreground truncate">{title}</span>
+          <span className="block typo-body text-foreground truncate">{title}</span>
           <span className="flex items-center gap-2 mt-0.5">
             <span className={`typo-caption ${meta.tone}`}>{meta.label}</span>
             <span className="typo-caption text-foreground opacity-40 tabular-nums">
@@ -248,7 +248,7 @@ export const DeliberationCard = memo(function DeliberationCard({
       <button type="button" onClick={() => onToggle(rowKey)} className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-violet-400/[0.09] transition-colors">
         <Scale className="w-4 h-4 flex-shrink-0 text-violet-300" />
         <span className="min-w-0 flex-1">
-          <span className="block typo-body font-medium text-foreground truncate">{topic}</span>
+          <span className="block typo-body text-foreground truncate">{topic}</span>
           <span className="flex items-center gap-2 mt-0.5">
             <span className={`typo-caption ${DELIB_STATUS[status] ?? ''}`}>{status}</span>
             <span className="typo-caption text-foreground opacity-40 tabular-nums">round {round}</span>
@@ -282,7 +282,7 @@ export const DeliberationCard = memo(function DeliberationCard({
                 const persona = turn.personaId ? personaIndex.get(turn.personaId) : undefined;
                 return (
                   <div key={turn.id}>
-                    <span className="typo-caption font-medium" style={{ color: memberColor(persona, turn.personaId) }}>
+                    <span className="typo-caption" style={{ color: memberColor(persona, turn.personaId) }}>
                       {persona?.name.replace(/^T:\s*/, '') ?? turn.label}
                     </span>
                     <p className="typo-caption text-foreground opacity-85 whitespace-pre-wrap">{turn.body}</p>
@@ -313,7 +313,7 @@ export function ProposalCard({
       <div className="px-3 py-2 flex items-center gap-2">
         <Wand2 className="w-4 h-4 flex-shrink-0 text-status-info" />
         <span className="min-w-0 flex-1">
-          <span className="block typo-body font-medium text-foreground truncate">{proposal.goal}</span>
+          <span className="block typo-body text-foreground truncate">{proposal.goal}</span>
           <span className="typo-caption text-foreground opacity-50">
             {proposal.status === 'launched'
               ? t.monitor.conv_proposal_running

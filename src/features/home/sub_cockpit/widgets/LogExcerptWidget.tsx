@@ -52,7 +52,7 @@ export function LogExcerptWidget({ config, title }: CockpitWidgetProps) {
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="flex-1 min-h-0 overflow-auto rounded-input border border-foreground/10 bg-background/60"
         >
-          <pre className="typo-code text-[11px] leading-relaxed py-1.5">
+          <pre className="typo-code text-[11px] py-1.5">
             {lines.map((line, i) => {
               const highlighted = highlights.has(i + 1);
               return (
@@ -77,7 +77,7 @@ export function LogExcerptWidget({ config, title }: CockpitWidgetProps) {
       {caption && (
         <div className="mt-2.5 flex items-start gap-2">
           <Lightbulb className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" aria-hidden />
-          <span className="typo-caption leading-relaxed">{caption}</span>
+          <span className="typo-caption">{caption}</span>
         </div>
       )}
     </div>

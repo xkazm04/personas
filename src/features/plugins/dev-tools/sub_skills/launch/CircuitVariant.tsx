@@ -54,7 +54,7 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
       <div className="flex-1 min-w-0 overflow-y-auto">
         {!selected && (
           <div className="rounded-card border border-primary/10 bg-secondary/15 px-5 py-8 text-center">
-            <p className="typo-title text-foreground">{d.launch_pick_skill_title}</p>
+            <p className="typo-title">{d.launch_pick_skill_title}</p>
             <p className="typo-caption text-foreground/85 mt-1">{d.launch_pick_skill_hint}</p>
           </div>
         )}
@@ -68,7 +68,7 @@ export default function CircuitVariant({ data }: { data: SkillLaunchData }) {
               <div className="rounded-card border border-primary/25 bg-secondary/25 px-5 py-4 shadow-elevation-1">
                 <div className="flex items-center gap-2 min-w-0">
                   <Cpu className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-                  <span className="typo-title text-foreground truncate">{selected}</span>
+                  <span className="typo-title truncate">{selected}</span>
                   {/* muted-ok: structural micro-label (version/category chip beside the title) */}
                   <span className="typo-label text-foreground/45 flex-shrink-0 ml-auto">
                     {tx(d.launch_skill_meta, {

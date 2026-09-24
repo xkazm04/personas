@@ -106,7 +106,7 @@ export function GlyphStageSurface(props: GlyphFullLayoutProps) {
       {glyphRows.length > 0 && (
         <div className="min-h-[1.75rem] flex items-center justify-center">
           <span
-            className="typo-heading-lg font-semibold text-center text-foreground"
+            className="typo-heading-lg text-center text-foreground"
             key={
               hoveredRowIndex !== null && hoveredRowIndex !== activeRowIndex
                 ? `${glyphRows[hoveredRowIndex]?.id}-preview`

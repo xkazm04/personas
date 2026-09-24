@@ -82,8 +82,8 @@ export const MARKDOWN_DEFAULT_DENSITY: MarkdownDensity = {
   // tightly. Bottom margin stays moderate so the heading still hugs its body.
   h1: 'typo-heading-lg text-primary mb-3 mt-10 first:mt-0 pb-1.5 border-b border-primary/20',
   h2: 'text-[15px] font-semibold text-primary/90 mb-2.5 mt-8 first:mt-0',
-  h3: 'typo-heading text-accent mb-2 mt-6 first:mt-0 tracking-wide',
-  p: 'typo-body text-foreground mb-3 leading-relaxed',
+  h3: 'typo-heading text-accent mb-2 mt-6 first:mt-0',
+  p: 'typo-body text-foreground mb-3',
   ul: 'list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground',
   ol: 'list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground',
   li: 'text-foreground',
@@ -139,7 +139,7 @@ export const MARKDOWN_DOCUMENT_DENSITY: MarkdownDensity = {
   // puts the floor at ~85% and a heading in a reading surface is not the place
   // to sit under it. The difference is imperceptible; the rule is not.
   h3: 'typo-label text-foreground/85 mb-1.5 mt-5 first:mt-0',
-  p: 'typo-body text-foreground mb-4 last:mb-0 leading-relaxed',
+  p: 'typo-body text-foreground mb-4 last:mb-0',
   ul: 'list-disc pl-5 space-y-1.5 my-4 typo-body text-foreground',
   ol: 'list-decimal pl-5 space-y-1.5 my-4 typo-body text-foreground',
   li: 'text-foreground mb-1.5',
@@ -166,7 +166,7 @@ export const MARKDOWN_CARD_DENSITY: MarkdownDensity = {
   h1: 'typo-heading text-foreground mb-1 mt-3 first:mt-0',
   h2: 'typo-heading text-foreground mb-1 mt-3 first:mt-0',
   h3: 'typo-label text-foreground/85 mb-1 mt-2 first:mt-0',
-  p: 'typo-body text-foreground mb-2 last:mb-0 leading-relaxed',
+  p: 'typo-body text-foreground mb-2 last:mb-0',
   ul: 'list-disc pl-5 space-y-1 my-2 typo-body text-foreground',
   ol: 'list-decimal pl-5 space-y-1 my-2 typo-body text-foreground',
   pre: 'my-2',

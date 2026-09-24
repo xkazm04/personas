@@ -27,7 +27,7 @@ export function TableChrome({ title, session, voice, view, onView, onClose }: Ta
   return (
     <div className="flex-shrink-0 flex items-center gap-3 px-4 md:px-6 py-3 border-b border-primary/15">
       <div className="flex-1 min-w-0">
-        <h1 id="twin-experience-title" className="typo-section-title text-foreground truncate">
+        <h1 id="twin-experience-title" className="typo-section-title truncate">
           {title}
         </h1>
         <p className="typo-caption text-primary truncate">{xg.forge.hint}</p>

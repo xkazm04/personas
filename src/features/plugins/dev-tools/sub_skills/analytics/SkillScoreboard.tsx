@@ -127,7 +127,7 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
   return (
     <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="skill-scoreboard">
       <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
-        <span className="typo-body font-semibold text-foreground">{d.skills_scoreboard_title}</span>
+        <span className="typo-body text-foreground">{d.skills_scoreboard_title}</span>
         {top && top.invokes30d > 0 && (
           <span className="ml-auto inline-flex items-center gap-1 typo-label text-foreground/50">
             <Trophy className="w-3 h-3 text-status-warning" aria-hidden />
@@ -161,7 +161,7 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
                       <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
                     </span>
                   )}
-                  <button type="button" onClick={() => onOpenInfo(row.name)} className="typo-caption font-medium text-foreground truncate text-left hover:text-primary transition-colors" data-testid={`skill-scoreboard-name-${row.name}`}>{row.name}</button>
+                  <button type="button" onClick={() => onOpenInfo(row.name)} className="typo-caption text-foreground truncate text-left hover:text-primary transition-colors" data-testid={`skill-scoreboard-name-${row.name}`}>{row.name}</button>
                 </span>
                 <span className="typo-caption text-foreground/70 tabular-nums text-right">{row.invokes30d || '—'}</span>
                 <span className="typo-caption text-foreground/70 tabular-nums text-right">

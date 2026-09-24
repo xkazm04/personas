@@ -56,7 +56,7 @@ export interface InlineEditableTextProps {
   parentGroup?: boolean;
 }
 
-const SHARED_TYPO = 'typo-body font-medium';
+const SHARED_TYPO = 'typo-body';
 
 export function InlineEditableText({
   value,

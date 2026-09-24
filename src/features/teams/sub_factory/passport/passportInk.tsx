@@ -148,7 +148,7 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label, icon:
           <Icon className="w-5 h-5" aria-hidden />
         </span>
       ) : (
-        <span className="typo-body-lg uppercase tracking-[0.08em] font-medium text-foreground/40">{label}</span>
+        <span className="typo-body-lg uppercase tracking-[0.08em] text-foreground/40">{label}</span>
       )}
       {tabs.map((t) => {
         const on = t.id === active;
@@ -160,7 +160,7 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label, icon:
             aria-selected={on}
             onClick={() => onChange(t.id)}
             className={`typo-body-lg uppercase tracking-[0.06em] pb-0.5 border-b transition-colors focus-ring ${
-              on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/75 border-transparent'
+              on ? 'text-foreground' : 'text-foreground/45 hover:text-foreground/75 border-transparent'
             }`}
             style={on ? { borderColor: INK.teal } : undefined}
           >

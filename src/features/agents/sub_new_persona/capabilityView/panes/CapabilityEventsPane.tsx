@@ -34,7 +34,7 @@ export function CapabilityEventsPane({ capability }: Props) {
                 key={`${ev.event_type}-${i}`}
                 className="flex items-center gap-2 rounded-card bg-secondary/25 px-2 py-1.5"
               >
-                <span className="typo-caption font-medium uppercase text-foreground">
+                <span className="typo-caption uppercase text-foreground">
                   {ev.direction}
                 </span>
                 <span className="typo-body-sm text-foreground truncate">
@@ -69,7 +69,7 @@ export function CapabilityEventsPane({ capability }: Props) {
                 key={`${ch.channel}-${i}`}
                 className="flex items-center gap-2 rounded-card bg-secondary/25 px-2 py-1.5"
               >
-                <span className="typo-caption font-medium uppercase text-foreground">
+                <span className="typo-caption uppercase text-foreground">
                   {ch.channel}
                 </span>
                 <span className="typo-body-sm text-foreground truncate">

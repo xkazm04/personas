@@ -218,7 +218,7 @@ export function KPIConnectWizard({
                     className="w-full text-left rounded-card border border-primary/15 bg-secondary/20 hover:bg-secondary/40 px-3 py-2 transition-colors focus-ring"
                     data-testid={`kpi-metric-type-${mt.id}`}
                   >
-                    <span className="typo-body text-foreground font-medium">{mt.label}</span>
+                    <span className="typo-body text-foreground">{mt.label}</span>
                     <span className="typo-caption text-foreground block opacity-80">{mt.contract}</span>
                   </button>
                 ))}
@@ -244,7 +244,7 @@ export function KPIConnectWizard({
                       data-testid={`kpi-wizard-cred-${c.credential_id}`}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="typo-body text-foreground font-medium block truncate">
+                        <span className="typo-body text-foreground block truncate">
                           {c.name}
                         </span>
                         <span className="typo-caption text-foreground opacity-80">
@@ -289,7 +289,7 @@ export function KPIConnectWizard({
             <>
               <Section title={t.kpis.wizard_verify_section}>
                 <div className="rounded-card border border-status-success/25 bg-status-success/10 px-4 py-3 flex items-baseline gap-2">
-                  <span className="typo-title text-foreground tabular-nums">
+                  <span className="typo-title tabular-nums">
                     <Numeric value={result.value} />
                   </span>
                   <span className="typo-body text-foreground">{kpi.unit || metricType?.unit || ''}</span>

@@ -87,7 +87,7 @@ export function StaticScanConfigModal({
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          <p className="typo-caption text-foreground/70 leading-relaxed">{ds.static_config_intro}</p>
+          <p className="typo-caption text-foreground/70">{ds.static_config_intro}</p>
 
           <div className="space-y-1.5">
             <label className="typo-label text-foreground/55 block">{ds.static_config_tool_label}</label>

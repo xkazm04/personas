@@ -45,7 +45,7 @@ export function Keycap({ children, large = false }: { children: ReactNode; large
   return (
     <span
       aria-hidden
-      className={`inline-flex items-center justify-center min-w-5 px-1 rounded-input border border-primary/20 bg-secondary/50 text-foreground/85 leading-none ${
+      className={`inline-flex items-center justify-center min-w-5 px-1 rounded-input border border-primary/20 bg-secondary/50 text-foreground/85 ${
         large ? 'h-6 typo-label' : 'h-5 typo-label'
       }`}
     >

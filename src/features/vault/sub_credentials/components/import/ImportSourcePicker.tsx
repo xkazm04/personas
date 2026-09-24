@@ -32,7 +32,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="typo-body font-medium text-foreground">{t.vault.credential_import.import_from_vault}</h3>
+          <h3 className="typo-body text-foreground">{t.vault.credential_import.import_from_vault}</h3>
           <p className="typo-body text-foreground">{t.vault.credential_import.import_subtitle}</p>
         </div>
       </div>
@@ -54,10 +54,10 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                 <Icon className="w-4.5 h-4.5" style={{ color: source.color }} />
               </div>
               <div className="min-w-0">
-                <p className="typo-body font-medium text-foreground group-hover:text-primary transition-colors">
+                <p className="typo-body text-foreground group-hover:text-primary transition-colors">
                   {source.label}
                 </p>
-                <p className="typo-body text-foreground leading-snug">{source.description}</p>
+                <p className="typo-body text-foreground">{source.description}</p>
                 {source.syncSupported && (
                   <StatusBadge accent="cyan" size="sm" className="mt-1">
                     {vi.sync_supported}

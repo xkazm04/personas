@@ -52,7 +52,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
           <Type className="w-3.5 h-3.5 text-violet-400" />
         </div>
-        <h2 id="ingest-text-title" className="typo-heading font-semibold text-foreground/90 flex-1">{sh.paste_text}</h2>
+        <h2 id="ingest-text-title" className="typo-heading text-foreground/90 flex-1">{sh.paste_text}</h2>
         <button
           type="button"
           onClick={onClose}
@@ -66,7 +66,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       {/* Body */}
       <div className="p-5 space-y-4">
         <div>
-          <label className="typo-caption font-medium text-foreground mb-1.5 block">{sh.title_label}</label>
+          <label className="typo-caption text-foreground mb-1.5 block">{sh.title_label}</label>
           <input
             type="text"
             value={title}
@@ -78,7 +78,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         </div>
 
         <div>
-          <label className="typo-caption font-medium text-foreground mb-1.5 block">
+          <label className="typo-caption text-foreground mb-1.5 block">
             {sh.content_label}
             {/* The unit belongs to the translated string — a bare ' chars'
                 suffix rendered English in all 14 locales. */}
@@ -91,7 +91,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
             onChange={(e) => setText(e.target.value)}
             placeholder={sh.content_placeholder}
             rows={12}
-            className="w-full px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none font-mono"
+            className="w-full px-3 py-2 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors resize-none"
           />
         </div>
 

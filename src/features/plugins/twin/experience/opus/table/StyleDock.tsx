@@ -39,7 +39,7 @@ export function StyleDock({ phase, styleName, onOpen }: StyleDockProps) {
       className={`xo-card xo-foil xo-suit-tone rounded-card p-3 space-y-2 ${waiting ? 'xo-foil-live xo-glow' : ''}`}
       data-testid="xo-style-dock"
     >
-      <p className="flex items-center gap-2 typo-title text-foreground">
+      <p className="flex items-center gap-2 typo-title">
         <Palette className="w-4 h-4 text-[var(--xo-hue)]" aria-hidden />
         {xo.title}
       </p>

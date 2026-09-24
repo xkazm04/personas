@@ -62,8 +62,8 @@ export function RemoteSessionDrawer({ jobId, onClose }: { jobId: string; onClose
     >
       <div className="flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-primary/10 bg-secondary/20 px-5">
         <div className="min-w-0">
-          <h3 className="truncate typo-heading leading-tight text-foreground">{title}</h3>
-          <p className="flex min-w-0 items-center gap-2 typo-caption leading-tight text-foreground">
+          <h3 className="truncate typo-heading text-foreground">{title}</h3>
+          <p className="flex min-w-0 items-center gap-2 typo-caption text-foreground">
             <Badge variant="sky" size="xs" className="flex-shrink-0">
               <Laptop className="h-2.5 w-2.5" aria-hidden />
               {device}

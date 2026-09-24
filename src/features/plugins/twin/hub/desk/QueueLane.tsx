@@ -121,7 +121,7 @@ export function QueueLane({ feed }: HubDeskProps) {
             >
               <QueueEntryHeader entry={current} />
               <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-4">
-                <p className="typo-body-lg text-foreground whitespace-pre-wrap leading-relaxed max-w-3xl">
+                <p className="typo-body-lg text-foreground whitespace-pre-wrap max-w-3xl">
                   {current.body}
                 </p>
               </div>

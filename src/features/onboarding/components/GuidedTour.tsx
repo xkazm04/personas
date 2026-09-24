@@ -295,7 +295,7 @@ export default function GuidedTour() {
               <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />
               </div>
-              <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+              <h3 className="typo-heading text-foreground/90">{tourDef.title}</h3>
             </div>
             <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} aria-label={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
               <X className="w-3.5 h-3.5" />
@@ -313,7 +313,7 @@ export default function GuidedTour() {
               <div className={`w-full rounded-modal ${colors.subtle} border ${colors.accent} p-3 text-left`}>
                 <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_up_next}</span>
                 <p className={`typo-heading ${colors.text} mt-1`}>{nextTour.title}</p>
-                <p className="typo-body text-foreground leading-relaxed mt-0.5">{nextTour.description}</p>
+                <p className="typo-body text-foreground mt-0.5">{nextTour.description}</p>
               </div>
             )}
             {otherTours.length > 0 && (
@@ -375,7 +375,7 @@ export default function GuidedTour() {
                 <Sparkles className={`w-4 h-4 ${colors.text}`} />
               </div>
               <div>
-                <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+                <h3 className="typo-heading text-foreground/90">{tourDef.title}</h3>
                 <p className="typo-caption text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
               </div>
             </div>
@@ -482,7 +482,7 @@ export default function GuidedTour() {
               </div>
               <div className="min-w-0">
                 <Tooltip content={tourDef.title} placement="right">
-                  <h3 className="typo-heading text-foreground/90 leading-tight truncate">{tourDef.title}</h3>
+                  <h3 className="typo-heading text-foreground/90 truncate">{tourDef.title}</h3>
                 </Tooltip>
                 <p className="typo-caption text-foreground truncate">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
               </div>

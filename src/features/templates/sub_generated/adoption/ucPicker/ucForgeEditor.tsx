@@ -68,7 +68,7 @@ export function ForgeEditor({
       <div className="grid grid-cols-[1fr_auto_1.5fr] items-stretch gap-0 mt-4">
         <div className="flex flex-col gap-3 rounded-modal ring-1 ring-border/80 bg-foreground/[0.03] p-4">
           <ZoneHeader icon={Sparkles} label="Runs" accent="primary" />
-          <p className="typo-body text-foreground leading-snug">{subtitle}</p>
+          <p className="typo-body text-foreground">{subtitle}</p>
         </div>
 
         <PipelineArrow firing={firing} />
@@ -103,7 +103,7 @@ export function ForgeEditor({
                     <StampGlyph kind={classifyEvent(ev.event_type)} size={14} />
                   </div>
                   <span
-                    className={`flex-1 min-w-0 typo-body font-medium truncate ${
+                    className={`flex-1 min-w-0 typo-body truncate ${
                       subscribed ? 'text-foreground' : 'text-foreground'
                     }`}
                   >
@@ -156,12 +156,12 @@ function ZoneHeader({
       ? 'bg-primary/20 text-primary ring-primary/30'
       : 'bg-status-warning/20 text-status-warning ring-status-warning/30';
   return (
-    <div className={`typo-body uppercase tracking-wider flex items-center gap-2 font-semibold ${textColor}`}>
+    <div className={`typo-body uppercase tracking-wider flex items-center gap-2 ${textColor}`}>
       <Icon className="w-5 h-5" />
       {label}
       {typeof count === 'number' && (
         <span
-          className={`ml-auto inline-flex items-center justify-center min-w-6 h-6 rounded-full px-2 typo-body font-bold ring-1 ${badgeClasses}`}
+          className={`ml-auto inline-flex items-center justify-center min-w-6 h-6 rounded-full px-2 typo-body ring-1 ${badgeClasses}`}
         >
           {count}
         </span>

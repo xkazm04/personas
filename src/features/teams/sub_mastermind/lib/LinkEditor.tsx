@@ -25,7 +25,7 @@ export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
       onClick={() => onChange({ dashed })}
       aria-pressed={link.dashed === dashed}
       className={`px-2 py-1 typo-caption rounded-interactive transition-colors focus-ring ${
-        link.dashed === dashed ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/60 hover:text-foreground hover:bg-primary/5'
+        link.dashed === dashed ? 'bg-primary/15 text-foreground' : 'text-foreground/60 hover:text-foreground hover:bg-primary/5'
       }`}
     >
       <span className="inline-flex items-center gap-1.5">

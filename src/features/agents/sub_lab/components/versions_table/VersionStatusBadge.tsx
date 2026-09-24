@@ -27,7 +27,7 @@ export function VersionStatusBadge({ row }: { row: VersionRow }) {
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption ${cls}`}>
       {row.isActive && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-pulse" />}
       {label}
     </span>

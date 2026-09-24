@@ -39,7 +39,7 @@ export function ComposerConnectorCard({ connector, selected, onToggle }: Compose
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="typo-body text-foreground font-medium truncate">{meta.label}</div>
+        <div className="typo-body text-foreground truncate">{meta.label}</div>
         <div className="typo-caption text-foreground truncate">
           {humanizeCategory(connector.category)}
         </div>

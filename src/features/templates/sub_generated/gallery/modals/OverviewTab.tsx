@@ -29,7 +29,7 @@ export function OverviewTab({
       {/* Summary */}
       {designResult?.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-modal px-4 py-3">
-          <p className="typo-body text-foreground/90 leading-relaxed">{designResult.summary}</p>
+          <p className="typo-body text-foreground/90">{designResult.summary}</p>
         </div>
       )}
 
@@ -64,7 +64,7 @@ export function OverviewTab({
       )}
       {!perfLoading && !perfError && performance && performance.data_available && (
         <div>
-          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.performance}
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -73,28 +73,28 @@ export function OverviewTab({
                 <Users className="w-3.5 h-3.5 text-violet-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.adoptions_label}</span>
               </div>
-              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{performance.total_adoptions}</span>
+              <span className="typo-heading-lg text-foreground/90 font-mono">{performance.total_adoptions}</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Activity className="w-3.5 h-3.5 text-blue-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.executions_label}</span>
               </div>
-              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{performance.total_executions}</span>
+              <span className="typo-heading-lg text-foreground/90 font-mono">{performance.total_executions}</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.success_label}</span>
               </div>
-              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
+              <span className="typo-heading-lg text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
             </div>
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
-              <Numeric value={performance.avg_cost_usd} unit="usd" className="typo-heading-lg font-semibold text-foreground/90 font-mono" />
+              <Numeric value={performance.avg_cost_usd} unit="usd" className="typo-heading-lg text-foreground/90 font-mono" />
             </div>
           </div>
           {/* Feedback summary */}
@@ -125,7 +125,7 @@ export function OverviewTab({
       {/* Use Case Flows */}
       {flows.length > 0 && (
         <div>
-          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.use_case_flows}
           </h4>
           <div className="flex items-center gap-3 flex-wrap">
@@ -138,7 +138,7 @@ export function OverviewTab({
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <Workflow className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors" />
-                  <span className="typo-body font-medium text-foreground group-hover:text-foreground/95 truncate">
+                  <span className="typo-body text-foreground group-hover:text-foreground/95 truncate">
                     {flow.name}
                   </span>
                 </div>
@@ -157,7 +157,7 @@ export function OverviewTab({
         <div className="bg-amber-500/5 border border-amber-500/15 rounded-modal px-4 py-3 space-y-2">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-400/80" />
-            <h4 className="typo-body font-medium text-amber-400/80 uppercase">
+            <h4 className="typo-body text-amber-400/80 uppercase">
               {t.templates.overview_tab.suggested_adjustment}
               {review.adjustment_generation != null && review.adjustment_generation > 0 && (
                 <span className="ml-1.5 text-foreground normal-case">
@@ -188,7 +188,7 @@ export function OverviewTab({
       {/* Dimension completion */}
       {review.structural_score !== null && (
         <div>
-          <h4 className="typo-body font-medium text-foreground uppercase tracking-wide mb-2">
+          <h4 className="typo-body text-foreground uppercase tracking-wide mb-2">
             {t.templates.overview_tab.dimension_completion}
           </h4>
           <div className="flex items-center gap-3">
@@ -200,7 +200,7 @@ export function OverviewTab({
                 style={{ width: `${Math.min(review.structural_score, 100)}%` }}
               />
             </div>
-            <span className={`typo-code font-mono font-semibold ${
+            <span className={`typo-code ${
               review.structural_score >= 80 ? 'text-emerald-400' : review.structural_score >= 60 ? 'text-amber-400' : 'text-red-400'
             }`}>
               {review.structural_score}%

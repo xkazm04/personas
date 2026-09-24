@@ -162,7 +162,7 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
                 </span>
               ) : null}
             </div>
-            <span className="typo-caption font-medium text-foreground/90 text-center leading-tight line-clamp-2">
+            <span className="typo-caption text-foreground/90 text-center line-clamp-2">
               {uc.title}
             </span>
             <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-foreground/55' : 'text-foreground/35'}`}>

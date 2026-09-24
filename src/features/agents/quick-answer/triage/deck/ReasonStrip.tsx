@@ -101,7 +101,7 @@ export function ReasonStrip({
           onClick={() => onResolve()}
           aria-label={prompt.skipLabel}
           title={prompt.skipLabel}
-          className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-3 py-2 typo-body font-medium transition-colors ${TONE_CHIP.danger} ${TONE_HOVER.danger}`}
+          className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-3 py-2 typo-body transition-colors ${TONE_CHIP.danger} ${TONE_HOVER.danger}`}
         >
           <MessageSquareOff className="h-4 w-4 shrink-0" aria-hidden />
           {prompt.skipLabel}

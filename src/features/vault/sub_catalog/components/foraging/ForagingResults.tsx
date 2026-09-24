@@ -49,7 +49,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
       {/* Summary bar */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
-          <span className="typo-body font-medium text-foreground">
+          <span className="typo-body text-foreground">
             {tx(credCount !== 1 ? fg.credentials_found_other : fg.credentials_found_one, { count: credCount })}
           </span>
           {importableCount > 0 && (
@@ -103,7 +103,7 @@ export function ForagingResults({ forage, importableCount, onImport }: ForagingR
         >
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="typo-body font-medium text-amber-300/80">{fg.read_errors_title}</span>
+            <span className="typo-body text-amber-300/80">{fg.read_errors_title}</span>
           </div>
           <ul className="space-y-0.5 pl-5">
             {readErrors.map((token) => {

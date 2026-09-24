@@ -61,7 +61,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
         <div className="flex items-start gap-3 p-5 border-b border-foreground/10">
           <KindBadge kind={item.kind} />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium text-foreground truncate">{item.title}</div>
+            <div className="typo-body text-foreground truncate">{item.title}</div>
             <div className="typo-caption text-foreground flex items-center gap-2 mt-0.5">
               <span className="truncate">{item.personaName}</span>
               <span>·</span>
@@ -124,7 +124,7 @@ export function DecisionDrawer({ item, onClose }: DecisionDrawerProps) {
               type="button"
               onClick={() => void run('primary')}
               disabled={busy !== null}
-              className="px-4 py-1.5 rounded-input typo-caption font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="px-4 py-1.5 rounded-input typo-caption bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {busy === 'primary' ? 'Working…' : actionLabel(actions.primary.labelKey)}
             </button>

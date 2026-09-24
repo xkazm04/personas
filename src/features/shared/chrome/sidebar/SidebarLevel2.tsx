@@ -407,8 +407,8 @@ function SchedulesSidebarNav() {
           aria-current={selectedGroupId === null ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             selectedGroupId === null
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
@@ -430,8 +430,8 @@ function SchedulesSidebarNav() {
             aria-current={selectedGroupId === g.id ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               selectedGroupId === g.id
-                ? 'bg-primary/10 text-foreground font-semibold'
-                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+                ? 'bg-primary/10 text-foreground'
+                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
             }`}
           >
             <span

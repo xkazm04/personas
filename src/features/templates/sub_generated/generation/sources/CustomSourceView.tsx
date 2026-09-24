@@ -60,7 +60,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
             >
               {/* Row 1: number + name + delete */}
               <div className="flex items-center gap-2">
-                <span className="typo-code text-foreground w-5 text-right flex-shrink-0 font-mono">
+                <span className="typo-code text-foreground w-5 text-right flex-shrink-0">
                   {index + 1}.
                 </span>
                 <input

@@ -57,8 +57,8 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
               step finishes, no new steps) so it's an understood, deliberate action. */}
           {onAbort && stopConfirm && (
             <div className="space-y-2 border-t border-violet-500/20 pt-2.5">
-              <p className="typo-body text-foreground font-medium">{dl.goal_handoff_stop_confirm_q}</p>
-              <p className="typo-caption text-foreground leading-relaxed">{dl.goal_handoff_stop_explain}</p>
+              <p className="typo-body text-foreground">{dl.goal_handoff_stop_confirm_q}</p>
+              <p className="typo-caption text-foreground">{dl.goal_handoff_stop_explain}</p>
               <div className="flex items-center gap-2">
                 <Button variant="accent" accentColor="rose" size="sm" icon={<Ban className="w-3.5 h-3.5" />} disabled={aborting} onClick={onAbort}>
                   {aborting ? dl.goal_handoff_stopping : dl.goal_handoff_stop}
@@ -72,8 +72,8 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
         </div>
       ) : confirming ? (
         <div className="rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-3 space-y-2.5">
-          <p className="typo-body text-foreground font-medium">{dl.goal_handoff_confirm_q}</p>
-          <p className="typo-caption text-foreground leading-relaxed">{dl.goal_handoff_explain}</p>
+          <p className="typo-body text-foreground">{dl.goal_handoff_confirm_q}</p>
+          <p className="typo-caption text-foreground">{dl.goal_handoff_explain}</p>
           <div className="flex items-center gap-2">
             <Button
               variant="accent"
@@ -92,7 +92,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="typo-caption text-foreground leading-relaxed">{dl.goal_handoff_explain}</p>
+          <p className="typo-caption text-foreground">{dl.goal_handoff_explain}</p>
           <Button
             variant="accent"
             accentColor="violet"

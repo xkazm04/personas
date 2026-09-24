@@ -186,7 +186,7 @@ export default function GoalsPage() {
                 <IconGoals active className="w-full h-full" />
               </div>
             </div>
-            <h3 className="typo-section-title text-foreground">
+            <h3 className="typo-section-title">
               {t.plugins.dev_tools.goals_tab_no_goals}
             </h3>
             <p className="typo-body text-foreground mt-1 mb-5 max-w-md">

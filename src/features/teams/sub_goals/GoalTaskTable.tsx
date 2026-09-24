@@ -188,7 +188,7 @@ function StepRow({
       </div>
       {open && hasOutput && (
         <div className="border-t border-primary/10 bg-card/20 px-3 py-2 max-h-72 overflow-y-auto">
-          <MarkdownRenderer content={output} className="typo-caption leading-relaxed" />
+          <MarkdownRenderer content={output} className="typo-caption" />
         </div>
       )}
     </li>

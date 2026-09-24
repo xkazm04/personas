@@ -48,7 +48,7 @@ export function StageCardEnginePick({
               data-testid={`create-athena-engine-${opt.id}`}
             >
               <div className="flex items-center gap-2">
-                <span className="typo-title text-foreground">{copy[opt.id].title}</span>
+                <span className="typo-title">{copy[opt.id].title}</span>
                 {opt.id === card.recommended && (
                   <span className="inline-flex items-center px-1.5 py-px rounded-pill bg-primary/15 text-primary typo-caption">
                     {c.create_recommended}
@@ -191,7 +191,7 @@ export function StageCardInstall({
     case 'manual':
       return (
         <div className="space-y-3" data-testid="create-athena-install-manual">
-          <h3 className="typo-title text-foreground">{c.create_install_manual_title}</h3>
+          <h3 className="typo-title">{c.create_install_manual_title}</h3>
           <div className="flex flex-wrap items-center gap-2">
             <ManualLink href={state.engineDownloadUrl} label={c.create_install_engine_link} />
             <ManualLink href={state.modelDownloadUrl} label={c.create_install_model_link} />

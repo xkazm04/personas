@@ -129,7 +129,7 @@ export function PluginsSidebarNav() {
       return (
         <span
           data-testid="devtools-l2-waiting-badge"
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption border border-violet-500/40 animate-pulse"
           title={fleetWaitingCount === 1
             ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
             : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
@@ -147,7 +147,7 @@ export function PluginsSidebarNav() {
     if (plugin.devOnly) {
       return (
         <span
-          className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
+          className="px-1.5 py-0.5 rounded-full typo-caption text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
           aria-label={debtText("auto_in_development_f6146d71")}
         >
           Dev
@@ -163,7 +163,7 @@ export function PluginsSidebarNav() {
       return (
         <span
           data-testid="fleet-sidebar-waiting-badge"
-          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption border border-violet-500/40 animate-pulse"
           title={fleetWaitingCount === 1
             ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
             : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
@@ -174,7 +174,7 @@ export function PluginsSidebarNav() {
     }
     if (plugin === 'obsidian-brain' && id === 'sync' && pendingConflicts > 0) {
       return (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption font-medium border border-amber-500/30">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption border border-amber-500/30">
           {pendingConflicts}
         </span>
       );

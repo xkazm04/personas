@@ -98,7 +98,7 @@ export default function NowPlayingCard({
           <p className="typo-caption text-foreground uppercase tracking-wide">
             {t.radio.now_playing}
           </p>
-          <p className="typo-body font-medium text-foreground truncate">
+          <p className="typo-body text-foreground truncate">
             {nowPlaying.station.name}
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function NowPlayingCard({
           <div className="min-w-0 flex-1">
             {nowPlaying.track ? (
               <>
-                <p className="typo-body font-medium text-foreground truncate">
+                <p className="typo-body text-foreground truncate">
                   {nowPlaying.track.title}
                 </p>
                 <p className="typo-caption text-foreground truncate">
@@ -136,7 +136,7 @@ export default function NowPlayingCard({
               </>
             ) : streamMetadata ? (
               <>
-                <p className="typo-body font-medium text-foreground truncate">
+                <p className="typo-body text-foreground truncate">
                   {streamMetadata.title}
                 </p>
                 <p className="typo-caption text-foreground truncate">
@@ -144,7 +144,7 @@ export default function NowPlayingCard({
                 </p>
               </>
             ) : (
-              <p className="typo-body text-foreground leading-relaxed">
+              <p className="typo-body text-foreground">
                 {nowPlaying.station.description}
               </p>
             )}

@@ -114,7 +114,7 @@ export function CloudDeploymentsPanel({
 
         <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1.5">
-            <label htmlFor="deploy-persona-select" className="typo-body font-medium text-foreground">
+            <label htmlFor="deploy-persona-select" className="typo-body text-foreground">
               Persona
             </label>
             <select
@@ -139,7 +139,7 @@ export function CloudDeploymentsPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="deploy-budget-select" className="typo-body font-medium text-foreground">
+            <label htmlFor="deploy-budget-select" className="typo-body text-foreground">
               Budget
             </label>
             <select

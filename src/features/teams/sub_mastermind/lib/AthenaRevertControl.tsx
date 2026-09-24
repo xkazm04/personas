@@ -34,7 +34,7 @@ export function AthenaRevertControl({ count, onRevert }: {
         data-testid="mm-athena-revert"
       >
         <Sparkles className="w-3.5 h-3.5" aria-hidden />
-        <span className="typo-caption font-semibold tabular-nums">{count}</span>
+        <span className="typo-caption tabular-nums">{count}</span>
       </button>
       {confirming && (
         <ConfirmDialog

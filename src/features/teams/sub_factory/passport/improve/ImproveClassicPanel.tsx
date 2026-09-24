@@ -51,7 +51,7 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
       {ops.reason && (
         <div className="rounded-interactive border border-primary/10 bg-primary/[0.03] px-2 py-1.5">
           <span className="typo-caption text-foreground/45 block mb-0.5" style={{ fontWeight: 400 }}>Why this rating</span>
-          <span className="typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>{ops.reason}</span>
+          <span className="typo-caption text-foreground/60" style={{ fontWeight: 400 }}>{ops.reason}</span>
         </div>
       )}
       {ops.hasLadder && <LevelLadder rowKey={rowKey} passport={ops.passport} />}
@@ -63,8 +63,8 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
               ? <ScanSearch className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
               : <Rocket className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />}
             <div className="min-w-0">
-              <span className="typo-caption font-medium text-foreground block">{a.label}</span>
-              <span className="typo-caption text-foreground/55 block leading-snug" style={{ fontWeight: 400 }}>{a.hint}</span>
+              <span className="typo-caption text-foreground block">{a.label}</span>
+              <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{a.hint}</span>
             </div>
           </div>
 
@@ -117,7 +117,7 @@ function ActionButton({ label, onClick, busy, primary, title }: { label: string;
       onClick={onClick}
       disabled={busy}
       title={title}
-      className={`px-2.5 py-1 rounded-interactive typo-caption font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
         primary
           ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25'
           : 'text-foreground hover:bg-secondary/40 border border-primary/10'

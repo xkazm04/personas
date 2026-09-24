@@ -95,8 +95,8 @@ export function CoverBody({
   // and opacity instead of size.
   const cell = (value: React.ReactNode, label: string, title: string) => (
     <span className="flex flex-col items-center gap-1 min-w-0" title={title}>
-      <span className="typo-body-lg font-semibold tabular-nums leading-none">{value}</span>
-      <span className="typo-body-lg uppercase tracking-[0.06em] font-medium text-foreground/40 leading-none">{label}</span>
+      <span className="typo-body-lg tabular-nums">{value}</span>
+      <span className="typo-body-lg uppercase tracking-[0.06em] text-foreground/40">{label}</span>
     </span>
   );
 
@@ -111,11 +111,11 @@ export function CoverBody({
         )}
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
-            <span className="typo-body-lg font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
+            <span className="typo-body-lg tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
             <ArrowUpRight className="w-5 h-5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
           </button>
         ) : (
-          <span title={p.identity.purpose} className="typo-body-lg font-semibold tracking-tight truncate block">{p.identity.name}</span>
+          <span title={p.identity.purpose} className="typo-body-lg tracking-tight truncate block">{p.identity.name}</span>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
         <BlockersBadge blockers={blockers} clearLabel={COPY.clear} />

@@ -65,7 +65,7 @@ export function TimelineWidget({ config, title }: CockpitWidgetProps) {
                 className={`absolute -left-[21.5px] top-1.5 w-2.5 h-2.5 rounded-full ring-2 ${DOT[evt.intent ?? 'info']}`}
               />
               <div className="flex items-baseline justify-between gap-3">
-                <span className="typo-body font-medium text-foreground leading-snug min-w-0">
+                <span className="typo-body text-foreground min-w-0">
                   {evt.label}
                 </span>
                 {evt.timestamp && (
@@ -73,7 +73,7 @@ export function TimelineWidget({ config, title }: CockpitWidgetProps) {
                 )}
               </div>
               {evt.detail && (
-                <p className="typo-caption leading-relaxed mt-0.5">{evt.detail}</p>
+                <p className="typo-caption mt-0.5">{evt.detail}</p>
               )}
             </motion.li>
           ))}

@@ -131,9 +131,9 @@ export function ConversationSwitcher() {
         className="flex items-center gap-1.5 max-w-[210px] px-1.5 py-0.5 -mx-1 rounded-interactive hover:bg-foreground/5 transition-colors focus-ring"
       >
         <StatusDot status={activeStatus} />
-        <span className="typo-body font-medium leading-tight truncate">{activeTitle}</span>
+        <span className="typo-body truncate">{activeTitle}</span>
         {!!active && active.unreadCount > 0n && (
-          <span className="min-w-4 h-4 px-1 rounded-full bg-status-success/20 text-status-success typo-caption font-semibold inline-flex items-center justify-center tabular-nums">
+          <span className="min-w-4 h-4 px-1 rounded-full bg-status-success/20 text-status-success typo-caption inline-flex items-center justify-center tabular-nums">
             {active.unreadCount}
           </span>
         )}
@@ -192,7 +192,7 @@ export function ConversationSwitcher() {
                     <StatusDot status={status} />
                     <span className="flex-1 min-w-0 typo-body truncate">{c.title ?? '—'}</span>
                     {c.unreadCount > 0n && (
-                      <span className="min-w-4 h-4 px-1 rounded-full bg-status-success/20 text-status-success typo-caption font-semibold inline-flex items-center justify-center tabular-nums">
+                      <span className="min-w-4 h-4 px-1 rounded-full bg-status-success/20 text-status-success typo-caption inline-flex items-center justify-center tabular-nums">
                         {c.unreadCount}
                       </span>
                     )}
@@ -228,7 +228,7 @@ export function ConversationSwitcher() {
             type="button"
             onClick={createNew}
             data-testid="companion-conversation-new"
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring typo-body font-medium"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring typo-body"
           >
             <Plus className="w-4 h-4" aria-hidden />
             {t.athena.new_conversation}

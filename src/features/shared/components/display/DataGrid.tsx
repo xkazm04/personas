@@ -469,7 +469,7 @@ export function DataGrid<T>({
             style={{ bottom: effectivePageSize > 0 ? '52px' : '12px' }}
           >
             <div className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-modal border border-primary/20 bg-secondary/80 shadow-elevation-3 backdrop-blur-md">
-              <span className="typo-body text-foreground font-medium px-2">
+              <span className="typo-body text-foreground px-2">
                 {tx(t.shared.bulk_selected, { count: selectedCount })}
               </span>
               <div className="w-px h-5 bg-primary/15" />
@@ -568,7 +568,7 @@ export function DataGrid<T>({
                   onClick={() => setPage(p)}
                   className={`w-7 h-7 rounded-lg typo-code transition-colors ${
                     p === page
-                      ? 'bg-primary/10 text-foreground font-semibold border border-primary/20'
+                      ? 'bg-primary/10 text-foreground border border-primary/20'
                       : 'text-foreground hover:text-foreground hover:bg-secondary/40'
                   }`}
                 >

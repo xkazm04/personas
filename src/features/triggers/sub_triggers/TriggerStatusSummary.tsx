@@ -51,7 +51,7 @@ export function TriggerStatusSummary({ trigger }: TriggerStatusSummaryProps) {
           {catMeta.label}
         </span>
       )}
-      <span className={`typo-body font-medium ${colorClass}`}>
+      <span className={`typo-body ${colorClass}`}>
         {getTriggerTypeLabel(trigger.trigger_type, t)}
       </span>
       {parts.length > 0 && (

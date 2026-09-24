@@ -244,14 +244,14 @@ function TriageCardImpl({
               <motion.div
                 style={{ opacity: rejectStamp, rotate: -12 }}
                 aria-hidden
-                className="pointer-events-none absolute left-6 top-6 z-30 rounded-modal border-2 border-status-error px-4 py-2 typo-heading-lg font-bold uppercase text-status-error"
+                className="pointer-events-none absolute left-6 top-6 z-30 rounded-modal border-2 border-status-error px-4 py-2 typo-heading-lg uppercase text-status-error"
               >
                 {item.verdictLabels.reject}
               </motion.div>
               <motion.div
                 style={{ opacity: acceptStamp, rotate: 12 }}
                 aria-hidden
-                className="pointer-events-none absolute right-6 top-6 z-30 rounded-modal border-2 border-status-success px-4 py-2 typo-heading-lg font-bold uppercase text-status-success"
+                className="pointer-events-none absolute right-6 top-6 z-30 rounded-modal border-2 border-status-success px-4 py-2 typo-heading-lg uppercase text-status-success"
               >
                 {item.verdictLabels.accept}
               </motion.div>

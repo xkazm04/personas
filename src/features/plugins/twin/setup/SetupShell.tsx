@@ -98,7 +98,7 @@ export function SetupShell({ session, voice, onOpenHub }: SetupShellProps) {
       {/* Title row — always present. */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 md:px-6 xl:px-8 py-3 border-b border-primary/10">
         <div className="flex-1 min-w-0">
-          <h1 className="typo-section-title text-foreground truncate">{ts.title}</h1>
+          <h1 className="typo-section-title truncate">{ts.title}</h1>
           <p className="typo-caption truncate">{ts.subtitle}</p>
         </div>
         <div className="flex-shrink-0 w-[13.5rem] hidden md:block">

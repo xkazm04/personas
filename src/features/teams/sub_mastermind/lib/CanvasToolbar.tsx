@@ -45,7 +45,7 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
               data-testid={`mm-mode-${id}`}
               onClick={() => onModeChange(id)}
               aria-pressed={active}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption transition-colors focus-ring ${
                 active ? 'bg-primary/20 text-foreground' : 'text-foreground/65 hover:bg-primary/10 hover:text-foreground'
               }`}
             >

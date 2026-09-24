@@ -46,7 +46,7 @@ export function FactoryBreadcrumb({ root, onRoot, leaf }: {
         title="Switch project"
       >
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: leaf.hue, boxShadow: `0 0 5px ${leaf.hue}88` }} />
-        <span className="typo-caption font-semibold text-foreground truncate">{leaf.label}</span>
+        <span className="typo-caption text-foreground truncate">{leaf.label}</span>
         <ChevronsUpDown className="w-3 h-3 text-foreground/40 shrink-0" aria-hidden />
       </button>
       {menu && createPortal(
@@ -72,7 +72,7 @@ export function FactoryBreadcrumb({ root, onRoot, leaf }: {
                 className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-foreground/[0.05] ${current ? 'bg-foreground/[0.03]' : ''}`}
               >
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.hue, boxShadow: `0 0 4px ${s.hue}77` }} />
-                <span className={`typo-caption truncate ${current ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>{s.label}</span>
+                <span className={`typo-caption truncate ${current ? 'text-foreground' : 'text-foreground/80'}`}>{s.label}</span>
                 {s.note && <span className="typo-label text-foreground/40 ml-auto shrink-0">{s.note}</span>}
               </button>
             );

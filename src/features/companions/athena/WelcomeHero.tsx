@@ -62,7 +62,7 @@ export function WelcomeHero({
         <h2 className="typo-heading-sm font-semibold text-foreground">
           {c.welcome_title}
         </h2>
-        <p className="typo-body text-foreground leading-relaxed">
+        <p className="typo-body text-foreground">
           {c.welcome_subtitle}
         </p>
       </div>
@@ -75,7 +75,7 @@ export function WelcomeHero({
             disabled={disabled}
             onClick={() => onPick(s.message)}
             data-testid={`companion-welcome-starter-${s.key}`}
-            className="rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/35 text-primary px-3 py-1.5 typo-caption font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/35 text-primary px-3 py-1.5 typo-caption transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {s.label}
           </button>

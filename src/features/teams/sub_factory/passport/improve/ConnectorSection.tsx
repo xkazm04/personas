@@ -73,8 +73,8 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
       <div className="flex items-start gap-2">
         <Plug className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
         <div className="min-w-0">
-          <span className="typo-caption font-medium text-foreground block">Connect a {spec.categoryLabel} tool</span>
-          <span className="typo-caption text-foreground/55 block leading-snug" style={{ fontWeight: 400 }}>Lit tiles are connected in your vault — click to wire one. Dimmed tiles aren’t set up yet.</span>
+          <span className="typo-caption text-foreground block">Connect a {spec.categoryLabel} tool</span>
+          <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>Lit tiles are connected in your vault — click to wire one. Dimmed tiles aren’t set up yet.</span>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
                     {iconUrl
                       ? <ThemedConnectorIcon url={iconUrl} label={tool.label} color={color} size="w-5 h-5" />
                       : <Fallback className="w-5 h-5" style={{ color }} />}
-                    <span className="typo-label text-foreground/70 w-full truncate text-center leading-none">{tool.label}</span>
+                    <span className="typo-label text-foreground/70 w-full truncate text-center">{tool.label}</span>
                   </button>
                 </Tooltip>
               );

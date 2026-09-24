@@ -149,7 +149,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 transition-colors focus-ring"
+              className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body hover:bg-sky-500/35 transition-colors focus-ring"
             >
               {t.plugins.drive.confirm}
             </button>
@@ -159,7 +159,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={onClose}
                 disabled={phase === "verifying"}
-                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors focus-ring"
+                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors focus-ring"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -167,7 +167,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+                className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body hover:bg-sky-500/35 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying
@@ -199,7 +199,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
           className={`w-5 h-5 ${isValid ? "text-emerald-300" : "text-rose-300"}`}
         />
         <span
-          className={`typo-body font-semibold ${
+          className={`typo-body ${
             isValid ? "text-emerald-100" : "text-rose-100"
           }`}
         >

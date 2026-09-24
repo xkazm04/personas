@@ -210,7 +210,7 @@ export function DialogueComposePanel({
                   type="button"
                   onClick={onLaunch}
                   disabled={launchDisabled}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive border border-primary/50 bg-primary/20 text-foreground hover:bg-primary/30 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer typo-body font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive border border-primary/50 bg-primary/20 text-foreground hover:bg-primary/30 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer typo-body transition-colors"
                   style={{ boxShadow: "0 0 18px rgba(96,165,250,0.25)" }}
                   data-testid="agent-launch-btn"
                 >
@@ -399,7 +399,7 @@ function StarterRow({ match, onOpen }: { match: RecipeMatch; onOpen?: () => void
       <span className="w-16 h-1.5 rounded-full bg-foreground/10 overflow-hidden shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: match.above_threshold ? "var(--color-primary,#60a5fa)" : "rgba(255,255,255,0.3)" }} />
       </span>
-      <span className="typo-data text-foreground tabular-nums w-9 text-right shrink-0">{pct}%</span>
+      <span className="typo-data text-foreground w-9 text-right shrink-0">{pct}%</span>
       {onOpen && <ChevronRight className="w-3.5 h-3.5 text-foreground shrink-0" />}
     </>
   );

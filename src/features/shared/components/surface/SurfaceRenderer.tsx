@@ -149,7 +149,7 @@ export function SurfaceRenderer({ spec, dropped = 0, context, className }: Surfa
       {/* Provenance header — an agent composed this, and it says so. */}
       <div className="flex items-start gap-2 flex-wrap">
         <div className="min-w-0 flex-1">
-          {spec.title && <h3 className="typo-heading font-semibold text-foreground/90">{spec.title}</h3>}
+          {spec.title && <h3 className="typo-heading text-foreground/90">{spec.title}</h3>}
           {spec.summary && <p className="typo-caption text-foreground mt-0.5">{spec.summary}</p>}
         </div>
         <AthenaComposedBadge

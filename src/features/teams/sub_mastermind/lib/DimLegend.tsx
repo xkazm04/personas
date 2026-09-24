@@ -88,7 +88,7 @@ export function DimLegend() {
         aria-expanded={open}
         aria-label={t.mastermind.legend_toggle}
         data-testid="mm-legend-toggle"
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium mm-chrome surface-blur-tooltip transition-colors focus-ring ${
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption mm-chrome surface-blur-tooltip transition-colors focus-ring ${
           open ? 'text-foreground' : 'text-foreground/65 hover:text-foreground'
         }`}
       >

@@ -499,7 +499,7 @@ function RefineComposer({ initialText, onCancel, onSend }: RefineComposerProps) 
       <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal bg-gradient-to-r from-primary to-transparent" />
       <div className="flex items-center gap-2 px-5 pt-4 pb-2">
         <RefreshCw className="w-4 h-4 text-primary" />
-        <span className="typo-label text-primary font-bold">
+        <span className="typo-label text-primary">
           {t.common.refine}
         </span>
         <div className="flex-1" />

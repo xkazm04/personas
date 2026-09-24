@@ -166,7 +166,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
       {/* Two-row body */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
-          <span className="typo-body font-medium text-primary break-words min-w-0">{headerTitle}</span>
+          <span className="typo-body text-primary break-words min-w-0">{headerTitle}</span>
           {!notification.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
         </div>
         <div className="flex items-start gap-2 mt-0.5">
@@ -263,7 +263,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
-          <span className="typo-body font-medium text-primary break-words min-w-0">{pipelineTitle}</span>
+          <span className="typo-body text-primary break-words min-w-0">{pipelineTitle}</span>
           {!notification.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
         </div>
         <div className="flex items-start gap-2 mt-0.5">
@@ -386,7 +386,7 @@ export function NotificationCenter() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="typo-body font-semibold text-foreground">{t.gitlab.notifications}</h2>
+                <h2 className="typo-body text-foreground">{t.gitlab.notifications}</h2>
               </div>
               <div className="flex items-center gap-1">
                 {notifications.length > 0 && (
@@ -425,7 +425,7 @@ export function NotificationCenter() {
                     <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
                       <BellOff className="w-7 h-7 text-foreground" />
                     </div>
-                    <p className="typo-heading-lg text-foreground font-medium">{t.gitlab.no_notifications_yet}</p>
+                    <p className="typo-heading-lg text-foreground">{t.gitlab.no_notifications_yet}</p>
                     <p className="text-md text-foreground mt-1 max-w-[220px]">
                       {t.gitlab.pipeline_status_hint}
                     </p>

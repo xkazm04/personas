@@ -29,7 +29,7 @@ function EntryRow({ entry }: { entry: ExecutionJournalEntry }) {
         onClick={() => entry.beforeImage && setShowImage((v) => !v)}
         className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left ${entry.beforeImage ? 'hover:bg-secondary/30 cursor-pointer' : 'cursor-default'} transition-colors`}
       >
-        <span className={`inline-flex items-center justify-center w-5 h-5 rounded font-mono typo-body font-bold ${style.cls}`}>{style.symbol}</span>
+        <span className={`inline-flex items-center justify-center w-5 h-5 rounded font-mono typo-body ${style.cls}`}>{style.symbol}</span>
         <span className="typo-body font-mono text-foreground truncate">{entry.table}</span>
         <span className="typo-body font-mono text-muted-foreground truncate" title={entry.rowPk ?? undefined}>
           {entry.rowPk ?? `(no pk)`}
@@ -108,7 +108,7 @@ export function DataDiffSection({ executionId }: DataDiffSectionProps) {
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
       >
         <Database className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-        <span className="typo-body font-medium text-foreground">Data changes</span>
+        <span className="typo-body text-foreground">Data changes</span>
         {diff !== null && (
           <span className="typo-body text-muted-foreground">{diff.total} row{diff.total === 1 ? '' : 's'}</span>
         )}
@@ -157,7 +157,7 @@ export function DataDiffSection({ executionId }: DataDiffSectionProps) {
                 <button
                   type="button"
                   onClick={() => setConfirming(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading font-medium bg-red-500/10 text-red-400 hover:bg-red-500/15 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading bg-red-500/10 text-red-400 hover:bg-red-500/15 transition-colors"
                 >
                   <Undo2 className="w-3 h-3" /> Undo this run&apos;s data changes
                 </button>
@@ -172,7 +172,7 @@ export function DataDiffSection({ executionId }: DataDiffSectionProps) {
                       type="button"
                       onClick={handleUndo}
                       disabled={undoing}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading font-medium bg-red-500/15 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg typo-heading bg-red-500/15 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                     >
                       {undoing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Undo2 className="w-3 h-3" />} Yes, undo the changes
                     </button>
@@ -180,7 +180,7 @@ export function DataDiffSection({ executionId }: DataDiffSectionProps) {
                       type="button"
                       onClick={() => setConfirming(false)}
                       disabled={undoing}
-                      className="px-2.5 py-1 rounded-lg typo-heading font-medium text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-50"
+                      className="px-2.5 py-1 rounded-lg typo-heading text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-50"
                     >
                       Keep them
                     </button>

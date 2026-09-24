@@ -49,7 +49,7 @@ export function AddToScopeModal({
       panelClassName="relative bg-gradient-to-b from-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col w-full max-h-[70vh]"
     >
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10 bg-secondary/20">
-        <h3 id="director-add-scope-title" className="typo-body-lg font-semibold text-foreground">
+        <h3 id="director-add-scope-title" className="typo-body-lg text-foreground">
           {t.director.roster_add_title}
         </h3>
       </div>

@@ -24,7 +24,7 @@ export function FleetAutoHibernateSettings() {
     >
       <div className="flex items-center gap-2 mb-1">
         <Moon className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-        <p className="typo-caption font-medium text-foreground">{f.auto_hibernate_title}</p>
+        <p className="typo-caption text-foreground">{f.auto_hibernate_title}</p>
       </div>
       <p className="text-[14px] text-foreground leading-relaxed mb-3 opacity-80">{f.auto_hibernate_desc}</p>
 

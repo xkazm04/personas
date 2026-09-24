@@ -200,10 +200,10 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           }}
           onBlur={() => commitEdit()}
           placeholder={debtText("auto_name_d84da4a2")}
-          className="typo-caption font-medium flex-1 min-w-0 bg-background border border-primary/30 rounded px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          className="typo-caption flex-1 min-w-0 bg-background border border-primary/30 rounded px-1.5 py-0 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
       ) : (
-        <span className="typo-caption font-medium truncate flex-1 min-w-0 flex items-baseline gap-1.5">
+        <span className="typo-caption truncate flex-1 min-w-0 flex items-baseline gap-1.5">
           <span className="truncate">{session.projectLabel}</span>
           {(session.name ?? session.title) && (
             <>

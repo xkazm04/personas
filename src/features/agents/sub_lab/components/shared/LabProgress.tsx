@@ -63,11 +63,11 @@ export function LabProgress() {
                     )}
                   </div>
                   <span
-                    className={`typo-caption leading-tight transition-colors ${
+                    className={`typo-caption transition-colors ${
                       isCompleted
                         ? 'text-emerald-400/70'
                         : isActive
-                          ? 'text-foreground font-medium'
+                          ? 'text-foreground'
                           : 'text-foreground'
                     }`}
                   >
@@ -114,7 +114,7 @@ export function LabProgress() {
                   )}
                 </span>
               )}
-              <span className="typo-data text-foreground tabular-nums">
+              <span className="typo-data text-foreground">
                 {labProgress.current ?? 0} / {labProgress.total}
               </span>
             </div>

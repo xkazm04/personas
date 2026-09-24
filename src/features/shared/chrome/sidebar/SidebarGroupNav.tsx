@@ -136,7 +136,7 @@ function RightAdornments({ item }: { item: Adornments }) {
   return (
     <>
       {item.badge && item.badge.count > 0 && (
-        <span className={`ml-auto px-1.5 py-0.5 typo-caption leading-none rounded-full ${item.badge.className}`}>
+        <span className={`ml-auto px-1.5 py-0.5 typo-caption rounded-full ${item.badge.className}`}>
           {item.badge.count}
         </span>
       )}

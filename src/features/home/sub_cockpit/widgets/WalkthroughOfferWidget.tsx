@@ -93,7 +93,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
         >
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-4 h-4 shrink-0 text-primary animate-pulse" />
-            <span className="typo-body font-medium text-foreground">{c.walkthrough_composing}</span>
+            <span className="typo-body text-foreground">{c.walkthrough_composing}</span>
           </div>
           <p className="typo-caption text-foreground">{c.walkthrough_composing_hint}</p>
           <div className="space-y-1.5 pt-1" aria-hidden="true">
@@ -122,7 +122,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
             >
               <Compass className="w-4 h-4 shrink-0" />
               <span className="flex flex-col">
-                <span className="typo-body font-medium">{c.walkthrough_offer_show}</span>
+                <span className="typo-body">{c.walkthrough_offer_show}</span>
                 <span className="typo-caption opacity-90">{c.walkthrough_offer_show_hint}</span>
               </span>
             </button>
@@ -135,7 +135,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
           >
             <MessageSquareText className="w-4 h-4 shrink-0 text-primary" />
             <span className="flex flex-col">
-              <span className="typo-body font-medium">{c.walkthrough_offer_tell}</span>
+              <span className="typo-body">{c.walkthrough_offer_tell}</span>
               <span className="typo-caption text-foreground">{c.walkthrough_offer_tell_hint}</span>
             </span>
           </button>

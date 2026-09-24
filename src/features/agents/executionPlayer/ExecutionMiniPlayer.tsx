@@ -80,7 +80,7 @@ export function SimpleExecutionView({
             {error ? t.execution.something_went_wrong : stageProgress.label}
           </span>
           {!error && (
-            <span className="typo-code text-foreground font-mono tabular-nums">
+            <span className="typo-code text-foreground tabular-nums">
               {Math.round(stageProgress.fraction * 100)}%
             </span>
           )}
@@ -105,10 +105,10 @@ export function SimpleExecutionView({
   return (
     <div className="px-3 py-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={`typo-body font-medium ${error ? 'text-red-400' : 'text-emerald-400'}`}>
+        <span className={`typo-body ${error ? 'text-red-400' : 'text-emerald-400'}`}>
           {error ? t.execution.failed : t.execution.complete}
         </span>
-        <span className="typo-code text-foreground font-mono tabular-nums">
+        <span className="typo-code text-foreground tabular-nums">
           {formatElapsed(elapsed)}
         </span>
       </div>
@@ -118,7 +118,7 @@ export function SimpleExecutionView({
       )}
       {resultText && !executionSummary && (
         <div className="rounded-card bg-secondary/30 border border-primary/10 p-2.5 max-h-32 overflow-y-auto">
-          <p className="typo-body text-foreground whitespace-pre-wrap break-words leading-relaxed">
+          <p className="typo-body text-foreground whitespace-pre-wrap break-words">
             {resultText}
           </p>
         </div>
@@ -299,10 +299,10 @@ export default function ExecutionMiniPlayer() {
           <StatusIndicator isExecuting={isExecuting} hasError={!!error && !isExecuting} />
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <Bot className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-            <span className="typo-body font-medium text-foreground truncate">{personaName}</span>
+            <span className="typo-body text-foreground truncate">{personaName}</span>
           </div>
           {isExecuting && (
-            <div className="flex items-center gap-1 typo-code font-mono text-foreground">
+            <div className="flex items-center gap-1 typo-code text-foreground">
               <Timer className="w-3 h-3" />
               {formatElapsed(elapsed, 'clock')}
             </div>
@@ -365,7 +365,7 @@ export default function ExecutionMiniPlayer() {
           <span className="typo-body text-foreground uppercase tracking-wider">{t.execution.pipeline}</span>
           <PipelineDots trace={pipelineTrace} />
           {executionOutput.length > 0 && (
-            <span className="ml-auto typo-code font-mono text-foreground">
+            <span className="ml-auto typo-code text-foreground">
               {executionOutput.length} {t.execution.lines}
             </span>
           )}
@@ -375,7 +375,7 @@ export default function ExecutionMiniPlayer() {
         {/* Full mode: Collapsed single last line */}
         {!isSimple && !miniPlayerExpanded && (
           <div className="px-3 py-1.5 bg-black/20">
-            <div className="font-mono typo-code text-foreground truncate flex items-center gap-1.5">
+            <div className="typo-code text-foreground truncate flex items-center gap-1.5">
               {isExecuting && (
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
               )}
@@ -390,7 +390,7 @@ export default function ExecutionMiniPlayer() {
         {showExpandedTerminal && (
           <div
             ref={terminalRef}
-            className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 font-mono typo-code leading-relaxed scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
+            className="max-h-52 overflow-y-auto bg-black/20 px-3 py-2 typo-code scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent"
           >
             {lastLines.length === 0 && (
               <div className="text-foreground flex items-center gap-2 py-2">

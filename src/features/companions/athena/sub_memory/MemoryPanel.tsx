@@ -105,7 +105,7 @@ export default function MemoryPanel() {
     <div className="h-full -mx-4 -mb-6 sm:-mx-6 lg:-mx-8 rounded-card overflow-hidden border border-foreground/10 bg-secondary/40 flex flex-col">
       <div className="px-4 py-2 border-b border-foreground/10 flex items-center justify-between gap-2 shrink-0">
         <div className="min-w-0">
-          <div className="typo-caption font-medium text-foreground">
+          <div className="typo-caption text-foreground">
             {t.athena.memory_bulk_actions_title}
           </div>
           <div className="typo-caption text-foreground hidden sm:block">
@@ -116,7 +116,7 @@ export default function MemoryPanel() {
           <button
             type="button"
             onClick={() => setView('consolidation')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium focus-ring transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
               view === 'consolidation'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/85'
@@ -132,7 +132,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={generateReflection}
             disabled={reflecting}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_generate_reflection}
           >
             {reflecting ? (
@@ -150,7 +150,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={decayFacts}
             disabled={decaying}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_decay_unused}
           >
             {decaying ? (
@@ -166,7 +166,7 @@ export default function MemoryPanel() {
             type="button"
             onClick={rebuildSearchIndex}
             disabled={reembedding}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             title={t.athena.memory_rebuild_search}
           >
             {reembedding ? (

@@ -16,7 +16,7 @@ export function TriggerFieldGroup({
   const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
-      <label className="block typo-body font-medium text-foreground">
+      <label className="block typo-body text-foreground">
         {label}
         {optional && <span className="text-foreground ml-1">{t.triggers.field_optional}</span>}
       </label>

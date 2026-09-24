@@ -116,7 +116,7 @@ export function Bubble({
           <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary/40" />
         </div>
         <div
-          className={`min-w-0 py-0.5 typo-caption italic text-foreground/55 leading-relaxed ${
+          className={`min-w-0 py-0.5 typo-caption italic text-foreground/55 ${
             compact ? 'max-w-[92%]' : 'max-w-[85%]'
           }`}
         >
@@ -193,7 +193,7 @@ export function Bubble({
         */}
         <div className="relative min-w-0">
           <div
-            className={`rounded-card typo-body leading-relaxed break-words ${
+            className={`rounded-card typo-body break-words ${
               compact ? 'px-2.5 py-1.5' : 'px-3.5 py-2.5'
             } ${
               isUser

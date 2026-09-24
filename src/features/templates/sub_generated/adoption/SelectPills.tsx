@@ -161,7 +161,7 @@ export function SelectPills({
             onKeyDown={(e) => onPillKeyDown(e, 0)}
             className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
               isAllSelected
-                ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                ? 'bg-primary/20 border-primary/30 text-primary'
                 : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
             }`}
           >
@@ -183,7 +183,7 @@ export function SelectPills({
               onKeyDown={(e) => onPillKeyDown(e, pillIdx)}
               className={`px-3.5 py-1.5 typo-body-lg rounded-card border transition-all ${
                 selected
-                  ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                  ? 'bg-primary/20 border-primary/30 text-primary'
                   : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
               }`}
               title={opt.sublabel ?? undefined}
@@ -197,7 +197,7 @@ export function SelectPills({
         {customValuesFromAnswer.map((v) => (
           <span
             key={`custom-${v}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body-lg rounded-card border border-primary/30 bg-primary/15 text-primary font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body-lg rounded-card border border-primary/30 bg-primary/15 text-primary"
           >
             {v}
             <button
@@ -216,7 +216,7 @@ export function SelectPills({
             onClick={() => setShowCustomInput((v) => !v)}
             className={`px-3 py-1.5 typo-body rounded-card border transition-all ${
               showCustomInput
-                ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                ? 'bg-primary/20 border-primary/30 text-primary'
                 : 'bg-foreground/[0.03] border-border text-foreground hover:bg-foreground/[0.06] hover:border-foreground/15'
             }`}
           >
@@ -252,7 +252,7 @@ export function SelectPills({
               type="button"
               onClick={commitCustom}
               disabled={!customDraft.trim()}
-              className="px-3 py-1.5 typo-caption font-medium rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
+              className="px-3 py-1.5 typo-caption rounded-card bg-primary/20 border border-primary/30 text-primary disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
             >
               {t.templates.adopt_modal.add_custom}
             </button>

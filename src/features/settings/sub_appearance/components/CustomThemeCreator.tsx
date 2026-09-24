@@ -44,7 +44,7 @@ function ContrastReadout({ vars, labels }: {
 
   return (
     <div className="space-y-2">
-      <label className="typo-caption font-medium text-foreground">{labels.title}</label>
+      <label className="typo-caption text-foreground">{labels.title}</label>
       <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-2 grid grid-cols-3 gap-3">
         {pairs.map((p) => (
           <div key={p.id} className="flex flex-col gap-1">
@@ -53,7 +53,7 @@ function ContrastReadout({ vars, labels }: {
               <span className={`px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass(p.level)}`}>
                 {badgeText(p.level)}
               </span>
-              <span className="typo-code font-mono text-foreground text-[11px]"><Numeric value={p.ratio} precision={1} />:1</span>
+              <span className="typo-code text-foreground text-[11px]"><Numeric value={p.ratio} precision={1} />:1</span>
             </div>
           </div>
         ))}
@@ -165,7 +165,7 @@ export default function CustomThemeCreator() {
       {/* Base mode + theme name */}
       <div className="flex items-end gap-4">
         <div className="space-y-2">
-          <label className="typo-caption font-medium text-foreground">{s.base_mode}</label>
+          <label className="typo-caption text-foreground">{s.base_mode}</label>
           <div className="flex gap-1.5">
             {(['dark', 'light'] as const).map((mode) => {
               const active = baseMode === mode;
@@ -175,7 +175,7 @@ export default function CustomThemeCreator() {
                   type="button"
                   key={mode}
                   onClick={() => setBaseMode(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
                     active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
@@ -187,7 +187,7 @@ export default function CustomThemeCreator() {
           </div>
         </div>
         <div className="space-y-2 flex-1 max-w-xs">
-          <label className="typo-caption font-medium text-foreground">{s.theme_name}</label>
+          <label className="typo-caption text-foreground">{s.theme_name}</label>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -200,7 +200,7 @@ export default function CustomThemeCreator() {
 
       {/* Color rows */}
       <div className="space-y-1">
-        <label className="typo-caption font-medium text-foreground">{s.colors}</label>
+        <label className="typo-caption text-foreground">{s.colors}</label>
         <div className="rounded-card border border-primary/8 bg-secondary/10 px-3 py-1 divide-y divide-primary/5">
           {colorRows.map((row) => (
             <ColorRow key={row.label} label={row.label} value={row.value} derivedValue={row.derivedValue} onChange={row.onChange} />
@@ -234,7 +234,7 @@ export default function CustomThemeCreator() {
                 showBubble={false}
                 className="flex-1"
               />
-              <span className="typo-code font-mono text-foreground w-10 text-right">{backgroundAngle}&deg;</span>
+              <span className="typo-code text-foreground w-10 text-right">{backgroundAngle}&deg;</span>
             </div>
           </div>
         )}
@@ -257,7 +257,7 @@ export default function CustomThemeCreator() {
 
       {/* Live preview */}
       <div className="space-y-2">
-        <label className="typo-caption font-medium text-foreground">{s.preview}</label>
+        <label className="typo-caption text-foreground">{s.preview}</label>
         <ThemePreview vars={derivedVars} />
       </div>
 

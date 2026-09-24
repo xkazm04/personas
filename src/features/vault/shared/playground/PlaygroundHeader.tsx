@@ -94,7 +94,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
                 onKeyDown={handleKeyDown}
                 onBlur={saveName}
                 autoFocus
-                className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
               />
               <button
                 onMouseDown={(e) => { e.preventDefault(); saveName(); }}
@@ -106,7 +106,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             </div>
           ) : (
             <>
-              <h2 id="credential-playground-title" className="typo-heading font-semibold text-foreground/90 truncate">
+              <h2 id="credential-playground-title" className="typo-heading text-foreground/90 truncate">
                 {credential.name}
               </h2>
               <button
@@ -121,7 +121,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {fieldKeys.map((key) => (
-            <span key={key} className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground font-mono">
+            <span key={key} className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-foreground">
               {key}
             </span>
           ))}
@@ -130,7 +130,7 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
             return (
               <span
                 key={tag}
-                className={`inline-flex items-center gap-1 typo-caption font-medium px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
+                className={`inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded border ${style.bg} ${style.text} ${style.border}`}
               >
                 {tag}
                 <button

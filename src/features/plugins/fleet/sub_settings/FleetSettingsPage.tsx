@@ -97,7 +97,7 @@ export default function FleetSettingsPage() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <AlertCircle className="w-4 h-4 text-orange-400" />
-                <p className="typo-caption font-medium text-orange-300"><DebtText k="auto_port_mismatch_b07961a1" /></p>
+                <p className="typo-caption text-orange-300"><DebtText k="auto_port_mismatch_b07961a1" /></p>
               </div>
               <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_hooks_point_to_port_36464ae7" />{' '}
@@ -111,7 +111,7 @@ export default function FleetSettingsPage() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <p className="typo-caption font-medium text-emerald-400"><DebtText k="auto_hooks_installed_dfe5c9be" /></p>
+                <p className="typo-caption text-emerald-400"><DebtText k="auto_hooks_installed_dfe5c9be" /></p>
               </div>
               <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_claude_code_posts_lifecycle_events_to_f1cd7ead" />{' '}
@@ -124,7 +124,7 @@ export default function FleetSettingsPage() {
               className="border border-primary/15 rounded-modal bg-primary/5 px-4 py-3"
               data-testid="fleet-hooks-banner-missing"
             >
-              <p className="typo-caption font-medium text-foreground mb-1"><DebtText k="auto_hooks_not_installed_772fd030" /></p>
+              <p className="typo-caption text-foreground mb-1"><DebtText k="auto_hooks_not_installed_772fd030" /></p>
               <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_fleet_needs_six_hook_entries_in_27ce6397" />{' '}
                 <code className="font-mono"><DebtText k="auto_claude_settings_json_3ce7a994" /></code> <DebtText k="auto_sessionstart_notification_stop_pretooluse__9837beb9" />{' '}
@@ -169,7 +169,7 @@ export default function FleetSettingsPage() {
           {/* Detailed breakdown */}
           {status && (
             <div className="border border-primary/10 rounded-modal px-4 py-3 bg-secondary/20">
-              <p className="typo-caption font-medium text-foreground mb-2"><DebtText k="auto_hook_entries_e7af67cb" /></p>
+              <p className="typo-caption text-foreground mb-2"><DebtText k="auto_hook_entries_e7af67cb" /></p>
               <ul className="space-y-1">
                 {[...status.presentEvents, ...status.missingEvents].sort().map((event) => {
                   const present = status.presentEvents.includes(event);

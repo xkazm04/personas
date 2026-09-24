@@ -119,7 +119,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
           </span>
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="typo-label" style={{ color: ACCENT }}>Faster path · {pct}% match</span>
-            <h2 id="recipe-alternative-modal" className="typo-title-lg text-foreground truncate">{recipe?.name ?? recipeName}</h2>
+            <h2 id="recipe-alternative-modal" className="typo-title-lg truncate">{recipe?.name ?? recipeName}</h2>
             {recipe?.category && <span className="typo-caption">{recipe.category}</span>}
           </div>
         </div>

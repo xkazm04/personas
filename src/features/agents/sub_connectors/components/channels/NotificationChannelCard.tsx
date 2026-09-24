@@ -75,7 +75,7 @@ export function NotificationChannelCard({
       {/* Header row */}
       <div className="flex items-center gap-3">
         {channelIcon(type)}
-        <span className="typo-body font-medium text-foreground flex-1 capitalize">{type}</span>
+        <span className="typo-body text-foreground flex-1 capitalize">{type}</span>
         <AccessibleToggle
           checked={enabled}
           onChange={onToggleEnabled}
@@ -96,7 +96,7 @@ export function NotificationChannelCard({
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
         return (
           <div key={field.key}>
-            <label className="block typo-body font-medium text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
+            <label className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
             <input
               type={field.public ? 'text' : 'password'}
               autoComplete={field.public ? undefined : 'off'}
@@ -113,7 +113,7 @@ export function NotificationChannelCard({
 
       {/* Credential picker */}
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1">{t.agents.connectors.ch_credential}</label>
+        <label className="block typo-body text-foreground mb-1">{t.agents.connectors.ch_credential}</label>
         <CredentialPicker
           credentials={matchingCredentials}
           selectedId={credentialId}

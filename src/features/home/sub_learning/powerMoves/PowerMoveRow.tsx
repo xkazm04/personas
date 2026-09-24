@@ -25,7 +25,7 @@ export function PowerMoveRow({ move }: { move: PowerMove }) {
       <div className="w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/50 transition-colors">
         <move.icon className={`w-3.5 h-3.5 ${move.color}`} />
       </div>
-      <h4 className="flex-1 min-w-0 typo-body font-medium text-foreground truncate">{ht[move.titleKey]}</h4>
+      <h4 className="flex-1 min-w-0 typo-body text-foreground truncate">{ht[move.titleKey]}</h4>
       {used && (
         <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />} className="flex-shrink-0">
           {ht.used_badge}

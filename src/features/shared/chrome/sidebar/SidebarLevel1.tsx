@@ -262,7 +262,7 @@ export default function SidebarLevel1({
                 </span>
               )}
               {isDisabled && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-foreground/90 whitespace-nowrap">
+                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label rounded bg-muted-foreground/15 text-foreground/90 whitespace-nowrap">
                   {t.sidebar.soon_badge}
                 </span>
               )}

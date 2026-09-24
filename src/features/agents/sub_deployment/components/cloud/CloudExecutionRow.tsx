@@ -81,7 +81,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                 <button
                   type="button"
                   onClick={onFetchOutput}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-colors cursor-pointer"
                 >
                   <Terminal className="w-3 h-3" />
                   {dt.view_output}
@@ -123,7 +123,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                     <RefreshCw className="w-3 h-3" />
                   </button>
                 </div>
-                <pre className="typo-code text-emerald-300/80 bg-gray-950/60 p-3 rounded-card overflow-auto max-h-64 border border-primary/10 font-mono leading-relaxed">
+                <pre className="typo-code text-emerald-300/80 bg-gray-950/60 p-3 rounded-card overflow-auto max-h-64 border border-primary/10">
                   {output.lines.join('\n')}
                 </pre>
               </div>

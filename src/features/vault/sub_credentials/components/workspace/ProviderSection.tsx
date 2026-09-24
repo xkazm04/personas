@@ -50,7 +50,7 @@ export function ProviderSection({
             <Globe className="w-4 h-4" style={{ color: provider.color }} />
           </div>
           <div>
-            <h3 className="typo-heading font-semibold text-foreground">{provider.label}</h3>
+            <h3 className="typo-heading text-foreground">{provider.label}</h3>
             <p className="typo-caption text-foreground">
               {isSelectPhase && wp.select_services}
               {ws.phase === 'authorizing' && wp.browser_sign_in}

@@ -39,7 +39,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 id="credential-design-title" className="typo-body-lg font-semibold text-foreground">{t.vault.design_modal.title}</h2>
+            <h2 id="credential-design-title" className="typo-body-lg text-foreground">{t.vault.design_modal.title}</h2>
             <p className="typo-body text-foreground">{subtitle}</p>
           </div>
         </div>

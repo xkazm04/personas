@@ -66,7 +66,7 @@ export function MemorySection({ projectId }: { projectId: string }) {
         <span className="typo-label text-foreground/90">{t.mastermind.memory_title}</span>
       </div>
       {coverage === null ? null : !hasMemory ? (
-        <p className="typo-caption text-foreground/45 leading-snug" style={{ fontWeight: 400 }}>{t.mastermind.memory_empty}</p>
+        <p className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{t.mastermind.memory_empty}</p>
       ) : (
         <div className="space-y-0.5">
           <p className="typo-caption text-foreground/70 tabular-nums">

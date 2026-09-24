@@ -88,7 +88,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
 
   return (
     <div className="space-y-3 relative z-10">
-      <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-submodule-header">
         <ShieldCheck className="w-4 h-4 text-primary/70" />
         {a.title}
       </h4>
@@ -101,7 +101,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
 
         {assertions.map((row) => (
           <div key={row.id} className="flex items-center gap-2 rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5">
-            <span className="typo-body font-medium text-foreground truncate flex-1">{row.name}</span>
+            <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
             <span className="typo-caption text-foreground">{typeLabel(row.assertionType)}</span>
             <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
             <button

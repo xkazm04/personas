@@ -188,15 +188,15 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-body font-medium text-violet-400">{review.persona_name || t.overview.review.agent}</span>
+              <span className="typo-body text-violet-400">{review.persona_name || t.overview.review.agent}</span>
               <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
             </div>
             <div className="rounded-modal bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
-              <RichMarkdown content={review.content} className="typo-body text-foreground leading-relaxed" />
+              <RichMarkdown content={review.content} className="typo-body text-foreground" />
             </div>
             {contextData && (
               <div className="mt-2 rounded-card bg-secondary/30 border border-primary/10 px-3 py-2">
-                <div className="typo-code font-mono text-foreground uppercase mb-1">{t.overview.review.context_label}</div>
+                <div className="typo-code text-foreground uppercase mb-1">{t.overview.review.context_label}</div>
                 <ContextDataPreview raw={contextData} />
               </div>
             )}
@@ -204,7 +204,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {hasDecisions && isPending && (
               <div className="mt-3 rounded-modal border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
-                  <span className="typo-label font-semibold text-foreground">{t.overview.review.decisions_label} ({decisions.length})</span>
+                  <span className="typo-label text-foreground">{t.overview.review.decisions_label} ({decisions.length})</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
@@ -278,7 +278,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <div className="mt-2 flex flex-col gap-1">
                 {suggestedActions.map((action, i) => (
                   <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-card typo-body bg-amber-500/[0.06] text-amber-300 border border-amber-500/15 hover:bg-amber-500/[0.12] hover:border-amber-500/25 transition-colors text-left">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-amber-500/15 text-amber-400 typo-code font-mono font-bold flex-shrink-0">{i + 1}</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-amber-500/15 text-amber-400 typo-code flex-shrink-0">{i + 1}</span>
                     {action}
                   </button>
                 ))}
@@ -300,11 +300,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-                  <span className={`typo-body font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
+                  <span className={`typo-body ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
                   <RelativeTime timestamp={msg.created_at} className="typo-body text-foreground" />
                 </div>
                 <div className={`rounded-modal px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
-                  <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  <p className="typo-body text-foreground whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             </div>

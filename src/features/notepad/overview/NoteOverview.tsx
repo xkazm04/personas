@@ -355,7 +355,7 @@ export function NoteOverview({
             >
               {visible.length === 0 ? (
                 <div className="py-16 flex flex-col items-center gap-1 text-center">
-                  <p className="typo-title text-foreground">
+                  <p className="typo-title">
                     {chrome.query.trim() ? t.notepad.desk_no_matches : t.notepad.empty_title}
                   </p>
                   <p className="typo-caption text-foreground/85">

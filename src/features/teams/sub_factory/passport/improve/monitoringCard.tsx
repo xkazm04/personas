@@ -80,7 +80,7 @@ export function CapabilityHead({ icon: Icon, label, state }: {
   return (
     <div className="relative flex items-center gap-2 px-3 py-2.5">
       <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-      <span className="typo-body font-semibold text-foreground truncate flex-1 min-w-0">{label}</span>
+      <span className="typo-body text-foreground truncate flex-1 min-w-0">{label}</span>
       <StateMark state={state} />
     </div>
   );
@@ -94,7 +94,7 @@ export function StateMark({ state }: { state: MonitoringState }) {
   return (
     <span className="inline-flex items-center gap-1.5 shrink-0">
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: ink }} aria-hidden />
-      <span className="typo-caption font-medium" style={{ color: ink }}>{d[`monitoring_state_${state}`]}</span>
+      <span className="typo-caption" style={{ color: ink }}>{d[`monitoring_state_${state}`]}</span>
     </span>
   );
 }
@@ -208,7 +208,7 @@ export function MergedTool({ label, serviceType, children }: {
         </span>
       </Tooltip>
       <ToolMark label={label} serviceType={serviceType} size={88} />
-      <span className="typo-body font-semibold text-foreground truncate max-w-full">{label}</span>
+      <span className="typo-body text-foreground truncate max-w-full">{label}</span>
       {children}
     </div>
   );
@@ -252,7 +252,7 @@ export function CardAction({ row, busy, deploying, onPick, onDeploy }: {
       type="button"
       disabled={isDeploy ? deploying : busy}
       onClick={isDeploy ? onDeploy : onPick}
-      className="relative w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors disabled:opacity-40"
+      className="relative w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors disabled:opacity-40"
     >
       {isDeploy
         ? <><Rocket className="w-3 h-3" aria-hidden />{deploying ? d.monitoring_deploying : d.monitoring_deploy}</>
@@ -334,7 +334,7 @@ export function CandidateList({ row, busy, onAssign, onCancel }: {
 export function DeployNote() {
   const { t } = useTranslation();
   return (
-    <p className="typo-caption text-foreground/60 leading-snug" style={{ fontWeight: 400 }}>
+    <p className="typo-caption text-foreground/60" style={{ fontWeight: 400 }}>
       {t.plugins.dev_tools.monitoring_deploy_blurb}
     </p>
   );

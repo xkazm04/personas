@@ -38,7 +38,7 @@ export function RecipeListItem({
           <BookOpen className="w-3 h-3 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="typo-body font-medium text-foreground truncate">{recipe.name}</p>
+          <p className="typo-body text-foreground truncate">{recipe.name}</p>
           {recipe.description && (
             <p className="typo-body text-foreground truncate">{recipe.description}</p>
           )}

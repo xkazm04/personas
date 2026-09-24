@@ -60,7 +60,7 @@ export function DealerCard({
           <Wand2 className={`w-4 h-4 ${SUIT_TEXT}`} />
         </span>
         <suit.Icon className={`w-4 h-4 ${SUIT_TEXT}`} aria-hidden />
-        <span className={`typo-label uppercase tracking-[0.18em] ${SUIT_TEXT}`}>{eyebrow}</span>
+        <span className={`typo-label uppercase ${SUIT_TEXT}`}>{eyebrow}</span>
         {toneChannel && (
           <span className="ml-auto px-2 py-0.5 rounded-pill border border-primary/20 typo-caption text-foreground">
             {channelName(toneChannel, xo.twinCard.everywhere)}
@@ -80,7 +80,7 @@ export function DealerCard({
               {greeting}
             </p>
           )}
-          <h3 className="typo-heading-lg text-foreground leading-snug" data-testid="xo-dealer-question">
+          <h3 className="typo-heading-lg text-foreground" data-testid="xo-dealer-question">
             {question ?? xo.table.noQuestion}
           </h3>
           {answerMode === 'write' && (

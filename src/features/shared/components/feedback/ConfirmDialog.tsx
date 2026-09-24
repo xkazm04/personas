@@ -65,14 +65,14 @@ export function ConfirmDialog({
     >
         <div id="confirm-dialog-title" className="typo-section-title mb-2">{title}</div>
         {body && (
-          <div className="typo-body text-foreground mb-4 leading-relaxed">{body}</div>
+          <div className="typo-body text-foreground mb-4">{body}</div>
         )}
         <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleCancel}
             disabled={busy}
-            className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelLabel ?? t.common.cancel}
           </button>
@@ -81,7 +81,7 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={busy}
             aria-busy={busy}
-            className={`px-3 py-1.5 rounded-input typo-body font-semibold border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+            className={`px-3 py-1.5 rounded-input typo-body border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
               danger
                 ? "bg-rose-500/25 text-rose-100 border-rose-500/45 hover:bg-rose-500/35"
                 : "bg-sky-500/25 text-sky-100 border-sky-500/40 hover:bg-sky-500/35"

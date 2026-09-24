@@ -251,7 +251,7 @@ function KindLegend({ kindLabels, counts, relationshipsLabel, healthLabels }: {
             <div key={kind} className="flex items-center gap-1.5">
               <Icon className="w-3 h-3" style={{ color: KIND_TINT[kind] }} />
               <span className="typo-caption text-foreground">{kindLabels[kind]}</span>
-              <span className="typo-data tabular-nums text-foreground/90">{counts[kind]}</span>
+              <span className="typo-data text-foreground/90">{counts[kind]}</span>
             </div>
           );
         })}

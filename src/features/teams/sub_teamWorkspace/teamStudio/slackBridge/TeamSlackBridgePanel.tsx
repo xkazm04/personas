@@ -82,7 +82,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
             : ts.slack_bridge_not_connected}
         </span>
       </div>
-      <p className="typo-caption font-normal text-foreground">{ts.slack_bridge_hint}</p>
+      <p className="typo-caption text-foreground">{ts.slack_bridge_hint}</p>
 
       {/* Ghost only while loading AND nothing to show yet. */}
       {bridge.loading && !linked && !bridge.form.credentialId ? (
@@ -93,10 +93,10 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
             {ts.slack_bridge_no_credential_title}
           </div>
-          <p className="typo-caption font-normal text-foreground">{ts.slack_bridge_no_credential_body}</p>
+          <p className="typo-caption text-foreground">{ts.slack_bridge_no_credential_body}</p>
         </div>
       ) : noMembers ? (
-        <p className="typo-caption font-normal text-foreground">{ts.slack_bridge_no_members}</p>
+        <p className="typo-caption text-foreground">{ts.slack_bridge_no_members}</p>
       ) : (
         <>
           <SlackBridgePickers
@@ -111,7 +111,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
           />
           <SlackBridgeDirections form={bridge.form} onChange={patch} />
           {bridge.legacyBlob && (
-            <p className="flex items-start gap-1.5 typo-caption font-normal text-amber-300">
+            <p className="flex items-start gap-1.5 typo-caption text-amber-300">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               {ts.slack_bridge_legacy_warning}
             </p>

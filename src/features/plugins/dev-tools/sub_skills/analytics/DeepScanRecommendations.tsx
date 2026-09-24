@@ -62,7 +62,7 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
     <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="deep-scan-recommendations">
       <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
         <Crosshair className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-body font-semibold text-foreground">{d.skills_deep_reco_title}</span>
+        <span className="typo-body text-foreground">{d.skills_deep_reco_title}</span>
         <span className="ml-auto flex items-center gap-2 flex-shrink-0">
           <Tooltip content={d.skills_auto_deep_hint} placement="top">
             <span className="typo-label text-foreground/55">{d.skills_auto_deep_label}</span>
@@ -90,7 +90,7 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
                   <visual.icon className="w-2.5 h-2.5" aria-hidden strokeWidth={1.75} />
                 </span>
               )}
-              <span className="typo-caption font-medium text-foreground flex-shrink-0">{visual?.label ?? lens}</span>
+              <span className="typo-caption text-foreground flex-shrink-0">{visual?.label ?? lens}</span>
               <span className="typo-label text-foreground/45 truncate flex-1 min-w-0">
                 {contextName ?? '—'}{idea.description ? ` · ${idea.description}` : ''}
               </span>

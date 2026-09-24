@@ -289,7 +289,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
       <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
         <div className="flex items-center gap-2">
           <KeyRound className="w-4 h-4 text-amber-400" />
-          <span className="typo-title text-amber-300">
+          <span className="typo-title">
             {t.athena.voice_pocket_hf_gate_title}
           </span>
         </div>
@@ -297,7 +297,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
         <button
           type="button"
           onClick={() => setSidebarSection('credentials')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption font-medium transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption transition-colors focus-ring"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           {t.athena.voice_empty_cta}
@@ -310,7 +310,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
     <div className="rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Upload className="w-4 h-4 text-primary" />
-        <span className="typo-title text-primary">
+        <span className="typo-title">
           {t.athena.voice_pocket_upload_title}
         </span>
       </div>
@@ -350,7 +350,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
               type="button"
               onClick={() => void onSave()}
               disabled={busy !== 'idle' || !name.trim()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors focus-ring disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption transition-colors focus-ring disabled:opacity-50"
             >
               {busy === 'saving' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -517,7 +517,7 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
             type="button"
             onClick={onSelect}
             disabled={selected}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption font-medium transition-colors focus-ring disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 typo-caption transition-colors focus-ring disabled:opacity-40"
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected

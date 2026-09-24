@@ -51,7 +51,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             <Workflow className="w-5 h-5 text-violet-400" />
           </div>
           <div>
-            <h2 id="activity-diagram-title" className="typo-body-lg font-semibold text-foreground/90">{titleOverride || templateName}</h2>
+            <h2 id="activity-diagram-title" className="typo-body-lg text-foreground/90">{titleOverride || templateName}</h2>
             <p className="typo-body text-foreground">
               {subtitleOverride || `${flows.length} use case flow${flows.length !== 1 ? 's' : ''}`}
             </p>
@@ -74,7 +74,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
                 setInspectedNode(null);
                 setPopoverPos(null);
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all whitespace-nowrap ${
                 index === activeFlowIndex
                   ? 'bg-violet-500/15 border border-violet-500/30 text-violet-300 shadow-[0_0_12px_rgba(139,92,246,0.1)]'
                   : 'bg-secondary/40 border border-transparent text-foreground hover:bg-secondary/60 hover:text-muted-foreground'

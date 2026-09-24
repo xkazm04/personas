@@ -138,12 +138,12 @@ export function PersonaDetailModal({
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/10 bg-secondary/20">
         <PersonaIcon icon={entry.icon} color={entry.color} size="w-5 h-5" />
-        <h3 id="director-persona-detail-title" className="typo-body-lg font-semibold text-foreground flex-1 truncate">
+        <h3 id="director-persona-detail-title" className="typo-body-lg text-foreground flex-1 truncate">
           {entry.name}
         </h3>
         {entry.latestScore != null && tone && (
           <span
-            className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded typo-body tabular-nums font-semibold"
+            className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded typo-body tabular-nums"
             style={{ color: tone.color, backgroundColor: toneFill(tone.color, 16) }}
           >
             {entry.latestScore}
@@ -183,7 +183,7 @@ export function PersonaDetailModal({
           )}
           <div className="flex items-center gap-2">
             <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.detail_value_rate}</span>
-            <Numeric value={entry.valueDeliveredRate} unit="ratio" precision={0} className="typo-body font-medium text-foreground tabular-nums" />
+            <Numeric value={entry.valueDeliveredRate} unit="ratio" precision={0} className="typo-body text-foreground tabular-nums" />
           </div>
           <div className="flex items-center gap-2">
             <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.last_review}</span>

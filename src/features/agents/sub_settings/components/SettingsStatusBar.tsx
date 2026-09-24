@@ -61,7 +61,7 @@ export function SettingsStatusBar({
             type="button"
             onClick={onDelete}
             data-testid="agent-delete-confirm"
-            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body font-medium transition-colors"
+            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body transition-colors"
           >
             {t.common.confirm}
           </button>

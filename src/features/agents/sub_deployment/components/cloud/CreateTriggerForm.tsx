@@ -45,7 +45,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
   return (
     <div className="rounded-modal bg-secondary/30 border border-indigo-500/15 p-4 space-y-3">
-      <h4 className="typo-body font-medium text-foreground/90">{dt.new_cloud_trigger}</h4>
+      <h4 className="typo-body text-foreground/90">{dt.new_cloud_trigger}</h4>
 
       {/* Persona selector */}
       <div className="space-y-1">
@@ -104,7 +104,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             value={createCron}
             onChange={(e) => setCreateCron(e.target.value)}
             placeholder="0 * * * *"
-            className="w-full px-3 py-1.5 typo-code font-mono rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-1.5 typo-code rounded-modal bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
           <div className="flex flex-wrap gap-1.5">
             {CLOUD_CRON_PRESETS.map((preset) => (

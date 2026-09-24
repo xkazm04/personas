@@ -35,7 +35,7 @@ export function ToolRow({
           <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
         )}
 
-        <span className="font-mono typo-code text-foreground truncate flex-1">
+        <span className="typo-code text-foreground truncate flex-1">
           {tool.name}
         </span>
 
@@ -47,7 +47,7 @@ export function ToolRow({
 
         <button
           onClick={(e) => { e.stopPropagation(); onRun(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1 rounded typo-body bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
           {t.vault.playground.mcp_run}
@@ -57,14 +57,14 @@ export function ToolRow({
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/5 bg-secondary/10 space-y-2">
           {tool.description && (
-            <p className="typo-body text-foreground leading-relaxed">{tool.description}</p>
+            <p className="typo-body text-foreground">{tool.description}</p>
           )}
           {tool.input_schema && (
             <div className="space-y-1">
-              <span className="typo-heading uppercase tracking-wider text-foreground font-semibold">
+              <span className="typo-heading uppercase text-foreground">
                 {sh.input_schema}
               </span>
-              <pre className="typo-code text-foreground font-mono bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
+              <pre className="typo-code text-foreground bg-secondary/20 rounded p-2 overflow-x-auto max-h-[200px]">
                 {JSON.stringify(tool.input_schema, null, 2)}
               </pre>
             </div>

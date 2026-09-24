@@ -106,7 +106,7 @@ export function AttentionBar() {
               aria-expanded={isOpen}
               aria-label={`${label[kind]} (${counts[kind]})`}
               data-testid={`companion-attention-${kind}`}
-              className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 typo-caption font-medium transition-colors focus-ring ${
+              className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 typo-caption transition-colors focus-ring ${
                 isOpen ? meta.active : meta.idle
               }`}
             >

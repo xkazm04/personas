@@ -140,7 +140,7 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
                   className="w-full text-left rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1 hover:border-sky-500/40 hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 transition-colors"
                 >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="typo-body font-medium text-foreground/95">
+                  <span className="typo-body text-foreground/95">
                     {m.name}
                   </span>
                   {m.category && (

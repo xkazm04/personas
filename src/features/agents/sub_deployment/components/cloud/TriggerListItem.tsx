@@ -65,7 +65,7 @@ export function TriggerListItem({
           <span className="text-foreground ml-2">{triggerTypeLabel(t, trigger.triggerType)}</span>
         </span>
         {config.cron && (
-          <span className="typo-code font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
+          <span className="typo-code text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
             {`${config.cron}`}
           </span>
         )}

@@ -122,7 +122,7 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
       disabled={id === "extract" && extractBlocked}
       data-testid={`drive-kb-tab-${id}`}
       onClick={() => setTab(id)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body font-medium transition-colors focus-ring ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body transition-colors focus-ring ${
         tab === id
           ? "bg-violet-500/20 border border-violet-500/45 text-violet-50"
           : "border border-transparent text-foreground hover:bg-secondary/50"

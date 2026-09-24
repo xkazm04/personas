@@ -155,7 +155,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
           <Sparkles className="w-4 h-4 text-primary" />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="typo-section-title text-foreground">{t.recipes_catalog.page_title}</div>
+          <div className="typo-section-title">{t.recipes_catalog.page_title}</div>
           <div className="typo-caption text-foreground">
             {t.recipes_catalog.page_subtitle}
           </div>

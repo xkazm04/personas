@@ -85,7 +85,7 @@ export function ScopeRail({
               <Icon className="w-4 h-4" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="typo-body font-medium text-foreground block truncate">{scopeLabel(key)}</span>
+              <span className="typo-body text-foreground block truncate">{scopeLabel(key)}</span>
               <span className="typo-caption text-foreground tabular-nums">
                 {tx(p.selected_of, { selected: c.selected, total: c.total })}
               </span>
@@ -102,7 +102,7 @@ export function ScopeRail({
           type="button"
           onClick={() => setAll(true)}
           data-testid="portability-select-everything"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
+          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
         >
           <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
         </button>
@@ -110,7 +110,7 @@ export function ScopeRail({
           type="button"
           onClick={() => setAll(false)}
           data-testid="portability-clear-all"
-          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
+          className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption text-foreground hover:bg-secondary/25 transition-colors"
         >
           <Eraser className="w-3.5 h-3.5" /> {p.clear_all}
         </button>

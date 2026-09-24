@@ -366,7 +366,7 @@ export default function ReportList() {
                           <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
                           <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
                         </div>
-                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><PriorityChip priority={priority} /></div>
                         <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.reports_view.unread} aria-label={t.overview.reports_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.reports_view.read} aria-hidden="true" />}</div>
                         <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>

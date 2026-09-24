@@ -66,7 +66,7 @@ export default function MemoryPanelList({
             key={cat}
             className={`typo-body px-2 py-0.5 rounded-full whitespace-nowrap transition-colors ${
               activeCategory === cat
-                ? 'bg-violet-500/20 text-violet-400 font-medium'
+                ? 'bg-violet-500/20 text-violet-400'
                 : 'bg-primary/5 text-foreground hover:bg-primary/10'
             }`}
             onClick={() => onCategoryChange(cat)}
@@ -93,7 +93,7 @@ export default function MemoryPanelList({
             {/* The run id carries its own meaning next to the commit glyph; the
                 bare English word "Run" that sat here rendered untranslated in
                 all 14 locales. */}
-            <span className="typo-code text-violet-400 font-mono truncate flex-1">
+            <span className="typo-code text-violet-400 truncate flex-1">
               {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
             </span>
             <button
