@@ -215,7 +215,19 @@
     "stale_chip": "Không hoạt động",
     "stale_tooltip": "Không có hoạt động trong hơn 30 ngày — hãy cân nhắc thu hồi nếu không còn sử dụng.",
     "title": "Khóa API",
-    "your_keys": "Khóa của bạn"
+    "your_keys": "Khóa của bạn",
+    "connected_apps_expired_count": "Ghép nối đã hết hạn: {count}",
+    "connected_apps_no_live": "Không có ghép nối còn hiệu lực",
+    "connected_apps_older_count": "Ghép nối cũ hơn: {count}",
+    "live_of_total": "{live} còn hiệu lực trên {total}",
+    "retire_body": "Mỗi khóa dưới đây đã hết hạn hoặc đã bị thay bằng ghép nối mới hơn cho cùng ứng dụng. Gỡ sẽ thu hồi khóa đó. Mỗi ứng dụng giữ lại ghép nối còn hiệu lực mới nhất.",
+    "retire_confirm": "Gỡ {count}",
+    "retire_failed_label": "Không thể gỡ:",
+    "retire_open": "Gỡ ghép nối không còn dùng ({count})",
+    "retire_reason_expired": "Đã hết hạn",
+    "retire_reason_superseded": "Đã bị thay bằng ghép nối mới hơn",
+    "retire_result": "Đã gỡ {retired} trên {total}.",
+    "retire_title": "Gỡ ghép nối không còn dùng"
   },
   "appearance_extra": {
     "dev": "Dev",

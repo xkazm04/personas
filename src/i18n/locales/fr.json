@@ -15970,7 +15970,19 @@
       "stale_chip": "Inactive",
       "stale_tooltip": "Aucune activité depuis plus de 30 jours — envisagez de la révoquer si elle n’est plus utilisée.",
       "title": "Clés API",
-      "your_keys": "Vos clés"
+      "your_keys": "Vos clés",
+      "connected_apps_expired_count": "Appairages expirés : {count}",
+      "connected_apps_no_live": "Aucun appairage valide",
+      "connected_apps_older_count": "Appairages plus anciens : {count}",
+      "live_of_total": "{live} valides sur {total}",
+      "retire_body": "Chaque clé ci-dessous a expiré ou a été remplacée par un appairage plus récent de la même app. La retirer la révoque. Chaque app conserve son appairage valide le plus récent.",
+      "retire_confirm": "Retirer {count}",
+      "retire_failed_label": "Impossible de retirer :",
+      "retire_open": "Retirer les appairages invalides ({count})",
+      "retire_reason_expired": "Expiré",
+      "retire_reason_superseded": "Remplacé par un appairage plus récent",
+      "retire_result": "{retired} sur {total} retirés.",
+      "retire_title": "Retirer les appairages invalides"
     },
     "appearance_extra": {
       "dev": "Dev",

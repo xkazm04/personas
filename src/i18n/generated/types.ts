@@ -13513,6 +13513,18 @@ export type Translations = {
       endpoint_build_promote: string;
       server_auth_label: string;
       server_auth_description: string;
+      live_of_total: string;
+      connected_apps_no_live: string;
+      connected_apps_expired_count: string;
+      connected_apps_older_count: string;
+      retire_open: string;
+      retire_title: string;
+      retire_body: string;
+      retire_reason_expired: string;
+      retire_reason_superseded: string;
+      retire_confirm: string;
+      retire_result: string;
+      retire_failed_label: string;
     };
     title: string;
     settings_saved: string;

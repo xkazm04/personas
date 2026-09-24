@@ -215,7 +215,19 @@
     "stale_chip": "Neaktivní",
     "stale_tooltip": "Žádná aktivita po dobu 30+ dnů — pokud se již nepoužívá, zvažte odvolání.",
     "title": "API klíče",
-    "your_keys": "Vaše klíče"
+    "your_keys": "Vaše klíče",
+    "connected_apps_expired_count": "Vypršelá spárování: {count}",
+    "connected_apps_no_live": "Žádné platné spárování",
+    "connected_apps_older_count": "Starší spárování: {count}",
+    "live_of_total": "{live} platných z {total}",
+    "retire_body": "Každý klíč níže buď vypršel, nebo byl nahrazen novějším spárováním stejné aplikace. Vyřazení jej odvolá. Každá aplikace si ponechá své nejnovější platné spárování.",
+    "retire_confirm": "Vyřadit {count}",
+    "retire_failed_label": "Nepodařilo se vyřadit:",
+    "retire_open": "Vyřadit neplatná spárování ({count})",
+    "retire_reason_expired": "Vypršelo",
+    "retire_reason_superseded": "Nahrazeno novějším spárováním",
+    "retire_result": "Vyřazeno {retired} z {total}.",
+    "retire_title": "Vyřadit neplatná spárování"
   },
   "appearance_extra": {
     "dev": "Dev",

@@ -15970,7 +15970,19 @@
       "stale_chip": "Inaktiv",
       "stale_tooltip": "Keine Aktivität seit über 30 Tagen — erwägen Sie eine Sperrung, wenn der Schlüssel nicht mehr verwendet wird.",
       "title": "API-Schlüssel",
-      "your_keys": "Ihre Schlüssel"
+      "your_keys": "Ihre Schlüssel",
+      "connected_apps_expired_count": "Abgelaufene Kopplungen: {count}",
+      "connected_apps_no_live": "Keine gültige Kopplung",
+      "connected_apps_older_count": "Ältere Kopplungen: {count}",
+      "live_of_total": "{live} gültig von {total}",
+      "retire_body": "Jeder Schlüssel unten ist abgelaufen oder wurde durch eine neuere Kopplung derselben App ersetzt. Entfernen widerruft ihn. Jede App behält ihre neueste gültige Kopplung.",
+      "retire_confirm": "{count} entfernen",
+      "retire_failed_label": "Konnte nicht entfernt werden:",
+      "retire_open": "Ungültige Kopplungen entfernen ({count})",
+      "retire_reason_expired": "Abgelaufen",
+      "retire_reason_superseded": "Durch neuere Kopplung ersetzt",
+      "retire_result": "{retired} von {total} entfernt.",
+      "retire_title": "Ungültige Kopplungen entfernen"
     },
     "appearance_extra": {
       "dev": "Entwickler",

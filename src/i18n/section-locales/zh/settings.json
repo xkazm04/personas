@@ -215,7 +215,19 @@
     "stale_chip": "已过期",
     "stale_tooltip": "30 天以上无活动——如果不再使用，请考虑撤销。",
     "title": "API 密钥",
-    "your_keys": "您的密钥"
+    "your_keys": "您的密钥",
+    "connected_apps_expired_count": "已过期配对：{count}",
+    "connected_apps_no_live": "无有效配对",
+    "connected_apps_older_count": "较早配对：{count}",
+    "live_of_total": "{total} 个中 {live} 个有效",
+    "retire_body": "以下每个密钥均已过期，或已被同一应用的较新配对取代。停用即撤销该密钥。每个应用都会保留其最新的有效配对。",
+    "retire_confirm": "停用 {count} 个",
+    "retire_failed_label": "无法停用：",
+    "retire_open": "停用失效配对 ({count})",
+    "retire_reason_expired": "已过期",
+    "retire_reason_superseded": "已被较新配对取代",
+    "retire_result": "已停用 {retired} 个，共 {total} 个。",
+    "retire_title": "停用失效配对"
   },
   "appearance_extra": {
     "dev": "开发",

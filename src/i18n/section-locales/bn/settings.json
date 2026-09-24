@@ -215,7 +215,19 @@
     "stale_chip": "নিষ্ক্রিয়",
     "stale_tooltip": "৩০+ দিন ধরে কোনো কার্যকলাপ নেই — আর ব্যবহার না হলে প্রত্যাহার করার কথা ভাবুন।",
     "title": "API কী",
-    "your_keys": "আপনার কী"
+    "your_keys": "আপনার কী",
+    "connected_apps_expired_count": "মেয়াদোত্তীর্ণ পেয়ারিং: {count}",
+    "connected_apps_no_live": "কোনো সক্রিয় পেয়ারিং নেই",
+    "connected_apps_older_count": "পুরোনো পেয়ারিং: {count}",
+    "live_of_total": "{total}-এর মধ্যে {live}টি সক্রিয়",
+    "retire_body": "নিচের প্রতিটি কী-এর মেয়াদ শেষ হয়েছে অথবা একই অ্যাপের নতুন পেয়ারিং দিয়ে প্রতিস্থাপিত হয়েছে। বাতিল করলে সেটি প্রত্যাহার হয়। প্রতিটি অ্যাপ তার সর্বশেষ সক্রিয় পেয়ারিং রাখে।",
+    "retire_confirm": "{count}টি বাতিল করুন",
+    "retire_failed_label": "বাতিল করা যায়নি:",
+    "retire_open": "অকেজো পেয়ারিং বাতিল করুন ({count})",
+    "retire_reason_expired": "মেয়াদোত্তীর্ণ",
+    "retire_reason_superseded": "নতুন পেয়ারিং দিয়ে প্রতিস্থাপিত",
+    "retire_result": "{total}-এর মধ্যে {retired}টি বাতিল হয়েছে।",
+    "retire_title": "অকেজো পেয়ারিং বাতিল করুন"
   },
   "appearance_extra": {
     "dev": "ডেভ",

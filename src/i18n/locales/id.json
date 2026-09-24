@@ -15970,7 +15970,19 @@
       "stale_chip": "Tidak aktif",
       "stale_tooltip": "Tidak ada aktivitas selama 30+ hari — pertimbangkan untuk mencabut jika tidak digunakan lagi.",
       "title": "Kunci API",
-      "your_keys": "Kunci Anda"
+      "your_keys": "Kunci Anda",
+      "connected_apps_expired_count": "Pemasangan kedaluwarsa: {count}",
+      "connected_apps_no_live": "Tidak ada pemasangan aktif",
+      "connected_apps_older_count": "Pemasangan lama: {count}",
+      "live_of_total": "{live} aktif dari {total}",
+      "retire_body": "Setiap kunci di bawah sudah kedaluwarsa atau digantikan pemasangan yang lebih baru untuk aplikasi yang sama. Memensiunkan akan mencabutnya. Setiap aplikasi tetap menyimpan pemasangan aktif terbarunya.",
+      "retire_confirm": "Pensiunkan {count}",
+      "retire_failed_label": "Tidak dapat dipensiunkan:",
+      "retire_open": "Pensiunkan pemasangan mati ({count})",
+      "retire_reason_expired": "Kedaluwarsa",
+      "retire_reason_superseded": "Digantikan pemasangan lebih baru",
+      "retire_result": "{retired} dari {total} dipensiunkan.",
+      "retire_title": "Pensiunkan pemasangan mati"
     },
     "appearance_extra": {
       "dev": "Dev",

@@ -215,7 +215,19 @@
     "stale_chip": "休止中",
     "stale_tooltip": "30 日以上使用されていません — 不要な場合は失効を検討してください。",
     "title": "APIキー",
-    "your_keys": "あなたのキー"
+    "your_keys": "あなたのキー",
+    "connected_apps_expired_count": "期限切れのペアリング: {count}",
+    "connected_apps_no_live": "有効なペアリングなし",
+    "connected_apps_older_count": "古いペアリング: {count}",
+    "live_of_total": "{total} 件中 {live} 件が有効",
+    "retire_body": "以下の各キーは期限切れか、同じアプリの新しいペアリングに置き換えられています。破棄すると失効します。各アプリは最新の有効なペアリングを保持します。",
+    "retire_confirm": "{count} 件を破棄",
+    "retire_failed_label": "破棄できませんでした:",
+    "retire_open": "無効なペアリングを破棄 ({count})",
+    "retire_reason_expired": "期限切れ",
+    "retire_reason_superseded": "新しいペアリングに置き換え済み",
+    "retire_result": "{total} 件中 {retired} 件を破棄しました。",
+    "retire_title": "無効なペアリングを破棄"
   },
   "appearance_extra": {
     "dev": "開発者",

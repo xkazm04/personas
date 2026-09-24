@@ -215,7 +215,19 @@
     "stale_chip": "Неактивен",
     "stale_tooltip": "Нет активности более 30 дней — рассмотрите возможность отзыва, если ключ больше не используется.",
     "title": "API-ключи",
-    "your_keys": "Ваши ключи"
+    "your_keys": "Ваши ключи",
+    "connected_apps_expired_count": "Истекшие привязки: {count}",
+    "connected_apps_no_live": "Нет действующей привязки",
+    "connected_apps_older_count": "Старые привязки: {count}",
+    "live_of_total": "{live} действующих из {total}",
+    "retire_body": "Каждый ключ ниже истёк или заменён более новой привязкой того же приложения. Удаление отзывает его. Каждое приложение сохраняет свою самую новую действующую привязку.",
+    "retire_confirm": "Удалить {count}",
+    "retire_failed_label": "Не удалось удалить:",
+    "retire_open": "Удалить недействующие привязки ({count})",
+    "retire_reason_expired": "Истёк",
+    "retire_reason_superseded": "Заменён более новой привязкой",
+    "retire_result": "Удалено {retired} из {total}.",
+    "retire_title": "Удалить недействующие привязки"
   },
   "appearance_extra": {
     "dev": "Разработчик",

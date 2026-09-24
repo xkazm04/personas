@@ -15970,7 +15970,19 @@
       "stale_chip": "निष्क्रिय",
       "stale_tooltip": "30+ दिनों से कोई गतिविधि नहीं — यदि अब उपयोग में नहीं है तो रद्द करने पर विचार करें।",
       "title": "API कुंजियाँ",
-      "your_keys": "आपकी कुंजियाँ"
+      "your_keys": "आपकी कुंजियाँ",
+      "connected_apps_expired_count": "समाप्त पेयरिंग: {count}",
+      "connected_apps_no_live": "कोई सक्रिय पेयरिंग नहीं",
+      "connected_apps_older_count": "पुरानी पेयरिंग: {count}",
+      "live_of_total": "{total} में से {live} सक्रिय",
+      "retire_body": "नीचे दी गई हर कुंजी या तो समाप्त हो चुकी है या उसी ऐप की नई पेयरिंग से बदल दी गई है। हटाने पर वह रद्द हो जाती है। हर ऐप अपनी सबसे नई सक्रिय पेयरिंग रखता है।",
+      "retire_confirm": "{count} हटाएँ",
+      "retire_failed_label": "हटाया नहीं जा सका:",
+      "retire_open": "निष्क्रिय पेयरिंग हटाएँ ({count})",
+      "retire_reason_expired": "समाप्त",
+      "retire_reason_superseded": "नई पेयरिंग से बदली गई",
+      "retire_result": "{total} में से {retired} हटाई गईं।",
+      "retire_title": "निष्क्रिय पेयरिंग हटाएँ"
     },
     "appearance_extra": {
       "dev": "डेव",

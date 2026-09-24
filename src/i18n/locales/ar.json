@@ -15970,7 +15970,19 @@
       "stale_chip": "خامل",
       "stale_tooltip": "لا يوجد نشاط منذ أكثر من 30 يومًا — فكر في الإلغاء إذا لم يعد قيد الاستخدام.",
       "title": "مفاتيح API",
-      "your_keys": "مفاتيحك"
+      "your_keys": "مفاتيحك",
+      "connected_apps_expired_count": "اقترانات منتهية: {count}",
+      "connected_apps_no_live": "لا يوجد اقتران نشط",
+      "connected_apps_older_count": "اقترانات أقدم: {count}",
+      "live_of_total": "{live} نشطة من أصل {total}",
+      "retire_body": "كل مفتاح أدناه إما انتهت صلاحيته أو استُبدل باقتران أحدث للتطبيق نفسه. الإيقاف يلغيه. يحتفظ كل تطبيق بأحدث اقتران نشط له.",
+      "retire_confirm": "إيقاف {count}",
+      "retire_failed_label": "تعذر الإيقاف:",
+      "retire_open": "إيقاف الاقترانات غير الصالحة ({count})",
+      "retire_reason_expired": "منتهي الصلاحية",
+      "retire_reason_superseded": "استُبدل باقتران أحدث",
+      "retire_result": "تم إيقاف {retired} من {total}.",
+      "retire_title": "إيقاف الاقترانات غير الصالحة"
     },
     "appearance_extra": {
       "dev": "مطوّر",

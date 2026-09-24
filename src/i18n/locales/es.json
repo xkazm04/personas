@@ -15970,7 +15970,19 @@
       "stale_chip": "Inactiva",
       "stale_tooltip": "Sin actividad durante más de 30 días — considera revocarla si ya no se usa.",
       "title": "Claves de API",
-      "your_keys": "Sus claves"
+      "your_keys": "Sus claves",
+      "connected_apps_expired_count": "Vinculaciones caducadas: {count}",
+      "connected_apps_no_live": "Sin vinculación válida",
+      "connected_apps_older_count": "Vinculaciones anteriores: {count}",
+      "live_of_total": "{live} válidas de {total}",
+      "retire_body": "Cada clave de abajo caducó o fue sustituida por una vinculación más reciente de la misma app. Retirarla la revoca. Cada app conserva su vinculación válida más reciente.",
+      "retire_confirm": "Retirar {count}",
+      "retire_failed_label": "No se pudo retirar:",
+      "retire_open": "Retirar vinculaciones inválidas ({count})",
+      "retire_reason_expired": "Caducada",
+      "retire_reason_superseded": "Sustituida por una vinculación más reciente",
+      "retire_result": "Retiradas {retired} de {total}.",
+      "retire_title": "Retirar vinculaciones inválidas"
     },
     "appearance_extra": {
       "dev": "Dev",

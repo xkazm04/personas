@@ -15970,7 +15970,19 @@
       "stale_chip": "미사용",
       "stale_tooltip": "30일 이상 활동 없음 — 더 이상 사용하지 않는다면 해지를 고려하세요.",
       "title": "API 키",
-      "your_keys": "내 키"
+      "your_keys": "내 키",
+      "connected_apps_expired_count": "만료된 페어링: {count}",
+      "connected_apps_no_live": "유효한 페어링 없음",
+      "connected_apps_older_count": "이전 페어링: {count}",
+      "live_of_total": "{total}개 중 {live}개 유효",
+      "retire_body": "아래 각 키는 만료되었거나 같은 앱의 새 페어링으로 대체되었습니다. 정리하면 해당 키가 폐기됩니다. 각 앱은 가장 최근의 유효한 페어링을 유지합니다.",
+      "retire_confirm": "{count}개 정리",
+      "retire_failed_label": "정리하지 못함:",
+      "retire_open": "무효 페어링 정리 ({count})",
+      "retire_reason_expired": "만료됨",
+      "retire_reason_superseded": "새 페어링으로 대체됨",
+      "retire_result": "{total}개 중 {retired}개 정리됨.",
+      "retire_title": "무효 페어링 정리"
     },
     "appearance_extra": {
       "dev": "Dev",
