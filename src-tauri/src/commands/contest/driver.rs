@@ -529,9 +529,7 @@ fn spawn_watcher(app: AppHandle, job: SeatJob) {
                 missing_capture_reason: Some("the app's seat watcher failed".into()),
                 ..RunEnd::default()
             };
-            if let Err(e) = finalize(&app, &job, end).await {
-                tracing::warn!(error = %e, "contest: could not record a panicked seat");
-            }
+            finalize_or_fail(&app, &job, end).await;
         }
         watched()
             .lock()
@@ -587,8 +585,52 @@ async fn watch(app: &AppHandle, job: &SeatJob) {
         wall_s: Some(started.elapsed().as_secs_f64()),
         finished_without_capture: false,
     };
-    if let Err(e) = finalize(app, job, end).await {
-        tracing::warn!(session = %sid, error = %e, "contest: writing the seat record failed");
+    finalize_or_fail(app, job, end).await;
+}
+
+/// Run `f` up to `tries` times, waiting `backoff * attempt` after each
+/// failure; the last error is returned.
+async fn with_retries<T, F, Fut>(tries: usize, backoff: Duration, mut f: F) -> Result<T, AppError>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, AppError>>,
+{
+    let mut attempt = 1usize;
+    loop {
+        match f().await {
+            Ok(v) => return Ok(v),
+            Err(e) if attempt >= tries => return Err(e),
+            Err(e) => {
+                tracing::info!(attempt, error = %e, "contest: retrying after a failed write");
+                let wait = backoff.saturating_mul(u32::try_from(attempt).unwrap_or(u32::MAX));
+                tokio::time::sleep(wait).await;
+                attempt += 1;
+            }
+        }
+    }
+}
+
+/// How many times a seat's record write is tried, and the backoff step.
+const FINALIZE_TRIES: usize = 3;
+const FINALIZE_BACKOFF: Duration = Duration::from_millis(500);
+
+/// [`finalize`] with retries. When every try failed, the chain is marked
+/// Failed with the reason, so the page names it instead of sitting in Queued
+/// (the chain waits for every participant's record).
+async fn finalize_or_fail(app: &AppHandle, job: &SeatJob, end: RunEnd) {
+    let res = with_retries(FINALIZE_TRIES, FINALIZE_BACKOFF, || {
+        finalize(app, job, end.clone())
+    })
+    .await;
+    let Err(e) = res else { return };
+    tracing::warn!(session = %job.session_id, error = %e, "contest: writing the seat record failed");
+    let reason = format!(
+        "could not write the record of seat {}: {}",
+        job.key,
+        short_reason(&e)
+    );
+    if let Err(e2) = set_chain(app, &job.ctx, ContestChainStep::Failed, Some(reason)).await {
+        tracing::warn!(error = %e2, "contest: could not record the failed seat record");
     }
 }
 
@@ -1082,6 +1124,34 @@ mod tests {
             .await
             .unwrap());
         assert_eq!(arena::read_sidecar(&paths).chain.step, C::Ready);
+    }
+
+    /// A record write that fails (a Windows rename over a locked
+    /// record.json) is retried, and gives up with the last error.
+    #[tokio::test]
+    async fn a_failed_record_write_is_retried_then_reported() {
+        use std::sync::atomic::AtomicUsize;
+        let calls = AtomicUsize::new(0);
+        let flaky = with_retries(3, Duration::from_millis(1), || {
+            let n = calls.fetch_add(1, Ordering::SeqCst);
+            async move {
+                if n < 2 {
+                    Err(AppError::Internal("replace record.json: denied".into()))
+                } else {
+                    Ok(n)
+                }
+            }
+        })
+        .await;
+        assert_eq!(flaky.unwrap(), 2, "succeeded on the third try");
+        let calls = AtomicUsize::new(0);
+        let dead: Result<(), AppError> = with_retries(3, Duration::from_millis(1), || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async { Err(AppError::Internal("replace record.json: denied".into())) }
+        })
+        .await;
+        assert!(dead.is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 3, "gave up after 3 tries");
     }
 
     #[test]
