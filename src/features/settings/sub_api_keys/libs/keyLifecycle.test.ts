@@ -123,7 +123,7 @@ describe('case 3: groupPairings collapses pairings to one group per origin', () 
 describe('case 4: the newest live pairing is current, older live ones are superseded', () => {
   it('t1 < t2 < t3 gives current = t3 and retirable = t1, t2', () => {
     const { all, ship } = measured();
-    const [t1, t2, t3] = ship;
+    const [t1, t2, t3] = ship as [ExternalApiKey, ExternalApiKey, ExternalApiKey]; // paired(SHIP, 3) builds exactly 3
     const g = groupPairings(all, NOW).find((x) => x.origin === SHIP)!;
     expect(g.current?.id).toBe(t3.id);
     expect(g.retirable.map((c) => c.key.id).sort()).toEqual([t1.id, t2.id].sort());
@@ -132,7 +132,7 @@ describe('case 4: the newest live pairing is current, older live ones are supers
   it('input order does not decide which pairing is current', () => {
     const { all, ship } = measured();
     const g = groupPairings([...all].reverse(), NOW).find((x) => x.origin === SHIP)!;
-    expect(g.current?.id).toBe(ship[2].id);
+    expect(g.current?.id).toBe(ship[2]!.id);
   });
 });
 
@@ -161,7 +161,7 @@ describe('case 5: retirePlan holds only expired or superseded origin-bound keys'
     expect(isStaleKey(staleRegular, NOW)).toBe(true);
 
     const ids = new Set(retirePlan(keys, NOW).map((c) => c.key.id));
-    for (const k of [bridge, staleRegular, expiredRegular, revokedPaired, disabledPaired, ship[2]]) {
+    for (const k of [bridge, staleRegular, expiredRegular, revokedPaired, disabledPaired, ship[2]!]) {
       expect(ids.has(k.id)).toBe(false);
     }
     // Every origin with a live pairing keeps exactly one live key out of the plan.
@@ -176,7 +176,7 @@ describe('case 5: retirePlan holds only expired or superseded origin-bound keys'
   it('[guard] an expired pairing newer than the live one does not unseat the live key', () => {
     const live = key({ bound_origin: PROBE, created_at: iso(NOW - 3 * DAY_MS), expires_at: iso(NOW + DAY_MS) });
     const newerExpired = key({ bound_origin: PROBE, created_at: iso(NOW - DAY_MS), expires_at: 'garbage' });
-    const [g] = groupPairings([live, newerExpired], NOW);
+    const g = groupPairings([live, newerExpired], NOW)[0]!;
     expect(g.current?.id).toBe(live.id);
     expect(retirePlan([live, newerExpired], NOW).map((c) => c.key.id)).toEqual([newerExpired.id]);
   });
