@@ -216,7 +216,7 @@ export default function GuideStudio({
             <>
               {live && <StudioPreviewFrames preview={preview} showPointer={!showBlueprint} />}
               {showBlueprint && !sketchMode && (
-                <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} placeholder={placeholder} messages={rt.messages} />
+                <GuideBlueprint name={rt.name} phase={rt.phase} phases={rt.phases} messages={rt.messages} />
               )}
               <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
                 <AnimatePresence mode="wait">

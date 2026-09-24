@@ -23182,11 +23182,6 @@ export type Translations = {
       frame_setup: string;
       frame_pending: string;
       sheet_title: string;
-      sheet_drafting: string;
-      setup_creating: string;
-      setup_starting: string;
-      setup_failed: string;
-      setup_hint: string;
       boot_failed: string;
       notes_label: string;
       note_found: string;
