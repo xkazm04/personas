@@ -16,12 +16,10 @@ import { useWords } from '../words';
 type Reach = 'granted' | 'refused' | 'never_asked' | 'off' | 'unknown';
 
 /**
- * Four of the five are marks in the same family - a filled dot, a barred dot,
- * a hollow dot, a dotted dot. `unknown` used to be a literal `?`, which reads
- * as a stray character beside a project name ("personas ?") rather than as a
- * reading, so it wears the ledger's own UNKNOWN ink instead: the see-through
- * dotted box the nine columns use for "nobody looked". The operator has
- * already learned that mark on this page.
+ * Four marks in one family. The fifth, `unknown`, was a literal `?` that read
+ * as a stray character beside a project name ("personas ?"); it wears the
+ * ledger's own see-through UNKNOWN ink instead - the mark the nine columns
+ * already taught the reader.
  */
 const REACH_GLYPH: Record<Exclude<Reach, 'unknown'>, string> = {
   granted: '●',
@@ -38,6 +36,7 @@ function reachMark(reach: ConsumerProject['reach']): Reach {
 
 function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
   const { w, tx } = useWords();
+  const mark = reachMark(p.reach);
   const scale = p.pairs / maxPairs;
   const part = (n: number) => widthPct((n / Math.max(1, p.pairs)) * 100 * scale, 100);
   return (
@@ -50,16 +49,12 @@ function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
         pct: share(p.evaluated, p.pairs) ?? w.not_measured,
         stale: p.staleVerdicts,
         state: p.state,
-      })} ${w.side_reach}: ${w.reach[reachMark(p.reach)]}`}
+      })} ${w.side_reach}: ${w.reach[mark]}`}
     >
       <span className="cb-pn typo-caption">
         {p.slug}
-        <i className={`cb-reach cb-reach-${reachMark(p.reach)}`}>
-          {reachMark(p.reach) === 'unknown' ? (
-            <span className="cb-unkbox" />
-          ) : (
-            REACH_GLYPH[reachMark(p.reach) as Exclude<Reach, 'unknown'>]
-          )}
+        <i className={`cb-reach cb-reach-${mark}`}>
+          {mark === 'unknown' ? <span className="cb-unkbox" /> : REACH_GLYPH[mark]}
         </i>
       </span>
       <span className="cb-bar" style={{ height: '9px' }}>

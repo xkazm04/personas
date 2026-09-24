@@ -6,25 +6,23 @@
  * from somewhere else - it is the row you clicked, grown, every cell becoming
  * the full drawing of its own reason in the place it already occupied.
  *
- * A PRESENTATIONAL PRIMITIVE. It takes its data (`model`, `docket`) and its
- * words (`words`) as props and reads nothing from the app, so the page can be
- * rendered against the product's real stylesheet outside the shell and held to
- * the winner's measured style contract.
+ * A PRESENTATIONAL PRIMITIVE: data (`model`, `docket`) and words (`words`)
+ * come in as props and it reads nothing from the app, so the whole page can be
+ * rendered and measured in a harness. The contest prototype's style contract
+ * was retired at the 2026-09-25 module gate - controls and type are the app's
+ * now, and only the nine-channel drawing stays bespoke.
  */
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 
 import { AnchoredTooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { matchesQuery } from '@/lib/text/search';
 
 import { DeepLayer } from './deep/DeepLayer';
 import { useDescent } from './deep/useDescent';
 import { Docket } from './docket/Docket';
-import { Bands } from './ledger/Bands';
 import { Foot } from './ledger/Foot';
-import { LedgerEmpty, type BlueprintPhase } from './ledger/LedgerEmpty';
-import { LedgerHead } from './ledger/LedgerHead';
-import { LedgerRow } from './ledger/LedgerRow';
+import { LedgerBody } from './ledger/LedgerBody';
+import type { BlueprintPhase } from './ledger/LedgerEmpty';
 import { TopBar } from './ledger/TopBar';
 import { Verdict } from './ledger/Verdict';
 import type { DocketFeed } from './model/docket';
@@ -43,21 +41,18 @@ export interface BlueprintProps {
   docket: DocketFeed;
   words: BlueprintWords;
   /**
-   * The operator's console, rendered as its own grid row between the verdict
-   * and the ledger - the order the work happens in: she drains the human lane
-   * BEFORE the plan below it.
-   *
-   * A node rather than data, because the console reaches IPC and this
-   * component reaches nothing. The slot element is always rendered so the
-   * grid's row placement does not depend on whether a host passed one; with
-   * no node it collapses to nothing.
+   * The operator's console: its own grid row between the verdict and the
+   * ledger, the order the work happens in - she drains the human lane BEFORE
+   * the plan below it. A node rather than data, because the console reaches
+   * IPC and this component reaches nothing; the slot element is always
+   * rendered, so row placement never depends on whether a host passed one.
    */
   console?: ReactNode;
   /**
-   * Which unpopulated phase the page is in, read ONLY when the model carries
-   * no rows. A read in flight, an instrument running and a registry nobody has
-   * ever measured are three different sentences, and the ledger body says the
-   * right one instead of announcing emptiness over a read that has not landed.
+   * Which unpopulated phase the page is in, read ONLY when the model carries no
+   * rows. A read in flight, an instrument running and a registry nobody has
+   * measured are three sentences, and the ledger body says the right one rather
+   * than announcing emptiness over a read that has not landed.
    */
   phase?: BlueprintPhase;
 }
@@ -98,42 +93,20 @@ export function Blueprint({
   );
   const onKeyDown = useBlueprintKeys({ state, deep, descend, ascend: descent.ascend });
 
-  // The map is bound on the page root rather than on `window`, so the page
-  // never eats a key while the operator is somewhere else in the app. That
-  // only works if something inside it holds focus, so it claims focus once.
+  // The key map is bound on the page root, not on `window`, so the page never
+  // eats a key while the operator is elsewhere - which needs focus inside it.
   useEffect(() => {
     rootRef.current?.focus({ preventScroll: true });
   }, []);
 
-  // The matching policy (case folding, diacritics, multi-term) is the app's,
-  // not this call site's: a subject slug typed with an accent must still find
-  // its row in all fourteen locales.
-  const query = state.query.trim();
   const current = state.rows[state.cursor];
-  const bodyRows = useMemo(
-    () =>
-      state.rows.map((row, i) => (
-        <LedgerRow
-          key={row.id}
-          row={row}
-          index={i}
-          model={model}
-          current={i === state.cursor}
-          dimmed={!!query && !matchesQuery(row.id, query)}
-        />
-      )),
-    [model, query, state.cursor, state.rows],
-  );
 
   return (
     <BlueprintWordsProvider value={words}>
       <div
         className="cb-root"
-        // The app's own tier for a dense tool surface (typography.css, Gate 3):
-        // every token one step down the ramp, with weight, tracking, tint and
-        // the Appearance text scale unchanged. The ledger is the surface that
-        // tier was written for, and it carried a private `font-size: 0.875rem`
-        // on its root instead.
+        // The app's tier for a dense tool surface (typography.css, Gate 3):
+        // one step down the ramp, everything else unchanged.
         data-type-density="compact"
         data-role="cb-blueprint"
         data-layer={descent.layer}
@@ -153,35 +126,25 @@ export function Blueprint({
           onQuery={state.setQuery}
           onHelp={state.toggleHelp}
         />
-        {/* Both collapse during the descent - they are about the corpus and
-            about her queue, not about the row being read - so they are hidden
-            from a screen reader there exactly as the ledger below already is. */}
+        {/* Both collapse during the descent - the corpus and her queue are not
+            what the operator is reading - and leave the a11y tree with it. */}
         <Verdict model={model} hidden={deep} />
         <div className="cb-console-slot" aria-hidden={deep}>
           {operatorConsole}
         </div>
         <main className="cb-stage" ref={deepRef}>
-          <section className="cb-ledger" aria-label={words.w.ledger_region} aria-hidden={deep}>
-            <div className="cb-lscroll" ref={ledgerRef}>
-              <LedgerHead model={model} solo={state.solo} onSolo={state.toggleSolo} />
-              <div
-                role="listbox"
-                aria-label={words.w.ledger_region}
-                tabIndex={-1}
-                onClick={(e) => {
-                  const row = e.target instanceof Element ? e.target.closest('[data-cb-row]') : null;
-                  if (row) descend(Number(row.getAttribute('data-cb-row')));
-                }}
-              >
-                {/* No rows is not an empty list: it is a ledger nobody has
-                    read, and it says so once, here, on the ledger's own grid
-                    rather than as a card that replaced the page. */}
-                {model.rows === null && <LedgerEmpty phase={phase} />}
-                {bodyRows}
-                <Bands model={model} />
-              </div>
-            </div>
-          </section>
+          <LedgerBody
+            model={model}
+            rows={state.rows}
+            cursor={state.cursor}
+            query={state.query.trim()}
+            solo={state.solo}
+            onSolo={state.toggleSolo}
+            onDescend={descend}
+            phase={phase}
+            scrollRef={ledgerRef}
+            hidden={deep}
+          />
           {current && (
             <DeepLayer
               row={current}
