@@ -78,16 +78,32 @@ pub fn tag_prompt_version(
 
 /// Rollback a persona's prompt to a specific version.
 /// Restores the version's prompt content to the persona and tags it as production.
+///
+/// After the rollback commits, the restored prompt is pushed to the persona's
+/// cloud deployment (if any) through the one recorded sync door. That push is
+/// detached: its failure writes a `failed` audit row and never fails the
+/// rollback.
 #[tauri::command]
 pub fn rollback_prompt_version(
     state: State<'_, Arc<AppState>>,
     version_id: String,
 ) -> Result<PersonaPromptVersion, AppError> {
     require_auth_sync(&state)?;
-    let version = repo::get_prompt_version_by_id(&state.db, &version_id)?;
+    let version = apply_prompt_rollback(&state.db, &version_id)?;
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &version.persona_id, None);
+    Ok(version)
+}
+
+/// The rollback's local write: restore the version's prompt onto the persona
+/// and tag it production, in one transaction.
+pub(crate) fn apply_prompt_rollback(
+    db: &crate::db::DbPool,
+    version_id: &str,
+) -> Result<PersonaPromptVersion, AppError> {
+    let version = repo::get_prompt_version_by_id(db, version_id)?;
 
     // Wrap all writes in a single transaction to ensure atomicity
-    let conn = state.db.get()?;
+    let conn = db.get()?;
     conn.execute_batch("BEGIN")?;
     let result = (|| -> Result<(), AppError> {
         let now = chrono::Utc::now().to_rfc3339();
@@ -130,7 +146,7 @@ pub fn rollback_prompt_version(
         }
     }
 
-    repo::get_prompt_version_by_id(&state.db, &version_id)
+    repo::get_prompt_version_by_id(db, version_id)
 }
 
 /// Get the recent error rate for a persona.

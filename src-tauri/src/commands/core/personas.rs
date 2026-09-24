@@ -16,7 +16,6 @@ use crate::db::repos::resources::persona_change_log as change_log_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
-use crate::engine;
 use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
@@ -232,69 +231,10 @@ pub fn update_persona(
         pool.invalidate(&pid).await;
     });
 
-    // Auto-sync to cloud if connected (fire-and-forget).
+    // Auto-sync to cloud if connected and deployed (fire-and-forget, recorded).
     // Use the already-fetched result to avoid re-reading stale data if
     // another update races with the sync task.
-    let cloud_client = state.cloud_client.clone();
-    let db = state.db.clone();
-    let sync_id = id.clone();
-    let sync_persona = result.clone();
-    tauri::async_runtime::spawn(async move {
-        let client = match cloud_client.lock().await.clone() {
-            Some(c) => c,
-            None => return, // not connected to cloud — nothing to sync
-        };
-        // Check if there is an active deployment for this persona
-        let deployments = match client.list_deployments().await {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-        let has_deployment = deployments.iter().any(|d| d.persona_id == sync_id);
-        if !has_deployment {
-            return;
-        }
-        // Use the already-updated persona snapshot; only tools need a DB read
-        let tools_list =
-            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-                Ok(t) => t,
-                Err(_) => return,
-            };
-        // v1: living-agent sections not exported (responsibilities/episodes
-        // stay None — `## Core` still renders from the persona snapshot).
-        let prompt = engine::prompt::assemble_prompt(
-            &sync_persona,
-            &tools_list,
-            None,
-            None,
-            None,
-            None,
-            #[cfg(feature = "desktop")]
-            None,
-        );
-        let body = serde_json::json!({
-            "id": sync_persona.id,
-            "name": sync_persona.name,
-            "description": sync_persona.description,
-            "systemPrompt": prompt,
-            "structuredPrompt": sync_persona.structured_prompt,
-            "icon": sync_persona.icon,
-            "color": sync_persona.color,
-            "enabled": sync_persona.enabled,
-            "maxConcurrent": sync_persona.max_concurrent,
-            "timeoutMs": sync_persona.timeout_ms,
-            "modelProfile": sync_persona.model_profile,
-            "maxBudgetUsd": sync_persona.max_budget_usd,
-            "maxTurns": sync_persona.max_turns,
-            "designContext": sync_persona.design_context,
-            "homeTeamId": sync_persona.home_team_id,
-            "coreProfile": sync_persona.core_profile,
-        });
-        if let Err(e) = client.upsert_persona(&body).await {
-            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
-        } else {
-            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after update");
-        }
-    });
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &id, Some(result.clone()));
 
     Ok(result)
 }
@@ -354,65 +294,9 @@ pub fn update_persona_parameters(
         pool.invalidate(&pid).await;
     });
 
-    // Auto-sync to cloud if connected (fire-and-forget).
+    // Auto-sync to cloud if connected and deployed (fire-and-forget, recorded).
     // Use the already-fetched result to avoid re-reading stale data.
-    let cloud_client = state.cloud_client.clone();
-    let db = state.db.clone();
-    let sync_id = id.clone();
-    let sync_persona = result.clone();
-    tauri::async_runtime::spawn(async move {
-        let client = match cloud_client.lock().await.clone() {
-            Some(c) => c,
-            None => return,
-        };
-        let deployments = match client.list_deployments().await {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-        if !deployments.iter().any(|d| d.persona_id == sync_id) {
-            return;
-        }
-        let tools_list =
-            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-                Ok(t) => t,
-                Err(_) => return,
-            };
-        // v1: living-agent sections not exported (responsibilities/episodes
-        // stay None — `## Core` still renders from the persona snapshot).
-        let prompt = engine::prompt::assemble_prompt(
-            &sync_persona,
-            &tools_list,
-            None,
-            None,
-            None,
-            None,
-            #[cfg(feature = "desktop")]
-            None,
-        );
-        let body = serde_json::json!({
-            "id": sync_persona.id,
-            "name": sync_persona.name,
-            "description": sync_persona.description,
-            "systemPrompt": prompt,
-            "structuredPrompt": sync_persona.structured_prompt,
-            "icon": sync_persona.icon,
-            "color": sync_persona.color,
-            "enabled": sync_persona.enabled,
-            "maxConcurrent": sync_persona.max_concurrent,
-            "timeoutMs": sync_persona.timeout_ms,
-            "modelProfile": sync_persona.model_profile,
-            "maxBudgetUsd": sync_persona.max_budget_usd,
-            "maxTurns": sync_persona.max_turns,
-            "designContext": sync_persona.design_context,
-            "homeTeamId": sync_persona.home_team_id,
-            "coreProfile": sync_persona.core_profile,
-        });
-        if let Err(e) = client.upsert_persona(&body).await {
-            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
-        } else {
-            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after parameter update");
-        }
-    });
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &id, Some(result.clone()));
 
     Ok(result)
 }
