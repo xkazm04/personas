@@ -1,0 +1,884 @@
+{
+ "generatedBy": "docs/design/style-mastery/specimen/contrast.mjs",
+ "bars": {
+  "text": 4.5,
+  "status": 3
+ },
+ "recipe": {
+  "chipFill": 0.1,
+  "chipBorder": 0.3,
+  "mute": 0.7
+ },
+ "themes": {
+  "dark-midnight": {
+   "bg": "#0a0e14",
+   "fg": "#e2e8f0",
+   "card": "#161a20",
+   "status": {
+    "success": {
+     "hex": "#34d399",
+     "onBg": 10.06,
+     "onCard": 9.08,
+     "onChip": 8.61,
+     "border": 1.89
+    },
+    "warning": {
+     "hex": "#fbbf24",
+     "onBg": 11.59,
+     "onCard": 10.46,
+     "onChip": 9.78,
+     "border": 2
+    },
+    "error": {
+     "hex": "#f87171",
+     "onBg": 6.99,
+     "onCard": 6.31,
+     "onChip": 6.24,
+     "border": 1.61
+    },
+    "info": {
+     "hex": "#60a5fa",
+     "onBg": 7.61,
+     "onCard": 6.87,
+     "onChip": 6.67,
+     "border": 1.7
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#a78bfa",
+     "onBg": 7.11,
+     "onCard": 6.42,
+     "onChip": 6.25,
+     "border": 1.65,
+     "pass": true
+    },
+    "human": {
+     "hex": "#f472b6",
+     "onBg": 7.3,
+     "onCard": 6.59,
+     "onChip": 6.49,
+     "border": 1.65,
+     "pass": true
+    },
+    "external": {
+     "hex": "#38bdf8",
+     "onBg": 9.03,
+     "onCard": 8.15,
+     "onChip": 7.77,
+     "border": 1.83,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#06b6d4",
+     "onBg": 7.97,
+     "onCard": 7.19,
+     "onChip": 6.99,
+     "border": 1.71,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 7.97,
+    "text-foreground/60": 6.1,
+    "text-foreground/40": 3.29,
+    "text-foreground opacity-60": 6.1,
+    "text-muted-foreground": 11.41,
+    "text-muted-foreground@80 (check-themes floor)": 7.56,
+    "proposed ink-muted on canvas": 7.97,
+    "proposed ink-muted on card": 7.48
+   }
+  },
+  "dark-cyan": {
+   "bg": "#0a1214",
+   "fg": "#e0f2fe",
+   "card": "#0b1a1d",
+   "status": {
+    "success": {
+     "hex": "#34d399",
+     "onBg": 9.85,
+     "onCard": 9.26,
+     "onChip": 8.37,
+     "border": 1.92
+    },
+    "warning": {
+     "hex": "#fbbf24",
+     "onBg": 11.34,
+     "onCard": 10.66,
+     "onChip": 9.53,
+     "border": 2.03
+    },
+    "error": {
+     "hex": "#f87171",
+     "onBg": 6.84,
+     "onCard": 6.44,
+     "onChip": 6.06,
+     "border": 1.62
+    },
+    "info": {
+     "hex": "#22d3ee",
+     "onBg": 10.47,
+     "onCard": 9.85,
+     "onChip": 8.85,
+     "border": 1.97
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#a78bfa",
+     "onBg": 6.95,
+     "onCard": 6.54,
+     "onChip": 6.1,
+     "border": 1.66,
+     "pass": true
+    },
+    "human": {
+     "hex": "#f472b6",
+     "onBg": 7.15,
+     "onCard": 6.72,
+     "onChip": 6.31,
+     "border": 1.65,
+     "pass": true
+    },
+    "external": {
+     "hex": "#7dd3fc",
+     "onBg": 11.35,
+     "onCard": 10.68,
+     "onChip": 9.44,
+     "border": 2.07,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#06b6d4",
+     "onBg": 7.8,
+     "onCard": 7.33,
+     "onChip": 6.81,
+     "border": 1.73,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8.4,
+    "text-foreground/60": 6.38,
+    "text-foreground/40": 3.5,
+    "text-foreground opacity-60": 6.38,
+    "text-muted-foreground": 10.09,
+    "text-muted-foreground@80 (check-themes floor)": 6.77,
+    "proposed ink-muted on canvas": 8.4,
+    "proposed ink-muted on card": 8.05
+   }
+  },
+  "dark-bronze": {
+   "bg": "#0c0b08",
+   "fg": "#ece7df",
+   "card": "#11100d",
+   "status": {
+    "success": {
+     "hex": "#66b06e",
+     "onBg": 7.5,
+     "onCard": 7.25,
+     "onChip": 6.63,
+     "border": 1.67
+    },
+    "warning": {
+     "hex": "#f59e0b",
+     "onBg": 9.16,
+     "onCard": 8.86,
+     "onChip": 8,
+     "border": 1.79
+    },
+    "error": {
+     "hex": "#e25d52",
+     "onBg": 5.55,
+     "onCard": 5.36,
+     "onChip": 5.08,
+     "border": 1.48
+    },
+    "info": {
+     "hex": "#cba65d",
+     "onBg": 8.58,
+     "onCard": 8.29,
+     "onChip": 7.48,
+     "border": 1.76
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#b9a3e6",
+     "onBg": 8.85,
+     "onCard": 8.56,
+     "onChip": 7.75,
+     "border": 1.79,
+     "pass": true
+    },
+    "human": {
+     "hex": "#e59bb8",
+     "onBg": 9.1,
+     "onCard": 8.8,
+     "onChip": 7.95,
+     "border": 1.79,
+     "pass": true
+    },
+    "external": {
+     "hex": "#9cc9d0",
+     "onBg": 10.95,
+     "onCard": 10.58,
+     "onChip": 9.37,
+     "border": 1.94,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#e0820a",
+     "onBg": 6.9,
+     "onCard": 6.67,
+     "onChip": 6.19,
+     "border": 1.61,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8.03,
+    "text-foreground/60": 6.1,
+    "text-foreground/40": 3.29,
+    "text-foreground opacity-60": 6.1,
+    "text-muted-foreground": 7.64,
+    "text-muted-foreground@80 (check-themes floor)": 5.19,
+    "proposed ink-muted on canvas": 8.03,
+    "proposed ink-muted on card": 7.92
+   }
+  },
+  "dark-frost": {
+   "bg": "#0f1115",
+   "fg": "#f1f5f9",
+   "card": "#17191d",
+   "status": {
+    "success": {
+     "hex": "#34d399",
+     "onBg": 9.83,
+     "onCard": 9.15,
+     "onChip": 8.38,
+     "border": 1.91
+    },
+    "warning": {
+     "hex": "#fbbf24",
+     "onBg": 11.32,
+     "onCard": 10.54,
+     "onChip": 9.48,
+     "border": 2.04
+    },
+    "error": {
+     "hex": "#f87171",
+     "onBg": 6.83,
+     "onCard": 6.36,
+     "onChip": 6.04,
+     "border": 1.64
+    },
+    "info": {
+     "hex": "#60a5fa",
+     "onBg": 7.43,
+     "onCard": 6.92,
+     "onChip": 6.46,
+     "border": 1.71
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#b8aee6",
+     "onBg": 9.21,
+     "onCard": 8.58,
+     "onChip": 7.8,
+     "border": 1.88,
+     "pass": true
+    },
+    "human": {
+     "hex": "#e3aecb",
+     "onBg": 10.06,
+     "onCard": 9.37,
+     "onChip": 8.46,
+     "border": 1.95,
+     "pass": true
+    },
+    "external": {
+     "hex": "#a7c9de",
+     "onBg": 10.85,
+     "onCard": 10.1,
+     "onChip": 9.08,
+     "border": 2.02,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#e2e8f0",
+     "onBg": 15.33,
+     "onCard": 14.28,
+     "onChip": 12.17,
+     "border": 2.4,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8.76,
+    "text-foreground/60": 6.69,
+    "text-foreground/40": 3.58,
+    "text-foreground opacity-60": 6.69,
+    "text-muted-foreground": 7.37,
+    "text-muted-foreground@80 (check-themes floor)": 5.1,
+    "proposed ink-muted on canvas": 8.76,
+    "proposed ink-muted on card": 8.36
+   }
+  },
+  "dark-purple": {
+   "bg": "#0b0a0f",
+   "fg": "#e9e6ee",
+   "card": "#100f14",
+   "status": {
+    "success": {
+     "hex": "#5fb88a",
+     "onBg": 8.18,
+     "onCard": 7.91,
+     "onChip": 7.26,
+     "border": 1.7
+    },
+    "warning": {
+     "hex": "#e2b340",
+     "onBg": 10.1,
+     "onCard": 9.77,
+     "onChip": 8.73,
+     "border": 1.87
+    },
+    "error": {
+     "hex": "#ef6f6f",
+     "onBg": 6.74,
+     "onCard": 6.52,
+     "onChip": 6.07,
+     "border": 1.57
+    },
+    "info": {
+     "hex": "#b6a8f5",
+     "onBg": 9.31,
+     "onCard": 9,
+     "onChip": 8.09,
+     "border": 1.8
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#cdbdfd",
+     "onBg": 11.55,
+     "onCard": 11.17,
+     "onChip": 9.83,
+     "border": 1.99,
+     "pass": true
+    },
+    "human": {
+     "hex": "#eaa2c9",
+     "onBg": 9.87,
+     "onCard": 9.55,
+     "onChip": 8.57,
+     "border": 1.86,
+     "pass": true
+    },
+    "external": {
+     "hex": "#9ec0ef",
+     "onBg": 10.56,
+     "onCard": 10.21,
+     "onChip": 9.09,
+     "border": 1.92,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#b667f7",
+     "onBg": 5.89,
+     "onCard": 5.7,
+     "onChip": 5.36,
+     "border": 1.52,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8,
+    "text-foreground/60": 6.1,
+    "text-foreground/40": 3.28,
+    "text-foreground opacity-60": 6.1,
+    "text-muted-foreground": 7.88,
+    "text-muted-foreground@80 (check-themes floor)": 5.36,
+    "proposed ink-muted on canvas": 8,
+    "proposed ink-muted on card": 7.93
+   }
+  },
+  "dark-pink": {
+   "bg": "#0f0a0d",
+   "fg": "#ece5e9",
+   "card": "#140f12",
+   "status": {
+    "success": {
+     "hex": "#5cb88f",
+     "onBg": 8.14,
+     "onCard": 7.87,
+     "onChip": 7.21,
+     "border": 1.7
+    },
+    "warning": {
+     "hex": "#e8b045",
+     "onBg": 10.03,
+     "onCard": 9.69,
+     "onChip": 8.62,
+     "border": 1.88
+    },
+    "error": {
+     "hex": "#f06b6b",
+     "onBg": 6.56,
+     "onCard": 6.34,
+     "onChip": 5.88,
+     "border": 1.58
+    },
+    "info": {
+     "hex": "#f48fc0",
+     "onBg": 8.92,
+     "onCard": 8.62,
+     "onChip": 7.79,
+     "border": 1.79
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#c1a7f0",
+     "onBg": 9.4,
+     "onCard": 9.08,
+     "onChip": 8.12,
+     "border": 1.82,
+     "pass": true
+    },
+    "human": {
+     "hex": "#fbc0dd",
+     "onBg": 12.8,
+     "onCard": 12.37,
+     "onChip": 10.73,
+     "border": 2.11,
+     "pass": true
+    },
+    "external": {
+     "hex": "#9ec3e8",
+     "onBg": 10.68,
+     "onCard": 10.32,
+     "onChip": 9.12,
+     "border": 1.94,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#f0529e",
+     "onBg": 5.99,
+     "onCard": 5.79,
+     "onChip": 5.43,
+     "border": 1.53,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 7.95,
+    "text-foreground/60": 6.06,
+    "text-foreground/40": 3.28,
+    "text-foreground opacity-60": 6.06,
+    "text-muted-foreground": 7.75,
+    "text-muted-foreground@80 (check-themes floor)": 5.26,
+    "proposed ink-muted on canvas": 7.95,
+    "proposed ink-muted on card": 7.85
+   }
+  },
+  "dark-red": {
+   "bg": "#080808",
+   "fg": "#ededed",
+   "card": "#0e0e0e",
+   "status": {
+    "success": {
+     "hex": "#b0b0b0",
+     "onBg": 9.23,
+     "onCard": 8.9,
+     "onChip": 8.11,
+     "border": 1.76
+    },
+    "warning": {
+     "hex": "#f5f5f5",
+     "onBg": 18.37,
+     "onCard": 17.71,
+     "onChip": 14.94,
+     "border": 2.45
+    },
+    "error": {
+     "hex": "#dc2626",
+     "onBg": 4.15,
+     "onCard": 4,
+     "onChip": 3.94,
+     "border": 1.3
+    },
+    "info": {
+     "hex": "#e5e5e5",
+     "onBg": 15.9,
+     "onCard": 15.32,
+     "onChip": 13.23,
+     "border": 2.26
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#c8c8c8",
+     "onBg": 11.97,
+     "onCard": 11.54,
+     "onChip": 10.29,
+     "border": 1.99,
+     "pass": true
+    },
+    "human": {
+     "hex": "#f0f0f0",
+     "onBg": 17.57,
+     "onCard": 16.94,
+     "onChip": 14.46,
+     "border": 2.41,
+     "pass": true
+    },
+    "external": {
+     "hex": "#a8a8a8",
+     "onBg": 8.42,
+     "onCard": 8.12,
+     "onChip": 7.47,
+     "border": 1.71,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#ff4d4d",
+     "onBg": 6.12,
+     "onCard": 5.9,
+     "onChip": 5.63,
+     "border": 1.48,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8.42,
+    "text-foreground/60": 6.35,
+    "text-foreground/40": 3.38,
+    "text-foreground opacity-60": 6.35,
+    "text-muted-foreground": 7.94,
+    "text-muted-foreground@80 (check-themes floor)": 5.35,
+    "proposed ink-muted on canvas": 8.42,
+    "proposed ink-muted on card": 8.31
+   }
+  },
+  "dark-matrix": {
+   "bg": "#050505",
+   "fg": "#e8e8e8",
+   "card": "#0a0a0a",
+   "status": {
+    "success": {
+     "hex": "#33ff66",
+     "onBg": 15.18,
+     "onCard": 14.74,
+     "onChip": 12.97,
+     "border": 2.13
+    },
+    "warning": {
+     "hex": "#88cc44",
+     "onBg": 10.45,
+     "onCard": 10.15,
+     "onChip": 9.21,
+     "border": 1.82
+    },
+    "error": {
+     "hex": "#ff3333",
+     "onBg": 5.6,
+     "onCard": 5.44,
+     "onChip": 5.23,
+     "border": 1.4
+    },
+    "info": {
+     "hex": "#00ff41",
+     "onBg": 14.93,
+     "onCard": 14.5,
+     "onChip": 12.85,
+     "border": 2.1
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#b3ff99",
+     "onBg": 17.16,
+     "onCard": 16.67,
+     "onChip": 14.38,
+     "border": 2.3,
+     "pass": true
+    },
+    "human": {
+     "hex": "#e6ff80",
+     "onBg": 18.42,
+     "onCard": 17.89,
+     "onChip": 15.27,
+     "border": 2.39,
+     "pass": true
+    },
+    "external": {
+     "hex": "#66ffcc",
+     "onBg": 16.25,
+     "onCard": 15.78,
+     "onChip": 13.72,
+     "border": 2.22,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#00ff41",
+     "onBg": 14.93,
+     "onCard": 14.5,
+     "onChip": 12.85,
+     "border": 2.1,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 8.18,
+    "text-foreground/60": 6.14,
+    "text-foreground/40": 3.24,
+    "text-foreground opacity-60": 6.14,
+    "text-muted-foreground": 7.79,
+    "text-muted-foreground@80 (check-themes floor)": 5.23,
+    "proposed ink-muted on canvas": 8.18,
+    "proposed ink-muted on card": 8.04
+   }
+  },
+  "light": {
+   "bg": "#eceef2",
+   "fg": "#0f172a",
+   "card": "#fdfefe",
+   "status": {
+    "success": {
+     "hex": "#047857",
+     "onBg": 4.72,
+     "onCard": 5.43,
+     "onChip": 4.13,
+     "border": 1.51
+    },
+    "warning": {
+     "hex": "#92400e",
+     "onBg": 6.1,
+     "onCard": 7.02,
+     "onChip": 5.28,
+     "border": 1.59
+    },
+    "error": {
+     "hex": "#be1b1b",
+     "onBg": 5.38,
+     "onCard": 6.18,
+     "onChip": 4.57,
+     "border": 1.66
+    },
+    "info": {
+     "hex": "#1d4ed8",
+     "onBg": 5.77,
+     "onCard": 6.63,
+     "onChip": 4.97,
+     "border": 1.59
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#6d28d9",
+     "onBg": 6.12,
+     "onCard": 7.03,
+     "onChip": 5.22,
+     "border": 1.64,
+     "pass": true
+    },
+    "human": {
+     "hex": "#9d174d",
+     "onBg": 6.79,
+     "onCard": 7.8,
+     "onChip": 5.75,
+     "border": 1.7,
+     "pass": true
+    },
+    "external": {
+     "hex": "#075985",
+     "onBg": 6.51,
+     "onCard": 7.49,
+     "onChip": 5.6,
+     "border": 1.62,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#1d4ed8",
+     "onBg": 5.77,
+     "onCard": 6.63,
+     "onChip": 4.97,
+     "border": 1.59,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 6.15,
+    "text-foreground/60": 4.47,
+    "text-foreground/40": 2.49,
+    "text-foreground opacity-60": 4.47,
+    "text-muted-foreground": 7.73,
+    "text-muted-foreground@80 (check-themes floor)": 4.64,
+    "proposed ink-muted on canvas": 6.15,
+    "proposed ink-muted on card": 6.63
+   }
+  },
+  "light-ice": {
+   "bg": "#e8eff6",
+   "fg": "#0f172a",
+   "card": "#fcfdfe",
+   "status": {
+    "success": {
+     "hex": "#0f766e",
+     "onBg": 4.72,
+     "onCard": 5.37,
+     "onChip": 4.14,
+     "border": 1.5
+    },
+    "warning": {
+     "hex": "#92400e",
+     "onBg": 6.11,
+     "onCard": 6.96,
+     "onChip": 5.28,
+     "border": 1.61
+    },
+    "error": {
+     "hex": "#b91c1c",
+     "onBg": 5.58,
+     "onCard": 6.35,
+     "onChip": 4.74,
+     "border": 1.67
+    },
+    "info": {
+     "hex": "#1d4ed8",
+     "onBg": 5.78,
+     "onCard": 6.58,
+     "onChip": 4.99,
+     "border": 1.59
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#6d28d9",
+     "onBg": 6.13,
+     "onCard": 6.98,
+     "onChip": 5.23,
+     "border": 1.65,
+     "pass": true
+    },
+    "human": {
+     "hex": "#9d174d",
+     "onBg": 6.8,
+     "onCard": 7.74,
+     "onChip": 5.73,
+     "border": 1.72,
+     "pass": true
+    },
+    "external": {
+     "hex": "#075985",
+     "onBg": 6.52,
+     "onCard": 7.43,
+     "onChip": 5.62,
+     "border": 1.61,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#1d4ed8",
+     "onBg": 5.78,
+     "onCard": 6.58,
+     "onChip": 4.99,
+     "border": 1.59,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 6.17,
+    "text-foreground/60": 4.48,
+    "text-foreground/40": 2.48,
+    "text-foreground opacity-60": 4.48,
+    "text-muted-foreground": 7.62,
+    "text-muted-foreground@80 (check-themes floor)": 4.61,
+    "proposed ink-muted on canvas": 6.17,
+    "proposed ink-muted on card": 6.58
+   }
+  },
+  "light-news": {
+   "bg": "#e0ded9",
+   "fg": "#111111",
+   "card": "#f6f6f4",
+   "status": {
+    "success": {
+     "hex": "#3a3a3a",
+     "onBg": 8.46,
+     "onCard": 10.51,
+     "onChip": 7.22,
+     "border": 1.67
+    },
+    "warning": {
+     "hex": "#555555",
+     "onBg": 5.55,
+     "onCard": 6.89,
+     "onChip": 4.84,
+     "border": 1.53
+    },
+    "error": {
+     "hex": "#2a2a2a",
+     "onBg": 10.68,
+     "onCard": 13.26,
+     "onChip": 8.95,
+     "border": 1.77
+    },
+    "info": {
+     "hex": "#333333",
+     "onBg": 9.4,
+     "onCard": 11.68,
+     "onChip": 7.95,
+     "border": 1.71
+    }
+   },
+   "roles": {
+    "agent": {
+     "hex": "#3d3d3d",
+     "onBg": 8.08,
+     "onCard": 10.04,
+     "onChip": 6.91,
+     "border": 1.65,
+     "pass": true
+    },
+    "human": {
+     "hex": "#262626",
+     "onBg": 11.26,
+     "onCard": 13.99,
+     "onChip": 9.41,
+     "border": 1.79,
+     "pass": true
+    },
+    "external": {
+     "hex": "#4d4d4d",
+     "onBg": 6.29,
+     "onCard": 7.81,
+     "onChip": 5.47,
+     "border": 1.57,
+     "pass": true
+    },
+    "highlight": {
+     "hex": "#1a1a1a",
+     "onBg": 12.95,
+     "onCard": 16.08,
+     "onChip": 10.63,
+     "border": 1.87,
+     "pass": true
+    }
+   },
+   "muting": {
+    "typo-caption (70%)": 6.11,
+    "text-foreground/60": 4.46,
+    "text-foreground/40": 2.5,
+    "text-foreground opacity-60": 4.46,
+    "text-muted-foreground": 7.48,
+    "text-muted-foreground@80 (check-themes floor)": 4.6,
+    "proposed ink-muted on canvas": 6.11,
+    "proposed ink-muted on card": 6.79
+   }
+  }
+ },
+ "rolesBelowTextBar": 0
+}
