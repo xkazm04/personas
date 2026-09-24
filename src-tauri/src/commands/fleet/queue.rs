@@ -243,9 +243,6 @@ fn split_headless_args(args: &[String]) -> Result<(String, Vec<String>), AppErro
 /// Build the `args` for a headless dispatch on a non-claude engine (`codex`
 /// or `grok`): the task, then the engine marker, the effort when named and
 /// [`ISOLATED_ARG`] when the lane should drop the operator's own config.
-// Only `contest_seat` calls this, and its caller lands in WP2 — see the allow
-// there. WP2: delete this allow with that one.
-#[allow(dead_code)]
 pub fn engine_args(
     task: &str,
     engine: &str,

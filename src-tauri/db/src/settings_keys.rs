@@ -72,6 +72,15 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// thing: the consult lane is off and executions run exactly as before.
 pub const KNOWLEDGE_REGISTRY_ROOT: &str = "knowledge_registry_root";
 
+/// Saved seat line-ups of the Contest plugin: a JSON array of
+/// `{name, seats: [engine:model@effort[#label]]}` (`commands::contest::lineups`).
+pub const CONTEST_LINEUPS: &str = "contest.lineups";
+
+/// Absolute path of the /contest instrument (`contest.mjs`), the last rung of
+/// the resolution ladder after `$AI_REGISTRY_DIR` and the project's
+/// `.ai/manifest.yaml` `registry.local` (`commands::contest::node`).
+pub const CONTEST_INSTRUMENT_PATH: &str = "contest.instrument_path";
+
 /// Absolute directory under which `create_project_repository` scaffolds new
 /// project repositories: `<root>/<workspace-slug>/<project-name>`.
 ///
@@ -1070,6 +1079,8 @@ const ALLOWED_KEYS: &[&str] = &[
     QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     KNOWLEDGE_REGISTRY_ROOT,
+    CONTEST_LINEUPS,
+    CONTEST_INSTRUMENT_PATH,
     SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,

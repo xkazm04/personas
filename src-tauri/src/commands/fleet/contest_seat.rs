@@ -21,12 +21,6 @@
 //! seat that settled while the app was down has no capture (its process died
 //! with the app anyway); the driver falls back to the registry outcome.
 
-// The contest driver (WP2, `commands/contest`) is this module's only caller
-// and lands after it; until then the public door reads as dead code. WP2:
-// delete this allow (and the one on `queue::engine_args`) when
-// `spawn_contest_seat` has its caller.
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};

@@ -10,4 +10,8 @@ import type { ContestVariant } from "./ContestVariant";
 /**
  * Everything the page needs about one contest.
  */
-export type ContestDetail = { summary: ContestSummary, brief: string, arenaPath: string, judgesEnabled: boolean, judges: Array<ContestSeatSpec>, notBeforeMs: number | null, seats: Array<ContestSeat>, variants: Array<ContestVariant>, scoreboard: ContestScoreboard | null, review: ContestReview | null, chain: ContestChain, };
+export type ContestDetail = { summary: ContestSummary, brief: string, arenaPath: string, 
+/**
+ * The participants' per-seat ceiling in minutes (`contest.json` `timeout_min`).
+ */
+timeoutMin: number, judgesEnabled: boolean, judges: Array<ContestSeatSpec>, notBeforeMs: number | null, seats: Array<ContestSeat>, variants: Array<ContestVariant>, scoreboard: ContestScoreboard | null, review: ContestReview | null, chain: ContestChain, };

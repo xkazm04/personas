@@ -2901,6 +2901,10 @@
         {
           "path": "src-tauri/src/local_http/mod.rs",
           "reason": "2026-08-22: the module that INSTALLS the layer. Its only `.route(\"` literals are the #[cfg(test)] fixtures that prove an unauthenticated request is refused"
+        },
+        {
+          "path": "src-tauri/src/commands/contest/preview.rs",
+          "reason": "2026-09-24: authenticates itself, on auth::SELF_AUTHENTICATED_PREFIXES - its one GET handler (`serve`) compares a per-boot random PATH token in constant time before touching the DB or the disk, then serves only files contained in a contest arena (canonicalised, no traversal or symlink escape). The Host allowlist still applies. Its #[cfg(test)] fixtures prove the refusals. SECURITY-SENSITIVE, flagged for human review with the Contest plugin"
         }
       ],
       "baseline": {
@@ -4584,6 +4588,10 @@
         {
           "path": "src-tauri/src/engine/persona_brain/sleep_cycle.rs",
           "reason": "RUNNING is a keyed single-flight guard over an in-process consolidation pass — an RAII CycleKey inserts on acquire and removes on Drop, so it is never a one-way latch and never a record of what was already EMITTED (the emission/dedupe decisions live durably in persona_attention_ledger rows). Same leaf as team_assignment_orchestrator.rs's LIVE above: idempotent-invocation, not a suppression ledger over an emission - hand-verified 2026-09-01"
+        },
+        {
+          "path": "src-tauri/src/commands/contest/driver.rs",
+          "reason": "watched() is a keyed single-flight guard over in-process seat WATCHER TASKS (a session id is inserted when its watcher is spawned and removed when that task ends), so it is never a one-way latch and never a record of what was EMITTED; the durable record of which seat run was finalised is app.json recordedSessions. A restart kills the watchers, so resetting with the process is correct. Same leaf as team_assignment_orchestrator.rs's LIVE: idempotent-invocation - hand-verified 2026-09-24"
         }
       ],
       "baseline": {

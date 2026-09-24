@@ -157,6 +157,11 @@ pub struct ContestSeat {
     #[ts(type = "number | null")]
     pub turns: Option<u32>,
     pub errors: Vec<String>,
+    /// When the seat's latest run actually started (left the fleet queue),
+    /// epoch ms; null when unknown (never launched from the app, or not yet
+    /// started). Queue time is excluded, as it is from the ceiling.
+    #[ts(type = "number | null")]
+    pub started_at_ms: Option<i64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +303,9 @@ pub struct ContestDetail {
     pub summary: ContestSummary,
     pub brief: String,
     pub arena_path: String,
+    /// The participants' per-seat ceiling in minutes (`contest.json` `timeout_min`).
+    #[ts(type = "number")]
+    pub timeout_min: u32,
     pub judges_enabled: bool,
     pub judges: Vec<ContestSeatSpec>,
     #[ts(type = "number | null")]
@@ -401,9 +409,6 @@ pub struct ContestBriefDraft {
 
 /// Payload of the `contest-changed` event (`event_name::CONTEST_CHANGED`),
 /// emitted on every seat-state change and every chain step.
-// WP0 ships the contract only; WP2's seat driver and chain construct this.
-// Remove the allow once the first emit lands.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]

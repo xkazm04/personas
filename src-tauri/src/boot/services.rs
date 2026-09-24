@@ -100,6 +100,14 @@ pub fn start_local_http(app: &tauri::App, st: &mut StartupTimer) {
         "dev-tools",
         commands::infrastructure::dev_tools_http::router(app.handle().clone()),
     );
+    // Contest preview — read-only GET of a contest arena's files for the
+    // sandboxed variant iframe. SECURITY-SENSITIVE: authenticates itself with
+    // a per-boot path token (see `commands::contest::preview`), which is why
+    // its prefix is on `auth::SELF_AUTHENTICATED_PREFIXES`.
+    local_http::register_router(
+        commands::contest::preview::PREFIX,
+        commands::contest::preview::router(app.handle().clone()),
+    );
     // Fleet background workers — staleness ticker + JSONL watcher.
     // Both fire-and-forget; the staleness ticker is safe everywhere,
     // the JSONL watcher is desktop-only because `notify` is feature-gated.

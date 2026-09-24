@@ -28,6 +28,7 @@ export function detailFixture(over: Partial<ContestDetail> = {}): ContestDetail 
     summary: summaryFixture(),
     brief: '## The idea\nA hero page.',
     arenaPath: 'C:/p1/.contest/arena/hero-page',
+    timeoutMin: 60,
     judgesEnabled: false,
     judges: [],
     notBeforeMs: null,
@@ -43,6 +44,7 @@ export function detailFixture(over: Partial<ContestDetail> = {}): ContestDetail 
         costUsd: 3.21,
         turns: 40,
         errors: [],
+        startedAtMs: 1_758_700_000_000,
       },
       {
         seatId: 'codex-gpt-6-sol_high',
@@ -55,6 +57,7 @@ export function detailFixture(over: Partial<ContestDetail> = {}): ContestDetail 
         costUsd: null,
         turns: null,
         errors: ['usage limit reached'],
+        startedAtMs: null,
       },
     ],
     variants: [

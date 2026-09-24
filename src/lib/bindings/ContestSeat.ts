@@ -14,4 +14,10 @@ spec: string, kind: ContestSeatKind, state: ContestSeatState, fleetSessionId: st
 /**
  * The blind letter assigned at collect; `None` before collect.
  */
-letter: string | null, wallS: number | null, costUsd: number | null, turns: number | null, errors: Array<string>, };
+letter: string | null, wallS: number | null, costUsd: number | null, turns: number | null, errors: Array<string>, 
+/**
+ * When the seat's latest run actually started (left the fleet queue),
+ * epoch ms; null when unknown (never launched from the app, or not yet
+ * started). Queue time is excluded, as it is from the ceiling.
+ */
+startedAtMs: number | null, };
