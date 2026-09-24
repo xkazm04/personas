@@ -219,8 +219,10 @@ pub async fn run_build_turn(
     // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
     let (reply, phases, question, options, area, selector) =
         crate::webbuild::plan::extract_build_turn(&text);
-    // C7 — snapshot this turn into the project's git history (best-effort).
-    crate::webbuild::versions::commit_snapshot(project_path, &reply);
+    // C7: snapshot this turn onto the project's private snapshot ref.
+    if let Err(e) = crate::webbuild::versions::commit_snapshot(project_path, &reply).await {
+        tracing::warn!(project_id, error = %e, "build turn snapshot failed");
+    }
     Ok(crate::webbuild::plan::BuildTurnResult {
         reply,
         phases,
