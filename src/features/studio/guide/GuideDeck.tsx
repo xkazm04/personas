@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { isFreeKey } from '../useDecisionKeys';
@@ -20,7 +21,7 @@ export default function GuideDeck({
   onDecline: (card: GuideCard) => void;
 }) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
 
   useAppKeyboard(

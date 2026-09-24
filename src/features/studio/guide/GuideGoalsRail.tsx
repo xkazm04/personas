@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Check, Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import type { BuildPhase } from '../studioBuildModel';
 
 export interface GuideGoalsRailHandle {
@@ -17,7 +18,7 @@ const GuideGoalsRail = forwardRef<
   { phases: BuildPhase[]; placeholder: boolean; canAdd: boolean; onAddGoal: (goal: string) => void }
 >(function GuideGoalsRail({ phases, placeholder, canAdd, onAddGoal }, ref) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);

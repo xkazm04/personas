@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Columns3, Database, Footprints, Monitor, Pencil, Search, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { OVERLAY_DISMISS_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { GUIDE_TOOLS, type GuideTool, type GuideToolId } from './guideModel';
@@ -30,7 +31,7 @@ export default function GuideToolArc({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
   const [focus, setFocus] = useState(0);
   const label: Record<GuideToolId, [string, string]> = {

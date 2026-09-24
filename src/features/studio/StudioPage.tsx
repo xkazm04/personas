@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guide/guideCopy';
 import { webbuildListProjects } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -61,8 +62,8 @@ export default function StudioPage() {
 
   const showVision = creating || tabCount === 0;
   const layoutTabs: { id: StudioLayout; label: string }[] = [
-    { id: 'guide', label: t.studio.guide.layout_guide },
-    { id: 'current', label: t.studio.guide.layout_current },
+    { id: 'guide', label: guideStrings(t).layout_guide },
+    { id: 'current', label: guideStrings(t).layout_current },
   ];
 
   return (
@@ -76,7 +77,7 @@ export default function StudioPage() {
           activeTab={layout}
           onTabChange={setLayout}
           size="sm"
-          ariaLabel={t.studio.guide.layout_switch}
+          ariaLabel={guideStrings(t).layout_switch}
           layoutId="studio-layout-switch"
           idPrefix="studio-layout"
           className="mr-3 shrink-0"

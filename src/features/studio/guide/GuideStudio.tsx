@@ -14,7 +14,7 @@ import GuideQuestionCard from './GuideQuestionCard';
 import GuideDeck from './GuideDeck';
 import GuideToolArc from './GuideToolArc';
 import { addGoalPrompt, deriveDeck, type GuideCard, type GuideTool, type GuideToolId } from './guideModel';
-import { estimateText } from './guideCopy';
+import { estimateText, guideStrings } from './guideCopy';
 import { useGuideRuntime } from './useGuideRuntime';
 import { useGuideReadAloud } from './useGuideReadAloud';
 import { useGuideKeys } from './useGuideKeys';
@@ -36,7 +36,7 @@ export default function GuideStudio({
   onCancelCreate?: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const rt = useGuideRuntime();
   const preview = useStudioPreview();
   const sendTurn = useStudioStore((s) => s.sendTurn);

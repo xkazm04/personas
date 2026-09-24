@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { guideStrings } from './guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { BuildPhase } from '../studioBuildModel';
 import type { StudioMessage, StudioPhase } from '../studioStore';
@@ -30,7 +31,7 @@ export default function GuideBlueprint({
   messages: StudioMessage[];
 }) {
   const { t, tx } = useTranslation();
-  const g = t.studio.guide;
+  const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
   const notes = messages.slice(-3);
   const settingUp = phase !== 'live';
