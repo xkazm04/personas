@@ -3,10 +3,13 @@
 //! - **winner** → `contest.mjs verdict --winner … [--runner-up …] --note …`, then
 //!   the winner note to the Obsidian brain (`Contests/<contestId>.md`, through
 //!   the generic mirror sink; skipped with a log when no vault is configured).
-//! - **shortlist** → first delete every variant dir the review bucketed
-//!   `failure` and re-run `collect` (skill 7b step 1), then
-//!   `verdict --shortlist …`, then `refine --shortlist … --feedback REVIEW.md`;
-//!   the child round inherits the judge settings and its summary is returned.
+//! - **shortlist** → `verdict --shortlist …`, then delete every variant dir
+//!   the review bucketed `failure` and re-run `collect` (skill 7b step 1),
+//!   then `refine --shortlist … --feedback REVIEW.md`; the child round
+//!   inherits the judge settings and its summary is returned. Each step is
+//!   retryable: a verdict already recorded is not re-run, the irreversible
+//!   delete waits for the recorded decision, and a finished child round is
+//!   not refined again.
 //!
 //! The instrument's `verdict` refuses to run without at least one verdict file.
 //! A contest decided without a judge panel therefore gets an OWNER verdict
@@ -21,7 +24,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use tauri::AppHandle;
 
-use super::arena::{self, ArenaPaths, ManifestFile};
+use super::arena::{self, ArenaPaths, ContestFile, ManifestFile};
 use super::driver::{self, Ctx};
 use super::node::{self, STEP_TIMEOUT};
 use super::review;
@@ -254,6 +257,62 @@ fn delete_failures(paths: &ArenaPaths, review: &ContestReview) -> Result<usize, 
     Ok(deleted)
 }
 
+/// `contest.json` already records exactly this shortlist: an earlier decide
+/// ran `verdict` and failed later, and `verdict` refuses to rewrite its note.
+fn shortlist_already_recorded(c: &ContestFile, keys: &[String]) -> bool {
+    let recorded: std::collections::BTreeSet<&str> =
+        c.shortlist.iter().map(|p| p.label.trim()).collect();
+    let wanted: std::collections::BTreeSet<&str> = keys.iter().map(|k| k.as_str()).collect();
+    !recorded.is_empty() && recorded == wanted
+}
+
+/// What a shortlist decide does about `refine`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RefineAction {
+    /// The child round's `contest.json` exists (refine writes it last): done.
+    Skip,
+    /// Run refine; `force` when a partial child dir may be left from a failed run.
+    Run { force: bool },
+}
+
+fn refine_action(parent_id: &str, child: Option<&ContestFile>) -> RefineAction {
+    match child {
+        Some(c) if c.parent.as_deref() == Some(parent_id) => RefineAction::Skip,
+        // Another contest owns that id: never overwrite it; refine names it.
+        Some(_) => RefineAction::Run { force: false },
+        // No child yet: (re)write the round. `--force` keeps a retry from
+        // dying on what a failed attempt left behind.
+        None => RefineAction::Run { force: true },
+    }
+}
+
+/// A variant bucketed `failure` that the manifest still lists as present:
+/// its dir is gone (or about to be), so `collect` must run again.
+fn failures_still_listed(
+    manifest: &ManifestFile,
+    blind: &BTreeMap<String, String>,
+    review: &ContestReview,
+) -> bool {
+    let failing = review
+        .variants
+        .iter()
+        .filter(|v| v.bucket == Some(ContestReviewBucket::Failure))
+        .filter_map(|v| parse_key(&v.key));
+    for (letter, n) in failing {
+        let Some(seat) = blind.get(&letter.to_string()) else {
+            continue;
+        };
+        let listed = manifest
+            .entries
+            .get(seat)
+            .is_some_and(|e| e.variants.iter().any(|v| v.n == n && v.present));
+        if listed {
+            return true;
+        }
+    }
+    false
+}
+
 /// Returns the contest whose summary the caller should show: this one for a
 /// winner, the child round for a shortlist.
 pub async fn decide(
@@ -308,11 +367,8 @@ pub async fn decide(
                         "`{k}` is bucketed as a failure and cannot be shortlisted"
                     )));
                 }
-                if delete_failures(&ctx.paths, r)? > 0 {
-                    driver::collect(ctx, &instrument).await?;
-                }
             }
-            let feedback = saved.unwrap_or_else(|| ContestReview {
+            let feedback = saved.clone().unwrap_or_else(|| ContestReview {
                 field: note.clone(),
                 variants: Vec::new(),
             });
@@ -322,32 +378,57 @@ pub async fn decide(
                     &review::render_review_markdown(&feedback),
                 )?;
             }
-            ensure_owner_verdict(&ctx.paths, &keys)?;
-            run_verdict(
-                ctx,
-                &instrument,
-                vec!["--shortlist".to_string(), keys.join(",")],
-                &note,
-            )
-            .await?;
+            // Every step below is safe to retry. A decide whose refine failed
+            // re-enters here: the verdict it already recorded is not re-run
+            // (`verdict` dies on its own note), and the failure dirs go only
+            // after the decision is durably recorded.
+            if !shortlist_already_recorded(&driver::read_contest(&ctx.paths)?, &keys) {
+                ensure_owner_verdict(&ctx.paths, &keys)?;
+                run_verdict(
+                    ctx,
+                    &instrument,
+                    vec!["--shortlist".to_string(), keys.join(",")],
+                    &note,
+                )
+                .await?;
+            }
+            if let Some(r) = &saved {
+                delete_failures(&ctx.paths, r)?;
+                let manifest: ManifestFile =
+                    arena::read_json_opt(&ctx.paths.manifest_json())?.unwrap_or_default();
+                let blind: BTreeMap<String, String> =
+                    arena::read_json_opt(&ctx.paths.blind_map_json())?.unwrap_or_default();
+                // Also true on a retry whose earlier collect failed after the
+                // delete: the dirs are gone but the manifest still lists them.
+                if failures_still_listed(&manifest, &blind, r) {
+                    driver::collect(ctx, &instrument).await?;
+                }
+            }
             let c = driver::read_contest(&ctx.paths)?;
             let round = c.round.unwrap_or(1) + 1;
-            let mut args = ctx.id_args("refine");
-            args.extend([
-                "--shortlist".to_string(),
-                keys.join(","),
-                "--feedback".to_string(),
-                ctx.paths.review_md().to_string_lossy().into_owned(),
-                "--round".to_string(),
-                round.to_string(),
-            ]);
-            node::run_node_checked(&instrument, &args, ctx.root(), STEP_TIMEOUT).await?;
             let child_id = format!("{}-r{round}", ctx.contest_id());
             let child = Ctx {
                 project_id: ctx.project_id.clone(),
                 project_name: ctx.project_name.clone(),
                 paths: ArenaPaths::new(ctx.root(), &child_id)?,
             };
+            let existing: Option<ContestFile> = arena::read_json_opt(&child.paths.contest_json())?;
+            if let RefineAction::Run { force } = refine_action(ctx.contest_id(), existing.as_ref())
+            {
+                let mut args = ctx.id_args("refine");
+                args.extend([
+                    "--shortlist".to_string(),
+                    keys.join(","),
+                    "--feedback".to_string(),
+                    ctx.paths.review_md().to_string_lossy().into_owned(),
+                    "--round".to_string(),
+                    round.to_string(),
+                ]);
+                if force {
+                    args.push("--force".to_string());
+                }
+                node::run_node_checked(&instrument, &args, ctx.root(), STEP_TIMEOUT).await?;
+            }
             let parent = arena::read_sidecar(&ctx.paths);
             driver::update_sidecar(&child.paths, |s| {
                 s.judges_enabled = parent.judges_enabled;
@@ -420,6 +501,98 @@ mod tests {
         assert_eq!(a[0]["strengths"], "blank page");
         assert!(a[0].get("scores").is_none(), "the owner scored nothing");
         assert_eq!(v["ranking"][0], "A/1");
+    }
+
+    fn pick(label: &str) -> crate::commands::contest::arena::ContestPick {
+        crate::commands::contest::arena::ContestPick {
+            label: label.into(),
+            ..Default::default()
+        }
+    }
+
+    /// A shortlist whose refine failed must be retryable: the recorded
+    /// verdict is not re-run (it would die on its own note), and a finished
+    /// child round is not re-refined.
+    #[test]
+    fn a_shortlist_decide_is_retryable_after_a_failed_refine() {
+        let keys = vec!["A/1".to_string(), "B/2".to_string()];
+        let mut c = ContestFile {
+            id: "home".into(),
+            ..ContestFile::default()
+        };
+        assert!(
+            !shortlist_already_recorded(&c, &keys),
+            "nothing recorded yet"
+        );
+        c.shortlist = vec![pick("B/2"), pick("A/1")];
+        assert!(shortlist_already_recorded(&c, &keys), "same set, any order");
+        c.shortlist = vec![pick("A/1")];
+        assert!(
+            !shortlist_already_recorded(&c, &keys),
+            "a different shortlist"
+        );
+
+        let child = ContestFile {
+            id: "home-r2".into(),
+            parent: Some("home".into()),
+            ..ContestFile::default()
+        };
+        assert_eq!(refine_action("home", Some(&child)), RefineAction::Skip);
+        assert_eq!(
+            refine_action("home", None),
+            RefineAction::Run { force: true }
+        );
+        let stranger = ContestFile {
+            parent: Some("other".into()),
+            ..child
+        };
+        assert_eq!(
+            refine_action("home", Some(&stranger)),
+            RefineAction::Run { force: false },
+            "another contest's round is never forced over"
+        );
+    }
+
+    #[test]
+    fn a_failure_still_in_the_manifest_forces_a_recollect() {
+        let mut m = ManifestFile::default();
+        m.entries.insert(
+            "seat-a".into(),
+            ManifestEntry {
+                letter: "A".into(),
+                variants: vec![ManifestVariant {
+                    n: 1,
+                    present: true,
+                    ..ManifestVariant::default()
+                }],
+            },
+        );
+        let blind: BTreeMap<String, String> = [("A".to_string(), "seat-a".to_string())].into();
+        let review = |bucket| ContestReview {
+            field: String::new(),
+            variants: vec![ContestVariantReview {
+                key: "A/1".into(),
+                bucket,
+                note: String::new(),
+                pins: vec![],
+            }],
+        };
+        assert!(failures_still_listed(
+            &m,
+            &blind,
+            &review(Some(ContestReviewBucket::Failure))
+        ));
+        assert!(!failures_still_listed(
+            &m,
+            &blind,
+            &review(Some(ContestReviewBucket::Shortlist))
+        ));
+        m.entries.get_mut("seat-a").unwrap().variants[0].present = false;
+        assert!(!failures_still_listed(
+            &m,
+            &blind,
+            &review(Some(ContestReviewBucket::Failure))
+        ));
     }
 
     #[test]
