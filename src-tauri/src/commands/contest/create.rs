@@ -5,7 +5,7 @@ use std::path::Path;
 
 use tauri::AppHandle;
 
-use super::arena::{self, slugify, spec_string, ArenaPaths, Sidecar};
+use super::arena::{self, parse_seat_spec, slugify, spec_string, ArenaPaths, Sidecar};
 use super::driver::{self, Ctx};
 use super::node::{self, STEP_TIMEOUT};
 use super::types::{ContestCreateRequest, ContestSeatKind};
@@ -42,6 +42,22 @@ fn suffixed_id(base: &str, n: u32) -> String {
     format!("{}{suffix}", head.trim_end_matches('-'))
 }
 
+/// Every spec names a distinct seat id: the instrument's `parseParticipants`
+/// throws on a repeat ("repeats … add #label"), and a repeated judge would
+/// only fail at `plan --judges`, after the paid participant run.
+pub fn require_unique_seat_ids(what: &str, specs: &[String]) -> Result<(), AppError> {
+    let mut seen = std::collections::BTreeSet::new();
+    for spec in specs {
+        let id = parse_seat_spec(spec)?.id;
+        if !seen.insert(id.clone()) {
+            return Err(AppError::Validation(format!(
+                "{what} `{spec}` repeats `{id}`; add #label to run the same seat twice"
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// The `init` arguments for a validated request.
 pub fn validate(req: &ContestCreateRequest) -> Result<(Vec<String>, Vec<String>), AppError> {
     require_non_empty("title", &req.title)?;
@@ -68,6 +84,8 @@ pub fn validate(req: &ContestCreateRequest) -> Result<(Vec<String>, Vec<String>)
         .iter()
         .map(spec_string)
         .collect::<Result<Vec<_>, _>>()?;
+    require_unique_seat_ids("seat", &seats)?;
+    require_unique_seat_ids("judge", &judges)?;
     // A panel switched on must name at least one judge.
     if req.judges_enabled {
         require_at_least_one("judges", &judges)?;
@@ -216,6 +234,26 @@ mod tests {
         let mut r = req();
         r.seats[0].model = "bad model".into();
         assert!(validate(&r).is_err());
+    }
+
+    /// The instrument throws on a repeated participant id at init, and a
+    /// repeated judge would die at `plan --judges a,a` after the paid run.
+    #[test]
+    fn duplicate_seats_or_judges_are_refused_up_front() {
+        let mut r = req();
+        r.seats.push(r.seats[0].clone());
+        let e = validate(&r).unwrap_err().to_string();
+        assert!(e.contains("claude-opus_high"), "{e}");
+        // A #label makes the same model a different seat.
+        let mut r = req();
+        let mut second = r.seats[0].clone();
+        second.label = Some("b".into());
+        r.seats.push(second);
+        assert!(validate(&r).is_ok());
+        let mut r = req();
+        r.judges_enabled = true;
+        r.judges = vec![r.seats[0].clone(), r.seats[0].clone()];
+        assert!(validate(&r).is_err(), "a repeated judge");
     }
 
     #[test]

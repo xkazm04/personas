@@ -36,6 +36,7 @@ pub fn normalise(lineups: Vec<ContestLineup>) -> Result<Vec<ContestLineup>, AppE
             .iter()
             .map(|s| parse_seat_spec(s).map(|p| p.spec))
             .collect::<Result<Vec<_>, _>>()?;
+        super::create::require_unique_seat_ids(&format!("line-up `{name}` seat"), &seats)?;
         out.push(ContestLineup { name, seats });
     }
     Ok(out)
@@ -100,6 +101,14 @@ mod tests {
             },
         ];
         assert!(normalise(dup).is_err());
+        let repeated_seat = vec![ContestLineup {
+            name: "x".into(),
+            seats: vec!["claude:opus@high".into(), " claude:opus@high".into()],
+        }];
+        assert!(
+            normalise(repeated_seat).is_err(),
+            "a seat repeated in one line-up"
+        );
         assert!(decode(Some("  ")).unwrap().is_empty());
         assert!(decode(Some("{")).is_err());
     }
