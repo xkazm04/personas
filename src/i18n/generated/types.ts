@@ -12830,6 +12830,24 @@ export type Translations = {
       webhook_subscriptions_edit_aria: string;
       webhook_subscriptions_delete_aria: string;
       webhook_subscriptions_enabled_aria: string;
+      webhook_events_known: string;
+      webhook_events_source_builtin: string;
+      webhook_events_source_observed: string;
+      webhook_events_count_7d: string;
+      webhook_events_custom_placeholder: string;
+      webhook_events_add: string;
+      webhook_events_remove_aria: string;
+      webhook_preview_empty: string;
+      webhook_preview_fired: string;
+      webhook_preview_none: string;
+      webhook_preview_unavailable: string;
+      webhook_preview_separator_miss: string;
+      webhook_pattern_unknown: string;
+      webhook_pattern_suggest: string;
+      webhook_health_never: string;
+      webhook_health_ok: string;
+      webhook_health_error: string;
+      webhook_row_dead: string;
     };
     athenaTiers: {
       title: string;
