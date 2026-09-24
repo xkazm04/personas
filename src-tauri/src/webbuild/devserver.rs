@@ -59,8 +59,10 @@ impl DevServerRegistry {
         project_dir: &std::path::Path,
         port: u16,
     ) -> Result<DevServerStatus, AppError> {
-        // Tear down any prior server for this project first.
-        self.stop(project_id);
+        // Tear down any prior server for this project first. A prior server
+        // that refuses to die is an error here too: starting another one next
+        // to it would leave two servers and track only one.
+        self.stop(project_id)?;
         // Next keeps one dev server per project dir; a crash-orphaned `next dev`
         // (the app was force-killed, skipping stop_all) would hold the lock and
         // make every restart fail with "Another next dev server is already
@@ -145,16 +147,30 @@ impl DevServerRegistry {
             .collect()
     }
 
-    /// Stop a project's dev server, killing the whole process tree. Idempotent.
-    pub fn stop(&self, project_id: &str) {
+    /// Stop a project's dev server, killing the whole process tree. Idempotent:
+    /// no server, or one already gone, is a successful stop. A kill that fails
+    /// is an error and the server stays registered, so it is still listed,
+    /// still stopped by `stop_all`, and a second stop can retry it.
+    pub fn stop(&self, project_id: &str) -> Result<(), AppError> {
         let server = {
             let mut guard = self.servers.lock().unwrap_or_else(|p| p.into_inner());
             guard.remove(project_id)
         };
-        if let Some(mut s) = server {
-            kill_tree(s.pid);
-            // Best-effort reap of the direct child handle.
-            let _ = s.child.start_kill();
+        let Some(mut s) = server else { return Ok(()) };
+        match kill_tree(s.pid) {
+            Ok(()) => {
+                // Best-effort reap of the direct child handle; the tree is gone.
+                let _ = s.child.start_kill();
+                Ok(())
+            }
+            Err(why) => {
+                let mut guard = self.servers.lock().unwrap_or_else(|p| p.into_inner());
+                // A server started for this project meanwhile keeps its slot.
+                guard.entry(project_id.to_string()).or_insert(s);
+                Err(AppError::Internal(format!(
+                    "could not stop the dev server for {project_id}: {why}"
+                )))
+            }
         }
     }
 
@@ -166,7 +182,9 @@ impl DevServerRegistry {
             guard.keys().cloned().collect()
         };
         for id in ids {
-            self.stop(&id);
+            if let Err(e) = self.stop(&id) {
+                tracing::warn!(project_id = %id, error = %e, "dev server did not stop at exit");
+            }
         }
     }
 }
@@ -213,26 +231,48 @@ fn http_responds(port: u16) -> bool {
 }
 
 /// Kill a process and its children. On Windows `bun` spawns a `next`/node
-/// child, so a bare kill orphans the server — use `taskkill /T`. Best-effort;
-/// failures (already-dead pid) are ignored.
-fn kill_tree(pid: u32) {
+/// child, so a bare kill orphans the server — use `taskkill /T`. A process
+/// that is already gone counts as killed; anything else the kill command
+/// reports (access denied, the command itself missing) is an error, because
+/// the server may still be holding its port.
+fn kill_tree(pid: u32) -> Result<(), String> {
     #[cfg(windows)]
-    {
+    let out = {
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        let _ = std::process::Command::new("taskkill")
+        std::process::Command::new("taskkill")
             .args(["/F", "/T", "/PID", &pid.to_string()])
             .creation_flags(CREATE_NO_WINDOW)
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
-    }
+            .output()
+            .map_err(|e| format!("run taskkill: {e}"))?
+    };
     #[cfg(not(windows))]
-    {
-        let _ = std::process::Command::new("kill")
-            .args(["-9", &pid.to_string()])
-            .status();
+    let out = std::process::Command::new("kill")
+        .args(["-9", &pid.to_string()])
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|e| format!("run kill: {e}"))?;
+    if out.status.success() {
+        return Ok(());
+    }
+    let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+    if already_gone(out.status.code(), &stderr) {
+        return Ok(());
+    }
+    Err(format!(
+        "kill of process {pid} exited with {:?}: {stderr}",
+        out.status.code()
+    ))
+}
+
+/// The kill command's way of saying the process no longer exists: `taskkill`
+/// exits 128 ("not found"), `kill` prints "No such process".
+fn already_gone(code: Option<i32>, stderr: &str) -> bool {
+    if cfg!(windows) {
+        code == Some(128)
+    } else {
+        stderr.contains("No such process")
     }
 }
 
@@ -246,7 +286,9 @@ fn clear_stale_next_lock(project_dir: &std::path::Path) {
     if let Ok(body) = std::fs::read_to_string(&lock) {
         if let Some(pid) = parse_lock_pid(&body) {
             if pid_is_node(pid) {
-                kill_tree(pid);
+                if let Err(e) = kill_tree(pid) {
+                    tracing::warn!(pid, error = %e, "could not kill the orphaned next dev server");
+                }
             }
         }
         let _ = std::fs::remove_file(&lock);
@@ -309,8 +351,31 @@ mod tests {
         let reg = DevServerRegistry::new();
         assert!(reg.status("mk").is_none());
         assert!(reg.list().is_empty());
-        reg.stop("mk"); // idempotent no-op
+        reg.stop("mk").expect("idempotent no-op");
         reg.stop_all(); // no-op
+    }
+
+    #[test]
+    fn a_process_that_is_already_gone_is_a_successful_stop() {
+        // The common case at close: the server died on its own. That must not
+        // be reported to the user as a failed stop. These are the exact
+        // answers taskkill and kill give for a pid that no longer exists.
+        #[cfg(windows)]
+        assert!(already_gone(
+            Some(128),
+            "ERROR: The process \"4242\" not found."
+        ));
+        #[cfg(not(windows))]
+        assert!(already_gone(Some(1), "kill: (4242) - No such process"));
+    }
+
+    #[test]
+    fn a_refused_kill_is_not_mistaken_for_a_gone_process() {
+        assert!(!already_gone(Some(1), "ERROR: Access is denied."));
+        assert!(!already_gone(
+            Some(1),
+            "kill: (1) - Operation not permitted"
+        ));
     }
 
     #[test]

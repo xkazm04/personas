@@ -204,15 +204,15 @@ pub async fn webbuild_dev_start(
     state.webbuild_servers.start(&project_id, &dir, port).await
 }
 
-/// Stop a project's Bun dev server (kills the whole process tree). Idempotent.
+/// Stop a project's Bun dev server (kills the whole process tree). Idempotent;
+/// an error means the server may still be running and holding its port.
 #[tauri::command]
 pub fn webbuild_dev_stop(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    state.webbuild_servers.stop(&project_id);
-    Ok(())
+    state.webbuild_servers.stop(&project_id)
 }
 
 /// Interrupt the in-flight build turn for a project — the Studio Stop button.
