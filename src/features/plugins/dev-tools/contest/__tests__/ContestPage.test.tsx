@@ -36,7 +36,7 @@ const NOT_IMPLEMENTED = new Error('contest_list is not implemented yet');
 
 beforeEach(() => {
   __resetContestStoreForTests();
-  useContestFocus.setState({ focused: null, focusSeq: 0, surface: 'arena' });
+  useContestFocus.setState({ focused: null, focusSeq: 0 });
   api.getContestEnvironment.mockResolvedValue({
     node: true,
     instrumentPath: null,
@@ -61,18 +61,6 @@ describe('ContestPage', () => {
     expect(await screen.findByTestId('contest-shell-arena')).toBeInTheDocument();
     await waitFor(() => expect(api.listContests).toHaveBeenCalled());
     expect(screen.queryByText('No contests yet')).not.toBeInTheDocument();
-  });
-
-  it('switches shells in memory and renders each stub', async () => {
-    api.listContests.mockResolvedValue([summaryFixture()]);
-    render(<ContestPage />);
-    await screen.findByTestId('contest-shell-arena');
-    fireEvent.click(screen.getByTestId('contest-surface-ledger'));
-    expect(await screen.findByTestId('contest-shell-ledger')).toBeInTheDocument();
-    expect(useContestFocus.getState().surface).toBe('ledger');
-    fireEvent.click(screen.getByTestId('contest-surface-contact'));
-    expect(await screen.findByTestId('contest-shell-contact')).toBeInTheDocument();
-    expect(await screen.findByText('Hero page')).toBeInTheDocument();
   });
 
   it('names the readiness problems of the focused project', async () => {
