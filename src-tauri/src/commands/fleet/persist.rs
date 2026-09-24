@@ -331,7 +331,11 @@ pub fn rehydrate(app: &AppHandle) -> usize {
                 }
                 continue;
             }
-            if ended_for(super::stale::MACHINE_WORKER_RETIRE_MS) {
+            if ended_for(super::stale::MACHINE_WORKER_RETIRE_MS)
+                && !(row.mode == "headless"
+                    && state == FleetSessionState::Stale
+                    && super::classify::is_one_shot_worker_label(row.run_label.as_deref()))
+            {
                 continue;
             }
         }
@@ -369,11 +373,9 @@ static RECOVERED: AtomicBool = AtomicBool::new(false);
 /// silently stranding real work.
 ///
 /// This pass runs ONCE, right after the first successful rehydrate and BEFORE
-/// `tick_once`, and force-parks each Athena-owned mid-task orphan to
-/// `AwaitingInput` with a recovery reason ([`park_recovered`]). That both
-/// surfaces it for reconnection (`fleet_resume`/`fleet_wake`) and shields it
-/// from auto-forget. Finished/dead rows are deliberately ignored here — the
-/// ticker's auto-forget pass cleans those.
+/// `tick_once`. It settles one-shot workers from their transcript, ends
+/// processless headless attempts that did not finish, and parks Athena-owned
+/// mid-task orphans for reconnection. Already finished rows are left alone.
 ///
 /// It intentionally does NOT auto-kill-and-resume the orphan process at boot:
 /// `fleet_resume_orphan` kills before resuming, and matching a process to a
@@ -385,7 +387,7 @@ pub fn recover_after_restart(app: &AppHandle) {
         return;
     }
     // Snapshot mid-task orphans under the lock; act outside it.
-    let strays: Vec<(String, Option<String>, Option<String>)> = {
+    let strays: Vec<(String, Option<String>, Option<String>, bool)> = {
         let map = registry()
             .sessions
             .lock()
@@ -403,6 +405,7 @@ pub fn recover_after_restart(app: &AppHandle) {
                         FleetSessionState::Running
                             | FleetSessionState::Idle
                             | FleetSessionState::AwaitingInput
+                            | FleetSessionState::Stale
                     )
             })
             .map(|s| {
@@ -410,23 +413,30 @@ pub fn recover_after_restart(app: &AppHandle) {
                     s.id.clone(),
                     s.run_label.clone(),
                     s.claude_session_id.clone(),
+                    s.mode == super::types::FleetSessionMode::Headless,
                 )
             })
             .collect()
     };
     RECOVERED.store(true, Ordering::SeqCst);
-    for (sid, run_label, claude_session_id) in strays {
-        // A one-shot worker restored mid-task is settled from its transcript,
-        // never from a timer: the CLI wrote what it was doing when the app
-        // went down, and that record says whether the turn had ENDED or was
-        // KILLED. Left to the ticker, both read "No log growth for 6 min" —
-        // and the abandoned-dispatch sweep then released a merged, finished
-        // delivery as "worker ended without write-back" (bank-contracts
-        // 672ce81d, 2026-09-10 → 09-13, three restarts).
-        if super::classify::is_one_shot_worker_label(run_label.as_deref())
-            && settle_restored_worker(app, &sid, claude_session_id.as_deref())
-        {
-            continue;
+    for (sid, run_label, claude_session_id, headless) in strays {
+        // Preserve a completion the transcript proves. A headless attempt
+        // without one cannot resume after this process died; leaving it stale
+        // made the App Master read its dispatch as running indefinitely.
+        if super::classify::is_one_shot_worker_label(run_label.as_deref()) {
+            let settled = settle_restored_worker(app, &sid, claude_session_id.as_deref());
+            if settled && registry().session_state(&sid) == Some(FleetSessionState::Finished) {
+                continue;
+            }
+            if headless {
+                if settle_dead_headless(registry(), &sid) {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+                continue;
+            }
+            if settled {
+                continue;
+            }
         }
         if !registry().is_athena_owned(&sid) {
             continue;
@@ -438,6 +448,15 @@ pub fn recover_after_restart(app: &AppHandle) {
             super::pty::emit_registry_changed(app, "updated", &sid);
         }
     }
+}
+
+fn settle_dead_headless(reg: &super::registry::FleetRegistry, session_id: &str) -> bool {
+    reg.settle_restored(
+        session_id,
+        FleetSessionState::Exited,
+        "worker gone: headless worker ended when the app restarted; no write-back was recorded",
+    )
+    .is_some()
 }
 
 /// What a restored one-shot worker's transcript says should become of it.
@@ -777,5 +796,32 @@ mod tests {
         assert_eq!(inner_from_row(&row).state, FleetSessionState::Finished);
         row.state = "hibernated".into();
         assert_eq!(inner_from_row(&row).state, FleetSessionState::Hibernated);
+    }
+
+    #[test]
+    fn restored_stale_headless_worker_ends_but_a_live_one_does_not() {
+        let reg = super::super::registry::FleetRegistry::default();
+        let mut dead = sample_inner();
+        dead.id = "dead".into();
+        dead.mode = FleetSessionMode::Headless;
+        dead.state = FleetSessionState::Stale;
+        dead.child_pid = None;
+        dead.dozing = true;
+        reg.insert(dead);
+        let mut live = sample_inner();
+        live.id = "live".into();
+        live.mode = FleetSessionMode::Headless;
+        live.state = FleetSessionState::Stale;
+        reg.insert(live);
+
+        assert!(settle_dead_headless(&reg, "dead"));
+        assert_eq!(reg.session_state("dead"), Some(FleetSessionState::Exited));
+        assert!(!settle_dead_headless(&reg, "dead"));
+        assert!(!settle_dead_headless(&reg, "live"));
+        assert_eq!(reg.session_state("live"), Some(FleetSessionState::Stale));
+        assert!(reg
+            .try_state_reason("dead")
+            .unwrap()
+            .starts_with("worker gone:"));
     }
 }

@@ -2203,6 +2203,7 @@ fn build_decision_context_with_mode(
             || decision_model(persona, charters, cascade.as_ref()),
             |m| m.model.clone(),
         ),
+        codex_mode: codex_mode.is_some(),
         charters: decision_charters,
         projects,
         open_asks,
@@ -2219,7 +2220,7 @@ fn build_decision_context_with_mode(
         may_direct,
         workspace,
         home_project,
-        resource_state: Some(resource_state_now(pool)),
+        resource_state: Some(resource_state_now(pool, codex_mode.is_some())),
     })
 }
 
@@ -2228,8 +2229,12 @@ fn build_decision_context_with_mode(
 /// takes and the same wire figures the Monitor shows - so this is a field
 /// copy, not a second computation. Measures nothing (no RAM probe, no usage
 /// call): it runs inside `plan_tick` for every App Master.
-fn resource_state_now(pool: &DbPool) -> attention_decide::ResourceState {
-    let b = crate::commands::fleet::queue::current_budgets(pool);
+fn resource_state_now(pool: &DbPool, codex_mode: bool) -> attention_decide::ResourceState {
+    let b = if codex_mode {
+        crate::commands::fleet::queue::current_budgets_for(pool, true)
+    } else {
+        crate::commands::fleet::queue::current_budgets(pool)
+    };
     attention_decide::ResourceState {
         enabled: b.enabled,
         behind_pct: b.behind_pct,

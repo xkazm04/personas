@@ -1785,9 +1785,20 @@ async fn snapshot(app: &AppHandle, pool: DbPool) -> Result<FleetQueueSnapshot, A
 /// admission takes - and assembles the wire shape through [`budget_view`], so
 /// the persona is told exactly what the Monitor's budgets block shows.
 pub fn current_budgets(pool: &DbPool) -> FleetBudgets {
+    current_budgets_for(pool, false)
+}
+
+/// The same admission reading for a codex-only decision. Claude pace and
+/// window holds are removed just as they are for a codex queue entry.
+pub fn current_budgets_for(pool: &DbPool, codex_only: bool) -> FleetBudgets {
     let now = now_ms();
     let (inputs, used, gpu_holder) =
         budget_reading(registry(), cap(pool), dynamic_budgets(pool), now);
+    let inputs = if codex_only {
+        without_claude_gauge(inputs)
+    } else {
+        inputs
+    };
     budget_view(registry(), &inputs, used, gpu_holder, now).budgets
 }
 
