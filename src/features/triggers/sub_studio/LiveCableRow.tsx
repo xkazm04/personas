@@ -13,6 +13,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { useStudioComposer } from './useStudioComposer';
 import { SourceChip } from './studioChips';
 import { conditionLabel } from './libs/studioLabels';
@@ -50,18 +51,22 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
             // A chain's "event" is the source's completion — `chain_triggered` is
             // shared by every chain and renaming it would rewire all of them, so
             // show the run-condition (read-only) instead of a renameable event.
-            <span title={st.proto_chain_route}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded-input border border-border text-foreground">
-              <GitBranch className="w-3.5 h-3.5 text-primary" />
-              <span className="typo-body">{conditionLabel(t, connection.route.condition)}</span>
-            </span>
+            <Tooltip content={st.proto_chain_route}>
+              <span
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-input border border-border text-foreground">
+                <GitBranch className="w-3.5 h-3.5 text-primary" />
+                <span className="typo-body">{conditionLabel(t, connection.route.condition)}</span>
+              </span>
+            </Tooltip>
           ) : (
-            <button type="button" onClick={() => onRename(row)} title={st.proto_rename_event}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded-input border border-border text-foreground hover:border-foreground/30 transition-colors">
-              <EventIcon className="w-3.5 h-3.5 text-foreground" />
-              <span className="typo-body truncate max-w-[10rem]">{row.template?.label ?? row.eventType}</span>
-              <Pencil className="w-3 h-3 text-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
-            </button>
+            <Tooltip content={st.proto_rename_event}>
+              <button type="button" onClick={() => onRename(row)}
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-input border border-border text-foreground hover:border-foreground/30 transition-colors">
+                <EventIcon className="w-3.5 h-3.5 text-foreground" />
+                <span className="typo-body truncate max-w-[10rem]">{row.template?.label ?? row.eventType}</span>
+                <Pencil className="w-3 h-3 text-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
+              </button>
+            </Tooltip>
           )}
           <div className={`h-px w-4 ${paused ? 'border-t border-dashed border-border' : 'bg-border'}`} />
           <ArrowRight className="w-3.5 h-3.5 text-foreground" />
@@ -88,15 +93,19 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
             data-testid="studio-cable-pause-toggle"
           />
         )}
-        <button type="button" onClick={() => onAdd(row)} title={st.proto_add_listener}
-          className="p-1.5 rounded-interactive text-foreground opacity-60 hover:opacity-100 hover:text-primary hover:bg-primary/10 transition-all">
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-        {connection && (
-          <button type="button" onClick={() => onDisconnect(connection, row)} title={st.proto_disconnect}
-            className="p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
-            <Unplug className="w-3.5 h-3.5" />
+        <Tooltip content={st.proto_add_listener}>
+          <button type="button" onClick={() => onAdd(row)} aria-label={st.proto_add_listener}
+            className="p-1.5 rounded-interactive text-foreground opacity-60 hover:opacity-100 hover:text-primary hover:bg-primary/10 transition-all">
+            <Plus className="w-3.5 h-3.5" />
           </button>
+        </Tooltip>
+        {connection && (
+          <Tooltip content={st.proto_disconnect}>
+            <button type="button" onClick={() => onDisconnect(connection, row)} aria-label={st.proto_disconnect}
+              className="p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
+              <Unplug className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>
