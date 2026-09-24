@@ -2,8 +2,8 @@
  * Shared state for routing-view variants (Dispatch / Switchboard / Baseline).
  *
  * Centralises: initial fetch + reload, row derivation (via buildEventRows),
- * modal target state, and the three action handlers (link / unlink / rename /
- * backfill-handlers). Each variant provides its own filters and layout — the
+ * modal target state, the action handlers (link / unlink / rename /
+ * backfill-handlers), and each cable's vitals + pause/resume (libs/cableVitals). Each variant provides its own filters and layout — the
  * hook keeps data and actions consistent across variants so we don't duplicate
  * ~150 lines of state glue three times while prototyping.
  */
@@ -19,15 +19,21 @@ import {
   linkPersonaToEvent,
   unlinkPersonaFromEvent,
   renameEventType,
+  updateTrigger,
+  dryRunTrigger,
 } from '@/api/pipeline/triggers';
 import {
   listEvents,
   listAllSubscriptions,
   deleteSubscription,
+  updateSubscription,
 } from '@/api/overview/events';
 import { buildEventRows, type EventRow, type Connection } from './routingHelpers';
 import { disconnectPlan } from '../../libs/routeCodec';
-import { silentCatch } from '@/lib/silentCatch';
+import { cableVitals, indexById, pausePlan, resumePlan, summarizeCables, type ToggleCall } from '../../libs/cableVitals';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 export interface RoutingStateProps {
@@ -54,6 +60,17 @@ const STUDIO_SUB_LIMIT = 200;
 /** Source-label enrichment only; LiveStream uses the same page. Must not gate cables. */
 const STUDIO_EVENT_LIMIT = 100;
 
+function runToggle(call: ToggleCall): Promise<unknown> {
+  return call.api === 'updateTrigger'
+    ? updateTrigger(call.id, call.personaId, call.input)
+    : updateSubscription(call.id, call.input);
+}
+
+/** Key of the row a toggle writes (the governing trigger or subscription). */
+export function toggleKeyOf(c: Connection): string {
+  return c.subscriptionId ?? c.route?.primaryTriggerId ?? c.triggerId ?? c.personaId;
+}
+
 export function useRoutingState({
   personas, teams,
 }: RoutingStateProps) {
@@ -68,6 +85,10 @@ export function useRoutingState({
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<AddPersonaTarget | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<DisconnectTarget | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
+  const [toggling, setToggling] = useState<ReadonlySet<string>>(new Set());
+  const addToast = useToastStore((s) => s.addToast);
+  const { t, tx } = useTranslation();
+  const st = t.triggers.studio;
 
   useEffect(() => {
     let stale = false;
@@ -111,6 +132,48 @@ export function useRoutingState({
     () => buildEventRows(allTriggers, recentEvents, subscriptions, personaMap),
     [allTriggers, recentEvents, subscriptions, personaMap],
   );
+
+  // The governing rows behind the cables (triggers by id, subscriptions by id).
+  const cableIndex = useMemo(() => indexById(allTriggers, subscriptions), [allTriggers, subscriptions]);
+  const vitalsOf = useCallback((c: Connection) => cableVitals(c, cableIndex), [cableIndex]);
+  const cableSummary = useMemo(
+    () => summarizeCables(rows.flatMap((r) => r.connections).map(vitalsOf)),
+    [rows, vitalsOf],
+  );
+
+  /**
+   * Pause or resume a cable. Both are one `enabled` write on the governing row
+   * and delete nothing. Resume first dry-runs the trigger (the gate a new chain
+   * commit walks in useStudioComposer.commitLink), so a route whose source went
+   * away while it sat paused stays paused and says why.
+   */
+  const handleSetPaused = useCallback(async (connection: Connection, paused: boolean) => {
+    const key = toggleKeyOf(connection);
+    setToggling((s) => new Set(s).add(key));
+    try {
+      if (paused) {
+        const call = pausePlan(connection);
+        if (call) await runToggle(call);
+      } else {
+        const plan = resumePlan(connection);
+        if (!plan) return;
+        if (plan.dryRunId) {
+          const dry = await dryRunTrigger(plan.dryRunId);
+          if (!dry.valid) {
+            const failed = dry.validation.checks.find((c) => !c.passed);
+            addToast(tx(st.resume_dry_run_failed, { error: failed?.message ?? '' }), 'error');
+            return;
+          }
+        }
+        await runToggle(plan.call);
+      }
+      await reload();
+    } catch (err) {
+      toastCatch('features/triggers/sub_studio/routing/layouts/useRoutingState:setPaused', st.route_toggle_failed)(err);
+    } finally {
+      setToggling((s) => { const n = new Set(s); n.delete(key); return n; });
+    }
+  }, [reload, addToast, tx, st.resume_dry_run_failed, st.route_toggle_failed]);
 
   const handleAddPersona = useCallback(
     async (personaId: string, useCaseId: string | null) => {
@@ -173,6 +236,7 @@ export function useRoutingState({
     renameTarget, setRenameTarget,
     handleAddPersona, handleRename, handleDisconnect,
     connectedPersonaIdsForRow,
+    vitalsOf, cableSummary, handleSetPaused, toggling,
   };
 }
 
