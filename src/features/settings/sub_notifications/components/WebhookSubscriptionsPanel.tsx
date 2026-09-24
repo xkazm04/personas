@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Webhook, Plus, Trash2, Send, Loader2, CheckCircle2, XCircle, Pencil } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useCallback, useEffect, useState } from 'react';
+import { Webhook, Plus, Trash2, Send, CheckCircle2, XCircle, Pencil, AlertTriangle, CircleDashed } from 'lucide-react';
+import { interpolate, useTranslation } from '@/i18n/useTranslation';
 import {
   createNotificationSubscription,
   deleteNotificationSubscription,
@@ -8,61 +8,32 @@ import {
   testNotificationSubscription,
   updateNotificationSubscription,
 } from '@/api/events/notificationSubscriptions';
+import { listKnownEventTypes } from '@/api/overview/events';
 import type { NotificationSubscription } from '@/lib/bindings/NotificationSubscription';
+import type { EventVocabularyEntry } from '@/lib/bindings/EventVocabularyEntry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-
-type Provider = 'slack' | 'discord' | 'teams' | 'generic';
-
-interface DraftSubscription {
-  id?: string;
-  label: string;
-  provider: Provider;
-  webhookUrl: string;
-  eventTypes: string;
-  templateBody: string;
-  enabled: boolean;
-}
-
-const EMPTY_DRAFT: DraftSubscription = {
-  label: '',
-  provider: 'slack',
-  webhookUrl: '',
-  eventTypes: 'execution.finished, healing.escalated',
-  templateBody: '',
-  enabled: true,
-};
-
-const PROVIDER_OPTIONS: Array<{ value: Provider; labelKey: 'slack' | 'discord' | 'teams' | 'generic' }> = [
-  { value: 'slack', labelKey: 'slack' },
-  { value: 'discord', labelKey: 'discord' },
-  { value: 'teams', labelKey: 'teams' },
-  { value: 'generic', labelKey: 'generic' },
-];
-
-function parseEventTypes(raw: string): string[] {
-  return raw
-    .split(/[,\n]/g)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
-function eventTypesToString(arr: string): string {
-  try {
-    const parsed = JSON.parse(arr) as unknown;
-    if (Array.isArray(parsed)) return parsed.join(', ');
-  } catch (err) { silentCatch("features/settings/sub_notifications/components/WebhookSubscriptionsPanel:catch1")(err); }
-  return arr;
-}
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import {
+  EMPTY_WEBHOOK_DRAFT,
+  classifyPatterns,
+  deliveryHealth,
+  draftToPayload,
+  eventTypesToString,
+  parseEventTypes,
+  type WebhookDraft,
+} from '../libs/webhookMatch';
+import { WebhookDraftForm, isWebhookProvider } from './WebhookDraftForm';
 
 export function WebhookSubscriptionsPanel() {
   const { t } = useTranslation();
   const s = t.settings.notifications;
   const [subscriptions, setSubscriptions] = useState<NotificationSubscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState<DraftSubscription | null>(null);
-  const [testingId, setTestingId] = useState<string | null>(null);
-  const [lastTest, setLastTest] = useState<Record<string, { ok: boolean; msg: string }>>({});
+  const [draft, setDraft] = useState<WebhookDraft | null>(null);
+  const [vocabulary, setVocabulary] = useState<EventVocabularyEntry[] | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -77,15 +48,18 @@ export function WebhookSubscriptionsPanel() {
 
   useEffect(() => {
     reload();
+    listKnownEventTypes()
+      .then(setVocabulary)
+      .catch(silentCatch('features/settings/sub_notifications/components/WebhookSubscriptionsPanel:vocabulary'));
   }, [reload]);
 
-  const openCreate = () => setDraft({ ...EMPTY_DRAFT });
+  const openCreate = () => setDraft({ ...EMPTY_WEBHOOK_DRAFT });
 
   const openEdit = (sub: NotificationSubscription) => {
     setDraft({
       id: sub.id,
       label: sub.label,
-      provider: (PROVIDER_OPTIONS.find((p) => p.value === sub.provider)?.value ?? 'generic') as Provider,
+      provider: isWebhookProvider(sub.provider) ? sub.provider : 'generic',
       webhookUrl: sub.webhookUrl ?? '',
       eventTypes: eventTypesToString(sub.eventTypes),
       templateBody: sub.templateBody ?? '',
@@ -93,20 +67,9 @@ export function WebhookSubscriptionsPanel() {
     });
   };
 
-  const closeDraft = () => setDraft(null);
-
   const saveDraft = useCallback(async () => {
     if (!draft) return;
-    const eventTypes = parseEventTypes(draft.eventTypes);
-    const payload = {
-      label: draft.label.trim(),
-      provider: draft.provider,
-      webhookUrl: draft.webhookUrl.trim() || null,
-      credentialId: null,
-      eventTypes,
-      templateBody: draft.templateBody.trim() || null,
-      enabled: draft.enabled,
-    };
+    const payload = draftToPayload(draft);
     try {
       if (draft.id) {
         await updateNotificationSubscription(draft.id, payload);
@@ -152,34 +115,19 @@ export function WebhookSubscriptionsPanel() {
     [reload],
   );
 
-  const runTest = useCallback(async (id: string) => {
-    setTestingId(id);
-    try {
-      const result = await testNotificationSubscription(id);
-      setLastTest((prev) => ({
-        ...prev,
-        [id]: {
-          ok: result.ok,
-          msg: result.ok
-            ? `HTTP ${result.statusCode ?? 200}`
-            : result.error ?? `HTTP ${result.statusCode ?? 'error'}`,
-        },
-      }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setLastTest((prev) => ({ ...prev, [id]: { ok: false, msg: message } }));
-    } finally {
-      setTestingId(null);
-    }
-  }, []);
-
-  const isValidDraft = useMemo(() => {
-    if (!draft) return false;
-    if (!draft.label.trim()) return false;
-    if (!draft.webhookUrl.trim()) return false;
-    if (parseEventTypes(draft.eventTypes).length === 0) return false;
-    return true;
-  }, [draft]);
+  // The test dispatch records into the same delivery ledger the row's health
+  // line reads (record_delivery), so a reload is what surfaces its outcome.
+  const runTest = useCallback(
+    async (id: string) => {
+      try {
+        await testNotificationSubscription(id);
+      } catch (err) {
+        toastCatch('WebhookSubscriptionsPanel:test')(err);
+      }
+      await reload();
+    },
+    [reload],
+  );
 
   const showGhost = loading && subscriptions.length === 0 && !draft;
 
@@ -211,158 +159,113 @@ export function WebhookSubscriptionsPanel() {
             {s.webhook_subscriptions_empty}
           </div>
         ) : null}
-        {subscriptions.map((sub) => {
-          const test = lastTest[sub.id];
-          return (
-            <div key={sub.id} className="px-4 py-3 flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="typo-body font-medium text-foreground truncate">{sub.label}</span>
-                  <span className="typo-caption text-foreground uppercase tracking-wider">
-                    {sub.provider}
-                  </span>
-                </div>
-                <div className="typo-caption text-foreground truncate">
-                  {eventTypesToString(sub.eventTypes)}
-                </div>
-                {test && (
-                  <div className="typo-caption mt-0.5 flex items-center gap-1">
-                    {test.ok ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    ) : (
-                      <XCircle className="w-3 h-3 text-red-400" />
-                    )}
-                    <span className={test.ok ? 'text-emerald-400' : 'text-red-400'}>{test.msg}</span>
-                  </div>
-                )}
+        {subscriptions.map((sub) => (
+          <div key={sub.id} className="px-4 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="typo-body font-medium text-foreground truncate">{sub.label}</span>
+                <span className="typo-caption text-foreground uppercase tracking-wider">
+                  {sub.provider}
+                </span>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => runTest(sub.id)}
-                  disabled={testingId === sub.id}
-                  className="rounded-interactive p-1.5 hover:bg-primary/10 disabled:opacity-50"
-                  aria-label={s.webhook_subscriptions_test_aria}
-                >
-                  {testingId === sub.id ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary/60" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5 text-primary/60" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openEdit(sub)}
-                  className="rounded-interactive p-1.5 hover:bg-primary/10"
-                  aria-label={s.webhook_subscriptions_edit_aria}
-                >
-                  <Pencil className="w-3.5 h-3.5 text-primary/60" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeSubscription(sub.id)}
-                  className="rounded-interactive p-1.5 hover:bg-red-500/10"
-                  aria-label={s.webhook_subscriptions_delete_aria}
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                </button>
-                <AccessibleToggle
-                  checked={sub.enabled}
-                  onChange={() => toggleEnabled(sub)}
-                  label={s.webhook_subscriptions_enabled_aria}
-                  size="sm"
-                />
+              <div className="typo-caption text-foreground truncate">
+                {eventTypesToString(sub.eventTypes)}
               </div>
+              <WebhookRowHealth sub={sub} vocabulary={vocabulary} />
             </div>
-          );
-        })}
-        {draft && (
-          <div className="px-4 py-4 space-y-3 bg-primary/5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block">
-                <span className="typo-caption text-foreground">{s.webhook_subscriptions_label}</span>
-                <input
-                  type="text"
-                  value={draft.label}
-                  onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-                  className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground"
-                  placeholder={s.webhook_subscriptions_label_placeholder}
-                  data-testid="webhook-draft-label"
-                />
-              </label>
-              <label className="block">
-                <span className="typo-caption text-foreground">{s.webhook_subscriptions_provider}</span>
-                <select
-                  value={draft.provider}
-                  onChange={(e) => setDraft({ ...draft, provider: e.target.value as Provider })}
-                  className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground"
-                >
-                  {PROVIDER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {s.webhook_subscriptions_provider_labels[opt.labelKey]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label className="block">
-              <span className="typo-caption text-foreground">{s.webhook_subscriptions_url}</span>
-              <input
-                type="text"
-                value={draft.webhookUrl}
-                onChange={(e) => setDraft({ ...draft, webhookUrl: e.target.value })}
-                className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
-                placeholder={s.webhook_subscriptions_url_placeholder}
-                data-testid="webhook-draft-url"
+            <div className="flex items-center gap-1">
+              <AsyncButton
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => runTest(sub.id)}
+                aria-label={s.webhook_subscriptions_test_aria}
+                icon={<Send className="w-3.5 h-3.5 text-primary/60" />}
               />
-            </label>
-            <label className="block">
-              <span className="typo-caption text-foreground">{s.webhook_subscriptions_events}</span>
-              <input
-                type="text"
-                value={draft.eventTypes}
-                onChange={(e) => setDraft({ ...draft, eventTypes: e.target.value })}
-                className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
-                placeholder={s.webhook_subscriptions_events_placeholder}
-              />
-              <span className="typo-caption text-foreground mt-1 block">
-                {s.webhook_subscriptions_events_hint}
-              </span>
-            </label>
-            <label className="block">
-              <span className="typo-caption text-foreground">{s.webhook_subscriptions_template}</span>
-              <textarea
-                value={draft.templateBody}
-                onChange={(e) => setDraft({ ...draft, templateBody: e.target.value })}
-                rows={3}
-                className="mt-1 w-full rounded-input border border-primary/15 bg-secondary/40 px-2 py-1 typo-body text-foreground font-mono"
-                placeholder={s.webhook_subscriptions_template_placeholder}
-              />
-              <span className="typo-caption text-foreground mt-1 block">
-                {s.webhook_subscriptions_template_hint}
-              </span>
-            </label>
-            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={closeDraft}
-                className="rounded-interactive px-3 py-1 typo-caption text-foreground hover:bg-primary/10"
+                onClick={() => openEdit(sub)}
+                className="rounded-interactive p-1.5 hover:bg-primary/10"
+                aria-label={s.webhook_subscriptions_edit_aria}
               >
-                {s.webhook_subscriptions_cancel}
+                <Pencil className="w-3.5 h-3.5 text-primary/60" />
               </button>
               <button
                 type="button"
-                onClick={saveDraft}
-                disabled={!isValidDraft}
-                className="rounded-interactive px-3 py-1 typo-caption font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40"
-                data-testid="webhook-draft-save"
+                onClick={() => removeSubscription(sub.id)}
+                className="rounded-interactive p-1.5 hover:bg-red-500/10"
+                aria-label={s.webhook_subscriptions_delete_aria}
               >
-                {s.webhook_subscriptions_save}
+                <Trash2 className="w-3.5 h-3.5 text-red-400" />
               </button>
+              <AccessibleToggle
+                checked={sub.enabled}
+                onChange={() => toggleEnabled(sub)}
+                label={s.webhook_subscriptions_enabled_aria}
+                size="sm"
+              />
             </div>
           </div>
+        ))}
+        {draft && (
+          <WebhookDraftForm
+            draft={draft}
+            onChange={setDraft}
+            onCancel={() => setDraft(null)}
+            onSave={saveDraft}
+            vocabulary={vocabulary}
+          />
         )}
       </div>
+    </div>
+  );
+}
+
+interface WebhookRowHealthProps {
+  sub: NotificationSubscription;
+  vocabulary: EventVocabularyEntry[] | null;
+}
+
+/** Delivery ledger (last delivery, status, verbatim error) and a dead-pattern warning, where the row lives. */
+function WebhookRowHealth({ sub, vocabulary }: WebhookRowHealthProps) {
+  const { t } = useTranslation();
+  const s = t.settings.notifications;
+  const health = deliveryHealth(sub);
+  const patterns = parseEventTypes(eventTypesToString(sub.eventTypes));
+  const verdicts = vocabulary ? classifyPatterns(patterns, vocabulary) : [];
+  const dead = verdicts.length > 0 && verdicts.every((v) => v.status === 'unknown');
+  const suggestion = verdicts.find((v) => v.suggestion)?.suggestion;
+  return (
+    <div className="typo-caption mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5" data-testid="webhook-row-health">
+      {health.tone === 'idle' && (
+        <span className="inline-flex items-center gap-1 text-foreground">
+          <CircleDashed className="w-3 h-3" />
+          {s.webhook_health_never}
+        </span>
+      )}
+      {health.tone === 'ok' && (
+        <span className="inline-flex items-center gap-1 text-status-success">
+          <CheckCircle2 className="w-3 h-3" />
+          {s.webhook_health_ok}
+          <RelativeTime timestamp={health.at} />
+        </span>
+      )}
+      {health.tone === 'error' && (
+        <Tooltip content={health.error ?? s.webhook_health_error}>
+          <span className="inline-flex items-center gap-1 text-status-error min-w-0">
+            <XCircle className="w-3 h-3 flex-shrink-0" />
+            {s.webhook_health_error}
+            <RelativeTime timestamp={health.at} showTooltip={false} />
+            {health.error && <span className="truncate max-w-[16rem] font-mono">{health.error}</span>}
+          </span>
+        </Tooltip>
+      )}
+      {dead && (
+        <span className="inline-flex items-center gap-1 text-status-warning">
+          <AlertTriangle className="w-3 h-3" />
+          {s.webhook_row_dead}
+          {suggestion && <span className="font-mono">{interpolate(s.webhook_pattern_suggest, { suggestion })}</span>}
+        </span>
+      )}
     </div>
   );
 }
