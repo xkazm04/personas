@@ -14,7 +14,7 @@ const columns: DataGridColumn<Row>[] = [
   { key: 'age', label: 'Raised', width: '80px', nowrap: true, align: 'right', render: (r) => r.age },
 ];
 
-const grid = (fit?: 'fill' | 'content') => (
+const grid = (fit?: 'fill' | 'content' | 'page') => (
   <DataGrid<Row> columns={columns} data={rows} getRowKey={(r) => r.id} pageSize={25} fit={fit} />
 );
 
@@ -39,5 +39,16 @@ describe('DataGrid fit', () => {
     render(grid('content'));
     expect(screen.getByText('8 min').closest('div')?.className).toMatch(/\bwhitespace-nowrap\b/);
     expect(screen.getByText('Name').className).toMatch(/\btruncate\b/);
+  });
+
+  it("fit='page' leaves the body uncapped so the page scrolls, header stays sticky", () => {
+    render(grid('page'));
+    const body = screen.getByTestId('data-grid-body');
+    expect(body.className).not.toMatch(/overflow-y-auto|\bflex-1\b|\bmin-h-0\b/);
+    expect(body.previousElementSibling?.className).toMatch(/\bsticky\b/);
+    // Next comes the zero-height sticky rail the bulk toolbar hangs from, then the pager.
+    const rail = body.nextElementSibling;
+    expect(rail?.className).toMatch(/\bsticky\b.*\bh-0\b/);
+    expect(rail?.nextElementSibling?.textContent).toContain('2');
   });
 });
