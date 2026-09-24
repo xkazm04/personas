@@ -28,6 +28,7 @@ pub mod claude_usage;
 pub mod cli_usage;
 pub mod commands;
 pub mod companion_api;
+pub mod contest_seat;
 pub mod debug_log;
 pub mod external;
 pub mod headless;

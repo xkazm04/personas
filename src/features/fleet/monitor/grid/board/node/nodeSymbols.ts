@@ -26,7 +26,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Bot, Check, CircleDashed, Clock, Hand, Hourglass, Lightbulb, MessageSquare, Moon, Play,
-  RotateCcw, Rss, Sparkles, Square,
+  RotateCcw, Rss, Sparkles, Square, Trophy,
 } from 'lucide-react';
 import type { DispatchOrigin } from '@/lib/bindings/DispatchOrigin';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
@@ -137,6 +137,7 @@ export const ORIGIN_GLYPH: Record<DispatchOrigin, LucideIcon> = {
   night_shift: Moon,
   feed_impact: Rss,
   orphan_resume: RotateCcw,
+  contest: Trophy,
 };
 
 // The colour half — hues, swatch, the one treatment — lives in `nodeHues`;

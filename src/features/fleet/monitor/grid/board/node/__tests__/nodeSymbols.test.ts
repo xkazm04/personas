@@ -88,8 +88,8 @@ describe('the state and origin marks', () => {
 
   it('gives every origin a distinct glyph', () => {
     const glyphs = Object.values(ORIGIN_GLYPH);
-    expect(glyphs).toHaveLength(8);
-    expect(new Set(glyphs).size).toBe(8);
+    expect(glyphs).toHaveLength(9);
+    expect(new Set(glyphs).size).toBe(9);
   });
 });
 

@@ -14,7 +14,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
-import type { SessionGrouping } from './fleetSessionModel';
+import { contestIdOfGroupKey, type SessionGrouping } from './fleetSessionModel';
 import { columnRows, type ColumnRow } from './gridGeometry';
 
 /** Stable empty list so a session-less column never rebuilds its rows. */
@@ -27,7 +27,20 @@ const EMPTY_SESSIONS: FleetSession[] = [];
  */
 export interface BoardColumn extends TeamGroup {
   rows: ColumnRow[];
+  /**
+   * The contest this column is the run group OF, or `null` for a team or
+   * workspace column. A contest column carries no personas, only that
+   * contest's seats; its `teamId` is the run-group key (`contest:<id>`) and
+   * its `teamName` the contest id, so it needs no string of its own.
+   */
+  contestId: string | null;
 }
+
+/**
+ * The header rule of a contest column. Data, not a class: `TeamColumn` paints
+ * every column's rule from its `teamColor` through `colorWithAlpha`.
+ */
+export const CONTEST_COLUMN_COLOR = '#f59e0b';
 
 export interface BoardModel {
   columns: BoardColumn[];
@@ -110,12 +123,41 @@ export function useBoardModel(
     return [...groups, ...grouped.teams.filter((g) => g.workspaceId === null)];
   }, [grouped.teams]);
 
-  const columns = useMemo(
-    () => ordered.map((g) => ({
+  const teamColumns = useMemo(
+    (): BoardColumn[] => ordered.map((g) => ({
       ...g,
       rows: columnRows(g.cards, filtered ? EMPTY_SESSIONS : (sessionGroups.byTeam.get(g.teamId) ?? EMPTY_SESSIONS), g.teamName),
+      contestId: null,
     })),
     [ordered, sessionGroups.byTeam, filtered],
+  );
+
+  // ONE COLUMN PER CONTEST, after the team columns. A contest's seats are one
+  // piece of work spread over several engines, so they read as a lane of their
+  // own rather than as strays in the tray. Like every other session, they are
+  // off the board while it is filtered.
+  const contestColumns = useMemo((): BoardColumn[] => {
+    if (filtered) return [];
+    const out: BoardColumn[] = [];
+    for (const [key, list] of sessionGroups.byRun) {
+      const contestId = contestIdOfGroupKey(key);
+      if (!contestId || list.length === 0) continue;
+      out.push({
+        teamId: key,
+        teamName: contestId,
+        teamColor: CONTEST_COLUMN_COLOR,
+        workspaceId: null,
+        cards: [],
+        rows: columnRows([], list, null),
+        contestId,
+      });
+    }
+    return out;
+  }, [sessionGroups.byRun, filtered]);
+
+  const columns = useMemo(
+    () => (contestColumns.length === 0 ? teamColumns : [...teamColumns, ...contestColumns]),
+    [teamColumns, contestColumns],
   );
 
   // `every` over an empty list is true, which is the pre-groups behaviour

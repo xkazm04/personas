@@ -30,7 +30,7 @@
 import { useCallback, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Power, PowerOff } from 'lucide-react';
+import { Power, PowerOff, Trophy } from 'lucide-react';
 import { ContextMenu } from '@/features/shared/components/overlays/ContextMenu';
 import {
   useProjectForTeam, useToggleProject,
@@ -97,37 +97,56 @@ export function TeamColumn({
     >
       {workspaceId !== null && <WorkspaceFrame />}
       <div className="relative z-10 flex flex-shrink-0 flex-col gap-1 pb-2 pt-0.5">
-        <Tooltip
-          content={workspaceId !== null
-            ? tx(t.monitor.grid_column_workspace_hint, { workspace: spaceName })
-            : projectOff
-              ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
-              : tx(t.monitor.grid_column_scope, { project: name })}
-        >
-          <button
-            type="button"
-            onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
-            onContextMenu={onContextMenu}
-            aria-pressed={scoped}
-            data-project-off={projectOff || undefined}
-            data-testid="fleet-grid-column-header"
-            className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
-              scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
-            }`}
-          >
-            <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
-            {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
-            {projectOff && (
-              <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
-                <PowerOff className="h-2.5 w-2.5" aria-hidden />
-                {t.plugins.dev_projects.project_state_off}
+        {column.contestId !== null ? (
+          // A CONTEST COLUMN is a run group, not a roster: nothing to scope the
+          // rail to and no project to switch, so its header is a plain label —
+          // the contest id (data, no string of its own) and its seat count.
+          <Tooltip content={column.contestId}>
+            <div
+              data-testid="fleet-grid-column-header"
+              data-contest-id={column.contestId}
+              className="flex w-full items-baseline gap-1.5 px-1 py-0.5 text-foreground"
+            >
+              <Trophy className="h-3 w-3 flex-shrink-0 self-center opacity-60" aria-hidden />
+              <span className="min-w-0 flex-1 truncate typo-label">{name}</span>
+              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+                {column.rows.filter((r) => r.kind === 'session').length}
               </span>
-            )}
-            <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
-              {column.cards.length}
-            </span>
-          </button>
-        </Tooltip>
+            </div>
+          </Tooltip>
+        ) : (
+          <Tooltip
+            content={workspaceId !== null
+              ? tx(t.monitor.grid_column_workspace_hint, { workspace: spaceName })
+              : projectOff
+                ? tx(t.plugins.dev_projects.project_off_hint, { project: name })
+                : tx(t.monitor.grid_column_scope, { project: name })}
+          >
+            <button
+              type="button"
+              onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
+              onContextMenu={onContextMenu}
+              aria-pressed={scoped}
+              data-project-off={projectOff || undefined}
+              data-testid="fleet-grid-column-header"
+              className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
+                scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
+              {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
+              {projectOff && (
+                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
+                  <PowerOff className="h-2.5 w-2.5" aria-hidden />
+                  {t.plugins.dev_projects.project_state_off}
+                </span>
+              )}
+              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+                {column.cards.length}
+              </span>
+            </button>
+          </Tooltip>
+        )}
         <span
           aria-hidden
           className="h-0.5 w-full rounded-full"

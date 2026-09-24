@@ -161,4 +161,21 @@ goalId: string | null,
 /**
  * Which autopilot / night-shift cycle produced this dispatch.
  */
-cycleIndex: number | null, };
+cycleIndex: number | null, 
+/**
+ * The dispatcher's run label (`contest:<contestId>:<seatId>`,
+ * `app-master:<personaId>`, `dev-runner:<batch>`, …), or null for an
+ * operator's unlabelled session. The Monitor groups `contest:` sessions
+ * into one column per contest from it.
+ */
+runLabel: string | null, 
+/**
+ * The run-harvest grouping key the session was spawned into, or null.
+ */
+runId: string | null, 
+/**
+ * The contest this session is a seat of, parsed once here from a
+ * `contest:<contestId>:<seatId>` run label (`contest_seat`), or null. The
+ * Monitor groups on it rather than re-parsing the label.
+ */
+contestId: string | null, };

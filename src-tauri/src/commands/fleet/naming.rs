@@ -185,9 +185,13 @@ pub(super) const VALUE_FLAGS: &[&str] = &[
     "--add-dir",
     // The CLI display name (`-n, --name <name>`); its value is not the task.
     "--name",
-    // Claude Code's isolated checkout (`--worktree <name>`), which the Dev
-    // runner passes for competition-bound tasks; its value is not the task.
+    // Claude Code's isolated checkout (`--worktree <name>`), which a caller
+    // may pass for a task that must not touch the main checkout; its value is
+    // not the task.
     "--worktree",
+    // A contest seat's isolation (`--setting-sources project,local`); its
+    // value is not the task.
+    "--setting-sources",
 ];
 
 /// Pull the session's task from its spawn args — the first positional argument,

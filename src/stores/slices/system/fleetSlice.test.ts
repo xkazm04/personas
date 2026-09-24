@@ -76,6 +76,9 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     personaId: null,
     goalId: null,
     cycleIndex: null,
+    runLabel: null,
+    runId: null,
+    contestId: null,
     ...partial,
   };
 }

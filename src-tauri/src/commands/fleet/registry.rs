@@ -431,6 +431,13 @@ impl FleetSessionInner {
             persona_id: self.persona_id.clone(),
             goal_id: self.goal_id.clone(),
             cycle_index: self.cycle_index,
+            run_label: self.run_label.clone(),
+            run_id: self.run_id.clone(),
+            contest_id: self
+                .run_label
+                .as_deref()
+                .and_then(super::contest_seat::parse_contest_run_label)
+                .map(|(contest_id, _)| contest_id.to_string()),
         }
     }
 }
@@ -1088,6 +1095,14 @@ impl FleetRegistry {
     pub fn name_of(&self, session_id: &str) -> Option<String> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         map.get(session_id).and_then(|s| s.name.clone())
+    }
+
+    /// The run label stamped on the row (`contest:<id>:<seat>`,
+    /// `app-master:<persona>`, …), `None` for an unlabelled session or an
+    /// unknown id.
+    pub fn run_label_of(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).and_then(|s| s.run_label.clone())
     }
 
     /// The dispatch origin token stamped on the row (`DispatchOrigin::token`),

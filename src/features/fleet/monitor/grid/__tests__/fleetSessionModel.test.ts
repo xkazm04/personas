@@ -9,6 +9,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import {
+  contestGroupKey, contestIdOfGroupKey,
   groupSessions, isLiveSession, sessionGlyph, sessionLabel, sessionStateMeta,
 } from '../fleetSessionModel';
 
@@ -18,7 +19,7 @@ function session(o: Partial<FleetSession> & { id: string }): FleetSession {
     args: [], mode: 'interactive', state: 'running' as FleetSessionState,
     lastActivityMs: 0n, lastPtyOutputMs: 0n, lastGrewMs: 0n, createdAtMs: 0n,
     childPid: null, exitCode: null, stateReason: null, athenaActive: false, dozing: false,
-    limitResetAtMs: null, staleKind: null,
+    limitResetAtMs: null, staleKind: null, runLabel: null, runId: null, contestId: null,
     ...o,
   } as unknown as FleetSession;
 }
@@ -112,5 +113,46 @@ describe('groupSessions', () => {
     const g = groupSessions([session({ id: 's1' })], []);
     expect(g.byTeam.size).toBe(0);
     expect(g.ungrouped).toHaveLength(1);
+  });
+});
+
+describe('contest run groups', () => {
+  const projects = [project('C:/work/alpha', 't1')];
+
+  it('round-trips a contest id through its run-group key, and nothing else', () => {
+    expect(contestIdOfGroupKey(contestGroupKey('home-hero'))).toBe('home-hero');
+    expect(contestIdOfGroupKey('t1')).toBeNull();
+    expect(contestIdOfGroupKey('contest:')).toBeNull();
+  });
+
+  it('puts every seat of a contest in one run group, never in a team column or the tray', () => {
+    const g = groupSessions(
+      [
+        // A seat whose cwd happens to be a team's project root still belongs to its contest.
+        session({ id: 'a', cwd: 'C:/work/alpha', runLabel: 'contest:c1:claude-opus_xhigh', contestId: 'c1' }),
+        session({ id: 'b', cwd: 'C:/work/alpha/.contest/arena/c1/entries/codex', runLabel: 'contest:c1:codex-sol_high', contestId: 'c1' }),
+        session({ id: 'plain', cwd: 'C:/work/alpha', runLabel: 'app-master:p1' }),
+        session({ id: 'stray', cwd: 'C:/elsewhere', runLabel: 'contest notes' }),
+      ],
+      projects,
+    );
+    expect([...g.byRun.keys()]).toEqual(['contest:c1']);
+    expect(g.byRun.get('contest:c1')!.map((s) => s.id).sort()).toEqual(['a', 'b']);
+    expect(g.byTeam.get('t1')!.map((s) => s.id)).toEqual(['plain']);
+    expect(g.ungrouped.map((s) => s.id)).toEqual(['stray']);
+  });
+
+  it('orders contests newest first, sorts seats attention-first, and drops exited seats', () => {
+    const g = groupSessions(
+      [
+        session({ id: 'old', runLabel: 'contest:older:s1', contestId: 'older', createdAtMs: 10n }),
+        session({ id: 'new-run', runLabel: 'contest:newer:s1', contestId: 'newer', state: 'running', createdAtMs: 50n }),
+        session({ id: 'new-asks', runLabel: 'contest:newer:s2', contestId: 'newer', state: 'awaiting_input', createdAtMs: 40n }),
+        session({ id: 'gone', runLabel: 'contest:gone:s1', contestId: 'gone', state: 'exited', createdAtMs: 99n }),
+      ],
+      projects,
+    );
+    expect([...g.byRun.keys()]).toEqual(['contest:newer', 'contest:older']);
+    expect(g.byRun.get('contest:newer')!.map((s) => s.id)).toEqual(['new-asks', 'new-run']);
   });
 });

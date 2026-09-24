@@ -330,6 +330,21 @@ fn staleness_transition(
     }
 }
 
+/// True when the silence sweep must leave a session's process alone: a
+/// contest seat (`contest:<contestId>:<seatId>`, `contest_seat::parse_contest_run_label`).
+///
+/// A contest seat is a design run that may think silently for long stretches
+/// (a codex or grok seat has no transcript to grow at all), and the contest
+/// driver owns its wall-clock ceiling (`wait_until_state` + `kill_contest_seat`).
+/// So the ticker never stamps one `Stale` — no flat-log, frozen-PTY,
+/// frozen-screen or never-attached verdict — and the doze pass never frees its
+/// process. Pure, so the rule is unit-tested. Quiet stays VISIBLE through the
+/// separate freshness signal: `last_activity_ms` / `last_grew_ms` keep being
+/// written, and the tile's "Xs ago" reads from them.
+fn exempt_from_silence_sweep(run_label: Option<&str>) -> bool {
+    super::contest_seat::is_contest_run_label(run_label)
+}
+
 /// True when a `Running` session looks frozen mid-run: its PTY went totally
 /// silent (claude redraws even when idle, so zero bytes ⇒ the process is
 /// hung) AND no transcript growth / hook activity either, both past the
@@ -607,6 +622,20 @@ fn tick_once(app: &AppHandle) {
             // stall. Once reaped, the row is history: leave it alone.
             if session.reaped {
                 base.remove(&session.id);
+                continue;
+            }
+            // A contest seat is never read as stale (see
+            // `exempt_from_silence_sweep`): keep its freshness bookkeeping — the
+            // quiet it DISPLAYS — and apply no verdict.
+            if exempt_from_silence_sweep(session.run_label.as_deref()) {
+                if grew_ids.contains(&session.id) {
+                    session.last_activity_ms = now;
+                }
+                if let Some(&g) = last_grew.get(&session.id) {
+                    session.last_grew_ms = g;
+                }
+                base.remove(&session.id);
+                silent.remove(&session.id);
                 continue;
             }
             // Never-attached spawn: still `Spawning`, no Claude session id ever
@@ -1210,9 +1239,12 @@ pub(crate) const MACHINE_WORKER_RETIRE_MS: i64 = 60 * 60 * 1000;
 /// weeks belongs to the orphaned-task sweep, not to this row.
 pub(crate) const MACHINE_WORKER_ROW_RETENTION_MS: i64 = 14 * 24 * 60 * 60 * 1000;
 
-/// True when a session is a machine dispatch (App Master or overnight: the run
-/// label says so, never a name) that has ENDED and been silent for `after_ms`.
-/// Pure, so the ticker, rehydrate and the prune share one rule.
+/// True when a session is a machine dispatch (App Master, overnight, Dev
+/// runner or a contest seat: the run label says so, never a name) that has
+/// ENDED and been silent for `after_ms`. Pure, so the ticker, rehydrate and the
+/// prune share one rule. A contest seat's record lives in its arena
+/// (`runs/<seat>/record.json`), written the moment it settles, so its tile
+/// leaves the grid on the same hour as any other machine worker.
 ///
 /// `Stale` counts as ended here even though it is not terminal for an
 /// operator's session: a machine worker has nobody coming back to it, and the
@@ -1225,7 +1257,8 @@ pub(crate) fn machine_worker_ended_for(
     now: i64,
     after_ms: i64,
 ) -> bool {
-    personas_engine::unattended::is_unattended_run(run_label)
+    (personas_engine::unattended::is_unattended_run(run_label)
+        || super::contest_seat::is_contest_run_label(run_label))
         && matches!(
             state,
             FleetSessionState::Finished | FleetSessionState::Stale | FleetSessionState::Exited
@@ -1833,7 +1866,10 @@ fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
             .unwrap_or_else(|e| e.into_inner());
         map.values()
             .filter(|s| {
-                if s.dozing || s.child_pid.is_none() {
+                if s.dozing
+                    || s.child_pid.is_none()
+                    || exempt_from_silence_sweep(s.run_label.as_deref())
+                {
                     return false;
                 }
                 let idle_since = s.last_grew_ms.max(s.last_activity_ms);
@@ -2027,6 +2063,21 @@ fn live_slot_pass(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
+    /// A contest seat is exempt from the silence sweep (never stamped stale,
+    /// never dozed); every other label, and a lookalike, is not.
+    #[test]
+    fn only_a_contest_seat_is_exempt_from_the_silence_sweep() {
+        use personas_engine::unattended::app_master_run_label;
+        let seat = crate::commands::fleet::contest_seat::contest_run_label("c1", "grok-4.6_high");
+        assert!(super::exempt_from_silence_sweep(Some(&seat)));
+        assert!(!super::exempt_from_silence_sweep(Some(
+            &app_master_run_label("p1")
+        )));
+        assert!(!super::exempt_from_silence_sweep(Some("contest notes")));
+        assert!(!super::exempt_from_silence_sweep(Some("contest:c1")));
+        assert!(!super::exempt_from_silence_sweep(None));
+    }
+
     /// Only machine dispatches that ENDED leave the grid, and only once silent
     /// past the window; an operator's session and a live state never do.
     #[test]
@@ -2037,8 +2088,16 @@ mod tests {
         const NOW: i64 = 1_700_000_000_000;
         let am = app_master_run_label("p1");
         let night = overnight_run_label("bank");
+        let seat = crate::commands::fleet::contest_seat::contest_run_label("c1", "seat-a");
         for state in [S::Finished, S::Stale, S::Exited] {
             assert!(machine_worker_ended_for(Some(&am), state, NOW - W, NOW, W));
+            assert!(machine_worker_ended_for(
+                Some(&seat),
+                state,
+                NOW - W,
+                NOW,
+                W
+            ));
             assert!(machine_worker_ended_for(
                 Some(&night),
                 state,

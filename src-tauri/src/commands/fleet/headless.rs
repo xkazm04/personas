@@ -166,7 +166,15 @@ pub(super) fn spawn_headless_session_with_identity(
             uuid::Uuid::new_v4().to_string(),
         ),
     };
-    let mcp = build_mcp_spawn(&id);
+    // A contest seat competes on its brief alone: no fleet MCP wiring (with
+    // `--strict-mcp-config` in its args that leaves it no MCP servers at all,
+    // exactly as the /contest skill runs a claude participant).
+    let contest_seat = super::contest_seat::is_contest_run_label(run_label);
+    let mcp = if contest_seat {
+        super::pty::McpSpawn { config_path: None }
+    } else {
+        build_mcp_spawn(&id)
+    };
 
     #[cfg(windows)]
     let program: PathBuf = match crate::engine::cli_process::resolve_claude_exe_windows() {
@@ -206,6 +214,7 @@ pub(super) fn spawn_headless_session_with_identity(
             row_args: extra_args,
             state_reason: "Headless session spawned",
             name_from_task: true,
+            grok_isolated: false,
         },
     )
 }
@@ -354,6 +363,58 @@ pub fn normalize_codex_event(event: serde_json::Value) -> serde_json::Value {
     }
 }
 
+/// The flags that keep a codex run off the operator's own setup — the
+/// /contest skill's `engineCommand` for codex, minus what the fleet argv
+/// already carries (`exec --json --skip-git-repo-check -C -m` and the sandbox
+/// bypass): no `config.toml` (auth still reads `CODEX_HOME`), no execpolicy
+/// rules, and no session files left on disk.
+pub fn codex_isolation_args() -> Vec<String> {
+    ["--ephemeral", "--ignore-user-config", "--ignore-rules"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+}
+
+/// The full codex argv for one worker: the base `exec` argv, the isolation
+/// flags when asked for, and the reasoning effort as the config override
+/// `codex exec` reads (`-c model_reasoning_effort="<e>"`, the value parsed as
+/// TOML, hence the quotes). Pure.
+pub fn codex_worker_argv(
+    cwd: &Path,
+    model: &str,
+    effort: Option<&str>,
+    isolated: bool,
+) -> Vec<String> {
+    let mut argv = codex_exec_argv(cwd, model);
+    if isolated {
+        argv.extend(codex_isolation_args());
+    }
+    if let Some(e) = effort {
+        argv.push("-c".to_string());
+        argv.push(format!("model_reasoning_effort=\"{e}\""));
+    }
+    argv
+}
+
+/// The row args a non-claude worker keeps: its engine marker, so the grid,
+/// the dispatch ledger and a re-enqueue can tell it from a claude worker.
+fn engine_row_args(marker: &super::queue::EngineMarker) -> Vec<String> {
+    let mut args = vec![
+        "--engine".to_string(),
+        marker.engine.to_string(),
+        "--model".to_string(),
+        marker.model.clone(),
+    ];
+    if let Some(e) = marker.effort.as_deref() {
+        args.push("--effort".to_string());
+        args.push(e.to_string());
+    }
+    if marker.isolated {
+        args.push("--isolated".to_string());
+    }
+    args
+}
+
 /// Spawn a one-shot codex worker in `cwd` with `task` as its whole prompt.
 /// Returns the internal session id. The row it registers is a headless
 /// session like any other; `args` carries the engine and the model so the
@@ -364,14 +425,25 @@ pub(super) fn spawn_codex_worker_with_identity(
     app: AppHandle,
     cwd: PathBuf,
     task: String,
-    model: String,
+    marker: super::queue::EngineMarker,
     run_label: Option<&str>,
     identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
     let (program, leading) = resolve_codex_launch()?;
     let mut argv = leading;
-    argv.extend(codex_exec_argv(&cwd, &model));
+    argv.extend(codex_worker_argv(
+        &cwd,
+        &marker.model,
+        marker.effort.as_deref(),
+        marker.isolated,
+    ));
     let seed = task.clone();
+    let row_args = engine_row_args(&marker);
+    let title = if marker.isolated {
+        None
+    } else {
+        Some(format!("codex maintenance worker ({})", marker.model))
+    };
     let (id, claude_session_id) = match identity {
         Some(i) => (i.id, i.claude_session_id),
         None => (
@@ -396,17 +468,192 @@ pub(super) fn spawn_codex_worker_with_identity(
             keep_stdin_open: false,
             mcp_config_path: None,
             claude_session_id,
-            title: Some(format!("codex maintenance worker ({model})")),
-            row_args: vec![
-                "--engine".to_string(),
-                CODEX_ENGINE.to_string(),
-                "--model".to_string(),
-                model,
-            ],
-            state_reason: "Codex maintenance worker spawned",
+            title,
+            row_args,
+            state_reason: "Codex worker spawned",
             name_from_task: false,
+            grok_isolated: false,
         },
     )
+}
+
+// ---------------------------------------------------------------------------
+// The grok lane (contest seats, 2026-09-24).
+//
+// xAI's Grok Build CLI run single-turn: `grok -p <prompt> --output-format
+// streaming-messages-json`. MEASURED on grok 1.0.40 (probe in a temp dir,
+// model grok-4.5, effort low): the stream is NDJSON in the SAME shape as
+// claude's stream-json — `system`/`init` (with `model`, `session_id`),
+// `assistant` messages carrying `text` / `tool_use` blocks, `user` messages
+// carrying `tool_result` blocks, and one closing `result` with `subtype`,
+// `is_error`, `num_turns`, `result`, `total_cost_usd`, `usage`,
+// `modelUsage`. A refused run (unknown model) exits 1 after printing ONE
+// `result` with `is_error: true`, `subtype: "error_during_execution"`, no
+// `result` field and an `errors` array. The process exits by itself after the
+// turn, so — like codex — nothing is held open on stdin. Fixtures of all three
+// runs are pinned in the tests below.
+// ---------------------------------------------------------------------------
+
+/// The engine token of the grok lane, as the dispatch marker spells it.
+pub const GROK_ENGINE: &str = "grok";
+
+/// The longest prompt passed as a `-p` argument. Windows caps a whole command
+/// line at 32,767 UTF-16 units; the contest prompt is short by design (it
+/// points at a brief file in the workspace), so a prompt past this is refused
+/// at spawn with a clear error rather than truncated.
+const GROK_PROMPT_MAX_CHARS: usize = 24_000;
+
+/// `grok -p` argv for one headless worker. Pure. The effort is grok's own
+/// `--effort` (alias of `--reasoning-effort`); approvals are bypassed exactly
+/// as the /contest skill runs a grok participant, and `--cwd` pins the
+/// workspace even though the process is also started in it.
+pub fn grok_exec_argv(cwd: &Path, model: &str, effort: Option<&str>, prompt: &str) -> Vec<String> {
+    let mut argv: Vec<String> = vec![
+        "-p".to_string(),
+        prompt.to_string(),
+        "-m".to_string(),
+        model.to_string(),
+    ];
+    if let Some(e) = effort {
+        argv.push("--effort".to_string());
+        argv.push(e.to_string());
+    }
+    argv.extend(
+        [
+            "--output-format",
+            "streaming-messages-json",
+            "--always-approve",
+            "--permission-mode",
+            "bypassPermissions",
+            "--cwd",
+        ]
+        .iter()
+        .map(|s| s.to_string()),
+    );
+    argv.push(cwd.to_string_lossy().to_string());
+    argv
+}
+
+/// The environment an isolated grok run gets: no cross-session memory, no
+/// agent dashboard — the two switches the /contest skill's `engineCommand`
+/// sets. Fixed literal pairs: the child is told exactly these two things on
+/// top of the environment every headless lane already passes down.
+pub const GROK_ISOLATION_ENV: [(&str, &str); 2] =
+    [("GROK_MEMORY", "0"), ("GROK_AGENT_DASHBOARD", "0")];
+
+/// Give an isolated grok run its [`GROK_ISOLATION_ENV`].
+fn apply_grok_isolation(cmd: &mut Command) {
+    cmd.envs(GROK_ISOLATION_ENV);
+}
+
+/// Map one grok `streaming-messages-json` event onto the claude stream-json
+/// shape [`stdout_loop`] reads. The measured format already IS that shape, so
+/// this is nearly the identity — two touches only: the `system`/`init` event
+/// is tagged with the engine (as the codex lane tags its own), and a refused
+/// `result` that carries its cause only in `errors` gets those joined into its
+/// `result` field, so the settle and the tile's reason say WHY the turn ended
+/// instead of "(no closing message)".
+pub fn normalize_grok_event(mut event: serde_json::Value) -> serde_json::Value {
+    let kind = event
+        .get("type")
+        .and_then(|t| t.as_str())
+        .map(str::to_string);
+    match kind.as_deref() {
+        Some("system") => {
+            if let Some(obj) = event.as_object_mut() {
+                obj.insert("engine".to_string(), json!(GROK_ENGINE));
+            }
+        }
+        Some("result") => {
+            let has_result = event
+                .get("result")
+                .and_then(|r| r.as_str())
+                .is_some_and(|r| !r.trim().is_empty());
+            let errors: Vec<String> = event
+                .get("errors")
+                .and_then(|e| e.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default();
+            if !has_result && !errors.is_empty() {
+                if let Some(obj) = event.as_object_mut() {
+                    obj.insert("result".to_string(), json!(errors.join("; ")));
+                }
+            }
+        }
+        _ => {}
+    }
+    event
+}
+
+/// Spawn a one-shot grok worker in `cwd` with `task` as its whole prompt.
+/// Returns the internal session id. A missing CLI or an over-long prompt is a
+/// spawn error (an errored admission / a failed promotion), never a session
+/// that hangs. `identity` as on [`spawn_headless_session_with_identity`] —
+/// reached only through `queue::admit`.
+pub(super) fn spawn_grok_worker_with_identity(
+    app: AppHandle,
+    cwd: PathBuf,
+    task: String,
+    marker: super::queue::EngineMarker,
+    run_label: Option<&str>,
+    identity: Option<super::pty::SpawnIdentity>,
+) -> Result<String, String> {
+    let program = crate::engine::cli_process::resolve_grok_exe().ok_or_else(|| {
+        "grok CLI not found (looked at PERSONAS_GROK_EXE, ~/.grok/bin, PATH)".to_string()
+    })?;
+    if task.chars().count() > GROK_PROMPT_MAX_CHARS {
+        return Err(format!(
+            "grok prompt is {} characters, over the {GROK_PROMPT_MAX_CHARS}-character \
+             command-line limit this lane passes it through",
+            task.chars().count()
+        ));
+    }
+    let argv = grok_exec_argv(&cwd, &marker.model, marker.effort.as_deref(), &task);
+    let row_args = engine_row_args(&marker);
+    let (id, claude_session_id) = match identity {
+        Some(i) => (i.id, i.claude_session_id),
+        None => (
+            uuid::Uuid::new_v4().to_string(),
+            uuid::Uuid::new_v4().to_string(),
+        ),
+    };
+    spawn_headless_launch(
+        app,
+        cwd,
+        task,
+        run_label,
+        HeadlessLaunch {
+            id,
+            engine: GROK_ENGINE,
+            program,
+            argv,
+            // The prompt rides `-p`; stdin is closed at once.
+            seed: String::new(),
+            keep_stdin_open: false,
+            mcp_config_path: None,
+            claude_session_id,
+            title: None,
+            row_args,
+            state_reason: "Grok worker spawned",
+            name_from_task: false,
+            grok_isolated: marker.isolated,
+        },
+    )
+}
+
+/// One engine's event, mapped onto the claude stream-json shape. Claude's
+/// own events pass through; codex's JSONL and grok's messages are normalised
+/// by their lane's function.
+fn normalize_event(engine: &str, event: serde_json::Value) -> serde_json::Value {
+    match engine {
+        CODEX_ENGINE => normalize_codex_event(event),
+        GROK_ENGINE => normalize_grok_event(event),
+        _ => event,
+    }
 }
 
 /// What tells one engine's headless spawn from another's. Everything below
@@ -417,7 +664,8 @@ struct HeadlessLaunch {
     /// The registry id, minted by the caller because the claude lane derives
     /// its MCP config path from it before the process exists.
     id: String,
-    /// `claude` | `codex`, for the spawn's own log and error lines.
+    /// `claude` | `codex` | `grok`, for the spawn's own log and error lines,
+    /// and for which normaliser the stdout pump reads events through.
     engine: &'static str,
     program: PathBuf,
     argv: Vec<String>,
@@ -436,6 +684,9 @@ struct HeadlessLaunch {
     /// Ask the naming lane for a display name from the task (claude workers)
     /// or keep the title given above (codex, whose name is its lane).
     name_from_task: bool,
+    /// Set grok's isolation switches on the child ([`apply_grok_isolation`]);
+    /// `false` for every other lane.
+    grok_isolated: bool,
 }
 
 /// The one headless spawn: process, pipes, registry row, pumps, reaper.
@@ -468,6 +719,7 @@ fn spawn_headless_launch(
         row_args,
         state_reason,
         name_from_task,
+        grok_isolated,
     } = launch;
 
     let mut cmd = Command::new(&program);
@@ -485,6 +737,9 @@ fn spawn_headless_launch(
     }
     for &key in CLAUDE_NESTING_ENV {
         cmd.env_remove(key);
+    }
+    if grok_isolated {
+        apply_grok_isolation(&mut cmd);
     }
     #[cfg(windows)]
     {
@@ -534,6 +789,9 @@ fn spawn_headless_launch(
         .to_string();
     let output = Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP)));
 
+    // A contest seat's closing `result` (final text, turns, cost, usage) is
+    // kept for the contest driver, which writes the seat's record from it.
+    let capture = super::contest_seat::is_contest_run_label(run_label);
     let (run_id, run_label) = match run_label {
         Some(label) => super::run::claim_run_for_labeled_spawn(label),
         None => super::run::claim_run_for_spawn(),
@@ -585,10 +843,19 @@ fn spawn_headless_launch(
         super::naming::name_session_from_task(app.clone(), id.clone(), task);
     }
 
+    // The stdout pump says when it has read to EOF, so the reaper can let it
+    // drain before the exit is published: a process that prints its `result`
+    // and exits in the same breath must not be seen `exited` by a waiter
+    // before that `result` was read.
+    let (pump_done_tx, pump_done_rx) = std::sync::mpsc::channel::<()>();
+
     let app_out = app.clone();
     let id_out = id.clone();
     let ring_out = output.clone();
-    tokio::task::spawn_blocking(move || stdout_loop(app_out, id_out, ring_out, stdout));
+    tokio::task::spawn_blocking(move || {
+        stdout_loop(app_out, id_out, ring_out, stdout, engine, capture);
+        let _ = pump_done_tx.send(());
+    });
 
     let app_err = app.clone();
     let id_err = id.clone();
@@ -597,6 +864,9 @@ fn spawn_headless_launch(
         for line in BufReader::new(stderr).lines().map_while(Result::ok) {
             if line.trim().is_empty() {
                 continue;
+            }
+            if capture {
+                super::contest_seat::observe_stderr(&id_err, &line);
             }
             push_display_line(&app_err, &id_err, &ring_err, &format!("! {line}"));
         }
@@ -607,6 +877,10 @@ fn spawn_headless_launch(
     let child = Arc::new(Mutex::new(child));
     tokio::task::spawn_blocking(move || {
         let exit_code = reaper_poll(&child);
+        // Bounded: a grandchild that inherited stdout (a dev server a worker
+        // started) keeps the pipe open past the exit, and the exit must still
+        // land.
+        let _ = pump_done_rx.recv_timeout(STDOUT_DRAIN_GRACE);
         finalize_child_exit(&app_reaper, &id_reaper, exit_code);
         crate::companion::orchestration::mcp::release_session_tokens(&id_reaper);
         crate::companion::orchestration::mcp::pending::cancel_for_session(&id_reaper);
@@ -772,6 +1046,11 @@ fn turn_final_text(event: &serde_json::Value, last_assistant: Option<&str>) -> O
 /// idle `claude` costs ~300 MB and the resource governor is counting.
 const ONE_SHOT_REAP_GRACE: Duration = Duration::from_secs(5);
 
+/// How long the reaper lets the stdout pump drain after the child exited
+/// before publishing the exit. The pump normally hits EOF at once; the bound
+/// exists for a grandchild that inherited the pipe.
+const STDOUT_DRAIN_GRACE: Duration = Duration::from_secs(3);
+
 /// Settle a ONE-SHOT WORKER's completed turn (**G21 + G25**).
 ///
 /// Interactive sessions and every session without the one-shot run label are
@@ -782,7 +1061,25 @@ pub(super) fn settle_one_shot_turn(app: &AppHandle, session_id: &str, final_text
     if !registry().is_one_shot_worker(session_id) {
         return;
     }
-    match super::classify::worker_turn_end(final_text) {
+    let verdict = super::classify::worker_turn_end(final_text);
+    // A CONTEST SEAT has exactly one turn, and nothing may keep it alive past
+    // it: no operator answers a blocked seat, and a limit is an outcome of the
+    // run (`seat-limit`), not a reason to retry it. Both finish the seat with
+    // the text verbatim as its reason (so `classify::worker_end_kind` still
+    // reads a limit as `Limit`), and the process is reaped like any other end.
+    let verdict = if super::contest_seat::is_contest_run_label(
+        registry().run_label_of(session_id).as_deref(),
+    ) {
+        match verdict {
+            WorkerTurnEnd::Limit { banner: reason } | WorkerTurnEnd::Blocked { reason } => {
+                WorkerTurnEnd::Unmarked { reason }
+            }
+            other => other,
+        }
+    } else {
+        verdict
+    };
+    match verdict {
         WorkerTurnEnd::Declared { summary } => {
             if let Some(prev) = registry().mark_finished(session_id, &summary) {
                 super::pty::emit_session_state(
@@ -941,6 +1238,8 @@ fn stdout_loop(
     session_id: String,
     ring: Arc<Mutex<OutputRing>>,
     stdout: std::process::ChildStdout,
+    engine: &'static str,
+    capture: bool,
 ) {
     // The turn's closing prose, kept so the `result` event can be read for the
     // fleet protocol's completion line even when it carries no `result` field.
@@ -957,8 +1256,16 @@ fn stdout_loop(
             push_display_line(&app, &session_id, &ring, trimmed);
             continue;
         };
-        // A codex worker's JSONL is read through the same state machine (G48).
-        let event = normalize_codex_event(event);
+        // A contest seat's record is read from the RAW event: codex's usage
+        // lives on `turn.completed`, which the normaliser does not carry over.
+        // Observed before the state machine moves, so a waiter woken by the
+        // settle below already finds the capture complete.
+        if capture {
+            super::contest_seat::observe_event(&session_id, engine, &event);
+        }
+        // A codex worker's JSONL (G48) and a grok worker's messages are read
+        // through the same state machine.
+        let event = normalize_event(engine, event);
         if let Some(display) = render_event_line(&event) {
             push_display_line(&app, &session_id, &ring, &display);
         }

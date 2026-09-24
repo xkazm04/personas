@@ -249,6 +249,20 @@ pub struct FleetSession {
     /// Which autopilot / night-shift cycle produced this dispatch.
     #[ts(type = "number | null")]
     pub cycle_index: Option<i64>,
+    /// The dispatcher's run label (`contest:<contestId>:<seatId>`,
+    /// `app-master:<personaId>`, `dev-runner:<batch>`, …), or null for an
+    /// operator's unlabelled session. The Monitor groups `contest:` sessions
+    /// into one column per contest from it.
+    #[serde(default)]
+    pub run_label: Option<String>,
+    /// The run-harvest grouping key the session was spawned into, or null.
+    #[serde(default)]
+    pub run_id: Option<String>,
+    /// The contest this session is a seat of, parsed once here from a
+    /// `contest:<contestId>:<seatId>` run label (`contest_seat`), or null. The
+    /// Monitor groups on it rather than re-parsing the label.
+    #[serde(default)]
+    pub contest_id: Option<String>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

@@ -149,9 +149,15 @@ pub fn worker_end_kind(state_reason: Option<&str>) -> WorkerEndKind {
 /// used to own a `claude -p` child that exited by itself, so through the
 /// fleet's stdin-held headless lane the one-shot reap is what keeps a finished
 /// task from holding a slot.
+///
+/// A **contest seat** (`contest:<contestId>:<seatId>`) is one-shot by
+/// construction: the /contest method gives each seat exactly one headless turn
+/// on its brief, and the contest driver reads the seat's end from the process
+/// exit.
 pub fn is_one_shot_worker_label(run_label: Option<&str>) -> bool {
     personas_engine::unattended::is_app_master_run(run_label)
         || personas_engine::unattended::is_dev_runner_run(run_label)
+        || super::contest_seat::is_contest_run_label(run_label)
 }
 
 /// How a one-shot worker's completed turn should be settled.
@@ -645,6 +651,11 @@ mod tests {
     fn only_an_app_master_label_marks_a_one_shot_worker() {
         assert!(is_one_shot_worker_label(Some("app-master:p-web-master")));
         assert!(is_one_shot_worker_label(Some("  app-master:p-web-master")));
+        assert!(is_one_shot_worker_label(Some(
+            "contest:home-hero:claude-opus_xhigh"
+        )));
+        assert!(!is_one_shot_worker_label(Some("contest notes")));
+        assert!(!is_one_shot_worker_label(Some("contest:")));
         // The night's own dispatcher drives its sessions across several turns —
         // reaping one after its first `result` would end a run mid-night.
         assert!(!is_one_shot_worker_label(Some("overnight 2026-09-08")));
