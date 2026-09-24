@@ -49,6 +49,7 @@
       ],
       "resolved": false
     },
+    "GlyphDialogueCinemaLayout.tsx": {"count":1,"sections":[7],"lines":["62"],"contexts":["appended to the build intent as prose (`GlyphDialogueCinemaLayout.tsx:62`). Nothing writes"],"resolved":false},
     "ModelScorecard.tsx": {
       "count": 1,
       "sections": [],
@@ -369,14 +370,6 @@
       "contexts": ["`ExecutionValueBadges.tsx:44` and `LlmCallsTable.tsx:219`, both `tokenLabel(t, 'thinking', …)`."],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionValueBadges.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["62"],
-      "contexts": ["appended to the build intent as prose (`GlyphDialogueCinemaLayout.tsx:62`). Nothing writes"],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphDialogueCinemaLayout.tsx"
     },
     "src/features/agents/sub_glyph/personaCore/*": {"count":1,"sections":[],"contexts":["`src/lib/models/modelCatalog.ts`, `src/features/agents/sub_glyph/personaCore/*`,"],"resolved":false,"isDir":true},
     "src/features/agents/sub_glyph/personaCore/ConfigTiles.tsx": {

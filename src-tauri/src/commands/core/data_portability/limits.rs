@@ -116,7 +116,7 @@ pub(crate) const ATHENA_PORTABLE_PREF_KEYS: [&str; 3] = [
 /// Table and column names that must never appear as a field name anywhere in
 /// the Athena section.
 #[cfg(test)]
-pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 23] = [
+pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 22] = [
     // 2 — machine-local
     "claude_session_id",
     "companion_known_project",
@@ -138,7 +138,6 @@ pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 23] = [
     "companion_background_job",
     "companion_night_plan",
     "companion_night_event",
-    "companion_daily_goal",
     "companion_active_connector",
     "companion_plugin_toggle",
     "companion_fts",

@@ -882,9 +882,9 @@ same author used both channels in one file, and the natural first apply wave:
 `GroundingTable.tsx` · `PersonaCoachingTable.tsx` · `EventLogList.tsx` ·
 `DispatchTable.tsx` · `KnowledgeTree.tsx` · `ExecutionHeatmap.tsx` ·
 `GlyphCapabilityPreview.tsx` · `UseCaseDetailPanel.tsx` · `ConnectorStatusCard.tsx` ·
-`DailyGoalsBar.tsx` · `DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`
+`DevOpLedger.tsx` · `contextLedgerShared.tsx` · `contextMapPerf.tsx`
 · `LlmOverviewPage.tsx` · `DeepScanRecommendations.tsx` · `TraceOverview.tsx` ·
-`FindingBadge.tsx` (+14).
+`FindingBadge.tsx` (+14; one more, the Daily Goals bar, was deleted with its feature on 2026-09-24).
 
 **The positive control is deliberately NOT proposed for `rules.json`.** A census baseline
 is monotone-downward by design — the runner treats a *rise* as a violation — so a rule

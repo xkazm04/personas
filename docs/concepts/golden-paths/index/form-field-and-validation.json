@@ -19,7 +19,7 @@
   "ruleIds": [],
   "ruleIdsFrom": "none",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 196,
+  "citationCount": 197,
   "triggers": [
     "\"Add a name / description / URL / API-key field to this modal.\"",
     "\"Show an error when the name is empty\" / \"this should turn red if the URL is bad.\"",
@@ -33,6 +33,15 @@
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["tree), not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "ChannelsAtelier.tsx": {"count":1,"sections":[5],"lines":["381"],"contexts":["`RecipeAdoptionModal.tsx:270`, `ChannelsAtelier.tsx:381`. The user sees that"],"resolved":false},
     "CreatePlaybookModal.tsx": {"count":1,"sections":[8],"lines":["138"],"contexts":["`CreatePlaybookModal.tsx:138` and most call sites — accepts none of"],"resolved":false},
+    "agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["27"],
+      "contexts": [
+        "| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9`…"
+      ],
+      "resolved": false
+    },
     "chat.rs": {"count":1,"sections":[7],"contexts":["`validation/persona.rs:516`, **0 in `contract.rs` / `chat.rs` / `memory.rs` /"],"resolved":false},
     "commands/core/validation.rs": {"count":1,"sections":[7],"lines":["11"],"contexts":["(`commands/core/validation.rs:11`) exposes the rule catalog over IPC and has"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["7421"],"contexts":["(`resources/connectors.rs:115-128`, `dev_tools.rs:7421`,"],"resolved":false},
@@ -162,16 +171,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_lab/use-cases/StructuredField.tsx"
     },
-    "src/features/agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["27"],
-      "contexts": [
-        "| ~~`agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx:27`~~ (deleted 2026-09-23 with the legacy build layouts) · `teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx:9`…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx"
-    },
     "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx": {
       "count": 6,
       "sections": [5,7],
@@ -179,6 +178,14 @@
       "contexts": ["`'persona-name-error'` (`PersonaSettingsTab.tsx:113`), `'interval-error'`"],
       "resolvedFrom": "basename",
       "verbatim": "PersonaSettingsTab.tsx"
+    },
+    "src/features/fleet/monitor/grid/board/WorkspaceGroup.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["179-189"],
+      "contexts": ["`fleet/monitor/grid/board/WorkspaceGroup.tsx:179-189` puts `maxLength` on the"],
+      "resolvedFrom": "suffix",
+      "verbatim": "fleet/monitor/grid/board/WorkspaceGroup.tsx"
     },
     "src/features/overview/sub_incidents/components/IncidentDetailModal.tsx": {
       "count": 1,
@@ -199,8 +206,15 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_memories/components/CreateMemoryForm.tsx"
     },
-    "src/features/plugins/companion/DailyGoalsModal.tsx": {"count":2,"sections":[4,6],"lines":["120","102-129"],"contexts":["`min-h-*` (see `DailyGoalsModal.tsx:120`). For a secret, render"],"resolvedFrom":"basename","verbatim":"DailyGoalsModal.tsx"},
     "src/features/plugins/dev-tools/sub_overview/OverviewParts.tsx": {"count":1,"sections":[7],"contexts":["| `plugins/dev-tools/sub_overview/OverviewParts.tsx` | 5 | |"],"resolvedFrom":"suffix","verbatim":"plugins/dev-tools/sub_overview/OverviewParts.tsx"},
+    "src/features/plugins/twin/setup/fields/SetupTextField.tsx": {
+      "count": 2,
+      "sections": [4,6],
+      "lines": ["88-100","81-114"],
+      "contexts": ["size it with `rows` or `min-h-*` (see `SetupTextField.tsx:88-100`). For a secret, render"],
+      "resolvedFrom": "basename",
+      "verbatim": "SetupTextField.tsx"
+    },
     "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx": {
       "count": 1,
       "sections": [7],

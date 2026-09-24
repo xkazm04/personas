@@ -11,6 +11,7 @@
     "No production path ever puts an execution back to queued",
     "0 production callers",
     "D3 — five Result<()> functions whose guard the caller cannot see.",
+    "D4 — RESOLVED BY DELETION (2026-09-24).",
     "D5 — three more dropped verdicts, one line each.",
     "D6 — let _ = on the scheduler's skip paths.",
     "D7 — read-then-write where the repo already owns the CAS.",
@@ -21,7 +22,7 @@
   "ruleIds": ["discarded-guard-verdict","discarded-guard-verdict-positive-control"],
   "ruleIdsFrom": "section-9",
   "sections": [0,1,2,3,4,5,6,7,8,9],
-  "citationCount": 83,
+  "citationCount": 82,
   "triggers": [
     "\"Two ticks could both pick this up — how do I make sure only one wins?\"",
     "\"Only mark it done if it's still pending.\" / \"Only save if nobody else edited it.\"",
@@ -205,7 +206,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "src/commands/infrastructure/skill_usage.rs"
     },
-    "src-tauri/src/companion/brain/daily_goals.rs": {"count":1,"sections":[7],"contexts":["apart.** `src/companion/brain/daily_goals.rs`:"],"resolvedFrom":"suffix","verbatim":"src/companion/brain/daily_goals.rs"},
     "src-tauri/src/companion/brain/semantic.rs": {"count":1,"sections":[7],"lines":["301"],"contexts":["- `src/companion/brain/semantic.rs:301` — `reinforce_fact` guards"],"resolvedFrom":"suffix","verbatim":"src/companion/brain/semantic.rs"},
     "src-tauri/src/companion/brain/sync_staging.rs": {"count":2,"sections":[9],"lines":["150"],"contexts":["(`sync_staging.rs:150` does exactly that). A `#[must_use]` there would be wrong"],"resolvedFrom":"basename","verbatim":"sync_staging.rs"},
     "src-tauri/src/companion/jobs/mod.rs": {

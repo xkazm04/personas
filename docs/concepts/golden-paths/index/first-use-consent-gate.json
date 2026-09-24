@@ -34,6 +34,24 @@
     ".github/workflows/ci.yml": {"count":1,"sections":[9],"contexts":["before that. It is also inside `npm run check` (`package.json:52`). It is **not** in `ci.yml`, which"],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "CookieConsent.tsx": {"count":4,"sections":[12],"lines":["18-23","21,38,47","60-73","51"],"contexts":["(`reopenCookieConsent`, `CookieConsent.tsx:18-23`) it **deletes the stored answer first**, so"],"resolved":false},
     "CookieSettingsButton.tsx": {"count":1,"sections":[],"lines":["15"],"contexts":["`personas-web`'s `CookieSettingsButton.tsx:15` → `reopenCookieConsent`, rendered from the public"],"resolved":false},
+    "GlyphCinemaLayout.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["53"],
+      "contexts": [
+        "| **A one-time latch in `useState`** | It forgets on unmount, so \"once\" means \"once per mount\". **5** sites: `GlyphCinemaLayout.tsx:53`, `GlyphDialogueCinemaLayout.tsx:66`, `ObservabilityDashboard.ts…"
+      ],
+      "resolved": false
+    },
+    "GlyphDialogueCinemaLayout.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["66"],
+      "contexts": [
+        "| **A one-time latch in `useState`** | It forgets on unmount, so \"once\" means \"once per mount\". **5** sites: `GlyphCinemaLayout.tsx:53`, `GlyphDialogueCinemaLayout.tsx:66`, `ObservabilityDashboard.ts…"
+      ],
+      "resolved": false
+    },
     "LegalContent.tsx": {"count":1,"sections":[],"lines":["70"],"contexts":["distinct instances.** Its sharpest are `LegalContent.tsx:70` — merely *landing* on `/legal` calls"],"resolved":false},
     "PolicyChangelog.tsx": {"count":1,"sections":[],"lines":["15"],"contexts":["(`PolicyChangelog.tsx:15`) — it never re-opens the banner. And where that repo *does* re-open"],"resolved":false},
     "analytics.ts": {"count":2,"sections":[],"lines":["13","29"],"contexts":["collapses them to a boolean at every downstream consumer — `analytics.ts:13`"],"resolved":false},
@@ -111,26 +129,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "UnifiedBuildEntry.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["53"],
-      "contexts": [
-        "| **A one-time latch in `useState`** | It forgets on unmount, so \"once\" means \"once per mount\". **5** sites: `GlyphCinemaLayout.tsx:53`, `GlyphDialogueCinemaLayout.tsx:66`, `ObservabilityDashboard.ts…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphCinemaLayout.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["66"],
-      "contexts": [
-        "| **A one-time latch in `useState`** | It forgets on unmount, so \"once\" means \"once per mount\". **5** sites: `GlyphCinemaLayout.tsx:53`, `GlyphDialogueCinemaLayout.tsx:66`, `ObservabilityDashboard.ts…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphDialogueCinemaLayout.tsx"
     },
     "src/features/onboarding/components/DesktopDiscoveryStep.tsx": {
       "count": 2,

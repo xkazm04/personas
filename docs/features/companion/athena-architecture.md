@@ -327,7 +327,7 @@ fixed order (`prompt/compose.rs`):
 | 7 | plugins, connectors | capabilities the user toggled on for her |
 | 8 | onboarding, voice, display | situational addenda: onboarding interview, the one-line voice flag when voice is on, and (in `display`) the per-turn layer-one register flag, `Layer one this turn: at most N sentences.` ([layered-voice.md](layered-voice.md)) |
 | 9 | static addenda | tells her WebSearch/WebFetch exist and to delegate rather than inline |
-| 10 | mode addenda | autonomous mode, dev mode self-model, daily goals, reply language |
+| 10 | mode addenda | autonomous mode, dev mode self-model, reply language |
 
 Three properties worth carrying to another project:
 
@@ -538,7 +538,7 @@ Created by `COMPANION_SCHEMA` in `src-tauri/db/src/lib.rs` on every boot with
 | Typed sidecars | `companion_fact`, `companion_procedural`, `companion_goal`, `companion_ritual`, `companion_backlog_item`, `companion_fact_tombstone`, `companion_taxonomy` |
 | Cycles and sync | `companion_cycle`, `companion_consolidation`, `companion_consolidation_item`, `companion_sync_inbox` |
 | Conversation | `companion_session` (one row per thread, holds the Claude session id), `companion_turn` (usage ledger), `companion_turn_sidecar`, `companion_chat_card` |
-| Runtime | `companion_approval`, `companion_design_decision`, `companion_proactive_message`, `companion_proactive_budget`, `companion_attention_budget`, `companion_night_plan`, `companion_night_event`, `companion_background_job`, `companion_dev_op`, `companion_dev_feedback`, `companion_known_project`, `companion_active_connector`, `companion_plugin_toggle`, `companion_tours`, `companion_daily_goal`, `companion_ux_signal`, `companion_persona_baseline` |
+| Runtime | `companion_approval`, `companion_design_decision`, `companion_proactive_message`, `companion_proactive_budget`, `companion_attention_budget`, `companion_night_plan`, `companion_night_event`, `companion_background_job`, `companion_dev_op`, `companion_dev_feedback`, `companion_known_project`, `companion_active_connector`, `companion_plugin_toggle`, `companion_tours`, `companion_ux_signal`, `companion_persona_baseline` |
 
 ### Forgetting
 
@@ -602,7 +602,7 @@ one brain.
 
 About 150 commands under `src-tauri/src/commands/companion/`, grouped by file: chat and
 conversations, approvals, brain and consolidation, observability, proactive, jobs, MCP bridge,
-fleet bridge, chat cards, canvas control, connectors, plugins, voice, STT, sensory, daily goals,
+fleet bridge, chat cards, canvas control, connectors, plugins, voice, STT, sensory,
 briefing, tours, templates, decisions, sidecars, browser test, project tracking. The frontend calls
 them only through `invokeWithTimeout`.
 

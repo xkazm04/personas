@@ -32,6 +32,9 @@
   ],
   "citations": {
     "DashboardHomeMissionControl.tsx": {"count":1,"sections":[7],"lines":["11"],"contexts":["`DashboardHomeMissionControl.tsx:11`."],"resolved":false},
+    "DialogueComposePanel.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["**All 3 warnings are false positives.** `DialogueComposePanel.tsx:193`,"],"resolved":false},
+    "GlyphCinemaLayout.tsx": {"count":2,"sections":[7],"lines":["254","290-291"],"contexts":["`GlyphCinemaLayout.tsx:254` and `:424` are shimmer bars animating `x: [\"-100%\", \"352%\"]` — `x` is"],"resolved":false},
+    "GlyphDialogueCinemaLayout.tsx": {"count":1,"sections":[7],"lines":["251-252"],"contexts":["| `GlyphDialogueCinemaLayout.tsx:251-252` | ternary + per-property | `y: [0,-3,0]` | yes | no |"],"resolved":false},
     "PhaseIndicator.tsx": {"count":1,"sections":[7],"lines":["67"],"contexts":["`ucPowerRail.tsx:45` (`opacity: [0.3, 1, 0.3]`), `PhaseIndicator.tsx:67` (`opacity: [0.4, 0,"],"resolved":false},
     "QualityContext.tsx": {
       "count": 1,
@@ -95,23 +98,6 @@
       "contexts": [
         "| `src/features/agents/sub_executions/components/ExecutionLifecycleIcons.tsx:46,76,112,148` | Four inline `<style>` blocks each carrying their own `@media (prefers-reduced-motion: reduce)`. Strictly…"
       ]
-    },
-    "src/features/agents/sub_glyph/DialogueComposePanel.tsx": {"count":1,"sections":[7],"lines":["193"],"contexts":["**All 3 warnings are false positives.** `DialogueComposePanel.tsx:193`,"],"resolvedFrom":"basename","verbatim":"DialogueComposePanel.tsx"},
-    "src/features/agents/sub_glyph/GlyphCinemaLayout.tsx": {
-      "count": 2,
-      "sections": [7],
-      "lines": ["254","290-291"],
-      "contexts": ["`GlyphCinemaLayout.tsx:254` and `:424` are shimmer bars animating `x: [\"-100%\", \"352%\"]` — `x` is"],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphCinemaLayout.tsx"
-    },
-    "src/features/agents/sub_glyph/GlyphDialogueCinemaLayout.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["251-252"],
-      "contexts": ["| `GlyphDialogueCinemaLayout.tsx:251-252` | ternary + per-property | `y: [0,-3,0]` | yes | no |"],
-      "resolvedFrom": "basename",
-      "verbatim": "GlyphDialogueCinemaLayout.tsx"
     },
     "src/features/fleet/monitor/channels/map/ChannelMap.tsx": {"count":1,"sections":[7],"lines":["2"],"contexts":["they are always mounted: `AthenaAvatar.tsx:2`, `AthenaOrb.tsx:17`, `ChannelMap.tsx:2`,"],"resolvedFrom":"basename","verbatim":"ChannelMap.tsx"},
     "src/features/plugins/companion/AthenaAvatar.tsx": {

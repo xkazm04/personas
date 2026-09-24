@@ -40,6 +40,7 @@
       ],
       "resolved": false
     },
+    "CapabilityRowSummary.tsx": {"count":1,"sections":[7],"lines":["33"],"contexts":["`ArenaResultsView.tsx:57` · `CapabilityRowSummary.tsx:33` · `SttPanel.tsx:448` ·"],"resolved":false},
     "CostSparkline.tsx": {"count":1,"sections":[1],"contexts":["on the bar row versus `CostSparkline.tsx` printing no number anywhere. I measured the"],"resolved":false},
     "DisputeBench.tsx": {"count":2,"sections":[4],"lines":["178-187","186-187"],"contexts":["spelling found anywhere is `brainiac/console`'s `DisputeBench.tsx:178-187`, which"],"resolved":false},
     "KnowledgeTree.tsx": {"count":3,"sections":[4],"lines":["133-135","118-149"],"contexts":["`KnowledgeTree.tsx:133-135`'s form: what the denominator is, and what the other option"],"resolved":false},
@@ -161,14 +162,6 @@
       "verbatim": "ScenarioDetailPanel.tsx"
     },
     "src/features/agents/sub_model_config/components/compare/CompareMetrics.tsx": {"count":2,"sections":[7,9],"lines":["96","86"],"contexts":["`IpcPerformancePanel.tsx:46` · `CompareMetrics.tsx:96`, `:107`."],"resolvedFrom":"basename","verbatim":"CompareMetrics.tsx"},
-    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowSummary.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["33"],
-      "contexts": ["`ArenaResultsView.tsx:57` · `CapabilityRowSummary.tsx:33` · `SttPanel.tsx:448` ·"],
-      "resolvedFrom": "basename",
-      "verbatim": "CapabilityRowSummary.tsx"
-    },
     "src/features/overview/sub_activity/components/AthenaUsageSection.tsx": {
       "count": 8,
       "sections": [5,7,9],
