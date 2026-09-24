@@ -20,6 +20,7 @@ import { sections as sidebarSections } from "@/features/shared/chrome/sidebar/si
 import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
 import { silentCatch } from '@/lib/silentCatch';
+import { registerIpcTape } from "./ipcTape";
 
 
 const VALID_SECTIONS: SidebarSection[] = [
@@ -3008,6 +3009,8 @@ async function collectBrainCounts(): Promise<{
 
 // Expose on window for Rust eval() access
 (window as unknown as Record<string, unknown>).__TEST__ = bridge;
+// Style page-harness tape recorder (tapeStart/tapeStop/tapeDump/tapeClear).
+registerIpcTape(bridge);
 // Expose stores for direct state manipulation in e2e tests
 (window as unknown as Record<string, unknown>).__AGENT_STORE__ = useAgentStore;
 (window as unknown as Record<string, unknown>).__SYSTEM_STORE__ = useSystemStore;
