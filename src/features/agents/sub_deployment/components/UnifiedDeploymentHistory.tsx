@@ -75,6 +75,9 @@ export function UnifiedDeploymentHistory() {
                 const tb = targetBadge(target);
                 const TargetIcon = target === 'cloud' ? Cloud : GitBranch;
                 const isRollback = !!r.rolledBackFrom;
+                // Every cloud sync is recorded, failures included; a failed
+                // push must not read like a delivered one.
+                const isFailed = r.deployResult === 'failed';
                 // One-shot entrance cascade: first-viewport rows ripple; rows
                 // past HISTORY_CASCADE_ROWS render plainly; entered ids never
                 // replay on poll/refresh.
@@ -88,6 +91,7 @@ export function UnifiedDeploymentHistory() {
                     markEntered={enter.markEntered}
                     data-testid={`history-row-${r.id}`}
                     data-target={r.target}
+                    data-result={r.deployResult}
                     className="flex items-center gap-2.5 py-1.5 typo-caption"
                   >
                     <span
@@ -99,6 +103,14 @@ export function UnifiedDeploymentHistory() {
                     <span className="font-medium text-foreground/90 truncate max-w-[16rem]">
                       {r.personaName}
                     </span>
+                    {isFailed && (
+                      <span
+                        className="px-1.5 py-0.5 rounded-card border border-status-error/30 text-status-error"
+                        data-testid={`history-failed-${r.id}`}
+                      >
+                        {t.deployment.history.failed}
+                      </span>
+                    )}
                     {isRollback && (
                       <Tooltip content={t.gitlab.rollback}>
                         <RotateCcw className="w-3 h-3 text-amber-400" />
