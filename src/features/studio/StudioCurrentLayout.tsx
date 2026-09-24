@@ -26,6 +26,7 @@ export default function StudioCurrentLayout({
   const { activeId, active, live, activePath, navRoutes, navigateTo, reloadActive } = preview;
   const lastCreateError = useStudioStore((s) => s.lastCreateError);
   const startExisting = useStudioStore((s) => s.startExisting);
+  const busy = useStudioStore((s) => (s.activeId ? !!s.runtimes[s.activeId]?.busy : false));
   const [urlDraft, setUrlDraft] = useState('/');
   const urlEditing = useRef(false);
 
@@ -92,7 +93,6 @@ export default function StudioCurrentLayout({
                 <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
                 <StudioVersions id={activeId} onRestored={reloadActive} />
               </div>
-              <StudioChatInput />
             </>
           ) : active ? (
             <div className="absolute inset-0 flex items-center justify-center px-6">
@@ -126,6 +126,9 @@ export default function StudioCurrentLayout({
               <p className="typo-caption max-w-sm">{t.studio.no_project_open}</p>
             </div>
           )}
+          {/* The first build turn starts while the preview still boots: the dock
+              (and its Stop) is there whenever a turn runs, not only once live. */}
+          {active && (live || busy) && <StudioChatInput />}
         </>
       )}
     </div>

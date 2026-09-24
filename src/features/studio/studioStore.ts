@@ -71,8 +71,6 @@ export interface ProjectRuntime {
   messages: StudioMessage[];
   question: string | null;
   autonomous: boolean;
-  /** Vision text to auto-send as the first turn once the server is live. */
-  seedPending: string | null;
   autoTurns: number;
   resumeAuto: boolean;
   /** Per-turn build controls (C1 effort, C4 voice/style). */
@@ -304,7 +302,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         messages: h?.messages ?? [],
         question: h?.question ?? null,
         autonomous: false,
-        seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
         effort: 'xhigh',
@@ -445,13 +442,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             patch(id, { phase: 'live' });
             stopPoll(id);
             beginLivenessWatch(id);
-            // Auto-send the vision seed once the preview is live.
-            const rt = get().runtimes[id];
-            if (rt?.seedPending) {
-              const seed = rt.gatePlan ? planFirstSeed(rt.seedPending) : rt.seedPending;
-              patch(id, { seedPending: null });
-              void get().sendTurn(id, seed);
-            }
             return;
           }
           if (exhausted) giveUp();
@@ -837,7 +827,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         sketchState: d?.sketchState ?? null,
         sketchAnswers: d?.answers ?? {},
         setupStartedAt: startedAt,
-        seedPending: null,
       });
       set({ draft: null });
       if (d?.sketch) savePlan(project.id, [], d.sketch);

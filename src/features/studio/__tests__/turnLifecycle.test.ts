@@ -58,7 +58,6 @@ function seedRuntime(patch: Partial<ProjectRuntime> = {}) {
         messages: [],
         question: null,
         autonomous: false,
-        seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
         effort: 'xhigh',

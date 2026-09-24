@@ -37,7 +37,7 @@ function seed(p: Partial<RT>) {
   const rt = {
     id: 'p1', name: 'Hearth', phase: 'live', status: { healthy: true, url: 'http://localhost:5000' },
     phases: MOCK_PHASES, busy: false, stream: '', reply: null, messages: [], question: null,
-    autonomous: false, seedPending: null, autoTurns: 0, resumeAuto: false, effort: 'xhigh', style: 'balanced',
+    autonomous: false, autoTurns: 0, resumeAuto: false, effort: 'xhigh', style: 'balanced',
     options: [], decisionArea: null, decisionSelector: null, gatePlan: false, mcp: [], stopNoop: false,
     activity: [], turnStartedAt: null, turnDurations: [], queuedNotes: [], ...p,
   } as RT;
