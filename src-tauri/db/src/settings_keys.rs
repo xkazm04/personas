@@ -559,6 +559,24 @@ pub const CURATOR_WORKER_CAP_MAX: u32 = 10;
 /// one pass that reconciles a plan made before the app restarted.
 pub const CURATOR_LAST_SLEEP_AT: &str = "curator_last_sleep_at";
 
+/// The `librarian/harvest/queue.md` fingerprint Curator's **drain** rung
+/// (`/harvest auto`) was last dispatched against.
+///
+/// A brake on cost, not a cache. On 2026-09-24 her standing lane dispatched
+/// eight consecutive passes that each cost about $0.26 and a minute to discover
+/// they had nothing to do, against a queue file that had not changed between
+/// any of them. A rung whose last run left the file byte-identical moved
+/// nothing the lane is about, so it is not dispatched again until the file
+/// does move - by the other rung, by a worker in another lane, or by a person.
+/// Absent means "this rung has never run", which arms it.
+pub const CURATOR_HARVEST_DRAIN_MARK: &str = "curator_harvest_drain_mark";
+
+/// The same mark for her **refill** rung (`/harvest research`). Kept apart from
+/// [`CURATOR_HARVEST_DRAIN_MARK`] because a drain that found nothing says
+/// nothing about whether the gap list has a source worth fetching - and because
+/// two rungs sharing one mark would let either silence the other.
+pub const CURATOR_HARVEST_REFILL_MARK: &str = "curator_harvest_refill_mark";
+
 /// Whether `spec` is a window Curator's tick and the attention loop will both
 /// honour. Delegates to the ONE parser
 /// ([`personas_core::quiet_hours::parse`]) rather than restating the grammar,
@@ -1292,6 +1310,8 @@ const ALLOWED_KEYS: &[&str] = &[
     CURATOR_BACKPRESSURE_N,
     CURATOR_WORKER_CAP,
     CURATOR_LAST_SLEEP_AT,
+    CURATOR_HARVEST_DRAIN_MARK,
+    CURATOR_HARVEST_REFILL_MARK,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
@@ -1617,7 +1637,10 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // accepted: it is compared for staleness against `now` and an
         // unparseable one reads as "never slept", which is the safe answer -
         // it makes her sleep, it cannot make her skip one.
-        CURATOR_LAST_SLEEP_AT => Ok(()),
+        // The two rung marks join it for the same reason: each is an opaque
+        // content digest of a file, and an unparseable one reads as "this rung
+        // has never run", which arms the rung rather than silencing it.
+        CURATOR_LAST_SLEEP_AT | CURATOR_HARVEST_DRAIN_MARK | CURATOR_HARVEST_REFILL_MARK => Ok(()),
         CURATOR_BACKPRESSURE_N => {
             if is_blank(value) {
                 return Ok(());
@@ -2087,7 +2110,9 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | CURATOR_QUIET_HOURS
         | CURATOR_BACKPRESSURE_N
         | CURATOR_WORKER_CAP
-        | CURATOR_LAST_SLEEP_AT => "autonomy",
+        | CURATOR_LAST_SLEEP_AT
+        | CURATOR_HARVEST_DRAIN_MARK
+        | CURATOR_HARVEST_REFILL_MARK => "autonomy",
         // Obsidian brain / dev-tools integrations.
         OBSIDIAN_BRAIN_CONFIG
         | OBSIDIAN_MIRROR_CONFIG
@@ -2352,6 +2377,28 @@ mod tests {
         // than skip one - so the door has no reason to refuse it.
         assert!(validate_value(CURATOR_LAST_SLEEP_AT, "whenever").is_ok());
         assert!(validate_value(CURATOR_LAST_SLEEP_AT, "").is_ok());
+    }
+
+    /// Her two standing-rung marks are the loop's too, and they are TWO keys:
+    /// one mark shared between the drain and the refill would let either
+    /// silence the other, which is the failure the pair was added to stop.
+    #[test]
+    fn the_standing_rung_marks_are_registered_and_distinct() {
+        assert_eq!(CURATOR_HARVEST_DRAIN_MARK, "curator_harvest_drain_mark");
+        assert_eq!(CURATOR_HARVEST_REFILL_MARK, "curator_harvest_refill_mark");
+        assert_ne!(CURATOR_HARVEST_DRAIN_MARK, CURATOR_HARVEST_REFILL_MARK);
+        for key in [CURATOR_HARVEST_DRAIN_MARK, CURATOR_HARVEST_REFILL_MARK] {
+            assert!(validate_key(key).is_ok(), "{key} must be registered");
+            assert_eq!(audit_category(key), Some("autonomy"), "{key}");
+            // A content digest has no grammar, and an absent mark arms the
+            // rung - so neither a hex string nor a blank is refusable. The
+            // sample is deliberately low-entropy hex: a realistic digest here
+            // trips the pre-commit gitleaks `generic-api-key` rule, and a test
+            // literal is not worth an allowlist entry.
+            assert!(validate_value(key, "aaaabbbbccccdddd").is_ok());
+            assert!(validate_value(key, "absent").is_ok());
+            assert!(validate_value(key, "").is_ok());
+        }
     }
 
     #[test]

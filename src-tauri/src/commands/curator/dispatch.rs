@@ -29,18 +29,34 @@ use personas_core::models::{
 
 use crate::error::AppError;
 
-/// The refill lane's skill and its argument.
+/// The standing lane's skill. Both of its rungs are `harvest` passes over the
+/// same queue file, which is why they can never run at the same time.
 ///
-/// **`/harvest research` and deliberately not `/deepen`.** Both were read on
-/// 2026-09-24. `harvest`'s own file describes the refill as a generator that
-/// cannot come up empty - "A refill that returns 'no elite source exists yet'
-/// updates the gap line's `nearest stand-in` instead - that is a finding, not a
-/// failure". `deepen`'s file describes the opposite: "Saturation is a state,
-/// not an end: when nothing clears threshold the loop **idles until the
-/// earliest clock or an event**". A lane whose job is that she never idles
-/// cannot be built on a skill that idles by design, so `deepen` stays a
-/// consumer of work somebody else identified.
-pub(super) const REFILL_SKILL: &str = "harvest";
+/// **`harvest` and deliberately not `/deepen`.** Both were read on 2026-09-24.
+/// `deepen`'s file says "Saturation is a state, not an end: when nothing clears
+/// threshold the loop **idles until the earliest clock or an event**". A lane
+/// whose job is that she never idles cannot be built on a skill that idles by
+/// design, so `deepen` stays a consumer of work somebody else identified.
+pub(super) const STANDING_SKILL: &str = "harvest";
+
+/// Rung 3 - **drain the standing queue**: "one unattended pass: only
+/// self-authorizing outcomes land". It is the mode harvest wrote for a machine
+/// caller: "already covered / currency / lead" land unattended, content banks
+/// as a spec and never lands, and a decline is "never auto-declined - parked or
+/// untriaged only".
+pub(super) const DRAIN_ARGUMENT: &str = "auto";
+
+/// Rung 4 - **refill the queue**, and only when [`super::standing`] has
+/// measured that it needs refilling.
+///
+/// This constant used to be the lane's ONLY rung, on the reading that harvest's
+/// refill "cannot come up empty" - "A refill that returns 'no elite source
+/// exists yet' updates the gap line's `nearest stand-in` instead - that is a
+/// finding, not a failure". The sentence is true and the inference from it was
+/// wrong: a refill that finds no GAP worth attacking dispatches nothing at all,
+/// which is what eight consecutive passes did on 2026-09-24 at ~$0.26 each
+/// against a 268-row queue. `research` generates rows; `auto` consumes them.
+/// The whole derivation is in [`super::standing`].
 pub(super) const REFILL_ARGUMENT: &str = "research";
 
 /// Who granted the standing authorization, and when. Spelled as constants
@@ -190,6 +206,14 @@ pub(super) struct Brief<'a> {
     pub subject: Option<&'a str>,
     /// The scan's own sentence for the finding that motivated a plan dispatch.
     pub finding: Option<&'a str>,
+    /// **The count this app dispatched on**, for a lane whose rung was chosen
+    /// by a measurement rather than by a claimed row.
+    ///
+    /// Carried so the worker can check it. The whole reason this lane has two
+    /// rungs is that a dispatched worker recounted the queue by hand, found the
+    /// app's reasoning wrong, and said so; a brief that hides the number it
+    /// acted on makes that contradiction cost a run to discover.
+    pub measurement: Option<&'a str>,
     /// The registry HEAD the worker starts from, so its report can cite the
     /// same version this app will diff against.
     pub head: Option<&'a str>,
@@ -256,6 +280,13 @@ pub(super) fn compose(brief: &Brief<'_>) -> String {
     if let Some(finding) = brief.finding {
         out.push_str(&format!("The finding that ranked it: {finding}\n"));
     }
+    if let Some(measurement) = brief.measurement {
+        out.push_str(&format!(
+            "What Personas measured before dispatching you: {measurement}. Recount it - if the \
+             queue says otherwise, say so and stop; a contradiction backed by evidence is the \
+             result this lane most needs.\n"
+        ));
+    }
     if let Some(note) = brief.note {
         // The operator's own words, unchanged and marked as theirs, so a
         // worker can tell an instruction from a paraphrase of one.
@@ -278,8 +309,13 @@ fn lane_sentence(lane: &str) -> &'static str {
             "the operator's own request queue, which she drains before her own plan"
         }
         curator_lane::PLAN => "her projection of the registry's own attention scan",
+        // ONE lane, two rungs: `/harvest auto` drains the standing queue and
+        // `/harvest research` refills it. The first line of this prompt says
+        // which rung you are, so the sentence names the lane rather than
+        // claiming a rung it cannot see from here.
         curator_lane::REFILL => {
-            "the refill pass she runs when both other lanes are empty, because she never idles"
+            "her standing lane, which she runs when the operator's queue and her own plan are \
+             both empty, because she never idles"
         }
         // Not reachable through `tick` - `e52`'s CHECK allows three lanes and
         // the sleep pass dispatches nothing - but a brief that silently
@@ -515,6 +551,7 @@ mod tests {
             note: Some("focus on the retrieval section, skip the benchmarks"),
             subject: None,
             finding: None,
+            measurement: None,
             head: Some("abc1234"),
         });
         assert!(
@@ -530,11 +567,12 @@ mod tests {
         // an argument would be.
         let refill = compose(&Brief {
             lane: curator_lane::REFILL,
-            skill: REFILL_SKILL,
+            skill: STANDING_SKILL,
             argument: Some(REFILL_ARGUMENT),
             note: None,
             subject: None,
             finding: None,
+            measurement: None,
             head: None,
         });
         assert!(refill.starts_with("/harvest research\n"), "{refill}");
@@ -547,10 +585,41 @@ mod tests {
             note: None,
             subject: Some("localization/czech"),
             finding: Some("its only application expired on 2026-08-01"),
+            measurement: None,
             head: None,
         });
         assert!(bare.starts_with("/librarian\n\n"), "{bare}");
         assert!(bare.contains("localization/czech"));
         assert!(bare.contains("expired on 2026-08-01"));
+    }
+
+    /// **Each rung spells its own invocation**, and the drain is the one the
+    /// standing lane reaches for first. This is the whole correction: the lane
+    /// shipped with `research` in this position and burned eight passes on it.
+    #[test]
+    fn the_standing_lane_spells_the_drain_and_the_refill_apart() {
+        assert_eq!(STANDING_SKILL, "harvest");
+        assert_eq!(DRAIN_ARGUMENT, "auto");
+        assert_eq!(REFILL_ARGUMENT, "research");
+
+        let drain = compose(&Brief {
+            lane: curator_lane::REFILL,
+            skill: STANDING_SKILL,
+            argument: Some(DRAIN_ARGUMENT),
+            note: None,
+            subject: None,
+            finding: None,
+            measurement: Some("268 rows are queued across 10 sections"),
+            head: Some("88bff378"),
+        });
+        assert!(drain.starts_with("/harvest auto\n\n"), "{drain}");
+        // The count travels with it, and so does the invitation to refute it.
+        assert!(drain.contains("268 rows are queued"), "{drain}");
+        assert!(drain.contains("Recount it"), "{drain}");
+        assert!(drain.contains("88bff378"));
+        // The lane sentence names the lane, never one of its rungs, because
+        // both rungs travel under it.
+        assert!(drain.contains("her standing lane"), "{drain}");
+        assert!(!drain.contains("refill pass"), "{drain}");
     }
 }

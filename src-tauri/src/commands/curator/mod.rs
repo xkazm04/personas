@@ -39,6 +39,10 @@ pub mod instrument;
 pub mod process;
 pub mod projection;
 pub mod sleep;
+/// Her standing lane: `/harvest auto` to drain the registry's source queue,
+/// `/harvest research` to refill it, and the measurement that picks between
+/// them. Private to this module - the two rungs are a detail of the loop.
+mod standing;
 pub mod tick;
 
 use std::sync::Arc;
@@ -569,7 +573,7 @@ fn fanned_out(running: u32) -> Option<u32> {
 ///
 /// `lane` is computed rather than stored, and the precedence it expresses is
 /// the operator's own rule: she drains his lane before her own plan, and when
-/// both are empty she refills rather than idling.
+/// both are empty she goes to her standing lane rather than idling.
 #[tauri::command]
 pub async fn curator_runtime_get(
     state: State<'_, Arc<AppState>>,
@@ -580,7 +584,7 @@ pub async fn curator_runtime_get(
     let running = crate::commands::fleet::queue::live_count_for_origin(
         crate::commands::fleet::queue::DispatchOrigin::Curator,
     );
-    let refilling = tick::refill_in_flight();
+    let harvesting = tick::harvest_in_flight();
     let sleeping = sleep::is_sleeping();
     let db = state.db.clone();
     blocking("curator_runtime_get", move || {
@@ -604,7 +608,10 @@ pub async fn curator_runtime_get(
                 curator_lane::SLEEP.into()
             } else if open_requests {
                 curator_lane::QUEUE.into()
-            } else if refilling {
+            // Her standing lane, whichever of its two rungs is out: the lane
+            // token is one for both, and the dispatch row's `skill` and
+            // `argument` are where a drain is told from a refill.
+            } else if harvesting {
                 curator_lane::REFILL.into()
             } else {
                 curator_lane::PLAN.into()
