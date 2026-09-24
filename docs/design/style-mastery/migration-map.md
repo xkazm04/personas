@@ -13,6 +13,8 @@ the D6 order, one commit per step:
 | 4 | Fonts: Segoe UI named, mono Cascadia Mono | `175bd169d` | DONE |
 | 5 | Phantoms (section 2) mapped, 14 inert variants deleted, `typo-eyebrow` defined | `5e5cd9ca5` | DONE: 105 in 46 files |
 | 6 | Accent roles bound in every theme, `@theme` bridge, check:themes grades them | `6528f44d3` | DONE: roles unused yet |
+| 7 | `accentColor` -> closed `tone` on Button (section 4) | `115151627` | DONE: 145 sites in 100 files |
+| 8 | Gate 1: roles moved off the statuses they matched; check:themes grades role vs status and role vs role (deltaE00 >= 10) | `7103b5c27`, `658e6196c` | DONE: 11 pairs under 10 -> 0 (doctrine.md section 4) |
 | - | Recolour (section 1 "tint removed", 198 sites) | - | REJECTED at Gate 0 |
 | - | Retire `typo-submodule-header` / `typo-card-label`, drop the glow | - | REJECTED at Gate 0 |
 | - | Muting (section 3) | - | NOT DONE by decision (module gates) |
@@ -159,10 +161,18 @@ cyan 3, orange 1. The rest are expressions.
 Proposed API: `accentColor` becomes `tone: 'agent' | 'human' | 'external' |
 'highlight' | 'success' | 'warning' | 'error' | 'info'`.
 
+Since WP4c `role-highlight` is no longer `status-info`'s blue in any theme: in
+light and light-ice it is deep cyan `#036d7d` (was `#1d4ed8`, the same hex as
+info). A blue or sky button that means "look here" rather than "for your
+information" now reads cyan in the light themes when it moves to `highlight`;
+one that means information stays `info`.
+
 ## 5. `ContentTone` -> roles
 
 9 JSX sites (measure: violet 1, amber 1, emerald 1, the rest expressions) plus
-RichMarkdown's defaults (primary for cards, amber for pills). primary -> `highlight`,
+RichMarkdown's defaults (primary for cards, amber for pills). primary -> `highlight`
+(note: in light and light-ice the primary is blue `#1d4ed8` and highlight is now
+deep cyan `#036d7d`, so a primary card changes hue there when it is renamed),
 blue -> `info`, amber -> `warning`, violet -> `agent`, emerald -> `success`,
 red -> `error`, neutral stays. Keep the tinted-card recipe (fill /5, border /15,
 ink): contentTones.ts records that a status-wash port "came out colourless", so a

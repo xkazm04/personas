@@ -26,11 +26,12 @@ for the specimen. Worklist: `migration-map.md`.
 | 4 | `typo-card-label`'s glow goes; card-label and submodule-header retire | **REJECTED**: both stay, glow stays | - |
 | 5 | Mono Cascadia Mono; sans names the system face, Inter removed | **KEPT** | `175bd169d` |
 | 6 | Four roles, `role-human` pink | **KEPT** (bound, bridged, graded; unused until WP4b) | `6528f44d3` |
-| 7 | `accentColor` becomes `tone` | WP4b | - |
+| 7 | `accentColor` becomes `tone` | **KEPT**: Button's accent variant takes a closed `tone` (4 status + 4 role names); 145 sites migrated | `115151627` |
 | 8 | Small floor: label and code 0.85 -> 0.875rem | **KEPT** | `af9f8d33a` |
 | 9 | One text-scale factor | **KEPT** | `af9f8d33a` |
 | - | Phantoms mapped, inert `[&_x]:typo-*` variants deleted, `typo-eyebrow` defined | **KEPT** (eyebrow composites migrate per module) | `5e5cd9ca5` |
 | - | Dead overrides deleted, tokens moved into `@layer components` | **KEPT** (D6 steps 1-2) | `937854f7d`, `266c05551` |
+| - | Gate 1: highlight's hue shifts off status-info; roles graded against every status and role | **KEPT** (WP4c) | `7103b5c27`, `658e6196c` |
 
 Sections below describe what was decided. Where a proposal was rejected it stays
 visible, marked "considered, rejected at Gate 0".
@@ -139,11 +140,52 @@ The Tailwind bridge is `--color-role-x: var(--role-x)` in `@theme` (shipped;
 `--color-ink-muted` is not, see section 3). `role-human` is pink, as proposed
 (*considered, rejected:* the Manifest's amber, which collides with warning).
 `npm run check:themes` grades all four roles on the canvas in every theme and
-fails below 4.5:1.
+fails below 4.5:1, and fails any role closer than deltaE 10 to a status or another
+role (below).
+
+**Distinct (Gate 1, WP4c).** A role must be distinguishable from every status and
+every other role in every theme; `check:themes` enforces CIEDE2000 deltaE >= 10.
+Contrast grades a colour against a surface, never against another colour, so
+Gate 0 shipped light's highlight as `#1d4ed8`, the same hex as `status-info`
+(deltaE 0.0): "Now" and "In Progress" read alike. The number: 10 is the top of
+the "perceptible at a glance" band (2 to 10) in the Delta E scale most UI colour
+work cites, set above the large-patch JND (about 2.3) because chips and text are
+small marks, and the difference needed to tell small marks apart grows as they
+shrink (Stone, Szafir & Setlur 2014). The pair the operator called "almost the
+same blue" measures 0.0 declared and 8.2 in the rendered model below at the
+default light tier: under 10 either way, and 8.2 did not read as two colours.
+CIEDE2000 rather than OKLab distance because its thresholds are published.
+
+- Before: 11 pairs under 10 in 7 themes (light and light-ice highlight/info 0.0,
+  dark-matrix highlight/info 0.0, dark-purple agent/info 6.1, light-ice
+  external/neutral 6.7, dark-cyan highlight/info 7.6, dark-bronze
+  highlight/warning 8.7, dark-midnight external/highlight 9.3, dark-cyan
+  external/info 9.1, dark-matrix highlight/success 3.1 and agent/success 9.8).
+  After: every graded pair >= 11.0 (`7103b5c27`). Highlight stays in the
+  teal/cyan family where that is its intent: light and light-ice `#036d7d`.
+- Monochrome themes (dark-red, light-news) grade only pairs with a hue in them.
+  Their statuses are greys that differ by lightness alone, and four grey roles
+  cannot sit 10 from five grey statuses inside the lightness band that clears
+  4.5:1 (about 40 L* on newsprint). The exemption is two-sided: a declared theme
+  with no grey pair under the bar fails as stale.
+- `node scripts/check-themes.mjs --matrix` prints all 286 distances;
+  `--self-check` shows the seeded collisions the gate must catch on every run.
+
+**Rendered is not declared.** Each brightness tier re-mixes a role from its
+`-raw` value, but a status a theme sets as a literal (`--status-info: #b6a8f5`)
+beats the tier block and is scaled by the page filter uncompensated (section 8).
+So a pair can pass as declared and collapse on screen: dark-purple's agent at a
+lighter lavender (`#ddcafb`) scores 11.0 declared and 2.0 rendered at the default tier.
+check:themes prints the modelled rendered minimum per tier (informational, never
+graded). After WP4c: 4 of 30 theme/tier cells under 10, lowest 9.4 (light-ice
+mid tier, highlight/success); before: 21 of 30, lowest 0.0. Compensating the
+literal statuses (a status-token change) closes the gap and would let the gate
+grade the rendered colour.
 
 **Contrast.** Every role clears 4.5:1 (AA body text) on the canvas, on its own 10%
 chip and on the card, in all eleven themes: stricter than the 3.0:1 check-themes
-applies to status. The lowest cell is 4.97:1 (highlight on its chip, light).
+applies to status. The lowest cell is 4.51:1 (highlight on its chip, light,
+`#036d7d`; was 4.97:1 for `#1d4ed8`).
 Computed by `specimen/contrast.mjs` with check-themes' own maths, which reproduces
 88 of check-themes' printed ratios with 0 mismatches. In the monochrome themes
 (dark-red, light-news) roles differ by lightness only, as their status colours do.
