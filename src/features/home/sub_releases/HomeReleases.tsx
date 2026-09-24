@@ -9,145 +9,19 @@
  * (clears the sidebar "What's New" dot).
  */
 import { Rocket } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import {
-  getNavReleases,
-  RELEASE_STATUS_META,
-  RELEASE_TYPE_META,
-  type Release,
-  type ReleaseItemStatus,
-  type ReleaseItemPriority,
-} from '@/data/releases';
-import { useReleasesTranslation, type ReleasesTranslation } from './i18n/useReleasesTranslation';
+import { getNavReleases } from '@/data/releases';
+import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import { useLiveRoadmap } from './useLiveRoadmap';
 import { LiveRoadmapStatusPill } from './LiveRoadmapStatusPill';
-import { buildDisplayItems, ROADMAP_PRIORITIES, type DisplayItem } from './roadmapItems';
-
-/** Guard against `useRevealTracker`'s per-id "already entered" tracking so the
- * one-shot entrance cascade never replays on live-refresh or unrelated
- * re-renders (law 4) — only a genuinely new item id fades in on its own. */
-type RevealTracker = ReturnType<typeof useRevealTracker>;
-
-// Traced glyph carries ~10KB gzipped of path data; lazy so it lands with the
-// roadmap tab instead of the eager entry chunk. It animates itself in on mount,
-// so the one-frame Suspense gap is invisible.
-const RoadmapLaneEmptyGlyph = lazy(() => import('./RoadmapLaneEmptyGlyph'));
-
-const statusDot: Record<ReleaseItemStatus, string> = {
-  in_progress: 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.6)]',
-  planned: 'bg-foreground/30',
-  completed: 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]',
-};
-
-const laneAccent: Record<ReleaseItemPriority, { label: string; bg: string; border: string; chip: string }> = {
-  now: { label: 'text-cyan-400', bg: 'bg-cyan-500/8', border: 'border-cyan-500/20', chip: 'text-cyan-400' },
-  next: { label: 'text-purple-400', bg: 'bg-purple-500/8', border: 'border-purple-500/20', chip: 'text-purple-400' },
-  later: { label: 'text-foreground', bg: 'bg-secondary/40', border: 'border-primary/12', chip: 'text-foreground' },
-};
-
-function RoadmapHero({ item, enter, t }: { item: DisplayItem; enter: RevealTracker; t: ReleasesTranslation }) {
-  return (
-    <RevealItem revealId={item.id} order={0} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
-      <article>
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <span className="relative flex items-center gap-2">
-            <span className={`relative h-2 w-2 rounded-full ${statusDot[item.status]}`}>
-              {item.status === 'in_progress' && (
-                <span className="absolute inset-0 -m-0.5 rounded-full bg-cyan-400/30 animate-ping" />
-              )}
-            </span>
-            <span className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-400">{t.itemStatus[item.status]}</span>
-          </span>
-          <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
-        </div>
-        <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
-          <h2 className="typo-heading text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
-            {item.title}
-          </h2>
-          {item.description && (
-            <p className="typo-body mt-4 max-w-prose text-foreground">{item.description}</p>
-          )}
-        </div>
-      </article>
-    </RevealItem>
-  );
-}
-
-function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriority; items: DisplayItem[]; enter: RevealTracker; t: ReleasesTranslation }) {
-  const accent = laneAccent[priority];
-  return (
-    <div className="flex flex-col gap-3">
-      <header className="flex items-center justify-between border-b border-primary/8 pb-2">
-        <span className={`typo-label ${accent.label}`}>{t.priority[priority]}</span>
-        <span className={`rounded-full border px-1.5 py-0.5 font-mono text-[11px] font-medium ${accent.bg} ${accent.border} ${accent.chip}`}>
-          {items.length}
-        </span>
-      </header>
-      {items.length === 0 ? (
-        <div className="flex h-24 flex-col items-center justify-center gap-1 rounded-modal border border-dashed border-primary/8">
-          <Suspense fallback={<div className="h-12 w-12" />}>
-            <RoadmapLaneEmptyGlyph />
-          </Suspense>
-          <span className="typo-caption text-foreground">{t.laneEmpty}</span>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item, index) => (
-            <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
-              <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-4 pl-5">
-                <div className={`absolute inset-y-3 left-1.5 w-[3px] rounded-full ${statusDot[item.status]}`} />
-                <h3 className="typo-heading text-primary">{item.title}</h3>
-                <div className="mt-1.5 font-mono text-xs uppercase tracking-wider text-foreground">{t.itemStatus[item.status]}</div>
-                {item.description && <p className="typo-body mt-2 text-foreground">{item.description}</p>}
-              </div>
-            </RevealItem>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Compact card for one shipped release: header + summary + flat item list. */
-function BundledReleaseCard({ release, t }: { release: Release; t: ReleasesTranslation }) {
-  const meta = RELEASE_STATUS_META[release.status];
-  const i18n = t.releases[release.version];
-  const items = i18n?.items;
-  return (
-    <section className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.02] to-transparent p-5">
-      <div className="flex flex-wrap items-baseline gap-3">
-        <h3 className="typo-heading text-primary [text-shadow:_0_0_12px_color-mix(in_oklab,var(--primary)_32%,transparent)]">
-          {i18n?.label ?? release.version}
-        </h3>
-        <span className="font-mono text-xs text-foreground">{release.version}</span>
-        <span className={['rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider', meta.badgeBg, meta.badgeText, meta.badgeBorder].join(' ')}>
-          {t.status[release.status]}
-        </span>
-        {release.released_at && <span className="font-mono text-[11px] text-foreground">{release.released_at}</span>}
-      </div>
-      {i18n?.summary && <p className="typo-body mt-2 text-[13px] text-foreground">{i18n.summary}</p>}
-      <ul className="mt-3 space-y-1.5">
-        {release.items.map((item) => {
-          const typeMeta = RELEASE_TYPE_META[item.type];
-          const content = items?.[item.id];
-          return (
-            <li key={item.id} className="flex items-start gap-2.5">
-              <span className={['mt-0.5 shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider', typeMeta.badgeBg, typeMeta.badgeText, typeMeta.badgeBorder].join(' ')}>
-                {t.type[item.type]}
-              </span>
-              <span className="typo-body text-[13px] text-foreground">{content?.title ?? `[${release.version}.${item.id}]`}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
+import { buildDisplayItems, ROADMAP_PRIORITIES } from './roadmapItems';
+import { RoadmapHero } from './RoadmapHero';
+import { RoadmapLane } from './RoadmapLane';
+import { BundledReleaseCard } from './BundledReleaseCard';
 
 export default function HomeReleases() {
   const { t, language } = useReleasesTranslation();
@@ -216,7 +90,7 @@ export default function HomeReleases() {
           {remaining.length > 0 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {ROADMAP_PRIORITIES.map((p) => (
-                <LaneColumn key={p} priority={p} items={remaining.filter((i) => i.priority === p)} enter={enter} t={t} />
+                <RoadmapLane key={p} priority={p} items={remaining.filter((i) => i.priority === p)} enter={enter} t={t} />
               ))}
             </div>
           )}
