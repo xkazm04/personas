@@ -24289,6 +24289,8 @@ export type Translations = {
       head_projection: string;
       head_projection_unknown: string;
       head_projection_tip: string;
+      meta_unrun: string;
+      meta_unrun_tip: string;
       find_placeholder: string;
       find_label: string;
       help_button_label: string;
@@ -24297,6 +24299,7 @@ export type Translations = {
       deep_region: string;
       verdict_region: string;
       not_measured: string;
+      unmeasured_tip: string;
       yes: string;
       no: string;
       channel: {
@@ -24330,6 +24333,8 @@ export type Translations = {
       };
       group_planned: string;
       group_points: string;
+      group_planned_bare: string;
+      group_points_bare: string;
       group_marks: string;
       group_marks_gloss: string;
       group_measures: string;
@@ -24341,6 +24346,7 @@ export type Translations = {
       head_total: string;
       verdict_subjects: string;
       verdict_in_bundles: string;
+      verdict_bundles_unmeasured: string;
       verdict_want_work: string;
       verdict_want_nothing: string;
       verdict_want_nothing_tip: string;
@@ -24348,6 +24354,8 @@ export type Translations = {
       verdict_techniques: string;
       verdict_applications: string;
       verdict_pairs: string;
+      verdict_pairs_unmeasured: string;
+      verdict_pairs_unmeasured_tip: string;
       verdict_pairs_tip: string;
       verdict_still_true: string;
       verdict_stale: string;
@@ -24355,6 +24363,7 @@ export type Translations = {
       verdict_projects: string;
       verdict_all_stale: string;
       verdict_maps_fresh: string;
+      verdict_maps_unmeasured: string;
       verdict_weak: string;
       verdict_problems: string;
       project_tip: string;
@@ -24365,6 +24374,7 @@ export type Translations = {
       channel_zero_unmeasurable: string;
       channel_zero_pure: string;
       channel_sort_hint: string;
+      channel_unmeasured: string;
       cell_scored: string;
       cell_measured_zero: string;
       cell_unknown: string;
@@ -24375,9 +24385,13 @@ export type Translations = {
       row_bundle_unknown: string;
       band_unlisted_title: string;
       band_unlisted_note: string;
+      band_unlisted_unmeasured: string;
+      band_unlisted_unmeasured_note: string;
+      band_unlisted_unmeasured_tip: string;
       band_unlisted_tip: string;
       band_quiet_title: string;
       band_quiet_tip: string;
+      band_quiet_unmeasured_tip: string;
       quiet_bundle_tip: string;
       quiet_bundle_tip_unknown: string;
       quiet_bundle_tip_none: string;

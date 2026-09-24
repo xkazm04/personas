@@ -24590,7 +24590,21 @@
         "terminals": "ターミナル",
         "terminals_tip": "彼女が同時に保持できる{cap}個のターミナルのうち{running}個。",
         "used_of": "{cap}中{used}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "静かな尾部とは、測定可能なすべてのチャンネルで得点がない主題のことである。ここでは何も測定されていないため、その数が何件あるかは不明であり、これはゼロ件とは異なる。",
+      "band_unlisted_unmeasured": "プラン外の主題",
+      "band_unlisted_unmeasured_note": "何も数えられていないため、まだ何も外にはない",
+      "band_unlisted_unmeasured_tip": "このバンドは、コーパスが保持しているが、プランには含まれていない主題である。投影がないため、それらが外れるべきプランそのものが存在せず、どちらの数値も測定されていない。",
+      "channel_unmeasured": "{name}、{weight}。このチャンネルは誰も測定していないため不明であり、ゼロではなく、合計にも含まれない。",
+      "group_planned_bare": "予定",
+      "group_points_bare": "pt",
+      "meta_unrun": "投影がまだ作成されていない",
+      "meta_unrun_tip": "プランとは、あるコミット時点におけるレジストリの投影である。ここではまだ作成されていないため、名指せる実行はなく、スキャン時刻もなく、それが取得されたコミットもない。",
+      "unmeasured_tip": "未測定。この項目には計測器が実行されていないため不明であり、ゼロではなく、合計にも含まれない。",
+      "verdict_bundles_unmeasured": "誰も数えていないバンドル内",
+      "verdict_maps_unmeasured": "マップチェックは実行されていない",
+      "verdict_pairs_unmeasured": "コンテキストと主題のペアはまだ一件も判定されていないため、報告できる割合がない。",
+      "verdict_pairs_unmeasured_tip": "これはこのページで唯一の小さな数値である:コンテキストと主題のペアのうち、誰かが判定した割合。計測器を実行すればそれが現れる。それまでは不明であり、不明な割合は0%ではない。"
     },
     "process": {
       "cohort_share": "全リポジトリ {pct}",

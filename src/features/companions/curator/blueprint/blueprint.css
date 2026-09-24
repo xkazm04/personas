@@ -1516,11 +1516,41 @@
   color: var(--status-success);
 }
 
-/* The page before a projection exists: no ledger, so no ledger grid. A plain
-   column keeps the console at the top and lets the empty state breathe under
-   it instead of being pinned into a row sized for a table that is not there. */
-.cb-root.cb-boot {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+/* ---- the page before anything has been measured -------------------------
+
+   There is no second layout here. The page draws itself - top bar, verdict,
+   console, the nine channel heads, both bands, the foot - and only the FIGURES
+   are missing. What stands in their place is the ledger's own UNKNOWN ink, at
+   three sizes, so the hero slot, a column head's count and a band's tally all
+   say the same thing the nine columns say. It is never a shimmer: a shimmer
+   promises arrival, and nothing arrives here until someone runs the
+   instrument. -------------------------------------------------------------- */
+.cb-root .cb-unmeasured {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.cb-root .cb-unmeasured[data-size='lg'] .cb-unkbox {
+  width: 34px;
+  height: 18px;
+  vertical-align: 0;
+}
+.cb-root .cb-unmeasured[data-size='hero'] .cb-unkbox {
+  width: 74px;
+  height: 30px;
+  border-radius: 3px;
+  vertical-align: 0;
+  background-size: 7px 100%;
+}
+
+/* Where the rows would be: one line, on the ledger's own grid, between the
+   real head and the real bands. Not a card, and not a card's worth of room. */
+.cb-root .cb-lempty {
+  border-bottom: 1px solid var(--cb-rule);
+}
+.cb-root .cb-lempty .cb-note {
+  max-width: 92ch;
+}
+.cb-root .cb-lempty .cb-noteline {
+  align-items: center;
 }

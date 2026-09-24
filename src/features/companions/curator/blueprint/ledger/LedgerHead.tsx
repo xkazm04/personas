@@ -5,13 +5,20 @@
  * `cb-ledger-row` / `cb-ledger-total` hooks the data rows do - which is what
  * the winner's own selectors did (`#lscroll .lrow:not(.band)` matched the head
  * first), so the contract compares the same element on both sides.
+ *
+ * It draws BEFORE anything has been measured too, which is the whole reason
+ * the page can render itself empty: the nine channels are a closed vocabulary,
+ * not a result, so their heads are known before any instrument runs. Only the
+ * counts under them are unknown, and those wear the ledger's own unknown ink.
  */
 import { Fragment } from 'react';
 
 import { channelColour, CHANNEL_ORDER, CHANNELS, type ChannelId } from '../model/channels';
 import type { BlueprintModel, ChannelTotal } from '../model/types';
-import { fmt } from '../format';
+import { fmt, say } from '../format';
 import { useWords } from '../words';
+
+import { Unmeasured } from './Unmeasured';
 
 interface HeadProps {
   model: BlueprintModel;
@@ -34,27 +41,38 @@ function ChannelHead({ model, id, solo, onSolo }: HeadProps & { id: ChannelId })
   const total: ChannelTotal = model.totals[id];
   const name = w.channel[`c${String(id)}` as keyof typeof w.channel];
   const weight = weightLabel(id, w, tx);
-  const scoring = total.points > 0;
+  // Three states, not two. A column that has never been measured is neither
+  // scoring nor a zero, and it must not borrow the zero's sentence.
+  const unmeasured = total.points === null;
+  const scoring = total.points !== null && total.points > 0;
 
-  const tip = scoring
-    ? `${tx(w.channel_tip_scored, { name, weight, points: fmt(total.points), subjects: total.subjects })} ${
-        spec.code === 'deviation' || spec.code === 'citation_gone'
-          ? tx(w.channel_tip_demand_tail, { n: model.unknownDemandBundles, total: model.domains })
-          : tx(w.channel_tip_all_bundles, { n: model.domains })
-      } ${tx(w.channel_sort_hint, { n: id })}`
-    : `${name}, ${weight}. ${
-        total.emptiness === 'unknown-remainder'
-          ? tx(w.channel_zero_unknown, {
-              known: model.demandKnownDomains.length,
-              total: model.domains,
-              unknown: model.unknownDemandBundles,
-            })
-          : total.emptiness === 'unmeasurable-remainder'
-            ? tx(w.channel_zero_unmeasurable, { n: fmt(model.noClockApplications) })
-            : w.channel_zero_pure
-      } ${tx(w.channel_sort_hint, { n: id })}`;
+  const tip = unmeasured
+    ? tx(w.channel_unmeasured, { name, weight })
+    : scoring
+      ? `${tx(w.channel_tip_scored, { name, weight, points: fmt(total.points), subjects: total.subjects ?? w.not_measured })} ${
+          spec.code === 'deviation' || spec.code === 'citation_gone'
+            ? tx(w.channel_tip_demand_tail, {
+                n: model.unknownDemandBundles ?? w.not_measured,
+                total: model.domains ?? w.not_measured,
+              })
+            : tx(w.channel_tip_all_bundles, { n: model.domains ?? w.not_measured })
+        } ${tx(w.channel_sort_hint, { n: id })}`
+      : `${name}, ${weight}. ${
+          total.emptiness === 'unknown-remainder'
+            ? tx(w.channel_zero_unknown, {
+                known: model.demandKnownDomains?.length ?? w.not_measured,
+                total: model.domains ?? w.not_measured,
+                unknown: model.unknownDemandBundles ?? w.not_measured,
+              })
+            : total.emptiness === 'unmeasurable-remainder'
+              ? tx(w.channel_zero_unmeasurable, { n: say(model.noClockApplications, w.not_measured) })
+              : w.channel_zero_pure
+        } ${tx(w.channel_sort_hint, { n: id })}`;
 
-  const barWidth = Math.max(8, (total.points / Math.max(1, model.planPoints)) * 100 * 2.2).toFixed(1);
+  const barWidth = Math.max(
+    8,
+    ((total.points ?? 0) / Math.max(1, model.planPoints ?? 0)) * 100 * 2.2,
+  ).toFixed(1);
 
   return (
     <button
@@ -71,10 +89,12 @@ function ChannelHead({ model, id, solo, onSolo }: HeadProps & { id: ChannelId })
     >
       <span className="cb-gl">{spec.glyph}</span>
       <span className={`cb-n typo-data${scoring ? '' : ' cb-z'}`} data-role="cb-channel-count">
-        {scoring ? fmt(total.points) : 0}
+        {unmeasured ? <Unmeasured tip={tip} /> : scoring ? fmt(total.points) : 0}
       </span>
       <span className="cb-st">
-        {scoring ? (
+        {unmeasured ? (
+          <span className="cb-unk" />
+        ) : scoring ? (
           <>
             <span className="cb-on" style={{ width: `${barWidth}%` }} />
             {(id === 1 || id === 7) && <span className="cb-unk" style={{ maxWidth: '34%' }} />}
@@ -96,18 +116,44 @@ function ChannelHead({ model, id, solo, onSolo }: HeadProps & { id: ChannelId })
   );
 }
 
-export function LedgerHead(props: HeadProps) {
-  const { model } = props;
+/**
+ * The first group's head. With a plan it counts what the plan carries; without
+ * one it becomes the bare label its three neighbours already are, with the
+ * unknown mark where the two counts were - never "0 planned".
+ */
+function PlannedGroup({ model }: { model: BlueprintModel }) {
   const { w, tx } = useWords();
-  return (
-    <div className="cb-lhead cb-lrow" data-role="cb-ledger-row">
+  if (model.rows === null) {
+    return (
       <div className="cb-grp cb-g1 typo-label cb-up">
-        <b data-role="cb-group-head">{tx(w.group_planned, { n: model.rows.length })}</b>
+        <b data-role="cb-group-head">{w.group_planned_bare}</b>
         <span className="cb-dim">
-          {tx(w.group_points, { n: fmt(model.planPoints), total: fmt(model.subjects) })}
+          <Unmeasured /> {w.group_points_bare}
         </span>
         <span className="cb-ln" />
       </div>
+    );
+  }
+  return (
+    <div className="cb-grp cb-g1 typo-label cb-up">
+      <b data-role="cb-group-head">{tx(w.group_planned, { n: model.rows.length })}</b>
+      <span className="cb-dim">
+        {tx(w.group_points, {
+          n: say(model.planPoints, w.not_measured),
+          total: say(model.subjects, w.not_measured),
+        })}
+      </span>
+      <span className="cb-ln" />
+    </div>
+  );
+}
+
+export function LedgerHead(props: HeadProps) {
+  const { model } = props;
+  const { w } = useWords();
+  return (
+    <div className="cb-lhead cb-lrow" data-role="cb-ledger-row">
+      <PlannedGroup model={model} />
       <div className="cb-grp cb-g2 typo-label cb-up">
         {w.group_marks}
         <span className="cb-gloss">{w.group_marks_gloss}</span>

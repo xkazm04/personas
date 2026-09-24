@@ -9,6 +9,15 @@
  * looked), and an unmeasurable (the instrument ran and had nothing to compare
  * against). `CellMark` is the closed vocabulary that keeps them apart, and
  * nothing downstream may collapse it to a number.
+ *
+ * THE SAME RULE, ONE LEVEL UP: every quantity the model carries is nullable,
+ * and `null` means NOBODY HAS MEASURED IT. That is what lets the page draw
+ * itself before the instrument has ever run - the layout, the nine channel
+ * heads, both aggregate bands and the foot are all present, and every figure
+ * in them reads as unknown rather than as a zero. A skeleton of zeros would be
+ * this page telling its own central lie on first contact. `unmeasuredModel()`
+ * is that state; `buildModel()` is the measured one, and the only difference
+ * between them is which of these fields are null.
  */
 import type { CuratorConsentState } from '@/lib/bindings/CuratorConsentState';
 import type { CuratorDemand } from '@/lib/bindings/CuratorDemand';
@@ -82,10 +91,10 @@ export interface BlueprintRow {
 /** What a column head says about the whole plan, per channel. */
 export interface ChannelTotal {
   channel: ChannelId;
-  /** Points summed across the rows. */
-  points: number;
-  /** How many rows carry this channel at all. */
-  subjects: number;
+  /** Points summed across the rows. `null` before anything has scored them. */
+  points: number | null;
+  /** How many rows carry this channel at all. `null` when nobody has looked. */
+  subjects: number | null;
   /**
    * Why the column reads zero, when it does. `null` while it scores.
    * `unknown-remainder`: measured zero here, and unasked in N bundles.
@@ -123,54 +132,70 @@ export interface ConsumerProject {
 }
 
 export interface BlueprintModel {
-  planRunId: string;
-  createdAt: string;
-  scanGeneratedAt: string;
+  planRunId: string | null;
+  createdAt: string | null;
+  scanGeneratedAt: string | null;
   registryHeadSha: string | null;
   /** Subjects the whole corpus holds. */
-  subjects: number;
-  techniques: number;
-  applications: number;
-  domains: number;
+  subjects: number | null;
+  techniques: number | null;
+  applications: number | null;
+  domains: number | null;
   /** Applications carrying no clock at all, so they cannot expire. */
-  noClockApplications: number;
-  expiredApplications: number;
-  atRiskApplications: number;
-  driftUnknown: number;
-  drift: number;
+  noClockApplications: number | null;
+  expiredApplications: number | null;
+  atRiskApplications: number | null;
+  driftUnknown: number | null;
+  drift: number | null;
   /** The bundles whose demand was actually read. */
-  demandKnownDomains: string[];
+  demandKnownDomains: string[] | null;
   /** 10 minus the read ones - where channels 1 and 7 are unknown. */
-  unknownDemandBundles: number;
+  unknownDemandBundles: number | null;
   /** One distinct two-letter mark per bundle, derived from the domains present. */
   bundleMark: Record<string, string>;
-  rows: BlueprintRow[];
+  /**
+   * The subjects the plan would act on. `null` is NOT an empty ledger: it is a
+   * ledger nobody has read, and the body says so in its own voice instead of
+   * drawing a row of zeros or a foreign empty-state card.
+   */
+  rows: BlueprintRow[] | null;
   /** Sum of the rows' points. With a whole plan, this IS the corpus's points. */
-  planPoints: number;
+  planPoints: number | null;
+  /**
+   * The two drawing SCALES, not quantities of the corpus - they are the
+   * denominators the tracks and totals are drawn against. With no rows nothing
+   * is drawn against them, so they stay plain numbers and never read as a
+   * measurement of anything.
+   */
   maxPoints: number;
   /** The widest deviation ceiling in the plan, for the track scale. */
   maxCeiling: number;
   totals: Record<ChannelId, ChannelTotal>;
-  quiet: QuietBundle[];
-  quietSubjects: number;
+  quiet: QuietBundle[] | null;
+  quietSubjects: number | null;
   /**
    * Subjects the corpus counts that neither the rows nor the quiet tail
    * account for. Zero for a whole projection; above zero it is a FINDING
    * about the plan, drawn as a band with unknown columns, never as work.
+   * `null` when no projection exists to account for anything.
    */
-  unlisted: number;
+  unlisted: number | null;
   consumers: {
-    projects: ConsumerProject[];
-    pairs: number;
-    evaluated: number;
-    staleVerdicts: number;
-    weak: number;
-    staleProjects: number;
-    mapsStale: boolean;
+    projects: ConsumerProject[] | null;
+    pairs: number | null;
+    evaluated: number | null;
+    staleVerdicts: number | null;
+    weak: number | null;
+    staleProjects: number | null;
+    mapsStale: boolean | null;
     problems: string[];
   };
-  /** The policy AS IT WAS when the projection was made. */
-  policy: BlueprintPolicy;
+  /**
+   * The policy AS IT WAS when the projection was made. `null` when no
+   * projection exists - the caps then come from the live read beside it, and
+   * where that is absent too the gauges read unknown rather than "no cap".
+   */
+  policy: BlueprintPolicy | null;
   /**
    * The policy NOW, when it could be read. The plan carries the version a
    * person agreed to; a surface that showed only one of the two would hide the

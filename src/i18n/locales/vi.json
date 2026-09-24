@@ -24590,7 +24590,21 @@
         "terminals": "Terminal",
         "terminals_tip": "{running} trong số {cap} terminal cô ấy có thể giữ cùng lúc.",
         "used_of": "{used} trên {cap}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "Phần đuôi im lặng là các chủ đề không đạt điểm nào trên mọi kênh có thể đo lường. Ở đây chưa có gì được đo, nên có bao nhiêu chủ đề như vậy vẫn không rõ, và điều đó không giống với không có chủ đề nào.",
+      "band_unlisted_unmeasured": "chủ đề nằm ngoài kế hoạch",
+      "band_unlisted_unmeasured_note": "chưa có gì được đếm, nên chưa có gì nằm ngoài bất cứ điều gì",
+      "band_unlisted_unmeasured_tip": "Dải này là các chủ đề mà kho ngữ liệu nắm giữ nhưng một kế hoạch không mang theo. Không có dự phóng nào thì không có kế hoạch nào để chúng nằm ngoài, và cả hai con số đều chưa được đo.",
+      "channel_unmeasured": "{name}, {weight}. Chưa ai đo kênh này, nên nó không rõ - không phải là số không, và không nằm trong bất kỳ tổng nào.",
+      "group_planned_bare": "Kế hoạch",
+      "group_points_bare": "điểm",
+      "meta_unrun": "chưa có dự phóng nào được lập",
+      "meta_unrun_tip": "Một kế hoạch là dự phóng của registry tại một commit. Ở đây chưa có dự phóng nào được lập, nên không có lượt chạy nào để gọi tên, không có đồng hồ quét và không có commit nào để lấy mốc.",
+      "unmeasured_tip": "Chưa được đo. Chưa có công cụ nào chạy qua đây, nên nó không rõ - không phải là số không, và không nằm trong bất kỳ tổng nào.",
+      "verdict_bundles_unmeasured": "trong các gói chưa ai đếm",
+      "verdict_maps_unmeasured": "chưa có lượt kiểm tra bản đồ nào chạy",
+      "verdict_pairs_unmeasured": "Chưa có cặp ngữ cảnh và chủ đề nào được đọc, nên chưa có tỷ lệ nào để báo cáo.",
+      "verdict_pairs_unmeasured_tip": "Đây là con số nhỏ duy nhất của trang: tỷ lệ các cặp ngữ cảnh và chủ đề mà bất kỳ ai từng phán quyết. Chạy công cụ và nó sẽ xuất hiện. Cho đến lúc đó nó không rõ, và một tỷ lệ không rõ không phải là 0%."
     },
     "process": {
       "cohort_share": "Tất cả kho lưu trữ {pct}",
