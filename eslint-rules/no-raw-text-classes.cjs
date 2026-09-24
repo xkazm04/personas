@@ -64,21 +64,23 @@ if (!READER_OK) {
   console.error("[no-raw-text-classes] read 0 typo-* names from src/**/*.css; phantom detection is OFF for this run");
 }
 
+// Same mapping the style foundation applied (docs/design/style-mastery/migration-map.md
+// section 2, 5e5cd9ca5), so the hook and the codemod never disagree.
 const PHANTOM_SUGGESTIONS = {
-  "body-sm": "typo-caption",
+  "body-sm": "typo-body",
   "body-xs": "typo-caption",
   "body-strong": "typo-title",
-  overline: "typo-label",
-  "heading-xs": "typo-heading",
+  overline: "typo-eyebrow",
+  "heading-xs": "typo-title",
   "heading-sm": "typo-heading",
-  "heading-md": "typo-heading",
+  "heading-md": "typo-title-lg",
   h3: "typo-heading-lg",
   h4: "typo-heading",
   h5: "typo-heading",
   "title-sm": "typo-title",
-  display: "typo-hero",
+  display: "typo-data-lg",
   "data-md": "typo-data",
-  button: "typo-heading",
+  button: "typo-title",
 };
 
 const RAW_TEXT_RE = /\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)\b/;

@@ -232,14 +232,14 @@ ruleTester.run("custom/no-raw-text-classes", noRawTextClasses, {
       // raw size beside it, and is reported itself.
       code: `function C() { return <p className="typo-body-sm text-sm">x</p>; }`,
       errors: [
-        { messageId: "phantomTypo", data: { raw: "typo-body-sm", token: "typo-caption" } },
+        { messageId: "phantomTypo", data: { raw: "typo-body-sm", token: "typo-body" } },
         { messageId: "rawTextClass", data: { raw: "text-sm", token: "typo-body" } },
       ],
     },
     {
       // A lone phantom is reported even with no raw size next to it.
       code: `function C() { return <h3 className="typo-overline text-foreground">x</h3>; }`,
-      errors: [{ messageId: "phantomTypo", data: { raw: "typo-overline", token: "typo-label" } }],
+      errors: [{ messageId: "phantomTypo", data: { raw: "typo-overline", token: "typo-eyebrow" } }],
     },
     {
       // Arbitrary px size, with the equivalent token named.
