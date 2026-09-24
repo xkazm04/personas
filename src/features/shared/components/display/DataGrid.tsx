@@ -330,9 +330,12 @@ export function DataGrid<T>({
                   // -mx-2 cancels the select's own !px-2 so its label starts on
                   // the same x as a plain/sortable header, while the hover
                   // background still bleeds into the cell padding.
-                  // Headers never wrap: the trigger clips on one line (its aria-label and
-                  // the open list carry the full option names).
-                  className="!px-2 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label whitespace-nowrap overflow-hidden"
+                  // Headers never wrap. The select fills its cell (it used to shrink to
+                  // its text, which put the chevron on top of the label), keeps room
+                  // for the chevron, and ellipsizes its label; the open list carries
+                  // every option in full.
+                  wrapperClassName="flex-1 min-w-0"
+                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label whitespace-nowrap [&>span]:block [&>span]:truncate"
                 />
               </div>
             );

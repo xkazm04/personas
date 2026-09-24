@@ -31,6 +31,11 @@ export function DataGridPager({ page, totalPages, pageSize, pageSizeOptions, tot
   const { t } = useTranslation();
   const start = Math.min((page - 1) * pageSize + 1, total);
   const end = Math.min(page * pageSize, total);
+  // A caller's page size that is not among the options (LiveStream passes 20)
+  // is still the size in use: list it, or the trigger would name no size at all.
+  const sizes = pageSizeOptions.includes(pageSize)
+    ? pageSizeOptions
+    : [...pageSizeOptions, pageSize].sort((x, y) => x - y);
   return (
     <div className="flex items-center justify-between px-4 py-2 border-t border-primary/10 bg-background/60 shrink-0">
       <div className="flex items-center gap-3">
@@ -40,7 +45,7 @@ export function DataGridPager({ page, totalPages, pageSize, pageSizeOptions, tot
             <ThemedSelect
               filterable
               hideSearch
-              options={pageSizeOptions.map((opt) => ({ value: String(opt), label: String(opt) }))}
+              options={sizes.map((opt) => ({ value: String(opt), label: String(opt) }))}
               value={String(pageSize)}
               onValueChange={(v) => onPageSize(Number(v))}
               aria-label={t.shared.grid_rows_per_page}
