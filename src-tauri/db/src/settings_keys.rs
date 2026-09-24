@@ -505,9 +505,20 @@ pub const CURATOR_DAILY_BUDGET_USD: &str = "curator_daily_budget_usd";
 pub const CURATOR_DAILY_RUN_CAP: &str = "curator_daily_run_cap";
 /// Commits Curator may land in a day. Unset means no cap declared.
 pub const CURATOR_DAILY_COMMIT_CAP: &str = "curator_daily_commit_cap";
-/// A window during which Curator stays quiet, e.g. `"22:00-07:00"`.
-/// Free-form: the loop package owns the parse, and pinning a grammar here
-/// before a reader exists would be guessing at one.
+/// A window during which Curator stays quiet, e.g. `"22:00-07:00"`, in the
+/// machine's LOCAL time. A window that starts after it ends wraps midnight.
+///
+/// **Free-form until 2026-09-24, and now a grammar**, because the reader the
+/// old comment was waiting for exists: `commands::curator::tick` refuses to
+/// dispatch inside this window. While nothing read it, a typo was harmless;
+/// now a typo is a brake that silently does not take - the reader can only
+/// treat an unparseable window as no window, which is the exact shape of
+/// setting this file refuses everywhere else. A blank still clears it.
+///
+/// The parse itself is `attention::parse_quiet_hours`, which the persona
+/// attention loop has used against the same `"HH:MM-HH:MM"` spelling since it
+/// shipped; this validator and that reader must accept the same strings, which
+/// is what the test below asserts.
 pub const CURATOR_QUIET_HOURS: &str = "curator_quiet_hours";
 
 /// How many decisions awaiting an answer stop Curator queueing more. This is
@@ -536,6 +547,26 @@ pub const CURATOR_WORKER_CAP_DEFAULT: u32 = 2;
 /// dispatch fan-out at 10 concurrent workers, which is the number two existing
 /// skills converged on across measured runs; this app must not exceed it.
 pub const CURATOR_WORKER_CAP_MAX: u32 = 10;
+
+/// When Curator's reconcile sleep last COMPLETED, RFC3339.
+///
+/// A stamp the loop writes, never a person - it is not part of `CuratorPolicy`
+/// and has no setting row in her Setup page. It lives here rather than in a
+/// table for the reason the policy does: there is exactly one Curator, this is
+/// one scalar, and `app_settings` already carries the allow-list and the audit
+/// trail. Absent means "she has never slept", which is the reading that makes
+/// her sleep on the first tick - a stamp that defaulted to `now` would skip the
+/// one pass that reconciles a plan made before the app restarted.
+pub const CURATOR_LAST_SLEEP_AT: &str = "curator_last_sleep_at";
+
+/// Whether `spec` is a window Curator's tick and the attention loop will both
+/// honour. Delegates to the ONE parser
+/// ([`personas_core::quiet_hours::parse`]) rather than restating the grammar,
+/// so a validator that accepts a string can never disagree with a reader that
+/// then cannot read it.
+fn parses_as_quiet_window(spec: &str) -> bool {
+    personas_core::quiet_hours::parse(spec.trim()).is_some()
+}
 
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
@@ -1257,6 +1288,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CURATOR_QUIET_HOURS,
     CURATOR_BACKPRESSURE_N,
     CURATOR_WORKER_CAP,
+    CURATOR_LAST_SLEEP_AT,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
@@ -1562,9 +1594,25 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             }
             validate_int_range(key, value, 0, u32::MAX)
         }
-        // Free-form on purpose: the loop package owns the parse, and pinning a
-        // grammar here before a reader exists would be guessing at one.
-        CURATOR_QUIET_HOURS => Ok(()),
+        // A grammar since 2026-09-24, when the reader landed. See the constant.
+        CURATOR_QUIET_HOURS => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            if parses_as_quiet_window(value) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "value for '{key}' must be a window like \"22:00-07:00\" \
+                     (24-hour, local time, wrapping midnight is fine), got {value:?}"
+                ))
+            }
+        }
+        // A stamp the loop writes, never a person. Any non-blank string is
+        // accepted: it is compared for staleness against `now` and an
+        // unparseable one reads as "never slept", which is the safe answer -
+        // it makes her sleep, it cannot make her skip one.
+        CURATOR_LAST_SLEEP_AT => Ok(()),
         CURATOR_BACKPRESSURE_N => {
             if is_blank(value) {
                 return Ok(());
@@ -1992,7 +2040,8 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | CURATOR_DAILY_COMMIT_CAP
         | CURATOR_QUIET_HOURS
         | CURATOR_BACKPRESSURE_N
-        | CURATOR_WORKER_CAP => "autonomy",
+        | CURATOR_WORKER_CAP
+        | CURATOR_LAST_SLEEP_AT => "autonomy",
         // Obsidian brain / dev-tools integrations.
         OBSIDIAN_BRAIN_CONFIG
         | OBSIDIAN_MIRROR_CONFIG
@@ -2211,6 +2260,52 @@ mod tests {
 
         assert_eq!(CURATOR_BACKPRESSURE_N_DEFAULT, 8);
         assert_eq!(CURATOR_WORKER_CAP_DEFAULT, 2);
+    }
+
+    /// Quiet hours stopped being free-form on 2026-09-24, when the reader that
+    /// old comment was waiting for landed. The validator and the reader must
+    /// accept exactly the same strings, so this asserts against the ONE parser
+    /// rather than against a restated grammar.
+    #[test]
+    fn a_quiet_window_must_be_one_the_reader_can_actually_read() {
+        for good in [
+            "22:00-07:00",
+            " 9:15 - 17:45 ",
+            "00:00-23:59",
+            "09:00-09:00",
+        ] {
+            assert!(validate_value(CURATOR_QUIET_HOURS, good).is_ok(), "{good}");
+            assert!(
+                personas_core::quiet_hours::parse(good.trim()).is_some(),
+                "the validator accepted {good:?} but the reader cannot read it"
+            );
+        }
+        // A blank still CLEARS the window - that is how "no quiet hours" is
+        // said, and it must not be confused with a malformed one.
+        assert!(validate_value(CURATOR_QUIET_HOURS, "").is_ok());
+        assert!(validate_value(CURATOR_QUIET_HOURS, "   ").is_ok());
+        // Each of these used to be accepted and would then have quieted
+        // nothing: a brake that silently does not take.
+        for bad in ["nights", "22:00", "25:00-07:00", "22:61-07:00", "10pm-7am"] {
+            assert!(
+                validate_value(CURATOR_QUIET_HOURS, bad).is_err(),
+                "{bad} should be refused at the door"
+            );
+        }
+    }
+
+    /// The sleep stamp is the loop's, not the operator's: registered, in the
+    /// autonomy audit category, and not part of `CuratorPolicy`.
+    #[test]
+    fn the_sleep_stamp_is_registered_and_free_form() {
+        assert_eq!(CURATOR_LAST_SLEEP_AT, "curator_last_sleep_at");
+        assert!(validate_key(CURATOR_LAST_SLEEP_AT).is_ok());
+        assert_eq!(audit_category(CURATOR_LAST_SLEEP_AT), Some("autonomy"));
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "2026-09-24T10:00:00Z").is_ok());
+        // Unparseable reads as "never slept", which makes her sleep rather
+        // than skip one - so the door has no reason to refuse it.
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "whenever").is_ok());
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "").is_ok());
     }
 
     #[test]
