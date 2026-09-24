@@ -18096,6 +18096,8 @@
       "note_found": "알아낸 것",
       "notes_label": "Athena의 메모",
       "notes_waiting": "다음 단계를 위한 메모: {count}개",
+      "note_remove": "이 메모 삭제",
+      "notes_full": "Athena에게 이미 {max}개의 메모가 대기 중입니다. 하나를 삭제하거나, 다음 단계가 시작된 후 보내 주세요.",
       "now_pick": "제안을 고르거나 Athena에게 다음에 할 일을 알려주세요.",
       "now_ready": "언제든 준비됐어요.",
       "now_setting_up": "{name} 설정 중",

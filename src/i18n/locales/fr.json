@@ -18096,6 +18096,8 @@
       "note_found": "Ce que j'ai trouvé",
       "notes_label": "Notes d'Athena",
       "notes_waiting": "Notes pour sa prochaine étape : {count}",
+      "note_remove": "Retirer cette note",
+      "notes_full": "Athena a déjà {max} notes en attente. Retirez-en une, ou envoyez celle-ci quand sa prochaine étape commence.",
       "now_pick": "Choisissez une suggestion ou dites à Athena ce qui suit.",
       "now_ready": "Prête quand vous l'êtes.",
       "now_setting_up": "Configuration de {name}",

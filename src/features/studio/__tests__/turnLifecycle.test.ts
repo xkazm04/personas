@@ -35,7 +35,7 @@ vi.mock('@/features/plugins/companion/companionStore', () => ({
   },
 }));
 
-const { useStudioStore, splitReply, AUTO_MAX_TURNS } = await import('../studioStore');
+const { useStudioStore, splitReply, AUTO_MAX_TURNS, QUEUED_NOTES_MAX } = await import('../studioStore');
 type ProjectRuntime = import('../studioStore').ProjectRuntime;
 const { useStudioHistory } = await import('../studioHistory');
 const { MOCK_PHASES } = await import('../studioBuildModel');
@@ -259,6 +259,16 @@ describe('Stop reads whether it actually stopped anything', () => {
     await vi.advanceTimersByTimeAsync(2000);
     expect(webbuildSessionSend).toHaveBeenCalledTimes(1);
     expect(useStudioStore.getState().runtimes[ID]?.queuedNotes).toEqual(['make it blue']);
+  });
+
+  it('a full note queue refuses the next note instead of dropping the oldest', () => {
+    const full = Array.from({ length: QUEUED_NOTES_MAX }, (_, i) => `note ${i}`);
+    seedRuntime({ queuedNotes: full });
+    expect(useStudioStore.getState().queueNote(ID, 'one more')).toBe(false);
+    expect(useStudioStore.getState().runtimes[ID]?.queuedNotes).toEqual(full);
+    useStudioStore.getState().removeQueuedNote(ID, 0);
+    expect(useStudioStore.getState().queueNote(ID, 'one more')).toBe(true);
+    expect(useStudioStore.getState().runtimes[ID]?.queuedNotes?.at(-1)).toBe('one more');
   });
 
   it('an interrupt that carries content still delivers its note', async () => {

@@ -23250,6 +23250,8 @@ export type Translations = {
       now_ready: string;
       on_her_own: string;
       notes_waiting: string;
+      note_remove: string;
+      notes_full: string;
       act_research: string;
       act_search: string;
       act_read: string;

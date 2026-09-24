@@ -134,6 +134,8 @@
     "note_found": "Yang saya temukan",
     "notes_label": "Catatan Athena",
     "notes_waiting": "Catatan untuk langkah berikutnya: {count}",
+    "note_remove": "Hapus catatan ini",
+    "notes_full": "Athena sudah punya {max} catatan yang menunggu. Hapus satu, atau kirim ini setelah langkah berikutnya dimulai.",
     "now_pick": "Pilih saran atau katakan ke Athena apa langkah berikutnya.",
     "now_ready": "Siap kapan pun kamu mau.",
     "now_setting_up": "Menyiapkan {name}",

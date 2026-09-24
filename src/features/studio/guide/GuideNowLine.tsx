@@ -3,6 +3,7 @@ import { AUTO_MAX_TURNS } from '../studioStore';
 import type { StudioActivity } from '../studioActivity';
 import { activityText, guideStrings } from './guideCopy';
 import { clock, useElapsed } from './useGuideRuntime';
+import GuideQueuedNotes from './GuideQueuedNotes';
 
 // One plain line under the frame: what Athena is doing now, with honest elapsed
 // time and never a percentage. The orb at its left opens her tools.
@@ -18,7 +19,8 @@ export default function GuideNowLine({
   activity,
   questionWaiting,
   questionHidden,
-  queued,
+  queuedNotes,
+  onRemoveNote,
   estimate,
   onOrb,
   onShowQuestion,
@@ -35,7 +37,8 @@ export default function GuideNowLine({
   activity: StudioActivity[];
   questionWaiting: boolean;
   questionHidden: boolean;
-  queued: number;
+  queuedNotes: string[];
+  onRemoveNote: (index: number) => void;
   estimate: string;
   onOrb: () => void;
   onShowQuestion: () => void;
@@ -97,11 +100,7 @@ export default function GuideNowLine({
           {tx(g.on_her_own, { n: autoTurns + 1, max: AUTO_MAX_TURNS })}
         </span>
       )}
-      {queued > 0 && (
-        <span className="shrink-0 rounded-full border border-border px-2.5 py-0.5 typo-caption text-foreground/90">
-          {tx(g.notes_waiting, { count: queued })}
-        </span>
-      )}
+      <GuideQueuedNotes notes={queuedNotes} onRemove={onRemoveNote} />
       {questionWaiting && questionHidden && <YourCallButton label={g.your_call} onClick={onShowQuestion} />}
     </div>
   );

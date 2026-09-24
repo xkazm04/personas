@@ -16,7 +16,7 @@ import { ChatInputBar } from '@/features/shared/components/forms/ChatInputBar';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guide/guideCopy';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
-import { useStudioStore } from './studioStore';
+import { QUEUED_NOTES_MAX, useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioMessages from './StudioMessages';
 import StudioPlanDrawer from './StudioPlanDrawer';
@@ -48,6 +48,9 @@ export default function StudioChatInput({
   const [input, setInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
+  // The step (by its start time) whose queue refused a note; the notice is
+  // about that step only and is gone once the next one starts.
+  const [queueFullTurn, setQueueFullTurn] = useState<number | null>(null);
   const { shouldAnimate } = useMotion();
   const activeId = useStudioStore((s) => s.activeId);
   // Perf: select only the fields the dock renders (shallow-compared) instead of
@@ -65,6 +68,7 @@ export default function StudioChatInput({
         name: r.name,
         phases: r.phases,
         stopNoop: r.stopNoop,
+        turnStartedAt: r.turnStartedAt,
       };
     }),
   );
@@ -75,8 +79,9 @@ export default function StudioChatInput({
   const queueNote = useStudioStore((s) => s.queueNote);
 
   if (!activeId || !rt) return null;
-  const { busy, question, autonomous, name, phases, stopNoop } = rt;
+  const { busy, question, autonomous, name, phases, stopNoop, turnStartedAt } = rt;
   const working = busy || autonomous;
+  const queueFull = working && queueFullTurn !== null && queueFullTurn === (turnStartedAt ?? 0);
   const { done, total } = phaseProgress(phases ?? []);
   const hasPlan = total > 0;
 
@@ -93,14 +98,20 @@ export default function StudioChatInput({
     if (!text) return;
     if (working) {
       if (!guide) return;
-      setInput('');
       // A bare stop word only stops: queued, it became the sole note of a new
       // turn told to carry on.
       if (isStopOnly(text)) {
+        setInput('');
         if (busy) stopTurn(activeId);
         return;
       }
-      queueNote(activeId, text);
+      // A full queue refuses the note and says so; the text stays in the box.
+      if (!queueNote(activeId, text)) {
+        setQueueFullTurn(turnStartedAt ?? 0);
+        return;
+      }
+      setInput('');
+      setQueueFullTurn(null);
       // Athena's mid-turn rule: a clear redirect ("actually,", "instead,")
       // interrupts the running step and its note goes with the next one (the
       // queue pump sends it); anything else waits for the step to end.
@@ -200,6 +211,15 @@ export default function StudioChatInput({
               : 'sr-only'}
           >
             {stopNoop && !working ? t.studio.stop_nothing_running : null}
+          </p>
+          <p
+            role="status"
+            data-testid={queueFull ? 'studio-queue-full' : undefined}
+            className={queueFull
+              ? 'pointer-events-auto self-center rounded-full border border-status-warning/60 bg-background/80 px-3 py-1 typo-caption text-status-warning shadow-elevation-1'
+              : 'sr-only'}
+          >
+            {queueFull ? tx(guideStrings(t).notes_full, { max: QUEUED_NOTES_MAX }) : null}
           </p>
 
           {!guide && !working && !question && !chatOpen && <StudioQuickActions id={activeId} />}

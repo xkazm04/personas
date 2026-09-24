@@ -134,6 +134,8 @@
     "note_found": "Những gì tôi tìm thấy",
     "notes_label": "Ghi chú của Athena",
     "notes_waiting": "Ghi chú cho bước tiếp theo của cô ấy: {count}",
+    "note_remove": "Xóa ghi chú này",
+    "notes_full": "Athena đã có {max} ghi chú đang chờ. Hãy xóa một ghi chú, hoặc gửi ghi chú này sau khi bước tiếp theo bắt đầu.",
     "now_pick": "Chọn một gợi ý hoặc cho Athena biết bước tiếp theo là gì.",
     "now_ready": "Sẵn sàng bất cứ khi nào bạn muốn.",
     "now_setting_up": "Đang cài đặt {name}",

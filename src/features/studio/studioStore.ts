@@ -109,6 +109,8 @@ export interface ProjectRuntime {
 // that miscounts here burns real CLI turns against a real project, which is the
 // one failure in this file whose cost is not paid in pixels.
 export const AUTO_MAX_TURNS = 12;
+/** Notes that may wait for the next step; one more is refused, never dropped. */
+export const QUEUED_NOTES_MAX = 10;
 
 // Boot poll bounds. A poll whose ONLY exit is success is not a poll, it is a
 // hang: a dev server that never binds — a port already in use, Turbopack dying
@@ -223,7 +225,8 @@ interface StudioStore {
    *  leaves waiting notes for the user's next send. */
   stopTurn: (id: string, opts?: { pumpNotes?: boolean }) => void;
   /** Keep a note for the next turn instead of refusing input mid-turn. */
-  queueNote: (id: string, text: string) => void;
+  /** False when the note was not queued (empty, no project, or the queue is full). */
+  queueNote: (id: string, text: string) => boolean;
   removeQueuedNote: (id: string, index: number) => void;
 }
 
@@ -881,8 +884,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     queueNote: (id, text) => {
       const note = text.trim();
       const rt = get().runtimes[id];
-      if (!rt || !note) return;
-      patch(id, { queuedNotes: [...(rt.queuedNotes ?? []), note].slice(-10) });
+      const queued = rt?.queuedNotes ?? [];
+      if (!rt || !note || queued.length >= QUEUED_NOTES_MAX) return false;
+      patch(id, { queuedNotes: [...queued, note] });
+      return true;
     },
 
     removeQueuedNote: (id, index) => {

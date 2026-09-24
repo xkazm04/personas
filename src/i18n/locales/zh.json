@@ -18096,6 +18096,8 @@
       "note_found": "我发现了什么",
       "notes_label": "Athena 的备注",
       "notes_waiting": "留给她下一步的备注：{count}",
+      "note_remove": "移除这条备注",
+      "notes_full": "Athena 已有 {max} 条备注在等待。请移除一条，或在她开始下一步后再发送这条。",
       "now_pick": "选一个建议，或者告诉 Athena 接下来做什么。",
       "now_ready": "你准备好随时可以开始。",
       "now_setting_up": "正在设置 {name}",

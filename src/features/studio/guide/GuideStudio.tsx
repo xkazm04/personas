@@ -264,7 +264,8 @@ export default function GuideStudio({
             activity={rt.activity}
             questionWaiting={!!question || sketchAsking}
             questionHidden={questionHidden}
-            queued={rt.queuedNotes.length}
+            queuedNotes={rt.queuedNotes}
+            onRemoveNote={(i) => id && useStudioStore.getState().removeQueuedNote(id, i)}
             estimate={estimate}
             onOrb={() => setArcOpen(true)}
             onShowQuestion={() => setQuestionHidden(false)}

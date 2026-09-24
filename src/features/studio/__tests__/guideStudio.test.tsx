@@ -174,6 +174,15 @@ describe('Guide layout', () => {
     expect(screen.getByRole('status').textContent).toBe('act_search: bakeries');
   });
 
+  it('lists the notes waiting for her next step, and each can be taken back', () => {
+    seed({ busy: true, turnStartedAt: Date.now(), queuedNotes: ['make it blue', 'bigger logo'] });
+    mount();
+    fireEvent.click(screen.getByText('notes_waiting'));
+    expect(screen.getByText('make it blue')).toBeTruthy();
+    fireEvent.click(screen.getAllByLabelText('note_remove')[0]!);
+    expect(useStudioStore.getState().runtimes.p1!.queuedNotes).toEqual(['bigger logo']);
+  });
+
   it('asks the question on a large card with keyed options', () => {
     const phases = [
       { id: 'v', title: 'Vision', status: 'active', note: 'shop + ordering' },

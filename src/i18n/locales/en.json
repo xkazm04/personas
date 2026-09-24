@@ -23244,6 +23244,8 @@
       "now_ready": "Ready when you are.",
       "on_her_own": "On her own: step {n} of up to {max}",
       "notes_waiting": "Notes for her next step: {count}",
+      "note_remove": "Remove this note",
+      "notes_full": "Athena already has {max} notes waiting. Remove one, or send this after her next step starts.",
       "act_research": "Sending helpers to research",
       "act_search": "Searching the web",
       "act_read": "Reading the project",

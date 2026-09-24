@@ -134,6 +134,8 @@
     "note_found": "わかったこと",
     "notes_label": "Athenaのメモ",
     "notes_waiting": "次のステップ用のメモ: {count}件",
+    "note_remove": "このメモを削除",
+    "notes_full": "Athena にはすでに {max} 件のメモが待機しています。1 件削除するか、次のステップが始まってから送信してください。",
     "now_pick": "提案を選ぶか、Athenaに次にすることを伝えてください。",
     "now_ready": "いつでもどうぞ。",
     "now_setting_up": "{name}をセットアップ中",

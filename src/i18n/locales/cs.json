@@ -18096,6 +18096,8 @@
       "note_found": "Co jsem zjistila",
       "notes_label": "Poznámky Atheny",
       "notes_waiting": "Poznámky pro její další krok: {count}",
+      "note_remove": "Odebrat tuto poznámku",
+      "notes_full": "Athena už má {max} čekajících poznámek. Jednu odeberte, nebo tuto pošlete, až začne její další krok.",
       "now_pick": "Vyber návrh, nebo řekni Atheně, co dál.",
       "now_ready": "Připravena, jakmile budeš ty.",
       "now_setting_up": "Nastavuje se {name}",
