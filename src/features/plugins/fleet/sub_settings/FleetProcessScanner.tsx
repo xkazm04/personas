@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Cpu, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { detectProcesses, killPid, resumeOrphan } from '@/api/fleet/fleet';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
@@ -9,6 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 import { countOrphans } from '../useFleetOrphanScan';
 import { FleetProcessRow } from './FleetProcessRow';
+import { FleetSettingsCard } from './FleetSettingsCard';
 
 /**
  * Detected-process diagnostics + orphan cleanup.
@@ -111,50 +111,53 @@ export function FleetProcessScanner() {
   const orphans = visible?.filter((p) => !p.tracked).length ?? 0;
 
   return (
-    <div
-      className="border border-primary/10 rounded-modal px-4 py-3 bg-secondary/20"
+    <FleetSettingsCard
       data-testid="fleet-process-scanner"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-primary" />
-          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-          <p className="typo-caption text-foreground">Running Claude processes</p>
+      icon={<Cpu className="w-4 h-4 text-primary" />}
+      // eslint-disable-next-line custom/no-hardcoded-jsx-text
+      title="Running Claude processes"
+      aside={
+        <>
           {orphans > 0 && (
             <span
-              className="text-[12px] px-1.5 py-0.5 rounded-interactive bg-orange-500/15 text-orange-300"
+              className="typo-label px-1.5 py-0.5 rounded-interactive border border-status-warning/30 bg-status-warning/10 text-status-warning"
               data-testid="fleet-orphan-count"
             >
               {orphans} orphaned
             </span>
           )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<RefreshCw className={`w-3.5 h-3.5 ${busy ? 'animate-spin' : ''}`} />}
-          onClick={scan}
-          disabled={busy}
-          data-testid="fleet-scan-processes"
-        >
-          Scan
-        </Button>
-      </div>
-      {/* eslint-disable custom/no-hardcoded-jsx-text */}
-      <p className="text-[13px] text-foreground leading-relaxed mb-3">
-        Interactive Claude sessions on this machine. Sessions Fleet still tracks are marked; the rest
-        are orphans (e.g. left running after an app restart) or external — <strong>Resume</strong>{' '}
-        re-adopts the conversation, <strong>Kill</strong> ends it. No more hunting in Task Manager.
-      </p>
-      {/* eslint-enable custom/no-hardcoded-jsx-text */}
-
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={scan}
+            loading={busy}
+            data-testid="fleet-scan-processes"
+          >
+            Scan
+          </Button>
+        </>
+      }
+      description={
+        <>
+          {/* eslint-disable custom/no-hardcoded-jsx-text */}
+          Interactive Claude sessions on this machine. Sessions Fleet still tracks are marked; the rest
+          are orphans (e.g. left running after an app restart) or external. <strong>Resume</strong>{' '}
+          re-adopts the conversation, <strong>Kill</strong> ends it. No more hunting in Task Manager.
+          {/* eslint-enable custom/no-hardcoded-jsx-text */}
+        </>
+      }
+    >
       {visible === null ? (
-        <div className="py-4 flex justify-center">
-          <LoadingSpinner />
+        // Ghost rows under the card's chrome while the first scan runs.
+        <div className="space-y-1" aria-busy="true">
+          {[0, 1].map((i) => (
+            <div key={i} aria-hidden className="h-9 rounded-interactive border border-primary/5 bg-background/40 animate-fade-in" />
+          ))}
         </div>
       ) : visible.length === 0 ? (
         // eslint-disable-next-line custom/no-hardcoded-jsx-text
-        <p className="text-[13px] text-foreground py-2 text-center">No Claude sessions running.</p>
+        <p className="typo-caption py-2 text-center">No Claude sessions running.</p>
       ) : (
         <ul className="space-y-1" data-testid="fleet-process-list">
           {visible.map((p) => (
@@ -181,6 +184,6 @@ export function FleetProcessScanner() {
           onCancel={() => setConfirm(null)}
         />
       )}
-    </div>
+    </FleetSettingsCard>
   );
 }

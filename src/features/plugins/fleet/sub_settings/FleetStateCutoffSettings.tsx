@@ -1,6 +1,9 @@
 import { Clock } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { stateText } from '../sub_grid/fleetStateTone';
+import { FleetSettingsCard } from './FleetSettingsCard';
+import { FleetMinutesField } from './FleetMinutesField';
 
 /**
  * Tunable staleness cutoffs — how long flat logs may sit before a session
@@ -18,48 +21,33 @@ export function FleetStateCutoffSettings() {
   const setStale = useSystemStore((s) => s.fleetSetStaleMinutes);
   const setFrozen = useSystemStore((s) => s.fleetSetFrozenMinutes);
 
-  const inputClass =
-    'w-16 rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 text-[14px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40';
-
   return (
-    <div
-      className="border border-primary/10 rounded-modal px-4 py-4 bg-secondary/20"
+    <FleetSettingsCard
       data-testid="fleet-state-cutoff-settings"
+      icon={<Clock className={`w-4 h-4 ${stateText('stale')}`} />}
+      title={f.state_cutoffs_title}
+      description={f.state_cutoffs_desc}
     >
-      <div className="flex items-center gap-2 mb-1">
-        <Clock className="w-4 h-4 text-orange-400" aria-hidden="true" />
-        <p className="typo-caption text-foreground">{f.state_cutoffs_title}</p>
-      </div>
-      <p className="text-[14px] text-foreground leading-relaxed mb-3 opacity-80">{f.state_cutoffs_desc}</p>
-
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <label className="flex items-center gap-2 text-[14px] text-foreground">
-          {f.state_cutoffs_stale}
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={staleMinutes}
-            onChange={(e) => setStale(Number(e.target.value))}
-            data-testid="fleet-stale-minutes"
-            className={inputClass}
-          />
-          {f.state_cutoffs_minutes_unit}
-        </label>
-        <label className="flex items-center gap-2 text-[14px] text-foreground">
-          {f.state_cutoffs_frozen}
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={frozenMinutes}
-            onChange={(e) => setFrozen(Number(e.target.value))}
-            data-testid="fleet-frozen-minutes"
-            className={inputClass}
-          />
-          {f.state_cutoffs_minutes_unit}
-        </label>
+        <FleetMinutesField
+          label={f.state_cutoffs_stale}
+          unit={f.state_cutoffs_minutes_unit}
+          value={staleMinutes}
+          min={1}
+          max={60}
+          onCommit={setStale}
+          testId="fleet-stale-minutes"
+        />
+        <FleetMinutesField
+          label={f.state_cutoffs_frozen}
+          unit={f.state_cutoffs_minutes_unit}
+          value={frozenMinutes}
+          min={1}
+          max={60}
+          onCommit={setFrozen}
+          testId="fleet-frozen-minutes"
+        />
       </div>
-    </div>
+    </FleetSettingsCard>
   );
 }
