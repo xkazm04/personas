@@ -31,10 +31,14 @@
 //!
 //! ## She never idles, and that is what makes the brakes load-bearing
 //!
-//! With both lanes empty she does not stop: she dispatches `/harvest research`,
-//! the registry's own refill pass, which by its file's design cannot come back
-//! empty-handed. So **nothing in this loop ever reaches a natural resting
-//! point**, and `curator_daily_budget_usd`, `curator_daily_run_cap`,
+//! With both lanes empty she does not stop: she goes to her **standing lane**,
+//! which is two rungs and not one - `/harvest auto` to drain the registry's
+//! source queue, and `/harvest research` to refill it when there is nothing
+//! left to drain. Which rung is a measurement taken from the queue file itself;
+//! the derivation, and the eight consecutive no-op refills that paid for it,
+//! are in [`super::standing`]. So **nothing in this loop reaches a natural
+//! resting point while the queue can be moved at all**, and
+//! `curator_daily_budget_usd`, `curator_daily_run_cap`,
 //! `curator_daily_commit_cap`, `curator_quiet_hours` and
 //! `curator_backpressure_n` are the only things that stop her. They are checked
 //! fresh every tick, together with the master switch, so flipping any of them
@@ -61,11 +65,12 @@ use crate::commands::fleet::queue::{self, DispatchOrigin, DispatchRequest};
 use crate::commands::fleet::registry::is_live_state;
 use crate::commands::fleet::types::{FleetSessionMode, FleetSessionState};
 use crate::db::repos::curator as repo;
-use crate::db::DbPool;
+use crate::db::{settings_keys, DbPool};
 use crate::engine::subscription::ReactiveSubscription;
 use crate::error::AppError;
 
 use super::dispatch::{self, Brief};
+use super::standing::{self, Marks, Rung, Standing};
 use super::{instrument, sleep};
 
 /// Poll cadence while the app is in use.
@@ -198,6 +203,21 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
     };
     let engines = dispatch::claimable_engines(&skills);
     let head = instrument::git_head_short(root).await;
+    // Her standing lane's state, read ONCE per tick from the registry's own
+    // queue file. `None` is "this app could not read it", which dispatches
+    // neither rung: both of them cost real money and the whole point of the
+    // measurement is that a rung is never chosen on a guess. A queue file that
+    // is simply absent is not this case - it reads as an empty lane.
+    let lane = match standing::read(root) {
+        Ok(lane) => Some(lane),
+        Err(err) => {
+            warn_occasionally(&format!(
+                "curator loop: her standing lane could not be measured, so neither of its rungs \
+                 is dispatched - {err}"
+            ));
+            None
+        }
+    };
     let mut runs_today = brakes.runs_today;
 
     while free > 0 {
@@ -211,7 +231,14 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
             break;
         }
         let now = chrono::Utc::now().to_rfc3339();
-        let chosen = match choose_work(pool, &engines, !refill_in_flight(), &now) {
+        // Re-derived per slot, not once per tick: the marks move when a rung is
+        // dispatched and `harvest_in_flight` moves when one is admitted, so two
+        // free slots must not put two writers into the same queue file.
+        let rung = lane
+            .as_ref()
+            .filter(|_| !harvest_in_flight())
+            .and_then(|lane| standing::standing_rung(lane, &read_marks(pool)));
+        let chosen = match choose_work(pool, &engines, rung, &now) {
             Ok(Some(work)) => work,
             Ok(None) => break,
             Err(err) => {
@@ -295,9 +322,10 @@ pub(super) enum Work {
     Queue(CuratorRequest),
     /// Her own plan.
     Plan(CuratorPlanItem),
-    /// The refill pass. Claims nothing, because there is no row to claim -
-    /// the corpus's coverage gaps are the queue.
-    Refill,
+    /// Her standing lane's chosen rung - drain or refill. Claims nothing,
+    /// because there is no row in THIS database to claim: the registry's own
+    /// queue file is the state, and [`super::standing`] measured it.
+    Standing(Standing),
 }
 
 impl Work {
@@ -305,25 +333,35 @@ impl Work {
         match self {
             Work::Queue(_) => curator_lane::QUEUE,
             Work::Plan(_) => curator_lane::PLAN,
-            Work::Refill => curator_lane::REFILL,
+            // ONE lane token for both rungs, deliberately. `curator_dispatch`
+            // records `skill` and `argument` beside it, so `/harvest auto` and
+            // `/harvest research` are already told apart in the audit; a fourth
+            // token would need the table's CHECK rebuilt and a label in
+            // fourteen locales to say something the row already says.
+            Work::Standing(_) => curator_lane::REFILL,
         }
     }
 }
 
-/// **The lane order.** The operator's queue, then her plan, then the refill.
+/// **The lane order.** The operator's queue, then her plan, then her standing
+/// lane - which is itself two rungs, `/harvest auto` before `/harvest
+/// research`.
 ///
 /// Separated from the dispatch so it can be driven against a real database in a
 /// test with no Tauri app: the ordering is the operator's own rule and the only
 /// way to prove it is to seed both lanes and watch which one drains.
 ///
-/// `refill_available` is false while one refill is already in flight. That is
-/// not a fairness rule - it is `harvest`'s own law ("Never let a miner or
-/// research agent write to the tree; single writer, always"): two refill passes
-/// in one checkout would both grade and append to the same queue file.
+/// `standing` arrives already chosen and is `None` when neither rung may run:
+/// one is already in flight, the queue file could not be read, or both rungs
+/// have already been run against exactly these bytes. The in-flight case is not
+/// a fairness rule - it is `harvest`'s own law ("Never let a miner or research
+/// agent write to the tree; single writer, always"): two harvest passes in one
+/// checkout would both write the same queue file, and it makes no difference
+/// that one of them is draining it and the other refilling it.
 pub(super) fn choose_work(
     pool: &DbPool,
     engines: &[CuratorEngine],
-    refill_available: bool,
+    standing: Option<Standing>,
     now: &str,
 ) -> Result<Option<Work>, AppError> {
     if let Some(request) = repo::claim_next_queued(pool, None, now)? {
@@ -332,24 +370,69 @@ pub(super) fn choose_work(
     if let Some(item) = repo::claim_next_plan_item(pool, engines, now)? {
         return Ok(Some(Work::Plan(item)));
     }
-    Ok(refill_available.then_some(Work::Refill))
+    Ok(standing.map(Work::Standing))
 }
 
-/// Whether a refill pass is already running or waiting.
+/// Whether ANY pass of her standing lane is already running or waiting.
+///
+/// Both rungs are matched, because both write `librarian/harvest/queue.md`:
+/// a drain flips row statuses while a refill appends rows, and two writers in
+/// one checkout is the situation harvest's single-writer law exists for.
 ///
 /// Keyed on the dispatched ARGV rather than on a name: the fleet's naming lane
 /// rewrites display names (collision discriminators, project labels), while the
 /// args are exactly what this module put there.
-pub(super) fn refill_in_flight() -> bool {
-    let marker = format!("/{} {}", dispatch::REFILL_SKILL, dispatch::REFILL_ARGUMENT);
+pub(super) fn harvest_in_flight() -> bool {
+    // The invocation is the first line of the prompt and its argument follows a
+    // space - or a newline, when a bare `/harvest` is dispatched. Matching the
+    // bare prefix alone would also match a future `/harvester`, so the next
+    // character has to be one that ENDS the name.
+    let marker = format!("/{}", dispatch::STANDING_SKILL);
+    let is_standing_pass = |arg: &String| {
+        arg.strip_prefix(&marker).is_some_and(|rest| {
+            !rest.starts_with(|c: char| c.is_alphanumeric() || c == '-' || c == '_')
+        })
+    };
     crate::commands::fleet::registry::registry()
         .list_dto()
         .into_iter()
         .any(|s| {
             s.origin.as_deref() == Some(DispatchOrigin::Curator.token())
                 && (matches!(s.state, FleetSessionState::Queued) || is_live_state(s.state))
-                && s.args.iter().any(|a| a.starts_with(&marker))
+                && s.args.iter().any(is_standing_pass)
         })
+}
+
+// ---------------------------------------------------------------------------
+// The standing lane's marks
+// ---------------------------------------------------------------------------
+
+/// The queue fingerprint each rung was last dispatched against.
+///
+/// In `app_settings` rather than a table for the reason
+/// `curator_last_sleep_at` is: there is exactly one Curator and these are two
+/// scalars the loop writes and no person ever sets.
+pub(super) fn read_marks(pool: &DbPool) -> Marks {
+    Marks {
+        drain: super::setting(pool, settings_keys::CURATOR_HARVEST_DRAIN_MARK),
+        refill: super::setting(pool, settings_keys::CURATOR_HARVEST_REFILL_MARK),
+    }
+}
+
+/// The settings key a rung's mark lives under.
+fn mark_key(rung: Rung) -> &'static str {
+    match rung {
+        Rung::Drain => settings_keys::CURATOR_HARVEST_DRAIN_MARK,
+        Rung::Refill => settings_keys::CURATOR_HARVEST_REFILL_MARK,
+    }
+}
+
+/// The argument one rung's invocation takes.
+fn rung_argument(rung: Rung) -> &'static str {
+    match rung {
+        Rung::Drain => dispatch::DRAIN_ARGUMENT,
+        Rung::Refill => dispatch::REFILL_ARGUMENT,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -376,11 +459,12 @@ async fn start(
     let lane = work.lane();
     let now = chrono::Utc::now().to_rfc3339();
 
-    let (skill, argument, note, subject, finding) = match &work {
+    let (skill, argument, note, subject, finding, measurement) = match &work {
         Work::Queue(request) => (
             request.skill.clone(),
             request.argument.clone(),
             request.note.clone(),
+            None,
             None,
             None,
         ),
@@ -408,14 +492,18 @@ async fn start(
                 None,
                 Some(item.subject_id.clone()),
                 item.reasons.first().map(|r| r.detail.clone()),
+                None,
             )
         }
-        Work::Refill => (
-            dispatch::REFILL_SKILL.to_string(),
-            Some(dispatch::REFILL_ARGUMENT.to_string()),
+        // The rung and the count that chose it, both from `standing`. The
+        // measurement travels into the brief so the worker can refute it.
+        Work::Standing(chosen) => (
+            dispatch::STANDING_SKILL.to_string(),
+            Some(rung_argument(chosen.rung).to_string()),
             None,
             None,
             None,
+            Some(chosen.because.clone()),
         ),
     };
 
@@ -424,7 +512,7 @@ async fn start(
     // refuses an undocumented invocation outright.
     let vetted = match &work {
         Work::Queue(_) => super::vet_request(skills, &skill, argument.as_deref()),
-        Work::Plan(_) | Work::Refill => {
+        Work::Plan(_) | Work::Standing(_) => {
             dispatch::vet_autonomous(skills, &skill, argument.as_deref())
         }
     };
@@ -440,6 +528,7 @@ async fn start(
         note: note.as_deref(),
         subject: subject.as_deref(),
         finding: finding.as_deref(),
+        measurement: measurement.as_deref(),
         head,
     });
 
@@ -484,7 +573,7 @@ async fn start(
     let (request_id, plan_item_id) = match &work {
         Work::Queue(request) => (Some(request.id.clone()), None),
         Work::Plan(item) => (None, Some(item.id.clone())),
-        Work::Refill => (None, None),
+        Work::Standing(_) => (None, None),
     };
     repo::record_dispatch(
         pool,
@@ -505,7 +594,26 @@ async fn start(
     match &work {
         Work::Queue(request) => repo::bind_request_session(pool, &request.id, &session_id)?,
         Work::Plan(item) => repo::bind_plan_item_session(pool, &item.id, &session_id)?,
-        Work::Refill => {}
+        // Nothing in this database asked for it, so there is nothing to bind.
+        // What is written instead is the rung's MARK: the queue fingerprint it
+        // was dispatched against, so a pass that leaves the file untouched
+        // cannot be handed the same bytes again on the next tick. Written after
+        // the admission, never before - a rung that failed to start has not
+        // been tried.
+        Work::Standing(chosen) => {
+            if let Err(err) =
+                crate::db::repos::core::settings::set(pool, mark_key(chosen.rung), &chosen.mark)
+            {
+                // Logged and swallowed: a missing mark costs one repeat
+                // dispatch, while a dispatch abandoned after its worker is
+                // already running leaks the session.
+                tracing::warn!(
+                    error = %err,
+                    "curator: her standing rung's mark could not be written, so the same rung \
+                     may be dispatched again against unchanged inputs"
+                );
+            }
+        }
     }
 
     tracing::info!(
@@ -543,8 +651,9 @@ fn settle_unstarted(pool: &DbPool, work: &Work, why: &str, now: &str) -> Result<
                 now,
             )?;
         }
-        // Nothing was claimed, so there is nothing to write back.
-        Work::Refill => {}
+        // Nothing was claimed, so there is nothing to write back - and no mark
+        // either: `start` writes that only after the fleet admits the worker.
+        Work::Standing(_) => {}
     }
     Ok(())
 }
@@ -869,6 +978,17 @@ mod tests {
         run_id
     }
 
+    /// The standing rung a tick would have chosen, for the lane-order tests -
+    /// which are about which LANE wins, not about which rung her standing lane
+    /// picks. That decision is driven whole in `standing`'s own tests.
+    fn a_rung(rung: Rung) -> Option<Standing> {
+        Some(Standing {
+            rung,
+            because: "a measurement taken elsewhere".into(),
+            mark: "fp".into(),
+        })
+    }
+
     fn skill(name: &str, runs_bare: Option<bool>) -> CuratorSkill {
         CuratorSkill {
             name: name.into(),
@@ -888,7 +1008,7 @@ mod tests {
     /// named consequence, so this asserts the starvation rather than a fairness
     /// rule nobody asked for.
     #[test]
-    fn the_human_lane_drains_before_her_plan_and_then_the_refill() {
+    fn the_human_lane_drains_before_her_plan_and_then_the_standing_lane() {
         let pool = init_test_db().unwrap();
         seed_plan(&pool, CuratorEngine::Reconcile, 9, "localization/czech");
         repo::create_request(&pool, "r1", "hygiene", None, Some("first"), &now()).unwrap();
@@ -896,43 +1016,128 @@ mod tests {
         let engines = [CuratorEngine::Reconcile];
 
         // Both operator requests go before the plan item, oldest first, even
-        // though the plan item scores and is ready.
-        match choose_work(&pool, &engines, true, &now()).unwrap() {
+        // though the plan item scores and is ready - and even though her
+        // standing lane has a rung ready the whole time.
+        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Queue(r)) => assert_eq!(r.id, "r1"),
             other => panic!("the oldest request must go first: {:?}", other.is_some()),
         }
-        match choose_work(&pool, &engines, true, &now()).unwrap() {
+        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Queue(r)) => assert_eq!(r.id, "r2"),
             other => panic!("the human lane drains WHOLE: {:?}", other.is_some()),
         }
         // Only now does her own plan get a hearing.
-        match choose_work(&pool, &engines, true, &now()).unwrap() {
+        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
             Some(Work::Plan(item)) => assert_eq!(item.subject_id, "localization/czech"),
             other => panic!("the plan comes after the queue: {:?}", other.is_some()),
         }
-        // And with both lanes drained she does NOT stop.
-        assert!(
-            matches!(
-                choose_work(&pool, &engines, true, &now()).unwrap(),
-                Some(Work::Refill)
+        // And with both lanes drained she does NOT stop - she goes to her
+        // standing lane, whose rung the measurement already chose.
+        match choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap() {
+            Some(Work::Standing(s)) => assert_eq!(s.rung, Rung::Drain),
+            other => panic!(
+                "a drained pair goes to the standing lane: {:?}",
+                other.is_some()
             ),
-            "a drained pair dispatches the refill rather than idling"
-        );
+        }
     }
 
-    /// The refill is the only lane with no row to claim, so it is the only one
-    /// that can repeat. One at a time, for `harvest`'s own single-writer law.
+    /// **The correction, at the lane door.** A drained pair dispatches
+    /// `/harvest auto` - the mode that CONSUMES the queue - and reaches
+    /// `/harvest research` only through the thin-queue gate. It shipped the
+    /// other way round and cost eight no-op passes in one day.
     #[test]
-    fn a_refill_already_in_flight_is_not_started_twice() {
+    fn a_drained_pair_dispatches_the_drain_and_the_refill_only_when_promoted() {
+        let pool = init_test_db().unwrap();
+
+        // Rung 3, against the registry's own file: the queue can furnish a
+        // batch, so the rung is the one that consumes rows.
+        let real = standing::parse_for_test(include_str!("fixtures/harvest-queue.md"), "fp");
+        let chosen = choose_work(
+            &pool,
+            &[],
+            standing::standing_rung(&real, &Marks::default()),
+            &now(),
+        )
+        .unwrap();
+        match chosen {
+            Some(Work::Standing(s)) => {
+                assert_eq!(s.rung, Rung::Drain, "268 queued rows is work to DRAIN");
+                assert_eq!(rung_argument(s.rung), "auto");
+                assert_eq!(mark_key(s.rung), settings_keys::CURATOR_HARVEST_DRAIN_MARK);
+            }
+            other => panic!("expected the drain: {:?}", other.is_some()),
+        }
+
+        // Rung 4: the same lane with nothing left to batch promotes to the
+        // refill, which is the only rung that makes new rows.
+        let emptied = standing::parse_for_test(
+            "## se (1)\n\n| A-1 | 1 | u | t | c | x | y | z | mined: 1c |\n",
+            "fp2",
+        );
+        let chosen = choose_work(
+            &pool,
+            &[],
+            standing::standing_rung(&emptied, &Marks::default()),
+            &now(),
+        )
+        .unwrap();
+        match chosen {
+            Some(Work::Standing(s)) => {
+                assert_eq!(s.rung, Rung::Refill);
+                assert_eq!(rung_argument(s.rung), "research");
+                assert_eq!(mark_key(s.rung), settings_keys::CURATOR_HARVEST_REFILL_MARK);
+            }
+            other => panic!("expected the refill: {:?}", other.is_some()),
+        }
+    }
+
+    /// **The cost brake, at the lane door.** A rung already run against exactly
+    /// these bytes is not offered again, and with both rungs spent the standing
+    /// lane hands back nothing rather than a ninth $0.26 pass.
+    #[test]
+    fn a_rung_that_found_nothing_is_not_redispatched_against_unchanged_inputs() {
+        let pool = init_test_db().unwrap();
+        let real = standing::parse_for_test(include_str!("fixtures/harvest-queue.md"), "88bff378");
+
+        let spent = Marks {
+            drain: Some("88bff378".into()),
+            refill: Some("88bff378".into()),
+        };
+        assert!(
+            choose_work(&pool, &[], standing::standing_rung(&real, &spent), &now())
+                .unwrap()
+                .is_none(),
+            "both rungs have been run at these bytes; another dispatch buys the same nothing"
+        );
+
+        // The operator's own lane is never gated by any of this: a request
+        // filed while both rungs are spent still goes out immediately.
+        repo::create_request(&pool, "r1", "hygiene", None, None, &now()).unwrap();
+        match choose_work(&pool, &[], standing::standing_rung(&real, &spent), &now()).unwrap() {
+            Some(Work::Queue(r)) => assert_eq!(r.id, "r1"),
+            other => panic!("the human lane is never braked: {:?}", other.is_some()),
+        }
+    }
+
+    /// Her standing lane is ONE writer whichever rung it is: a drain and a
+    /// refill both write `queue.md`, so the in-flight check keys on the SKILL
+    /// and not on the argument.
+    #[test]
+    fn a_standing_pass_already_in_flight_is_not_started_twice() {
         let pool = init_test_db().unwrap();
         assert!(matches!(
-            choose_work(&pool, &[], true, &now()).unwrap(),
-            Some(Work::Refill)
+            choose_work(&pool, &[], a_rung(Rung::Drain), &now()).unwrap(),
+            Some(Work::Standing(_))
         ));
         assert!(
-            choose_work(&pool, &[], false, &now()).unwrap().is_none(),
-            "a second refill into the same checkout would race the first's writer"
+            choose_work(&pool, &[], None, &now()).unwrap().is_none(),
+            "a second harvest pass into the same checkout would race the first writer"
         );
+        // Nothing of hers is live in this process, so the predicate finds
+        // nothing - what matters is that ONE predicate now covers both rungs
+        // rather than only `/harvest research`.
+        assert!(!harvest_in_flight());
     }
 
     /// An engine her plan cannot spell is not claimed at all. The item stays
@@ -952,10 +1157,10 @@ mod tests {
         assert!(engines.is_empty());
         assert!(
             matches!(
-                choose_work(&pool, &engines, true, &now()).unwrap(),
-                Some(Work::Refill)
+                choose_work(&pool, &engines, a_rung(Rung::Drain), &now()).unwrap(),
+                Some(Work::Standing(_))
             ),
-            "she goes to the refill rather than guessing a /deepen command"
+            "she goes to her standing lane rather than guessing a /deepen command"
         );
         let plan = repo::current_plan(&pool).unwrap().unwrap();
         assert_eq!(plan.items[0].state, CuratorPlanItemState::Planned);
@@ -998,8 +1203,14 @@ mod tests {
         repo::insert_plan(&pool, &run_id, &run, &items).unwrap();
         assert!(
             matches!(
-                choose_work(&pool, &[CuratorEngine::Reconcile], true, &now()).unwrap(),
-                Some(Work::Refill)
+                choose_work(
+                    &pool,
+                    &[CuratorEngine::Reconcile],
+                    a_rung(Rung::Drain),
+                    &now()
+                )
+                .unwrap(),
+                Some(Work::Standing(_))
             ),
             "settled ground is not re-run"
         );
