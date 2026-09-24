@@ -12,6 +12,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
+import {
+  redirectTarget,
+  shouldAutoRedirect,
+  type PromoteReceipt,
+  type PromoteRedirect,
+} from "@/features/agents/components/matrix/promoteReceipt";
+import { PromoteReceiptCard } from "@/features/agents/components/matrix/PromoteReceiptCard";
 import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
 import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
@@ -171,6 +178,9 @@ export function UnifiedBuildEntry() {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  // What Promote answered (promoteReceipt.ts). `null` = no receipt held, which
+  // keeps today's unconditional timed redirect after `promoted`.
+  const [promoteReceipt, setPromoteReceipt] = useState<PromoteReceipt | null>(null);
   // Slice 4 — picker hydration source. Populated on mount when the build
   // flow is resumed for an existing draft persona, so the messaging picker
   // shows the user's prior selections instead of starting from the
@@ -237,11 +247,12 @@ export function UnifiedBuildEntry() {
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
-  const handleViewPromotedAgent = useCallback(() => {
+  const handleViewPromotedAgent = useCallback((target: PromoteRedirect = { editorTab: 'matrix' }) => {
     const personaId = draftPersonaId;
     if (!personaId) return;
 
     setFadeOut(true);
+    setPromoteReceipt(null);
     setTimeout(() => {
       // Remove process activity
       try {
@@ -265,18 +276,30 @@ export function UnifiedBuildEntry() {
       useAgentStore.getState().selectPersona(personaId);
       useAgentStore.getState().fetchPersonas();
       useSystemStore.getState().setIsCreatingPersona(false);
-      useSystemStore.getState().setEditorTab('matrix');
+      useSystemStore.getState().setEditorTab(target.editorTab);
+      if (target.designSubTab) useSystemStore.getState().setDesignSubTab(target.designSubTab);
     }, 400); // matches fade duration
   }, [draftPersonaId, setIntentText, setDraftPersonaId]);
 
-  // Auto-redirect after promotion
+  // Auto-redirect after promotion -- only a clean promote leaves on a timer.
+  // A held persona (needs_setup) keeps the surface so its receipt can route
+  // the user to the fix.
   const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
   useEffect(() => {
     if (buildPhaseForRedirect !== 'promoted' || !draftPersonaId || fadeOut) return;
+    if (!shouldAutoRedirect(promoteReceipt)) return;
     // Short delay so user sees the "Agent Promoted" success indicator
     const timer = setTimeout(() => handleViewPromotedAgent(), 1500);
     return () => clearTimeout(timer);
-  }, [buildPhaseForRedirect, draftPersonaId, fadeOut, handleViewPromotedAgent]);
+  }, [buildPhaseForRedirect, draftPersonaId, fadeOut, handleViewPromotedAgent, promoteReceipt]);
+
+  // A receipt belongs to one promote attempt: drop it once the build leaves
+  // the promote decision (a re-test, a refine, a fresh build).
+  useEffect(() => {
+    if (buildPhaseForRedirect !== 'test_complete' && buildPhaseForRedirect !== 'promoted') {
+      setPromoteReceipt(null);
+    }
+  }, [buildPhaseForRedirect]);
 
   // -- Build orchestration ------------------------------------------------
 
@@ -350,6 +373,16 @@ export function UnifiedBuildEntry() {
     personaId: draftPersonaId,
     consumeCoreSnapshot,
   });
+
+  // Promote and keep its receipt. `in_flight` (a second click while the first
+  // promote runs) changes nothing on screen; a guard refusal (null) neither.
+  const lastPromoteForceRef = useRef(false);
+  const lifecyclePromote = lifecycle.handlePromote;
+  const handlePromoteWithReceipt = useCallback(async (force: boolean) => {
+    lastPromoteForceRef.current = force;
+    const { receipt } = await lifecyclePromote(force ? { force: true } : undefined);
+    if (receipt && receipt.kind !== 'in_flight') setPromoteReceipt(receipt);
+  }, [lifecyclePromote]);
 
   // -- Auto-test on draft_ready when no pending questions -----------------
   // Saves the user a click: as soon as the LLM has produced a draft and there
@@ -873,8 +906,10 @@ export function UnifiedBuildEntry() {
           hasDesignResult,
           glyphRows,
           onStartTest: lifecycle.handleStartTest,
-          onPromote: () => { void lifecycle.handlePromote(); },
-          onPromoteForce: () => { void lifecycle.handlePromote({ force: true }); },
+          // The double-submit guard lives in useLifecycle (an in-flight ref),
+          // so discarding the promise here cannot let a second click through.
+          onPromote: () => { void handlePromoteWithReceipt(false); },
+          onPromoteForce: () => { void handlePromoteWithReceipt(true); },
           onRejectTest: lifecycle.handleRejectTest,
           onRefine: lifecycle.handleRefine,
           testOutputLines: build.buildTestOutputLines,
@@ -884,7 +919,7 @@ export function UnifiedBuildEntry() {
           testSummary: lifecycle.buildTestSummary,
           cliOutputLines: build.outputLines,
           onQuickConfigChange: handleQuickConfigChange,
-          onViewAgent: handleViewPromotedAgent,
+          onViewAgent: () => handleViewPromotedAgent(redirectTarget(promoteReceipt)),
           buildError: build.buildError,
           initialNotificationChannels: initialNotificationChannels ?? undefined,
           // Persona Core Codex → typed core_profile. Both compose surfaces
@@ -898,6 +933,14 @@ export function UnifiedBuildEntry() {
           layout === "cinema" ? GlyphCinemaLayout : GlyphDialogueCinemaLayout;
         return <LayoutComponent {...layoutProps} />;
       })()}
+
+      <PromoteReceiptCard
+        receipt={promoteReceipt}
+        onConnect={() => handleViewPromotedAgent(redirectTarget(promoteReceipt))}
+        onLater={() => handleViewPromotedAgent({ editorTab: 'matrix' })}
+        onRetry={() => handlePromoteWithReceipt(lastPromoteForceRef.current)}
+        onDismiss={() => setPromoteReceipt(null)}
+      />
 
       {/* Error banner */}
       {(launchError || build.buildError) && (
