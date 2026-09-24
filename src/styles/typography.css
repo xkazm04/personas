@@ -4,7 +4,8 @@
 
    How it works:
    1. [data-lang] on <html> selects the correct font stack
-   2. Semantic .typo-* classes define text roles (hero, heading, body, etc.)
+   2. Semantic .typo-* classes define text roles (hero, heading, body, etc.),
+      in `@layer components`, so a Tailwind utility beside one wins
    3. Font-feature presets (.font-data, .font-code) add OpenType polish
    4. Script-specific tuning adjusts line-height, spacing, and direction
 
@@ -57,122 +58,344 @@ body {
   direction: rtl;
   text-align: right;
 }
+/* -- The token layer ----------------------------------------------------------
+   Every typo-* role lives in `@layer components` (moved 2026-09-24, style
+   unification D6 step 2). Tailwind 4 orders its layers theme, base,
+   components, utilities, so a utility written beside a token now WINS:
+   `typo-body font-semibold` renders 600, `typo-title text-foreground` drops the
+   tint. While this file was unlayered it beat every utility and such a
+   utility was silently dead; scripts/style/codemod-dead-overrides.mjs deleted
+   the dead ones first, so the move itself changed no rendering.
+   Still unlayered on purpose: the language stacks and body rule above,
+   .typo-rtl, .typo-weight-light, the font presets, the hero shine and the
+   JSON line numbers. The unlayered text-scale rules for `.text-xs`, `.text-sm`
+   and `.text-[Npx]` in globals.css still beat both layers. */
+@layer components {
+  /* Script-aware line height adjustments -- complex scripts need more breathing room */
+  [data-lang="zh"] .typo-body,
+  [data-lang="ja"] .typo-body,
+  [data-lang="ko"] .typo-body,
+  [data-lang="hi"] .typo-body,
+  [data-lang="bn"] .typo-body,
+  [data-lang="ar"] .typo-body {
+    line-height: 1.85;
+  }
 
-/* Script-aware line height adjustments -- complex scripts need more breathing room */
-[data-lang="zh"] .typo-body,
-[data-lang="ja"] .typo-body,
-[data-lang="ko"] .typo-body,
-[data-lang="hi"] .typo-body,
-[data-lang="bn"] .typo-body,
-[data-lang="ar"] .typo-body {
-  line-height: 1.85;
-}
+  [data-lang="zh"] .typo-hero,
+  [data-lang="ja"] .typo-hero,
+  [data-lang="ko"] .typo-hero,
+  [data-lang="hi"] .typo-hero,
+  [data-lang="bn"] .typo-hero,
+  [data-lang="ar"] .typo-hero {
+    line-height: 1.3;
+  }
 
-[data-lang="zh"] .typo-hero,
-[data-lang="ja"] .typo-hero,
-[data-lang="ko"] .typo-hero,
-[data-lang="hi"] .typo-hero,
-[data-lang="bn"] .typo-hero,
-[data-lang="ar"] .typo-hero {
-  line-height: 1.3;
-}
+  [data-lang="zh"] .typo-heading,
+  [data-lang="ja"] .typo-heading,
+  [data-lang="ko"] .typo-heading,
+  [data-lang="hi"] .typo-heading,
+  [data-lang="bn"] .typo-heading,
+  [data-lang="ar"] .typo-heading {
+    line-height: 1.45;
+  }
 
-[data-lang="zh"] .typo-heading,
-[data-lang="ja"] .typo-heading,
-[data-lang="ko"] .typo-heading,
-[data-lang="hi"] .typo-heading,
-[data-lang="bn"] .typo-heading,
-[data-lang="ar"] .typo-heading {
-  line-height: 1.45;
-}
+  /* Arabic and CJK take no letter-spacing on labels -- Arabic is cursive (tracking
+     breaks the joins) and CJK glyphs are already on a fixed em grid. Since .typo-label
+     stopped being uppercase + wide-tracked in 2026-08, these are the only remaining
+     script adjustments it needs. */
+  [data-lang="ar"] .typo-label,
+  [data-lang="zh"] .typo-label,
+  [data-lang="ja"] .typo-label,
+  [data-lang="ko"] .typo-label {
+    letter-spacing: 0;
+  }
 
-/* Arabic and CJK take no letter-spacing on labels -- Arabic is cursive (tracking
-   breaks the joins) and CJK glyphs are already on a fixed em grid. Since .typo-label
-   stopped being uppercase + wide-tracked in 2026-08, these are the only remaining
-   script adjustments it needs. */
-[data-lang="ar"] .typo-label,
-[data-lang="zh"] .typo-label,
-[data-lang="ja"] .typo-label,
-[data-lang="ko"] .typo-label {
-  letter-spacing: 0;
-}
+  /* -- Semantic Typography Classes ---------------------------------------------
+     Use these instead of raw Tailwind combos. Each class defines a complete
+     text role: size, weight, line-height, tracking, and features. */
 
-/* -- Semantic Typography Classes ---------------------------------------------
-   Use these instead of raw Tailwind combos. Each class defines a complete
-   text role: size, weight, line-height, tracking, and features. */
+  /* Hero -- main page greeting (e.g. "Good Morning, Alex") */
+  .typo-hero {
+    font-size: 2.25rem;            /* text-4xl */
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Hero -- main page greeting (e.g. "Good Morning, Alex") */
-.typo-hero {
-  font-size: 2.25rem;            /* text-4xl */
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.015em;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
+  /* Heading -- section titles, card headers */
+  .typo-heading {
+    font-size: 0.875rem;           /* text-sm */
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.025em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Heading -- section titles, card headers */
-.typo-heading {
-  font-size: 0.875rem;           /* text-sm */
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 0.025em;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
+  /* Heading large -- page-level headings */
+  .typo-heading-lg {
+    font-size: 1.25rem;            /* text-xl */
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Heading large -- page-level headings */
-.typo-heading-lg {
-  font-size: 1.25rem;            /* text-xl */
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
+  /* Body -- paragraphs, descriptions */
+  .typo-body {
+    font-size: 0.875rem;           /* text-sm */
+    font-weight: 400;
+    line-height: 1.65;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Body -- paragraphs, descriptions */
-.typo-body {
-  font-size: 0.875rem;           /* text-sm */
-  font-weight: 400;
-  line-height: 1.65;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
+  /* Body large -- prominent descriptions, summaries */
+  .typo-body-lg {
+    font-size: 1rem;               /* text-base */
+    font-weight: 400;
+    line-height: 1.7;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Weight modifier -- one step (100) lighter than the body ramp, for row hints
-   that must recede under a .typo-title label. Declared unlayered AFTER the
-   typo-* tokens on purpose: a Tailwind `font-light` utility lives in a cascade
-   layer and cannot beat the unlayered token weight. */
-.typo-weight-light {
-  font-weight: 300;
-}
+  /* Caption -- secondary text, descriptions, timestamps, hints.
+     Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
+     muted to 70% foreground so the title/description pair reads as two
+     distinct tiers. The color lives in @layer base (below) so any explicit
+     text-* utility — status colors, accent chips, badges — still wins.
 
-/* Body large -- prominent descriptions, summaries */
-.typo-body-lg {
-  font-size: 1rem;               /* text-base */
-  font-weight: 400;
-  line-height: 1.7;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
+     WEIGHT IS 400 ON PURPOSE (was 500 until 2026-08-06). Caption and
+     .typo-title share the same 0.875rem size, so at 500-vs-600 the pair
+     differed by one step at identical size and read as two bold lines —
+     the separation was being carried entirely by color, not weight.
+     Secondary prose is the app's default voice: it stays normal so that
+     weight itself means "this matters". Anything that needs emphasis
+     should move up a token (.typo-title / .typo-heading). A font-* utility
+     beside this token now applies (the tokens sit in @layer components,
+     below utilities), so `typo-caption font-semibold` renders 600: it is
+     allowed, but it is a second voice where a token already exists. */
+  .typo-caption {
+    font-size: 0.875rem;           /* text-sm */
+    font-weight: 400;
+    line-height: 1.5;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
 
-/* Caption -- secondary text, descriptions, timestamps, hints.
-   Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
-   muted to 70% foreground so the title/description pair reads as two
-   distinct tiers. The color lives in @layer base (below) so any explicit
-   text-* utility — status colors, accent chips, badges — still wins.
+  /* -- Label -------------------------------------------------------------------
+     The small strong tier: category markers, dividers, badges, chip text,
+     column headers — anything that names a thing in less than a line.
 
-   WEIGHT IS 400 ON PURPOSE (was 500 until 2026-08-06). Caption and
-   .typo-title share the same 0.875rem size, so at 500-vs-600 the pair
-   differed by one step at identical size and read as two bold lines —
-   the separation was being carried entirely by color, not weight.
-   Secondary prose is the app's default voice: it stays normal so that
-   weight itself means "this matters". Anything that needs emphasis
-   should move up a token (.typo-title / .typo-heading), NOT add a
-   font-* utility here: the rules in this file are unlayered and beat
-   Tailwind's @layer utilities, so `typo-caption font-semibold` is
-   silently a no-op. */
-.typo-caption {
-  font-size: 0.875rem;           /* text-sm */
-  font-weight: 400;
-  line-height: 1.5;
-  font-feature-settings: "kern" 1, "liga" 1;
+     READS AS NORMAL TEXT (changed 2026-08-07). It was 700-weight, 0.15em-tracked
+     UPPERCASE with line-height 1, which is display styling, not reading styling:
+     it forced squinting on anything longer than two words, collapsed acronyms and
+     proper nouns into the surrounding shout, and could not wrap (line-height 1
+     overlaps descenders on a second line). It now sits directly below .typo-title
+     on the same recipe — one size smaller, same weight, same near-normal tracking
+     — so a label/title/caption stack reads as three tiers of the SAME voice.
+
+     Size is the only thing separating it from .typo-title; weight is what
+     separates it from .typo-caption. A font-* utility beside it now applies
+     (tokens are layered below utilities), so `typo-label font-bold` renders
+     700; prefer the token that already carries the weight.
+
+     NOT FOR SENTENCES. If the text is a phrase a user reads rather than scans
+     (roughly 6+ words, or anything that wraps), it is secondary prose — use
+     .typo-caption, which is body-sized, normal weight, and muted for exactly
+     that job. `uppercase` is available as an opt-in utility again now that this
+     token no longer sets text-transform, but the house style is sentence case. */
+  .typo-label {
+    font-size: 0.75rem;            /* text-xs */
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Data -- numbers, stats, metrics. Tabular nums for alignment. */
+  .typo-data {
+    font-size: 0.875rem;           /* text-sm */
+    font-weight: 500;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+  }
+
+  /* Data large -- hero metrics, big counters */
+  .typo-data-lg {
+    font-size: 1.5rem;             /* text-2xl */
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+  }
+
+  /* Code -- monospace text, IDs, technical values */
+  .typo-code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;            /* text-xs */
+    font-weight: 400;
+    line-height: 1.5;
+    font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
+  }
+
+  /* -- Theme-Adaptive Card Label -----------------------------------------------
+     Bright and shiny in dark themes, darker/shadowy in light themes.
+     Tokenized for reuse across card grids, nav cards, language cards, etc. */
+
+  .typo-card-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--foreground);
+    text-shadow: 0 0 20px color-mix(in srgb, var(--primary) 30%, transparent),
+                 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+  }
+
+  :root[class*="light"] .typo-card-label,
+  [data-theme*="light"] .typo-card-label {
+    text-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 15%, transparent);
+    color: color-mix(in srgb, var(--foreground) 85%, transparent);
+  }
+
+  /* -- Title -------------------------------------------------------------------
+     Universal title for form-element labels, toggle rows, and list-item
+     headlines. The counterpart of a .typo-caption description: where the
+     caption is muted secondary prose, the title is semibold, slightly
+     tracked, and tinted with the theme primary (same adaptive recipe as
+     .typo-section-title) — so a title + description pair never renders as
+     two near-identical lines. */
+
+  .typo-title {
+    font-size: 0.875rem;           /* text-sm */
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-title,
+  [data-theme*="light"] .typo-title {
+    color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+  }
+
+  /* Title large -- content headlines (e.g. a logged decision's choice). */
+  .typo-title-lg {
+    font-size: 1rem;               /* text-base */
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-title-lg,
+  [data-theme*="light"] .typo-title-lg {
+    color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+  }
+
+  /* -- Section Title -----------------------------------------------------------
+     Section divider labels tinted with the theme's primary color.
+     Dark themes: colored with primary. Light themes: neutral foreground. */
+
+  .typo-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary) 85%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-section-title,
+  [data-theme*="light"] .typo-section-title {
+    color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  }
+
+  /* -- Submodule Header --------------------------------------------------------
+     Prominent section headers used inside agent submodules (Connectors,
+     Use Cases, Settings). Larger than .typo-section-title and tinted more
+     strongly with the theme primary so it reads as a top-level divider.
+     Theme-adaptive: red on red-theme, cyan on default, etc. */
+
+  .typo-submodule-header {
+    font-size: 1.25rem;          /* text-xl */
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    font-feature-settings: "kern" 1, "liga" 1;
+    color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
+  }
+
+  :root[class*="light"] .typo-submodule-header,
+  [data-theme*="light"] .typo-submodule-header {
+    color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+  }
+
+  /* -- Text Scale Integration --------------------------------------------------
+     Hooks into the data-text-scale system in globals.css.
+     All semantic classes scale proportionally across four tiers. */
+
+  /* Compact — dense power-user view */
+  [data-text-scale="compact"] .typo-hero       { font-size: 2rem; }
+  [data-text-scale="compact"] .typo-heading-lg { font-size: 1.125rem; }
+  [data-text-scale="compact"] .typo-heading    { font-size: 0.8125rem; }
+  [data-text-scale="compact"] .typo-body       { font-size: 0.8125rem; }
+  [data-text-scale="compact"] .typo-body-lg    { font-size: 0.9375rem; }
+  [data-text-scale="compact"] .typo-title      { font-size: 0.8125rem; }
+  [data-text-scale="compact"] .typo-title-lg   { font-size: 0.9375rem; }
+  [data-text-scale="compact"] .typo-caption    { font-size: 0.8125rem; }
+  [data-text-scale="compact"] .typo-label      { font-size: 0.6875rem; }
+  [data-text-scale="compact"] .typo-data       { font-size: 0.8125rem; }
+  [data-text-scale="compact"] .typo-data-lg    { font-size: 1.375rem; }
+  [data-text-scale="compact"] .typo-code       { font-size: 0.6875rem; }
+
+  /* Default — baseline (no overrides needed for base sizes, only for
+     classes whose authored size assumes 16px root; at 14px root these
+     need a small nudge to stay visually correct) */
+
+  /* Large — comfortable reading */
+  [data-text-scale="large"] .typo-hero       { font-size: 2.5rem; }
+  [data-text-scale="large"] .typo-heading-lg { font-size: 1.375rem; }
+  [data-text-scale="large"] .typo-heading    { font-size: 0.9375rem; }
+  [data-text-scale="large"] .typo-body       { font-size: 0.9375rem; }
+  [data-text-scale="large"] .typo-body-lg    { font-size: 1.0625rem; }
+  [data-text-scale="large"] .typo-title      { font-size: 0.9375rem; }
+  [data-text-scale="large"] .typo-title-lg   { font-size: 1.0625rem; }
+  [data-text-scale="large"] .typo-caption    { font-size: 0.9375rem; }
+  [data-text-scale="large"] .typo-label      { font-size: 0.8rem; }
+  [data-text-scale="large"] .typo-data       { font-size: 0.9375rem; }
+  [data-text-scale="large"] .typo-data-lg    { font-size: 1.625rem; }
+  [data-text-scale="large"] .typo-code       { font-size: 0.8rem; }
+
+  /* Larger — maximum readability / accessibility */
+  [data-text-scale="larger"] .typo-hero       { font-size: 2.75rem; }
+  [data-text-scale="larger"] .typo-heading-lg { font-size: 1.5rem; }
+  [data-text-scale="larger"] .typo-heading    { font-size: 1rem; }
+  [data-text-scale="larger"] .typo-body       { font-size: 1rem; }
+  [data-text-scale="larger"] .typo-body-lg    { font-size: 1.125rem; }
+  [data-text-scale="larger"] .typo-title      { font-size: 1rem; }
+  [data-text-scale="larger"] .typo-title-lg   { font-size: 1.125rem; }
+  [data-text-scale="larger"] .typo-caption    { font-size: 1rem; }
+  [data-text-scale="larger"] .typo-label      { font-size: 0.85rem; }
+  [data-text-scale="larger"] .typo-data       { font-size: 1rem; }
+  [data-text-scale="larger"] .typo-data-lg    { font-size: 1.75rem; }
+  [data-text-scale="larger"] .typo-code       { font-size: 0.85rem; }
+
+  /* XL — maximum readability */
+  [data-text-scale="xl"] .typo-hero       { font-size: 3rem; }
+  [data-text-scale="xl"] .typo-heading-lg { font-size: 1.625rem; }
+  [data-text-scale="xl"] .typo-heading    { font-size: 1.0625rem; }
+  [data-text-scale="xl"] .typo-body       { font-size: 1.0625rem; }
+  [data-text-scale="xl"] .typo-body-lg    { font-size: 1.1875rem; }
+  [data-text-scale="xl"] .typo-title      { font-size: 1.0625rem; }
+  [data-text-scale="xl"] .typo-title-lg   { font-size: 1.1875rem; }
+  [data-text-scale="xl"] .typo-caption    { font-size: 0.9375rem; }
+  [data-text-scale="xl"] .typo-label      { font-size: 0.9rem; }
+  [data-text-scale="xl"] .typo-data       { font-size: 1.0625rem; }
+  [data-text-scale="xl"] .typo-data-lg    { font-size: 1.875rem; }
+  [data-text-scale="xl"] .typo-code       { font-size: 0.9rem; }
 }
 
 @layer base {
@@ -181,61 +404,12 @@ body {
   }
 }
 
-/* -- Label -------------------------------------------------------------------
-   The small strong tier: category markers, dividers, badges, chip text,
-   column headers — anything that names a thing in less than a line.
-
-   READS AS NORMAL TEXT (changed 2026-08-07). It was 700-weight, 0.15em-tracked
-   UPPERCASE with line-height 1, which is display styling, not reading styling:
-   it forced squinting on anything longer than two words, collapsed acronyms and
-   proper nouns into the surrounding shout, and could not wrap (line-height 1
-   overlaps descenders on a second line). It now sits directly below .typo-title
-   on the same recipe — one size smaller, same weight, same near-normal tracking
-   — so a label/title/caption stack reads as three tiers of the SAME voice.
-
-   Size is the only thing separating it from .typo-title; weight is what
-   separates it from .typo-caption. Do not add font-* utilities here: the rules
-   in this file are unlayered and beat Tailwind's @layer utilities, so
-   `typo-label font-bold` is silently a no-op.
-
-   NOT FOR SENTENCES. If the text is a phrase a user reads rather than scans
-   (roughly 6+ words, or anything that wraps), it is secondary prose — use
-   .typo-caption, which is body-sized, normal weight, and muted for exactly
-   that job. `uppercase` is available as an opt-in utility again now that this
-   token no longer sets text-transform, but the house style is sentence case. */
-.typo-label {
-  font-size: 0.75rem;            /* text-xs */
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
-
-/* Data -- numbers, stats, metrics. Tabular nums for alignment. */
-.typo-data {
-  font-size: 0.875rem;           /* text-sm */
-  font-weight: 500;
-  line-height: 1.4;
-  font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
-}
-
-/* Data large -- hero metrics, big counters */
-.typo-data-lg {
-  font-size: 1.5rem;             /* text-2xl */
-  font-weight: 700;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
-}
-
-/* Code -- monospace text, IDs, technical values */
-.typo-code {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;            /* text-xs */
-  font-weight: 400;
-  line-height: 1.5;
-  font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
+/* Weight modifier -- one step (100) lighter than the body ramp, for row hints
+   that must recede under a .typo-title label. Kept UNLAYERED on purpose when
+   the tokens moved into @layer components: it beat the token weight and any
+   font-* utility before the move and still does, so no call site changed. */
+.typo-weight-light {
+  font-weight: 300;
 }
 
 /* -- Font Feature Presets ----------------------------------------------------
@@ -257,102 +431,6 @@ body {
 /* Display -- ligatures + kerning for large decorative text */
 .font-display {
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
-}
-
-/* -- Theme-Adaptive Card Label -----------------------------------------------
-   Bright and shiny in dark themes, darker/shadowy in light themes.
-   Tokenized for reuse across card grids, nav cards, language cards, etc. */
-
-.typo-card-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-  font-feature-settings: "kern" 1, "liga" 1;
-  color: var(--foreground);
-  text-shadow: 0 0 20px color-mix(in srgb, var(--primary) 30%, transparent),
-               0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
-}
-
-:root[class*="light"] .typo-card-label,
-[data-theme*="light"] .typo-card-label {
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 15%, transparent);
-  color: color-mix(in srgb, var(--foreground) 85%, transparent);
-}
-
-/* -- Title -------------------------------------------------------------------
-   Universal title for form-element labels, toggle rows, and list-item
-   headlines. The counterpart of a .typo-caption description: where the
-   caption is muted secondary prose, the title is semibold, slightly
-   tracked, and tinted with the theme primary (same adaptive recipe as
-   .typo-section-title) — so a title + description pair never renders as
-   two near-identical lines. */
-
-.typo-title {
-  font-size: 0.875rem;           /* text-sm */
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.015em;
-  font-feature-settings: "kern" 1, "liga" 1;
-  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
-}
-
-:root[class*="light"] .typo-title,
-[data-theme*="light"] .typo-title {
-  color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
-}
-
-/* Title large -- content headlines (e.g. a logged decision's choice). */
-.typo-title-lg {
-  font-size: 1rem;               /* text-base */
-  font-weight: 600;
-  line-height: 1.45;
-  letter-spacing: 0.005em;
-  font-feature-settings: "kern" 1, "liga" 1;
-  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
-}
-
-:root[class*="light"] .typo-title-lg,
-[data-theme*="light"] .typo-title-lg {
-  color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
-}
-
-/* -- Section Title -----------------------------------------------------------
-   Section divider labels tinted with the theme's primary color.
-   Dark themes: colored with primary. Light themes: neutral foreground. */
-
-.typo-section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  font-feature-settings: "kern" 1, "liga" 1;
-  color: color-mix(in srgb, var(--primary) 85%, var(--foreground));
-}
-
-:root[class*="light"] .typo-section-title,
-[data-theme*="light"] .typo-section-title {
-  color: color-mix(in srgb, var(--foreground) 80%, transparent);
-}
-
-/* -- Submodule Header --------------------------------------------------------
-   Prominent section headers used inside agent submodules (Connectors,
-   Use Cases, Settings). Larger than .typo-section-title and tinted more
-   strongly with the theme primary so it reads as a top-level divider.
-   Theme-adaptive: red on red-theme, cyan on default, etc. */
-
-.typo-submodule-header {
-  font-size: 1.25rem;          /* text-xl */
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.005em;
-  font-feature-settings: "kern" 1, "liga" 1;
-  color: color-mix(in srgb, var(--primary) 90%, var(--foreground));
-}
-
-:root[class*="light"] .typo-submodule-header,
-[data-theme*="light"] .typo-submodule-header {
-  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
 }
 
 /* -- Hero Greeting Shine -----------------------------------------------------
@@ -392,70 +470,6 @@ body {
   font-feature-settings: "smcp" 1, "kern" 1;
   text-transform: lowercase; /* smcp works on lowercase letters */
 }
-
-/* -- Text Scale Integration --------------------------------------------------
-   Hooks into the data-text-scale system in globals.css.
-   All semantic classes scale proportionally across four tiers. */
-
-/* Compact — dense power-user view */
-[data-text-scale="compact"] .typo-hero       { font-size: 2rem; }
-[data-text-scale="compact"] .typo-heading-lg { font-size: 1.125rem; }
-[data-text-scale="compact"] .typo-heading    { font-size: 0.8125rem; }
-[data-text-scale="compact"] .typo-body       { font-size: 0.8125rem; }
-[data-text-scale="compact"] .typo-body-lg    { font-size: 0.9375rem; }
-[data-text-scale="compact"] .typo-title      { font-size: 0.8125rem; }
-[data-text-scale="compact"] .typo-title-lg   { font-size: 0.9375rem; }
-[data-text-scale="compact"] .typo-caption    { font-size: 0.8125rem; }
-[data-text-scale="compact"] .typo-label      { font-size: 0.6875rem; }
-[data-text-scale="compact"] .typo-data       { font-size: 0.8125rem; }
-[data-text-scale="compact"] .typo-data-lg    { font-size: 1.375rem; }
-[data-text-scale="compact"] .typo-code       { font-size: 0.6875rem; }
-
-/* Default — baseline (no overrides needed for base sizes, only for
-   classes whose authored size assumes 16px root; at 14px root these
-   need a small nudge to stay visually correct) */
-
-/* Large — comfortable reading */
-[data-text-scale="large"] .typo-hero       { font-size: 2.5rem; }
-[data-text-scale="large"] .typo-heading-lg { font-size: 1.375rem; }
-[data-text-scale="large"] .typo-heading    { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-body       { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-body-lg    { font-size: 1.0625rem; }
-[data-text-scale="large"] .typo-title      { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-title-lg   { font-size: 1.0625rem; }
-[data-text-scale="large"] .typo-caption    { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-label      { font-size: 0.8rem; }
-[data-text-scale="large"] .typo-data       { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-data-lg    { font-size: 1.625rem; }
-[data-text-scale="large"] .typo-code       { font-size: 0.8rem; }
-
-/* Larger — maximum readability / accessibility */
-[data-text-scale="larger"] .typo-hero       { font-size: 2.75rem; }
-[data-text-scale="larger"] .typo-heading-lg { font-size: 1.5rem; }
-[data-text-scale="larger"] .typo-heading    { font-size: 1rem; }
-[data-text-scale="larger"] .typo-body       { font-size: 1rem; }
-[data-text-scale="larger"] .typo-body-lg    { font-size: 1.125rem; }
-[data-text-scale="larger"] .typo-title      { font-size: 1rem; }
-[data-text-scale="larger"] .typo-title-lg   { font-size: 1.125rem; }
-[data-text-scale="larger"] .typo-caption    { font-size: 1rem; }
-[data-text-scale="larger"] .typo-label      { font-size: 0.85rem; }
-[data-text-scale="larger"] .typo-data       { font-size: 1rem; }
-[data-text-scale="larger"] .typo-data-lg    { font-size: 1.75rem; }
-[data-text-scale="larger"] .typo-code       { font-size: 0.85rem; }
-
-/* XL — maximum readability */
-[data-text-scale="xl"] .typo-hero       { font-size: 3rem; }
-[data-text-scale="xl"] .typo-heading-lg { font-size: 1.625rem; }
-[data-text-scale="xl"] .typo-heading    { font-size: 1.0625rem; }
-[data-text-scale="xl"] .typo-body       { font-size: 1.0625rem; }
-[data-text-scale="xl"] .typo-body-lg    { font-size: 1.1875rem; }
-[data-text-scale="xl"] .typo-title      { font-size: 1.0625rem; }
-[data-text-scale="xl"] .typo-title-lg   { font-size: 1.1875rem; }
-[data-text-scale="xl"] .typo-caption    { font-size: 0.9375rem; }
-[data-text-scale="xl"] .typo-label      { font-size: 0.9rem; }
-[data-text-scale="xl"] .typo-data       { font-size: 1.0625rem; }
-[data-text-scale="xl"] .typo-data-lg    { font-size: 1.875rem; }
-[data-text-scale="xl"] .typo-code       { font-size: 0.9rem; }
 
 /* -- JSON Viewer Line Numbers -----------------------------------------------
    CSS-counter-based line numbers for HighlightedJson. */
