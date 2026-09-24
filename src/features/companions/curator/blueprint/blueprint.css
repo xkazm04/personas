@@ -384,7 +384,15 @@
   color: var(--muted-dark);
   white-space: nowrap;
 }
-.cb-root .cb-chh {
+/* `button.cb-chh`, not `.cb-chh`: the reset above is `.cb-root
+   button:not(.cb-keep)` at specificity 0-2-1, and a column head IS a button,
+   so a plain `.cb-root .cb-chh` at 0-2-0 loses to it and this rule's padding
+   and left rule are silently dead. That happened: the reset gained
+   `:not(.cb-keep)` in dc779f097 (so an AsyncButton could keep its own skin)
+   AFTER the style contract had been verified at zero, and it took four roles
+   with it unnoticed. Matching the reset's specificity and winning on source
+   order is the fix; raising it further would only move the next collision. */
+.cb-root button.cb-chh {
   grid-row: 2;
   padding: 4px 3px 6px;
   display: flex;
