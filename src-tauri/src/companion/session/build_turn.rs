@@ -66,7 +66,7 @@ Before marking a phase done, go through the ACTUAL app, not your memory of it, a
 # Rules
 - Edit files directly with your tools; keep the change scoped to the request.
 - The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
-- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
+- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. Progress updates and questions stay this brief in every voice; only explanations of a concept or of an idea you propose may run longer, and only when the Voice section below asks for them. The user watches the live preview, so don't paste large diffs."#;
 
 /// The part of the build prompt that is the same for every project and every
 /// turn: the engine's role, the doctrine and the planning rules. It comes
@@ -102,7 +102,7 @@ pub(super) fn build_system_prompt(project_path: &std::path::Path, style: Option<
     // Optional user-chosen voice (the C4 style picker). Balanced / None = default.
     let voice = match style {
         Some("concise") => "\n\n# Voice\nKeep replies terse — one-sentence summaries, minimal explanation. The user watches the live preview, so show rather than tell.",
-        Some("teaching") => "\n\n# Voice\nBriefly explain your key choices in plain language as you go, so a non-technical user learns what's happening — keep it skimmable, never a lecture.",
+        Some("teaching") => "\n\n# Voice\nThe owner may be new to building websites. Keep progress updates and questions as brief as always. When you introduce a concept they may not know (a route, a component, a database, responsive layout) or propose an idea, explain it in plain words: what it is and why it helps their site, in a few sentences, with no jargon. Never a lecture.",
         _ => "",
     };
     format!("{}{project}{voice}", STATIC_HEAD.as_str())
@@ -289,5 +289,21 @@ mod tests {
         assert!(!STATIC_HEAD.contains("bakery"));
         assert!(a.ends_with("You are working in the web project at C:/sites/bakery."));
         assert!(STATIC_HEAD.len() > 20_000, "the doctrine is in the head");
+    }
+
+    // Voice layers refine the length rule, never contradict it: progress and
+    // questions stay brief in every voice, and only Teaching opens room to
+    // explain concepts and proposed ideas (owner triage, 2026-09-24).
+    #[test]
+    fn voices_refine_the_length_rule_instead_of_contradicting_it() {
+        let teaching = build_system_prompt(std::path::Path::new("C:/sites/a"), Some("teaching"));
+        let balanced = build_system_prompt(std::path::Path::new("C:/sites/a"), None);
+        assert!(
+            STATIC_HEAD.contains("Progress updates and questions stay this brief in every voice")
+        );
+        let voice = teaching.rsplit("# Voice").next().unwrap_or_default();
+        assert!(voice.contains("progress updates and questions as brief as always"));
+        assert!(voice.contains("explain it in plain words"));
+        assert!(!balanced.contains("# Voice"));
     }
 }
