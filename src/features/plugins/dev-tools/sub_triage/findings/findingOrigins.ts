@@ -33,10 +33,15 @@ const ORIGIN_META: Record<
     icon: AlertTriangle,
     tw: 'bg-red-500/10 text-red-300 border-red-500/25',
   },
+  // Pink, not emerald (operator, Gate 2): an off-track KPI is bad news and must not
+  // wear the success hue. Pink clears CIEDE2000 10 against the other ten sensor
+  // hues in dark (nearest rose, 10.5) and light (rose, 12.4) and sits 21.5 from
+  // every status. A raw step like its ten siblings, not role-human: the role
+  // would claim "a person did this", which a KPI finding does not mean.
   kpi_offtrack: {
     labelKey: 'origin_kpi_offtrack',
     icon: Activity,
-    tw: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
+    tw: 'bg-pink-500/10 text-pink-300 border-pink-500/25',
   },
   skill_dormant: {
     labelKey: 'origin_skill_dormant',

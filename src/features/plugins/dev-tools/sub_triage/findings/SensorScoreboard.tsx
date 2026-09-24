@@ -45,6 +45,13 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
   const ideas = useSystemStore((s) => s.ideas);
   const originLabel = useOriginLabel();
   const stats = useMemo(() => computeSensorStats(ideas), [ideas]);
+  // Sensors with nothing judged yet would each fill a row of dots (Gate 2: the
+  // board pushed the Backlog table off screen). Two or more share ONE row: their
+  // names in the Sensor cell, their total in Raised, nothing to verify yet.
+  const judged = stats.filter((s) => s.verdicted > 0);
+  const unjudged = stats.filter((s) => s.verdicted === 0);
+  const grouped = unjudged.length >= 2;
+  const rows = grouped ? judged : stats;
   const lastSweep = useLastSweep(projectId);
   const skipped = lastSweep?.skippedSensors ?? [];
 
@@ -72,14 +79,15 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
         <thead>
           <tr className="text-left">
             {['Sensor', 'Raised', 'Shipped', 'Cleared', 'Moved', 'Unchanged', 'Regressed', 'Verify'].map((h) => (
-              <th key={h} className="px-3 py-1.5 typo-label text-foreground">
+              // style-deviation: the operator asked the heads dimmed again at Gate 2. 70% is the doctrine's one muting level (typo-caption's ink) at label size; the old 45% sat on the light-theme legibility floor (census illegible-foreground-alpha). No token pairs label size with the muting.
+              <th key={h} className={`px-3 py-1.5 typo-label text-foreground/70 ${h === 'Sensor' ? 'w-1/4' : ''}`}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-primary/5">
-          {stats.map((s) => {
+          {rows.map((s) => {
             const meta = originMeta(s.origin);
             const Icon = meta?.icon;
             const noisy = isNoisySensor(s);
@@ -114,9 +122,36 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
               </tr>
             );
           })}
+          {grouped && <UnjudgedRow stats={unjudged} label={originLabel} />}
         </tbody>
       </table>
       )}
     </div>
+  );
+}
+
+/** The sensors nothing of which has shipped and been judged: one row, not one row each. */
+function UnjudgedRow({ stats, label }: { stats: SensorStats[]; label: (origin: string) => string }) {
+  const raised = stats.reduce((n, s) => n + s.raised, 0);
+  return (
+    <tr className="hover:bg-primary/2" data-testid="sensor-scoreboard-unjudged">
+      <td className="px-3 py-1.5">
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {stats.map((s) => {
+            const Icon = originMeta(s.origin)?.icon;
+            return (
+              <span key={s.origin} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                {Icon && <Icon className="w-3 h-3 text-foreground" aria-hidden />}
+                <span className="typo-caption text-foreground">{label(s.origin)}</span>
+              </span>
+            );
+          })}
+        </span>
+      </td>
+      <td className="px-3 py-1.5 typo-caption tabular-nums">{raised}</td>
+      <td className="px-3 py-1.5 typo-caption tabular-nums">0</td>
+      <td className="px-3 py-1.5 typo-caption" colSpan={4} />
+      <td className="px-3 py-1.5 typo-caption">—</td>
+    </tr>
   );
 }
