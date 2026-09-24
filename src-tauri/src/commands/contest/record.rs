@@ -94,6 +94,8 @@ pub fn build_record(who: &SeatIdentity, end: &RunEnd, finished: String) -> (Seat
     let mut exit = end.exit;
     // The app's own diagnosis, appended after classification.
     let mut app_note: Option<String> = None;
+    // Stderr / fleet text for a silent crash, appended after classification.
+    let mut evidence: Vec<String> = Vec::new();
     match cap {
         None => {
             if end.finished_without_capture {
@@ -111,18 +113,21 @@ pub fn build_record(who: &SeatIdentity, end: &RunEnd, finished: String) -> (Seat
             }
         }
         Some(c) => {
-            // A run that died without saying why: its stderr is the evidence.
+            // A run that died without saying why: its stderr (else the
+            // fleet's state reason) is the evidence. Recorded, NOT
+            // classified: the non-zero exit already makes it `errored`, and
+            // this text is the app's capture, not the engine's error envelope.
             if errors.is_empty() && exit != Some(0) && !end.timed_out {
-                errors.extend(
+                evidence.extend(
                     c.stderr_tail
                         .iter()
                         .map(|l| l.trim())
                         .filter(|l| !l.is_empty())
                         .map(|l| l.chars().take(300).collect::<String>()),
                 );
-                if errors.is_empty() {
+                if evidence.is_empty() {
                     if let Some(r) = end.state_reason.as_deref().filter(|r| !r.trim().is_empty()) {
-                        errors.push(r.trim().chars().take(300).collect());
+                        evidence.push(r.trim().chars().take(300).collect());
                     }
                 }
             }
@@ -135,6 +140,7 @@ pub fn build_record(who: &SeatIdentity, end: &RunEnd, finished: String) -> (Seat
         Some(_) => OUTCOME_ERRORED,
         None => classify_outcome(&errors, exit, end.timed_out),
     };
+    errors.extend(evidence);
     errors.extend(app_note);
     let wall_s = end.wall_s.or_else(|| {
         cap.and_then(|c| c.duration_ms)
@@ -284,6 +290,37 @@ mod tests {
         let (rec, _) = build_record(&who(), &end, "t".into());
         assert_eq!(rec.outcome, OUTCOME_COMPLETED);
         assert_eq!(rec.exit, Some(0));
+    }
+
+    /// The app's own text (the fleet's state reason, stderr) is evidence, never
+    /// classifier input: a crash whose reason mentions a "seat" is `errored`.
+    #[test]
+    fn app_written_evidence_never_reaches_the_classifier() {
+        for (stderr, reason) in [
+            (
+                vec![],
+                "Exited with code 1 - claude said: the seat process crashed",
+            ),
+            (
+                vec!["panic in seat worker".to_string()],
+                "Exited with code 1",
+            ),
+        ] {
+            let end = RunEnd {
+                capture: Some({
+                    let mut c = SeatCapture::default();
+                    c.engine = "claude".into();
+                    c.stderr_tail = stderr.clone();
+                    c
+                }),
+                exit: Some(1),
+                state_reason: Some(reason.into()),
+                ..RunEnd::default()
+            };
+            let (rec, _) = build_record(&who(), &end, "t".into());
+            assert_eq!(rec.outcome, OUTCOME_ERRORED, "stderr {stderr:?}");
+            assert!(!rec.errors.is_empty(), "the evidence is still recorded");
+        }
     }
 
     #[test]
