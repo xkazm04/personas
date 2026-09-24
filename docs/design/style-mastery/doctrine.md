@@ -61,6 +61,16 @@ the title tint and the card-label glow, the rule for every module is:
    `// style-deviation: <why>`, naming the gate that kept it.
 6. **Show the page the operator will look at.** Shots include one tall viewport
    (1440x3200) so the lower half of a surface is judged too.
+7. **The headline of a module is what the surface visibly does, not its token
+   count** (Gate 2). A pass that took `sub_triage` from divergence 7.27 to 0.59 was
+   judged "almost non-existent"; the defects the operator saw were layout and data
+   fit: a table body stretched to the viewport with the pager far below the rows,
+   time cells wrapping, one cell cramming title, badge and a description that repeats
+   the title. So every module starts by LOOKING at the integrated page for overflow,
+   wrapping, dead space, crammed cells and redundant columns, and fixes those first,
+   at the shared component when the defect lives there. Token conversion is the floor
+   every module meets, never the deliverable. The unit of work is the surface the user
+   sees, not the source directory.
 
 ## 1. Type roles
 
