@@ -22,6 +22,7 @@ import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { PendingPairingView } from '@/lib/bindings/PendingPairingView';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { KbExtractionProgress } from '@/lib/bindings/KbExtractionProgress';
+import type { ContestChangedPayload } from '@/lib/bindings/ContestChangedPayload';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
@@ -316,6 +317,9 @@ export const EventName = {
   FLEET_SESSION_EXITED: 'fleet-session-exited',
   FLEET_REGISTRY_CHANGED: 'fleet-registry-changed',
   FLEET_QUEUE_CHANGED: 'fleet-queue-changed',
+
+  // Contest plugin: a seat changed state or an autopilot chain step moved.
+  CONTEST_CHANGED: 'contest-changed',
 
   // Companion / MCP bridges and plugin surfaces (see events.rs for why these
   // were off-registry until the call-site scan).
@@ -1195,6 +1199,9 @@ export interface EventPayloadMap {
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
   // Rust: personas_core::events::QueueChangedPayload (camelCase) — see src/lib/bindings/QueueChangedPayload.ts.
   [EventName.FLEET_QUEUE_CHANGED]: { kind: 'enqueued' | 'promoted' | 'reordered' | 'cancelled' | 'cap_changed'; sessionId: string | null };
+
+  // Contest plugin. Rust: commands::contest::types::ContestChangedPayload (camelCase).
+  [EventName.CONTEST_CHANGED]: ContestChangedPayload;
 
   // Companion / MCP bridges and plugin surfaces. The MCP notice shape is the
   // bridge's own `RawRequestNotice`, stated here so the registry is the one

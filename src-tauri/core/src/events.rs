@@ -360,6 +360,11 @@ event_names! {
     // cancelled, or the live-session cap changed. Payload: `QueueChangedPayload`.
     FLEET_QUEUE_CHANGED        => "fleet-queue-changed",
 
+    // Contest plugin: a seat changed state or an autopilot chain step moved.
+    // Payload: `commands::contest::types::ContestChangedPayload`
+    // (`{ projectId, contestId }`).
+    CONTEST_CHANGED            => "contest-changed",
+
     // Companion / MCP bridges and plugin surfaces. These names lived as private
     // consts or literals beside their emitters, so the two registry lists agreed
     // while the app subscribed to names in neither; the call-site scan in

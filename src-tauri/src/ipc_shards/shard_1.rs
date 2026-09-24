@@ -228,5 +228,18 @@ pub(super) fn shard(
         commands::credentials::intelligence::credential_usage_stats,
         commands::credentials::intelligence::credential_dependents,
         commands::credentials::intelligence::credential_dependents_all,
+        // Contest -- the in-app home of the /contest method
+        commands::contest::contest_list,
+        commands::contest::contest_get,
+        commands::contest::contest_create,
+        commands::contest::contest_launch,
+        commands::contest::contest_cancel,
+        commands::contest::contest_save_review,
+        commands::contest::contest_decide,
+        commands::contest::contest_run_step,
+        commands::contest::contest_environment,
+        commands::contest::contest_lineups_get,
+        commands::contest::contest_lineups_set,
+        commands::contest::contest_draft_brief,
     ])
 }
