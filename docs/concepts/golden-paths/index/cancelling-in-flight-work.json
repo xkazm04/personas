@@ -20,6 +20,15 @@
     "\"Delete this thing while a scan is writing to it\""
   ],
   "citations": {
+    "CompetitionCard.tsx": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["140-152","140","145"],
+      "contexts": [
+        "- **Optimistic UI that toasts success before the call.** `CompetitionCard.tsx:140-152` sets `optimisticCancelled`, calls `processEnded(...)`, fires a **success toast**, and refreshes — *then* calls `…"
+      ],
+      "resolved": false
+    },
     "artist/ffmpeg.rs": {"count":1,"sections":[9],"lines":["950"],"contexts":["(`run_claude_cli`, the shared one-shot helper), `artist/ffmpeg.rs:950` (the marquee —"],"resolved":false},
     "artist/mod.rs": {
       "count": 2,
@@ -657,16 +666,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "useUseCases.ts"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["140-152","140","145"],
-      "contexts": [
-        "- **Optimistic UI that toasts success before the call.** `CompetitionCard.tsx:140-152` sets `optimisticCancelled`, calls `processEnded(...)`, fires a **success toast**, and refreshes — *then* calls `…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionCard.tsx"
     },
     "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx": {
       "count": 2,

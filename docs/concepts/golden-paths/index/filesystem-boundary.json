@@ -150,14 +150,6 @@
       "lines": ["335","31","154","276","160-173","68","122","1-6"],
       "contexts": ["- **`src-tauri/engine/src/path_safety.rs:335` — `validate_file_access_path(path, allowed_extensions)`.**"]
     },
-    "src-tauri/engine/src/worktree_settings.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["104"],
-      "contexts": ["`claude_md_projection.rs:198`, `cli_mcp_config.rs:319`, `worktree_settings.rs:104`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "worktree_settings.rs"
-    },
     "src-tauri/src/": {"count":1,"sections":[6],"contexts":["**Adoption.** 1,673 `#[tauri::command]` definitions, all in `src-tauri/src/`. **71"],"resolved":false,"isDir":true},
     "src-tauri/src/**/*.rs": {"count":1,"sections":[9],"contexts":["`src-tauri/src/**/*.rs`, parse every `#[tauri::command]` signature, and for each with"],"resolved":false},
     "src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs": {
@@ -434,6 +426,7 @@
     "vector_kb.rs": {"count":2,"sections":[7],"lines":["557-567","283,316"],"contexts":["`vector_kb.rs:557-567`, which is the containment-free blocklist from category G."],"resolved":false},
     "workspace_harvest.rs": {"count":1,"sections":[7],"lines":["393"],"contexts":["`workspace_harvest.rs:393` · `commands/core/data_portability.rs:{4434, 8783, 8795}` ·"],"resolved":false},
     "workspace_projection.rs": {"count":1,"sections":[7],"lines":["512,528"],"contexts":["reachable unauthenticated per category E), `workspace_projection.rs:512,528`,"],"resolved":false},
+    "worktree_settings.rs": {"count":1,"sections":[7],"lines":["104"],"contexts":["`claude_md_projection.rs:198`, `cli_mcp_config.rs:319`, `worktree_settings.rs:104`,"],"resolved":false},
     "~/.claude/settings.json": {"count":3,"sections":[5,7],"contexts":["`~/.claude/settings.json` in place."],"resolved":false}
   }
 }

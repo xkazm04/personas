@@ -44,6 +44,7 @@
     "dev_workspaces.rs": {"count":1,"sections":[7],"contexts":["`dev_tools.rs` (70 cmds), `twin.rs` (46), `cloud.rs` (37), `dev_workspaces.rs` (33),"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["### ✅ `shared-facts.json` is correct — verified, not merely cited"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.mjs": {"count":2,"sections":[9],"lines":["60"],"contexts":["this with a custom AST rule (`eslint.config.mjs:60`, `custom-quality/max-tsx-lines` at 200) —"],"resolved":false},
+    "infrastructure/dev_tools/competitions.rs": {"count":1,"sections":[7],"contexts":["`design/reviews.rs` (6), `infrastructure/dev_tools/competitions.rs` (6)."],"resolved":false},
     "infrastructure/research_lab.rs": {"count":1,"sections":[7],"contexts":["`infrastructure/research_lab.rs` individually. **When your product map has to name files because"],"resolved":false},
     "lib.rs": {"count":4,"sections":[1,4,6,9],"lines":["1805","3838"],"contexts":["Verified: the `generate_handler![]` list at `lib.rs:1805` registers by fully-qualified path but"],"resolved":false},
     "mod.rs": {"count":5,"sections":[1,3,5,7],"contexts":["2. **`jobs` is not a module at all.** No directory, no `mod.rs`, nothing to be large. Seven"],"resolved":false},
@@ -165,7 +166,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "infrastructure/dev_tools.rs"
     },
-    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs": {"count":1,"sections":[7],"contexts":["`design/reviews.rs` (6), `infrastructure/dev_tools/competitions.rs` (6)."],"resolvedFrom":"suffix","verbatim":"infrastructure/dev_tools/competitions.rs"},
     "src-tauri/src/commands/infrastructure/dev_tools_http.rs": {"count":1,"sections":[7],"contexts":["| `commands/infrastructure/dev_tools_http.rs` | 1,432 | 1 | 1,432 |"],"resolvedFrom":"suffix","verbatim":"commands/infrastructure/dev_tools_http.rs"},
     "src-tauri/src/commands/infrastructure/live_roadmap.rs": {
       "count": 1,

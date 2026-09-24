@@ -55,6 +55,7 @@
     "markdown.ts": {"count":2,"sections":[],"lines":["258-261","14-20"],"contexts":["and blocks auto-publish when uncited prose survives; then `markdown.ts:258-261` **recomputes the"],"resolved":false},
     "mcp.rs": {"count":2,"sections":[],"lines":["725-745","232-250"],"contexts":["in `brainiac` with no shared code, and once more here.** Its MCP dispatch (`mcp.rs:725-745`, 18"],"resolved":false},
     "parseCustomBlock.tsx": {"count":1,"sections":[],"lines":["20-38"],"contexts":["invisible; `personas-web`'s guide block registry (`parseCustomBlock.tsx:20-38`, 13 block types)"],"resolved":false},
+    "plan.rs": {"count":2,"sections":[7],"lines":["82","12"],"contexts":["- *Too eager*: `split` matches the marker **anywhere**, while `plan.rs:82` uses a line-anchored"],"resolved":false},
     "runner.rs": {"count":1,"sections":[8],"lines":["188-215"],"contexts":["*if it has finished arriving*\" — `runner.rs:188-215`'s `extract_early_behavior_core` scans a"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**Not already gated.** All **65** rules in `scripts/census/rules.json` were read: none concerns"]},
     "scripts/docs/check-doc-sync.mjs": {"count":1,"sections":[9],"contexts":["The right host is a check script beside `scripts/docs/check-doc-sync.mjs`, wired into `npm run check`."]},
@@ -126,9 +127,9 @@
       "verbatim": "kpi_derivation.rs"
     },
     "src-tauri/src/webbuild/plan.rs": {
-      "count": 4,
-      "sections": [6,7],
-      "lines": ["64-125","82","12"],
+      "count": 2,
+      "sections": [6],
+      "lines": ["64-125"],
       "contexts": ["grammar + renderer + its 2 consumers, `webbuild/plan.rs`, `applyClientAction`, the companion"],
       "resolvedFrom": "suffix",
       "verbatim": "webbuild/plan.rs"

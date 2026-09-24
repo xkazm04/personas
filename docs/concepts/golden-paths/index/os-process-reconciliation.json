@@ -27,6 +27,7 @@
     "*_tests.rs": {"count":1,"sections":[7],"contexts":["and `#[cfg(test)]` modules and `*_tests.rs` excluded). `kill_on_drop(true)`: **17**. The"],"resolved":false},
     "Cargo.toml": {"count":2,"sections":[7,12],"lines":["136-138"],"contexts":["### 7.9 `Cargo.toml`'s own comment contradicts the code"],"resolved":false},
     "competitions.rs": {"count":3,"sections":[0,5,7],"lines":["973-975","977-983","1163"],"contexts":["`DEV_SERVERS` (`competitions.rs:973-975`), `ExecutionEngine::child_pids`"],"resolved":false},
+    "dev_tools/competitions.rs": {"count":3,"sections":[7],"lines":["990","1184"],"contexts":["`dev_tools/competitions.rs` and `fleet/process_scan.rs` read in full or around every relevant site."],"resolved":false},
     "events.rs": {"count":1,"sections":[7],"lines":["80"],"contexts":["Writers: `build_session/mod.rs:196`, `runner.rs:1921`, `events.rs:80` — all write nothing. It is"],"resolved":false},
     "headless.rs": {"count":1,"sections":[12],"lines":["258-262"],"contexts":["`headless.rs:258-262`) still does not run when the app is killed, and there is still no boot sweep."],"resolved":false},
     "incremental.rs": {
@@ -170,14 +171,6 @@
       "verbatim": "fleet/registry.rs"
     },
     "src-tauri/src/commands/fleet/stale.rs": {"count":2,"sections":[3],"contexts":["read end to end for its eleven recovery calls; `fleet/persist.rs`, `fleet/stale.rs`,"],"resolvedFrom":"suffix","verbatim":"fleet/stale.rs"},
-    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["990","1184"],
-      "contexts": ["`dev_tools/competitions.rs` and `fleet/process_scan.rs` read in full or around every relevant site."],
-      "resolvedFrom": "suffix",
-      "verbatim": "dev_tools/competitions.rs"
-    },
     "src-tauri/src/companion/brain/oneshot.rs": {
       "count": 1,
       "sections": [0],

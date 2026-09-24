@@ -45,6 +45,7 @@
       ],
       "resolved": false
     },
+    "NewCompetitionModal.tsx": {"count":1,"sections":[12],"lines":["60"],"contexts":["and NOT re-derived here.** `NewCompetitionModal.tsx:60` → `task_executor.rs:663`. It is"],"resolved":false},
     "api/group-health-scan/route.ts": {
       "count": 1,
       "sections": [6],
@@ -247,7 +248,6 @@
       ],
       "resolved": false
     },
-    "session.rs": {"count":1,"sections":[7],"lines":["771"],"contexts":["`session.rs:771` is the worst: `Internal` runs through the *string* classifier"],"resolved":false},
     "skills.rs": {"count":1,"sections":[6],"lines":["285"],"contexts":["(`skills.rs:285`) is one of the two best verdict types in the cohort, and its"],"resolved":false},
     "smee_relay.rs": {"count":1,"sections":[7],"lines":["529"],"contexts":["`smee_relay.rs:529`, `webhook_trigger_max` at `webhook.rs:341`. **One struct, three limits, two"],"resolved":false},
     "src-tauri/": {"count":1,"sections":[],"contexts":["**Sweep size.** All **963** `.rs` files under `src-tauri/` (the census engine's own walk agrees at"],"resolved":false,"isDir":true},
@@ -472,6 +472,7 @@
       "resolvedFrom": "basename",
       "verbatim": "share_link.rs"
     },
+    "src-tauri/src/engine/twin_setup/session.rs": {"count":1,"sections":[7],"lines":["771"],"contexts":["`session.rs:771` is the worst: `Internal` runs through the *string* classifier"],"resolvedFrom":"basename","verbatim":"session.rs"},
     "src-tauri/src/engine/webhook.rs": {
       "count": 6,
       "sections": [2,3,6,7],
@@ -490,14 +491,6 @@
       "isDir": true
     },
     "src/commands/infrastructure/{idea_scanner,kpi_scan,use_case_scan,tier_usage}.rs": {"count":1,"sections":[],"contexts":["`src/commands/infrastructure/{idea_scanner,kpi_scan,use_case_scan,tier_usage}.rs`,"],"resolved":false},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/NewCompetitionModal.tsx": {
-      "count": 1,
-      "sections": [12],
-      "lines": ["60"],
-      "contexts": ["and NOT re-derived here.** `NewCompetitionModal.tsx:60` → `task_executor.rs:663`. It is"],
-      "resolvedFrom": "basename",
-      "verbatim": "NewCompetitionModal.tsx"
-    },
     "src/lib/bindings/SchedulerStats.ts": {"count":1,"sections":[7],"contexts":["(`background.rs:426`, bound in `src/lib/bindings/SchedulerStats.ts`). **Render sites in 4,829"]},
     "src/lib/errors/errorRegistry.ts": {
       "count": 2,

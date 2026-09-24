@@ -38,6 +38,7 @@
   "citations": {
     ".claude/conventions.json": {"count":3,"sections":[8,9],"contexts":["inside `tauriInvoke`). Nothing in `CLAUDE.md`, in `.claude/conventions.json`'s `doNotHandRoll`"]},
     ".github/workflows/ci.yml": {"count":2,"sections":[9],"contexts":["`golden-path-census` **pre-push** job in `lefthook.yml:74-75`. It is **not** in `ci.yml` at all,"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "CompetitionList.tsx": {"count":1,"sections":[7],"lines":["22-23"],"contexts":["`CompetitionList.tsx:22-23`; `i18n/useTranslation.ts:42-43`; `customIconStore.ts:48`."],"resolved":false},
     "EventSwimlane.tsx": {
       "count": 1,
       "sections": [6],
@@ -224,14 +225,6 @@
       "verbatim": "PersonaConfigPanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {"count":3,"sections":[7,12],"lines":["34-36"],"contexts":["`useDrive.ts`, `LlmTrackingCell.tsx`, `LifecyclePage.tsx`,"],"resolvedFrom":"basename","verbatim":"LifecyclePage.tsx"},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["22-23"],
-      "contexts": ["`CompetitionList.tsx:22-23`; `i18n/useTranslation.ts:42-43`; `customIconStore.ts:48`."],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionList.tsx"
-    },
     "src/features/plugins/dev-tools/sub_llm_overview/useLlmPinpoints.ts": {
       "count": 3,
       "sections": [6,7],

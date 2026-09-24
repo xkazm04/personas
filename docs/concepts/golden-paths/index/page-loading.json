@@ -36,6 +36,15 @@
         "8. **Zero automated enforcement.** No ESLint rule, no check script, no test asserts any of the five laws; `UnifiedTable` has no test file. Contrast `custom/enforce-base-modal`, which does gate the mo…"
       ]
     },
+    "CompetitionList.tsx": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["22"],
+      "contexts": [
+        "3. **No shared module-scoped-cache primitive.** `LifecyclePage.tsx:34`, `CompetitionList.tsx:22`, `useScraperData.ts:30` hand-roll `let cachedX` with duplicated comments; six more hooks do variants.…"
+      ],
+      "resolved": false
+    },
     "agents/sub_glyph/GlyphCinemaLayout.tsx": {
       "count": 1,
       "sections": [7],
@@ -409,16 +418,6 @@
       "contexts": ["- `plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:28-36,63-72,154` — module cache + `everLoaded` gate."],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx": {
-      "count": 1,
-      "sections": [8],
-      "lines": ["22"],
-      "contexts": [
-        "3. **No shared module-scoped-cache primitive.** `LifecyclePage.tsx:34`, `CompetitionList.tsx:22`, `useScraperData.ts:30` hand-roll `let cachedX` with duplicated comments; six more hooks do variants.…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionList.tsx"
     },
     "src/features/plugins/dev-tools/sub_overview/OverviewParts.tsx": {
       "count": 1,

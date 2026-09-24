@@ -55,6 +55,15 @@
     "overview/sub_manual-review/components/dispatch/DispatchPanel.tsx": {"count":1,"sections":[7],"lines":["141"],"contexts":["`overview/sub_manual-review/components/dispatch/DispatchPanel.tsx:141` ·"],"resolved":false},
     "overview/sub_patterns/ExtractionMenu.tsx": {"count":1,"sections":[7],"lines":["186"],"contexts":["`overview/sub_patterns/ExtractionMenu.tsx:186`,`:200` ·"],"resolved":false},
     "overview/sub_patterns/PracticeRolloutModal.tsx": {"count":1,"sections":[7],"lines":["87"],"contexts":["`overview/sub_patterns/PracticeRolloutModal.tsx:87`,`:100` ·"],"resolved":false},
+    "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["82"],
+      "contexts": [
+        "| `plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx:82` | `competition.id` | `loadDetail` → `setDetail(await …)`; an 8s poll (`:92`) races the expand-triggered fetch, so a slow poll r…"
+      ],
+      "resolved": false
+    },
     "plugins/research-lab/sub_experiments/ExperimentsPanel.tsx": {"count":1,"sections":[7],"lines":["109"],"contexts":["`plugins/research-lab/sub_experiments/ExperimentsPanel.tsx:109` ·"],"resolved":false},
     "plugins/research-lab/sub_literature/arxivClient.ts": {"count":1,"sections":[7],"lines":["71"],"contexts":["`plugins/research-lab/sub_literature/arxivClient.ts:71` and `crossrefClient.ts:81`"],"resolved":false},
     "plugins/twin/sub_brain/useBrainConnection.ts": {
@@ -281,16 +290,6 @@
       "verbatim": "plugins/dev-tools/sub_context/ContextMapHealth.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts": {"count":1,"sections":[7],"lines":["130"],"contexts":["`useContextRuntime.ts:130`,`:158` · `UnifiedBuildEntry.tsx:291`"],"resolvedFrom":"basename","verbatim":"useContextRuntime.ts"},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["82"],
-      "contexts": [
-        "| `plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx:82` | `competition.id` | `loadDetail` → `setDetail(await …)`; an 8s poll (`:92`) races the expand-triggered fetch, so a slow poll r…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx"
-    },
     "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx": {
       "count": 1,
       "sections": [7],

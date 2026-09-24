@@ -32,6 +32,7 @@
     "**If you are about to write** `useState<string | null>(null)` named `expanded*`,"
   ],
   "citations": {
+    "CompetitionSlotRow.tsx": {"count":3,"sections":[5,9,12],"lines":["81-93","82-93"],"contexts":["(`CompetitionSlotRow.tsx:81-93`). A 2-site population cannot carry a doctrine clause on"],"resolved":false},
     "ComplianceRow.tsx": {"count":3,"sections":[4],"lines":["37","34-38"],"contexts":["`SLABreachRow.tsx:57`, `IncidentList.tsx:79`, `ComplianceRow.tsx:37`,"],"resolved":false},
     "DataTable.tsx": {"count":3,"sections":[7],"lines":["97","85"],"contexts":["`DataTable.tsx` takes a `keyExtractor` (`:16`), holds `expandedId: string | null`"],"resolved":false},
     "DebuggerControls.tsx": {"count":2,"sections":[9],"lines":["106"],"contexts":["`DebuggerControls.tsx:106` (`onExpandInspector`) and `DebuggerVariables.tsx:38`"],"resolved":false},
@@ -45,6 +46,15 @@
     "docs/concepts/shared-facts.json": {"count":3,"sections":[7,9],"contexts":["[`shared-facts.json`](../shared-facts.json); everything else was measured during"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the reason to put it here rather than in `eslint.config.js` — as"]},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
+    "plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["81-93"],
+      "contexts": [
+        "| `plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx:81-93` | `setExpandedDiff(null)` on collapse; re-runs `getCompetitionSlotDiff(slot.id)` on every re-expand. No cache, no cancell…"
+      ],
+      "resolved": false
+    },
     "plugins/twin/sub_tone/ToneConsole.tsx": {"count":1,"sections":[6],"lines":["158-241"],"contexts":["- `plugins/twin/sub_tone/ToneConsole.tsx:158-241` and `scraper/ScraperControlRoom.tsx:157-241`"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 2,
@@ -154,14 +164,6 @@
       "contexts": ["| `useState<Record<string, boolean>>` | many open | **1** — `LiveOpsStrip.tsx:41` |"],
       "resolvedFrom": "basename",
       "verbatim": "LiveOpsStrip.tsx"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx": {
-      "count": 4,
-      "sections": [5,7,9,12],
-      "lines": ["81-93","82-93"],
-      "contexts": ["(`CompetitionSlotRow.tsx:81-93`). A 2-site population cannot carry a doctrine clause on"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionSlotRow.tsx"
     },
     "src/features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal.tsx": {
       "count": 3,

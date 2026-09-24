@@ -30,6 +30,8 @@
   ],
   "citations": {
     "Cargo.toml": {"count":1,"sections":[7],"contexts":["There is **no gate**: no `[lints]` table in any of the 5 `Cargo.toml`, no `clippy.toml`, no"],"resolved":false},
+    "CompetitionList.tsx": {"count":1,"sections":[5],"lines":["59"],"contexts":["(`CompetitionList.tsx:59`), `catch { setStats([]) }` (`StrategyLeaderboard.tsx:17`),"],"resolved":false},
+    "StrategyLeaderboard.tsx": {"count":1,"sections":[5],"lines":["17"],"contexts":["(`CompetitionList.tsx:59`), `catch { setStats([]) }` (`StrategyLeaderboard.tsx:17`),"],"resolved":false},
     "brainiac/console/demo-fallback.ts": {
       "count": 1,
       "sections": [2],
@@ -127,22 +129,6 @@
       "contexts": ["telemetry) · `ContextMapHealth.tsx:91,103,117` · `PrBridge.tsx:231,242,253,289,328` ·"],
       "resolvedFrom": "basename",
       "verbatim": "ContextMapHealth.tsx"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["59"],
-      "contexts": ["(`CompetitionList.tsx:59`), `catch { setStats([]) }` (`StrategyLeaderboard.tsx:17`),"],
-      "resolvedFrom": "basename",
-      "verbatim": "CompetitionList.tsx"
-    },
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["17"],
-      "contexts": ["(`CompetitionList.tsx:59`), `catch { setStats([]) }` (`StrategyLeaderboard.tsx:17`),"],
-      "resolvedFrom": "basename",
-      "verbatim": "StrategyLeaderboard.tsx"
     },
     "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx": {
       "count": 1,

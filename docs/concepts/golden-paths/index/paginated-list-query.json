@@ -138,6 +138,13 @@
       ],
       "resolved": false
     },
+    "jobs.rs": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["36"],
+      "contexts": ["| `commands/companion/consolidate.rs:72,:276` · `jobs.rs:36` · `proactive.rs:80` | Four companion list commands, unclamped, over tables the night shift writes to on every tick. |"],
+      "resolved": false
+    },
     "memories.rs": {
       "count": 1,
       "sections": [7],
@@ -363,14 +370,6 @@
       "contexts": [
         "- `src-tauri/src/commands/companion/chat.rs:397-432` — a correct keyset page with `clamp(1, 500)` and an `exhausted` flag deliberately computed from **raw scanned rows, not surviving rows** (`:421`,…"
       ]
-    },
-    "src-tauri/src/commands/companion/jobs.rs": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["36"],
-      "contexts": ["| `commands/companion/consolidate.rs:72,:276` · `jobs.rs:36` · `proactive.rs:80` | Four companion list commands, unclamped, over tables the night shift writes to on every tick. |"],
-      "resolvedFrom": "basename",
-      "verbatim": "jobs.rs"
     },
     "src-tauri/src/commands/companion/proactive.rs": {
       "count": 1,

@@ -165,6 +165,15 @@
       ],
       "resolved": false
     },
+    "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["92"],
+      "contexts": [
+        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
+      ],
+      "resolved": false
+    },
     "reviews.rs": {
       "count": 1,
       "sections": [],
@@ -817,16 +826,6 @@
       "verbatim": "plugins/companion/sub_setup/BrowserBridgePanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_context/useUseCases.ts": {"count":2,"sections":[7],"lines":["81"],"contexts":["| `SystemLoadFooterIcon.tsx:86` · `useUseCases.ts:81` | 2 s | 5s | 2.5× slower |"],"resolvedFrom":"basename","verbatim":"useUseCases.ts"},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx"
-    },
     "src/features/plugins/fleet/relativeAgo.ts": {"count":1,"sections":[9],"contexts":["`src/hooks/utility/timing/relativeTimeTicker.ts` and `src/features/plugins/fleet/relativeAgo.ts`"]},
     "src/features/plugins/fleet/sub_grid/FleetTokenSummaryBar.tsx": {
       "count": 1,

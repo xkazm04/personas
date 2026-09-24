@@ -48,6 +48,7 @@
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["274"],"contexts":["The two idioms sit side by side with no stated rule: `dev_tools.rs:274` writes"],"resolved":false},
     "docs/concepts/discovery/discovery-server-commands.json": {"count":2,"sections":[6,8],"lines":["683"],"contexts":["*(This corrects `docs/concepts/discovery/discovery-server-commands.json:683`, which reports"]},
     "docs/concepts/shared-facts.json": {"count":3,"sections":[6],"contexts":["Command and file totals cited from [`shared-facts.json`](../shared-facts.json)"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
+    "env.rs": {"count":1,"sections":[6],"contexts":["invariant. The right granularity, and `env.rs` is the only `KeyedResourcePool` caller that passes"],"resolved":false},
     "extract.rs": {"count":1,"sections":[],"lines":["531-598"],"contexts":["brainiac avoided the class by putting its LLM cache in a table (`extract.rs:531-598`). The pattern —"],"resolved":false},
     "lib.rs": {"count":10,"sections":[3,6,7,9],"lines":["1181","58","122","583","1719","3505"],"contexts":["(`lib.rs:1181`). Its cost is §Deviations F."],"resolved":false},
     "notifications.rs": {"count":4,"sections":[5,7,9],"lines":["1260","1250"],"contexts":["it is a lease held for as long as the awaited work takes. `notifications.rs:1260` holds the"],"resolved":false},
@@ -194,7 +195,7 @@
       "verbatim": "runner/credentials.rs"
     },
     "src-tauri/src/engine/runner/env.rs": {
-      "count": 4,
+      "count": 3,
       "sections": [6,7],
       "lines": ["120","120-121"],
       "contexts": ["`engine/composite.rs:86,:88`, `engine/runner/env.rs:120`) — exactly the three it names, and"],

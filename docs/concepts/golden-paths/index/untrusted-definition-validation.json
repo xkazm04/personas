@@ -81,7 +81,6 @@
     "result.json": {"count":5,"sections":[1,3,4,7],"contexts":["- \"read the `result.json` the skill wrote and ingest it\""],"resolved":false},
     "scripts/census/rules.json": {"count":2,"sections":[9,12],"contexts":["All **110** rules in `scripts/census/rules.json` were read. The six that share `roots: [\"src\"]` and could"]},
     "scripts/docs/gen-tour-anchors.mjs": {"count":5,"sections":[0,2,3,4,8],"contexts":["`scripts/docs/gen-tour-anchors.mjs` from one scan), and emits a fresh `serde_json::json!({...})`. Executed:"]},
-    "session.rs": {"count":2,"sections":[4],"lines":["1401","1423"],"contexts":["(`session.rs:1401` via the preserving wrapper, and the pin flow) and `save_tour` has **2**"],"resolved":false},
     "src-tauri/": {"count":2,"sections":[12],"contexts":["**946** non-generated `.rs` files under `src-tauri/` (`bindings/`, `tests/`, `*_test.rs` excluded;"],"resolved":false,"isDir":true},
     "src-tauri/Cargo.toml": {"count":2,"sections":[7],"lines":["208"],"contexts":["(`src-tauri/Cargo.toml:208`) with **one** call site (§7.E). `ascent` inverts it deliberately: no"]},
     "src-tauri/core/src/models/connector.rs": {
@@ -217,6 +216,14 @@
       ],
       "resolved": false,
       "isDir": true
+    },
+    "src-tauri/src/engine/twin_setup/session.rs": {
+      "count": 2,
+      "sections": [4],
+      "lines": ["1401","1423"],
+      "contexts": ["(`session.rs:1401` via the preserving wrapper, and the pin flow) and `save_tour` has **2**"],
+      "resolvedFrom": "basename",
+      "verbatim": "session.rs"
     },
     "src-tauri/src/ipc_auth.rs": {"count":3,"sections":[5],"lines":["477"],"contexts":["`commands/credentials/openapi_autopilot.rs`, `engine/bundle.rs`, `ipc_auth.rs`."],"resolvedFrom":"basename","verbatim":"ipc_auth.rs"},
     "src-tauri/src/local_http/mod.rs": {

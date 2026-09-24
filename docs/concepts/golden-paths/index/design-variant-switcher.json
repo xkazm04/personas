@@ -44,6 +44,7 @@
       "resolvedFrom": "basename",
       "verbatim": "no-hardcoded-jsx-text.cjs"
     },
+    "index.tsx": {"count":1,"sections":[],"lines":["7"],"contexts":["containing **one** file, statically imported by `index.tsx:7`, with no switcher —"],"resolved":false},
     "lefthook.yml": {"count":2,"sections":[12],"contexts":["`lefthook.yml`. Handed to [theming-and-contrast](./theming-and-contrast.md)."]},
     "package.json": {"count":1,"sections":[],"contexts":["`package.json`: no `react-router`, no `@tanstack/router`, no `wouter`. So"]},
     "scripts/check-scaffolding-expiry.mjs": {"count":1,"sections":[],"contexts":["- **Mechanism.** `scripts/check-scaffolding-expiry.mjs`, run in"],"resolved":false},
@@ -52,7 +53,6 @@
     "src/features/agents/quick-answer/QuickAnswerPopover.tsx": {"count":1,"sections":[7],"lines":["104"],"contexts":["(→ `QuickAnswerPopover.tsx:104`). **Each has exactly one importer and no"],"resolvedFrom":"basename","verbatim":"QuickAnswerPopover.tsx"},
     "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx": {"count":1,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolvedFrom":"basename","verbatim":"TriageDeckVariant.tsx"},
     "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {"count":1,"sections":[],"contexts":["`factoryModel.ts`, a throwaway id in `useDeckControls.tsx`, a test fixture, a"],"resolvedFrom":"basename","verbatim":"useDeckControls.tsx"},
-    "src/features/plugins/companion/chat/next/frame/variants/c/index.tsx": {"count":1,"sections":[],"lines":["7"],"contexts":["containing **one** file, statically imported by `index.tsx:7`, with no switcher —"],"resolvedFrom":"basename","verbatim":"index.tsx"},
     "src/features/plugins/companion/sub_voice/audioToReferenceWav.ts": {"count":1,"sections":[],"contexts":["unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object in"],"resolvedFrom":"basename","verbatim":"audioToReferenceWav.ts"},
     "src/features/plugins/radio/components/RadioConsoleVariant.tsx": {"count":1,"sections":[7],"contexts":["`TrendVariant.tsx` (→ `FactoryPage.tsx:25`), `RadioConsoleVariant.tsx`"],"resolvedFrom":"basename","verbatim":"RadioConsoleVariant.tsx"},
     "src/features/plugins/radio/components/RadioPage.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolvedFrom":"basename","verbatim":"RadioPage.tsx"},

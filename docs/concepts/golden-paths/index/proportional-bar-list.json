@@ -100,6 +100,7 @@
       ],
       "resolved": false
     },
+    "StrategyLeaderboard.tsx": {"count":2,"sections":[7],"lines":["62","35"],"contexts":["`CategoryRollup.tsx:44` · `DirectorCoachingTab.tsx:345` · `StrategyLeaderboard.tsx:62` ·"],"resolved":false},
     "TeamCertCard.tsx": {
       "count": 3,
       "sections": [5,7],
@@ -138,6 +139,15 @@
       "lines": ["118-149"],
       "contexts": [
         "| **`overview/sub_patterns/KnowledgeTree.tsx:118-149` → `railMeta`** | **The shape to copy.** A `useMemo` that computes the denominator once, names it (`maxAtDepth`), states in a comment which denomi…"
+      ],
+      "resolved": false
+    },
+    "plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["35"],
+      "contexts": [
+        "| `plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx:35` | `Math.max(1, ...stats.map(s => s.wins))` — the correct spelling of the extremum, with the divide-by-zero floor built in. |"
       ],
       "resolved": false
     },
@@ -231,16 +241,6 @@
     "src/features/overview/sub_patterns/KnowledgeTree.tsx": {"count":1,"sections":[6],"lines":["118-149"],"contexts":["**The ONE site to copy: `src/features/overview/sub_patterns/KnowledgeTree.tsx:118-149`,"],"resolved":false},
     "src/features/plugins/companion/OperationalThread.tsx": {"count":1,"sections":[7],"lines":["56"],"contexts":["`BacklogFocusDeck.tsx:154` · `OperationalThread.tsx:56`."],"resolvedFrom":"basename","verbatim":"OperationalThread.tsx"},
     "src/features/plugins/companion/sub_voice/SttPanel.tsx": {"count":1,"sections":[7],"lines":["448"],"contexts":["`ArenaResultsView.tsx:57` · `CapabilityRowSummary.tsx:33` · `SttPanel.tsx:448` ·"],"resolvedFrom":"basename","verbatim":"SttPanel.tsx"},
-    "src/features/plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx": {
-      "count": 3,
-      "sections": [6,7],
-      "lines": ["35","62"],
-      "contexts": [
-        "| `plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx:35` | `Math.max(1, ...stats.map(s => s.wins))` — the correct spelling of the extremum, with the divide-by-zero floor built in. |"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx"
-    },
     "src/features/plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx": {
       "count": 2,
       "sections": [7],
