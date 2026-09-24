@@ -18161,7 +18161,17 @@
       "sketch_draft": "あなたの言葉から作った最初のスケッチです。プロジェクトの準備が整う間に、Athenaがこれを実際のプランへ仕上げます。",
       "sketch_failed": "クイックスケッチを取得できませんでした。Athenaが検討し終わると、ここに完全なプランが表示されます。",
       "sketch_loading": "アイデアを読み込んでいます。数秒でサイトの最初のスケッチがここに表示されます。",
-      "sketch_understood": "理解した内容"
+      "sketch_understood": "理解した内容",
+      "create_failed": "プロジェクトを作成できませんでした",
+      "name_taken": "「{name}」という名前のプロジェクトは既に存在します。別の名前を選ぶか、+メニューからそのプロジェクトを開いてください。",
+      "name_unsafe": "このコンピューター上でフォルダーにできるよう、名前には文字か数字を使ってください。",
+      "preview_booting_plan": "ライブプレビューを起動しています。ここまでのプランです。",
+      "template_hint": "すべてのNext.jsサイトはこれらのパーツから始まります。Athenaのスケッチが完成し次第、あなたのアイデアをもとに内容を埋めていきます。",
+      "template_home": "ホームページ",
+      "template_region_banner": "ウェルカムバナー",
+      "template_region_content": "メインコンテンツ",
+      "template_region_footer": "フッター",
+      "template_region_nav": "上部バー"
     }
   },
   "system_health": {

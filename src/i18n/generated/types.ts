@@ -23275,6 +23275,16 @@ export type Translations = {
       answer_placeholder: string;
       answer_send: string;
       answer_inline: string;
+      template_home: string;
+      template_region_nav: string;
+      template_region_banner: string;
+      template_region_content: string;
+      template_region_footer: string;
+      template_hint: string;
+      preview_booting_plan: string;
+      name_taken: string;
+      name_unsafe: string;
+      create_failed: string;
     };
   };
   notepad: {

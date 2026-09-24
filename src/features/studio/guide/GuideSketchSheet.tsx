@@ -2,16 +2,11 @@ import { motion } from 'framer-motion';
 import { Check, Circle, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { BLUEPRINT_GRID } from './blueprintGrid';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
 import type { SetupStepKey, SetupStepState } from './guideModel';
 import { guideStrings } from './guideCopy';
 import { clock, useElapsed } from './useGuideRuntime';
-
-const GRID: React.CSSProperties = {
-  backgroundImage:
-    'linear-gradient(color-mix(in srgb, var(--primary) 9%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--primary) 9%, transparent) 1px, transparent 1px), linear-gradient(color-mix(in srgb, var(--primary) 4%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--primary) 4%, transparent) 1px, transparent 1px)',
-  backgroundSize: '96px 96px, 96px 96px, 24px 24px, 24px 24px',
-};
 
 // The plan sheet during setup (contest A/3's idea-to-plan drawing, on real
 // data): the sketch lane's pages drawn as page outlines, each region drawn in
@@ -55,7 +50,7 @@ export default function GuideSketchSheet({
   let order = 0;
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-background" style={GRID}>
+    <div className="absolute inset-0 overflow-hidden bg-background" style={BLUEPRINT_GRID}>
       <div className="flex h-full gap-6 p-6">
         <section className="flex min-w-0 flex-1 flex-col">
           <p className="typo-label uppercase tracking-wider text-primary/80">{tx(g.sheet_title, { name })}</p>
@@ -63,7 +58,11 @@ export default function GuideSketchSheet({
             <div className="mt-4 grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6">
               <PageOutline title={home.title}>
                 {home.regions.map((r) => (
-                  <motion.div key={r.title} {...draw(order++)} className="rounded-interactive border border-primary/45 bg-primary/5 px-3 py-2">
+                  <motion.div
+                    key={r.title}
+                    {...draw(order++)}
+                    className="rounded-interactive border border-primary/45 bg-primary/5 px-3 py-2"
+                  >
                     <p className="typo-title text-primary">{r.title}</p>
                     {r.purpose && <p className="typo-caption text-foreground/90">{r.purpose}</p>}
                   </motion.div>
@@ -73,7 +72,11 @@ export default function GuideSketchSheet({
                 {rest.map((p) => (
                   <PageOutline key={p.title} title={p.title} route={p.route}>
                     {p.regions.map((r) => (
-                      <motion.div key={r.title} {...draw(order++)} className="rounded-interactive border border-primary/35 px-3 py-1.5">
+                      <motion.div
+                        key={r.title}
+                        {...draw(order++)}
+                        className="rounded-interactive border border-primary/35 px-3 py-1.5"
+                      >
                         <p className="typo-title text-primary">{r.title}</p>
                       </motion.div>
                     ))}
@@ -82,11 +85,27 @@ export default function GuideSketchSheet({
               </div>
             </div>
           ) : (
-            <div className="mt-4 grid flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6" aria-hidden>
-              <div className="rounded-card border border-dashed border-primary/35" />
-              <div className="flex flex-col gap-4">
-                <div className="h-1/3 rounded-card border border-dashed border-primary/25" />
-                <div className="h-1/4 rounded-card border border-dashed border-primary/20" />
+            // Before the sketch lands (or when there is none): the structure
+            // every Next.js site starts from, drawn at once and in full, so the
+            // sheet is never empty. The sketch replaces it region by region.
+            <div className="mt-4 grid min-h-0 flex-1 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6">
+              <PageOutline title={g.template_home} route="/">
+                {[g.template_region_nav, g.template_region_banner, g.template_region_content, g.template_region_footer].map(
+                  (title) => (
+                    <motion.div
+                      key={title}
+                      {...draw(order++)}
+                      className="rounded-interactive border border-dashed border-primary/45 px-3 py-2"
+                    >
+                      <p className="typo-title text-primary/90">{title}</p>
+                    </motion.div>
+                  ),
+                )}
+              </PageOutline>
+              <div className="flex flex-col gap-3">
+                <motion.p {...draw(order++)} className="typo-body text-foreground/90">
+                  {g.template_hint}
+                </motion.p>
               </div>
             </div>
           )}
@@ -104,23 +123,27 @@ export default function GuideSketchSheet({
               </li>
             ))}
             {startedAt !== null && elapsed > 0 && (
-              <li className="ml-auto font-mono typo-caption text-foreground/90">{tx(g.setup_elapsed, { elapsed: clock(elapsed) })}</li>
+              <li className="ml-auto font-mono typo-caption text-foreground/90">
+                {tx(g.setup_elapsed, { elapsed: clock(elapsed) })}
+              </li>
             )}
           </ol>
         </section>
-        <aside className="flex w-72 shrink-0 flex-col gap-3 pt-7" aria-label={g.notes_label}>
-          <motion.div
-            initial={shouldAnimate ? { opacity: 0, y: -8, rotate: -1.2 } : false}
-            animate={{ opacity: 1, y: 0, rotate: -0.6 }}
-            className="rounded-card border border-status-warning/30 bg-gradient-to-br from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
-          >
-            <p className="typo-label uppercase tracking-wider text-status-warning/90">{g.sketch_understood}</p>
-            <p className="mt-1 typo-body text-foreground">
-              {sketch?.summary || (sketchState === 'failed' ? g.sketch_failed : g.sketch_loading)}
-            </p>
-          </motion.div>
-          {sketch && <p className="typo-caption text-foreground/90">{g.sketch_draft}</p>}
-        </aside>
+        {(sketch || sketchState) && (
+          <aside className="flex w-72 shrink-0 flex-col gap-3 pt-7" aria-label={g.notes_label}>
+            <motion.div
+              initial={shouldAnimate ? { opacity: 0, y: -8, rotate: -1.2 } : false}
+              animate={{ opacity: 1, y: 0, rotate: -0.6 }}
+              className="rounded-card border border-status-warning/30 bg-gradient-to-br from-secondary/90 to-secondary/60 p-3 shadow-elevation-2"
+            >
+              <p className="typo-label uppercase tracking-wider text-status-warning/90">{g.sketch_understood}</p>
+              <p className="mt-1 typo-body text-foreground">
+                {sketch?.summary || (sketchState === 'failed' ? g.sketch_failed : g.sketch_loading)}
+              </p>
+            </motion.div>
+            {sketch && <p className="typo-caption text-foreground/90">{g.sketch_draft}</p>}
+          </aside>
+        )}
       </div>
     </div>
   );

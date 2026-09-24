@@ -13,13 +13,15 @@ import {
   webbuildScaffold,
   webbuildSessionSend,
   webbuildSessionStop,
+  webbuildGetPlan,
+  webbuildSavePlan,
   webbuildSketch,
   webbuildStatus,
   type BuildEffort,
   type BuildStyle,
 } from '@/api/webbuild';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
-import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
+import { isPlaceholderPlan, MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 import { useStudioHistory } from './studioHistory';
 import { classifyToolUse, extractToolUses, type StudioActivity } from './studioActivity';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
@@ -321,6 +323,27 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       };
     });
     persistTabs();
+    // The plan lives with the project in the database (webbuild_plans), so a
+    // reopened project draws its real plan while the dev server boots instead
+    // of a skeleton. It wins over the WebView's localStorage copy, which a
+    // cleared WebView loses; it never overwrites a plan a turn already set.
+    // Best-effort by construction: a plan store that is missing or fails must
+    // never stop a project from opening (the call is deferred into the chain,
+    // so even a synchronous throw lands in the catch).
+    Promise.resolve()
+      .then(() => webbuildGetPlan(id))
+      .then((plan) => {
+        const rt = get().runtimes[id];
+        if (!plan || !rt) return;
+        const p: Partial<ProjectRuntime> = {};
+        if (plan.phases.length > 0 && isPlaceholderPlan(rt.phases)) p.phases = plan.phases;
+        if (plan.sketch && !rt.sketch) {
+          p.sketch = plan.sketch;
+          p.sketchState = 'ready';
+        }
+        if (Object.keys(p).length) patch(id, p);
+      })
+      .catch(silentCatch('studioStore:getPlan'));
   };
 
   // H10 — re-attach to a project's dev server WITHOUT restarting it when it's
@@ -341,10 +364,18 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     await start(id);
   };
 
+  // Keep the plan with the project (webbuild_plans). Best-effort, like the load.
+  const savePlan = (id: string, phases: BuildPhase[], sketch: SiteSketch | null) => {
+    Promise.resolve()
+      .then(() => webbuildSavePlan(id, phases, sketch))
+      .catch(silentCatch('studioStore:savePlan'));
+  };
+
   // Persist the project's checklist + message log so it survives an app restart.
   const saveHistory = (id: string) => {
     const rt = get().runtimes[id];
     if (!rt) return;
+    if (!isPlaceholderPlan(rt.phases)) savePlan(id, rt.phases, null);
     useStudioHistory.getState().save(id, {
       phases: rt.phases,
       messages: rt.messages,
@@ -764,7 +795,12 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const landSketch = (sketch: SiteSketch | null, state: SketchState) => {
         const d = get().draft;
         if (d && d.startedAt === startedAt) set({ draft: { ...d, sketch, sketchState: state } });
-        else if (projectId) patch(projectId, { sketch, sketchState: state });
+        else if (projectId) {
+          patch(projectId, { sketch, sketchState: state });
+          const cur = get().runtimes[projectId];
+          const phases = cur && !isPlaceholderPlan(cur.phases) ? cur.phases : [];
+          if (sketch) savePlan(projectId, phases, sketch);
+        }
       };
       webbuildSketch(vision)
         .then((sk) => landSketch(sk, 'ready'))
@@ -778,8 +814,9 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         project = await webbuildScaffold(name);
       } catch (e) {
         // H9: keep WHY the scaffold failed on the vision screen (e.g. missing Bun).
+        // The form shows why, inline, and stays open; no toast on top of it.
         set({ draft: null, lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
-        toastCatch('scaffold project')(e);
+        silentCatch('studioStore:scaffold')(e);
         return;
       }
       projectId = project.id;
@@ -794,6 +831,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         seedPending: null,
       });
       set({ draft: null });
+      if (d?.sketch) savePlan(project.id, [], d.sketch);
       // The seed turn no longer waits for the dev server: planning and research
       // need the project folder, not a running preview, so the boot and the
       // first (longest) turn overlap.

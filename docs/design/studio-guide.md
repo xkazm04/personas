@@ -55,6 +55,22 @@ itself, and questions gathered while work continues; Studio now uses the same pi
 | Queue pump | Notes that waited out a turn are sent as the next turn automatically (one per finished turn), as Athena's chat queue does. |
 | Mid-turn intent | A dock message during a turn is queued; a clear redirect (`classifyMidTurnIntent`) also stops the running step. The dock is open from project creation, not only once the preview is live. |
 
+Follow-up (2026-09-24, owner review of phase 1.5):
+
+- **Never an empty sheet.** Before the sketch lands (and for any project with no plan), the sheet
+  draws the structure every Next.js site starts from (home page: top bar, welcome banner, main
+  content, footer) at once; the sketch replaces it region by region. The old "Setting up your
+  project" card is gone from Guide.
+- **The plan lives with the project.** `webbuild_plans` (migration e46, one row per project,
+  cascading) keeps the BUILD_PLAN phases and the sketch as JSON (`webbuild_get_plan` /
+  `webbuild_save_plan`). A reopened project replays its real plan on the sheet while the dev
+  server boots, instead of a skeleton; localStorage stays only as the message-log cache.
+- **One grid layer.** The sheet's grid paper is one 48 px layer (`blueprintGrid.ts`), not two.
+- **Errors in the form.** `webbuild_check_name` answers with the scaffold's own rule (is the folder
+  taken? plus a free `-<n>` variant), asked on every edit: a taken or unusable name shows an inline
+  `Banner` under the field and Build stays disabled; starters pick a free name; a scaffold failure
+  keeps the form open with the reason in a `Banner` (no toast, no fallback to another project).
+
 Next in this line (not built): **read-only side lanes during a build turn** (research, device
 checks, walk-throughs on a `webbuild:<id>:side` key with no git snapshot, a separate Stop path and
 stream routing), and **batched decisions** (collect every NEEDS_INPUT, a decision queue with

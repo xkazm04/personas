@@ -76,14 +76,20 @@ export default function GuideStudio({
       : null;
   const sketchQuestions = sketchSrc?.sketch?.questions ?? [];
   const nextSketchQ = sketchQuestions.findIndex((_, i) => !sketchSrc?.answers[i]);
-  const sketchMode = drafting || (showBlueprint && placeholder && !!sketchSrc);
-  const steps = setupSteps({
+  // Every no-plan setup state draws the sketch sheet: the sketch when there is
+  // one, the Next.js page template until then (never an empty skeleton).
+  const sketchMode = drafting || (showBlueprint && placeholder);
+  const opened = !drafting && !rt?.setupStartedAt;
+  const allSteps = setupSteps({
     sketchState: sketchSrc?.state ?? null,
     created: !drafting,
     phase: drafting ? null : (rt?.phase ?? null),
     planning,
     planned: !drafting && !placeholder,
   });
+  // A project opened from disk was not sketched or created now: its timeline
+  // is only what is really happening (the preview starting, a plan running).
+  const steps = opened ? allSteps.filter((st) => st.key === 'preview' || st.key === 'plan') : allSteps;
   const step = (rt?.turnDurations.length ?? 0) + (rt?.busy ? 1 : 0);
   const lastTurnSecs = rt && rt.turnDurations.length ? rt.turnDurations[rt.turnDurations.length - 1]! : null;
   const estimate = estimateText(g, tx, rt?.turnDurations ?? []);
@@ -161,13 +167,13 @@ export default function GuideStudio({
           onCreate={onCreate}
           onCancelCreate={onCancelCreate}
         >
-          {sketchSrc && (drafting || sketchMode) && !showVision && (
+          {sketchMode && !showVision && (sketchSrc || rt) && (
             <GuideSketchSheet
-              name={sketchSrc.name}
-              sketch={sketchSrc.sketch}
-              sketchState={sketchSrc.state}
+              name={sketchSrc?.name ?? rt?.name ?? ''}
+              sketch={sketchSrc?.sketch ?? null}
+              sketchState={sketchSrc?.state ?? null}
               steps={steps}
-              startedAt={sketchSrc.startedAt}
+              startedAt={sketchSrc?.startedAt ?? null}
             />
           )}
           {drafting && nextSketchQ >= 0 && !questionHidden && sketchSrc?.sketch && (

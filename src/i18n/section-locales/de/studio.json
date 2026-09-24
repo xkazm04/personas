@@ -199,6 +199,16 @@
     "sketch_draft": "Eine erste Skizze aus Ihren Worten. Athena macht daraus den endgültigen Plan, während das Projekt eingerichtet wird.",
     "sketch_failed": "Die Schnellskizze kam nicht zurück. Der vollständige Plan erscheint hier, sobald Athena ihn durchdacht hat.",
     "sketch_loading": "Ihre Idee wird gelesen. Eine erste Skizze der Website erscheint hier in wenigen Sekunden.",
-    "sketch_understood": "Was ich verstanden habe"
+    "sketch_understood": "Was ich verstanden habe",
+    "create_failed": "Das Projekt konnte nicht erstellt werden",
+    "name_taken": "Ein Projekt namens \"{name}\" existiert bereits. Wähle einen anderen Namen oder öffne das Projekt über das +-Menü.",
+    "name_unsafe": "Verwende Buchstaben oder Zahlen im Namen, damit er als Ordner auf diesem Computer verwendet werden kann.",
+    "preview_booting_plan": "Die Live-Vorschau wird gestartet. Hier ist der bisherige Plan.",
+    "template_hint": "Jede Next.js-Seite beginnt mit diesen Teilen. Athena füllt sie mit deiner Idee, sobald ihre Skizze fertig ist.",
+    "template_home": "Startseite",
+    "template_region_banner": "Willkommensbanner",
+    "template_region_content": "Hauptinhalt",
+    "template_region_footer": "Fußzeile",
+    "template_region_nav": "Obere Leiste"
   }
 }

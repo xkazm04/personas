@@ -199,6 +199,16 @@
     "sketch_draft": "根据你的描述生成的初步草图。项目设置期间,Athena 会将它变成真正的计划。",
     "sketch_failed": "快速草图未能返回。完整计划会在 Athena 深思熟虑后显示在这里。",
     "sketch_loading": "正在读取你的想法。网站的初步草图会在几秒后显示在这里。",
-    "sketch_understood": "我理解到的内容"
+    "sketch_understood": "我理解到的内容",
+    "create_failed": "无法创建项目",
+    "name_taken": "名为“{name}”的项目已存在。请换一个名称，或从 + 菜单打开该项目。",
+    "name_unsafe": "名称请使用字母或数字，以便在此电脑上作为文件夹使用。",
+    "preview_booting_plan": "正在启动实时预览。这是目前的方案。",
+    "template_hint": "每个 Next.js 网站都从这些部分开始。草图准备好后，Athena 会根据你的想法立即填充内容。",
+    "template_home": "首页",
+    "template_region_banner": "欢迎横幅",
+    "template_region_content": "主要内容",
+    "template_region_footer": "页脚",
+    "template_region_nav": "顶部栏"
   }
 }

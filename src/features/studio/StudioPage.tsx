@@ -108,7 +108,11 @@ export default function StudioPage() {
               onCancelCreate={tabCount > 0 ? () => setCreating(false) : undefined}
             />
           ) : (
-            <StudioCurrentLayout showVision={creating || tabCount === 0} submitting={submitting} onCreate={onCreate} />
+            <StudioCurrentLayout
+              showVision={creating || tabCount === 0}
+              submitting={submitting}
+              onCreate={onCreate}
+            />
           )}
         </Suspense>
       </div>

@@ -23268,7 +23268,17 @@
       "question_counter": "{n} of {total}",
       "answer_placeholder": "Type your answer",
       "answer_send": "Answer",
-      "answer_inline": "Pick one or type your own answer. Setup keeps running while you decide."
+      "answer_inline": "Pick one or type your own answer. Setup keeps running while you decide.",
+      "template_home": "Home page",
+      "template_region_nav": "Top bar",
+      "template_region_banner": "Welcome banner",
+      "template_region_content": "Main content",
+      "template_region_footer": "Footer",
+      "template_hint": "Every Next.js site starts from these parts. Athena fills them in from your idea as soon as her sketch is ready.",
+      "preview_booting_plan": "Starting the live preview. Here is the plan so far.",
+      "name_taken": "A project called \"{name}\" already exists. Pick another name, or open that project from the + menu.",
+      "name_unsafe": "Use letters or numbers in the name, so it can be a folder on this computer.",
+      "create_failed": "The project could not be created"
     }
   },
   "notepad": {

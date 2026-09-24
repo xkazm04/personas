@@ -18161,7 +18161,17 @@
       "sketch_draft": "Bản phác thảo đầu tiên từ những gì bạn viết. Athena biến nó thành kế hoạch thật trong khi dự án được thiết lập.",
       "sketch_failed": "Bản phác thảo nhanh chưa trả về. Kế hoạch đầy đủ sẽ xuất hiện ở đây khi Athena đã suy nghĩ kỹ.",
       "sketch_loading": "Đang đọc ý tưởng của bạn. Bản phác thảo đầu tiên của trang web sẽ xuất hiện ở đây sau vài giây.",
-      "sketch_understood": "Những gì tôi hiểu được"
+      "sketch_understood": "Những gì tôi hiểu được",
+      "create_failed": "Không thể tạo dự án",
+      "name_taken": "Dự án có tên \"{name}\" đã tồn tại. Hãy chọn tên khác, hoặc mở dự án đó từ menu +.",
+      "name_unsafe": "Hãy dùng chữ cái hoặc số trong tên, để nó có thể trở thành một thư mục trên máy tính này.",
+      "preview_booting_plan": "Đang khởi động bản xem trước trực tiếp. Đây là kế hoạch cho đến nay.",
+      "template_hint": "Mọi trang Next.js đều bắt đầu từ những phần này. Athena sẽ điền vào dựa trên ý tưởng của bạn ngay khi bản phác thảo sẵn sàng.",
+      "template_home": "Trang chủ",
+      "template_region_banner": "Biểu ngữ chào mừng",
+      "template_region_content": "Nội dung chính",
+      "template_region_footer": "Chân trang",
+      "template_region_nav": "Thanh trên cùng"
     }
   },
   "system_health": {

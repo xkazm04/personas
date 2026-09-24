@@ -54,7 +54,9 @@ describe('Guide layout', () => {
   it('draws the setup sheet while the project is being created', () => {
     seed({ phase: 'starting', status: null });
     mount();
-    expect(screen.getByText('setup_starting')).toBeTruthy();
+    // No plan and no sketch yet: the Next.js page template, never a skeleton.
+    expect(screen.getByText('template_home')).toBeTruthy();
+    expect(screen.getByText('template_region_banner')).toBeTruthy();
     expect(screen.getByText('frame_blueprint')).toBeTruthy();
     // The dock is open during setup: notes left now go with the next step.
     expect(screen.getByTestId('dock')).toBeTruthy();
@@ -83,6 +85,21 @@ describe('Guide layout', () => {
     expect(screen.getByText('setup_step_create')).toBeTruthy();
     fireEvent.click(screen.getByText('Yes'));
     expect(useStudioStore.getState().draft?.answers[0]).toBe('Yes');
+  });
+
+  it('replays a stored plan while an opened project boots', () => {
+    seed({
+      phase: 'starting',
+      status: null,
+      phases: [
+        { id: 'v', title: 'Vision', status: 'done', note: 'shop + ordering' },
+        { id: 'm', title: 'Menu', status: 'active', note: null },
+      ],
+    });
+    mount();
+    expect(screen.getByText('preview_booting_plan')).toBeTruthy();
+    expect(screen.getAllByText('Menu').length).toBeGreaterThan(0);
+    expect(screen.queryByText('template_home')).toBeNull();
   });
 
   it('never holds a loading sheet over an idle project with no plan', () => {

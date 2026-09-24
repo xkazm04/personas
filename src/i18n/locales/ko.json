@@ -18161,7 +18161,17 @@
       "sketch_draft": "당신의 설명으로 만든 첫 스케치입니다. 프로젝트가 설정되는 동안 Athena가 이를 실제 계획으로 완성합니다.",
       "sketch_failed": "빠른 스케치를 받아오지 못했습니다. Athena가 충분히 검토하면 여기에 전체 계획이 표시됩니다.",
       "sketch_loading": "아이디어를 읽는 중입니다. 몇 초 후 사이트의 첫 스케치가 여기에 표시됩니다.",
-      "sketch_understood": "제가 이해한 내용"
+      "sketch_understood": "제가 이해한 내용",
+      "create_failed": "프로젝트를 생성할 수 없습니다",
+      "name_taken": "\"{name}\"이라는 프로젝트가 이미 있습니다. 다른 이름을 선택하거나 + 메뉴에서 해당 프로젝트를 여세요.",
+      "name_unsafe": "이 컴퓨터에서 폴더로 사용할 수 있도록 이름에 문자나 숫자를 사용하세요.",
+      "preview_booting_plan": "실시간 미리보기를 시작하는 중입니다. 지금까지의 계획입니다.",
+      "template_hint": "모든 Next.js 사이트는 이 구성 요소들에서 시작됩니다. Athena의 스케치가 준비되는 즉시 아이디어를 바탕으로 내용을 채웁니다.",
+      "template_home": "홈페이지",
+      "template_region_banner": "환영 배너",
+      "template_region_content": "메인 콘텐츠",
+      "template_region_footer": "푸터",
+      "template_region_nav": "상단 바"
     }
   },
   "system_health": {

@@ -199,6 +199,16 @@
     "sketch_draft": "Sketsa awal dari kata-katamu. Athena mengubahnya menjadi rencana sebenarnya selama proyek disiapkan.",
     "sketch_failed": "Sketsa cepat tidak muncul. Rencana lengkap akan tampil di sini setelah Athena selesai memikirkannya.",
     "sketch_loading": "Membaca idemu. Sketsa awal situs akan muncul di sini dalam beberapa detik.",
-    "sketch_understood": "Yang saya pahami"
+    "sketch_understood": "Yang saya pahami",
+    "create_failed": "Proyek tidak dapat dibuat",
+    "name_taken": "Proyek bernama \"{name}\" sudah ada. Pilih nama lain, atau buka proyek tersebut dari menu +.",
+    "name_unsafe": "Gunakan huruf atau angka pada nama, agar bisa menjadi folder di komputer ini.",
+    "preview_booting_plan": "Memulai pratinjau langsung. Berikut rencana sejauh ini.",
+    "template_hint": "Setiap situs Next.js dimulai dari bagian-bagian ini. Athena akan mengisinya berdasarkan idemu segera setelah sketsanya siap.",
+    "template_home": "Halaman utama",
+    "template_region_banner": "Spanduk selamat datang",
+    "template_region_content": "Konten utama",
+    "template_region_footer": "Footer",
+    "template_region_nav": "Bilah atas"
   }
 }

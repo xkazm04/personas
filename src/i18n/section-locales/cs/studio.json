@@ -199,6 +199,16 @@
     "sketch_draft": "První skica podle vašich slov. Athena ji během přípravy projektu promění ve skutečný plán.",
     "sketch_failed": "Rychlá skica se nevrátila. Úplný plán se tu objeví, jakmile ho Athena promyslí.",
     "sketch_loading": "Čtu váš nápad. První skica webu se tu objeví během několika sekund.",
-    "sketch_understood": "Co jsem pochopila"
+    "sketch_understood": "Co jsem pochopila",
+    "create_failed": "Projekt se nepodařilo vytvořit",
+    "name_taken": "Projekt s názvem \"{name}\" už existuje. Zvolte jiný název, nebo tento projekt otevřete z nabídky +.",
+    "name_unsafe": "Použijte v názvu písmena nebo čísla, aby mohl být složkou na tomto počítači.",
+    "preview_booting_plan": "Spouští se živý náhled. Zde je zatím vytvořený plán.",
+    "template_hint": "Každý web Next.js začíná z těchto částí. Athena je doplní podle vašeho nápadu, jakmile bude její náčrt hotový.",
+    "template_home": "Domovská stránka",
+    "template_region_banner": "Uvítací banner",
+    "template_region_content": "Hlavní obsah",
+    "template_region_footer": "Patička",
+    "template_region_nav": "Horní lišta"
   }
 }

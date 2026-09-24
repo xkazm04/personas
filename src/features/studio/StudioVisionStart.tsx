@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Bot, Sparkles } from 'lucide-react';
+import { Bot, Sparkles } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { webbuildBunStatus } from '@/api/webbuild';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { Banner } from '@/features/shared/components/feedback/Banner';
+import { guideStrings } from './guide/guideCopy';
+import { freeName, useNameCheck } from './studioNames';
 
 // Vision-phase project init — the "Build with Athena" from-zero start. The user
 // describes what they want; the parent scaffolds + starts the dev server, then
@@ -39,7 +42,8 @@ export default function StudioVisionStart({
   /** Last scaffold/create failure (H9) — shown so a failed start isn't silent. */
   error?: string | null;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const g = guideStrings(t);
   const [name, setName] = useState('');
   const [vision, setVision] = useState('');
   // H8 preflight — Studio's scaffold + dev server require Bun. Check up front so
@@ -90,10 +94,13 @@ export default function StudioVisionStart({
 
   const applyStarter = (s: (typeof STARTERS)[number]) => {
     setVision(t.studio[s.visionKey]);
-    if (!name.trim()) setName(s.name);
+    if (!name.trim()) void freeName(s.name).then(setName);
   };
 
-  const canSubmit = name.trim().length > 0 && vision.trim().length > 0;
+  // The backend's verdict on the name (the scaffold's own rule); submit waits
+  // for it, so a taken or unusable name can never be sent.
+  const { problem, checking } = useNameCheck(name);
+  const canSubmit = name.trim().length > 0 && vision.trim().length > 0 && !problem && !checking;
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto px-6 py-8">
       <div className="w-full max-w-lg rounded-modal border border-border bg-background/70 p-6 shadow-elevation-3">
@@ -131,8 +138,22 @@ export default function StudioVisionStart({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t.studio.project_name_placeholder}
-          className="mb-4 w-full rounded-input border border-border bg-secondary/40 px-3 py-2 text-md outline-none focus:border-primary/50"
+          aria-invalid={problem ? true : undefined}
+          aria-describedby={problem ? 'studio-vision-name-problem' : undefined}
+          className={`w-full rounded-input border bg-secondary/40 px-3 py-2 text-md outline-none ${
+            problem ? 'border-status-error/70 focus:border-status-error' : 'border-border focus:border-primary/50'
+          } ${problem ? 'mb-2' : 'mb-4'}`}
         />
+        {problem && (
+          <div id="studio-vision-name-problem" data-testid="studio-vision-name-problem" className="mb-4">
+            <Banner
+              severity="error"
+              compact
+              alwaysAlert
+              message={problem === 'taken' ? tx(g.name_taken, { name: name.trim() }) : g.name_unsafe}
+            />
+          </div>
+        )}
 
         <label className="mb-1 block typo-caption text-foreground/70">
           {t.studio.what_to_build}
@@ -147,40 +168,29 @@ export default function StudioVisionStart({
         />
 
         {bunMissing && (
-          <div
-            data-testid="studio-vision-bun-missing"
-            className="mb-4 flex items-start gap-2 rounded-input border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="leading-relaxed">{t.studio.bun_missing}</span>
+          <div data-testid="studio-vision-bun-missing" className="mb-4">
+            <Banner severity="warning" compact message={t.studio.bun_missing} />
           </div>
         )}
 
         {bunUnknown && (
-          <div
-            data-testid="studio-vision-bun-unknown"
-            className="mb-4 flex items-start gap-2 rounded-input border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="flex-1 leading-relaxed">{t.studio.bun_unknown}</span>
-            <button
-              type="button"
-              data-testid="studio-vision-bun-retry"
-              onClick={() => setProbe((n) => n + 1)}
-              className="shrink-0 rounded-interactive border border-warning/40 px-2 py-0.5 text-xs font-medium text-warning transition-colors hover:bg-warning/20"
-            >
-              {t.common.retry}
-            </button>
+          <div data-testid="studio-vision-bun-unknown" className="mb-4">
+            <Banner
+              severity="warning"
+              compact
+              message={t.studio.bun_unknown}
+              actions={
+                <Button data-testid="studio-vision-bun-retry" size="sm" variant="secondary" onClick={() => setProbe((n) => n + 1)}>
+                  {t.common.retry}
+                </Button>
+              }
+            />
           </div>
         )}
 
         {error && (
-          <div
-            data-testid="studio-vision-error"
-            className="mb-4 flex items-start gap-2 rounded-input border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="leading-relaxed">{error}</span>
+          <div data-testid="studio-vision-error" className="mb-4">
+            <Banner severity="error" compact alwaysAlert title={g.create_failed} message={error} />
           </div>
         )}
 

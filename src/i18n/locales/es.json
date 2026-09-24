@@ -18161,7 +18161,17 @@
       "sketch_draft": "Un primer boceto a partir de tus palabras. Athena lo convierte en el plan definitivo mientras se configura el proyecto.",
       "sketch_failed": "El boceto rápido no llegó. El plan completo aparecerá aquí cuando Athena lo haya pensado bien.",
       "sketch_loading": "Leyendo tu idea. Un primer boceto del sitio aparecerá aquí en unos segundos.",
-      "sketch_understood": "Lo que entendí"
+      "sketch_understood": "Lo que entendí",
+      "create_failed": "No se pudo crear el proyecto",
+      "name_taken": "Ya existe un proyecto llamado \"{name}\". Elige otro nombre o abre ese proyecto desde el menú +.",
+      "name_unsafe": "Usa letras o números en el nombre, para que pueda ser una carpeta en este equipo.",
+      "preview_booting_plan": "Iniciando la vista previa en vivo. Este es el plan hasta ahora.",
+      "template_hint": "Todo sitio Next.js empieza con estas partes. Athena las completa con tu idea en cuanto su boceto esté listo.",
+      "template_home": "Página de inicio",
+      "template_region_banner": "Banner de bienvenida",
+      "template_region_content": "Contenido principal",
+      "template_region_footer": "Pie de página",
+      "template_region_nav": "Barra superior"
     }
   },
   "system_health": {
