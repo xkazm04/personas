@@ -205,9 +205,9 @@ export default function StudioVisionStart({
           </div>
         )}
 
-        {error && (
+        {typeof error === 'string' && (
           <div data-testid="studio-vision-error" className="mb-4">
-            <Banner severity="error" compact alwaysAlert title={g.create_failed} message={error} />
+            <Banner severity="error" compact alwaysAlert title={g.create_failed} message={error || g.create_failed_hint} />
           </div>
         )}
 

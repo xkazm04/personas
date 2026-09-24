@@ -817,7 +817,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       } catch (e) {
         // H9: keep WHY the scaffold failed on the vision screen (e.g. missing Bun).
         // The form shows why, inline, and stays open; no toast on top of it.
-        set({ draft: null, lastCreateError: readErr(e) ?? 'Something went wrong creating the project.' });
+        // An empty string still means "failed": the form words it (the store has no i18n).
+        set({ draft: null, lastCreateError: readErr(e) ?? '' });
         silentCatch('studioStore:scaffold')(e);
         return;
       }

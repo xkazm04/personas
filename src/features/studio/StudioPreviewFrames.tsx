@@ -36,7 +36,8 @@ export default function StudioPreviewFrames({
             data-tab={id}
             onLoad={() => setLoaded((m) => (m[`${id}-${nonce}`] ? m : { ...m, [`${id}-${nonce}`]: true }))}
             src={`${previewUrls[id]}${route === '/' ? '' : route}`}
-            title={isActive ? 'preview' : `preview-${id}`}
+            data-testid={isActive ? 'studio-preview' : undefined}
+            title={t.studio.preview_frame_title}
             aria-hidden={!isActive}
             // `inert` removes a hidden warm preview from focus AND the a11y tree;
             // opacity/pointer-events alone left it reachable by the Tab key.

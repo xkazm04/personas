@@ -23080,6 +23080,7 @@ export type Translations = {
     no_project_open: string;
     reload_preview: string;
     preview_path: string;
+    preview_frame_title: string;
     build_settings: string;
     effort: string;
     effort_hint: string;
@@ -23288,6 +23289,7 @@ export type Translations = {
       name_unsafe: string;
       name_check_failed: string;
       create_failed: string;
+      create_failed_hint: string;
     };
   };
   notepad: {

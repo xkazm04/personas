@@ -58,6 +58,12 @@ describe('the new-project form', () => {
     await waitFor(() => expect(screen.queryByTestId('studio-vision-name-check-failed')).toBeNull());
   });
 
+  it('a create that failed without a reason still says so, in the form', () => {
+    render(<StudioVisionStart onSubmit={vi.fn()} busy={false} error="" />);
+    expect(screen.getByTestId('studio-vision-error')).toBeTruthy();
+    expect(screen.getByText('create_failed_hint')).toBeTruthy();
+  });
+
   it('a starter picks a free name instead of a taken one', async () => {
     render(<StudioVisionStart onSubmit={vi.fn()} busy={false} error={null} />);
     fireEvent.click(screen.getAllByTestId('studio-vision-starter')[0]!);
