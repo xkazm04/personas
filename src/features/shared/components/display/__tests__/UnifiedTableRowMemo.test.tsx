@@ -26,6 +26,9 @@ const columns: TableColumn<Row>[] = [
 
 const rowEl = (text: string) => screen.getByText(text).closest('.row-hover-lift') as HTMLElement;
 
+/** Every table here is virtualized, the bounded path callers should take. */
+const ROW_H = 44;
+
 describe('UnifiedTable row memoization', () => {
   beforeEach(() => {
     renders = {};
@@ -38,13 +41,14 @@ describe('UnifiedTable row memoization', () => {
     const c = { id: 'c', name: 'Charlie' };
     const { rerender } = render(
       // An inline handler per render, as most callers write it.
-      <UnifiedTable<Row> columns={columns} data={[a, b, c]} getRowKey={(r) => r.id} onRowClick={() => {}} />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={[a, b, c]} getRowKey={(r) => r.id} onRowClick={() => {}} />,
     );
     expect(renders).toEqual({ a: 1, b: 1, c: 1 });
 
     renders = {};
     rerender(
       <UnifiedTable<Row>
+        rowHeight={ROW_H}
         columns={columns}
         // a: same object; b: changed; c: a fresh but equal object (a re-fetch).
         data={[a, { id: 'b', name: 'Bravo 2' }, { id: 'c', name: 'Charlie' }]}
@@ -61,9 +65,9 @@ describe('UnifiedTable row memoization', () => {
     const first = vi.fn();
     const second = vi.fn();
     const { rerender } = render(
-      <UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={first} />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={first} />,
     );
-    rerender(<UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={second} />);
+    rerender(<UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={second} />);
     fireEvent.click(rowEl('Alpha'));
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith(rows[0]);
@@ -71,7 +75,7 @@ describe('UnifiedTable row memoization', () => {
 
   it('a keyboard focus move re-renders only the row that gained focus', () => {
     const rows = [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Bravo' }];
-    render(<UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={() => {}} />);
+    render(<UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} onRowClick={() => {}} />);
     renders = {};
     fireEvent.keyDown(rowEl('Alpha').parentElement!, { key: 'ArrowDown' });
     expect(renders).toEqual({ a: 1 });
@@ -82,10 +86,10 @@ describe('UnifiedTable row memoization', () => {
       { key: 'rank', label: 'Rank', width: '1fr', render: (r, i) => `${r.name}#${i}` },
     ];
     const b = { id: 'b', name: 'Bravo' };
-    const { rerender } = render(<UnifiedTable<Row> columns={indexColumns} data={[b]} getRowKey={(r) => r.id} />);
+    const { rerender } = render(<UnifiedTable<Row> rowHeight={ROW_H} columns={indexColumns} data={[b]} getRowKey={(r) => r.id} />);
     expect(screen.getByText('Bravo#0')).toBeTruthy();
     rerender(
-      <UnifiedTable<Row> columns={indexColumns} data={[{ id: 'a', name: 'Alpha' }, b]} getRowKey={(r) => r.id} />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={indexColumns} data={[{ id: 'a', name: 'Alpha' }, b]} getRowKey={(r) => r.id} />,
     );
     expect(screen.getByText('Bravo#1')).toBeTruthy();
   });
@@ -105,27 +109,28 @@ describe('UnifiedTable entrance cascade on warm return', () => {
 
   it('a second mount of the same surface key plays 0 cascades', () => {
     const first = render(
-      <UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-surface" />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-surface" />,
     );
     expect(cascading()).toBe(2);
     finishEntrances();
     first.unmount();
 
     render(
-      <UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-surface" />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-surface" />,
     );
     expect(cascading()).toBe(0);
   });
 
   it('a genuinely new row on the warm surface still enters alone', () => {
     const first = render(
-      <UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-new-row" />,
+      <UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} tableId="wp3-new-row" />,
     );
     finishEntrances();
     first.unmount();
 
     render(
       <UnifiedTable<Row>
+        rowHeight={ROW_H}
         columns={columns}
         data={[...rows, { id: 'c', name: 'Charlie' }]}
         getRowKey={(r) => r.id}
@@ -138,10 +143,10 @@ describe('UnifiedTable entrance cascade on warm return', () => {
   });
 
   it('a table with no surface key keeps the per-mount seen-set (replays on remount)', () => {
-    const first = render(<UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} />);
+    const first = render(<UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} />);
     finishEntrances();
     first.unmount();
-    render(<UnifiedTable<Row> columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} />);
+    render(<UnifiedTable<Row> rowHeight={ROW_H} columns={columns} data={rows} getRowKey={(r) => r.id} isLoading={false} />);
     expect(cascading()).toBe(2);
   });
 });
