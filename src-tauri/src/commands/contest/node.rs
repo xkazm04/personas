@@ -32,15 +32,39 @@ pub struct NodeOutput {
 }
 
 impl NodeOutput {
-    /// The last lines of stderr (then stdout) — the reason a failed step shows.
+    /// The reason a failed step shows, from stderr (else stdout): the first
+    /// error line (`Error: …` from an uncaught throw, `contest: …` from the
+    /// instrument's `die`) plus the line after it (the throw site); else the
+    /// last lines. An uncaught throw prints the message first and then stack
+    /// frames and `Node.js vX`, so a plain tail is all frames.
     pub fn tail(&self) -> String {
         let src = if self.stderr.trim().is_empty() {
             &self.stdout
         } else {
             &self.stderr
         };
-        tail_lines(src, 6, 600)
+        let lines: Vec<&str> = src.lines().filter(|l| !l.trim().is_empty()).collect();
+        match lines.iter().position(|l| is_error_line(l)) {
+            Some(i) => {
+                let end = (i + 2).min(lines.len());
+                tail_lines(&lines[i..end].join("\n"), 2, 600)
+            }
+            None => tail_lines(src, 6, 600),
+        }
     }
+}
+
+/// `^(\w*Error\b|contest:)`: a JS error's message line, or the instrument's `die`.
+fn is_error_line(line: &str) -> bool {
+    if line.starts_with("contest:") {
+        return true;
+    }
+    // The leading word run; it ends at a non-word char, which is the `\b`.
+    let word: String = line
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect();
+    word.ends_with("Error")
 }
 
 pub fn tail_lines(text: &str, lines: usize, max_chars: usize) -> String {
@@ -394,6 +418,52 @@ mod tests {
         assert_eq!(resolve_vault(root).0, root.join(".contest"));
         std::fs::create_dir_all(root.join("vaultdir")).unwrap();
         assert_eq!(resolve_vault(root).0, root.join("vaultdir"));
+    }
+
+    /// Captured 2026-09-25: `contest.mjs init` with a repeated participant.
+    const UNCAUGHT_THROW: &str = "file:///C:/reg/skills/contest/scripts/lib/participants.mjs:32
+    if (seen.has(p.id)) throw new Error(`participant \"${spec}\" repeats \"${p.id}\" - add #label to run the same seat twice`);
+                              ^
+
+Error: participant \"claude:opus@high\" repeats \"claude-opus_high\" - add #label to run the same seat twice
+    at parseParticipants (file:///C:/reg/skills/contest/scripts/lib/participants.mjs:32:31)
+    at Object.init (file:///C:/reg/skills/contest/scripts/contest.mjs:168:24)
+    at file:///C:/reg/skills/contest/scripts/contest.mjs:582:30
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.12.0
+";
+
+    #[test]
+    fn a_failed_step_shows_the_error_line_not_the_stack() {
+        let out = NodeOutput {
+            status: Some(1),
+            success: false,
+            stdout: String::new(),
+            stderr: UNCAUGHT_THROW.into(),
+        };
+        let tail = out.tail();
+        assert!(
+            tail.contains("repeats \"claude-opus_high\""),
+            "the error line is missing: {tail}"
+        );
+        assert!(!tail.contains("Node.js v24"), "{tail}");
+        // A die() message is one `contest:` line.
+        let died = NodeOutput {
+            stderr:
+                "contest: C:/v/contests/x.md exists - pass --force to rewrite the contest note\n"
+                    .into(),
+            ..out.clone()
+        };
+        assert!(died.tail().starts_with("contest: "), "{}", died.tail());
+        // No error line: the last lines, as before.
+        let plain = NodeOutput {
+            stderr: "a\nb\n".into(),
+            ..out
+        };
+        assert_eq!(plain.tail(), "a\nb");
     }
 
     #[test]
