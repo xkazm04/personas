@@ -14,7 +14,7 @@ import { motion } from 'framer-motion';
 import { KIND_VAR } from '../../../tones';
 import type { WorkItem } from '../../../useWorkforce';
 import { CardBody } from './bodies/CardBody';
-import { CORNERS, KIND_GLYPH, filigreeStyle, mix, monogram, projectHue, ringGradient, weaveStyle } from './cardArt';
+import { CORNERS, HOVER_GLOW, KIND_GLYPH, filigreeStyle, mix, monogram, projectHue, ringGradient, weaveStyle } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
 
 function Filigree({ color, size }: { color: string; size: number }) {
@@ -137,7 +137,7 @@ export function CardFace({
           <button
             type="button"
             onClick={onSetAside}
-            className="inline-flex items-center gap-2 rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
+            className={`inline-flex items-center gap-2 rounded-interactive border border-foreground/15 px-3 py-1 typo-body text-foreground focus-ring ${HOVER_GLOW}`}
           >
             {S.setAside}
             <kbd className="rounded border border-foreground/20 bg-foreground/[0.06] px-1.5 typo-caption font-mono text-foreground/90">

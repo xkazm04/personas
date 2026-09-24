@@ -3,10 +3,11 @@
  * for a decision, an approval or a session request, the Oracle treatment over
  * the shared `CardModel`; for every other kind, the product's own `WorkItemBody` for now.
  *
- * Keys (one place for all three treatments, above the stage's own keys):
- * 1-9 pick that option, 0 asks Athena (reveals her recommendation), Enter
- * confirms the recommended option once shown, or asks for it first. Space,
- * Esc and Alt+W stay the stage's (next card, return the spread).
+ * Keys (above the stage's own keys): 1-9 pick that option, Up / Down move
+ * focus between the options (Enter then picks the focused one), 0 asks Athena
+ * (reveals her recommendation), Enter confirms the recommended option once
+ * shown, or asks for it first. Left / Right, Space, Esc and Alt+W stay the
+ * stage's (walk the queue, set aside, return the spread).
  *
  * TODO(prototype, 2026-09-24): consolidate the Athena chat switcher.
  */
@@ -52,6 +53,16 @@ function useCardKeys(model: CardModel) {
         if (!choice || model.busy) return false;
         e.preventDefault();
         void choice.run();
+        return true;
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const plates = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-card-choice]')).filter((b) => !b.disabled);
+        if (!plates.length) return false;
+        e.preventDefault();
+        const at = plates.indexOf(document.activeElement as HTMLButtonElement);
+        const step = e.key === 'ArrowDown' ? 1 : -1;
+        const next = at < 0 ? (step > 0 ? 0 : plates.length - 1) : (at + step + plates.length) % plates.length;
+        plates[next]!.focus();
         return true;
       }
       const rec = model.recommendation;

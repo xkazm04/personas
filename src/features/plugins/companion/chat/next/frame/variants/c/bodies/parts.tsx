@@ -9,7 +9,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { mix } from '../cardArt';
+import { HOVER_GLOW, mix } from '../cardArt';
 import type { CardChoice, CardField, CardModel } from './model';
 
 export function KeyCap({ children, color, size = 'md' }: { children: ReactNode; color: string; size?: 'md' | 'lg' }) {
@@ -49,7 +49,8 @@ export function ChoiceButton({
       loading={choice.busy}
       onClick={choice.run}
       data-testid={choice.testId}
-      className={className}
+      data-card-choice=""
+      className={`ease-linear hover:brightness-125 focus-visible:brightness-125 ${className ?? ''}`}
       style={style}
     >
       {children}
@@ -142,7 +143,7 @@ export function FieldSubmit({ field }: { field: CardField }) {
 export function DetailsReveal({ details }: { details: NonNullable<CardModel['details']> }) {
   return (
     <details className="group">
-      <summary className="cursor-pointer select-none typo-body text-foreground/85 hover:text-foreground">{details.label}</summary>
+      <summary className={`cursor-pointer select-none typo-body text-foreground/85 rounded-interactive focus-ring ${HOVER_GLOW}`}>{details.label}</summary>
       <pre className="mt-2 max-h-48 overflow-auto scrollbar-thin rounded-input bg-secondary/40 px-3 py-2 typo-data font-mono text-foreground whitespace-pre-wrap break-words">
         {details.code}
       </pre>

@@ -54,6 +54,15 @@ export function monogram(label: string): string {
   return (label.slice(0, 2) || '?').replace(/^./, (c) => c.toUpperCase());
 }
 
+/**
+ * The Spread's one hover language (owner, 2026-09-24): an interactive element
+ * brightens on hover or keyboard focus through a linear filter transition —
+ * no grey fill, no movement. `HOVER_GLOW_GROUP` is the same for a part that
+ * lights with its `group` parent.
+ */
+export const HOVER_GLOW = 'transition-[filter] duration-200 ease-linear hover:brightness-125 focus-visible:brightness-125';
+export const HOVER_GLOW_GROUP = 'transition-[filter] duration-200 ease-linear group-hover:brightness-125 group-focus-visible:brightness-125';
+
 export const mix = (color: string, pct: number, into = 'transparent') => `color-mix(in srgb, ${color} ${pct}%, ${into})`;
 
 /** The double-ring border: a metallic sweep in the card's colour. */

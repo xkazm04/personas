@@ -15,7 +15,7 @@ import { KIND_VAR } from '../../../tones';
 import { NEXT_COPY as C } from '../../../nextCopy';
 import { ATHENA_COLUMN, type ProcessMark, type ProjectColumn } from '../../../useProcessColumns';
 import type { RightPanelProps } from '../../slots';
-import { CORNERS, filigreeStyle, mix, monogram, projectHue, ringGradient } from './cardArt';
+import { CORNERS, HOVER_GLOW, HOVER_GLOW_GROUP, filigreeStyle, mix, monogram, projectHue, ringGradient } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
 
 /** Where the spread's cards fly from and back to. */
@@ -43,7 +43,7 @@ function ProcessDot({ p }: { p: ProcessMark }) {
         className="grid place-items-center w-3.5 h-3.5 rounded-full focus-ring group"
       >
         <span
-          className={`block w-2 h-2 rounded-full transition-transform group-hover:scale-150 ${p.dot} ${
+          className={`block w-2 h-2 rounded-full ${HOVER_GLOW_GROUP} ${p.dot} ${
             p.urgent ? 'ring-2 ring-status-warning/70 ring-offset-1 ring-offset-background' : ''
           }`}
           aria-hidden
@@ -85,7 +85,7 @@ function EdgeStack({ col, onOpenItem }: { col: ProjectColumn; onOpenItem: (id: s
           return (
             <span
               key={d.id}
-              className="absolute left-0 right-0 rounded-t-interactive border border-b-0 transition-transform group-hover:-translate-y-1"
+              className={`absolute left-0 right-0 rounded-t-interactive border border-b-0 ${HOVER_GLOW_GROUP}`}
               style={{
                 top: 12 - depth * 4,
                 height: 14 + depth * 4,
@@ -99,7 +99,7 @@ function EdgeStack({ col, onOpenItem }: { col: ProjectColumn; onOpenItem: (id: s
           );
         })}
         <span
-          className="absolute left-1/2 -translate-x-1/2 grid place-items-center min-w-5 h-5 px-1 rounded-full border bg-background typo-caption text-foreground shadow-elevation-2 transition-transform group-hover:-translate-y-1"
+          className={`absolute left-1/2 -translate-x-1/2 grid place-items-center min-w-5 h-5 px-1 rounded-full border bg-background typo-caption text-foreground shadow-elevation-2 ${HOVER_GLOW_GROUP}`}
           style={{ top: 12 - (shown.length - 1) * 4 - 10, borderColor: KIND_VAR[first.kind] }}
           aria-hidden
         >
@@ -195,7 +195,7 @@ export function BinderPanel({ columns, waiting, onOpenItem, onOpenWaiting }: Rig
       <button
         type="button"
         onClick={onOpenWaiting}
-        className="mx-2 mt-2 mb-1 flex items-center gap-2 rounded-interactive px-2 py-1.5 hover:bg-foreground/[0.06] focus-ring"
+        className={`mx-2 mt-2 mb-1 flex items-center gap-2 rounded-interactive px-2 py-1.5 focus-ring ${HOVER_GLOW}`}
         aria-label={S.openSpread}
       >
         <span className="relative w-4 h-5 shrink-0" aria-hidden>

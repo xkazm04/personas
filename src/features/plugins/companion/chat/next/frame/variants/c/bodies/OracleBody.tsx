@@ -9,7 +9,7 @@
  */
 
 import { Sparkles } from 'lucide-react';
-import { mix } from '../cardArt';
+import { HOVER_GLOW, mix } from '../cardArt';
 import { SPREAD_COPY as S } from '../copy';
 import type { BodyProps } from './CardBody';
 import { ChoiceButton, DetailsReveal, FieldInput, FieldSubmit, KeyCap, Problems, toneColor } from './parts';
@@ -91,7 +91,7 @@ export function OracleBody({ model, color, art }: BodyProps) {
               <button
                 type="button"
                 onClick={rec.reveal}
-                className="inline-flex items-center gap-2 rounded-interactive px-3 py-1.5 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
+                className={`inline-flex items-center gap-2 rounded-interactive px-3 py-1.5 typo-body text-foreground focus-ring ${HOVER_GLOW}`}
               >
                 <KeyCap color={color}>{S.keyAsk}</KeyCap>
                 {S.askAthena}

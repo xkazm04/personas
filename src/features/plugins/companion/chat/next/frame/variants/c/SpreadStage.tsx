@@ -12,11 +12,13 @@
  * and flies to the discard pile at the lower left, and the next card is drawn.
  * With the deck empty the pile sweeps away and the stage closes.
  *
- * Keys: Space draws the next card (the current one goes under the deck), Esc
- * (or Alt+W) returns the spread to the binder. On a card with a native body,
- * 1-9 / 0 / Enter belong to the card (pick, ask Athena, confirm); elsewhere
- * Enter draws the next card and 1-9 draw that card from the deck. Reduced
- * motion: every flight becomes a fade.
+ * Keys: Left / Right walk the queue as a ring (the current card goes back
+ * into the deck), Space sets the current card aside (the one skip), Esc (or
+ * Alt+W) returns the spread to the binder. On a card with a native body,
+ * 1-9 / 0 / Enter / Up / Down belong to the card (pick, ask Athena, confirm,
+ * move between options); elsewhere Enter draws the next card and 1-9 draw
+ * that card from the deck. Hover: a linear brightness glow (`HOVER_GLOW`).
+ * Reduced motion: every flight becomes a fade.
  *
  * TODO(prototype, 2026-09-23): consolidate the Athena chat switcher.
  */
@@ -31,7 +33,7 @@ import { ATHENA_COLUMN } from '../../../useProcessColumns';
 import type { DecisionStageProps } from '../../slots';
 import { BINDER_ATTR, TILE_ATTR } from './BinderPanel';
 import { CardBack, CardFace } from './CardFrame';
-import { mix } from './cardArt';
+import { HOVER_GLOW, mix } from './cardArt';
 import { SPREAD_COPY as S } from './copy';
 
 const DECK_W = 76;
@@ -103,7 +105,8 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [played, setPlayed] = useState<Played[]>([]);
   const [aside, setAside] = useState<ReadonlySet<string>>(() => new Set());
-  const [skipped, setSkipped] = useState<string[]>([]);
+  // The queue as a ring, the active card first once one is drawn.
+  const [order, setOrder] = useState<string[]>([]);
   const [exitTo, setExitTo] = useState<ExitTo>('discard');
   const [arrivals, setArrivals] = useState(0);
 
@@ -112,11 +115,13 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
   const lastActive = useRef<WorkItem | null>(null);
   if (active) lastActive.current = active;
 
-  const deck = useMemo(() => {
-    const rest = live.filter((i) => i.id !== activeId);
-    const skip = new Set(skipped);
-    return [...rest.filter((i) => !skip.has(i.id)), ...skipped.map((id) => rest.find((i) => i.id === id)).filter((i): i is WorkItem => !!i)];
-  }, [live, activeId, skipped]);
+  const ring = useMemo(() => {
+    const byId = new Map(live.map((i) => [i.id, i] as const));
+    const ordered = order.map((id) => byId.get(id)).filter((i): i is WorkItem => !!i);
+    const known = new Set(order);
+    return [...ordered, ...live.filter((i) => !known.has(i.id))];
+  }, [live, order]);
+  const deck = useMemo(() => ring.filter((i) => i.id !== activeId), [ring, activeId]);
 
   // Geometry (stage coordinates).
   const { w, h } = size;
@@ -131,19 +136,17 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
   const compact = cardH < 600;
 
   // Refs so key and timer handlers read the current state.
-  const state = useRef({ phase, activeId, deck, live });
-  state.current = { phase, activeId, deck, live };
+  const state = useRef({ phase, activeId, deck, live, ring });
+  state.current = { phase, activeId, deck, live, ring };
 
   const draw = useCallback(
     (id: string) => {
-      const cur = state.current.activeId;
+      const { activeId: cur, ring: r } = state.current;
       if (cur === id) return;
-      if (cur) {
-        setExitTo('deck');
-        setSkipped((s) => [...s.filter((x) => x !== cur && x !== id), cur]);
-      } else {
-        setSkipped((s) => s.filter((x) => x !== id));
-      }
+      if (cur) setExitTo('deck');
+      // Rotate the ring so the drawn card leads; Right then Left comes back.
+      const at = r.findIndex((i) => i.id === id);
+      if (at >= 0) setOrder([...r.slice(at), ...r.slice(0, at)].map((i) => i.id));
       setActiveId(id);
       setArrivals((n) => n + 1);
       onFocus(id);
@@ -154,6 +157,12 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
   const drawNext = useCallback(() => {
     const next = state.current.deck[0];
     if (next) draw(next.id);
+  }, [draw]);
+
+  const drawPrev = useCallback(() => {
+    const d = state.current.deck;
+    const prev = d[d.length - 1];
+    if (prev) draw(prev.id);
   }, [draw]);
 
   const startReturn = useCallback(() => {
@@ -237,7 +246,21 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
         return true;
       }
       if (isTyping(el) || e.altKey || e.ctrlKey || e.metaKey) return false;
-      if (e.key === ' ' || e.key === 'Enter') {
+      if (e.key === ' ') {
+        // The one skip: set the current card aside, whatever holds focus.
+        if (!state.current.activeId) return false;
+        e.preventDefault();
+        setActiveAside();
+        return true;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        if (!state.current.deck.length) return false;
+        e.preventDefault();
+        if (e.key === 'ArrowRight') drawNext();
+        else drawPrev();
+        return true;
+      }
+      if (e.key === 'Enter') {
         // Enter on a real control inside the card belongs to that control.
         if (el && el !== document.body && (el.tagName === 'BUTTON' || el.tagName === 'A') && !el.closest('[data-spread-deck]')) return false;
         e.preventDefault();
@@ -256,11 +279,11 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
     { priority: FULLSCREEN_LAYER_PRIORITY + 1 },
   );
 
-  const setActiveAside = () => {
-    if (!activeId) return;
-    const id = activeId;
+  function setActiveAside() {
+    const id = state.current.activeId;
+    if (!id) return;
     setAside((s) => new Set(s).add(id));
-  };
+  }
 
   const index = played.length;
   const total = played.length + live.length;
@@ -350,7 +373,7 @@ function Deck({
   const leaving = phase === 'return' || phase === 'end';
   return (
     <div
-      className="absolute pointer-events-auto"
+      className="absolute pointer-events-auto transition-[filter] duration-200 ease-linear hover:brightness-125 has-[:focus-visible]:brightness-125"
       style={{ left: at.x - DECK_W / 2, top: at.y - DECK_H / 2, width: DECK_W, height: DECK_H }}
       data-spread-deck=""
     >
@@ -384,7 +407,7 @@ function Deck({
           type="button"
           onClick={onDraw}
           aria-label={S.drawNext}
-          className="absolute inset-0 z-20 rounded-card focus-ring hover:ring-2 hover:ring-primary/40"
+          className="absolute inset-0 z-20 rounded-card focus-ring"
         />
       )}
       {deck.length > 0 && !leaving && (
@@ -544,7 +567,7 @@ function EmptyPlate({ at, onClose }: { at: Pt; onClose: () => void }) {
       <button
         type="button"
         onClick={onClose}
-        className="mt-4 rounded-interactive border border-foreground/15 px-3 py-1.5 typo-body text-foreground hover:bg-foreground/[0.06] focus-ring"
+        className={`mt-4 rounded-interactive border border-foreground/15 px-3 py-1.5 typo-body text-foreground focus-ring ${HOVER_GLOW}`}
       >
         {S.close}
       </button>
