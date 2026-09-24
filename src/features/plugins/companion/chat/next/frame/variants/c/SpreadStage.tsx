@@ -34,11 +34,14 @@ import type { DecisionStageProps } from '../../slots';
 import { BINDER_ATTR, TILE_ATTR } from './BinderPanel';
 import { CardBack, CardFace } from './CardFrame';
 import { HOVER_GLOW, mix } from './cardArt';
+import { centreShift } from '../../screenCentre';
 import { SPREAD_COPY as S } from './copy';
 
 const DECK_W = 76;
 const DECK_H = 106;
 const PAD = 10;
+const CARD_W = 600;
+const CARD_MIN_W = 420;
 const DECK_SHOWN = 7;
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -68,15 +71,19 @@ function isTyping(el: Element | null): boolean {
 
 function useStageGeometry() {
   const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0, lift: 0 });
+  const [size, setSize] = useState({ w: 0, h: 0, lift: 0, mid: 0 });
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const measure = () => {
       // How far the stage may grow upward over her latest words (the top piece).
       const layer = el.closest('[data-testid="companion-panel"]');
-      const lift = layer ? Math.max(0, el.getBoundingClientRect().top - layer.getBoundingClientRect().top) : 0;
-      setSize({ w: el.clientWidth, h: el.clientHeight, lift });
+      const r = el.getBoundingClientRect();
+      const lr = layer?.getBoundingClientRect();
+      const lift = lr ? Math.max(0, r.top - lr.top) : 0;
+      // The screen's middle in stage coordinates, so the card centres on it.
+      const mid = lr ? lr.left + lr.width / 2 - r.left : el.clientWidth / 2;
+      setSize({ w: el.clientWidth, h: el.clientHeight, lift, mid });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -130,9 +137,12 @@ function Spread({ items, focusId, onFocus, onClose, onSend }: SpreadStageProps) 
   const lift = h < 560 ? size.lift : 0;
   const deckPt: Pt = { x: w - DECK_W / 2 - PAD, y: h - DECK_H / 2 - PAD };
   const discardPt: Pt = { x: DECK_W / 2 + PAD, y: h - DECK_H / 2 - PAD };
-  const cardW = Math.max(320, Math.min(600, w - 2 * (DECK_W + 3 * PAD)));
+  // The card keeps its full width until the stage itself runs out of room;
+  // on a narrow stage it covers the inner edge of the deck and the pile
+  // rather than shrinking to clear them.
+  const cardW = Math.max(CARD_MIN_W, Math.min(CARD_W, w - 2 * PAD));
   const cardH = Math.max(300, h + lift - 4);
-  const cardPt: Pt = { x: w / 2, y: (h - lift) / 2 };
+  const cardPt: Pt = { x: w / 2 + centreShift(size.mid, { left: 0, width: w }, cardW), y: (h - lift) / 2 };
   const compact = cardH < 600;
 
   // Refs so key and timer handlers read the current state.

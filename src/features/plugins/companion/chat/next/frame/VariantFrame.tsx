@@ -13,9 +13,11 @@
  * the chat or voice input. Left: the tools rail. Right: the slot's panel.
  *
  * `slots` picks the right panel and the decision stage (see `slots.ts`).
+ * The rails differ in width, so the top and bottom pieces (and the Spread's
+ * card) are nudged to the screen's middle, within their column (`screenCentre.ts`).
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { BrainViewer } from '../../../BrainViewer';
 import { CompanionToolbar } from '../../../CompanionToolbar';
 import { useCompanionStore } from '../../../companionStore';
@@ -33,6 +35,9 @@ import { FramePiece } from './FramePiece';
 import { FrameTop } from './FrameTop';
 import { FRAME_LOOKS } from './frameLook';
 import type { HaloSlots } from './slots';
+import { useScreenCentre } from './screenCentre';
+
+const CENTRED_EDGES = ['top', 'bottom'] as const;
 
 const look = FRAME_LOOKS.halo;
 
@@ -47,6 +52,9 @@ export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngi
   const streaming = useCompanionStore((s) => s.streaming);
   const brainOpen = useCompanionStore((s) => s.brainView.open);
   const frame = frameGradient(workforce);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const centreRef = useRef<HTMLDivElement>(null);
+  const shift = useScreenCentre(layerRef, centreRef, CENTRED_EDGES);
 
   const decisionsOpen = view.kind === 'work' && !brainOpen;
   const focusId = view.kind === 'work' ? (view.focus ?? workforce.items[0]?.id ?? null) : null;
@@ -74,6 +82,7 @@ export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngi
     <div
       className={`fixed inset-x-0 bottom-0 top-[112px] ${lifted ? 'z-[220]' : 'z-[60]'} pointer-events-none grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)] gap-5 px-5 pb-6`}
       data-testid="companion-panel"
+      ref={layerRef}
     >
       <div className="min-h-0 flex items-center">
         <FramePiece edge="left" look={look} frame={frame} label={C.tools} className="py-1">
@@ -81,13 +90,14 @@ export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngi
         </FramePiece>
       </div>
 
-      <div className="min-w-0 min-h-0 flex flex-col gap-4">
+      <div ref={centreRef} className="min-w-0 min-h-0 flex flex-col gap-4">
         <FramePiece
           edge="top"
           look={look}
           frame={frame}
           working={streaming}
           label={C.athena}
+          shiftX={shift.top}
           sectionClassName={expandedTop ? 'flex-1 min-h-0' : 'shrink-0'}
         >
           <FrameTop
@@ -123,7 +133,7 @@ export function VariantFrame({ engine, lifted, slots }: { engine: AthenaChatEngi
           />
         </div>
 
-        <FramePiece edge="bottom" look={look} frame={frame} working={streaming} sectionClassName="shrink-0" className="px-2 py-1.5">
+        <FramePiece edge="bottom" look={look} frame={frame} working={streaming} shiftX={shift.bottom} sectionClassName="shrink-0" className="px-2 py-1.5">
           <FrameBottom engine={engine} about={about} onClearAbout={layer.back} />
         </FramePiece>
       </div>

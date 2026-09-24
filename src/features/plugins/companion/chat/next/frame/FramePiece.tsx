@@ -8,6 +8,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import type { FrameLook } from './frameLook';
+import { FRAME_EDGE_ATTR } from './screenCentre';
 
 type Edge = 'top' | 'bottom' | 'left' | 'right' | 'center';
 
@@ -28,6 +29,7 @@ export function FramePiece({
   sectionClassName = '',
   children,
   label,
+  shiftX = 0,
 }: {
   edge: Edge;
   look: FrameLook;
@@ -39,6 +41,8 @@ export function FramePiece({
   sectionClassName?: string;
   children: ReactNode;
   label?: string;
+  /** Horizontal nudge toward the screen's middle (`useScreenCentre`). */
+  shiftX?: number;
 }) {
   const place = look.place[edge];
   const surface = look.surface[edge];
@@ -49,7 +53,12 @@ export function FramePiece({
       transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
       aria-label={label}
       className={`pointer-events-auto ${place} ${sectionClassName} ${look.framed ? `athena-frame ${surface}` : ''}`}
-      style={look.framed ? ({ ['--athena-frame' as string]: frame } as CSSProperties) : undefined}
+      style={{
+        ...(look.framed ? ({ ['--athena-frame' as string]: frame } as CSSProperties) : {}),
+        // CSS `translate`, not `transform`: framer-motion owns the transform.
+        ...(shiftX ? { translate: `${shiftX}px 0` } : {}),
+      }}
+      {...{ [FRAME_EDGE_ATTR]: edge }}
       data-working={look.framed && working ? 'true' : 'false'}
     >
       <div
