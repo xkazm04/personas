@@ -248,6 +248,12 @@ const BUILDERS = {
   'overview/sub_events': () => subEvents(),
   'plugins/dev-tools/sub_triage': () => subTriage(),
   'plugins/dev-tools/sub_triage/leaves': () => ({ ...subTriage(), module: 'plugins/dev-tools/sub_triage/leaves' }),
+  // The shared DataGrid's other consumers (datagridSurfaces.tsx): the persona and
+  // event fixtures above feed PersonaOverviewPage and LiveStreamTab; the vault
+  // surfaces take synthetic props or store state and need no IPC beyond boot.
+  ...Object.fromEntries(['datagrid/persona-overview', 'datagrid/live-stream', 'datagrid/credentials', 'datagrid/databases'].map((id) => [
+    id, () => ({ ...subEvents(), module: id, note: 'Synthetic: the sub_events personas and events, for a shared DataGrid surface.' }),
+  ])),
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
