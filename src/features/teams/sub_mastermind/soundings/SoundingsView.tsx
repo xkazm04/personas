@@ -67,6 +67,9 @@ import './soundings.css';
 
 export interface SoundingsViewProps {
   scene: Scene;
+  /** The page's scene has not settled yet (useSceneSettle): the chart shows its
+   *  chrome and a loading line, never a ghost of stations it does not have. */
+  settling?: boolean;
   /** The view switcher, rendered in the chart's own top bar. */
   switcher?: ReactNode;
   onDimOpen: (slug: string, node: DimNode, anchor: Anchor) => void;
@@ -93,7 +96,7 @@ const sleep = (t: number) => new Promise<void>((r) => { window.setTimeout(r, t);
 let seq = 0;
 
 export default function SoundingsView(props: SoundingsViewProps) {
-  const { scene, switcher } = props;
+  const { scene, switcher, settling = false } = props;
   const { t, tx } = useTranslation();
   const m = t.mastermind;
   const statusWord = useStatusWord();
@@ -541,7 +544,7 @@ export default function SoundingsView(props: SoundingsViewProps) {
   } : null;
 
   // ── the reading line ────────────────────────────────────────────────────
-  let reading: ReactNode = null;
+  let reading: ReactNode = settling ? m.loading_projects : null;
   if (n > 0) {
     if (level === 2 && liftedKey && liftedKey !== FILE && curStation) {
       const node = curStation.island.nodes.find((x) => x.key === liftedKey);
@@ -875,7 +878,7 @@ export default function SoundingsView(props: SoundingsViewProps) {
             })()}
           </>
         )}
-        {n === 0 && <div className="sd-empty">{m.soundings_empty}</div>}
+        {n === 0 && !settling && <div className="sd-empty">{m.soundings_empty}</div>}
       </main>
 
       <footer className="sd-dock">

@@ -69,17 +69,18 @@ import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { RunnerListPopover } from './lib/RunnerListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode, Scene } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { ViewPanel, ViewSwitcher, type MastermindView } from './lib/ViewSwitcher';
 import { useSceneSettle } from './lib/useSceneSettle';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
 // Soundings, the next-gen chart (docs/design/mastermind-soundings.md), in its
 // own chunk so the Baseline never pays for it. lazyRetry, not React.lazy (see
 // PersonasPage for why).
 const SoundingsView = lazyRetry(() => import('./soundings/SoundingsView'));
+/** What Soundings draws while the scene settles: its chrome, no stations. */
+const UNSETTLED_SCENE: Scene = { islands: [], edges: [], demo: false };
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
@@ -910,9 +911,13 @@ function MastermindInner() {
           JUMP when the persisted layout arrives. */}
       <ViewPanel view={view}>
       {!baseline ? (
-        <Suspense fallback={<RouteChunkSkeleton />}>
+        // No skeleton: a ghost of stations that do not exist yet has a different
+        // geometry from the chart that replaces it, and the swap read as a blink.
+        // The chart's own chrome (water, bands) is the loading state.
+        <Suspense fallback={<div className="absolute inset-0" aria-hidden />}>
           <SoundingsView
-            scene={canvasScene}
+            scene={settled ? canvasScene : UNSETTLED_SCENE}
+            settling={!settled}
             switcher={<ViewSwitcher view={view} onChange={setView} inline />}
             onDimOpen={onDimOpen}
             onFleetOpen={setPreviewId}
@@ -924,7 +929,7 @@ function MastermindInner() {
             canOpenTerminal={canOpenTerminal}
           />
         </Suspense>
-      ) : layoutReady ? (
+      ) : layoutReady && settled ? (
         <MastermindHexMosaic
           scene={canvasScene}
           mode={mode}
@@ -944,10 +949,13 @@ function MastermindInner() {
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
-        // Layout-doc read only — one DB round trip, not a fan-out. The label is
-        // announced for assistive tech; there is deliberately no spinner, which
-        // this app bans as a surface loading state (docs/design/overview-loading.md).
-        <LoadingSpinner label={t.mastermind.loading_layout} />
+        // Until the layout doc is read AND the scene has settled (useSceneSettle),
+        // the canvas stays empty under its permanent chrome (switcher, toolbar,
+        // project list). Provisional islands used to paint here first, and their
+        // placeholder geometry (no chips, dashed scores) blinked into the real
+        // islands. The label is announced for assistive tech; there is no spinner,
+        // which this app bans as a surface loading state.
+        <LoadingSpinner label={t.mastermind.loading_projects} />
       )}
       </ViewPanel>
 

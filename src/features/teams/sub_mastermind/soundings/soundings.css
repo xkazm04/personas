@@ -154,7 +154,7 @@
 
 /* stations */
 .sd-stations { position: absolute; inset: 0; z-index: 3; }
-.sd-st { position: absolute; top: 0; bottom: 0; transition: left var(--sd-move) var(--sd-ease), width var(--sd-move) var(--sd-ease); }
+.sd-st { position: absolute; top: 0; bottom: 0; transition: left var(--sd-move) var(--sd-ease), width var(--sd-move) var(--sd-ease); animation: sd-col-in .4s calc(var(--i) * 30ms) both; }
 .sd-st .sd-pl { position: absolute; inset: 0 1px; border-radius: 2px; transition: background .35s; }
 .sd-st.sd-hov .sd-pl, .sd-st.sd-foc .sd-pl { background: linear-gradient(180deg, transparent 0%, var(--sd-plate-cur) 30%, var(--sd-hair) 60%, transparent 100%); }
 /* Buoy, mooring line and tick MOVE BY TRANSFORM, never by `top`: a data arrival
