@@ -21233,7 +21233,6 @@
         "playHint": "다시 누르면 제출됩니다.",
         "ready": "{score}% 준비됨",
         "send": "보내기",
-        "subtitle": "한 번에 하나씩 질문합니다. 보관하기 전까지는 아무것도 저장되지 않습니다.",
         "training": "트레이닝",
         "writeHint": "실제로 보낼 때처럼, 오타까지 그대로 답하세요. 그 답변은 본인 글투의 예시로 보관할 수 있습니다.",
         "yourReply": "답장",
@@ -21308,7 +21307,9 @@
         "styleSurprise": "깜짝 선택",
         "styleSurpriseHint": "트윈이 생긴 뒤 목소리 세 장을 뽑습니다.",
         "subtitle": "이름만 있으면 시작할 수 있습니다. 나머지는 카드로 나눕니다.",
-        "title": "이 트윈은 누구인가요?"
+        "title": "이 트윈은 누구인가요?",
+        "styleChoose": "목소리 선택…",
+        "styleChooseHint": "고를 수 있는 시작 목소리 10가지."
       },
       "slots": {
         "channels": {
@@ -21357,6 +21358,107 @@
       "voice": {
         "dictate": "받아쓰기",
         "stop": "듣기 중지"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "편집",
+        "keyPick": "선택",
+        "keyPlay": "제출",
+        "keySkip": "건너뛰기",
+        "label": "선택할 수 있는 답변",
+        "placeholder": "…또는 직접 작성",
+        "playHint": "다시 누르면 제출됩니다",
+        "skip": "이건 아니에요",
+        "writePlaceholder": "답변을 작성하세요"
+      },
+      "ask": {
+        "everywhere": "전체",
+        "greeting": "아직 남음: {items}.",
+        "greetingFresh": "{name}이(가) 있습니다. 아직 남음: {items}.",
+        "incoming": "상대가 이렇게 썼어요",
+        "incomingFrom": "{channel}에서 상대가 이렇게 썼어요",
+        "training": "트레이닝",
+        "writeHint": "실제로 답할 법한 방식 그대로 답하세요 — 한 글자도 그대로 저장됩니다."
+      },
+      "create": {
+        "ask": "누구를 만들고 있나요?",
+        "begin": "시작",
+        "creating": "만드는 중…",
+        "door": "언어와 시작 목소리",
+        "hint": "시작하려면 이름만 있으면 됩니다. 나머지는 당신에게서 배웁니다.",
+        "languages": "사용할 언어",
+        "languagesHint": "첫 번째가 주 언어입니다.",
+        "languagesMain": "메인",
+        "namePlaceholder": "이름",
+        "optionsHint": "둘 다 선택 사항이며, 나중에 바꿀 수 있습니다.",
+        "optionsTitle": "시작하기 전에",
+        "sigil": "어떻게 부를지",
+        "style": "시작 목소리",
+        "styleHint": "빈 페이지가 아니라 반응할 수 있는 초안입니다.",
+        "styleNone": "저에게서 배우기",
+        "styleNoneHint": "아무것도 미리 가정하지 않습니다. 목소리는 당신이 쓰는 것에서 만들어집니다.",
+        "styleRoll": "깜짝 선택",
+        "styleRollHint": "초안으로 만든 목소리 세 가지 중에서 고르세요."
+      },
+      "deck": {
+        "coverage": "{tier} · 메모리 {count}개",
+        "hint": "다음 질문의 주제를 선택하세요.",
+        "rounds": "지금까지 {count}라운드",
+        "tiers": {
+          "covered": "충분",
+          "some": "보통",
+          "thin": "부족"
+        },
+        "title": "트레이닝 주제"
+      },
+      "launch": {
+        "resume": "설정 이어하기",
+        "title": "{name}이(가) 기다리고 있어요",
+        "titleNoTwin": "아직 트윈이 없어요",
+        "train": "트레이닝 라운드 시작"
+      },
+      "notices": {
+        "completeBody": "설정 항목이 모두 채워졌습니다. 트레이닝을 거칠수록 점점 더 당신처럼 들립니다.",
+        "completeClose": "이만 닫기",
+        "completeTitle": "{name}이(가) 준비되었습니다",
+        "completeTrain": "트레이닝하기",
+        "inviteBody": "설정으로는 이 항목을 채울 수 없습니다. 트레이닝 라운드는 당신의 일, 말버릇, 답하는 방식을 묻습니다 — 그리고 모든 답변이 메모리가 됩니다.",
+        "inviteStart": "트레이닝 시작",
+        "inviteTitle": "메모리는 트레이닝에서 만들어집니다",
+        "retry": "다시 시도"
+      },
+      "offer": {
+        "hint": "당신이 저장하기 전까지는 아무것도 저장되지 않습니다.",
+        "title": "가이드가 이걸 적어두고 싶어해요"
+      },
+      "rail": {
+        "doors": "열기",
+        "unnamed": "당신의 트윈"
+      },
+      "sheet": {
+        "everywhere": "전체",
+        "hint": "지금까지 저장된 모든 것입니다. 당신 없이 쓰인 건 하나도 없습니다.",
+        "memories": "메모리 · {detail}",
+        "noBio": "아직 자기소개가 없어요",
+        "noRole": "아직 역할이 없어요",
+        "noVoice": "아직 목소리 없음",
+        "openFields": "모든 필드 편집",
+        "samplesAndRules": "예시 {samples}개, 규칙 {rules}개",
+        "title": "알고 있는 것",
+        "voices": "목소리"
+      },
+      "voice": {
+        "candidates": "고를 수 있는 목소리 세 가지",
+        "drafting": "{name} 초안 작성 중",
+        "idle": "아직 작성된 목소리 초안이 없어요",
+        "ready": "{name} 검토 준비 완료",
+        "rolling": "목소리 세 가지 생성 중",
+        "saving": "저장 중",
+        "title": "목소리"
+      },
+      "whisper": {
+        "kept": "저장됨 · {field}"
       }
     }
   },

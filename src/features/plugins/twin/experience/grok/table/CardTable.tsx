@@ -1,6 +1,13 @@
 /**
  * The training table: one question, a fan of flying cards, proposals, composer.
+ *
  * Keyboard scope lives on the table element so the composer still takes typing.
+ * That element is `tabIndex={-1}` — programmatically focusable, never a tab
+ * stop — because a scroll container that swallows a Tab press is a trap for
+ * every keyboard user and buys nothing the shortcuts do not already give.
+ *
+ * Only the middle band scrolls. The composer is pinned below it, so the hand
+ * you play from does not slide off the bottom of the table.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,7 +33,7 @@ const isTextTarget = (el: EventTarget | null) => {
 };
 
 export function CardTable({ session, voice }: SetupDeskProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const xg = t.twin.experience_grok;
   const [picked, setPicked] = useState(0);
   const [draft, setDraft] = useState('');
@@ -39,10 +46,16 @@ export function CardTable({ session, voice }: SetupDeskProps) {
     () => deriveDeskTrail(session.history, session.question),
     [session.history, session.question],
   );
-  const open = session.checklist.filter((item) => item.status !== 'set');
+  // The open suits are joined the way the reader's language joins a list —
+  // never with a hard-coded English comma.
+  const open = session.checklist
+    .filter((item) => item.status !== 'set')
+    .map((item) => xg.slots[item.id].label);
   const greeting =
     trail.isOpening && open.length > 0
-      ? tx(xg.table.greeting, { items: open.map((item) => xg.slots[item.id].label).join(', ') })
+      ? tx(xg.table.greeting, {
+          items: new Intl.ListFormat(language, { type: 'conjunction' }).format(open),
+        })
       : null;
 
   const intoComposer = useCallback((value: string) => setDraft(value), []);
@@ -80,10 +93,10 @@ export function CardTable({ session, voice }: SetupDeskProps) {
   return (
     <div
       ref={tableRef}
-      tabIndex={0}
+      tabIndex={-1}
       onKeyDown={onKeyDown}
       data-testid="setup-desk"
-      className="flex-1 min-h-0 flex flex-col outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+      className="flex-1 min-h-0 flex flex-col outline-none"
     >
       <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-5">
         <TableTrail history={session.history} question={session.question} />
@@ -113,6 +126,8 @@ export function CardTable({ session, voice }: SetupDeskProps) {
           </motion.div>
         </AnimatePresence>
         <ProposalFan session={session} intoComposer={intoComposer} />
+      </div>
+      <div className="flex-shrink-0 border-t border-primary/15 bg-background/70 px-4 md:px-8 py-3">
         <TableComposer
           draft={draft}
           onDraft={setDraft}

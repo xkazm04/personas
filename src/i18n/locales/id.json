@@ -21233,7 +21233,6 @@
         "playHint": "Tekan lagi untuk main",
         "ready": "{score}% siap",
         "send": "Kirim",
-        "subtitle": "Satu pertanyaan setiap kali. Tidak ada yang disimpan sampai Anda menyimpannya.",
         "training": "Pelatihan",
         "writeHint": "Balas dengan cara yang benar-benar akan Anda kirim, salah ketik dan semuanya. Anda bisa menyimpan balasan ini sebagai contoh cara Anda menulis.",
         "yourReply": "Balasan Anda",
@@ -21308,7 +21307,9 @@
         "styleSurprise": "Kejutkan saya",
         "styleSurpriseHint": "Undi tiga suara setelah twin ini ada.",
         "subtitle": "Nama saja cukup untuk mulai. Sisanya kami bagikan sebagai kartu.",
-        "title": "Siapa twin ini seharusnya?"
+        "title": "Siapa twin ini seharusnya?",
+        "styleChoose": "Pilih suara…",
+        "styleChooseHint": "Sepuluh suara awal untuk dipilih."
       },
       "slots": {
         "channels": {
@@ -21357,6 +21358,107 @@
       "voice": {
         "dictate": "Dikte",
         "stop": "Berhenti mendengarkan"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "sunting",
+        "keyPick": "pilih",
+        "keyPlay": "mainkan",
+        "keySkip": "lewati",
+        "label": "Jawaban untuk dipilih",
+        "placeholder": "…atau tulis jawaban Anda sendiri",
+        "playHint": "Tekan lagi untuk main",
+        "skip": "Bukan ini",
+        "writePlaceholder": "Tulis balasan Anda"
+      },
+      "ask": {
+        "everywhere": "Di mana saja",
+        "greeting": "Masih terbuka: {items}.",
+        "greetingFresh": "{name} sudah ada. Masih terbuka: {items}.",
+        "incoming": "Mereka menulis",
+        "incomingFrom": "Di {channel}, mereka menulis",
+        "training": "Pelatihan",
+        "writeHint": "Balas dengan cara yang benar-benar akan Anda kirim — disimpan kata demi kata."
+      },
+      "create": {
+        "ask": "Siapa yang sedang Anda buat?",
+        "begin": "Mulai",
+        "creating": "Membuatnya",
+        "door": "Bahasa dan suara awal",
+        "hint": "Satu nama saja cukup untuk memulai. Semua yang lain dipelajari dari Anda.",
+        "languages": "Bahasa yang mereka tulis",
+        "languagesHint": "Yang pertama adalah bahasa utama mereka.",
+        "languagesMain": "utama",
+        "namePlaceholder": "Nama mereka",
+        "optionsHint": "Keduanya opsional, dan keduanya bisa diubah nanti.",
+        "optionsTitle": "Sebelum kita mulai",
+        "sigil": "Cara mereka disapa",
+        "style": "Suara awal",
+        "styleHint": "Sebuah draf untuk ditanggapi, bukan halaman kosong.",
+        "styleNone": "Pelajari dari saya",
+        "styleNoneHint": "Tidak ada yang diasumsikan. Suara berasal dari apa yang Anda tulis.",
+        "styleRoll": "Kejutkan saya",
+        "styleRollHint": "Tiga suara yang sudah dibuat untuk dipilih."
+      },
+      "deck": {
+        "coverage": "{tier} · {count} memori",
+        "hint": "Pilih topik untuk pertanyaan berikutnya.",
+        "rounds": "{count} putaran sejauh ini",
+        "tiers": {
+          "covered": "Tercakup baik",
+          "some": "Sebagian",
+          "thin": "Tipis"
+        },
+        "title": "Topik pelatihan"
+      },
+      "launch": {
+        "resume": "Lanjutkan penyiapan",
+        "title": "{name} sedang menunggu",
+        "titleNoTwin": "Belum ada twin",
+        "train": "Mulai putaran pelatihan"
+      },
+      "notices": {
+        "completeBody": "Setiap slot penyiapan sudah terisi. Pelatihan terus membuatnya semakin terdengar seperti Anda.",
+        "completeClose": "Selesai dulu",
+        "completeTitle": "{name} sudah siap",
+        "completeTrain": "Lanjutkan pelatihan",
+        "inviteBody": "Penyiapan tidak bisa mengisi yang satu ini. Putaran pelatihan menanyakan tentang pekerjaan Anda, batasan Anda, dan cara Anda menjawab — dan setiap jawaban menjadi memori.",
+        "inviteStart": "Mulai pelatihan",
+        "inviteTitle": "Memori berasal dari pelatihan",
+        "retry": "Coba lagi"
+      },
+      "offer": {
+        "hint": "Tidak ada yang disimpan sampai Anda menyimpannya.",
+        "title": "Pemandu ingin menuliskan ini"
+      },
+      "rail": {
+        "doors": "Buka",
+        "unnamed": "Twin Anda"
+      },
+      "sheet": {
+        "everywhere": "Di mana saja",
+        "hint": "Semua yang tersimpan sejauh ini. Tidak ada yang ditulis tanpa Anda.",
+        "memories": "Memori · {detail}",
+        "noBio": "Belum ada biografi",
+        "noRole": "Belum ada peran",
+        "noVoice": "belum ada nada suara",
+        "openFields": "Edit setiap kolom",
+        "samplesAndRules": "{samples} contoh, {rules} aturan",
+        "title": "Apa yang diketahuinya",
+        "voices": "Suara"
+      },
+      "voice": {
+        "candidates": "Tiga suara untuk dipilih",
+        "drafting": "Membuat draf {name}…",
+        "idle": "Belum ada suara yang dibuat",
+        "ready": "{name} siap untuk ditinjau",
+        "rolling": "Mengacak tiga suara…",
+        "saving": "Menyimpan",
+        "title": "Suara"
+      },
+      "whisper": {
+        "kept": "Disimpan · {field}"
       }
     }
   },

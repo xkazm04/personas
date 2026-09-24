@@ -748,6 +748,21 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "memories": {}
       },
       "voice": {}
+    },
+    "experience_mirror": {
+      "create": {},
+      "rail": {},
+      "ask": {},
+      "answers": {},
+      "offer": {},
+      "whisper": {},
+      "sheet": {},
+      "deck": {
+        "tiers": {}
+      },
+      "voice": {},
+      "notices": {},
+      "launch": {}
     }
   },
   "radio": {},

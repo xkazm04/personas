@@ -21233,7 +21233,6 @@
         "playHint": "Appuyez à nouveau pour jouer",
         "ready": "{score} % prêt",
         "send": "Envoyer",
-        "subtitle": "Une question à la fois. Rien n’est enregistré tant que vous ne le gardez pas.",
         "training": "Entraînement",
         "writeHint": "Répondez comme vous l’enverriez vraiment, fautes de frappe comprises. Vous pouvez garder votre réponse comme exemple de votre façon d’écrire.",
         "yourReply": "Votre réponse",
@@ -21308,7 +21307,9 @@
         "styleSurprise": "Surprends-moi",
         "styleSurpriseHint": "Tirer trois voix une fois ce twin créé.",
         "subtitle": "Un nom suffit pour commencer. Le reste, on le distribue en cartes.",
-        "title": "Qui doit être ce twin ?"
+        "title": "Qui doit être ce twin ?",
+        "styleChoose": "Choisis une voix…",
+        "styleChooseHint": "Dix voix de départ au choix."
       },
       "slots": {
         "channels": {
@@ -21357,6 +21358,107 @@
       "voice": {
         "dictate": "Dicter",
         "stop": "Arrêter d'écouter"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "modifier",
+        "keyPick": "choisir",
+        "keyPlay": "lire",
+        "keySkip": "passer",
+        "label": "Réponses au choix",
+        "placeholder": "…ou écris la tienne",
+        "playHint": "Appuie de nouveau pour lire",
+        "skip": "Pas celle-là",
+        "writePlaceholder": "Écris ta réponse"
+      },
+      "ask": {
+        "everywhere": "Partout",
+        "greeting": "Encore ouvert : {items}.",
+        "greetingFresh": "{name} existe. Encore ouvert : {items}.",
+        "incoming": "Ils ont écrit",
+        "incomingFrom": "Sur {channel}, ils ont écrit",
+        "training": "Entraînement",
+        "writeHint": "Réponds comme tu le ferais vraiment — c'est gardé mot pour mot."
+      },
+      "create": {
+        "ask": "Qui crées-tu ?",
+        "begin": "Commencer",
+        "creating": "Création…",
+        "door": "Langues et voix de départ",
+        "hint": "Un nom suffit pour commencer. Tout le reste, il l'apprend de toi.",
+        "languages": "Langues dans lesquelles il écrit",
+        "languagesHint": "La première est sa langue principale.",
+        "languagesMain": "principale",
+        "namePlaceholder": "Son nom",
+        "optionsHint": "Les deux sont facultatifs, et les deux peuvent changer plus tard.",
+        "optionsTitle": "Avant de commencer",
+        "sigil": "Forme d'adresse",
+        "style": "Voix de départ",
+        "styleHint": "Un brouillon auquel réagir, plutôt qu'une page blanche.",
+        "styleNone": "Apprends-le de moi",
+        "styleNoneHint": "Rien n'est présumé. La voix vient de ce que tu écris.",
+        "styleRoll": "Surprends-moi",
+        "styleRollHint": "Trois voix proposées, à choisir."
+      },
+      "deck": {
+        "coverage": "{tier} · {count} mémoires",
+        "hint": "Choisis le sujet des prochaines questions.",
+        "rounds": "{count} manches jusqu'ici",
+        "tiers": {
+          "covered": "Couvert",
+          "some": "Partiel",
+          "thin": "Peu"
+        },
+        "title": "Sur quoi s'entraîner"
+      },
+      "launch": {
+        "resume": "Continuer la configuration",
+        "title": "{name} attend",
+        "titleNoTwin": "Pas encore de twin",
+        "train": "Lancer une manche d'entraînement"
+      },
+      "notices": {
+        "completeBody": "La configuration est entièrement remplie. L'entraînement continue de le rapprocher de toi.",
+        "completeClose": "Terminé pour l'instant",
+        "completeTitle": "{name} est prêt",
+        "completeTrain": "L'entraîner",
+        "inviteBody": "La configuration ne peut pas remplir ça. Une manche d'entraînement pose des questions sur ton travail, tes phrases et ta façon de répondre — et chaque réponse devient une mémoire.",
+        "inviteStart": "Commencer l'entraînement",
+        "inviteTitle": "Les mémoires viennent de l'entraînement",
+        "retry": "Réessayer"
+      },
+      "offer": {
+        "hint": "Rien n'est enregistré tant que tu ne le confirmes pas.",
+        "title": "Il veut noter ça"
+      },
+      "rail": {
+        "doors": "Ouvrir",
+        "unnamed": "Ton twin"
+      },
+      "sheet": {
+        "everywhere": "Partout",
+        "hint": "Tout ce qui est enregistré jusqu'ici. Rien n'a été écrit sans toi.",
+        "memories": "Mémoires · {detail}",
+        "noBio": "Pas encore de bio",
+        "noRole": "Pas encore de rôle",
+        "noVoice": "pas encore de voix",
+        "openFields": "Modifier tous les champs",
+        "samplesAndRules": "{samples} échantillons, {rules} règles",
+        "title": "Ce qu'il sait",
+        "voices": "Voix"
+      },
+      "voice": {
+        "candidates": "Trois voix au choix",
+        "drafting": "Rédaction de {name}",
+        "idle": "Pas encore de voix rédigée",
+        "ready": "{name} est prêt pour la révision",
+        "rolling": "Tirage de trois voix",
+        "saving": "Enregistrement",
+        "title": "Voix"
+      },
+      "whisper": {
+        "kept": "Enregistré · {field}"
       }
     }
   },

@@ -21569,7 +21569,6 @@ export type Translations = {
         studio: string;
       };
       table: {
-        subtitle: string;
         training: string;
         noQuestion: string;
         dealing: string;
@@ -21727,6 +21726,8 @@ export type Translations = {
         create: string;
         creating: string;
         hint: string;
+        styleChoose: string;
+        styleChooseHint: string;
       };
       table: {
         greeting: string;
@@ -21773,6 +21774,107 @@ export type Translations = {
       voice: {
         dictate: string;
         stop: string;
+      };
+    };
+    experience_mirror: {
+      create: {
+        ask: string;
+        hint: string;
+        namePlaceholder: string;
+        sigil: string;
+        begin: string;
+        creating: string;
+        door: string;
+        optionsTitle: string;
+        optionsHint: string;
+        languages: string;
+        languagesHint: string;
+        languagesMain: string;
+        style: string;
+        styleHint: string;
+        styleNone: string;
+        styleNoneHint: string;
+        styleRoll: string;
+        styleRollHint: string;
+      };
+      rail: {
+        unnamed: string;
+        doors: string;
+      };
+      ask: {
+        training: string;
+        everywhere: string;
+        incoming: string;
+        incomingFrom: string;
+        writeHint: string;
+        greeting: string;
+        greetingFresh: string;
+      };
+      answers: {
+        label: string;
+        playHint: string;
+        placeholder: string;
+        writePlaceholder: string;
+        skip: string;
+        keyPick: string;
+        keyPlay: string;
+        keyEdit: string;
+        keySkip: string;
+      };
+      offer: {
+        title: string;
+        hint: string;
+      };
+      whisper: {
+        kept: string;
+      };
+      sheet: {
+        title: string;
+        hint: string;
+        noRole: string;
+        noBio: string;
+        noVoice: string;
+        voices: string;
+        everywhere: string;
+        samplesAndRules: string;
+        memories: string;
+        openFields: string;
+      };
+      deck: {
+        title: string;
+        hint: string;
+        rounds: string;
+        coverage: string;
+        tiers: {
+          thin: string;
+          some: string;
+          covered: string;
+        };
+      };
+      voice: {
+        title: string;
+        drafting: string;
+        rolling: string;
+        candidates: string;
+        ready: string;
+        saving: string;
+        idle: string;
+      };
+      notices: {
+        retry: string;
+        inviteTitle: string;
+        inviteBody: string;
+        inviteStart: string;
+        completeTitle: string;
+        completeBody: string;
+        completeTrain: string;
+        completeClose: string;
+      };
+      launch: {
+        title: string;
+        titleNoTwin: string;
+        resume: string;
+        train: string;
       };
     };
   };

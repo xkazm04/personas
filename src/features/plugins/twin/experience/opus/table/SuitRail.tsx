@@ -30,7 +30,7 @@ export function SuitRail({ items, focus, flare, onFocus, onOpenHub }: SuitRailPr
 
   return (
     <nav aria-label={xo.suits.label} className="space-y-3" data-testid="xo-suits">
-      <p className="typo-label uppercase tracking-[0.18em] px-1">{xo.suits.label}</p>
+      <p className="typo-label px-1">{xo.suits.label}</p>
       {items.map((item) => {
         const suit = SUITS[item.id];
         const entry = twinStatusEntry(item.status);
@@ -40,8 +40,8 @@ export function SuitRail({ items, focus, flare, onFocus, onOpenHub }: SuitRailPr
         return (
           <div key={item.id} className={`relative ${suit.hue}`}>
             {/* The pile under the top card: two backs, offset. */}
-            <span aria-hidden className="xo-back absolute inset-0 translate-x-1.5 translate-y-1.5 opacity-60" />
-            <span aria-hidden className="xo-back absolute inset-0 translate-x-0.5 translate-y-0.5 opacity-80" />
+            <span aria-hidden className="xo-back rounded-card absolute inset-0 translate-x-1.5 translate-y-1.5 opacity-60" />
+            <span aria-hidden className="xo-back rounded-card absolute inset-0 translate-x-0.5 translate-y-0.5 opacity-80" />
             <motion.button
               type="button"
               onClick={() => onFocus(item.id)}

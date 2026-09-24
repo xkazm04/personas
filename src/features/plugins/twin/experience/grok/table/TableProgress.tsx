@@ -1,6 +1,8 @@
 /**
- * Four suit cards across the top, one per slot. Status is colour AND shape.
- * Clicking a card moves the guided flow to that slot.
+ * Four suit cards across the top, one per slot. Suit identity is shape (icon);
+ * the ONLY colour that varies here is the `StatusGlyph`, so green on this strip
+ * always means "set" and never "channels". Clicking a card moves the guided
+ * flow to that slot.
  */
 
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -49,7 +51,7 @@ export function TableProgress({ checklist, score, focus, onFocus }: TableProgres
               <span className="typo-caption truncate text-foreground">
                 {xg.slots[item.id].label}
               </span>
-              <span className="typo-caption tabular-nums text-primary">{item.detail}</span>
+              <span className="typo-caption tabular-nums">{item.detail}</span>
             </span>
           </button>
         );
@@ -58,7 +60,7 @@ export function TableProgress({ checklist, score, focus, onFocus }: TableProgres
         className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-card border border-primary/25 bg-primary/10"
         data-testid="setup-readiness-score"
       >
-        <span className="typo-caption text-primary">{xg.table.score}</span>
+        <span className="typo-caption">{xg.table.score}</span>
         <Numeric value={clamped} unit="percent" precision={0} className="typo-data text-foreground" />
       </div>
     </div>

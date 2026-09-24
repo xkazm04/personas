@@ -21233,7 +21233,6 @@
         "playHint": "もう一度押すと出せます。",
         "ready": "準備完了度{score}%",
         "send": "送信",
-        "subtitle": "1問ずつ進みます。キープするまで何も保存されません。",
         "training": "トレーニング",
         "writeHint": "実際に送るとおりに返信してください。誤字もそのままでかまいません。その返信は、書き方の例文としてキープできます。",
         "yourReply": "返信",
@@ -21308,7 +21307,9 @@
         "styleSurprise": "おまかせ",
         "styleSurpriseHint": "ツインができてから声を3つ引きます。",
         "subtitle": "名前があれば始められます。残りはカードとして配ります。",
-        "title": "このツインは誰ですか？"
+        "title": "このツインは誰ですか？",
+        "styleChoose": "声を選ぶ…",
+        "styleChooseHint": "選べる声は10種類。"
       },
       "slots": {
         "channels": {
@@ -21357,6 +21358,107 @@
       "voice": {
         "dictate": "音声入力",
         "stop": "聞き取りを止める"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "編集",
+        "keyPick": "選択",
+        "keyPlay": "出す",
+        "keySkip": "スキップ",
+        "label": "選べる返答",
+        "placeholder": "…または自分で書く",
+        "playHint": "もう一度押すと出せます",
+        "skip": "これじゃない",
+        "writePlaceholder": "返信を書く"
+      },
+      "ask": {
+        "everywhere": "すべて",
+        "greeting": "未対応：{items}。",
+        "greetingFresh": "{name}はすでに存在します。未対応：{items}。",
+        "incoming": "相手はこう書きました",
+        "incomingFrom": "{channel}で相手はこう書きました",
+        "training": "トレーニング",
+        "writeHint": "実際に返すとおりに答えてください — そのまま一字一句保存されます。"
+      },
+      "create": {
+        "ask": "誰を作りますか？",
+        "begin": "はじめる",
+        "creating": "作っています…",
+        "door": "言語と最初の声",
+        "hint": "始めるには名前だけで十分です。それ以外はあなたから学びます。",
+        "languages": "書く言語",
+        "languagesHint": "最初の言語がメインになります。",
+        "languagesMain": "メイン",
+        "namePlaceholder": "その名前",
+        "optionsHint": "どちらも任意で、あとから変更できます。",
+        "optionsTitle": "始める前に",
+        "sigil": "呼び方",
+        "style": "最初の声",
+        "styleHint": "白紙ではなく、反応できる下書きから始めます。",
+        "styleNone": "私から学ぶ",
+        "styleNoneHint": "何も仮定しません。声はあなたが書いたものから生まれます。",
+        "styleRoll": "おまかせ",
+        "styleRollHint": "下書きされた声を3つから選べます。"
+      },
+      "deck": {
+        "coverage": "{tier} · メモリ {count}件",
+        "hint": "次の質問のテーマを選んでください。",
+        "rounds": "これまでに{count}ラウンド",
+        "tiers": {
+          "covered": "十分",
+          "some": "普通",
+          "thin": "少ない"
+        },
+        "title": "トレーニングのテーマ"
+      },
+      "launch": {
+        "resume": "セットアップを続ける",
+        "title": "{name}が待っています",
+        "titleNoTwin": "まだツインがいません",
+        "train": "トレーニングラウンドを始める"
+      },
+      "notices": {
+        "completeBody": "セットアップのすべてのスロットが埋まりました。トレーニングを重ねるほど、あなたらしさが増していきます。",
+        "completeClose": "今はここまで",
+        "completeTitle": "{name}の準備が整いました",
+        "completeTrain": "トレーニングする",
+        "inviteBody": "セットアップではこの項目を埋められません。トレーニングラウンドでは、あなたの仕事、口癖、返し方について尋ねます — その答えひとつひとつがメモリになります。",
+        "inviteStart": "トレーニングを始める",
+        "inviteTitle": "記憶はトレーニングから生まれます",
+        "retry": "もう一度試す"
+      },
+      "offer": {
+        "hint": "あなたが残すと決めるまで、何も保存されません。",
+        "title": "ガイドがこれを書き留めたがっています"
+      },
+      "rail": {
+        "doors": "開く",
+        "unnamed": "あなたのツイン"
+      },
+      "sheet": {
+        "everywhere": "すべて",
+        "hint": "これまでに保存されたすべて。あなたの知らないところで書かれたものは一つもありません。",
+        "memories": "記憶 · {detail}",
+        "noBio": "まだプロフィールがありません",
+        "noRole": "まだ役割がありません",
+        "noVoice": "まだ声がありません",
+        "openFields": "すべての項目を編集",
+        "samplesAndRules": "例文{samples}件、ルール{rules}件",
+        "title": "知っていること",
+        "voices": "声"
+      },
+      "voice": {
+        "candidates": "選べる声が3つ",
+        "drafting": "{name}を下書き中",
+        "idle": "まだ声の下書きがありません",
+        "ready": "{name}の確認準備ができました",
+        "rolling": "声を3つ生成中",
+        "saving": "保存中",
+        "title": "声"
+      },
+      "whisper": {
+        "kept": "保存済み · {field}"
       }
     }
   },

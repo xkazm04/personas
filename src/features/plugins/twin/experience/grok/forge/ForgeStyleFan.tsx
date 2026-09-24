@@ -1,64 +1,38 @@
 /**
- * Starting-voice picker as a fan of preset cards, plus skip and surprise.
+ * Starting-voice picker: THREE tiles in the main sight — decide later, surprise
+ * me, choose a voice. The ten curated presets live behind the third tile, in
+ * `StylePresetDialog`, so this phase stays one calm sight with one decision in
+ * it and no nested scroller.
  */
 
+import { useState } from 'react';
 import { Dices, Palette, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { STYLE_PRESETS } from '../../../setup/style/stylePresets';
+import { presetById } from '../../../setup/style/stylePresets';
 import type { StyleStart } from '../../../setup/style/styleContract';
+import { StyleTile } from './StyleTile';
+import { StylePresetDialog } from './StylePresetDialog';
 
 interface ForgeStyleFanProps {
   value: StyleStart | null;
   onChange: (next: StyleStart | null) => void;
 }
 
-function StyleTile({
-  selected,
-  onSelect,
-  title,
-  body,
-  icon,
-  testId,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-  title: string;
-  body: string;
-  icon: React.ReactNode;
-  testId: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      data-testid={testId}
-      className={`focus-ring text-left flex gap-2 rounded-card border px-3 py-2.5 transition-colors min-h-[4.5rem] ${
-        selected
-          ? 'border-primary bg-primary/10 shadow-elevation-2'
-          : 'border-primary/15 bg-card-bg hover:border-primary/40 hover:shadow-elevation-1'
-      }`}
-    >
-      <span className="mt-0.5 flex-shrink-0 text-primary" aria-hidden>{icon}</span>
-      <span className="min-w-0">
-        <span className="block typo-title text-foreground">{title}</span>
-        <span className="block typo-caption text-primary">{body}</span>
-      </span>
-    </button>
-  );
-}
-
 export function ForgeStyleFan({ value, onChange }: ForgeStyleFanProps) {
   const { t } = useTranslation();
   const xg = t.twin.experience_grok;
   const ts = t.twin.style;
+  const [picking, setPicking] = useState(false);
   const icon = 'w-3.5 h-3.5';
+
+  const chosenId = value?.kind === 'preset' ? value.presetId : null;
+  const chosen = presetById(chosenId);
 
   return (
     <fieldset className="space-y-2" data-testid="create-twin-style-step">
       <legend className="typo-title text-foreground">{xg.forge.style}</legend>
-      <p className="typo-caption text-primary">{xg.forge.styleHint}</p>
-      <div className="grid gap-2 sm:grid-cols-2 max-h-72 overflow-y-auto pr-1">
+      <p className="typo-caption">{xg.forge.styleHint}</p>
+      <div className="grid gap-2 sm:grid-cols-3">
         <StyleTile
           selected={value === null}
           onSelect={() => onChange(null)}
@@ -75,18 +49,25 @@ export function ForgeStyleFan({ value, onChange }: ForgeStyleFanProps) {
           icon={<Dices className={icon} />}
           testId="create-twin-style-roll"
         />
-        {STYLE_PRESETS.map((preset) => (
-          <StyleTile
-            key={preset.id}
-            selected={value?.kind === 'preset' && value.presetId === preset.id}
-            onSelect={() => onChange({ kind: 'preset', presetId: preset.id })}
-            title={ts.presets[preset.id].name}
-            body={ts.presets[preset.id].summary}
-            icon={<Palette className={icon} />}
-            testId={`create-twin-style-${preset.id}`}
-          />
-        ))}
+        <StyleTile
+          selected={chosen !== null}
+          onSelect={() => setPicking(true)}
+          title={chosen ? ts.presets[chosen.id].name : xg.forge.styleChoose}
+          body={chosen ? ts.presets[chosen.id].summary : xg.forge.styleChooseHint}
+          icon={<Palette className={icon} />}
+          testId="create-twin-style-choose"
+        />
       </div>
+      {picking && (
+        <StylePresetDialog
+          selected={chosenId}
+          onPick={(presetId) => {
+            onChange({ kind: 'preset', presetId });
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </fieldset>
   );
 }

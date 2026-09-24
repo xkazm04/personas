@@ -1,4 +1,11 @@
-/** The keys, always on screen: a binding nobody can see is not a binding. */
+/**
+ * The keys, always on screen: a binding nobody can see is not a binding.
+ *
+ * But it is a footnote, not a toolbar. It used to be a banded strip of six
+ * keycaps under its own border, competing with the hand for the eye at the
+ * bottom of the table; it is now one quiet caption line, the caps set in the
+ * mono face rather than raised chrome.
+ */
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -15,17 +22,18 @@ export function KeyLegend() {
   ];
 
   return (
-    <div
-      className="flex-shrink-0 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 px-6 py-2 border-t border-primary/10 bg-background/60"
+    <p
+      className="flex-shrink-0 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-6 pb-2 typo-caption"
       data-testid="xo-keys"
     >
-      {items.map(([cap, label]) => (
-        <span key={cap} className="inline-flex items-center gap-1.5 typo-caption">
-          <kbd className="xo-key typo-label text-foreground">{cap}</kbd>
+      {items.map(([cap, label], i) => (
+        <span key={cap} className="inline-flex items-center gap-1.5">
+          {i > 0 && <span aria-hidden className="w-1 h-1 mr-1.5 rounded-pill bg-foreground/30" />}
+          <kbd className="typo-code text-foreground">{cap}</kbd>
           {label}
         </span>
       ))}
-    </div>
+    </p>
   );
 }
 

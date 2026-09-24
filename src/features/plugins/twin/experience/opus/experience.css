@@ -4,8 +4,16 @@
  *
  * Everything is prefixed `xo-` and scoped to this folder. Colours come from
  * the app tokens (`--primary`, `--foreground`, `--secondary`, `--background`)
- * so all ten themes carry it; the four suit hues are the one decorative
- * palette this surface adds, and each is re-tuned for the light themes.
+ * so all ten themes carry it.
+ *
+ * COLOUR IS STATUS, AND NOTHING ELSE. The four suits used to carry four raw
+ * hexes of their own. That bypassed the `[data-brightness=…]` compensation
+ * every `--status-*` token gets, and it put four decorative hues on the same
+ * rows where `twinStatus` paints real status — so colour stopped meaning
+ * progress. The suits now all resolve to `--primary`, and what tells them
+ * apart is SHAPE: their glyph (`suits.ts`) and their weave, the per-suit
+ * angle/step of the pattern on the back of a card (`--xo-weave*` below).
+ * Only the light-theme card surfaces still need their own tuning.
  *
  * Motion contract (Design.md §6): every animation here is decorative, and all
  * of it stops under `prefers-reduced-motion` AND under the in-app Reduce
@@ -19,42 +27,54 @@
 }
 
 .xo-root {
-  --xo-suit-identity: #a78bfa;
-  --xo-suit-tone: #38bdf8;
-  --xo-suit-channels: #fbbf24;
-  --xo-suit-memories: #fb7185;
+  /* One accent, four names. The names stay because every suit reads its hue
+     through one, and a theme that ever wants to part them has one place. */
+  --xo-suit-identity: var(--primary);
+  --xo-suit-tone: var(--primary);
+  --xo-suit-channels: var(--primary);
+  --xo-suit-memories: var(--primary);
   --xo-card: color-mix(in oklab, var(--secondary) 78%, var(--background));
   --xo-card-raised: color-mix(in oklab, var(--secondary) 92%, var(--foreground) 4%);
+  /* The default weave, for anything wearing no suit. */
+  --xo-weave: 45deg;
+  --xo-weave-step: 5px;
+  --xo-weave-eye: 18%;
 }
 
 [data-theme^='light'] .xo-root {
-  --xo-suit-identity: #7c3aed;
-  --xo-suit-tone: #0284c7;
-  --xo-suit-channels: #b45309;
-  --xo-suit-memories: #e11d48;
   --xo-card: color-mix(in oklab, var(--background) 88%, var(--foreground) 3%);
   --xo-card-raised: var(--background);
 }
 
-.xo-suit-identity { --xo-hue: var(--xo-suit-identity); }
-.xo-suit-tone { --xo-hue: var(--xo-suit-tone); }
-.xo-suit-channels { --xo-hue: var(--xo-suit-channels); }
-.xo-suit-memories { --xo-hue: var(--xo-suit-memories); }
+/*
+ * A suit is a weave, not a colour: the angle its lines cross at, how tight
+ * they are, and the size of the eye in the middle of the card back. Four
+ * patterns anyone can tell apart in one glance, in one hue.
+ */
+.xo-suit-identity { --xo-hue: var(--xo-suit-identity); --xo-weave: 45deg; --xo-weave-step: 5px; --xo-weave-eye: 18%; }
+.xo-suit-tone { --xo-hue: var(--xo-suit-tone); --xo-weave: 90deg; --xo-weave-step: 3px; --xo-weave-eye: 0%; }
+.xo-suit-channels { --xo-hue: var(--xo-suit-channels); --xo-weave: 0deg; --xo-weave-step: 7px; --xo-weave-eye: 27%; }
+.xo-suit-memories { --xo-hue: var(--xo-suit-memories); --xo-weave: 21deg; --xo-weave-step: 4px; --xo-weave-eye: 9%; }
 
 /* The table itself: a lit felt with a faint diamond weave. */
 .xo-felt {
   background:
     radial-gradient(ellipse 70% 55% at 50% 32%, color-mix(in oklab, var(--primary) 13%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 50% 110%, color-mix(in oklab, var(--xo-suit-identity) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, color-mix(in oklab, var(--foreground) 4%, transparent), transparent 70%),
     repeating-linear-gradient(45deg, color-mix(in oklab, var(--foreground) 2.5%, transparent) 0 1px, transparent 1px 22px),
     repeating-linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 2.5%, transparent) 0 1px, transparent 1px 22px),
     var(--background);
 }
 
-/* A card surface. */
+/*
+ * A card surface. It sets NO radius: this stylesheet is unlayered, so a
+ * `border-radius` here silently beat the `rounded-card` / `rounded-modal`
+ * utility every call site already writes (Tailwind's utilities are layered,
+ * and unlayered CSS wins the cascade). The semantic radius tier belongs to
+ * the call site; every `.xo-card` and `.xo-back` here names one.
+ */
 .xo-card {
   background: var(--xo-card);
-  border-radius: 1rem;
 }
 .xo-card-raised {
   background: var(--xo-card-raised);
@@ -121,13 +141,23 @@
   animation: xo-sheen 4.5s ease-in-out infinite;
 }
 
-/* The back of a card: the deck's pattern in the suit hue. */
+/*
+ * The back of a card: the deck's pattern, woven at the suit's own angle and
+ * pitch. This is what tells the four suits apart now that they share one hue.
+ */
 .xo-back {
-  border-radius: 1rem;
   background:
-    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--xo-hue, var(--primary)) 22%, transparent) 0 18%, transparent 19%),
-    repeating-linear-gradient(45deg, color-mix(in oklab, var(--xo-hue, var(--primary)) 14%, transparent) 0 5px, transparent 5px 11px),
-    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--xo-hue, var(--primary)) 10%, transparent) 0 5px, transparent 5px 11px),
+    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--xo-hue, var(--primary)) 22%, transparent) 0 var(--xo-weave-eye), transparent calc(var(--xo-weave-eye) + 1%)),
+    repeating-linear-gradient(
+      var(--xo-weave),
+      color-mix(in oklab, var(--xo-hue, var(--primary)) 14%, transparent) 0 var(--xo-weave-step),
+      transparent var(--xo-weave-step) calc(var(--xo-weave-step) * 2.2)
+    ),
+    repeating-linear-gradient(
+      calc(var(--xo-weave) * -1),
+      color-mix(in oklab, var(--xo-hue, var(--primary)) 10%, transparent) 0 var(--xo-weave-step),
+      transparent var(--xo-weave-step) calc(var(--xo-weave-step) * 2.2)
+    ),
     var(--xo-card);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--xo-hue, var(--primary)) 35%, transparent),
     inset 0 0 0 6px var(--xo-card),
@@ -174,7 +204,7 @@
   min-width: 1.5rem;
   height: 1.5rem;
   padding: 0 0.375rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-interactive);
   background: color-mix(in oklab, var(--secondary) 80%, transparent);
   box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--foreground) 14%, transparent),
     0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent);

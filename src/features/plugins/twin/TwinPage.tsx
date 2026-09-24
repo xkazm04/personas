@@ -7,8 +7,12 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
 import { useReadinessCelebration } from './useReadinessCelebration';
 // TEMPORARY /contest scaffold — see experience/twinExperienceVariant.tsx.
-import { TwinExperienceHost } from './experience/opus';
-import { TwinExperienceVariantSwitch, VariantCreateHost, VariantSetupPage } from './experience/twinExperienceVariant';
+import {
+  TwinExperienceVariantSwitch,
+  VariantCreateHost,
+  VariantExperienceHost,
+  VariantSetupPage,
+} from './experience/twinExperienceVariant';
 
 // Mirrors ContentBox's responsive ladder (see ContentLayout.tsx). Twin
 // Atelier pages render their own hero band instead of ContentHeader, so
@@ -105,7 +109,7 @@ export default function TwinPage() {
         </Suspense>
       </div>
       {/* Outside the keyed tab wrapper: these layers outlive tab changes under them. */}
-      <TwinExperienceHost />
+      <VariantExperienceHost />
       <VariantCreateHost />
     </div>
   );

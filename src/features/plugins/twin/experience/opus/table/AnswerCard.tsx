@@ -33,7 +33,7 @@ export function AnswerCard({ index, card, picked, onPress, onPlay }: AnswerCardP
       data-picked={picked}
       data-testid={`xo-card-${index + 1}`}
       whileHover={reduced || picked ? undefined : { y: -10, transition: { duration: 0.18 } }}
-      className={`focus-ring w-full min-h-[10rem] xo-card xo-foil rounded-modal p-4 flex flex-col gap-3 text-left ${
+      className={`focus-ring w-full min-h-[7.5rem] xo-card xo-foil rounded-modal p-3.5 flex flex-col gap-2 text-left ${
         picked ? 'xo-card-raised xo-foil-live xo-glow' : ''
       }`}
     >

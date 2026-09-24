@@ -21233,7 +21233,6 @@
         "playHint": "Pulsa de nuevo para jugar",
         "ready": "{score}% listo",
         "send": "Enviar",
-        "subtitle": "Una pregunta a la vez. No se guarda nada hasta que lo conserves.",
         "training": "Entrenamiento",
         "writeHint": "Responde tal como lo enviarías de verdad, con erratas y todo. Puedes conservar tu respuesta como muestra de cómo escribes.",
         "yourReply": "Tu respuesta",
@@ -21308,7 +21307,9 @@
         "styleSurprise": "Sorpréndeme",
         "styleSurpriseHint": "Sacar tres voces cuando este gemelo exista.",
         "subtitle": "Con un nombre basta para empezar. El resto lo repartimos en cartas.",
-        "title": "¿Quién debe ser este gemelo?"
+        "title": "¿Quién debe ser este gemelo?",
+        "styleChoose": "Elige una voz…",
+        "styleChooseHint": "Diez voces iniciales para elegir."
       },
       "slots": {
         "channels": {
@@ -21357,6 +21358,107 @@
       "voice": {
         "dictate": "Dictar",
         "stop": "Dejar de escuchar"
+      }
+    },
+    "experience_mirror": {
+      "answers": {
+        "keyEdit": "editar",
+        "keyPick": "elegir",
+        "keyPlay": "reproducir",
+        "keySkip": "omitir",
+        "label": "Respuestas para elegir",
+        "placeholder": "…o escribe la tuya",
+        "playHint": "Pulsa de nuevo para reproducir",
+        "skip": "Esta no",
+        "writePlaceholder": "Escribe tu respuesta"
+      },
+      "ask": {
+        "everywhere": "En todas partes",
+        "greeting": "Aún abierto: {items}.",
+        "greetingFresh": "{name} existe. Aún abierto: {items}.",
+        "incoming": "Escribieron",
+        "incomingFrom": "En {channel} escribieron",
+        "training": "Entrenamiento",
+        "writeHint": "Responde como realmente lo harías — se guarda palabra por palabra."
+      },
+      "create": {
+        "ask": "¿A quién estás creando?",
+        "begin": "Empezar",
+        "creating": "Creando…",
+        "door": "Idiomas y voz inicial",
+        "hint": "Con un nombre basta para empezar. Todo lo demás lo aprende de ti.",
+        "languages": "Idiomas en los que escribe",
+        "languagesHint": "El primero es su idioma principal.",
+        "languagesMain": "principal",
+        "namePlaceholder": "Su nombre",
+        "optionsHint": "Ambos son opcionales, y ambos se pueden cambiar más tarde.",
+        "optionsTitle": "Antes de empezar",
+        "sigil": "Tratamiento",
+        "style": "Voz inicial",
+        "styleHint": "Un borrador al que reaccionar, en vez de una página en blanco.",
+        "styleNone": "Apréndelo de mí",
+        "styleNoneHint": "No se asume nada. La voz surge de lo que escribes.",
+        "styleRoll": "Sorpréndeme",
+        "styleRollHint": "Tres voces sugeridas para elegir."
+      },
+      "deck": {
+        "coverage": "{tier} · {count} memorias",
+        "hint": "Elige de qué tratarán las próximas preguntas.",
+        "rounds": "{count} rondas hasta ahora",
+        "tiers": {
+          "covered": "Cubierto",
+          "some": "Parcial",
+          "thin": "Poca"
+        },
+        "title": "En qué entrenar"
+      },
+      "launch": {
+        "resume": "Seguir con la configuración",
+        "title": "{name} está esperando",
+        "titleNoTwin": "Aún no hay gemelo",
+        "train": "Empezar una ronda de entrenamiento"
+      },
+      "notices": {
+        "completeBody": "La configuración está completamente rellenada. El entrenamiento sigue haciendo que suene más como tú.",
+        "completeClose": "Listo por ahora",
+        "completeTitle": "{name} está listo",
+        "completeTrain": "Entrenarlo",
+        "inviteBody": "La configuración no puede completar esto. Una ronda de entrenamiento pregunta sobre tu trabajo, tus frases y tu forma de responder — y cada respuesta se convierte en una memoria.",
+        "inviteStart": "Empezar entrenamiento",
+        "inviteTitle": "Las memorias vienen del entrenamiento",
+        "retry": "Inténtalo de nuevo"
+      },
+      "offer": {
+        "hint": "No se guarda nada hasta que lo confirmes.",
+        "title": "Quiere anotarlo"
+      },
+      "rail": {
+        "doors": "Abrir",
+        "unnamed": "Tu gemelo"
+      },
+      "sheet": {
+        "everywhere": "En todas partes",
+        "hint": "Todo lo guardado hasta ahora. Nada de esto se escribió sin ti.",
+        "memories": "Memorias · {detail}",
+        "noBio": "Aún no hay bio",
+        "noRole": "Aún no hay rol",
+        "noVoice": "aún sin voz",
+        "openFields": "Editar todos los campos",
+        "samplesAndRules": "{samples} muestras, {rules} reglas",
+        "title": "Lo que sabe",
+        "voices": "Voces"
+      },
+      "voice": {
+        "candidates": "Tres voces para elegir",
+        "drafting": "Redactando {name}",
+        "idle": "Aún no hay voz redactada",
+        "ready": "{name} está listo para revisar",
+        "rolling": "Sorteando tres voces",
+        "saving": "Guardando",
+        "title": "Voz"
+      },
+      "whisper": {
+        "kept": "Guardado · {field}"
       }
     }
   },
