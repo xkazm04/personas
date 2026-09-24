@@ -30,6 +30,7 @@ import type { TestScenario } from '@/lib/bindings/TestScenario';
 import type { TestScores } from '@/lib/bindings/TestScores';
 import type { NoteStatus } from '@/lib/bindings/NoteStatus';
 import type { NoteComment } from '@/lib/bindings/NoteComment';
+import type { SetupUpdatedEvent } from '@/lib/bindings/SetupUpdatedEvent';
 // Not a generated binding yet: `BrowserTab` is WP0's hand-written wire contract
 // (`src/features/browser/types.ts`), which WP4 re-points at `@/lib/bindings`
 // once the Rust side carries `#[derive(TS)] #[ts(export)]`.
@@ -205,6 +206,9 @@ export const EventName = {
   TWIN_STUDIO_OUTPUT: 'twin-studio-output',
   TWIN_STUDIO_PROGRESS: 'twin-studio-progress',
   TWIN_STUDIO_COMPLETE: 'twin-studio-complete',
+
+  // Twin setup plan (background planner / reconciler changed the session)
+  TWIN_SETUP_UPDATED: 'twin-setup-updated',
 
   // Obsidian Brain — Revitalize (background vault memory optimization)
   OBSIDIAN_REVITALIZE_STATUS: 'obsidian-revitalize-status',
@@ -1000,6 +1004,9 @@ export interface EventPayloadMap {
   [EventName.TWIN_STUDIO_OUTPUT]: { job_id: string; line: string };
   [EventName.TWIN_STUDIO_PROGRESS]: { batch_id: string; phase: string; completed: number; total: number };
   [EventName.TWIN_STUDIO_COMPLETE]: { batch_id: string; status: string; phase: string; item_count: number };
+
+  // Twin setup plan: refetch the snapshot (twinSetup.setupGet) on receipt
+  [EventName.TWIN_SETUP_UPDATED]: SetupUpdatedEvent;
 
   // Obsidian Brain — Revitalize (BackgroundJob pattern)
   [EventName.OBSIDIAN_REVITALIZE_STATUS]: { job_id: string; status: string; error?: string };

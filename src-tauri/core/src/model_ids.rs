@@ -32,6 +32,12 @@ pub const HAIKU_CURRENT: &str = "claude-haiku-4-5-20251001";
 pub const SONNET_CURRENT: &str = "claude-sonnet-4-6";
 pub const OPUS_CURRENT: &str = "claude-opus-5";
 
+/// Opus 5.5, pinned by id for the twin setup engine (planner + reconciler).
+/// Probe-verified on the CLI 2026-09-24: `claude -p --model claude-opus-5-5
+/// --effort low` answered ok (api 1.9 s). Deliberately NOT `OPUS_CURRENT`:
+/// the tier ladder moves only when the alias does.
+pub const OPUS_5_5: &str = "claude-opus-5-5";
+
 /// Tier defaults consumed by headless judges, lab runs, capability fallbacks
 /// and settings defaults. Named by the *job* so a caller never has to know
 /// which family currently fills it.

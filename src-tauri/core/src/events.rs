@@ -242,6 +242,10 @@ event_names! {
     TWIN_STUDIO_PROGRESS       => "twin-studio-progress",
     TWIN_STUDIO_COMPLETE       => "twin-studio-complete",
 
+    // Twin setup plan (background planner / reconciler changed the session;
+    // payload `SetupUpdatedEvent`, the client refetches the snapshot)
+    TWIN_SETUP_UPDATED         => "twin-setup-updated",
+
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",
