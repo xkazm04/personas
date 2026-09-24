@@ -16,15 +16,7 @@ use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
 
-async fn blocking<T, F>(what: &'static str, f: F) -> Result<T, AppError>
-where
-    T: Send + 'static,
-    F: FnOnce() -> Result<T, AppError> + Send + 'static,
-{
-    tauri::async_runtime::spawn_blocking(f)
-        .await
-        .map_err(|e| AppError::Internal(format!("{what} task join failed: {e}")))?
-}
+use crate::commands::blocking::run_blocking as blocking;
 
 /// One layer-two report, the target of a `ref:report/<id>` link.
 #[tauri::command]

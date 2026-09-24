@@ -1,3 +1,4 @@
+pub(crate) mod blocking;
 pub mod browser;
 pub mod communication;
 pub mod companion;

@@ -1,3 +1,4 @@
+use crate::commands::blocking::run_blocking;
 use crate::db::models::{DevContext, DevContextGroup, DevContextGroupRelationship};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -11,12 +12,16 @@ use tauri::State;
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_context_groups(
+pub async fn dev_tools_list_context_groups(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<Vec<DevContextGroup>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_context_groups(&state.db, &project_id)
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_context_groups", move || {
+        repo::list_context_groups(&db, &project_id)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -91,14 +96,18 @@ pub fn dev_tools_reorder_context_groups(
 // ============================================================================
 
 #[tauri::command]
-pub fn dev_tools_list_contexts(
+pub async fn dev_tools_list_contexts(
     state: State<'_, Arc<AppState>>,
     project_id: String,
     group_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<Vec<DevContext>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_contexts_by_project_page(&state.db, &project_id, group_id.as_deref(), limit)
+    let db = state.db.clone();
+    run_blocking("dev_tools_list_contexts", move || {
+        repo::list_contexts_by_project_page(&db, &project_id, group_id.as_deref(), limit)
+    })
+    .await
 }
 
 #[tauri::command]
