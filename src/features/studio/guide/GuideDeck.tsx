@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { guideStrings } from './guideCopy';
@@ -8,7 +9,9 @@ import type { GuideCard } from './guideModel';
 
 // Athena's next moves after a finished step: 2-3 cards, each a real turn. Enter
 // takes the first, 1-3 pick, X passes on the first. Keys are ignored while the
-// user is typing or a popover is open (same guards as the question card).
+// user is typing or a popover is open (same guards as the question card), and
+// Enter only counts when focus is on nothing or on the deck itself: Enter on a
+// focused goal, tab or link belongs to that element, not to a build turn.
 export default function GuideDeck({
   cards,
   estimate,
@@ -23,13 +26,19 @@ export default function GuideDeck({
   const { t, tx } = useTranslation();
   const g = guideStrings(t);
   const { shouldAnimate } = useMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const enterIsOurs = () => {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el || el === document.body) return true;
+    return !!rootRef.current?.contains(el) && el.tagName !== 'BUTTON';
+  };
 
   useAppKeyboard(
     (e) => {
       if (!isFreeKey(e)) return false;
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= cards.length) onAccept(cards[n - 1]!);
-      else if (e.key === 'Enter' && (document.activeElement as HTMLElement | null)?.tagName !== 'BUTTON') onAccept(cards[0]!);
+      else if (e.key === 'Enter' && enterIsOurs()) onAccept(cards[0]!);
       else if (e.key === 'x' || e.key === 'X') onDecline(cards[0]!);
       else return false;
       e.preventDefault();
@@ -58,7 +67,7 @@ export default function GuideDeck({
     })[c.kind];
 
   return (
-    <div className="pointer-events-auto flex w-full flex-col items-center gap-2">
+    <div ref={rootRef} className="pointer-events-auto flex w-full flex-col items-center gap-2">
       <p className="rounded-full border border-border bg-background/80 px-3 py-1 typo-caption text-foreground/90 backdrop-blur">
         <span className="font-medium text-primary">{g.suggests}</span> {g.suggests_keys}
       </p>

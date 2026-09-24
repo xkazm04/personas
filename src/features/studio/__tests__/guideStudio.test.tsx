@@ -187,6 +187,23 @@ describe('Guide layout', () => {
     expect(screen.getAllByText('shop + ordering').length).toBeGreaterThan(0);
   });
 
+  it('Enter takes the first next move only when nothing else has focus', () => {
+    const phases = [
+      { id: 'v', title: 'Vision', status: 'done', note: null },
+      { id: 'm', title: 'Menu', status: 'active', note: null },
+    ];
+    seed({ phases, turnDurations: [400], activity: [{ id: 'a', kind: 'build', subject: 'Menu grid', detail: 'Write', ts: 0 }] });
+    mount();
+    expect(screen.getByText('card_continue')).toBeTruthy();
+    const goal = document.querySelector<HTMLElement>('[data-active="true"]')!;
+    goal.focus();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(useStudioStore.getState().runtimes.p1!.busy).toBe(false);
+    goal.blur();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(useStudioStore.getState().runtimes.p1!.busy).toBe(true);
+  });
+
   it('deals next moves after a finished step and opens the tool arc on O', () => {
     const phases = [
       { id: 'v', title: 'Vision', status: 'done', note: null },

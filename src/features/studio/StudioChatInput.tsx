@@ -253,10 +253,18 @@ export default function StudioChatInput({
                   type="button"
                   onClick={() => (onPlanClick ? onPlanClick() : setPlanOpen((v) => !v))}
                   data-testid="studio-plan-button"
+                  // Guide: the button moves focus to the goals rail; it opens
+                  // nothing, so it names the goals and claims no expanded state.
                   aria-label={
-                    hasPlan ? tx(t.studio.plan_progress, { done, total }) : t.studio.build_plan
+                    onPlanClick
+                      ? hasPlan
+                        ? `${guideStrings(t).goals} · ${tx(guideStrings(t).goals_progress, { done, total })}`
+                        : guideStrings(t).goals
+                      : hasPlan
+                        ? tx(t.studio.plan_progress, { done, total })
+                        : t.studio.build_plan
                   }
-                  aria-expanded={planOpen}
+                  aria-expanded={onPlanClick ? undefined : planOpen}
                   className={`relative flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2 transition-colors ${
                     planOpen
                       ? 'bg-secondary/70 text-primary'

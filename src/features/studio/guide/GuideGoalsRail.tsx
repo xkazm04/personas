@@ -39,7 +39,8 @@ const GuideGoalsRail = forwardRef<
       setAdding(true);
       window.requestAnimationFrame(() => inputRef.current?.focus());
     },
-    focusActive: () => listRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.focus(),
+    // With no goal in progress (all done, or none yet) the list itself takes focus.
+    focusActive: () => (listRef.current?.querySelector<HTMLElement>('[data-active="true"]') ?? listRef.current)?.focus(),
   }));
 
   const done = phases.filter((p) => p.status === 'done').length;
@@ -94,7 +95,7 @@ const GuideGoalsRail = forwardRef<
           )}
         </div>
       ) : (
-        <ol ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-3">
+        <ol ref={listRef} tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto px-4 pb-3 outline-none">
           {phases.map((p, i) => {
             const status = p.status === 'done' ? 'done' : p.status === 'active' ? 'active' : 'pending';
             return (
