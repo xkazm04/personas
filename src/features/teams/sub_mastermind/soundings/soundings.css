@@ -157,9 +157,13 @@
 .sd-st { position: absolute; top: 0; bottom: 0; transition: left var(--sd-move) var(--sd-ease), width var(--sd-move) var(--sd-ease); }
 .sd-st .sd-pl { position: absolute; inset: 0 1px; border-radius: 2px; transition: background .35s; }
 .sd-st.sd-hov .sd-pl, .sd-st.sd-foc .sd-pl { background: linear-gradient(180deg, transparent 0%, var(--sd-plate-cur) 30%, var(--sd-hair) 60%, transparent 100%); }
-.sd-st .sd-line { position: absolute; left: 50%; top: calc(var(--y) * 1px); bottom: 24px; border-left: 1px dashed var(--sd-hair2); transition: top var(--sd-sink) var(--sd-ease), opacity .3s; }
+/* Buoy, mooring line and tick MOVE BY TRANSFORM, never by `top`: a data arrival
+   that re-ranks the portfolio moves every buoy at once, and animating `top`
+   re-ran layout for the whole chart on every frame of a 1.3 s sink. A transform
+   stays on the compositor. The line runs from the buoy to the chart floor. */
+.sd-st .sd-line { position: absolute; left: 50%; top: 0; height: 100%; border-left: 1px dashed var(--sd-hair2); transform: translateY(calc(var(--y) * 1px)); transition: transform var(--sd-sink) var(--sd-ease), opacity .3s; will-change: transform; }
 .sd-st.sd-foc .sd-line { border-left-color: var(--sd-hair3); }
-.sd-buoy { position: absolute; left: -40px; right: -40px; height: 40px; top: calc(var(--y) * 1px - 32px); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; text-align: center; transition: top var(--sd-sink) var(--sd-ease), opacity .3s, visibility 0s; border-radius: var(--radius-interactive); }
+.sd-buoy { position: absolute; left: -40px; right: -40px; height: 40px; top: 0; transform: translateY(calc(var(--y) * 1px - 32px)); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; text-align: center; transition: transform var(--sd-sink) var(--sd-ease), opacity .3s, visibility 0s; will-change: transform; border-radius: var(--radius-interactive); }
 .sd-buoy .sd-nm { white-space: nowrap; color: var(--sd-ink); padding: 0 5px; border-radius: var(--radius-interactive); transition: color .6s, background .6s, box-shadow .2s; }
 .sd-st[data-band="2"] .sd-buoy .sd-nm, .sd-st[data-band="3"] .sd-buoy .sd-nm { color: var(--sd-ink2); font-weight: 500; }
 .sd-bm { position: relative; width: 15px; height: 15px; display: grid; place-items: center; }
@@ -178,14 +182,14 @@
 .sd-vtag { position: absolute; left: 50%; margin-left: -8px; width: 16px; bottom: 30px; writing-mode: vertical-rl; line-height: 16px; font-size: 12px; color: var(--sd-ink3); white-space: nowrap; overflow: hidden; max-height: 60%; text-overflow: ellipsis; opacity: 0; visibility: hidden; transition: opacity .3s; pointer-events: none; }
 .sd-root[data-level="1"] .sd-st.sd-sl .sd-vtag, .sd-root[data-level="2"] .sd-st.sd-sl .sd-vtag { opacity: 1; visibility: visible; transition: opacity .3s .3s; }
 .sd-st.sd-sl.sd-rel .sd-vtag { color: var(--sd-ink); }
-.sd-tick { position: absolute; left: 4px; right: 4px; height: 3px; border-radius: 2px; top: calc(var(--y) * 1px - 1px); background: var(--mc); opacity: 0; transition: opacity .3s, top var(--sd-sink) var(--sd-ease); }
-.sd-st[data-mc="alert"] .sd-tick { height: 5px; top: calc(var(--y) * 1px - 2px); }
+.sd-tick { position: absolute; left: 4px; right: 4px; height: 3px; border-radius: 2px; top: 0; transform: translateY(calc(var(--y) * 1px - 1px)); background: var(--mc); opacity: 0; transition: opacity .3s, transform var(--sd-sink) var(--sd-ease); }
+.sd-st[data-mc="alert"] .sd-tick { height: 5px; transform: translateY(calc(var(--y) * 1px - 2px)); }
 .sd-st[data-mc="calm"] .sd-tick { background: var(--sd-hair3); height: 2px; }
 .sd-sldot { position: absolute; left: 50%; margin-left: -4px; width: 8px; height: 8px; border-radius: 2px; top: calc(var(--wl) * 1px - 4px); background: var(--sd-lilac); opacity: 0; transition: opacity .3s; }
 .sd-slbtn { position: absolute; inset: 0; visibility: hidden; border-radius: 2px; }
 .sd-slbtn:hover { background: var(--sd-hair); }
 .sd-root[data-level="1"] .sd-buoy, .sd-root[data-level="2"] .sd-buoy,
-.sd-root[data-level="1"] .sd-floats, .sd-root[data-level="2"] .sd-floats { opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s .25s, top var(--sd-sink) var(--sd-ease); }
+.sd-root[data-level="1"] .sd-floats, .sd-root[data-level="2"] .sd-floats { opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s .25s, transform var(--sd-sink) var(--sd-ease); }
 .sd-root[data-level="1"] .sd-st.sd-sl .sd-tick, .sd-root[data-level="2"] .sd-st.sd-sl .sd-tick { opacity: 1; }
 .sd-root[data-level="1"] .sd-st.sd-sl.sd-aw .sd-sldot, .sd-root[data-level="2"] .sd-st.sd-sl.sd-aw .sd-sldot { opacity: 1; }
 .sd-root[data-level="1"] .sd-st.sd-sl .sd-slbtn, .sd-root[data-level="2"] .sd-st.sd-sl .sd-slbtn { visibility: visible; }

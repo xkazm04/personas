@@ -72,6 +72,7 @@ import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { ViewPanel, ViewSwitcher, type MastermindView } from './lib/ViewSwitcher';
+import { useSceneSettle } from './lib/useSceneSettle';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
@@ -125,11 +126,11 @@ export default function MastermindPage() {
 
 function MastermindInner() {
   const { t, tx } = useTranslation();
-  const { passports, rawByProject, loading, error, reload, rescan, rescanning, rescanProject } = usePassportData();
+  const { passports, rawByProject, loading, error, measured, reload, rescan, rescanning, rescanProject } = usePassportData();
   // R22 — a finished `passport:*` dispatch (island dim action, fleet dock)
   // auto-verifies via scoped rescan, same loop closure as the Factory wall.
   useAutoRescanOnFleetExit(rescanProject);
-  const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
+  const { projects: factoryProjects, loading: factoryLoading, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
   // Scene store — the single batched spine: cross-project relations (meta) +
   // idea scans, each fetched with ≤1 IPC and invalidated by event, not polled.
@@ -268,6 +269,8 @@ function MastermindInner() {
   // reduced to the banner's next/shipped/late shape via the same roadmap
   // builder the passport wall uses (the two surfaces must agree on "next").
   const [shipByProject, setShipByProject] = useState<Map<string, IslandShip>>(new Map());
+  // Whether the ship summaries have answered at least once (settle gate input).
+  const [shipAnswered, setShipAnswered] = useState(false);
   useEffect(() => {
     const ids = passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-'));
     if (ids.length === 0) return;
@@ -299,8 +302,9 @@ function MastermindInner() {
           });
         }
         setShipByProject(m);
+        setShipAnswered(true);
       })
-      .catch(silentCatch('mastermind projectWallSummary'));
+      .catch((err) => { silentCatch('mastermind projectWallSummary')(err); if (live) setShipAnswered(true); });
     return () => { live = false; };
   }, [passports]);
 
@@ -507,9 +511,19 @@ function MastermindInner() {
     () => ({ scansUnknown: scansStatus === 'failed', kpiUnknown: Boolean(factoryError), goalsUnknown: goalsStatus === 'failed' }),
     [scansStatus, factoryError, goalsStatus],
   );
+  // Render-blocking verdicts (see useSceneSettle): islands paint at once as
+  // provisional ghosts and adopt their verdicts in ONE commit when every family
+  // that changes a verdict has answered, instead of repainting ~15 times in the
+  // first two seconds and retracting what they showed.
+  const settled = useSceneSettle({
+    passportsReady: measured || Boolean(error),
+    families: [metaStatus, scansStatus, goalsStatus, sentryStatus, llmSpendStatus],
+    factoryReady: !factoryLoading || Boolean(factoryError),
+    shipReady: shipAnswered,
+  });
   const scene = useMemo(
-    () => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject),
-    [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject],
+    () => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject, settled),
+    [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject, settled],
   );
 
   // Which data families are currently not clean (failed OR showing stale data).
