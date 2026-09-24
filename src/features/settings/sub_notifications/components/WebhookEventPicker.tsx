@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Plus, X } from 'lucide-react';
 import { interpolate, useTranslation } from '@/i18n/useTranslation';
 import { listEventsInRange } from '@/api/overview/events';
@@ -71,18 +71,28 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
     [patterns, vocabulary],
   );
   const preview = useMemo(() => (recent ? previewMatches(patterns, recent.events) : null), [patterns, recent]);
-  const counts = useMemo(() => (recent ? previewMatches(['*'], recent.events).byType : {}), [recent]);
+  const weekly = useMemo(() => (recent ? previewMatches(['*'], recent.events).byType : null), [recent]);
+  // Events of a type in the loaded 7-day window. Absent from a LOADED tally is
+  // a real zero; before the window loads (or when it failed) it is unknown: null.
+  const weeklyCount = useCallback(
+    (type: string): number | null => {
+      if (!weekly) return null;
+      const n = weekly[type];
+      return n === undefined ? 0 : n;
+    },
+    [weekly],
+  );
   const choices = useMemo(
     () =>
       (vocabulary ?? [])
         .filter((v) => !patterns.includes(v.eventType))
         .sort(
           (a, b) =>
-            (counts[b.eventType] ?? 0) - (counts[a.eventType] ?? 0) ||
+            (weeklyCount(b.eventType) ?? 0) - (weeklyCount(a.eventType) ?? 0) ||
             Number(b.source === 'observed') - Number(a.source === 'observed') ||
             a.eventType.localeCompare(b.eventType),
         ),
-    [vocabulary, patterns, counts],
+    [vocabulary, patterns, weeklyCount],
   );
 
   const setPatterns = (next: string[]) => onChange([...new Set(next)].join(', '));
@@ -168,7 +178,7 @@ export function WebhookEventPicker({ value, onChange, vocabulary }: WebhookEvent
                 {v.eventType}
                 <span className="font-sans text-foreground">
                   {v.source === 'observed' ? s.webhook_events_source_observed : s.webhook_events_source_builtin}
-                  {counts[v.eventType] ? ` · ${interpolate(s.webhook_events_count_7d, { count: counts[v.eventType] ?? 0 })}` : ''}
+                  {weeklyCount(v.eventType) ? ` · ${interpolate(s.webhook_events_count_7d, { count: weeklyCount(v.eventType) ?? '' })}` : ''}
                 </span>
               </button>
             ))}
