@@ -13,7 +13,6 @@ import { extractMessage } from '@/lib/silentCatch';
 import type { ContestKey } from '../focus';
 import { useContest } from '../hooks/useContests';
 import { useReviewDraft } from '../hooks/useReviewDraft';
-import { ARENA } from './copy';
 import { PhotoFinish } from './PhotoFinish';
 import { RaceTrack } from './RaceTrack';
 
@@ -26,12 +25,13 @@ export interface ArenaStageProps {
 
 export function ArenaStage({ trackKey, reviewKey, onReviewKey, onNewRace }: ArenaStageProps) {
   const { t } = useTranslation();
+  const a = t.plugins.contest.arena;
   const { detail, isLoading, error, refresh } = useContest(trackKey?.projectId ?? null, trackKey?.contestId ?? null);
   const draft = useReviewDraft(detail);
 
   if (!trackKey) {
     return (
-      <EmptyState icon={Flag} title={ARENA.trackEmptyTitle} subtitle={ARENA.trackEmptyBody} action={{ label: ARENA.newRace, onClick: onNewRace, icon: Plus }} />
+      <EmptyState icon={Flag} title={a.track_empty_title} subtitle={a.track_empty_body} action={{ label: a.new_race, onClick: onNewRace, icon: Plus }} />
     );
   }
   if (!detail) {
@@ -39,7 +39,7 @@ export function ArenaStage({ trackKey, reviewKey, onReviewKey, onNewRace }: Aren
       return (
         <ErrorBanner
           variant="inline"
-          message={`${ARENA.trackLoadFailed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
+          message={`${a.track_load_failed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
           onRetry={() => void refresh()}
         />
       );

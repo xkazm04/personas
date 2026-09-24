@@ -20,8 +20,10 @@ import {
   DEFAULT_SEAT_EFFORT,
   formatSeatSpec,
   isSpecToken,
+  modelDisplayName,
   seatId,
 } from '../model/seatCatalog';
+import { SeatLabel } from '../arena/SeatLabel';
 import { LineupBar } from './LineupBar';
 
 export interface SeatPickerProps {
@@ -83,7 +85,7 @@ export function SeatPicker({
                   data-testid={`${testIdPrefix}-seat-${seatId(spec)}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="typo-code text-foreground">{text}</span>
+                    <SeatLabel spec={text} hideEffort />
                     <Button
                       size="icon-sm"
                       variant="ghost"
@@ -159,7 +161,7 @@ function EngineRow({ engine, available, onAdd, testIdPrefix }: EngineRowProps) {
           onClick={() => onAdd(model)}
           data-testid={`${testIdPrefix}-model-${model}`}
         >
-          <span className="typo-code">{model}</span>
+          {modelDisplayName(model)}
         </Button>
       ))}
       {/* Not a <form>: the picker sits inside SetupForm, and forms do not nest. */}

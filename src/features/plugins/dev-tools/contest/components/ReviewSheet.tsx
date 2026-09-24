@@ -22,10 +22,12 @@ export interface ReviewSheetProps {
   /** Hide the bucket picker when the host shell sorts variants its own way
    *  (a podium, grease-pencil marks). Defaults to true. */
   showBuckets?: boolean;
+  /** Hide the heading + facts when the host shell names the variant itself. */
+  showHeader?: boolean;
   className?: string;
 }
 
-export function ReviewSheet({ variant, draft, showBuckets = true, className = '' }: ReviewSheetProps) {
+export function ReviewSheet({ variant, draft, showBuckets = true, showHeader = true, className = '' }: ReviewSheetProps) {
   const { t, tx } = useTranslation();
   const s = t.plugins.contest;
   if (!draft.review) return null;
@@ -38,11 +40,12 @@ export function ReviewSheet({ variant, draft, showBuckets = true, className = ''
       aria-label={tx(s.review_title, { key: variant.key })}
       data-testid={`contest-review-sheet-${variant.key}`}
     >
+      {showHeader && (
       <header className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="typo-heading">{tx(s.review_title, { key: variant.key })}</h3>
           {vr.bucket && (
-            <StatusBadge variant={bucketTone(vr.bucket)} size="sm" pill>
+            <StatusBadge variant={bucketTone(vr.bucket)} size="md" pill>
               {bucketLabel(s, vr.bucket)}
             </StatusBadge>
           )}
@@ -50,6 +53,7 @@ export function ReviewSheet({ variant, draft, showBuckets = true, className = ''
         </div>
         <VariantFacts variant={variant} />
       </header>
+      )}
 
       {showBuckets && (
       <div className="space-y-1.5">

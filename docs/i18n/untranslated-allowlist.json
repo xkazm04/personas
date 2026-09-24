@@ -3987,5 +3987,8 @@
   "fr:plugins.contest.col_phase",
   "id:plugins.contest.chain_label",
   "id:plugins.contest.seat_label_placeholder",
-  "id:plugins.contest.field_brief"
+  "id:plugins.contest.field_brief",
+  "cs:plugins.contest.arena.errors_show_one",
+  "fr:plugins.contest.arena.errors_show_one",
+  "fr:plugins.contest.arena.errors_show_other"
 ]

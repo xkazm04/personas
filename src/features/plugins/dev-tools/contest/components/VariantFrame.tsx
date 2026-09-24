@@ -40,6 +40,9 @@ export interface VariantFrameProps {
   onWidthChange?: (w: DesignWidth) => void;
   /** Thumbnail mode: no controls, no pins, the page cannot be clicked. */
   thumbnail?: boolean;
+  /** Render the width + pin-mode controls above the frame (default). A host
+   *  that owns them in its own header (controlled width / pinMode) passes false. */
+  showControls?: boolean;
   className?: string;
 }
 
@@ -58,6 +61,7 @@ export function VariantFrame({
   width: widthProp,
   onWidthChange,
   thumbnail = false,
+  showControls = true,
   className = '',
 }: VariantFrameProps) {
   const { t, tx } = useTranslation();
@@ -128,7 +132,7 @@ export function VariantFrame({
 
   return (
     <div className={`space-y-2 ${className}`} data-testid={`contest-frame-${variant.key}`}>
-      {!thumbnail && (
+      {!thumbnail && showControls && (
         <div className="flex flex-wrap items-center gap-2">
           {/* A toggle group, not a tab strip: the width reflows ONE frame, it
               does not switch between panels. */}
@@ -207,7 +211,7 @@ export function VariantFrame({
             ) : null,
           )}
 
-        {pending && (
+        {pending && pinMode && (
           <div
             className="absolute left-0 top-0 w-56 space-y-1.5 rounded-card border border-primary/20 bg-background p-2 shadow-elevation-3"
             style={{

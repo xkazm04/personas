@@ -17,14 +17,22 @@ import { useSystemStore } from '@/stores/systemStore';
 
 import { ReadinessStrip } from './components/ReadinessStrip';
 import { useContestFocus } from './focus';
+import { useContests } from './hooks/useContests';
 
 const Arena = lazyRetry(() => import('./arena'));
 
 export default function ContestPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.plugins.contest;
+  const a = s.arena;
   const focusedProject = useContestFocus((st) => st.focused?.projectId ?? null);
   const activeProjectId = useSystemStore((st) => st.activeProjectId);
+  const { contests } = useContests();
+  const ready = contests.filter((c) => c.phase === 'review' || c.phase === 'shortlisted').length;
+  const subtitle =
+    contests.length === 0
+      ? a.page_subtitle
+      : [tx(contests.length === 1 ? a.subtitle_count_one : a.subtitle_count_other, { count: contests.length }), ready > 0 ? tx(a.subtitle_ready, { count: ready }) : null].filter(Boolean).join(' · ');
 
   return (
     <ContentBox data-testid="contest-page">
@@ -32,7 +40,7 @@ export default function ContestPage() {
         icon={<Trophy className="w-5 h-5 text-primary" />}
         iconColor="primary"
         title={s.page_title}
-        subtitle={s.page_subtitle}
+        subtitle={subtitle}
         fitWidth
       />
       <ContentBody>

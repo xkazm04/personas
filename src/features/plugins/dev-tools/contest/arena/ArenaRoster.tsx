@@ -1,13 +1,14 @@
-// The home layer: a compact column of every race beside the track. Refine
-// rounds nest under the race they came from. Loading v2: the header always
-// renders, a calm delayed ghost fills emptiness, cards ripple in once.
-import { useMemo } from 'react';
-import { Flag, ListOrdered, Plus, Trophy } from 'lucide-react';
+// The home layer: a compact list of every race beside the track, read like
+// the notes desk — a title that wraps to two lines, one muted meta line, and
+// for a decided race the winner. Refine rounds sit indented under the race
+// they came from, on a thin guide line. Loading v2: the header always
+// renders, a calm delayed ghost fills emptiness, rows ripple in once.
+import { useMemo, type ReactNode } from 'react';
+import { ListOrdered, Plus, Trophy } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
@@ -19,10 +20,10 @@ import { extractMessage } from '@/lib/silentCatch';
 import { contestKeyString, type ContestKey } from '../focus';
 import { phaseLabel, phaseTone } from '../model/labels';
 import { raceRounds } from './arenaModel';
-import { ARENA } from './copy';
+import { SeatLabel } from './SeatLabel';
+import { ToneDot } from './ToneDot';
 
-const GHOST_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
-const CARD_H = 76;
+const GHOST_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
 
 export interface ArenaRosterProps {
   contests: ContestSummary[];
@@ -37,45 +38,44 @@ export interface ArenaRosterProps {
 
 export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onPick, onNewRace, onStandings }: ArenaRosterProps) {
   const { t } = useTranslation();
+  const a = t.plugins.contest.arena;
   const entries = useMemo(() => raceRounds(contests), [contests]);
   const enter = useRevealTracker('arena-roster');
   const current = trackKey ? contestKeyString(trackKey) : null;
   const showGhost = isLoading && contests.length === 0;
 
   return (
-    <aside className="flex min-h-0 flex-col gap-3" aria-label={ARENA.rosterTitle} data-testid="arena-roster">
-      <header className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Flag className="w-4 h-4 text-primary" aria-hidden />
-          <h3 className="typo-heading flex-1">{ARENA.rosterTitle}</h3>
-          <Button size="xs" variant="ghost" icon={<ListOrdered className="w-3.5 h-3.5" />} onClick={onStandings} data-testid="arena-open-standings">
-            {ARENA.standings}
-          </Button>
-        </div>
-        <Button size="sm" variant="primary" className="w-full" icon={<Plus className="w-3.5 h-3.5" />} onClick={onNewRace} data-testid="arena-new-race">
-          {ARENA.newRace}
+    <aside className="flex min-h-0 flex-col gap-2" aria-label={a.roster_title} data-testid="arena-roster">
+      <header className="flex items-center gap-1.5">
+        <h3 className="typo-label flex-1">{a.roster_title}</h3>
+        <Button size="xs" variant="ghost" icon={<ListOrdered className="w-3.5 h-3.5" />} onClick={onStandings} data-testid="arena-open-standings">
+          {a.standings}
         </Button>
-        <p className="typo-caption text-foreground">{ARENA.rosterHint}</p>
+        <Button size="sm" variant="secondary" icon={<Plus className="w-3.5 h-3.5" />} onClick={onNewRace} data-testid="arena-new-race">
+          {a.new_race}
+        </Button>
       </header>
 
       {error != null && contests.length === 0 ? (
         <ErrorBanner
           variant="inline"
-          message={`${ARENA.rosterLoadFailed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
+          message={`${a.roster_load_failed} ${resolveErrorTranslated(t, extractMessage(error)).message}`}
           onRetry={onRetry}
         />
       ) : showGhost ? (
         <RosterGhost />
       ) : entries.length === 0 ? (
-        <EmptyState icon={Flag} title={ARENA.rosterEmptyTitle} subtitle={ARENA.rosterEmptyBody} action={{ label: ARENA.newRace, onClick: onNewRace, icon: Plus }} />
+        <EmptyState icon={Trophy} title={a.roster_empty_title} subtitle={a.roster_empty_body} action={{ label: a.new_race, onClick: onNewRace, icon: Plus }} />
       ) : (
-        <ol className="space-y-1.5 overflow-y-auto pr-1 max-h-[calc(100vh-16rem)]">
+        <ol className="-mx-1 overflow-y-auto max-h-[calc(100vh-15rem)]">
           {entries.map(({ summary, depth }, i) => {
             const key = { projectId: summary.projectId, contestId: summary.contestId };
             const id = contestKeyString(key);
             return (
-              <RevealItem as="li" key={id} revealId={id} order={i} hasEntered={enter.hasEntered} markEntered={enter.markEntered} style={{ marginLeft: depth * 12 }}>
-                <RaceCard summary={summary} active={id === current} onPick={() => onPick(key)} />
+              <RevealItem as="li" key={id} revealId={id} order={i} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
+                <div className={depth > 0 ? 'ml-3 border-l border-primary/15 pl-2' : ''}>
+                  <RaceRow summary={summary} active={id === current} onPick={() => onPick(key)} />
+                </div>
               </RevealItem>
             );
           })}
@@ -85,53 +85,60 @@ export function ArenaRoster({ contests, isLoading, error, onRetry, trackKey, onP
   );
 }
 
-function RaceCard({ summary, active, onPick }: { summary: ContestSummary; active: boolean; onPick: () => void }) {
-  const { t } = useTranslation();
+function RaceRow({ summary, active, onPick }: { summary: ContestSummary; active: boolean; onPick: () => void }) {
+  const { t, tx } = useTranslation();
   const s = t.plugins.contest;
+  const a = s.arena;
   return (
     <button
       type="button"
       onClick={onPick}
       aria-current={active ? 'true' : undefined}
-      className={`w-full text-left rounded-card border px-3 py-2 space-y-1 transition-colors focus-ring ${
-        active ? 'border-primary/40 bg-primary/10' : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
+      className={`relative block w-full rounded-interactive px-2.5 py-1.5 text-left transition-colors focus-ring ${
+        active ? 'bg-secondary/50' : 'hover:bg-secondary/25'
       }`}
       data-testid={`arena-race-${summary.contestId}`}
     >
-      <div className="flex items-center gap-2">
-        <span className="typo-title truncate flex-1">{summary.title}</span>
-        <StatusBadge variant={phaseTone(summary.phase)} size="sm" pill>
-          {phaseLabel(s, summary.phase)}
-        </StatusBadge>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-2 typo-caption text-foreground">
-        <span className="truncate">{summary.projectName}</span>
-        {summary.round !== null && <span>· {ARENA.roundN(summary.round)}</span>}
-        <span>·</span>
-        <RelativeTime timestamp={summary.updatedAtMs} className="typo-caption text-foreground" />
-      </div>
+      {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-pill bg-primary" aria-hidden />}
+      <span className="typo-body text-foreground line-clamp-2 break-words">
+        <span className="font-medium">{summary.title}</span>
+      </span>
+      <span className="flex flex-wrap items-center gap-x-1.5 typo-caption">
+        <ToneDot tone={phaseTone(summary.phase)}>{phaseLabel(s, summary.phase)}</ToneDot>
+        <MetaItem>{summary.projectName}</MetaItem>
+        {summary.round !== null && <MetaItem>{tx(a.round_n, { n: summary.round })}</MetaItem>}
+        <MetaItem>
+          <RelativeTime timestamp={summary.updatedAtMs} className="typo-caption" />
+        </MetaItem>
+      </span>
       {summary.winner && (
-        <div className="flex items-center gap-1.5 typo-caption text-foreground min-w-0">
-          <Trophy className="w-3.5 h-3.5 shrink-0 text-status-success" aria-hidden />
-          <span className="typo-label">{summary.winner}</span>
-          {summary.winnerSeatSpec && <span className="typo-caption font-mono truncate">{ARENA.winnerBy} {summary.winnerSeatSpec}</span>}
-        </div>
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 typo-caption">
+          <Trophy className="w-3.5 h-3.5 shrink-0 text-status-success" aria-label={a.winner} />
+          <span className="text-foreground shrink-0">{summary.winner}</span>
+          {summary.winnerSeatSpec && <SeatLabel spec={summary.winnerSeatSpec} />}
+        </span>
       )}
     </button>
   );
 }
 
+/** One "· item" of the meta line; the separator never wraps away from its item. */
+function MetaItem({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+      <span aria-hidden>·</span>
+      {children}
+    </span>
+  );
+}
+
 function RosterGhost() {
   return (
-    <div className="space-y-1.5" aria-hidden data-testid="arena-roster-ghost">
+    <div className="space-y-1" aria-hidden data-testid="arena-roster-ghost">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-card border border-primary/[0.06] px-3 py-2 space-y-2 animate-fade-in"
-          style={{ height: CARD_H, animationDelay: `${120 + i * 35}ms` }}
-        >
+        <div key={i} className="space-y-1.5 px-2.5 py-2 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
           <div className={`h-3.5 rounded-interactive bg-primary/[0.06] ${GHOST_WIDTHS[i % 4]}`} />
-          <div className="h-3 w-24 rounded-interactive bg-primary/[0.06]" />
+          <div className="h-3 w-28 rounded-interactive bg-primary/[0.06]" />
         </div>
       ))}
     </div>

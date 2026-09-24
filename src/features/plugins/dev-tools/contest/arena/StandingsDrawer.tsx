@@ -7,13 +7,13 @@ import { X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
 import { SeatStatsBoard } from '../components/SeatStatsBoard';
 import { contestKeyString, type ContestKey } from '../focus';
-import { ARENA } from './copy';
-import { SeatSpecChips } from './SeatSpecChips';
+import { SeatLabel } from './SeatLabel';
 
 const TITLE_ID = 'arena-standings-title';
 
@@ -27,70 +27,72 @@ export interface StandingsDrawerProps {
 }
 
 export function StandingsDrawer({ contests, isLoading, error, onRetry, onPick, onClose }: StandingsDrawerProps) {
+  const { t, tx } = useTranslation();
+  const a = t.plugins.contest.arena;
   const decided = useMemo(() => contests.filter((c) => c.phase === 'decided'), [contests]);
   const columns = useMemo<TableColumn<ContestSummary>[]>(
     () => [
       {
         key: 'race',
-        label: ARENA.colRace,
+        label: a.col_race,
         width: 'minmax(10rem, 1.4fr)',
         render: (r) => (
           <div className="min-w-0">
-            <p className="typo-title truncate">{r.title}</p>
+            <p className="typo-body text-foreground line-clamp-2">{r.title}</p>
             <p className="typo-caption text-foreground truncate">{r.projectName}</p>
           </div>
         ),
       },
-      { key: 'winner', label: ARENA.colWinner, width: '5.5rem', render: (r) => <span className="typo-label text-primary">{r.winner ?? '—'}</span> },
+      { key: 'winner', label: a.col_winner, width: '5.5rem', render: (r) => <span className="typo-caption text-primary">{r.winner ?? '—'}</span> },
       {
         key: 'seat',
-        label: ARENA.colSeat,
+        label: a.col_seat,
         width: 'minmax(12rem, 1.6fr)',
-        render: (r) => (r.winnerSeatSpec ? <SeatSpecChips spec={r.winnerSeatSpec} /> : <span className="typo-caption text-foreground">—</span>),
+        render: (r) => (r.winnerSeatSpec ? <SeatLabel spec={r.winnerSeatSpec} /> : <span className="typo-caption text-foreground">—</span>),
       },
       {
         key: 'round',
-        label: ARENA.colRound,
+        label: a.col_round,
         width: '6rem',
-        render: (r) => <span className="typo-caption text-foreground">{r.round !== null ? ARENA.roundN(r.round) : ARENA.firstRound}</span>,
+        render: (r) => <span className="typo-caption text-foreground">{r.round !== null ? tx(a.round_n, { n: r.round }) : a.first_round}</span>,
       },
       {
         key: 'decided',
-        label: ARENA.colDecided,
+        label: a.col_decided,
         width: '7rem',
         render: (r) => <RelativeTime timestamp={r.updatedAtMs} className="typo-caption text-foreground" />,
       },
     ],
-    [],
+    [a, tx],
   );
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal maxWidthClass="max-w-3xl">
-      <div className="flex h-full min-h-0 flex-col" data-testid="arena-standings">
+      <div className="flex h-full min-h-0 flex-col typo-body" data-testid="arena-standings">
         <header className="flex items-start gap-3 border-b border-primary/10 px-5 py-4">
           <div className="min-w-0 flex-1 space-y-1">
-            <h2 id={TITLE_ID} className="typo-section-title">
-              {ARENA.standingsTitle}
+            <h2 id={TITLE_ID} className="typo-title">
+              {a.standings}
             </h2>
-            <p className="typo-caption text-foreground">{ARENA.standingsHint}</p>
+            <p className="typo-caption text-foreground">{a.standings_hint}</p>
           </div>
-          <Button size="icon-sm" variant="ghost" aria-label={ARENA.close} onClick={onClose}>
+          <Button size="icon-sm" variant="ghost" aria-label={t.common.close} onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </header>
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-4">
-          <section className="space-y-2" aria-label={ARENA.podiumHistory}>
-            <h3 className="typo-heading">{ARENA.podiumHistory}</h3>
+          <section className="space-y-2" aria-label={a.podium_history}>
+            <h3 className="typo-label">{a.podium_history}</h3>
             <UnifiedTable
               columns={columns}
               data={decided}
               getRowKey={(r) => contestKeyString({ projectId: r.projectId, contestId: r.contestId })}
               onRowClick={(r) => onPick({ projectId: r.projectId, contestId: r.contestId })}
               isLoading={isLoading}
-              error={error ? ARENA.rosterLoadFailed : null}
+              error={error ? a.roster_load_failed : null}
               onRetry={onRetry}
-              emptyTitle={ARENA.historyEmpty}
-              ariaLabel={ARENA.podiumHistory}
+              emptyTitle={a.history_empty}
+              ariaLabel={a.podium_history}
               density="compact"
               rowHeight={56}
               className="max-h-[24rem]"

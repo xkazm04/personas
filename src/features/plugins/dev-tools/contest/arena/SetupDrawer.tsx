@@ -5,25 +5,27 @@
 import { X } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
 import { SetupForm } from '../components/SetupForm';
-import { ARENA } from './copy';
 
 const TITLE_ID = 'arena-setup-title';
 
 export function SetupDrawer({ defaultProjectId, onClose }: { defaultProjectId: string | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const a = t.plugins.contest.arena;
   return (
     <BaseModal isOpen onClose={onClose} titleId={TITLE_ID} placement="right-drawer" portal maxWidthClass="max-w-3xl">
-      <div className="flex h-full min-h-0 flex-col" data-testid="arena-setup">
+      <div className="flex h-full min-h-0 flex-col typo-body" data-testid="arena-setup">
         <header className="flex items-start gap-3 border-b border-primary/10 px-5 py-4">
           <div className="min-w-0 flex-1 space-y-1">
-            <h2 id={TITLE_ID} className="typo-section-title">
-              {ARENA.setupTitle}
+            <h2 id={TITLE_ID} className="typo-title">
+              {a.new_race}
             </h2>
-            <p className="typo-caption text-foreground">{ARENA.setupHint}</p>
+            <p className="typo-caption text-foreground">{a.setup_hint}</p>
           </div>
-          <Button size="icon-sm" variant="ghost" aria-label={ARENA.close} onClick={onClose}>
+          <Button size="icon-sm" variant="ghost" aria-label={t.common.close} onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </header>

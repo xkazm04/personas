@@ -125,6 +125,7 @@ describe('shared components', () => {
       />,
     );
     expect(screen.getByTestId('contest-seat-stats')).toBeInTheDocument();
-    expect(screen.getByText('codex:gpt-6-sol@high')).toBeInTheDocument();
+    // The seat reads as a name, never the raw spec.
+    expect(screen.getByText('GPT-6 Sol')).toBeInTheDocument();
   });
 });

@@ -10,9 +10,11 @@ import {
   makerSpec,
   pickTrackKey,
   raceRounds,
+  raceStartMs,
   relevantLayer,
   stepKey,
   trays,
+  variantName,
 } from '../arenaModel';
 
 describe('raceRounds', () => {
@@ -133,5 +135,24 @@ describe('photo finish helpers', () => {
     const d = detailFixture();
     expect(makerSpec(d, d.variants[1]!)).toBe('codex:gpt-6-sol@high');
     expect(makerSpec(d, { seatId: 'nobody' })).toBeNull();
+  });
+});
+
+describe('raceStartMs', () => {
+  const seat = detailFixture().seats[0]!;
+  it('a scheduled start ahead wins, else the earliest seat start, else a past schedule', () => {
+    expect(raceStartMs({ notBeforeMs: 5_000, seats: [] }, 1_000)).toEqual({ ms: 5_000, upcoming: true });
+    const seats = [{ ...seat, startedAtMs: 3_000 }, { ...seat, startedAtMs: 2_000 }, { ...seat, startedAtMs: null }];
+    expect(raceStartMs({ notBeforeMs: 500, seats }, 9_000)).toEqual({ ms: 2_000, upcoming: false });
+    expect(raceStartMs({ notBeforeMs: 500, seats: [] }, 9_000)).toEqual({ ms: 500, upcoming: false });
+    expect(raceStartMs({ notBeforeMs: null, seats: [] }, 9_000)).toBeNull();
+  });
+});
+
+describe('variantName', () => {
+  it('says the name once: concept, else title, else key', () => {
+    expect(variantName({ concept: 'Spotlight', title: 'Studio: Spotlight', key: 'C/1' })).toBe('Spotlight');
+    expect(variantName({ concept: ' ', title: 'Studio', key: 'C/1' })).toBe('Studio');
+    expect(variantName({ concept: '', title: '', key: 'C/1' })).toBe('C/1');
   });
 });

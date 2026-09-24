@@ -213,3 +213,19 @@ function unknownLabel(v: never): string {
 function unknownTone(_v: never): StatusVariant {
   return 'neutral';
 }
+
+export type ArenaStrings = ContestStrings['arena'];
+
+/** A seat's life in the Arena's race words (`On the grid`, `Racing`, …). */
+export function laneStateLabel(a: ArenaStrings, state: ContestSeatState): string {
+  switch (state) {
+    case 'idle': return a.lane_state.idle;
+    case 'queued': return a.lane_state.queued;
+    case 'running': return a.lane_state.running;
+    case 'completed': return a.lane_state.completed;
+    case 'seat-limit': return a.lane_state.seat_limit;
+    case 'timed-out': return a.lane_state.timed_out;
+    case 'errored': return a.lane_state.errored;
+    default: return unknownLabel(state);
+  }
+}

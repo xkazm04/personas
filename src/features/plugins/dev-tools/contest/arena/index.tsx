@@ -29,7 +29,7 @@ export default function ArenaShell() {
   const trackKey = pickTrackKey(focused, list.contests);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]" data-testid="contest-shell-arena">
+    <div className="grid gap-6 typo-body lg:grid-cols-[19rem_minmax(0,1fr)]" data-testid="contest-shell-arena">
       <ArenaRoster
         contests={list.contests}
         isLoading={list.isLoading}

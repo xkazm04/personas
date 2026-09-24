@@ -604,7 +604,13 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "obsidian": {},
     "research_lab": {},
     "scraper": {},
-    "contest": {}
+    "contest": {
+      "arena": {
+        "lane_state": {},
+        "station": {},
+        "station_status": {}
+      }
+    }
   },
   "media_studio": {},
   "research_lab": {},

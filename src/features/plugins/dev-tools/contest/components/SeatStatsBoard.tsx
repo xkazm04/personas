@@ -12,6 +12,7 @@ import type { ContestSummary } from '@/lib/bindings/ContestSummary';
 import { extractMessage } from '@/lib/silentCatch';
 import { formatNumeric } from '@/lib/utils/formatters';
 
+import { SeatLabel } from '../arena/SeatLabel';
 import { MIN_RANKABLE_SAMPLE, seatWinRates, type SeatWinRate } from '../stats';
 
 export interface SeatStatsBoardProps {
@@ -54,7 +55,7 @@ export function SeatStatsBoard({ contests, isLoading, error, onRetry, className 
       key: 'spec',
       label: s.col_spec,
       width: 'minmax(12rem, 2fr)',
-      render: (r) => <span className="typo-code text-foreground break-all">{r.spec}</span>,
+      render: (r) => <SeatLabel spec={r.spec} />,
     },
     {
       key: 'entered',
@@ -81,11 +82,11 @@ export function SeatStatsBoard({ contests, isLoading, error, onRetry, className 
   return (
     <section className={`space-y-2 ${className}`} aria-label={s.stats_title} data-testid="contest-seat-stats">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="typo-heading flex-1">{s.stats_title}</h3>
+        <h3 className="typo-label flex-1">{s.stats_title}</h3>
         {comparing && (
           <Tooltip content={board.separated ? s.stats_separated_hint : s.stats_not_separated_hint}>
             <span>
-              <StatusBadge variant={board.separated ? 'success' : 'neutral'} size="sm" pill>
+              <StatusBadge variant={board.separated ? 'success' : 'neutral'} size="md" pill>
                 {board.separated ? s.stats_separated : s.stats_not_separated}
               </StatusBadge>
             </span>

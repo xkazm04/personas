@@ -147,6 +147,21 @@ export function lanePosition(
   }
 }
 
+/**
+ * When the race starts or started, for the header's meta line: a scheduled
+ * start still ahead (`upcoming`), else the earliest seat that left the
+ * queue, else a scheduled start already past. Null when nothing is known.
+ */
+export function raceStartMs(
+  detail: Pick<ContestDetail, 'notBeforeMs' | 'seats'>,
+  nowMs: number = Date.now(),
+): { ms: number; upcoming: boolean } | null {
+  if (detail.notBeforeMs !== null && detail.notBeforeMs > nowMs) return { ms: detail.notBeforeMs, upcoming: true };
+  const starts = detail.seats.map((s) => s.startedAtMs).filter((v): v is number => v !== null && v > 0);
+  if (starts.length > 0) return { ms: Math.min(...starts), upcoming: false };
+  return detail.notBeforeMs !== null ? { ms: detail.notBeforeMs, upcoming: false } : null;
+}
+
 /** Seconds since a start time, or null when the start is unknown. */
 export function elapsedSince(startMs: number | null | undefined, nowMs: number): number | null {
   if (startMs == null || !Number.isFinite(startMs) || startMs <= 0) return null;
@@ -218,4 +233,10 @@ export function stepKey(keys: readonly string[], current: string | null, delta: 
 /** The seat spec that built a variant (winners show their maker). */
 export function makerSpec(detail: Pick<ContestDetail, 'seats'>, variant: Pick<ContestVariant, 'seatId'>): string | null {
   return detail.seats.find((s) => s.seatId === variant.seatId)?.spec ?? null;
+}
+
+/** A variant's name, said once: the builder's concept, else its title,
+ *  else its blind key. (`Studio: Spotlight` + `Spotlight` reads as a stutter.) */
+export function variantName(variant: Pick<ContestVariant, 'concept' | 'title' | 'key'>): string {
+  return variant.concept.trim() || variant.title.trim() || variant.key;
 }

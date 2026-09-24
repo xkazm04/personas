@@ -107,3 +107,57 @@ export function addSeat(panel: readonly ContestSeatSpec[], spec: ContestSeatSpec
     if (!ids.has(seatId(labelled))) return [...panel, labelled];
   }
 }
+
+// ── Display ────────────────────────────────────────────────────────────────
+
+/** A seat as people read it: `Opus 5.5` + `xhigh`, never the raw spec. */
+export interface SeatLabel {
+  /** Human model name (`Opus 5.5`, `GPT-6 Sol`), or the raw id when unknown. */
+  model: string;
+  /** The raw effort token, or null for a bare model id. */
+  effort: ContestEffort | null;
+  engine: ContestEngine | null;
+  /** The `#label` that separates a repeated seat, if any. */
+  label: string | null;
+}
+
+const WORD_RE = /^[a-z]+$/i;
+const VERSION_RE = /^\d+(?:\.\d+)*$/;
+const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+
+/**
+ * A model id → its display name. `claude-opus-5-5` → `Opus 5.5`,
+ * `gpt-6-sol` → `GPT-6 Sol`, `grok-4.6` → `Grok 4.6`. An id that does not
+ * follow the `name-version-variant` shape comes back unchanged, so an unknown
+ * model stays readable instead of being mangled.
+ */
+export function modelDisplayName(id: string): string {
+  const raw = id.trim();
+  let parts = raw.split('-');
+  if (parts[0]?.toLowerCase() === 'claude' && parts.length > 1) parts = parts.slice(1);
+  if (parts.some((p) => !WORD_RE.test(p) && !VERSION_RE.test(p))) return raw;
+  const [head, ...rest] = parts;
+  if (!head || !WORD_RE.test(head)) return raw;
+  const version: string[] = [];
+  let i = 0;
+  while (i < rest.length && VERSION_RE.test(rest[i]!)) version.push(rest[i++]!);
+  const tail = rest.slice(i);
+  // A version after the variant words (`foo-bar-2`) is not a shape we know.
+  if (tail.some((w) => !WORD_RE.test(w))) return raw;
+  const v = version.join('.');
+  const words = tail.map(cap);
+  if (head.toLowerCase() === 'gpt') {
+    return v ? [`GPT-${v}`, ...words].join(' ') : raw;
+  }
+  return [cap(head), v, ...words].filter(Boolean).join(' ');
+}
+
+/** A spec string (`claude:claude-opus-5-5@xhigh`) or a bare model id
+ *  (`claude-fable-5-1`) → the seat's display parts. */
+export function seatLabel(spec: string): SeatLabel {
+  const parsed = parseSeatSpec(spec);
+  if (parsed) {
+    return { model: modelDisplayName(parsed.model), effort: parsed.effort, engine: parsed.engine, label: parsed.label };
+  }
+  return { model: modelDisplayName(spec), effort: null, engine: null, label: null };
+}
