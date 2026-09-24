@@ -13,6 +13,12 @@ export interface PreviewRect {
   height: number;
 }
 
+function sameRect(a: PreviewRect | null, b: PreviewRect | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 // The preview machinery both Studio layouts share: warm iframes per live tab,
 // per-tab route + reload nonce, the address bar's live path, route discovery,
 // and the precise orb pointer (A3). Moved out of StudioPage unchanged so the
@@ -60,6 +66,8 @@ export function useStudioPreview() {
   // Precise orb-pointer rect (A3): the bounding box of the element a decision is
   // about, reported by the preview agent over postMessage.
   const [pointerRect, setPointerRect] = useState<PreviewRect | null>(null);
+  // Stops the running locate ping; the agent's first answer ends the retries.
+  const stopLocateRef = useRef<(() => void) | null>(null);
 
   const activeNonce = activeId ? (iframeNonces[activeId] ?? 0) : 0;
   // The window `message` listener is registered once, so it reads the active
@@ -99,7 +107,10 @@ export function useStudioPreview() {
       if (d.type === 'located') {
         // Only the tab the user is looking at may move the orb.
         if (id !== activeIdRef.current) return;
-        setPointerRect(d.found && d.rect ? d.rect : null);
+        const next = d.found && d.rect ? d.rect : null;
+        if (next) stopLocateRef.current?.();
+        // The same rect again keeps the same object: no re-render, no new orb flight.
+        setPointerRect((prev) => (sameRect(prev, next) ? prev : next));
       } else if (d.type === 'route' && typeof d.path === 'string') {
         const path = d.path;
         setCurrentPaths((m) => (m[id] === path ? m : { ...m, [id]: path }));
@@ -122,13 +133,18 @@ export function useStudioPreview() {
     if (!targetOrigin) return;
     const selector = active.decisionSelector;
     let tries = 0;
+    const stop = () => window.clearInterval(interval);
+    stopLocateRef.current = stop;
     const interval = window.setInterval(() => {
       // Address the frame by its tab id, never by the `title` attribute (display copy).
       const iframe = document.querySelector<HTMLIFrameElement>(`iframe[data-tab="${CSS.escape(activeId ?? '')}"]`);
       iframe?.contentWindow?.postMessage({ source: 'athena', type: 'locate', selector, reqId: `${activeId}` }, targetOrigin);
-      if (++tries >= 8) window.clearInterval(interval);
+      if (++tries >= 8) stop();
     }, 700);
-    return () => window.clearInterval(interval);
+    return () => {
+      stop();
+      if (stopLocateRef.current === stop) stopLocateRef.current = null;
+    };
   }, [activeId, active?.question, active?.decisionSelector, previewUrls]);
 
   // Fly Athena's global orb to the element a precise decision is about. The
