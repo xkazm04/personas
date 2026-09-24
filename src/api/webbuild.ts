@@ -4,6 +4,9 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { BuildTurnResult } from '@/lib/bindings/BuildTurnResult';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 import type { SiteSketch } from '@/lib/bindings/SiteSketch';
+import type { StudioPlan } from '@/lib/bindings/StudioPlan';
+import type { ProjectNameCheck } from '@/lib/bindings/ProjectNameCheck';
+import type { WebBuildPhase } from '@/lib/bindings/WebBuildPhase';
 
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
@@ -17,6 +20,19 @@ export const webbuildScaffold = (name: string) =>
  *  one-shot micro call; usually seconds, bounded at two minutes. */
 export const webbuildSketch = (vision: string) =>
   invokeWithTimeout<SiteSketch>('webbuild_sketch', { vision }, undefined, 120_000);
+
+/** A new project's name, checked the way the scaffold will: its folder, whether
+ *  that folder is taken, and a free variant. */
+export const webbuildCheckName = (name: string) =>
+  invokeWithTimeout<ProjectNameCheck>('webbuild_check_name', { name });
+
+/** A project's stored plan (phases + sketch), or null when it has none yet. */
+export const webbuildGetPlan = (projectId: string) =>
+  invokeWithTimeout<StudioPlan | null>('webbuild_get_plan', { projectId });
+
+/** Keep a project's plan with the project. `sketch: null` keeps a stored sketch. */
+export const webbuildSavePlan = (projectId: string, phases: WebBuildPhase[], sketch: SiteSketch | null) =>
+  invokeWithTimeout<void>('webbuild_save_plan', { projectId, phases, sketch });
 
 /** Start (or restart) a project's Bun dev server. May still be booting. */
 export const webbuildDevStart = (projectId: string) =>

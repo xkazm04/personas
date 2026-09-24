@@ -306,6 +306,9 @@ pub(super) fn shard(
         // Web-build runtime (Athena web-dev companion, P0)
         commands::infrastructure::webbuild::webbuild_scaffold,
         commands::infrastructure::webbuild::webbuild_sketch,
+        commands::infrastructure::webbuild::webbuild_check_name,
+        commands::infrastructure::webbuild::webbuild_get_plan,
+        commands::infrastructure::webbuild::webbuild_save_plan,
         commands::infrastructure::webbuild::webbuild_register_existing,
         commands::infrastructure::webbuild::webbuild_dev_start,
         commands::infrastructure::webbuild::webbuild_dev_stop,

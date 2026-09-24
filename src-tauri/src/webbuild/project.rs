@@ -61,6 +61,42 @@ pub fn project_dir(slug: &str) -> Result<PathBuf, AppError> {
     Ok(projects_root()?.join(slug))
 }
 
+/// What the new-project form needs to know about a name before submit: the
+/// folder it becomes, whether that folder is already taken (the exact condition
+/// [`scaffold_next_app`] refuses on), and a free variant to offer instead.
+/// Asked of the backend rather than mirrored in TypeScript, so the form can
+/// never disagree with the scaffold.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS, PartialEq)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectNameCheck {
+    /// The folder name, or `None` when the name has no usable characters.
+    pub slug: Option<String>,
+    pub taken: bool,
+    /// The first free `<slug>-<n>` when `taken`.
+    pub suggestion: Option<String>,
+}
+
+/// Check `name` against `exists` (the projects root on disk in production).
+pub fn check_project_name(name: &str, exists: impl Fn(&str) -> bool) -> ProjectNameCheck {
+    let Ok(slug) = slugify(name) else {
+        return ProjectNameCheck {
+            slug: None,
+            taken: false,
+            suggestion: None,
+        };
+    };
+    let taken = exists(&slug);
+    let suggestion = taken
+        .then(|| (2..100).map(|n| format!("{slug}-{n}")).find(|c| !exists(c)))
+        .flatten();
+    ProjectNameCheck {
+        slug: Some(slug),
+        taken,
+        suggestion,
+    }
+}
+
 /// True if `dir` looks like a Next.js app Studio can build + preview: a
 /// `next.config.*` is present, or `next` is a (dev)dependency in package.json.
 /// Used to flag incompatible Dev Tools projects in the Studio import picker
@@ -154,6 +190,23 @@ async fn pin_turbopack_root(dir: &Path) -> Result<(), AppError> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn name_check_matches_the_scaffold_and_suggests_a_free_folder() {
+        let taken = ["portfolio", "portfolio-2"];
+        let exists = |slug: &str| taken.contains(&slug);
+        let c = super::check_project_name("Portfolio", exists);
+        assert_eq!(c.slug.as_deref(), Some("portfolio"));
+        assert!(c.taken);
+        assert_eq!(c.suggestion.as_deref(), Some("portfolio-3"));
+        let free = super::check_project_name("Hearth & Grain", exists);
+        assert_eq!(
+            (free.slug.as_deref(), free.taken, free.suggestion),
+            (Some("hearth-grain"), false, None)
+        );
+        let unsafe_name = super::check_project_name("***", exists);
+        assert_eq!(unsafe_name.slug, None);
+    }
+
     use super::*;
 
     #[test]
