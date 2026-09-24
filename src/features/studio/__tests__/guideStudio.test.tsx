@@ -87,6 +87,24 @@ describe('Guide layout', () => {
     expect(useStudioStore.getState().draft?.answers[0]).toBe('Yes');
   });
 
+  it('Esc tucks a sketch question away during the draft and your call brings it back', () => {
+    useStudioStore.setState({
+      draft: {
+        name: 'Hearth', vision: 'A bakery', startedAt: Date.now(), sketchState: 'ready', answers: {},
+        sketch: {
+          summary: 'A bakery.', pages: [{ title: 'Home', route: '/', regions: [] }], goals: [],
+          questions: [{ question: 'Pickup only?', options: ['Yes', 'No'], why: '' }],
+        },
+      },
+    });
+    mount();
+    expect(screen.getByText('Pickup only?')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByText('Pickup only?')).toBeNull();
+    fireEvent.click(screen.getByText('your_call'));
+    expect(screen.getByText('Pickup only?')).toBeTruthy();
+  });
+
   it('replays a stored plan while an opened project boots', () => {
     seed({
       phase: 'starting',

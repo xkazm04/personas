@@ -93,15 +93,20 @@ export default function GuideNowLine({
           {tx(g.notes_waiting, { count: queued })}
         </span>
       )}
-      {questionWaiting && questionHidden && (
-        <button
-          type="button"
-          onClick={onShowQuestion}
-          className="shrink-0 rounded-full border border-status-warning/60 px-2.5 py-0.5 typo-caption text-status-warning hover:bg-status-warning/10"
-        >
-          {g.your_call}
-        </button>
-      )}
+      {questionWaiting && questionHidden && <YourCallButton label={g.your_call} onClick={onShowQuestion} />}
     </div>
+  );
+}
+
+/** Brings back a question the user tucked away (Esc or the card's hide). */
+export function YourCallButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="pointer-events-auto shrink-0 rounded-full border border-status-warning/60 bg-background/85 px-2.5 py-0.5 typo-caption text-status-warning hover:bg-status-warning/10"
+    >
+      {label}
+    </button>
   );
 }

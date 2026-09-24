@@ -10,7 +10,7 @@ import GuideGoalsRail, { type GuideGoalsRailHandle } from './GuideGoalsRail';
 import GuideBlueprint from './GuideBlueprint';
 import GuideSketchSheet from './GuideSketchSheet';
 import GuideFrame from './GuideFrame';
-import GuideNowLine from './GuideNowLine';
+import GuideNowLine, { YourCallButton } from './GuideNowLine';
 import GuideQuestionCard from './GuideQuestionCard';
 import GuideDeck from './GuideDeck';
 import GuideToolArc from './GuideToolArc';
@@ -79,6 +79,9 @@ export default function GuideStudio({
   const askSketch = drafting || !!rt?.setupStartedAt;
   const sketchQuestions = askSketch ? (sketchSrc?.sketch?.questions ?? []) : [];
   const nextSketchQ = sketchQuestions.findIndex((_, i) => !sketchSrc?.answers[i]);
+  const sketchAsking = nextSketchQ >= 0 && !!sketchSrc?.sketch;
+  // What a question card would show right now; Esc and "your call" act on it.
+  const questionShown = drafting ? sketchAsking : (!!question && !rt?.busy) || sketchAsking;
   // Every no-plan setup state draws the sketch sheet: the sketch when there is
   // one, the Next.js page template until then (never an empty skeleton).
   const sketchMode = drafting || (showBlueprint && placeholder);
@@ -141,10 +144,15 @@ export default function GuideStudio({
 
   useGuideKeys({
     enabled: !!rt && !showVision && !drafting && !arcOpen,
+    escapeEnabled: !showVision && !arcOpen,
     onTools: () => setArcOpen(true),
     onAddGoal: () => railRef.current?.startAdding(),
     onToggleBlueprint: () => setBlueprintPinned((p) => !(p ?? showBlueprint)),
-    onEscape: () => question && setQuestionHidden(true),
+    onEscape: () => {
+      if (!questionShown || questionHidden) return false;
+      setQuestionHidden(true);
+      return true;
+    },
   });
 
   const reason = rt && question ? (rt.messages[rt.messages.length - 1]?.text ?? null) : null;
@@ -179,7 +187,12 @@ export default function GuideStudio({
               startedAt={sketchSrc?.startedAt ?? null}
             />
           )}
-          {drafting && nextSketchQ >= 0 && !questionHidden && sketchSrc?.sketch && (
+          {drafting && sketchAsking && questionHidden && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
+              <YourCallButton label={g.your_call} onClick={() => setQuestionHidden(false)} />
+            </div>
+          )}
+          {drafting && sketchAsking && !questionHidden && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
               <GuideQuestionCard
                 key={`sq-${nextSketchQ}`}
@@ -249,7 +262,7 @@ export default function GuideStudio({
             turnStartedAt={rt.turnStartedAt}
             lastTurnSecs={lastTurnSecs}
             activity={rt.activity}
-            questionWaiting={!!question}
+            questionWaiting={!!question || sketchAsking}
             questionHidden={questionHidden}
             queued={rt.queuedNotes.length}
             estimate={estimate}
