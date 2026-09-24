@@ -122,6 +122,7 @@
     "i18n:merge-chunks": "node scripts/i18n/merge-chunks.mjs",
     "i18n:purge-dead": "node scripts/i18n/purge-dead-keys.mjs",
     "perf:load": "node scripts/perf/load-harness.mjs",
+    "perf:eager": "node scripts/perf/eager-bytes.mjs",
     "style:divergence": "node scripts/style/style-divergence.mjs --repo . --out tmp/style-divergence",
     "check:corpus": "node scripts/census/check-corpus-integrity.mjs",
     "check:recipe-index": "node scripts/templates/generate-recipe-index.mjs --check",
