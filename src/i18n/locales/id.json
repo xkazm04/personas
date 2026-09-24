@@ -18165,6 +18165,7 @@
       "create_failed": "Proyek tidak dapat dibuat",
       "name_taken": "Proyek bernama \"{name}\" sudah ada. Pilih nama lain, atau buka proyek tersebut dari menu +.",
       "name_unsafe": "Gunakan huruf atau angka pada nama, agar bisa menjadi folder di komputer ini.",
+      "name_check_failed": "Nama ini tidak dapat diperiksa saat ini. Anda tetap bisa mulai membangun, atau coba lagi.",
       "preview_booting_plan": "Memulai pratinjau langsung. Berikut rencana sejauh ini.",
       "template_hint": "Setiap situs Next.js dimulai dari bagian-bagian ini. Athena akan mengisinya berdasarkan idemu segera setelah sketsanya siap.",
       "template_home": "Halaman utama",

@@ -18165,6 +18165,7 @@
       "create_failed": "无法创建项目",
       "name_taken": "名为“{name}”的项目已存在。请换一个名称，或从 + 菜单打开该项目。",
       "name_unsafe": "名称请使用字母或数字，以便在此电脑上作为文件夹使用。",
+      "name_check_failed": "暂时无法检查这个名称。你仍然可以开始构建，或者重试。",
       "preview_booting_plan": "正在启动实时预览。这是目前的方案。",
       "template_hint": "每个 Next.js 网站都从这些部分开始。草图准备好后，Athena 会根据你的想法立即填充内容。",
       "template_home": "首页",

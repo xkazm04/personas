@@ -18165,6 +18165,7 @@
       "create_failed": "Không thể tạo dự án",
       "name_taken": "Dự án có tên \"{name}\" đã tồn tại. Hãy chọn tên khác, hoặc mở dự án đó từ menu +.",
       "name_unsafe": "Hãy dùng chữ cái hoặc số trong tên, để nó có thể trở thành một thư mục trên máy tính này.",
+      "name_check_failed": "Hiện không thể kiểm tra tên này. Bạn vẫn có thể bắt đầu xây dựng hoặc thử lại.",
       "preview_booting_plan": "Đang khởi động bản xem trước trực tiếp. Đây là kế hoạch cho đến nay.",
       "template_hint": "Mọi trang Next.js đều bắt đầu từ những phần này. Athena sẽ điền vào dựa trên ý tưởng của bạn ngay khi bản phác thảo sẵn sàng.",
       "template_home": "Trang chủ",

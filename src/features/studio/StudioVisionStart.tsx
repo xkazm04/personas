@@ -79,7 +79,7 @@ export default function StudioVisionStart({
   // for it, so a taken or unusable name can never be sent. Called above the
   // `busy` return: Classic keeps this form mounted while it creates, and a hook
   // after an early return changes the hook count and crashes the form.
-  const { problem, checking } = useNameCheck(name);
+  const { problem, checking, failed: checkFailed, retry: retryCheck } = useNameCheck(name);
 
   if (busy) {
     return (
@@ -144,7 +144,7 @@ export default function StudioVisionStart({
           aria-describedby={problem ? 'studio-vision-name-problem' : undefined}
           className={`w-full rounded-input border bg-secondary/40 px-3 py-2 text-md outline-none ${
             problem ? 'border-status-error/70 focus:border-status-error' : 'border-border focus:border-primary/50'
-          } ${problem ? 'mb-2' : 'mb-4'}`}
+          } ${problem || checkFailed ? 'mb-2' : 'mb-4'}`}
         />
         {problem && (
           <div id="studio-vision-name-problem" data-testid="studio-vision-name-problem" className="mb-4">
@@ -153,6 +153,21 @@ export default function StudioVisionStart({
               compact
               alwaysAlert
               message={problem === 'taken' ? tx(g.name_taken, { name: name.trim() }) : g.name_unsafe}
+            />
+          </div>
+        )}
+
+        {checkFailed && (
+          <div data-testid="studio-vision-name-check-failed" className="mb-4">
+            <Banner
+              severity="warning"
+              compact
+              message={g.name_check_failed}
+              actions={
+                <Button size="sm" variant="secondary" onClick={retryCheck}>
+                  {t.common.retry}
+                </Button>
+              }
             />
           </div>
         )}

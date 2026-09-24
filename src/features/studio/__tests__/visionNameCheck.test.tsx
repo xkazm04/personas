@@ -9,6 +9,7 @@ vi.mock('@/api/webbuild', () => ({
   webbuildBunStatus: () => Promise.resolve('/usr/bin/bun'),
   // The scaffold's rule, as the backend answers it: the folder must be free.
   webbuildCheckName: (name: string) => {
+    if (name.trim() === 'offline') return Promise.reject(new Error('ipc timeout'));
     const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || null;
     const taken = !!slug && TAKEN.has(slug);
     return Promise.resolve({ slug, taken, suggestion: taken ? `${slug}-2` : null });
@@ -42,6 +43,19 @@ describe('the new-project form', () => {
     fireEvent.change(screen.getByTestId('studio-vision-name'), { target: { value: 'portfolio-2' } });
     expect(screen.queryByTestId('studio-vision-name-problem')).toBeNull();
     await waitFor(() => expect(submit.disabled).toBe(false));
+  });
+
+  it('a name check that fails says so and offers a retry instead of checking forever', async () => {
+    render(<StudioVisionStart onSubmit={vi.fn()} busy={false} error={null} />);
+    fireEvent.change(screen.getByTestId('studio-vision-text'), { target: { value: 'A shop' } });
+    fireEvent.change(screen.getByTestId('studio-vision-name'), { target: { value: 'offline' } });
+    expect(await screen.findByTestId('studio-vision-name-check-failed')).toBeTruthy();
+    expect(screen.getByText('name_check_failed')).toBeTruthy();
+    // The scaffold still refuses a taken folder, so an unchecked name may be built.
+    const submit = screen.getByTestId('studio-vision-submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(false);
+    fireEvent.change(screen.getByTestId('studio-vision-name'), { target: { value: 'shop' } });
+    await waitFor(() => expect(screen.queryByTestId('studio-vision-name-check-failed')).toBeNull());
   });
 
   it('a starter picks a free name instead of a taken one', async () => {

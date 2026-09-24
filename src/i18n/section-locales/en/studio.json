@@ -209,6 +209,7 @@
     "preview_booting_plan": "Starting the live preview. Here is the plan so far.",
     "name_taken": "A project called \"{name}\" already exists. Pick another name, or open that project from the + menu.",
     "name_unsafe": "Use letters or numbers in the name, so it can be a folder on this computer.",
+    "name_check_failed": "We could not check this name just now. You can still build, or try again.",
     "create_failed": "The project could not be created"
   }
 }

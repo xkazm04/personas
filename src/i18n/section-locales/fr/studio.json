@@ -203,6 +203,7 @@
     "create_failed": "Le projet n'a pas pu être créé",
     "name_taken": "Un projet nommé \"{name}\" existe déjà. Choisissez un autre nom ou ouvrez ce projet depuis le menu +.",
     "name_unsafe": "Utilisez des lettres ou des chiffres dans le nom, afin qu'il puisse devenir un dossier sur cet ordinateur.",
+    "name_check_failed": "Impossible de vérifier ce nom pour le moment. Vous pouvez quand même lancer la création, ou réessayer.",
     "preview_booting_plan": "Démarrage de l'aperçu en direct. Voici le plan jusqu'ici.",
     "template_hint": "Chaque site Next.js part de ces éléments. Athena les remplit à partir de votre idée dès que son esquisse est prête.",
     "template_home": "Page d'accueil",

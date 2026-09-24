@@ -18165,6 +18165,7 @@
       "create_failed": "No se pudo crear el proyecto",
       "name_taken": "Ya existe un proyecto llamado \"{name}\". Elige otro nombre o abre ese proyecto desde el menú +.",
       "name_unsafe": "Usa letras o números en el nombre, para que pueda ser una carpeta en este equipo.",
+      "name_check_failed": "No pudimos comprobar este nombre ahora mismo. Puedes crear el proyecto igualmente o volver a intentarlo.",
       "preview_booting_plan": "Iniciando la vista previa en vivo. Este es el plan hasta ahora.",
       "template_hint": "Todo sitio Next.js empieza con estas partes. Athena las completa con tu idea en cuanto su boceto esté listo.",
       "template_home": "Página de inicio",

@@ -203,6 +203,7 @@
     "create_failed": "Projekt se nepodařilo vytvořit",
     "name_taken": "Projekt s názvem \"{name}\" už existuje. Zvolte jiný název, nebo tento projekt otevřete z nabídky +.",
     "name_unsafe": "Použijte v názvu písmena nebo čísla, aby mohl být složkou na tomto počítači.",
+    "name_check_failed": "Tento název se teď nepodařilo ověřit. Můžete přesto začít stavět, nebo to zkusit znovu.",
     "preview_booting_plan": "Spouští se živý náhled. Zde je zatím vytvořený plán.",
     "template_hint": "Každý web Next.js začíná z těchto částí. Athena je doplní podle vašeho nápadu, jakmile bude její náčrt hotový.",
     "template_home": "Domovská stránka",

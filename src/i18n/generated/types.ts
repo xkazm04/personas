@@ -23284,6 +23284,7 @@ export type Translations = {
       preview_booting_plan: string;
       name_taken: string;
       name_unsafe: string;
+      name_check_failed: string;
       create_failed: string;
     };
   };
