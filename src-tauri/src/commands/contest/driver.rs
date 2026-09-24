@@ -181,6 +181,45 @@ pub async fn set_chain(
     Ok(())
 }
 
+/// Move the chain from `from` to `to`, only while it is still at `from`: a
+/// cancel (or any failure) written meanwhile wins and the chain stops there.
+/// Returns whether it moved. The check and the write share the contest lock.
+pub async fn transition_chain(
+    paths: &ArenaPaths,
+    from: ContestChainStep,
+    to: ContestChainStep,
+    reason: Option<String>,
+) -> Result<bool, AppError> {
+    update_sidecar(paths, |s| {
+        if s.chain.step != from {
+            return false;
+        }
+        s.chain.step = to;
+        s.chain.reason = reason;
+        s.chain.updated_at_ms = Some(now_ms());
+        true
+    })
+    .await
+}
+
+/// [`transition_chain`] plus the change event; a refused move is logged.
+async fn advance_chain(
+    app: &AppHandle,
+    ctx: &Ctx,
+    from: ContestChainStep,
+    to: ContestChainStep,
+    reason: Option<String>,
+) -> Result<bool, AppError> {
+    let moved = transition_chain(&ctx.paths, from, to, reason).await?;
+    if moved {
+        emit_changed(app, &ctx.project_id, ctx.contest_id());
+    } else {
+        tracing::info!(contest = %ctx.contest_id(), ?from, ?to,
+            "contest: the chain moved on meanwhile (cancelled), stopping here");
+    }
+    Ok(moved)
+}
+
 pub fn emit_changed(app: &AppHandle, project_id: &str, contest_id: &str) {
     if let Err(e) = app.emit(
         event_name::CONTEST_CHANGED,
@@ -277,6 +316,19 @@ pub async fn launch_seats(
     kind: ContestSeatKind,
     only: Option<Vec<String>>,
 ) -> Result<usize, AppError> {
+    launch_seats_from(app, ctx, kind, only, None).await
+}
+
+/// [`launch_seats`]. With `chain_from`, the chain launches its judges: they
+/// are armed only while the chain is still at that step (a cancel wins), with
+/// that reason kept.
+async fn launch_seats_from(
+    app: &AppHandle,
+    ctx: &Ctx,
+    kind: ContestSeatKind,
+    only: Option<Vec<String>>,
+    chain_from: Option<(ContestChainStep, Option<String>)>,
+) -> Result<usize, AppError> {
     let db = db_of(app)?;
     let instrument = node::require_instrument(&db, ctx.root())?;
     let sidecar = arena::read_sidecar(&ctx.paths);
@@ -335,9 +387,16 @@ pub async fn launch_seats(
 
     // Arm the chain BEFORE any seat can settle, so the last seat to settle
     // always finds the step it advances from.
-    match kind {
-        ContestSeatKind::Participant => set_chain(app, ctx, ContestChainStep::Idle, None).await?,
-        ContestSeatKind::Judge => {
+    match (kind, chain_from) {
+        (ContestSeatKind::Participant, _) => {
+            set_chain(app, ctx, ContestChainStep::Idle, None).await?
+        }
+        (ContestSeatKind::Judge, Some((from, reason))) => {
+            if !advance_chain(app, ctx, from, ContestChainStep::Judging, reason).await? {
+                return Ok(0);
+            }
+        }
+        (ContestSeatKind::Judge, None) => {
             let keep = sidecar.chain.reason.clone();
             set_chain(app, ctx, ContestChainStep::Judging, keep).await?
         }
@@ -352,6 +411,10 @@ pub async fn launch_seats(
             .unwrap_or_default();
         arena::require_slug("seat key", &key)?;
         let current = arena::read_sidecar(&ctx.paths);
+        if current.chain.step == ContestChainStep::Failed {
+            tracing::info!(seat = %key, "contest: cancelled mid-launch, no more seats");
+            break;
+        }
         if let Some(prev) = current.seat_sessions.get(&key) {
             let recorded = current.recorded_sessions.get(&key) == Some(prev);
             if !recorded && matches!(seat_live(prev), SeatLive::Queued | SeatLive::Running) {
@@ -376,13 +439,21 @@ pub async fn launch_seats(
             },
         )
         .await?;
-        update_sidecar(&ctx.paths, |s| {
+        let cancelled = update_sidecar(&ctx.paths, |s| {
             s.seat_sessions.insert(key.clone(), session_id.clone());
             s.recorded_sessions.remove(&key);
             s.seat_started_ms.remove(&key);
+            s.chain.step == ContestChainStep::Failed
         })
         .await?;
         emit_changed(app, &ctx.project_id, ctx.contest_id());
+        if cancelled {
+            // A cancel landed while this seat was admitted: it read the
+            // sessions before this one was recorded, so end it here.
+            if let Err(e) = contest_seat::kill_contest_seat(app, &session_id) {
+                tracing::warn!(seat = %key, error = %e, "contest: could not end a seat admitted during cancel");
+            }
+        }
         spawn_watcher(
             app.clone(),
             SeatJob {
@@ -621,21 +692,28 @@ async fn chain_steps(app: &AppHandle, ctx: &Ctx, from: ChainFrom) -> Result<(), 
     if from == ChainFrom::Aggregate {
         return aggregate_to_ready(app, ctx, &instrument).await;
     }
+    // The entry step is written as-is (a retry starts from Failed); every
+    // later move is taken only while the chain still sits where this run
+    // left it, so a cancel during collect or the visual pass stops it.
     if from == ChainFrom::Collect {
         set_chain(app, ctx, ContestChainStep::Collecting, None).await?;
         collect(ctx, &instrument).await?;
+        let (c, v) = (ContestChainStep::Collecting, ContestChainStep::Visual);
+        if !advance_chain(app, ctx, c, v, None).await? {
+            return Ok(());
+        }
+    } else {
+        set_chain(app, ctx, ContestChainStep::Visual, None).await?;
     }
-    set_chain(app, ctx, ContestChainStep::Visual, None).await?;
     let skipped = visual_pass(ctx, &instrument).await;
     let s = arena::read_sidecar(&ctx.paths);
     if s.judges_enabled && !s.judges.is_empty() {
-        if let Some(reason) = skipped.clone() {
-            update_sidecar(&ctx.paths, |s| s.chain.reason = Some(reason)).await?;
-        }
-        launch_seats(app, ctx, ContestSeatKind::Judge, None).await?;
+        let from = Some((ContestChainStep::Visual, skipped));
+        launch_seats_from(app, ctx, ContestSeatKind::Judge, None, from).await?;
         return Ok(());
     }
-    set_chain(app, ctx, ContestChainStep::Ready, skipped).await
+    let (v, r) = (ContestChainStep::Visual, ContestChainStep::Ready);
+    advance_chain(app, ctx, v, r, skipped).await.map(|_| ())
 }
 
 pub async fn collect(ctx: &Ctx, instrument: &Path) -> Result<(), AppError> {
@@ -737,20 +815,32 @@ pub async fn run_step(
 }
 
 /// Kill every live seat and mark the chain failed ("cancelled"). The chain is
-/// marked first, so the watchers' records do not advance it.
+/// marked first, so the watchers' records do not advance it and a running
+/// chain stops at its next step. A seat that could not be ended is named in
+/// the chain reason and returned as the error.
 pub async fn cancel(app: &AppHandle, ctx: &Ctx) -> Result<(), AppError> {
     set_chain(app, ctx, ContestChainStep::Failed, Some("cancelled".into())).await?;
     let s = arena::read_sidecar(&ctx.paths);
+    let mut failed: Vec<String> = Vec::new();
     for (key, live) in live_by_key(&s) {
         if matches!(live, SeatLive::Queued | SeatLive::Running) {
             if let Some(sid) = s.seat_sessions.get(&key) {
                 if let Err(e) = contest_seat::kill_contest_seat(app, sid) {
                     tracing::warn!(seat = %key, error = %e, "contest: cancel could not end a seat");
+                    failed.push(format!("{key}: {e}"));
                 }
             }
         }
     }
-    Ok(())
+    if failed.is_empty() {
+        return Ok(());
+    }
+    let reason = format!(
+        "cancelled; still running (could not be ended): {}",
+        failed.join("; ")
+    );
+    set_chain(app, ctx, ContestChainStep::Failed, Some(reason.clone())).await?;
+    Err(AppError::ProcessSpawn(format!("contest cancel: {reason}")))
 }
 
 // ---------------------------------------------------------------------------
@@ -891,5 +981,53 @@ pub fn read_record(paths: &ArenaPaths, key: &str) -> Option<RecordView> {
             tracing::warn!(seat = %key, error = %e, "contest: record.json unreadable");
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn arena() -> (tempfile::TempDir, ArenaPaths) {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = ArenaPaths::new(tmp.path(), "c").unwrap();
+        (tmp, paths)
+    }
+
+    async fn cancel_now(paths: &ArenaPaths) {
+        update_sidecar(paths, |s| {
+            s.chain.step = ContestChainStep::Failed;
+            s.chain.reason = Some("cancelled".into());
+        })
+        .await
+        .unwrap();
+    }
+
+    /// Both cancel windows of the chain: during `collect` (the chain would
+    /// move Collecting -> Visual) and during the visual pass (it would move
+    /// Visual -> Judging and launch paid judge seats). A cancel written in
+    /// either window must win.
+    #[tokio::test]
+    async fn a_cancel_during_collect_or_visual_stops_the_chain() {
+        use ContestChainStep as C;
+        for (at, next) in [(C::Collecting, C::Visual), (C::Visual, C::Judging)] {
+            let (_tmp, paths) = arena();
+            update_sidecar(&paths, |s| s.chain.step = at).await.unwrap();
+            cancel_now(&paths).await;
+            let moved = transition_chain(&paths, at, next, None).await.unwrap();
+            assert!(!moved, "{at:?} -> {next:?} ran over a cancel");
+            let s = arena::read_sidecar(&paths);
+            assert_eq!(s.chain.step, C::Failed);
+            assert_eq!(s.chain.reason.as_deref(), Some("cancelled"));
+        }
+        // Uncancelled, the step moves.
+        let (_tmp, paths) = arena();
+        update_sidecar(&paths, |s| s.chain.step = C::Visual)
+            .await
+            .unwrap();
+        assert!(transition_chain(&paths, C::Visual, C::Ready, None)
+            .await
+            .unwrap());
+        assert_eq!(arena::read_sidecar(&paths).chain.step, C::Ready);
     }
 }
