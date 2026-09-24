@@ -74,7 +74,10 @@ export default function GuideStudio({
     : rt && (rt.sketch || rt.sketchState)
       ? { name: rt.name, sketch: rt.sketch, state: rt.sketchState, answers: rt.sketchAnswers, startedAt: rt.setupStartedAt }
       : null;
-  const sketchQuestions = sketchSrc?.sketch?.questions ?? [];
+  // Sketch questions belong to the moment a project is created. A project
+  // opened later replays its stored sketch but is never re-asked them.
+  const askSketch = drafting || !!rt?.setupStartedAt;
+  const sketchQuestions = askSketch ? (sketchSrc?.sketch?.questions ?? []) : [];
   const nextSketchQ = sketchQuestions.findIndex((_, i) => !sketchSrc?.answers[i]);
   // Every no-plan setup state draws the sketch sheet: the sketch when there is
   // one, the Next.js page template until then (never an empty skeleton).

@@ -102,6 +102,23 @@ describe('Guide layout', () => {
     expect(screen.queryByText('template_home')).toBeNull();
   });
 
+  it('an opened project replays its stored sketch without asking its questions again', () => {
+    seed({
+      phases: [],
+      sketchState: 'ready',
+      sketchAnswers: {},
+      setupStartedAt: null,
+      sketch: {
+        summary: 'A bakery.',
+        pages: [{ title: 'Home', route: '/', regions: [] }],
+        goals: [],
+        questions: [{ question: 'Pickup only?', options: ['Yes', 'No'], why: '' }],
+      },
+    });
+    mount();
+    expect(screen.queryByText('Pickup only?')).toBeNull();
+  });
+
   it('while a new project is drafted, the tools and goals cannot act on the project behind it', () => {
     // activeId still names the previous (live) project during a draft.
     seed({ phases: [{ id: 'm', title: 'Menu', status: 'active', note: null }] });
