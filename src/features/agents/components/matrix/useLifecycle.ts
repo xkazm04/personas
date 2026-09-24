@@ -12,7 +12,7 @@
  *   4. Rejecting a test and returning to draft_ready for refinement
  *   5. Refining: sending feedback through the build session conversation
  */
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, cancelBuildSession, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
@@ -22,7 +22,14 @@ import { useSystemStore } from "@/stores/systemStore";
 import {
   updatePersona,
   buildUpdateInput,
+  getPersona,
 } from "@/api/agents/personas";
+import {
+  derivePromoteReceipt,
+  promoteFailedReceipt,
+  type PromoteReceipt,
+  type PromotedPersonaReadiness,
+} from "./promoteReceipt";
 import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes";
 // Deep module import ON PURPOSE: the personaCore barrel also exports the codex
 // React components + the archetype API hook; this pure module keeps the promote
@@ -72,6 +79,21 @@ export interface PromoteResult {
   toolsCreated: number;
   connectorsNeedingSetup: string[];
   entityErrors: Array<{ entity_type: string; entity_name: string; error: string }>;
+  /** What the surface should do next (see promoteReceipt.ts). `null` when a
+   *  guard refused the call before anything was attempted. */
+  receipt: PromoteReceipt | null;
+}
+
+/** Read the promoted persona's runtime-verified readiness columns back.
+ *  A failed read yields null, which the receipt treats as today's "ready". */
+async function readPromotedReadiness(personaId: string): Promise<PromotedPersonaReadiness | null> {
+  try {
+    const persona = await getPersona(personaId);
+    return { setupStatus: persona.setup_status, setupDetail: persona.setup_detail };
+  } catch (err) {
+    silentCatch("lifecycle:promote:readReadiness")(err);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +250,11 @@ export function useLifecycle({
    *                       skipped / partially failed but the user wants to
    *                       proceed (e.g. missing credentials, connector gaps).
    */
+  // Double-submit guard. The phase stays `test_complete` for the whole promote
+  // round-trip (it flips to `promoted` only after the IPC resolves), so the
+  // phase guard below cannot stop a second click; this ref can, synchronously.
+  const promoteInFlightRef = useRef(false);
+
   const handlePromote = useCallback(async (options?: { force?: boolean }): Promise<PromoteResult> => {
     const force = options?.force ?? false;
     const state = useAgentStore.getState();
@@ -237,7 +264,12 @@ export function useLifecycle({
       toolsCreated: 0,
       connectorsNeedingSetup: [],
       entityErrors: [],
+      receipt: null,
     };
+
+    if (promoteInFlightRef.current) {
+      return { ...emptyResult, receipt: { kind: "in_flight" } };
+    }
 
     // Guard: must be in test_complete phase. Test result check is skipped
     // when force=true so users can promote after skipped/failed tests.
@@ -258,6 +290,7 @@ export function useLifecycle({
       return emptyResult;
     }
 
+    promoteInFlightRef.current = true;
     try {
       const agentIR = state.buildDraft as Record<string, unknown> | null;
       // Check for rich draft data OR the presence of a build session (which stores
@@ -317,6 +350,13 @@ export function useLifecycle({
           }
         }
 
+        // Readiness receipt: read the persona's runtime-verified setup columns
+        // BEFORE flipping the phase, so the surface holds the receipt by the
+        // time `promoted` arms its auto-redirect timer. `promote_build_draft`
+        // has already run the connector-readiness resolver and the
+        // verification run, so these columns are final for this promote.
+        const receipt = derivePromoteReceipt(await readPromotedReadiness(effectivePid));
+
         // Transition to promoted
         useAgentStore.getState().handleBuildSessionStatus({
           type: "session_status",
@@ -326,20 +366,26 @@ export function useLifecycle({
           total_count: 8,
         });
 
-        // Be honest about readiness. The atomic promote reports connectors that
-        // still need a credential and entities that failed to create; claiming
-        // "ready to use" while a persona is being marked needs_credentials is the
-        // exact silent failure a non-technical founder gets burned by (UAT
-        // 2026-07-20: promoted "ready to use", then the agent had no way into
-        // Gmail). Name what's outstanding instead.
-        const needsSetup = result.connectors_needing_setup ?? [];
+        // Be honest about readiness. Claiming "ready to use" while a persona is
+        // being marked needs_credentials is the exact silent failure a
+        // non-technical founder gets burned by (UAT 2026-07-20: promoted "ready
+        // to use", then the agent had no way into Gmail). Name what's
+        // outstanding instead, from the verified blockers: the promote JSON's
+        // `connectors_needing_setup` is an IR pre-filter that also lists
+        // connectors which are already connected. The OS notification stays
+        // for a backgrounded window; the in-app receipt is the primary channel.
+        const needsSetup = receipt.kind === "needs_setup" ? receipt.connectors : [];
+        const unverified = receipt.kind === "needs_setup" && receipt.unverified;
         const entityErrors = result.entity_errors ?? [];
-        if (needsSetup.length > 0 || entityErrors.length > 0) {
+        if (receipt.kind === "needs_setup" || entityErrors.length > 0) {
           const parts: string[] = [];
           if (needsSetup.length > 0) {
             parts.push(
               `Connect ${needsSetup.length === 1 ? '1 service' : `${needsSetup.length} services`} before it can run: ${needsSetup.join(', ')}.`,
             );
+          }
+          if (unverified) {
+            parts.push("Its first check run could not deliver value. Review its connectors before relying on it.");
           }
           if (entityErrors.length > 0) {
             parts.push(
@@ -356,8 +402,9 @@ export function useLifecycle({
           success: true,
           triggersCreated: result.triggers_created,
           toolsCreated: result.tools_created,
-          connectorsNeedingSetup: result.connectors_needing_setup,
-          entityErrors: result.entity_errors,
+          connectorsNeedingSetup: result.connectors_needing_setup ?? [],
+          entityErrors,
+          receipt,
         };
       } else {
         // Fallback: old-format agent_ir without entities — just enable the persona
@@ -381,16 +428,19 @@ export function useLifecycle({
         });
 
         sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
-        return { ...emptyResult, success: true };
+        return { ...emptyResult, success: true, receipt: { kind: "ready" } };
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message
-        : typeof err === "string" ? err
-        : (err as Record<string, unknown>)?.error ? String((err as Record<string, unknown>).error)
-        : "Promotion failed";
-      logger.error("handlePromote failed", { message });
-      return emptyResult;
+      // The backend's refusal (invalid transition, agent_ir null or
+      // unparsable) is the receipt: the surface shows it with a Retry instead
+      // of leaving a dead button. The phase stays `test_complete`.
+      const receipt = promoteFailedReceipt(err);
+      logger.error("handlePromote failed", {
+        message: receipt.kind === "failed" ? receipt.message : "",
+      });
+      return { ...emptyResult, receipt };
+    } finally {
+      promoteInFlightRef.current = false;
     }
   }, [personaId, consumeCoreSnapshot]);
 
