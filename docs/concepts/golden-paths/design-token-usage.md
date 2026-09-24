@@ -678,16 +678,16 @@ Both were run against the working tree with
     {
       "id": "typo-token-overpainted",
       "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
-      "title": "Font-weight utility layered over a typo-* token, where the token silently wins",
+      "title": "Font-weight utility over a typo-* token: a local variant of a type recipe",
       "roots": ["src"],
       "extensions": [".tsx"],
       "signal": {
         "pattern": "\\btypo-[a-z-]+[^\"'`{}<>]{0,120}?font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)\\b|\\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)[^\"'`{}<>]{0,120}?\\btypo-[a-z-]+",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
+        "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. Until 266c05551 (2026-09-24) typography.css was unlayered and the token silently won, so every such pair was dead code (1,754 at adoption). The style foundation deleted the dead ones (937854f7d) and moved the tokens into @layer components (266c05551), so a font-* beside a typo-* now APPLIES. Each surviving pair is a local variant of a type recipe: a recipe owns its properties (design-tokens/token-taxonomy) and an override is the one countable escape hatch (ui-controls/variant-discipline). The count only goes down; a recurring pair names a missing token. Prefer the token that carries the weight (typo-caption -> typo-title -> typo-heading)."
       },
-      "baseline": { "files": 824, "matches": 2005 },
+      "baseline": { "files": 12, "matches": 15 },
       "floor": 2000
     },
     {
@@ -788,9 +788,12 @@ token to use instead in `signal.fix`, and is seeded red in `scripts/census/self-
 C5 above says a status-colour rule is blocked because `STATUS_PALETTE` emits the palette
 spelling. `raw-palette-text-colour` takes the ratchet route instead: the three colour-token
 owners are excluded as the destination and every other site is frozen at its count, so the
-backlog can only shrink while Gap 3 waits. `phantom-typo-token` is an allow-list inside a
-static regex; `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs` inside
-`npm run check`, fails when that list and the `.typo-*` selectors in `src/**/*.css` disagree.
+backlog can only shrink while Gap 3 waits. Phantom `typo-*` names (a class no stylesheet
+defines) were a census rule, `phantom-typo-token`, until the style foundation mapped every one
+(5e5cd9ca5, 2026-09-24). A census rule at zero reads as a broken matcher, so the extinct
+condition moved to `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs`
+inside `npm run check`: zero tolerance, with the allow-list derived from the `.typo-*`
+selectors in `src/**/*.css` at run time and floors that fail a walk that saw nothing.
 
 ```json
 {
@@ -960,49 +963,6 @@ static regex; `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity
       "baseline": {
         "files": 89,
         "matches": 239
-      },
-      "floor": 5000
-    },
-    {
-      "id": "phantom-typo-token",
-      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
-      "title": "A typo-* class that no stylesheet defines",
-      "roots": [
-        "src"
-      ],
-      "extensions": [
-        ".ts",
-        ".tsx"
-      ],
-      "signal": {
-        "pattern": "(?<![\\w-])typo-(?!(?:body|body-lg|caption|card-label|code|data|data-lg|heading|heading-lg|hero|hero-shine|label|rtl|section-title|submodule-header|title|title-lg|weight-light)(?![\\w-]))[a-z0-9]+(?:-[a-z0-9]+)*(?![\\w-])",
-        "flags": "g",
-        "ignoreCommentLines": true,
-        "description": "a typo-* class name that is NOT one of the names a stylesheet under src/ defines (typo-body-sm, typo-overline, typo-heading-sm, typo-h3, typo-button, ...). PROXY FOR the stack-free condition: a call site names a type token that does not exist, so the element silently renders in inherited type while reading as if it were tokenised, and the gap is invisible in review. Implemented as an ALLOW-LIST in a static regex (a negative lookahead over the defined names), so a NEW phantom rises the count with no list to maintain. The allow-list itself is kept honest by scripts/style/typo-allowlist.mjs, which check-corpus-integrity.mjs runs inside npm run check: it fails when this list and the .typo-* selectors in src/**/*.css (style proposals in *.proposed.css skipped until promoted) disagree in either direction, which is the one drift a static list could otherwise hide (a token deleted from CSS but still allowed here). Recall limit, stated: a name built at runtime (typo-${size}) is invisible.",
-        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION: every one of the 49 hits sampled across the pre-exclude hit list was an undefined class name except the harness scenario ids in src/lib/harness/scenario-parser.ts, now excluded. Most common phantoms: typo-body-sm, typo-overline, typo-heading-sm, typo-body-strong, typo-heading-md, typo-h3.",
-        "fix": "a defined token: typo-body-sm -> typo-caption, typo-heading-sm/md -> typo-heading, typo-overline -> typo-label, typo-body-strong -> typo-title, typo-h3 -> typo-heading-lg."
-      },
-      "exclude": [
-        {
-          "path": "**/__tests__/**",
-          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
-        },
-        {
-          "path": "**/*.test.tsx",
-          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
-        },
-        {
-          "path": "**/*.test.ts",
-          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
-        },
-        {
-          "path": "src/lib/harness/scenario-parser.ts",
-          "reason": "typo-mapping, typo-home, ... are harness scenario ids that happen to share the prefix; no class string in the file"
-        }
-      ],
-      "baseline": {
-        "files": 47,
-        "matches": 106
       },
       "floor": 5000
     },

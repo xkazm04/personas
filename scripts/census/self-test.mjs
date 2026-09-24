@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertRule, isCommentOnlyLine, patternToRegExp, scanRule, validateRule } from './lib/engine.mjs';
 import { runCensus } from './run-census.mjs';
-import { RULE_ID as ALLOWLIST_RULE_ID, allowListFromPattern, compareAllowList } from '../style/typo-allowlist.mjs';
+import { findPhantoms } from '../style/typo-allowlist.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, '__fixtures__');
@@ -562,12 +562,6 @@ const STYLE_SEEDS = {
     near: '<i className="text-foreground disabled:opacity-50 hover:opacity-80" /><i className="text-foreground opacity-100 text-foreground/60" />',
     count: 2,
   },
-  'phantom-typo-token': {
-    ext: '.tsx',
-    red: '<i className="typo-body-sm" /><div className="[&_h1]:typo-h3" />',
-    near: '<i className="typo-body typo-body-lg typo-caption typo-section-title" />',
-    count: 2,
-  },
   'raw-button-element': {
     ext: '.tsx',
     red: '<button className="x">a</button>\n<button\n  type="button"\n  onClick={() => a > b}\n  className="y"\n>b</button>\n',
@@ -609,33 +603,27 @@ for (const [id, seed] of Object.entries(STYLE_SEEDS)) {
   });
 }
 
-test('typo allow-list check fails in BOTH directions and passes when they agree', () => {
-  const pattern = REAL_RULES.find((r) => r.id === ALLOWLIST_RULE_ID).signal.pattern;
-  eq(allowListFromPattern(pattern) instanceof Set, true, 'the real pattern carries a parseable allow-list');
-  const dir = mkdtempSync(join(tmpdir(), 'census-typo-allow-'));
+test('phantom typo-* check: zero tolerance, derived from the stylesheets, loud on a broken walk', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'census-typo-phantom-'));
+  const floors = { files: 1, uses: 1 };
   try {
-    mkdirSync(join(dir, 'scripts', 'census'), { recursive: true });
     mkdirSync(join(dir, 'src', 'styles'), { recursive: true });
-    const writeRule = (names) =>
-      writeFileSync(
-        join(dir, 'scripts', 'census', 'rules.json'),
-        JSON.stringify({ rules: [{ id: ALLOWLIST_RULE_ID, signal: { pattern: `typo-(?!(?:${names.join('|')})(?![\\w-]))` } }] }),
-      );
+    mkdirSync(join(dir, 'src', 'ui', '__tests__'), { recursive: true });
     writeFileSync(join(dir, 'src', 'styles', 't.css'), '.typo-body { } /* .typo-ghost */ .typo-title { }', 'utf8');
     writeFileSync(join(dir, 'src', 'styles', 't.proposed.css'), '.typo-eyebrow { }', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', 'a.tsx'), '<i className="typo-body typo-title" />\n// typo-ghost in prose is not a use\n', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', '__tests__', 'x.tsx'), '<i className="typo-fixture-only" />', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', 'b.test.tsx'), '<i className="typo-fixture-only" />', 'utf8');
+    eq(findPhantoms(dir, floors).ok, true, 'defined names pass; comments, tests and __tests__ are not uses');
 
-    writeRule(['body', 'title']);
-    eq(compareAllowList(dir).ok, true, 'agreeing sets pass; a commented selector and a proposal define nothing');
+    writeFileSync(join(dir, 'src', 'ui', 'c.tsx'), '<i className="typo-ghost typo-eyebrow" />', 'utf8');
+    const r = findPhantoms(dir, floors);
+    eq(r.sites.length, 2, 'a commented-out selector and an unpromoted proposal define nothing');
+    ok(r.problems.some((p) => /c\.tsx:1 typo-ghost is defined by no stylesheet/.test(p)), 'the site is named by file:line');
 
-    writeRule(['body']);
-    ok(compareAllowList(dir).problems.some((p) => /typo-title is defined in CSS but absent/.test(p)), 'defined-but-not-allowed fails');
-
-    writeRule(['body', 'title', 'gone']);
-    ok(compareAllowList(dir).problems.some((p) => /typo-gone is allowed .* no stylesheet defines it/.test(p)), 'allowed-but-deleted fails');
-
-    rmSync(join(dir, 'src'), { recursive: true, force: true });
-    writeRule(['body', 'title']);
-    ok(compareAllowList(dir).problems.some((p) => /reader is broken/.test(p)), 'reading zero stylesheets fails loudly');
+    eq(findPhantoms(dir, { files: 99, uses: 1 }).broken, true, 'too few files walked is a broken walker, not a clean tree');
+    rmSync(join(dir, 'src', 'styles'), { recursive: true, force: true });
+    ok(findPhantoms(dir, floors).problems.some((p) => /reader is broken/.test(p)), 'reading zero stylesheets fails loudly');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

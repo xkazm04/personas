@@ -54,7 +54,6 @@ export const CENSUS_RULES = [
   'raw-palette-text-colour',
   'bare-rounded',
   'opacity-dimmed-text',
-  'phantom-typo-token',
   'raw-button-element',
   'feature-css-type-literal',
 ];
@@ -154,7 +153,7 @@ export function analyse({ toolName, input, rel, content, registry }) {
   let findings = censusFindings(rel, content, registry);
   if (rel.endsWith('.tsx')) {
     const eslint = lintWithEslint(rel, content);
-    // The census arbitrary-size and phantom arms repeat what no-raw-text-classes says.
+    // The census arbitrary-size arm repeats what no-raw-text-classes says (which also reports phantom typo-* names).
     const seen = new Set(eslint.map((f) => `${f.line}|${f.token}`));
     findings = [...eslint, ...findings.filter((f) => !seen.has(`${f.line}|${f.token}`))];
   }

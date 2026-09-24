@@ -14,10 +14,11 @@ Reference: **`.claude/Design.md`**. Primitives: **`src/features/shared/component
 
 - **Census ratchets fail** `npm run check` and pre-push when a count RISES. Style rules:
   `raw-arbitrary-text-size`, `raw-palette-text-colour`, `bare-rounded`, `opacity-dimmed-text`,
-  `phantom-typo-token`, `raw-button-element`, `feature-css-type-literal`, `typo-token-overpainted`,
+  `raw-button-element`, `feature-css-type-literal`, `typo-token-overpainted`,
   `hand-rolled-spinner`, `hand-rolled-disabled-state`, `native-title-tooltip`,
   `hand-painted-modal-backdrop`, `raw-select`, `local-empty-state`. Sites: `npm run census -- --rule <id> --verbose`.
   A drop your real fix caused: `npm run census -- --update` in the same commit. Never `--update` a rise.
+- **A `typo-*` name no stylesheet defines fails `npm run check`** (`scripts/style/typo-allowlist.mjs`, zero tolerance).
 - **ESLint `custom/*` style rules are warn and fail nothing** (no `--max-warnings` anywhere).
 - **The edit-time hook** (`scripts/style/lint-edited.mjs`) reports the style findings on the lines
   you just wrote, each naming the token to use. A report is a defect to fix now; silence means clean.

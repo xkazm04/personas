@@ -389,7 +389,7 @@ count may not rise (`npm run census -- --rule <id> --verbose` lists the sites).
 | Arbitrary text size (`text-[11px]`, `text-[0.8rem]`) | A `typo-*` tier (§2) | census `raw-arbitrary-text-size` + `custom/no-raw-text-classes` |
 | Bare `rounded` (the 0.25rem default, off the radius scale) | `rounded-interactive/input/card/modal` | census `bare-rounded` |
 | `text-foreground` dimmed with `opacity-10`..`opacity-89` | Bare `text-foreground` on a smaller `typo-*` tier | census `opacity-dimmed-text` |
-| A `typo-*` name no stylesheet defines (`typo-body-sm`, `typo-overline`) | A defined token from §2 | census `phantom-typo-token` + `custom/no-raw-text-classes` |
+| A `typo-*` name no stylesheet defines (`typo-body-sm`, `typo-overline`) | A defined token from §2 | `scripts/style/typo-allowlist.mjs` in `npm run check` (zero tolerance since 2026-09-24) + `custom/no-raw-text-classes` |
 | Styled raw `<button>` outside `shared/components` | `buttons/Button` / `buttons/AsyncButton` | census `raw-button-element` |
 | px/rem `font-size`, literal `font-family`, hex/rgb colour in feature CSS | `typo-*` on the element; `var(--font-*)`; `var(--foreground/--primary/--status-*)` | census `feature-css-type-literal` |
 | New theme or token color shipped unchecked | Run `npm run check:themes` (AA gate, CI) | `scripts/check-themes.mjs` |

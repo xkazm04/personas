@@ -29,7 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { compareAllowList } from '../style/typo-allowlist.mjs';
+import { findPhantoms } from '../style/typo-allowlist.mjs';
 
 // Derived from this file's own location, NOT hardcoded.
 //
@@ -200,13 +200,12 @@ for (const r of rules) {
   }
 }
 
-// ------------- 3.1 a census allow-list agrees with the source it was copied from
-// phantom-typo-token (added 2026-09-24) spells the typo-* names the stylesheets
-// define inside a static regex, because the engine takes no computed pattern. A
-// token deleted from CSS but still allowed there would make its call sites
-// phantoms nobody counts, and no census run can see an absence. This is the
-// inventory in both directions; scripts/style/typo-allowlist.mjs has the detail.
-for (const p of compareAllowList(ROOT).problems) fail(`census rule "phantom-typo-token": ${p}`);
+// ------------- 3.1 no typo-* class name that no stylesheet defines (zero tolerance)
+// The census rule phantom-typo-token held this as a ratchet until the style
+// foundation mapped every phantom (5e5cd9ca5); a census rule at zero reads as a
+// broken matcher, so the extinct condition is held here, with the allow-list
+// derived from the stylesheets at run time. scripts/style/typo-allowlist.mjs.
+for (const p of findPhantoms(ROOT).problems) fail(`phantom typo-* token: ${p}`);
 
 // --------------------- 3.5 subject hierarchy (docs/concepts/paths/) — GRAPH.md
 // Enforces the v2 layer contract, section by section of docs/concepts/paths/GRAPH.md
