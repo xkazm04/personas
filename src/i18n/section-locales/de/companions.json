@@ -436,7 +436,21 @@
       "terminals": "Terminals",
       "terminals_tip": "{running} von {cap} Terminals, die sie gleichzeitig halten darf.",
       "used_of": "{used} von {cap}"
-    }
+    },
+    "band_quiet_unmeasured_tip": "Der stille Ausläufer sind die Themen, die auf jedem messbaren Kanal nichts erzielen. Hier wurde nichts gemessen, daher ist unbekannt, wie viele es sind, und das ist nicht dasselbe wie keine.",
+    "band_unlisted_unmeasured": "Themen außerhalb des Plans",
+    "band_unlisted_unmeasured_note": "nichts gezählt, also ist noch nichts außerhalb von irgendetwas",
+    "band_unlisted_unmeasured_tip": "Dieses Band sind die Themen, die der Korpus enthält, aber kein Plan trägt. Ohne Projektion gibt es keinen Plan, außerhalb dessen sie stehen könnten, und keine der beiden Zahlen wurde gemessen.",
+    "channel_unmeasured": "{name}, {weight}. Niemand hat diesen Kanal gemessen, also ist er unbekannt - keine Null, und nicht Teil einer Summe.",
+    "group_planned_bare": "geplant",
+    "group_points_bare": "Pkt.",
+    "meta_unrun": "keine Projektion erstellt",
+    "meta_unrun_tip": "Ein Plan ist eine Projektion des Registers zu einem Commit. Hier wurde keiner erstellt, daher gibt es keinen Lauf zu benennen, keine Scan-Uhr und keinen Commit, zu dem er erstellt wurde.",
+    "unmeasured_tip": "Nicht gemessen. Kein Instrument ist darüber gelaufen, also ist es unbekannt - keine Null, und nicht Teil einer Summe.",
+    "verdict_bundles_unmeasured": "in Bündeln, die niemand gezählt hat",
+    "verdict_maps_unmeasured": "es ist keine Map-Prüfung gelaufen",
+    "verdict_pairs_unmeasured": "Noch kein Kontext-Thema-Paar wurde gelesen, daher gibt es keinen Anteil davon zu melden.",
+    "verdict_pairs_unmeasured_tip": "Das ist die eine kleine Zahl dieser Seite: der Anteil der Kontext-Thema-Paare, die je beurteilt wurden. Lassen Sie das Instrument laufen, und sie erscheint. Bis dahin ist sie unbekannt, und ein unbekannter Anteil ist nicht 0 %."
   },
   "process": {
     "cohort_share": "Alle Repositories {pct}",

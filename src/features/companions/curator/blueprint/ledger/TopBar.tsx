@@ -41,14 +41,23 @@ export function TopBar({
         <b className="typo-title-lg">{w.title}</b>
         <i className="typo-label cb-up cb-dim">{w.subtitle}</i>
       </div>
+      {/* With no projection there is no run id, no scan clock and no commit
+          the plan was made against - so the meta row carries the one true
+          sentence rather than three empty ones. */}
       <div className="cb-meta typo-caption">
-        <span>{model.planRunId}</span>
-        <span>{tx(w.scan_at, { at: utcStamp(model.scanGeneratedAt) })}</span>
-        <span data-cb-tip={w.head_projection_tip}>
-          {model.registryHeadSha
-            ? tx(w.head_projection, { sha: model.registryHeadSha })
-            : w.head_projection_unknown}
-        </span>
+        {model.planRunId === null ? (
+          <span data-cb-tip={w.meta_unrun_tip}>{w.meta_unrun}</span>
+        ) : (
+          <>
+            <span>{model.planRunId}</span>
+            <span>{tx(w.scan_at, { at: utcStamp(model.scanGeneratedAt) })}</span>
+            <span data-cb-tip={w.head_projection_tip}>
+              {model.registryHeadSha
+                ? tx(w.head_projection, { sha: model.registryHeadSha })
+                : w.head_projection_unknown}
+            </span>
+          </>
+        )}
       </div>
       <div className="cb-sp" />
       <input

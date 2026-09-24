@@ -436,7 +436,21 @@
       "terminals": "터미널",
       "terminals_tip": "그녀가 동시에 보유할 수 있는 터미널 {cap}개 중 {running}개.",
       "used_of": "{cap}개 중 {used}개"
-    }
+    },
+    "band_quiet_unmeasured_tip": "조용한 꼬리 부분은 측정 가능한 모든 채널에서 아무 점수도 얻지 못하는 주제들입니다. 여기서는 아무것도 측정되지 않았으므로 그 수가 몇 개인지는 알 수 없으며, 이는 0개와 같지 않습니다.",
+    "band_unlisted_unmeasured": "계획 밖 주제",
+    "band_unlisted_unmeasured_note": "집계된 것이 없으므로 아직 무엇의 밖에도 있지 않습니다",
+    "band_unlisted_unmeasured_tip": "이 띠는 코퍼스가 보유하고 있지만 계획에는 실리지 않은 주제들입니다. 투영이 없으므로 그것들이 밖에 있다고 말할 계획 자체가 없으며, 두 수치 모두 측정되지 않았습니다.",
+    "channel_unmeasured": "{name}, {weight}. 아무도 이 채널을 측정하지 않았으므로 알 수 없습니다. 0이 아니며, 어떤 합계에도 포함되지 않습니다.",
+    "group_planned_bare": "계획됨",
+    "group_points_bare": "점",
+    "meta_unrun": "아직 어떤 투영도 이루어지지 않음",
+    "meta_unrun_tip": "계획이란 특정 커밋 시점의 레지스트리에 대한 투영입니다. 여기서는 아직 아무것도 만들어지지 않았으므로, 이름 붙일 실행도, 스캔 시각도, 그것이 찍힌 커밋도 없습니다.",
+    "unmeasured_tip": "측정되지 않음. 이에 대해 실행된 측정 도구가 없으므로 알 수 없습니다. 0이 아니며, 어떤 합계에도 포함되지 않습니다.",
+    "verdict_bundles_unmeasured": "아무도 집계하지 않은 번들에서",
+    "verdict_maps_unmeasured": "맵 검사가 실행된 적 없음",
+    "verdict_pairs_unmeasured": "아직 읽힌 컨텍스트-주제 쌍이 없으므로 보고할 비율이 없습니다.",
+    "verdict_pairs_unmeasured_tip": "이것이 이 페이지의 유일한 작은 수치입니다: 지금까지 누군가 판정한 컨텍스트-주제 쌍의 비율입니다. 측정 도구를 실행하면 나타납니다. 그때까지는 알 수 없으며, 알 수 없는 비율은 0%가 아닙니다."
   },
   "process": {
     "cohort_share": "전체 저장소 {pct}",

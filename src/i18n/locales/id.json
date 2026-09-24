@@ -24590,7 +24590,21 @@
         "terminals": "terminal",
         "terminals_tip": "{running} dari {cap} terminal yang boleh dia pegang sekaligus.",
         "used_of": "{used} dari {cap}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "Ekor yang sunyi adalah subjek-subjek yang tidak mendapat skor apa pun pada setiap kanal yang dapat diukur. Belum ada yang diukur di sini, sehingga berapa banyak jumlahnya TIDAK DIKETAHUI, dan itu bukan hal yang sama dengan nihil.",
+      "band_unlisted_unmeasured": "subjek di luar rencana",
+      "band_unlisted_unmeasured_note": "belum ada yang dihitung, sehingga belum ada yang berada di luar apa pun",
+      "band_unlisted_unmeasured_tip": "Pita ini adalah subjek-subjek yang dimiliki korpus namun tidak dibawa oleh rencana. Tanpa proyeksi, tidak ada rencana bagi mereka untuk berada di luarnya, dan kedua angka tersebut belum diukur.",
+      "channel_unmeasured": "{name}, {weight}. Belum ada yang mengukur kanal ini, sehingga statusnya TIDAK DIKETAHUI - bukan nol, dan tidak termasuk dalam total mana pun.",
+      "group_planned_bare": "direncanakan",
+      "group_points_bare": "poin",
+      "meta_unrun": "belum ada proyeksi yang dibuat",
+      "meta_unrun_tip": "Rencana adalah proyeksi registry pada satu commit. Belum ada yang dibuat di sini, sehingga tidak ada proses untuk disebutkan namanya, tidak ada jam pemindaian, dan tidak ada commit tempat itu diambil.",
+      "unmeasured_tip": "Belum terukur. Tidak ada instrumen yang berjalan atas ini, sehingga statusnya TIDAK DIKETAHUI - bukan nol, dan tidak termasuk dalam total mana pun.",
+      "verdict_bundles_unmeasured": "di bundel yang belum pernah dihitung siapa pun",
+      "verdict_maps_unmeasured": "belum ada pemeriksaan peta yang berjalan",
+      "verdict_pairs_unmeasured": "Belum ada pasangan konteks dan subjek yang dibaca, sehingga tidak ada bagian dari mereka untuk dilaporkan.",
+      "verdict_pairs_unmeasured_tip": "Ini adalah satu angka kecil pada halaman ini: bagian dari pasangan konteks dan subjek yang pernah dinilai siapa pun. Jalankan instrumen dan angka itu akan muncul. Sampai saat itu statusnya TIDAK DIKETAHUI, dan bagian yang tidak diketahui bukanlah 0%."
     },
     "process": {
       "cohort_share": "Semua repositori {pct}",

@@ -8,13 +8,30 @@
  * `curator_plan_refresh` had no caller anywhere in `src/`, which is the whole
  * reason `curator_plan_current` returned null and this page read "No
  * projection yet": nothing had ever asked her to look. The console owns that
- * act now, and the empty state OFFERS it rather than only explaining the
- * absence - the page is not locked behind a command nobody can reach.
+ * act, and it owns it in EVERY phase - one run control on the page, always in
+ * the same place.
  *
  * The refresh costs about eleven seconds cold (it spawns up to four node
  * processes, cached five minutes on the registry's HEAD), so it is drawn as an
  * ACTION - a real spinner on the control the operator pressed - and never as a
  * surface ghost. See `console/CuratorConsole.tsx`.
+ *
+ * ## Why there is no empty state here
+ *
+ * There used to be: with no plan the page rendered a console over one
+ * whole-page `<EmptyState>` and nothing else - no verdict, no channel heads,
+ * no bands, no foot. The operator asked for the opposite, and he is right: the
+ * first pass should be started from a page that already looks like itself.
+ *
+ * So the model is always built. `unmeasuredModel()` is the same shape with
+ * every quantity ABSENT rather than zero, and each surface draws its
+ * unpopulated form with the ledger's own unknown ink. A skeleton of zeros on a
+ * page whose entire argument is that an unknown is not a zero would be the
+ * worst possible first contact with it.
+ *
+ * Three phases stay distinct, and the ledger body says which one it is in: a
+ * first read in flight, an instrument running now, and a read that came back
+ * with no projection. Only the last one is an offer.
  *
  * The docket ships EMPTY on purpose. There is no `curator_decisions_list` and
  * nothing writes a decision yet, so there is nothing to read; the drawer says
@@ -23,17 +40,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { curatorPlanCurrent, curatorPlanRefresh, curatorPolicyGet, curatorProjectsList } from '@/api/curator';
-import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
-import { ConsoleShell } from './console/ConsoleShell';
-import { CuratorConsole, RunInstrument } from './console/CuratorConsole';
+import { CuratorConsole } from './console/CuratorConsole';
 import { useCuratorLoop } from './console/useCuratorLoop';
+import type { BlueprintPhase } from './ledger/LedgerEmpty';
 import { buildModel, type BlueprintSources } from './model/buildModel';
 import { EMPTY_DOCKET } from './model/docket';
+import { unmeasuredModel } from './model/unmeasured';
 import type { BlueprintWords } from './words';
 
 import './blueprint.css';
@@ -89,7 +106,7 @@ export default function BlueprintPage() {
    *
    * `refreshing` is owned HERE rather than left to the button's own guard,
    * because two other things read it: the live region that narrates the wait,
-   * and the empty state, which says she is reading the registry instead of
+   * and the ledger body, which says she is reading the registry instead of
    * repeating that no projection exists while one is being made.
    */
   const refresh = useCallback(async () => {
@@ -112,47 +129,31 @@ export default function BlueprintPage() {
     () => ({ w: t.companions.blueprint, tx }),
     [t.companions.blueprint, tx],
   );
-  const model = useMemo(() => (plan ? buildModel(plan, sources) : null), [plan, sources]);
-  const operatorConsole = (
-    <CuratorConsole
-      loop={loop}
-      policy={sources.policy ?? null}
-      refreshing={refreshing}
-      onRefresh={refresh}
-      run={!!model}
-    />
+  // Always a model, never a null. The absence lives INSIDE it, as nulls the
+  // surfaces draw as unknown, rather than outside it as a branch that swaps
+  // the whole page for a card.
+  const model = useMemo(
+    () => (plan ? buildModel(plan, sources) : unmeasuredModel(sources)),
+    [plan, sources],
   );
+  // Running wins over reading: a refresh started from a warm page is the
+  // instrument working, not a first read in flight.
+  const phase: BlueprintPhase = refreshing ? 'running' : loading ? 'reading' : 'unrun';
 
-  if (model) {
-    return <Blueprint model={model} docket={EMPTY_DOCKET} words={words} console={operatorConsole} />;
-  }
-
-  // No projection. The page says so - it never draws zeros - and it OFFERS the
-  // run in the same block, because the absence and the thing that ends it
-  // belong together. While the instrument runs, the copy says what is
-  // happening rather than restating the emptiness.
-  const booting = loading && !refreshing;
   return (
-    <ConsoleShell words={words}>
-      {operatorConsole}
-      <EmptyState
-        title={
-          refreshing
-            ? t.companions.blueprint.console.refresh_title
-            : booting
-              ? t.companions.blueprint.boot_title
-              : t.companions.blueprint.no_plan_title
-        }
-        subtitle={
-          refreshing
-            ? t.companions.blueprint.console.refresh_body
-            : booting
-              ? t.companions.blueprint.boot_body
-              : t.companions.blueprint.no_plan_body
-        }
-      >
-        {!booting && <RunInstrument refreshing={refreshing} onRefresh={refresh} />}
-      </EmptyState>
-    </ConsoleShell>
+    <Blueprint
+      model={model}
+      docket={EMPTY_DOCKET}
+      words={words}
+      phase={phase}
+      console={
+        <CuratorConsole
+          loop={loop}
+          policy={sources.policy ?? null}
+          refreshing={refreshing}
+          onRefresh={refresh}
+        />
+      }
+    />
   );
 }

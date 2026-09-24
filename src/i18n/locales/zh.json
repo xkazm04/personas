@@ -24590,7 +24590,21 @@
         "terminals": "终端",
         "terminals_tip": "她最多可同时持有 {cap} 个终端中的 {running} 个。",
         "used_of": "{used} / {cap}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "安静尾部是指在每一个可测量的通道上都不得分的主题。此处尚未进行任何测量，因此这类主题共有多少是未知的，这与“没有”并不相同。",
+      "band_unlisted_unmeasured": "计划之外的主题",
+      "band_unlisted_unmeasured_note": "尚未计数，因此目前也没有什么算在“之外”。",
+      "band_unlisted_unmeasured_tip": "这个分区是指语料库持有、但计划未纳入的主题。既然尚无投影，它们也就没有可供“之外”的计划，而这两个数字都还没有被测量。",
+      "channel_unmeasured": "{name}，{weight}。没有人测量过这个通道，因此它是未知的，不是零，也不计入任何总计。",
+      "group_planned_bare": "已规划",
+      "group_points_bare": "分",
+      "meta_unrun": "尚无投影",
+      "meta_unrun_tip": "计划是注册库在某次提交时的一份投影。这里尚未制定过计划，因此没有运行可供命名，没有扫描时钟，也没有对应的提交记录。",
+      "unmeasured_tip": "未测量。没有仪器在此运行过，因此它是未知的，不是零，也不计入任何总计。",
+      "verdict_bundles_unmeasured": "分布在无人计数的合集中",
+      "verdict_maps_unmeasured": "尚未运行过映射检查",
+      "verdict_pairs_unmeasured": "尚未读取任何一对上下文与主题配对，因此没有可报告的占比。",
+      "verdict_pairs_unmeasured_tip": "这是本页唯一的一个小数字：曾被评判过的上下文与主题配对所占的比例。运行仪器后它才会出现。在此之前，它是未知的，而未知的占比并不等于 0%。"
     },
     "process": {
       "cohort_share": "所有仓库 {pct}",

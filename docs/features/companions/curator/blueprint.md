@@ -64,6 +64,45 @@ Two bands sit under the rows, on the same nine columns:
   band is absent; when it appears, every column reads UNKNOWN, because this
   instrument carries the count and not what they score on.
 
+## Before the instrument has run
+
+`curator_plan_current` honestly returns `null` until someone runs the
+instrument, and on a fresh registry that is the first thing anyone sees. The
+page draws itself anyway: **the real page, drawn empty.** The top bar, the
+verdict strip, the console with its run control, the group heads, the nine
+channel heads, the ledger frame, both aggregate bands, the foot and the docket
+are all present and laid out exactly as they will be; only the figures are
+missing.
+
+**No figure reads `0`.** A skeleton of zeros on a page whose entire argument is
+that an unknown is not a zero would be the page telling its own central lie on
+first contact, so every quantity in this state is absent rather than zero
+(`model/unmeasured.ts`), and every place a figure will be wears the ledger's own
+UNKNOWN ink - the same see-through hatched box the nine columns use for "nobody
+looked". It is not a loading shimmer either: a shimmer promises arrival, and
+nothing arrives here until someone presses the control.
+
+Three phases stay distinct, and the ledger body says which one it is in, once,
+where the rows would be:
+
+| Phase | Says |
+|---|---|
+| the first read is in flight | she is reading the projection she last made |
+| the instrument is running | she is walking the corpus, about eleven seconds |
+| the read came back with nothing | no projection yet, and nothing here is zero |
+
+Only the last is an offer. **The run control is in the console in every phase**,
+never duplicated and never moved: `curator_plan_refresh` is an action the
+operator pressed, so it wears a real spinner on the button plus `disabled` and
+`aria-busy`, and a live region narrates the wait.
+
+Two things are honestly zero rather than unknown even here: the docket's
+counter, because its feed is empty by construction (see below), and the foot's
+gauges when `curator_policy_get` answered - that door has nothing to do with the
+plan, so the operator's real caps are drawn. Where it did not answer, the gauges
+read unknown rather than "no cap declared", which would be a claim about
+settings nobody has looked at.
+
 ## The docket
 
 `D` opens a drawer with three states (shut, a lane, the full surface) carrying

@@ -436,7 +436,21 @@
       "terminals": "terminály",
       "terminals_tip": "{running} z {cap} terminálů, které může držet zároveň.",
       "used_of": "{used} z {cap}"
-    }
+    },
+    "band_quiet_unmeasured_tip": "Tichý ocas jsou subjekty, které nedosahují žádného skóre v žádném kanálu, jenž šlo změřit. Zde nebylo změřeno nic, takže kolik jich vlastně je, je neznámé, což není totéž jako žádný.",
+    "band_unlisted_unmeasured": "subjekty mimo plán",
+    "band_unlisted_unmeasured_note": "nic nespočítáno, takže zatím nic není mimo nic",
+    "band_unlisted_unmeasured_tip": "Tento pás jsou subjekty, které korpus obsahuje, ale plán je nenese. Bez projekce neexistuje plán, vůči kterému by byly mimo, a ani jedno číslo nebylo změřeno.",
+    "channel_unmeasured": "{name}, {weight}. Tento kanál nikdo nezměřil, takže je neznámý - ne nula, a není součástí žádného součtu.",
+    "group_planned_bare": "plánováno",
+    "group_points_bare": "b.",
+    "meta_unrun": "žádná projekce nebyla vytvořena",
+    "meta_unrun_tip": "Plán je projekcí registru k jednomu commitu. Zde žádný nebyl vytvořen, takže není co pojmenovat jako běh, chybí čas skenu i commit, ke kterému by byl vztažen.",
+    "unmeasured_tip": "Neměřeno. Žádný nástroj nad tímto neproběhl, takže je to neznámé - ne nula, a není to součástí žádného součtu.",
+    "verdict_bundles_unmeasured": "v balících, které nikdo nespočítal",
+    "verdict_maps_unmeasured": "žádná kontrola mapy neproběhla",
+    "verdict_pairs_unmeasured": "Zatím nebyl přečten žádný pár kontext-subjekt, takže není žádný podíl, který by šlo hlásit.",
+    "verdict_pairs_unmeasured_tip": "Toto je jediné malé číslo této stránky: podíl párů kontext-subjekt, které kdy někdo posoudil. Spusťte nástroj a objeví se. Do té doby je neznámý, a neznámý podíl není 0 %."
   },
   "process": {
     "cohort_share": "Všechna úložiště {pct}",

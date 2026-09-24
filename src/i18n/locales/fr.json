@@ -24590,7 +24590,21 @@
         "terminals": "terminaux",
         "terminals_tip": "{running} sur les {cap} terminaux qu'elle peut tenir à la fois.",
         "used_of": "{used} sur {cap}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "La queue silencieuse est constituée des sujets qui n'obtiennent rien sur tous les canaux mesurables. Rien n'a été mesuré ici, donc leur nombre est inconnu, ce qui n'est pas la même chose que zéro.",
+      "band_unlisted_unmeasured": "sujets hors du plan",
+      "band_unlisted_unmeasured_note": "rien n'est compté, donc rien n'est encore en dehors de quoi que ce soit",
+      "band_unlisted_unmeasured_tip": "Ce bandeau désigne les sujets que le corpus détient et qu'un plan ne porte pas. Sans projection, il n'y a pas de plan dont ils pourraient être exclus, et aucun des deux chiffres n'a été mesuré.",
+      "channel_unmeasured": "{name}, {weight}. Personne n'a mesuré ce canal, donc il est inconnu : ce n'est pas un zéro, et cela n'entre dans aucun total.",
+      "group_planned_bare": "planifié",
+      "group_points_bare": "pts.",
+      "meta_unrun": "aucune projection n'a été faite",
+      "meta_unrun_tip": "Un plan est une projection du registre à une validation donnée. Aucune n'a été faite ici, donc il n'y a aucune exécution à nommer, aucune horloge de balayage et aucune validation à laquelle elle aurait été prise.",
+      "unmeasured_tip": "Non mesuré. Aucun instrument n'a tourné sur ceci, donc c'est inconnu : ce n'est pas un zéro, et cela n'entre dans aucun total.",
+      "verdict_bundles_unmeasured": "dans des lots que personne n'a comptés",
+      "verdict_maps_unmeasured": "aucun contrôle de carte n'a tourné",
+      "verdict_pairs_unmeasured": "Aucune paire contexte-sujet n'a encore été lue, il n'y a donc aucune part à rapporter.",
+      "verdict_pairs_unmeasured_tip": "C'est le seul petit chiffre de cette page : la part des paires contexte-sujet que quiconque a jamais jugée. Exécutez l'instrument et il apparaît. D'ici là, elle est inconnue, et une part inconnue n'est pas 0 %."
     },
     "process": {
       "cohort_share": "Tous les dépôts {pct}",

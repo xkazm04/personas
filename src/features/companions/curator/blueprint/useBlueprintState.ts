@@ -59,7 +59,9 @@ export function useBlueprintState(model: BlueprintModel, feed: DocketFeed): Blue
   const stack = useRef<string[]>([]);
 
   const rows = useMemo(() => {
-    const list = [...model.rows];
+    // An unread ledger sorts to nothing. The absence lives in the model, and
+    // the body draws it; this hook only ever deals in rows that exist.
+    const list = [...(model.rows ?? [])];
     if (solo) {
       list.sort((a, b) => {
         const av = a.cells[solo].kind === 'scored' ? (a.cells[solo] as { mark: { points: number } }).mark.points : 0;

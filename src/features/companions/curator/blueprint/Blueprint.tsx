@@ -22,6 +22,7 @@ import { useDescent } from './deep/useDescent';
 import { Docket } from './docket/Docket';
 import { Bands } from './ledger/Bands';
 import { Foot } from './ledger/Foot';
+import { LedgerEmpty, type BlueprintPhase } from './ledger/LedgerEmpty';
 import { LedgerHead } from './ledger/LedgerHead';
 import { LedgerRow } from './ledger/LedgerRow';
 import { TopBar } from './ledger/TopBar';
@@ -52,9 +53,22 @@ export interface BlueprintProps {
    * no node it collapses to nothing.
    */
   console?: ReactNode;
+  /**
+   * Which unpopulated phase the page is in, read ONLY when the model carries
+   * no rows. A read in flight, an instrument running and a registry nobody has
+   * ever measured are three different sentences, and the ledger body says the
+   * right one instead of announcing emptiness over a read that has not landed.
+   */
+  phase?: BlueprintPhase;
 }
 
-export function Blueprint({ model, docket, words, console: operatorConsole }: BlueprintProps) {
+export function Blueprint({
+  model,
+  docket,
+  words,
+  console: operatorConsole,
+  phase = 'unrun',
+}: BlueprintProps) {
   const state = useBlueprintState(model, docket);
   const rootRef = useRef<HTMLDivElement>(null);
   const ledgerRef = useRef<HTMLDivElement>(null);
@@ -148,6 +162,10 @@ export function Blueprint({ model, docket, words, console: operatorConsole }: Bl
                   if (row) descend(Number(row.getAttribute('data-cb-row')));
                 }}
               >
+                {/* No rows is not an empty list: it is a ledger nobody has
+                    read, and it says so once, here, on the ledger's own grid
+                    rather than as a card that replaced the page. */}
+                {model.rows === null && <LedgerEmpty phase={phase} />}
                 {bodyRows}
                 <Bands model={model} />
               </div>

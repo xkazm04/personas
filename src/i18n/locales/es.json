@@ -24590,7 +24590,21 @@
         "terminals": "terminales",
         "terminals_tip": "{running} de las {cap} terminales que puede mantener a la vez.",
         "used_of": "{used} de {cap}"
-      }
+      },
+      "band_quiet_unmeasured_tip": "La cola silenciosa son los temas que no puntúan nada en ningún canal que se pudiera medir. Aquí no se ha medido nada, así que cuántos son es desconocido, lo cual no es lo mismo que ninguno.",
+      "band_unlisted_unmeasured": "temas fuera del plan",
+      "band_unlisted_unmeasured_note": "nada contado, así que nada queda fuera todavía",
+      "band_unlisted_unmeasured_tip": "Esta banda son los temas que contiene el corpus pero que un plan no lleva. Sin proyección no hay plan del que estar fuera, y ninguna de las dos cifras se ha medido.",
+      "channel_unmeasured": "{name}, {weight}. Nadie ha medido este canal, así que es desconocido: no es un cero, y no cuenta dentro de ningún total.",
+      "group_planned_bare": "planificado",
+      "group_points_bare": "ptos",
+      "meta_unrun": "no se ha hecho ninguna proyección",
+      "meta_unrun_tip": "Un plan es una proyección del registro en un commit. Aquí no se ha hecho ninguna, así que no hay ejecución que nombrar, ni reloj de escaneo, ni commit en el que se tomara.",
+      "unmeasured_tip": "No medido. Ningún instrumento se ha ejecutado sobre esto, así que es desconocido: no es un cero, y no cuenta dentro de ningún total.",
+      "verdict_bundles_unmeasured": "en paquetes que nadie ha contado",
+      "verdict_maps_unmeasured": "no se ha ejecutado ninguna comprobación de mapa",
+      "verdict_pairs_unmeasured": "Todavía no se ha leído ningún par de contexto y tema, así que no hay ninguna proporción que informar.",
+      "verdict_pairs_unmeasured_tip": "Este es el único número pequeño de la página: la proporción de pares de contexto y tema que alguien ha juzgado alguna vez. Ejecuta el instrumento y aparecerá. Hasta entonces es desconocido, y una proporción desconocida no es 0%."
     },
     "process": {
       "cohort_share": "Todos los repositorios {pct}",

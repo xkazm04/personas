@@ -16,6 +16,18 @@ export function fmt(n: number | null | undefined): string {
 }
 
 /**
+ * A quantity inside a SENTENCE, where an absent one has to read as words.
+ *
+ * `fmt` routes an absent value to the shared formatter's em dash, which is a
+ * glyph this page's reader has no vocabulary for and which the app's own copy
+ * rules ban outright. Where a number is interpolated into prose, an unmeasured
+ * one says so in the page's own words instead.
+ */
+export function say(n: number | null | undefined, unknown: string): string {
+  return n == null ? unknown : fmt(n);
+}
+
+/**
  * A declared dollar ceiling. Assembled by the shared unit formatter, not by a
  * `$` glued to a number: the symbol, its side and the separators are all the
  * reader's locale's, not this file's.

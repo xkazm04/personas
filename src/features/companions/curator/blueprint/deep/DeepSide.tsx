@@ -9,7 +9,7 @@
  * cannot be drawn from this instrument.
  */
 import type { BlueprintModel, BlueprintRow, ConsumerProject } from '../model/types';
-import { fmt, share, widthPct } from '../format';
+import { fmt, say, share, widthPct } from '../format';
 import { useWords } from '../words';
 
 /** How far Curator may reach into a checkout. `unknown` is not `refused`. */
@@ -29,10 +29,8 @@ function reachMark(reach: ConsumerProject['reach']): Reach {
   return reach.consent === 'granted' ? 'granted' : reach.consent === 'refused' ? 'refused' : 'never_asked';
 }
 
-function ProjectBar({ model, slug }: { model: BlueprintModel; slug: string }) {
+function ProjectBar({ p, maxPairs }: { p: ConsumerProject; maxPairs: number }) {
   const { w, tx } = useWords();
-  const p = model.consumers.projects.find((x) => x.slug === slug)!;
-  const maxPairs = Math.max(1, ...model.consumers.projects.map((x) => x.pairs));
   const scale = p.pairs / maxPairs;
   const part = (n: number) => widthPct((n / Math.max(1, p.pairs)) * 100 * scale, 100);
   return (
@@ -79,10 +77,15 @@ function ProjectBar({ model, slug }: { model: BlueprintModel; slug: string }) {
 
 export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintModel }) {
   const { w, tx } = useWords();
+  // Reached only from a row, so every quantity below was measured by the same
+  // projection that produced that row. The `??` arms exist so an unmeasured
+  // model cannot be made to fabricate one here either; none of them can run.
   const c = model.consumers;
-  const quiet = model.quiet.find((q) => q.domain === row.domain);
-  const bundleRows = model.rows.filter((r) => r.domain === row.domain);
-  const demandRead = model.demandKnownDomains.includes(row.domain);
+  const projects = c.projects ?? [];
+  const maxPairs = Math.max(1, ...projects.map((x) => x.pairs));
+  const quiet = (model.quiet ?? []).find((q) => q.domain === row.domain);
+  const bundleRows = (model.rows ?? []).filter((r) => r.domain === row.domain);
+  const demandRead = model.demandKnownDomains?.includes(row.domain) ?? false;
 
   return (
     <aside className="cb-dside">
@@ -92,14 +95,14 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
       </div>
       <p className="typo-caption">
         {tx(w.side_crossing_unnamed, {
-          stale: fmt(c.staleVerdicts),
-          projects: fmt(c.projects.length),
+          stale: say(c.staleVerdicts, w.not_measured),
+          projects: fmt(projects.length),
         })}
       </p>
-      {[...c.projects]
+      {[...projects]
         .sort((a, b) => b.staleVerdicts - a.staleVerdicts)
         .map((p) => (
-          <ProjectBar key={p.slug} model={model} slug={p.slug} />
+          <ProjectBar key={p.slug} p={p} maxPairs={maxPairs} />
         ))}
 
       <div className="cb-sect typo-label cb-up">
@@ -156,7 +159,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
         <dt>{w.side_applied_row}</dt>
         <dd>{row.hasAppliedRow === null ? w.side_applied_unknown : row.hasAppliedRow ? w.yes : w.no}</dd>
         <dt>{w.side_in_plan}</dt>
-        <dd>{tx(w.side_plan_position, { n: row.order + 1, total: model.rows.length })}</dd>
+        <dd>{tx(w.side_plan_position, { n: row.order + 1, total: model.rows?.length ?? w.not_measured })}</dd>
       </dl>
 
       <div className="cb-sect typo-label cb-up">
@@ -170,7 +173,7 @@ export function DeepSide({ row, model }: { row: BlueprintRow; model: BlueprintMo
         </dd>
         <dt>{w.side_bundle_points}</dt>
         <dd>
-          {fmt(bundleRows.reduce((a, r) => a + r.points, 0))} / {fmt(model.planPoints)}
+          {fmt(bundleRows.reduce((a, r) => a + r.points, 0))} / {say(model.planPoints, w.not_measured)}
         </dd>
         <dt>{w.side_demand}</dt>
         <dd>

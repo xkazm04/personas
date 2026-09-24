@@ -11,7 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import { CHANNEL_ORDER } from '../model/channels';
 import type { BlueprintModel, BlueprintRow } from '../model/types';
-import { fmt } from '../format';
+import { say } from '../format';
 import { LedgerRow } from '../ledger/LedgerRow';
 import { ENGINE_GLYPH, STATE_GLYPH, stateColour } from '../ledger/vocabulary';
 import { useWords } from '../words';
@@ -45,7 +45,7 @@ function DeepHead({ row, model, onBack }: { row: BlueprintRow; model: BlueprintM
           <b className="typo-data-lg" style={{ color: 'var(--foreground)' }}>
             {row.points}
           </b>{' '}
-          {tx(w.deep_points_rank, { rank: row.rank, total: fmt(model.rows.length) })}
+          {tx(w.deep_points_rank, { rank: row.rank, total: say(model.rows?.length, w.not_measured) })}
         </span>
         <span style={{ color: stateColour(row.state) }}>
           <span className="cb-gl">{STATE_GLYPH[row.state]}</span> {w.state[row.state]}

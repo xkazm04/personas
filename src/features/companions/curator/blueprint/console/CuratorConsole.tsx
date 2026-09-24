@@ -34,23 +34,19 @@ export interface ConsoleProps {
   policy: CuratorPolicy | null;
   refreshing: boolean;
   onRefresh: () => Promise<void>;
-  /**
-   * Whether the console carries the run control.
-   *
-   * It does whenever a projection exists. When none does, the empty state
-   * below carries it instead: with nothing on the page, running the instrument
-   * is the ONE thing to do, and the offer belongs in the block that explains
-   * why the page is empty rather than in a toolbar above it. One control
-   * either way - never two buttons for one act.
-   */
-  run?: boolean;
 }
 
 /**
- * The run control on its own, so the empty page can offer the same act without
- * the lane and the strip around it.
+ * The run control.
+ *
+ * THE PAGE HAS EXACTLY ONE, IN EVERY PHASE, AND IT IS HERE. It used to move:
+ * with a projection the console carried it, and without one a whole-page empty
+ * state did instead, which meant the control the operator is looking for
+ * changed address depending on a read they cannot see. Now the full layout
+ * always draws, so the console always has it - booting, offering and running
+ * alike - and no phase can show the offer twice.
  */
-export function RunInstrument({ refreshing, onRefresh }: { refreshing: boolean; onRefresh: () => Promise<void> }) {
+function RunInstrument({ refreshing, onRefresh }: { refreshing: boolean; onRefresh: () => Promise<void> }) {
   const { w } = useWords();
   return (
     <span className="cb-run">
@@ -76,12 +72,12 @@ export function RunInstrument({ refreshing, onRefresh }: { refreshing: boolean; 
   );
 }
 
-export function CuratorConsole({ loop, policy, refreshing, onRefresh, run = true }: ConsoleProps) {
+export function CuratorConsole({ loop, policy, refreshing, onRefresh }: ConsoleProps) {
   const { w } = useWords();
   return (
     <section className="cb-console" aria-label={w.console.region} data-role="cb-console">
       <div className="cb-console-top">
-        {run && <RunInstrument refreshing={refreshing} onRefresh={onRefresh} />}
+        <RunInstrument refreshing={refreshing} onRefresh={onRefresh} />
         <RuntimeStrip runtime={loop.runtime} policy={policy} />
       </div>
       <RequestLane requests={loop.requests} onCancel={loop.cancel} />

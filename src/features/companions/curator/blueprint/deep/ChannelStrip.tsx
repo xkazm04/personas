@@ -8,7 +8,7 @@
  */
 import { channelColour, CHANNELS, type ChannelId } from '../model/channels';
 import type { BlueprintModel, BlueprintRow } from '../model/types';
-import { fmt } from '../format';
+import { fmt, say } from '../format';
 import { useWords } from '../words';
 
 import { StripDrawing } from './StripDrawing';
@@ -48,15 +48,15 @@ export function ChannelStrip({ channel, row, model }: StripProps) {
     // three different sentences; where the column scores elsewhere, this
     // subject simply does not carry this defect.
     const columnEmpty = model.totals[channel].emptiness;
-    const say =
+    const columnSay =
       columnEmpty === 'unknown-remainder'
         ? tx(w.channel_zero_unknown, {
-            known: model.demandKnownDomains.length,
-            total: model.domains,
-            unknown: model.unknownDemandBundles,
+            known: model.demandKnownDomains?.length ?? w.not_measured,
+            total: model.domains ?? w.not_measured,
+            unknown: model.unknownDemandBundles ?? w.not_measured,
           })
         : columnEmpty === 'unmeasurable-remainder'
-          ? tx(w.channel_zero_unmeasurable, { n: fmt(model.noClockApplications) })
+          ? tx(w.channel_zero_unmeasurable, { n: say(model.noClockApplications, w.not_measured) })
           : columnEmpty === 'pure'
             ? w.channel_zero_pure
             : w.strip_subject_clean;
@@ -68,7 +68,7 @@ export function ChannelStrip({ channel, row, model }: StripProps) {
         tabIndex={0}
         style={style}
         data-cb-tip={
-          unknown ? tx(w.strip_unknown_tip, { domain: row.domain }) : tx(w.strip_measured_tip, { say })
+          unknown ? tx(w.strip_unknown_tip, { domain: row.domain }) : tx(w.strip_measured_tip, { say: columnSay })
         }
       >
         <div className="cb-strip-in">
