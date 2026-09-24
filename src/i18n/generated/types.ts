@@ -23081,6 +23081,18 @@ export type Translations = {
     reload_preview: string;
     preview_path: string;
     preview_frame_title: string;
+    knob_spacing: string;
+    knob_tighter: string;
+    knob_airier: string;
+    knob_corners: string;
+    knob_sharper: string;
+    knob_rounder: string;
+    knob_type: string;
+    knob_smaller: string;
+    knob_bigger: string;
+    knob_vibe: string;
+    knob_calmer: string;
+    knob_bolder: string;
     build_settings: string;
     effort: string;
     effort_hint: string;
