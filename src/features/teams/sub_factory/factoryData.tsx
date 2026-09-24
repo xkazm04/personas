@@ -239,6 +239,73 @@ const FACTORY_KEY = 'tree';
 const factoryPaint = createTtlValueCache<MockProject[]>(30 * 60_000);
 const factoryFresh = createTtlValueCache<true>(60_000);
 
+/** Progress callbacks for a cold load (nothing cached to paint). */
+interface TreeProgress {
+  onSkeleton: (skeletons: MockProject[]) => void;
+  onProject: (assembled: MockProject) => void;
+}
+
+/** The whole KPI tree, assembled project by project; writes both caches.
+ *  Module-level so a prefetch can run it before the provider mounts. */
+async function loadFactoryTree(progress?: TreeProgress): Promise<MockProject[]> {
+  // L1 / L2 first paint only needs id+name+stack. KPIs, measurements, and the
+  // per-project tree used to gate a single setState, so a cover click could
+  // not enter L2 until the last sibling assembled.
+  const projects = await devApi.listProjects();
+  const skeletons: MockProject[] = projects.map((p) => ({ id: p.id, name: p.name, stack: p.tech_stack ?? '', groups: [] }));
+  progress?.onSkeleton(skeletons);
+  const assembledById = new Map<string, MockProject>();
+  // Bounded fan-out: this was a bare Promise.all over every project, which
+  // saturated the IPC channel the Mastermind canvas's first-paint calls also
+  // travel on. Same helper every other factory fan-out uses. Each assembled
+  // project is reported as it lands so L2 for the opened project does not
+  // wait on N, and the fleet-wide listAllKpis dump is skipped.
+  await mapWithConcurrency(projects, PROJECT_FANOUT_CONCURRENCY, async (p) => {
+    try {
+      const [groups, contexts, useCases, kpis] = await Promise.all([
+        devApi.listContextGroups(p.id),
+        devApi.listContexts(p.id),
+        // Placement needs every non-archived use case: a KPI may be scoped to
+        // one that is still awaiting triage.
+        useCaseApi.listUseCases(p.id).catch((err) => { silentCatch('useFactoryData:listUseCases')(err); return [] as DevUseCase[]; }),
+        kpiApi.listKpis(p.id).catch((err) => { silentCatch('useFactoryData:listKpis')(err); return [] as DevKpi[]; }),
+      ]);
+      // Matrix shows MANAGED KPIs only; proposed ones live in the proposals
+      // on-ramp (KpiProposalsPanel) and archived are gone.
+      const pk = kpis.filter((k) => k.status === 'active' || k.status === 'paused');
+      const ids = pk.map((k) => k.id);
+      const measurements: DevKpiMeasurement[] = ids.length ? await kpiApi.listKpiMeasurementsBulk(ids, 20) : [];
+      const seriesByKpi = new Map<string, number[]>();
+      for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
+      for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first -> oldest to newest
+      const assembled = assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
+      assembledById.set(assembled.id, assembled);
+      progress?.onProject(assembled);
+    } catch (err) {
+      silentCatch('useFactoryData:project')(err);
+    }
+  });
+  // A project whose tree failed to assemble keeps its skeleton row.
+  const final = skeletons.map((row) => assembledById.get(row.id) ?? row);
+  factoryPaint.set(FACTORY_KEY, final);
+  factoryFresh.set(FACTORY_KEY, true);
+  return final;
+}
+
+/** A prefetch load in flight; a provider that mounts meanwhile adopts it. */
+let factoryInflight: Promise<MockProject[] | null> | null = null;
+
+/** Warm the KPI tree ahead of navigation (see prefetchMastermind). No-op when
+ *  a fresh tree is cached or a prefetch is running; never rejects. */
+export function prefetchFactoryData(): Promise<unknown> {
+  if (factoryFresh.get(FACTORY_KEY) && factoryPaint.get(FACTORY_KEY)) return Promise.resolve();
+  if (factoryInflight) return factoryInflight;
+  factoryInflight = loadFactoryTree()
+    .catch((err) => { silentCatch('useFactoryData:prefetch')(err); return null; })
+    .finally(() => { factoryInflight = null; });
+  return factoryInflight;
+}
+
 export function FactoryDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<{ projects: MockProject[]; loading: boolean; error: string | null }>(() => {
     const painted = factoryPaint.get(FACTORY_KEY);
@@ -249,75 +316,31 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (nonce === 0 && factoryFresh.get(FACTORY_KEY) && factoryPaint.get(FACTORY_KEY)) return;
+    let cancelled = false;
+    // A prefetch (nav hover / section idle) is already loading the tree: adopt
+    // its result instead of a second fan-out.
+    const pending = nonce === 0 ? factoryInflight : null;
+    if (pending) {
+      void pending.then((final) => { if (!cancelled && final) setData({ projects: final, loading: false, error: null }); });
+      return () => { cancelled = true; };
+    }
     // Revalidating behind cached data: keep what is on screen and publish once
     // at the end. With nothing cached, publish per project as before so the
     // Factory's L2 for the opened project does not wait on all N.
     const revalidating = factoryPaint.get(FACTORY_KEY) !== undefined;
-    let cancelled = false;
-    (async () => {
-      try {
-        // L1 / L2 first paint only needs id+name+stack. KPIs, measurements,
-        // and the per-project 3-IPC tree used to gate a single setState, so a
-        // cover click could not enter L2 until the last sibling assembled.
-        const projects = await devApi.listProjects();
+    loadFactoryTree(revalidating ? undefined : {
+      onSkeleton: (skeletons) => { if (!cancelled) setData({ projects: skeletons, loading: true, error: null }); },
+      onProject: (assembled) => {
         if (cancelled) return;
-        const skeletons: MockProject[] = projects.map((p) => ({
-          id: p.id,
-          name: p.name,
-          stack: p.tech_stack ?? '',
-          groups: [],
-        }));
-        const assembledById = new Map<string, MockProject>();
-        if (!revalidating) setData({ projects: skeletons, loading: true, error: null });
-
-        // Bounded fan-out: this was a bare Promise.all over every project — 3N
-        // IPC calls issued simultaneously (groups + contexts + use cases). On
-        // the Mastermind canvas, which mounts this provider alongside the
-        // passport build, that saturated the IPC channel the first-paint calls
-        // also travel on. Same helper every other factory fan-out uses.
-        // Publish each assembled project as it lands so L2 for the opened
-        // project does not wait on N, and skip the fleet-wide listAllKpis dump.
-        await mapWithConcurrency(projects, PROJECT_FANOUT_CONCURRENCY, async (p) => {
-          try {
-            const [groups, contexts, useCases, kpis] = await Promise.all([
-              devApi.listContextGroups(p.id),
-              devApi.listContexts(p.id),
-              // Placement needs every non-archived use case: a KPI may be
-              // scoped to one that is still awaiting triage.
-              useCaseApi.listUseCases(p.id).catch((err) => { silentCatch('useFactoryData:listUseCases')(err); return [] as DevUseCase[]; }),
-              kpiApi.listKpis(p.id).catch((err) => { silentCatch('useFactoryData:listKpis')(err); return [] as DevKpi[]; }),
-            ]);
-            // Matrix shows MANAGED KPIs only; proposed ones live in the
-            // proposals on-ramp (KpiProposalsPanel) and archived are gone.
-            const pk = kpis.filter((k) => k.status === 'active' || k.status === 'paused');
-            const ids = pk.map((k) => k.id);
-            const measurements: DevKpiMeasurement[] = ids.length ? await kpiApi.listKpiMeasurementsBulk(ids, 20) : [];
-            const seriesByKpi = new Map<string, number[]>();
-            for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
-            for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first → oldest→newest
-            const assembled = assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
-            assembledById.set(assembled.id, assembled);
-            if (cancelled || revalidating) return;
-            setData((prev) => ({
-              ...prev,
-              projects: prev.projects.map((row) => (row.id === assembled.id ? assembled : row)),
-            }));
-          } catch (err) {
-            silentCatch('useFactoryData:project')(err);
-          }
-        });
-        if (cancelled) return;
-        // A project whose tree failed to assemble keeps its skeleton row.
-        const final = skeletons.map((row) => assembledById.get(row.id) ?? row);
-        factoryPaint.set(FACTORY_KEY, final);
-        factoryFresh.set(FACTORY_KEY, true);
-        setData({ projects: final, loading: false, error: null });
-      } catch (err) {
+        setData((prev) => ({ ...prev, projects: prev.projects.map((row) => (row.id === assembled.id ? assembled : row)) }));
+      },
+    })
+      .then((final) => { if (!cancelled) setData({ projects: final, loading: false, error: null }); })
+      .catch((err) => {
         // A failed revalidation keeps the cached rows on screen; only a cold
         // load with nothing to show reports an empty tree.
         if (!cancelled) setData((prev) => ({ projects: revalidating ? prev.projects : [], loading: false, error: err instanceof Error ? err.message : String(err) }));
-      }
-    })();
+      });
     return () => { cancelled = true; };
   }, [nonce]);
 

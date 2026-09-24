@@ -9,7 +9,6 @@ import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
-import { projectWallSummary } from '@/api/devTools/milestones';
 import { spawnSession } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
@@ -18,7 +17,6 @@ import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
-import { buildCoverRoadmap } from '@/features/teams/sub_factory/passport/CoverRoadmap';
 import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { ImproveSurface } from '@/features/teams/sub_factory/passport/improve/ImproveSurface';
@@ -73,6 +71,7 @@ import type { CanvasMode, DimNode, FleetNode, IslandShip, RunnerNode, Scene } fr
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { ViewPanel, ViewSwitcher, type MastermindView } from './lib/ViewSwitcher';
 import { useSceneSettle } from './lib/useSceneSettle';
+import { cachedShipSummaries, loadShipSummaries } from './lib/shipSummaries';
 import { lazyRetry } from '@/lib/lazyRetry';
 
 // Soundings, the next-gen chart (docs/design/mastermind-soundings.md), in its
@@ -266,48 +265,20 @@ function MastermindInner() {
     void loadGoals({ projectIds: ids });
   }, [sceneProjectIdsKey, loadScans, loadGoals]);
 
-  // Ship-milestone chips: ONE batched wall-summary IPC for every real project,
-  // reduced to the banner's next/shipped/late shape via the same roadmap
-  // builder the passport wall uses (the two surfaces must agree on "next").
-  const [shipByProject, setShipByProject] = useState<Map<string, IslandShip>>(new Map());
+  // Ship-milestone chips (lib/shipSummaries: one batched IPC, cached so a nav
+  // prefetch fills it before this page mounts).
+  const shipIds = useMemo(() => passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-')), [passports]);
+  const [shipByProject, setShipByProject] = useState<Map<string, IslandShip>>(() => cachedShipSummaries(shipIds) ?? new Map());
   // Whether the ship summaries have answered at least once (settle gate input).
-  const [shipAnswered, setShipAnswered] = useState(false);
+  const [shipAnswered, setShipAnswered] = useState(() => cachedShipSummaries(shipIds) !== undefined);
   useEffect(() => {
-    const ids = passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-'));
-    if (ids.length === 0) return;
+    if (shipIds.length === 0) return;
     let live = true;
-    projectWallSummary(ids)
-      .then((rows) => {
-        if (!live) return;
-        const m = new Map<string, IslandShip>();
-        for (const r of rows) {
-          const vm = buildCoverRoadmap(r.milestones);
-          if (vm.steps.length === 0) continue;
-          m.set(r.projectId, {
-            next: vm.next?.name ?? null,
-            nextStatus: vm.next?.status === 'active' ? 'active' : vm.next ? 'planned' : null,
-            shipped: vm.shipped,
-            total: vm.steps.length,
-            targetDate: vm.next?.targetDate ?? null,
-            forecastDate: vm.forecast?.date ?? null,
-            late: vm.forecast?.late ?? false,
-            // Plan order with the cut one first — the same rule `buildCoverRoadmap`
-            // uses to pick `next`, extended to the two behind it. Capped at three
-            // because this renders inside an island: a fourth row costs more
-            // vertical space than it returns at any zoom a human reads at.
-            upcoming: vm.steps
-              .filter((st) => st.status !== 'shipped')
-              .sort((a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1))
-              .slice(0, 3)
-              .map((st) => ({ name: st.name, status: st.status === 'active' ? 'active' as const : 'planned' as const })),
-          });
-        }
-        setShipByProject(m);
-        setShipAnswered(true);
-      })
+    loadShipSummaries(shipIds)
+      .then((m) => { if (live) { setShipByProject(m); setShipAnswered(true); } })
       .catch((err) => { silentCatch('mastermind projectWallSummary')(err); if (live) setShipAnswered(true); });
     return () => { live = false; };
-  }, [passports]);
+  }, [shipIds]);
 
   // Vault credentials — needed to resolve each project's bound monitoring
   // connector (Sentry) for live error counts. One fetch; refreshed with reload.
