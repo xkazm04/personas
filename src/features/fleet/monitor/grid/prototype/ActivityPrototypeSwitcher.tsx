@@ -6,16 +6,16 @@ import { useState, type ComponentType } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 import type { ActivitySurfaceProps } from './useActivitySurface';
 import { ActivityInstrument } from './instrument/ActivityInstrument';
-import { ActivityAtelier } from './atelier/ActivityAtelier';
-import { ActivityDepartures } from './departures/ActivityDepartures';
+import { ActivityEntryD } from './entry-d/ActivityEntryD';
+import { ActivityEntryE } from './entry-e/ActivityEntryE';
 
-type Pick = 'baseline' | 'instrument' | 'atelier' | 'departures';
+type Pick = 'baseline' | 'instrument' | 'entry-d' | 'entry-e';
 
 const KEY = 'personas.prototype.activity-variant';
 function read(): Pick {
   try {
     const v = localStorage.getItem(KEY);
-    if (v === 'baseline' || v === 'instrument' || v === 'atelier' || v === 'departures') return v;
+    if (v === 'baseline' || v === 'instrument' || v === 'entry-d' || v === 'entry-e') return v;
   } catch (err) { silentCatch('fleet/prototype:readVariant')(err); }
   return 'baseline';
 }
@@ -23,8 +23,8 @@ function read(): Pick {
 const TABS: Array<{ id: Pick; label: string; hint: string }> = [
   { id: 'baseline', label: 'Baseline', hint: 'Current production surface' },
   { id: 'instrument', label: 'A · Instrument', hint: 'Avionics HUD: luminous spines, mono data, gauges' },
-  { id: 'atelier', label: 'B · Atelier', hint: 'Soft material: avatar-first, words over glyphs' },
-  { id: 'departures', label: 'C · Departures', hint: 'Ruled ledger: rows not boxes, tabular board' },
+  { id: 'entry-d', label: 'D', hint: 'Contest entry D' },
+  { id: 'entry-e', label: 'E', hint: 'Contest entry E' },
 ];
 
 export function ActivityPrototypeSwitcher({
@@ -36,8 +36,8 @@ export function ActivityPrototypeSwitcher({
     try { localStorage.setItem(KEY, p); } catch (err) { silentCatch('fleet/prototype:writeVariant')(err); }
   };
   const Body = pick === 'instrument' ? ActivityInstrument
-    : pick === 'atelier' ? ActivityAtelier
-      : pick === 'departures' ? ActivityDepartures
+    : pick === 'entry-d' ? ActivityEntryD
+      : pick === 'entry-e' ? ActivityEntryE
         : Baseline;
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5">
