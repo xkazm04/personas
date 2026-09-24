@@ -2729,12 +2729,12 @@ pub async fn promote_build_draft_inner(
 /// emits nothing, which is what lets [`preview_promote`] run it before the
 /// click and refuse exactly what promote would refuse.
 async fn prepare_promote(
-    pool: &crate::db::DbPool,
+    db: &crate::db::DbPool,
     session_id: &str,
     persona_id: &str,
     excluded_use_case_ids: Vec<String>,
 ) -> Result<PreparedPromote, AppError> {
-    let mut session = build_session_repo::get_by_id(pool, session_id)?
+    let mut session = build_session_repo::get_by_id(db, session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
     session
@@ -2750,7 +2750,7 @@ async fn prepare_promote(
     if session.agent_ir.is_none() {
         for attempt in 1..=20u32 {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-            match build_session_repo::get_by_id(pool, session_id)? {
+            match build_session_repo::get_by_id(db, session_id)? {
                 Some(refreshed) if refreshed.agent_ir.is_some() => {
                     tracing::info!(
                         session_id = %session_id,
@@ -2797,7 +2797,7 @@ async fn prepare_promote(
             // 2026-05-09 — Stage B Phase 2: hydrate recipe_refs before the
             // existing flatten step. No-op for sessions whose stored agent_ir
             // is already inline (build-from-scratch, or pre-Phase-2 templates).
-            let pool_for_lookup = pool.clone();
+            let pool_for_lookup = db.clone();
             let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, AppError> {
                 crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
             };
@@ -2875,7 +2875,7 @@ async fn prepare_promote(
     // hygiene notes, so a hire that came back narrower than the design pass
     // drew it says so instead of just looking small.
     let kp_surface_trim =
-        crate::engine::build_session::apply_kp_tool_surface(pool, persona_id, &mut ir, "promote");
+        crate::engine::build_session::apply_kp_tool_surface(db, persona_id, &mut ir, "promote");
     let kp_surface_notes: Vec<String> = kp_surface_trim
         .as_ref()
         .map(|trim| trim.notes())
@@ -3017,8 +3017,8 @@ async fn prepare_promote(
     }
 
     let use_cases = build_structured_use_cases(&ir);
-    let all_connectors = connector_repo::get_all(pool).unwrap_or_default();
-    let (tool_actions, tool_names) = prepare_tool_actions(&ir, pool, &all_connectors);
+    let all_connectors = connector_repo::get_all(db).unwrap_or_default();
+    let (tool_actions, tool_names) = prepare_tool_actions(&ir, db, &all_connectors);
     validate_triggers(&ir)?;
     let notification_channels = prepare_notification_channels(&ir)?;
     // Phase 1 (build-readiness redesign) — bind every Credential-class
@@ -3034,7 +3034,7 @@ async fn prepare_promote(
             .iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
-        match pool.get() {
+        match db.get() {
             Ok(conn) => {
                 super::connector_readiness::resolve_credential_links(&conn, connector_names.iter())
             }
@@ -3049,24 +3049,22 @@ async fn prepare_promote(
     // outbound KP report. Read it off the pre-promote row, re-inject it into
     // the fresh envelope, and keep it for the post-commit `activated` push.
     let kp_link: Option<(crate::db::models::KpLink, String)> =
-        persona_repo::get_by_id(pool, persona_id)
-            .ok()
-            .and_then(|p| {
-                let promoted_name = ir.name.clone().unwrap_or_else(|| p.name.clone());
-                p.parsed_design_context()
-                    .kp_link
-                    .map(|link| (link, promoted_name))
-            });
+        persona_repo::get_by_id(db, persona_id).ok().and_then(|p| {
+            let promoted_name = ir.name.clone().unwrap_or_else(|| p.name.clone());
+            p.parsed_design_context()
+                .kp_link
+                .map(|link| (link, promoted_name))
+        });
     // Same hazard, same fix, for the App master hire (P4): the binding to the
     // project, the charter row pointer (`mandate_key` carries the
     // persona_responsibilities row id), the seeded KPI ids and the UNSUPPORTED
     // cadence kinds all live on `design_context.appMaster`, and a rebuild would
     // drop them — leaving a persona that owns an app with no record that it does.
     let app_master_link: Option<crate::db::models::AppMasterLink> =
-        persona_repo::get_by_id(pool, persona_id)
+        persona_repo::get_by_id(db, persona_id)
             .ok()
             .and_then(|p| p.parsed_design_context().app_master);
-    let dev_project_id: Option<String> = persona_repo::get_by_id(pool, persona_id)
+    let dev_project_id: Option<String> = persona_repo::get_by_id(db, persona_id)
         .ok()
         .and_then(|p| p.parsed_design_context().dev_project_id);
     let design_context_str = {
@@ -3114,7 +3112,7 @@ async fn prepare_promote(
 /// the best-effort post-commit stamps. Takes only what [`prepare_promote`]
 /// decided, so every refusal promote can make happens before this runs.
 fn commit_promote(
-    pool: &crate::db::DbPool,
+    db: &crate::db::DbPool,
     session_id: &str,
     persona_id: &str,
     prepared: PreparedPromote,
@@ -3149,7 +3147,7 @@ fn commit_promote(
     // failed promote leaves no charter behind. Superseded charters from an
     // earlier promote of the same persona are retired only AFTER commit.
     let minted_charters = super::template_adopt::mint_charters_from_use_cases(
-        pool,
+        db,
         persona_id,
         &use_cases.structured,
         adoption_answers.as_ref(),
@@ -3165,7 +3163,7 @@ fn commit_promote(
     // against it), commits on Ok and rolls back on Err. This command only
     // supplies the writes, and holds no pooled connection of its own — which
     // matters because the post-commit section below asks the pool for more.
-    let tx_outcome = build_session_repo::with_promote_tx(pool, |tx| {
+    let tx_outcome = build_session_repo::with_promote_tx(db, |tx| {
         let now = chrono::Utc::now().to_rfc3339();
 
         let tools_created = create_tools_in_tx(tx, persona_id, &tool_actions, &now)?;
@@ -3229,7 +3227,7 @@ fn commit_promote(
         Ok(v) => v,
         Err(e) => {
             // The tx rolled back; take the pre-tx charter mint with it.
-            super::template_adopt::delete_charter_rows(pool, &charter_ids);
+            super::template_adopt::delete_charter_rows(db, &charter_ids);
             return Err(e);
         }
     };
@@ -3239,7 +3237,7 @@ fn commit_promote(
     // superseded by this mint — retire them (hand-authored charters carry no
     // `spec.migrated_from_use_case_id` marker and are never touched).
     super::template_adopt::retire_use_case_born_charters(
-        pool,
+        db,
         persona_id,
         &charter_ids.iter().cloned().collect(),
     );
@@ -3258,7 +3256,7 @@ fn commit_promote(
     // re-promote must NEVER overwrite it — the guard makes the stamp a no-op
     // on any row that already carries one.
     if let Some(core) = &promoted_core {
-        if let Ok(conn) = pool.get() {
+        if let Ok(conn) = db.get() {
             match conn.execute(
                 "UPDATE personas SET core_profile = ?1, updated_at = ?2 \
                  WHERE id = ?3 AND (core_profile IS NULL OR core_profile = '')",
@@ -3288,9 +3286,9 @@ fn commit_promote(
     // setup`); the connector-readiness resolver then verifies each flagged
     // connector against current state — a vault credential, a Dev Tools
     // project, or an Obsidian vault, depending on the connector's class.
-    let runtime_missing = connectors_missing_setup(pool, &connectors_needing_setup);
+    let runtime_missing = connectors_missing_setup(db, &connectors_needing_setup);
     if !runtime_missing.is_empty() {
-        if let Ok(conn) = pool.get() {
+        if let Ok(conn) = db.get() {
             let _ = conn.execute(
                 "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
                 rusqlite::params![
@@ -3316,7 +3314,7 @@ fn commit_promote(
         let setup = promote_setup(&runtime_missing, &ir, &design_hygiene, &kp_surface_notes);
         match serde_json::to_string(&setup) {
             Ok(json) => {
-                if let Ok(conn) = pool.get() {
+                if let Ok(conn) = db.get() {
                     let _ = conn.execute(
                         "UPDATE personas SET setup_detail = ?1, updated_at = ?2 WHERE id = ?3",
                         rusqlite::params![json, chrono::Utc::now().to_rfc3339(), persona_id],
@@ -3330,7 +3328,7 @@ fn commit_promote(
     }
 
     // Post-transaction: best-effort scheduler updates
-    update_trigger_schedules(pool, &created_trigger_ids);
+    update_trigger_schedules(db, &created_trigger_ids);
 
     // Translate any `adoption_questions[].maps_to == persona.parameters[KEY]`
     // declarations on the original design payload into a `PersonaParameter[]`
@@ -3351,7 +3349,7 @@ fn commit_promote(
         let recipe_param_values =
             crate::engine::recipe_parameters::to_parameter_values(&recipe_capability_params);
         if let Err(e) = super::template_adopt::populate_persona_parameters_from_design(
-            pool,
+            db,
             persona_id,
             &design_json,
             answers_map.as_ref(),
@@ -3370,7 +3368,7 @@ fn commit_promote(
     // Best-effort: a failure here doesn't unwind the promote (the webhook
     // trigger still works on `POST /webhook/<id>` directly; the user can
     // attach a smee binding manually via SmeeRelayTab if this fails).
-    let smee_relays_created = auto_create_smee_relays(pool, persona_id, &ir);
+    let smee_relays_created = auto_create_smee_relays(db, persona_id, &ir);
     if smee_relays_created > 0 {
         tracing::info!(
             persona_id = %persona_id,
@@ -4001,35 +3999,45 @@ mod tests {
         session_id: &str,
         persona_id: &str,
         agent_ir: &serde_json::Value,
-    ) {
-        let conn = pool.get().unwrap();
+    ) -> Result<(), AppError> {
+        let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "INSERT INTO build_sessions (id, persona_id, phase, resolved_cells, intent, agent_ir, created_at, updated_at)
              VALUES (?1, ?2, 'test_complete', '{}', 'preview test', ?3, ?4, ?4)",
             rusqlite::params![session_id, persona_id, agent_ir.to_string(), now],
-        )
-        .unwrap();
+        )?;
+        Ok(())
     }
 
-    fn count_for_persona(pool: &crate::db::DbPool, table: &str, persona_id: &str) -> i64 {
-        let conn = pool.get().unwrap();
-        conn.query_row(
+    /// One-column read for the preview assertions.
+    fn read_one<T: rusqlite::types::FromSql>(
+        pool: &crate::db::DbPool,
+        sql: &str,
+        params: impl rusqlite::Params,
+    ) -> Result<T, AppError> {
+        let conn = pool.get()?;
+        Ok(conn.query_row(sql, params, |r| r.get(0))?)
+    }
+
+    fn count_for_persona(
+        pool: &crate::db::DbPool,
+        table: &str,
+        persona_id: &str,
+    ) -> Result<i64, AppError> {
+        read_one(
+            pool,
             &format!("SELECT COUNT(*) FROM {table} WHERE persona_id = ?1"),
             rusqlite::params![persona_id],
-            |r| r.get(0),
         )
-        .unwrap()
     }
 
-    fn session_phase(pool: &crate::db::DbPool, session_id: &str) -> String {
-        let conn = pool.get().unwrap();
-        conn.query_row(
+    fn session_phase(pool: &crate::db::DbPool, session_id: &str) -> Result<String, AppError> {
+        read_one(
+            pool,
             "SELECT phase FROM build_sessions WHERE id = ?1",
             rusqlite::params![session_id],
-            |r| r.get(0),
         )
-        .unwrap()
     }
 
     /// A tested draft: capabilities with one trigger each, and a `gmail`
@@ -4057,11 +4065,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn preview_promote_reports_arm_time_and_blockers_and_writes_nothing() {
+    async fn preview_promote_reports_arm_time_and_blockers_and_writes_nothing(
+    ) -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
         seed_test_persona(&pool, "p_prev");
         let ir = draft_ir(serde_json::json!([daily_schedule("daily")]), &["uc_a"]);
-        seed_test_complete_session(&pool, "s_prev", "p_prev", &ir);
+        seed_test_complete_session(&pool, "s_prev", "p_prev", &ir)?;
 
         let preview = preview_promote(&pool, "s_prev", "p_prev", vec![]).await;
 
@@ -4076,26 +4085,23 @@ mod tests {
         assert_eq!(setup.blockers[0].connector, "gmail");
 
         // Read-only: nothing promote writes exists after a preview.
-        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_prev"), 0);
+        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_prev")?, 0);
         assert_eq!(
-            count_for_persona(&pool, "persona_responsibilities", "p_prev"),
+            count_for_persona(&pool, "persona_responsibilities", "p_prev")?,
             0
         );
-        assert_eq!(session_phase(&pool, "s_prev"), "test_complete");
-        let setup_detail: Option<String> = pool
-            .get()
-            .unwrap()
-            .query_row(
-                "SELECT setup_detail FROM personas WHERE id = 'p_prev'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
+        assert_eq!(session_phase(&pool, "s_prev")?, "test_complete");
+        let setup_detail: Option<String> = read_one(
+            &pool,
+            "SELECT setup_detail FROM personas WHERE id = 'p_prev'",
+            [],
+        )?;
         assert_eq!(setup_detail, None);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn preview_promote_refuses_what_promote_refuses() {
+    async fn preview_promote_refuses_what_promote_refuses() -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
         seed_test_persona(&pool, "p_ssrf");
         let ir = draft_ir(
@@ -4106,7 +4112,7 @@ mod tests {
             }]),
             &["uc_a"],
         );
-        seed_test_complete_session(&pool, "s_ssrf", "p_ssrf", &ir);
+        seed_test_complete_session(&pool, "s_ssrf", "p_ssrf", &ir)?;
 
         let preview = preview_promote(&pool, "s_ssrf", "p_ssrf", vec![]).await;
         assert!(!preview.promotable);
@@ -4128,18 +4134,19 @@ mod tests {
             PromotePreview::refused(&promote_err).refusal,
             preview.refusal
         );
-        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_ssrf"), 0);
+        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_ssrf")?, 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn preview_promote_honours_capability_exclusions() {
+    async fn preview_promote_honours_capability_exclusions() -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
         seed_test_persona(&pool, "p_excl");
         let ir = draft_ir(
             serde_json::json!([daily_schedule("a daily"), daily_schedule("b daily")]),
             &["uc_a", "uc_b"],
         );
-        seed_test_complete_session(&pool, "s_excl", "p_excl", &ir);
+        seed_test_complete_session(&pool, "s_excl", "p_excl", &ir)?;
 
         let all = preview_promote(&pool, "s_excl", "p_excl", vec![]).await;
         assert_eq!(all.next_fires.len(), 2);
@@ -4147,16 +4154,18 @@ mod tests {
         assert!(kept.promotable, "refusal: {:?}", kept.refusal);
         assert_eq!(kept.next_fires.len(), 1);
         assert_eq!(kept.next_fires[0].description.as_deref(), Some("a daily"));
+        Ok(())
     }
 
     /// Guard: the promote write half, fed by the same `prepare_promote`, still
     /// arms the trigger and writes the same `setup_detail` the preview showed.
     #[tokio::test]
-    async fn preview_promote_guard_promote_arms_and_writes_the_previewed_setup() {
+    async fn preview_promote_guard_promote_arms_and_writes_the_previewed_setup(
+    ) -> Result<(), AppError> {
         let pool = crate::db::init_test_db().unwrap();
         seed_test_persona(&pool, "p_guard");
         let ir = draft_ir(serde_json::json!([daily_schedule("daily")]), &["uc_a"]);
-        seed_test_complete_session(&pool, "s_guard", "p_guard", &ir);
+        seed_test_complete_session(&pool, "s_guard", "p_guard", &ir)?;
 
         let preview = preview_promote(&pool, "s_guard", "p_guard", vec![]).await;
         let prepared = prepare_promote(&pool, "s_guard", "p_guard", vec![])
@@ -4165,29 +4174,30 @@ mod tests {
         let committed = commit_promote(&pool, "s_guard", "p_guard", prepared).expect("commit");
         assert_eq!(committed.result["triggers_created"], 1);
 
-        let conn = pool.get().unwrap();
-        let next_at: Option<String> = conn
-            .query_row(
-                "SELECT next_trigger_at FROM persona_triggers
-                 WHERE persona_id = 'p_guard' AND trigger_type = 'schedule'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
+        let next_at: Option<String> = read_one(
+            &pool,
+            "SELECT next_trigger_at FROM persona_triggers
+             WHERE persona_id = 'p_guard' AND trigger_type = 'schedule'",
+            [],
+        )?;
         assert!(next_at.is_some(), "the promoted schedule is armed");
-        let (setup_detail, setup_status): (Option<String>, String) = conn
-            .query_row(
-                "SELECT setup_detail, setup_status FROM personas WHERE id = 'p_guard'",
-                [],
-                |r| Ok((r.get(0)?, r.get(1)?)),
-            )
-            .unwrap();
+        let setup_status: String = read_one(
+            &pool,
+            "SELECT setup_status FROM personas WHERE id = 'p_guard'",
+            [],
+        )?;
+        let setup_detail: Option<String> = read_one(
+            &pool,
+            "SELECT setup_detail FROM personas WHERE id = 'p_guard'",
+            [],
+        )?;
         assert_eq!(setup_status, "needs_credentials");
         let written: serde_json::Value =
             serde_json::from_str(&setup_detail.expect("setup_detail written")).unwrap();
         let previewed = serde_json::to_value(preview.setup.expect("preview setup")).unwrap();
         assert_eq!(written, previewed, "promote wrote what the preview showed");
-        assert_eq!(session_phase(&pool, "s_guard"), "promoted");
+        assert_eq!(session_phase(&pool, "s_guard")?, "promoted");
+        Ok(())
     }
 }
 // touch 1777378957
