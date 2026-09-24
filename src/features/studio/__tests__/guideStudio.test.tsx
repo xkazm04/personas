@@ -30,6 +30,7 @@ vi.mock('../StudioVisionStart', () => ({ default: () => <div data-testid="vision
 
 const { useStudioStore } = await import('../studioStore');
 const { MOCK_PHASES } = await import('../studioBuildModel');
+const { GUIDE_TOOLS } = await import('../guide/guideModel');
 const GuideStudio = (await import('../guide/GuideStudio')).default;
 
 type RT = ReturnType<typeof useStudioStore.getState>['runtimes'][string];
@@ -263,6 +264,6 @@ describe('Guide layout', () => {
     expect(screen.getByText('card_devices')).toBeTruthy();
     fireEvent.keyDown(window, { key: 'o' });
     expect(screen.getByRole('menu')).toBeTruthy();
-    expect(screen.getAllByRole('menuitem')).toHaveLength(7);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(GUIDE_TOOLS.length);
   });
 });

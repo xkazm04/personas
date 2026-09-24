@@ -14,11 +14,10 @@ use super::transcript::{clear_claude_session_id, read_claude_session_id};
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
-/// Concise coding-agent system prompt for a web-build session. Kept lean for
-/// v0 — the full web-build doctrine + Vision/checklist machinery land in P3.
 /// The full web-build doctrine, embedded so a build session carries the whole
-/// playbook (P3). Cost is real (~12KB/turn); a later pass can switch to
-/// retrieval, but full injection keeps fidelity to the doctrine for now.
+/// playbook (P3). Cost is real: about 22 KB a turn (measured 2026-09-24), which
+/// is why it sits in the prompt's fixed head (see [`build_system_prompt`]). A
+/// later pass can switch to retrieval; full injection keeps fidelity for now.
 const WEB_BUILD_DOCTRINE: &str =
     include_str!("../../../../docs/concepts/web-build-best-practices.md");
 
@@ -69,17 +68,36 @@ Before marking a phase done, go through the ACTUAL app, not your memory of it, a
 - The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
 - Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
 
-pub(super) fn build_system_prompt(project_path: &std::path::Path, style: Option<&str>) -> String {
-    let base = format!(
-        "You are Athena's web-build engine — a focused coding agent working inside the local \
-web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
-already running that hot-reloads on every file save, so the user sees your changes \
-immediately in an embedded preview. Follow your web-build doctrine below for planning and \
-quality.\n\n\
+/// The part of the build prompt that is the same for every project and every
+/// turn: the engine's role, the doctrine and the planning rules. It comes
+/// first and carries nothing per-project, so the whole ~27 KB head is one
+/// byte-identical prefix a prompt cache can reuse. The project path and the
+/// voice go after it, in the tail.
+static STATIC_HEAD: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    format!(
+        "You are Athena's web-build engine — a focused coding agent working inside a local \
+web project (its folder is named at the end of this prompt). It is a Next.js + TypeScript + \
+Tailwind app with a live dev server already running that hot-reloads on every file save, so \
+the user sees your changes immediately in an embedded preview. Follow your web-build doctrine \
+below for planning and quality.\n\n\
 ===== WEB-BUILD DOCTRINE =====\n{doctrine}\n===== END DOCTRINE =====\n{instruction}",
-        path = project_path.display(),
         doctrine = WEB_BUILD_DOCTRINE,
         instruction = BUILD_PLAN_INSTRUCTION,
+    )
+});
+
+/// Short, stable fingerprint of the prompt head, so a trace can show that two
+/// turns really sent the same prefix (or that a deploy changed it).
+fn head_digest() -> String {
+    use sha2::{Digest, Sha256};
+    let hex = format!("{:x}", Sha256::digest(STATIC_HEAD.as_bytes()));
+    hex[..12].to_string()
+}
+
+pub(super) fn build_system_prompt(project_path: &std::path::Path, style: Option<&str>) -> String {
+    let project = format!(
+        "\n\n# This project\nYou are working in the web project at {}.",
+        project_path.display()
     );
     // Optional user-chosen voice (the C4 style picker). Balanced / None = default.
     let voice = match style {
@@ -87,7 +105,7 @@ quality.\n\n\
         Some("teaching") => "\n\n# Voice\nBriefly explain your key choices in plain language as you go, so a non-technical user learns what's happening — keep it skimmable, never a lecture.",
         _ => "",
     };
-    format!("{base}{voice}")
+    format!("{}{project}{voice}", STATIC_HEAD.as_str())
 }
 
 /// Run one build-session turn: a project-rooted Claude Code turn that edits the
@@ -137,6 +155,13 @@ pub async fn run_build_turn(
     let _turn_guard = BuildTurnGuard(session_id.clone());
     let claude_session_id = read_claude_session_id(user_db, &session_id)?;
     let system_prompt = build_system_prompt(project_path, style);
+    tracing::debug!(
+        project_id,
+        prompt_bytes = system_prompt.len(),
+        head_bytes = STATIC_HEAD.len(),
+        head_digest = %head_digest(),
+        "webbuild build-turn system prompt"
+    );
 
     let text = match timeout(
         TURN_TIMEOUT,
@@ -204,4 +229,65 @@ pub async fn run_build_turn(
         area,
         selector,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{build_system_prompt, BUILD_PLAN_INSTRUCTION, STATIC_HEAD};
+    use crate::webbuild::plan::extract_build_turn;
+
+    /// The example line the instruction shows the model for `marker`.
+    fn example(marker: &str) -> &'static str {
+        BUILD_PLAN_INSTRUCTION
+            .lines()
+            .map(str::trim)
+            .find(|l| l.starts_with(marker))
+            .unwrap_or_else(|| panic!("the build instruction no longer shows a {marker} example"))
+    }
+
+    // The instruction teaches the model the marker format by example, and
+    // plan.rs parses what comes back. Nothing tied the two together: a reworded
+    // example (a renamed key, a changed shape) would ship green and every real
+    // reply would lose its plan or its question. Parse the instruction's own
+    // examples with the real parser.
+    #[test]
+    fn the_instruction_examples_parse_with_the_real_parser() {
+        let reply = format!(
+            "Set up the foundation.\n{}\n{}",
+            example("BUILD_PLAN:"),
+            example("NEEDS_INPUT:")
+        );
+        let (text, phases, question, options, _, _) = extract_build_turn(&reply);
+        let phases = phases.expect("the BUILD_PLAN example parses to phases");
+        assert_eq!(phases.len(), 2);
+        assert_eq!(phases[0].title, "Vision");
+        assert!(
+            question.is_some_and(|q| !q.is_empty()),
+            "the NEEDS_INPUT example parses to a question"
+        );
+        assert_eq!(
+            options.len(),
+            2,
+            "the NEEDS_INPUT example parses to its options"
+        );
+        assert_eq!(
+            text.trim(),
+            "Set up the foundation.",
+            "both markers are stripped from the reply"
+        );
+    }
+
+    // The prompt head is the long part (doctrine + rules) and must be the same
+    // bytes for every project, or no turn can reuse a cached prefix: it used to
+    // open with the project's path, so each project began with a different
+    // first line.
+    #[test]
+    fn every_project_shares_the_same_prompt_head() {
+        let a = build_system_prompt(std::path::Path::new("C:/sites/bakery"), None);
+        let b = build_system_prompt(std::path::Path::new("C:/sites/florist"), Some("concise"));
+        assert!(a.starts_with(STATIC_HEAD.as_str()) && b.starts_with(STATIC_HEAD.as_str()));
+        assert!(!STATIC_HEAD.contains("bakery"));
+        assert!(a.ends_with("You are working in the web project at C:/sites/bakery."));
+        assert!(STATIC_HEAD.len() > 20_000, "the doctrine is in the head");
+    }
 }

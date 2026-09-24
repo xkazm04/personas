@@ -28,6 +28,10 @@ pub const MAX_REGIONS: usize = 6;
 pub const MAX_GOALS: usize = 8;
 pub const MAX_QUESTIONS: usize = 3;
 pub const MAX_OPTIONS: usize = 4;
+/// The sketch runs on the micro tier and needs the gist, not a pasted spec: a
+/// vision longer than this is cut before it reaches the prompt (the full text
+/// still seeds the build turn).
+pub const MAX_VISION_CHARS: usize = 4_000;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
 #[ts(export)]
@@ -104,7 +108,7 @@ Rules:
 
 Vision:
 {vision}"#,
-        vision = vision.trim()
+        vision = clip(vision, MAX_VISION_CHARS)
     )
 }
 
@@ -215,6 +219,15 @@ pub fn parse_sketch(text: &str) -> Result<SiteSketch, AppError> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_pasted_spec_is_cut_to_the_vision_cap() {
+        let long = "word ".repeat(5_000);
+        let prompt = super::sketch_prompt(&long);
+        let vision = prompt.rsplit("Vision:\n").next().unwrap_or_default();
+        assert!(vision.chars().count() <= super::MAX_VISION_CHARS);
+        assert!(vision.starts_with("word word"));
+    }
+
     use super::*;
 
     const GOOD: &str = r#"Here you go:
