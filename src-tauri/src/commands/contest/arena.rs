@@ -507,6 +507,16 @@ pub fn write_text(path: &Path, text: &str) -> Result<(), AppError> {
     })
 }
 
+/// The sidecar for a read-modify-write: a missing file is empty, an
+/// unreadable one is an ERROR. Writing back defaults over a file this build
+/// cannot parse (say an unknown chain step from a newer build) would drop
+/// every seat session and the judge panel.
+pub fn read_sidecar_for_update(paths: &ArenaPaths) -> Result<Sidecar, AppError> {
+    read_json_opt::<Sidecar>(&paths.app_json()).map(Option::unwrap_or_default)
+}
+
+/// The sidecar for display and decisions: an unreadable file reads as empty
+/// (logged). Never write the result back; use [`read_sidecar_for_update`].
 pub fn read_sidecar(paths: &ArenaPaths) -> Sidecar {
     match read_json_opt::<Sidecar>(&paths.app_json()) {
         Ok(Some(s)) => s,

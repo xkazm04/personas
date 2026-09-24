@@ -150,14 +150,15 @@ fn contest_lock(dir: &Path) -> Arc<tokio::sync::Mutex<()>> {
         .clone()
 }
 
-/// Read-modify-write the sidecar under the contest's lock.
+/// Read-modify-write the sidecar under the contest's lock. An unreadable
+/// `app.json` is an error and the file is left untouched.
 pub async fn update_sidecar<R>(
     paths: &ArenaPaths,
     f: impl FnOnce(&mut Sidecar) -> R,
 ) -> Result<R, AppError> {
     let lock = contest_lock(&paths.dir);
     let _guard = lock.lock().await;
-    let mut s = arena::read_sidecar(paths);
+    let mut s = arena::read_sidecar_for_update(paths)?;
     let r = f(&mut s);
     arena::write_json(&paths.app_json(), &s)?;
     Ok(r)
@@ -639,7 +640,7 @@ async fn finalize(app: &AppHandle, job: &SeatJob, end: RunEnd) -> Result<(), App
     let paths = &job.ctx.paths;
     let lock = contest_lock(&paths.dir);
     let _guard = lock.lock().await;
-    let mut s = arena::read_sidecar(paths);
+    let mut s = arena::read_sidecar_for_update(paths)?;
     if s.recorded_sessions.get(&job.key) == Some(&job.session_id) {
         return Ok(()); // never double-write
     }
@@ -1124,6 +1125,29 @@ mod tests {
             .await
             .unwrap());
         assert_eq!(arena::read_sidecar(&paths).chain.step, C::Ready);
+    }
+
+    /// An app.json this build cannot parse (an unknown chain step from a newer
+    /// build) is refused, never overwritten with defaults: that would drop
+    /// every seat session and the judge panel.
+    #[tokio::test]
+    async fn an_unreadable_sidecar_is_never_overwritten_with_defaults() {
+        let (_tmp, paths) = arena();
+        let skewed = "{\"chain\":{\"step\":\"exploded\"},\"judgesEnabled\":true,\
+                      \"seatSessions\":{\"claude-opus_high\":\"s1\"}}\n";
+        arena::write_text(&paths.app_json(), skewed).unwrap();
+        let res = update_sidecar(&paths, |s| s.chain.step = ContestChainStep::Ready).await;
+        assert!(
+            res.is_err(),
+            "the write went through over an unreadable file"
+        );
+        assert_eq!(std::fs::read_to_string(paths.app_json()).unwrap(), skewed);
+        // A missing file is simply empty.
+        let (_tmp, fresh) = arena();
+        update_sidecar(&fresh, |s| s.judges_enabled = true)
+            .await
+            .unwrap();
+        assert!(arena::read_sidecar(&fresh).judges_enabled);
     }
 
     /// A record write that fails (a Windows rename over a locked
