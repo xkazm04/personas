@@ -4344,6 +4344,14 @@ mod tests {
         );
         assert!(p.contains("UNOBSERVED, not as evidence"), "{p}");
 
+        // G52b: the same open hold, shown to a codex_mode persona, is over for
+        // it. Printed as STILL HELD it stopped three of six App Masters.
+        ctx.loop_hold.as_mut().unwrap().ended_at =
+            Some(super::super::attention::CODEX_HOLD_LIFTED.to_string());
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("to now FOR YOU: you run in codex_mode"), "{p}");
+        assert!(!p.contains("STILL HELD"), "{p}");
+
         // Never-dispatched outranks any age: once r2 has been served, the
         // charter that never has is the starved one.
         ctx.charters[0].pacing = Some(ResponsibilityPacing {

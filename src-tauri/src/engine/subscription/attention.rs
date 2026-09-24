@@ -62,6 +62,21 @@ use crate::db::DbPool;
 use crate::error::AppError;
 
 const KIND_ATTENTION: &str = "attention";
+/// How an open Claude hold reads to a codex_mode persona: over for it, while
+/// the gap behind it stays unobserved. Rendered after "from <start> to ".
+pub(crate) const CODEX_HOLD_LIFTED: &str =
+    "now FOR YOU: you run in codex_mode, which this Claude usage \
+     hold does not stop, so your code charters dispatch from this wake on and only your execution \
+     charters stay held";
+/// The `ended_at` a persona is shown for a loop hold: an open hold is over
+/// for a codex_mode persona (see [`CODEX_HOLD_LIFTED`]), and unchanged for
+/// everyone else.
+fn hold_end_for(ended_at: Option<String>, in_codex_mode: bool) -> Option<String> {
+    match ended_at {
+        None if in_codex_mode => Some(CODEX_HOLD_LIFTED.to_string()),
+        ended => ended,
+    }
+}
 const CODEX_EXECUTION_HOLD: &str = "codex_mode: execution charters need the claude runner; held until the persona leaves codex_mode";
 
 #[derive(Clone, Debug, Deserialize)]
@@ -2119,7 +2134,13 @@ fn build_decision_context_with_mode(
         .map(|h| attention_decide::LoopHoldNote {
             kind: h.kind,
             started_at: h.started_at,
-            ended_at: h.ended_at,
+            // G52b: a Claude usage or pacing hold that is still open does not
+            // stop a codex_mode persona. Its code charters dispatch through
+            // this very wake. Printed as "STILL HELD", it read as a stop, and
+            // three of six App Masters deferred every charter on it
+            // (2026-09-24 18:07Z). The hold stays in the note, because the
+            // gap behind the persona is still unobserved.
+            ended_at: hold_end_for(h.ended_at, codex_mode.is_some()),
             detail: h.detail,
         });
 
@@ -9898,6 +9919,13 @@ mod attention_tests {
         assert!(resolved.starts_with("claude-opus-"), "{resolved}");
         assert_ne!(resolved, "opus", "the slug is resolved, not passed through");
         Ok(())
+    }
+
+    #[test]
+    fn an_open_claude_hold_reads_as_lifted_only_to_a_codex_mode_persona() {
+        assert_eq!(hold_end_for(None, false), None);
+        assert_eq!(hold_end_for(Some("t1".into()), true).as_deref(), Some("t1"));
+        assert_eq!(hold_end_for(None, true).as_deref(), Some(CODEX_HOLD_LIFTED));
     }
 
     #[test]
