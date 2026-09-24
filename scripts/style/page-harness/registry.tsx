@@ -13,6 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { TONE_MODULES } from './toneSurfaces';
+import { TRIAGE_MODULES } from './triageSurfaces';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -54,6 +55,7 @@ export const MODULES: Record<string, HarnessModule> = {
     },
   },
   ...TONE_MODULES,
+  ...TRIAGE_MODULES,
   // Probes for `shoot.mjs --self-test`: each must make the shooter exit non-zero.
   '__selftest/empty': {
     load: async () => ({ default: () => <div /> }),

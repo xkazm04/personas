@@ -63,5 +63,61 @@
     ],
     "boot": [],
     "fill": {}
+  },
+  "plugins/dev-tools/sub_triage": {
+    "title": "Overview / Manual Review / Backlog (record with --manual: open Manual Review, then the Backlog mode tab; no test ids reach them)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "dev_tools_list_projects",
+        null
+      ],
+      [
+        "dev_tools_list_ideas",
+        null
+      ]
+    ],
+    "fill": {}
+  },
+  "plugins/dev-tools/sub_triage/leaves": {
+    "title": "sub_triage leaf states (synthetic only: mounted on props, not reachable by route)",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "dev_tools_list_projects",
+        null
+      ],
+      [
+        "dev_tools_list_ideas",
+        null
+      ]
+    ],
+    "fill": {}
   }
 }

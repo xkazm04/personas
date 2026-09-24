@@ -138,8 +138,116 @@ function subReleases(repoRoot) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// plugins/dev-tools/sub_triage (module 2): the Backlog panel in Overview ->
+// Manual Review hosts the triage instruments. Two corpora, as in the app:
+// `dev_tools_triage_ideas` is the pending queue the table shows, and
+// `dev_tools_list_ideas` is the project's whole history, which feeds the rule
+// suggestions (decided ideas) and the sensor scoreboard (verify states).
+// ---------------------------------------------------------------------------
+
+const TRIAGE_PROJECT = 'proj-triage';
+
+function idea(id, title, fields = {}) {
+  return {
+    id, project_id: TRIAGE_PROJECT, context_id: null, scan_type: 'code_quality', category: 'technical',
+    title, description: null, reasoning: null, status: 'pending', effort: 3, impact: 3, risk: 3,
+    priority: null, provider: null, model: null, rejection_reason: null, origin: null, use_case_id: null,
+    evidence: null, dedup_key: null, goal_id: null, verify_state: null, verify_checked_at: null,
+    verify_evidence: null, plan: null, completeness: 'full', created_at: ago(60), updated_at: ago(60),
+    ...fields,
+  };
+}
+
+// [id, title, origin, category, effort, impact, risk, minutesAgo, evidence]
+const PENDING_ROWS = [
+  ['i-01', 'Sentry: TypeError in useBacklogQueue reload after project switch', 'sentry_spike', 'technical', 3, 5, 2, 8, { count: 142, users: 17, shortId: 'PERSONAS-4K' }],
+  ['i-02', 'LLM spend on "athena-chat" crossed the weekly threshold', 'llm_cost', 'business', 2, 4, 1, 22, { costUsd: 12.4, calls: 318, windowDays: 7 }],
+  ['i-03', 'Readiness passport: CI gate missing for the tier builds', 'passport_gap', 'technical', 4, 4, 2, 35, { dimension: 'ci', tier: 1 }],
+  ['i-04', 'Standards: 14 components exceed the 200 line limit', 'standards_finding', 'technical', 5, 3, 2, 50, { violations: 14, rule: 'component-loc' }],
+  ['i-05', 'KPI "weekly active agents" is off track for the third week', 'kpi_offtrack', 'business', 6, 5, 3, 80, { current: 41, target: 60 }],
+  ['i-06', 'Skill "record-demo" has not run in 45 days', 'skill_dormant', 'user', 1, 2, 1, 110, { daysIdle: 45 }],
+  ['i-07', 'Doc rot: build.md still describes the retired ORT fetch', 'doc_rot', 'technical', 2, 3, 1, 140, { staleDays: 61, dirtyReads: 9 }],
+  ['i-08', 'Simulated KPI run: churn rises if the onboarding tour is skipped', 'kpi_sim', 'business', 7, 4, 6, 200, { deltaPct: 8.5 }],
+  ['i-09', 'Athena memory disputed: "tiers ship from one bundle"', 'memory_disputed', 'user', 2, 3, 2, 260, { disputes: 3 }],
+  ['i-10', 'Adopt the shared FormField across vault forms', 'workspace_practice', 'technical', 4, 3, 2, 320, null],
+  ['i-11', 'Scan sweep: bindingless catch on three IO paths', 'scan_sweep', 'technical', 3, 4, 4, 400, { sites: 3 }],
+  ['i-12', 'Cache the connector catalogue between vault visits', null, 'technical', 3, 4, 2, 600, null],
+  ['i-13', 'Let the companion summarise a long execution log', null, 'user', 5, 4, 3, 900, null],
+  ['i-14', 'Split the fleet grid into lanes by project', null, 'user', 8, 3, 7, 1300, null],
+];
+
+const PENDING_IDEAS = PENDING_ROWS.map(([id, title, origin, category, effort, impact, risk, m, evidence]) =>
+  idea(id, title, {
+    origin, category, effort, impact, risk,
+    scan_type: origin ? 'finding' : 'code_quality',
+    evidence: evidence ? JSON.stringify(evidence) : null,
+    description: `${title}. Synthetic fixture for the page harness.`,
+    created_at: ago(m), updated_at: ago(m),
+  }));
+
+// The decided history: enough heavy rejections, quick accepts and verdicts that
+// the rule suggestions and every scoreboard column render.
+const HISTORY = [
+  ...[1, 2, 3, 4, 5].map((n) => idea(`h-heavy-${n}`, `Rewrite subsystem ${n}`, { status: 'rejected', effort: 7, impact: 3, category: 'performance' })),
+  ...[1, 2, 3, 4].map((n) => idea(`h-quick-${n}`, `Quick fix ${n}`, { status: 'accepted', effort: 1, impact: 5 })),
+  idea('h-std-1', 'Standards 1', { status: 'accepted', origin: 'standards_finding', verify_state: 'cleared' }),
+  idea('h-std-2', 'Standards 2', { status: 'accepted', origin: 'standards_finding', verify_state: 'cleared' }),
+  idea('h-std-3', 'Standards 3', { status: 'accepted', origin: 'standards_finding', verify_state: 'moved' }),
+  idea('h-std-4', 'Standards 4', { status: 'accepted', origin: 'standards_finding', verify_state: 'unchanged' }),
+  idea('h-sen-1', 'Sentry 1', { status: 'accepted', origin: 'sentry_spike', verify_state: 'unchanged' }),
+  idea('h-sen-2', 'Sentry 2', { status: 'accepted', origin: 'sentry_spike', verify_state: 'unchanged' }),
+  idea('h-sen-3', 'Sentry 3', { status: 'accepted', origin: 'sentry_spike', verify_state: 'regressed' }),
+  idea('h-llm-1', 'LLM 1', { status: 'accepted', origin: 'llm_cost', verify_state: 'cleared' }),
+  idea('h-llm-2', 'LLM 2', { status: 'accepted', origin: 'llm_cost', verify_state: 'unchanged' }),
+];
+
+const TRIAGE_RULES = [
+  { id: 'rule-1', project_id: TRIAGE_PROJECT, name: 'Auto-accept quick wins', conditions: JSON.stringify([{ field: 'effort', op: 'lte', value: 2 }, { field: 'impact', op: 'gte', value: 4 }]), action: 'accept', enabled: true, times_fired: 12, created_at: ago(60 * 24 * 9) },
+  { id: 'rule-2', project_id: TRIAGE_PROJECT, name: 'Reject risky rewrites', conditions: JSON.stringify([{ field: 'risk', op: 'gte', value: 7 }]), action: 'reject', enabled: false, times_fired: 3, created_at: ago(60 * 24 * 4) },
+];
+
+function subTriage() {
+  const byOrigin = {};
+  for (const i of PENDING_IDEAS) byOrigin[i.origin ?? 'scanner'] = (byOrigin[i.origin ?? 'scanner'] ?? 0) + 1;
+  const byCategory = {};
+  for (const i of PENDING_IDEAS) byCategory[i.category] = (byCategory[i.category] ?? 0) + 1;
+  const project = {
+    id: TRIAGE_PROJECT, name: 'personas', root_path: 'C:/work/personas', description: null, status: 'active',
+    tech_stack: 'tauri,react', github_url: null, monitoring_credential_id: null, monitoring_project_slug: null,
+    static_scan_config: null, auto_pr_on_success: false, pr_credential_id: null, llm_tracking_credential_id: null,
+    support_credential_id: null, data_links: null, test_env_url: null, test_env_branch: null, main_branch: 'master',
+    standards_config: null, team_id: null, workspace_id: null, kind: 'code', enabled: true,
+    created_at: ago(60 * 24 * 90), updated_at: ago(60 * 24),
+  };
+  return {
+    version: 1,
+    module: 'plugins/dev-tools/sub_triage',
+    source: 'synthetic',
+    recordedAt: RECORDED_AT,
+    note: 'Synthetic: 14 pending backlog ideas (11 sensor origins + 3 scanner), a decided history that yields rule suggestions and every scoreboard column, 2 triage rules.',
+    calls: [
+      { cmd: 'dev_tools_list_projects', response: [project] },
+      { cmd: 'dev_tools_list_ideas', response: [...PENDING_IDEAS, ...HISTORY] },
+      {
+        cmd: 'dev_tools_triage_ideas',
+        response: {
+          ideas: PENDING_IDEAS, cursor: null, hasMore: false,
+          counts: { total: PENDING_IDEAS.length + HISTORY.length, pending: PENDING_IDEAS.length, accepted: 13, rejected: 5, archived: 2, byOrigin, byCategory },
+        },
+      },
+      { cmd: 'dev_tools_list_triage_rules', response: TRIAGE_RULES },
+      { cmd: 'dev_tools_run_triage_rules', response: { applied: 2, ideas_affected: 5 } },
+      // usePassportForProject (SweepButton): no passport assessed yet.
+      { cmd: 'dev_tools_get_cross_project_metadata', response: null },
+    ],
+  };
+}
+
 const BUILDERS = {
   'overview/sub_events': () => subEvents(),
+  'plugins/dev-tools/sub_triage': () => subTriage(),
+  'plugins/dev-tools/sub_triage/leaves': () => ({ ...subTriage(), module: 'plugins/dev-tools/sub_triage/leaves' }),
   'home/sub_releases': (repoRoot) => subReleases(repoRoot),
   // WP4b tone surfaces (toneSurfaces.tsx): props are synthetic, no IPC.
   ...Object.fromEntries(['tone/health-cards', 'tone/n8n-footer', 'tone/query-toolbar'].map((id) => [
