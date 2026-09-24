@@ -23,7 +23,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from '@/features/agents/executionPlayer/PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
+import { BackgroundRunsBar } from '@/features/agents/executionPlayer/BackgroundRunsBar';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
 import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
@@ -160,7 +160,7 @@ export default function ExecutionMiniPlayer() {
 
   const elapsed = useElapsedTimer(isExecuting);
 
-  const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
+  const backgroundRunCount = useAgentStore((s) => s.backgroundExecutions.length);
 
   useExecutionScope(activeExecutionId, executionPersonaId);
 
@@ -271,7 +271,7 @@ export default function ExecutionMiniPlayer() {
     [pipelineTrace],
   );
 
-  const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId || backgroundExecutions.length > 0;
+  const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId || backgroundRunCount > 0;
   if (!miniPlayerPinned || !hasContent) return null;
 
   return (
@@ -341,24 +341,8 @@ export default function ExecutionMiniPlayer() {
           </Tooltip>
         </div>
 
-        {/* Background executions bar */}
-        {backgroundExecutions.length > 0 && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
-            <span className="text-[10px] uppercase tracking-wider text-foreground mr-1">{t.execution.background}</span>
-            {backgroundExecutions.map((bg) => (
-              <Tooltip key={bg.executionId} content={`${bg.personaName}: ${tokenLabel(t, 'execution', bg.status)}`}>
-                <div className="relative w-5 h-5 rounded-input flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
-                  <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} />
-                  <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
-                    bg.status === 'running' ? 'bg-blue-400 animate-pulse' :
-                    bg.status === 'completed' ? 'bg-emerald-400' :
-                    bg.status === 'failed' ? 'bg-red-400' : 'bg-amber-400'
-                  }`} />
-                </div>
-              </Tooltip>
-            ))}
-          </div>
-        )}
+        {/* Background runs: stop, open and dismiss each lane */}
+        <BackgroundRunsBar />
 
         {/* Simple mode: friendly progress bar → result summary with reasoning trace */}
         {isSimple && (
