@@ -291,8 +291,8 @@ pub fn resolve_codex_launch() -> Result<(PathBuf, Vec<String>), String> {
 /// stdout, no sandbox (the worker runs inside an authoring worktree the
 /// dispatcher prepared, and the project's own gates are the guard), the
 /// worktree as cwd, the lane's model, and the prompt read from stdin.
-pub fn codex_exec_argv(cwd: &Path, model: &str) -> Vec<String> {
-    vec![
+pub fn codex_exec_argv(cwd: &Path, model: &str, effort: Option<&str>) -> Vec<String> {
+    let mut argv = vec![
         "exec".to_string(),
         "--json".to_string(),
         "--skip-git-repo-check".to_string(),
@@ -301,7 +301,11 @@ pub fn codex_exec_argv(cwd: &Path, model: &str) -> Vec<String> {
         cwd.to_string_lossy().to_string(),
         "-m".to_string(),
         model.to_string(),
-    ]
+    ];
+    if let Some(effort) = effort {
+        argv.extend(["-c".to_string(), format!("model_reasoning_effort={effort}")]);
+    }
+    argv
 }
 
 /// Map one codex JSONL event onto the claude stream-json shape
@@ -365,12 +369,13 @@ pub(super) fn spawn_codex_worker_with_identity(
     cwd: PathBuf,
     task: String,
     model: String,
+    effort: Option<String>,
     run_label: Option<&str>,
     identity: Option<super::pty::SpawnIdentity>,
 ) -> Result<String, String> {
     let (program, leading) = resolve_codex_launch()?;
     let mut argv = leading;
-    argv.extend(codex_exec_argv(&cwd, &model));
+    argv.extend(codex_exec_argv(&cwd, &model, effort.as_deref()));
     let seed = task.clone();
     let (id, claude_session_id) = match identity {
         Some(i) => (i.id, i.claude_session_id),
@@ -1231,12 +1236,18 @@ mod tests {
         let argv = codex_exec_argv(
             Path::new("C:/wt/x"),
             personas_core::model_ids::CODEX_MAINTENANCE,
+            Some(personas_core::model_ids::CODEX_DEFAULT_EFFORT),
         );
         assert_eq!(argv[0], "exec");
         assert!(argv.contains(&"--json".to_string()));
         assert!(argv.contains(&"--skip-git-repo-check".to_string()));
         let m = argv.iter().position(|a| a == "-m").unwrap();
         assert_eq!(argv[m + 1], personas_core::model_ids::CODEX_MAINTENANCE);
+        let c = argv.iter().position(|a| a == "-c").unwrap();
+        assert_eq!(argv[c + 1], "model_reasoning_effort=high");
+        assert!(!codex_exec_argv(Path::new("C:/wt/x"), "gpt-6-sol", None)
+            .iter()
+            .any(|arg| arg == "-c"));
         // No positional prompt: the task travels on stdin and closes it.
         assert!(argv.iter().all(|a| !a.contains("Deliver")));
     }

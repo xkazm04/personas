@@ -214,6 +214,7 @@ pub const TASK_ARG: &str = "--fleet-task";
 /// worker already stamps on its row.
 const ENGINE_ARG: &str = "--engine";
 const MODEL_ARG: &str = "--model";
+const CODEX_EFFORT_ARG: &str = "--codex-effort";
 
 /// Build the `args` for a headless dispatch: the task, then the CLI extras.
 pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
@@ -225,16 +226,17 @@ pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
 }
 
 /// Build the `args` for a codex maintenance worker dispatch.
-pub fn codex_args(task: &str, model: &str) -> Vec<String> {
-    headless_args(
-        task,
-        vec![
-            ENGINE_ARG.to_string(),
-            super::headless::CODEX_ENGINE.to_string(),
-            MODEL_ARG.to_string(),
-            model.to_string(),
-        ],
-    )
+pub fn codex_args(task: &str, model: &str, effort: Option<&str>) -> Vec<String> {
+    let mut extra = vec![
+        ENGINE_ARG.to_string(),
+        super::headless::CODEX_ENGINE.to_string(),
+        MODEL_ARG.to_string(),
+        model.to_string(),
+    ];
+    if let Some(effort) = effort {
+        extra.extend([CODEX_EFFORT_ARG.to_string(), effort.to_string()]);
+    }
+    headless_args(task, extra)
 }
 
 /// `(task, extra_args)` from a headless dispatch's `args`. A dispatch that
@@ -270,6 +272,24 @@ fn codex_model(args: &[String]) -> Option<String> {
         .position(|a| a == MODEL_ARG)
         .and_then(|i| args.get(i + 1))
         .cloned()
+}
+
+fn codex_effort(args: &[String]) -> Option<String> {
+    args.iter()
+        .position(|a| a == CODEX_EFFORT_ARG)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
+}
+
+fn is_codex_dispatch(req: &DispatchRequest) -> bool {
+    matches!(req.mode, FleetSessionMode::Headless) && codex_model(&req.args).is_some()
+}
+
+fn without_claude_gauge(mut inputs: BudgetInputs) -> BudgetInputs {
+    inputs.behind_pct = None;
+    inputs.five_hour_full = false;
+    inputs.governor_stop = false;
+    inputs
 }
 
 /// Admit refusal reason: the entry's machine or plan units exceed the STATIC
@@ -699,13 +719,19 @@ fn scan_queue(reg: &FleetRegistry, now: i64, inputs: &BudgetInputs, used: Used) 
             ..QueueScan::default()
         };
     }
-    let budgets = budgets::budgets_from(inputs, used);
     let mut scan = QueueScan::default();
     for (id, not_before, facts) in reg.queued_admissions_in_order() {
         if not_before.is_some_and(|t| t > now) {
             // A time gate is skipped, not waited on, and is not "unfit".
             continue;
         }
+        let entry_inputs =
+            if dispatch_of_session_in(reg, &id).is_some_and(|req| is_codex_dispatch(&req)) {
+                without_claude_gauge(*inputs)
+            } else {
+                *inputs
+            };
+        let budgets = budgets::budgets_from(&entry_inputs, used);
         if budgets::fits(facts.charge(), used, &budgets).is_ok() {
             scan.pick = Some(id);
             return scan;
@@ -730,12 +756,17 @@ fn door_verdict(
     inputs: &BudgetInputs,
     used: Used,
 ) -> Door {
+    let effective = if is_codex_dispatch(req) {
+        without_claude_gauge(*inputs)
+    } else {
+        *inputs
+    };
     door_verdict_for(
         reg,
         Charge::from_profile(req.profile.as_ref()),
         req.not_before_ms,
         now,
-        inputs,
+        &effective,
         used,
     )
 }
@@ -941,6 +972,7 @@ fn spawn_now(
                     cwd,
                     task,
                     model,
+                    codex_effort(&extra),
                     req.run_label.as_deref(),
                     identity,
                 ),
@@ -1606,7 +1638,14 @@ fn budget_view(
     if inputs.enabled {
         let mut head_seen = false;
         for (id, not_before, facts) in reg.queued_admissions_in_order() {
-            let entry_hold = budgets::fits(facts.charge(), used, &derived)
+            let entry_inputs =
+                if dispatch_of_session_in(reg, &id).is_some_and(|req| is_codex_dispatch(&req)) {
+                    without_claude_gauge(*inputs)
+                } else {
+                    *inputs
+                };
+            let entry_derived = budgets::budgets_from(&entry_inputs, used);
+            let entry_hold = budgets::fits(facts.charge(), used, &entry_derived)
                 .err()
                 .and_then(budgets::Unfit::hold);
             if let Some(h) = entry_hold {
@@ -2229,11 +2268,26 @@ mod tests {
         assert_eq!(task, "ship it");
         assert_eq!(extra, vec!["--model".to_string(), "opus".to_string()]);
         assert_eq!(codex_model(&extra), None);
-        let codex = codex_args("refactor", "gpt-5-codex");
+        let codex = codex_args("refactor", "gpt-5-codex", Some("high"));
         let (_, extra) = split_headless_args(&codex).unwrap();
         assert_eq!(codex_model(&extra).as_deref(), Some("gpt-5-codex"));
+        assert_eq!(codex_effort(&extra).as_deref(), Some("high"));
         assert!(split_headless_args(&["--model".to_string()]).is_err());
         assert!(split_headless_args(&[TASK_ARG.to_string(), "  ".to_string()]).is_err());
+    }
+
+    #[test]
+    fn codex_budget_keeps_memory_and_drops_claude_limits() {
+        let mut inputs = BudgetInputs::unmeasured(4, true);
+        inputs.behind_pct = Some(-25.0);
+        inputs.five_hour_full = true;
+        inputs.governor_stop = true;
+        inputs.memory_slots = Some(0);
+        let codex = without_claude_gauge(inputs);
+        assert_eq!(codex.behind_pct, None);
+        assert!(!codex.five_hour_full);
+        assert!(!codex.governor_stop);
+        assert_eq!(codex.memory_slots, Some(0));
     }
 
     #[test]

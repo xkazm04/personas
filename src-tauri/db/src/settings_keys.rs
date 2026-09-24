@@ -629,6 +629,9 @@ pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
 /// up to the stop; only the long-running worker needs the margin. Default 10,
 /// clamped 0..=40 by the reader.
 pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
+/// Temporary per-persona codex routing: JSON with `personas`, optional `model`
+/// and optional `effort`. Absent or an empty persona list leaves routing alone.
+pub const ATTENTION_CODEX_MODE: &str = "attention.codex_mode";
 /// The attention loop's recent HOLD windows - the stretches in which the quota
 /// governor or the Autopilot pacing stopped every persona, as a bounded JSON
 /// list (newest last, at most [`ATTENTION_LOOP_HOLDS_MAX`]). Written by
@@ -1295,6 +1298,7 @@ const ALLOWED_KEYS: &[&str] = &[
     ATTENTION_WAKE_REQUESTS,
     ATTENTION_USAGE_STOP_PCT,
     ATTENTION_FLEET_START_MARGIN_PCT,
+    ATTENTION_CODEX_MODE,
     ATTENTION_LOOP_HOLDS,
     FLEET_AUTOPILOT_PACING,
     FLEET_AUTOPILOT_MAX_PARALLEL,
@@ -1448,6 +1452,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // owed" — a silently dropped wake is exactly the failure the durable
         // row exists to prevent.
         ATTENTION_WAKE_REQUESTS => validate_json_wellformed(key, value),
+        ATTENTION_CODEX_MODE => validate_attention_codex_mode(value),
         // The scheme is checked because the consumer concatenates this value
         // into a URL. A bare host would produce `127.0.0.1:3000/api/...`, which
         // reqwest reads as a RELATIVE url and refuses at send time — a failure
@@ -1803,6 +1808,46 @@ fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
         .map_err(|e| format!("value for '{key}' is not well-formed JSON: {e}"))
 }
 
+fn validate_attention_codex_mode(value: &str) -> Result<(), String> {
+    if is_blank(value) {
+        return Ok(());
+    }
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Setting {
+        personas: Vec<String>,
+        model: Option<String>,
+        effort: Option<String>,
+    }
+    let setting: Setting = serde_json::from_str(value)
+        .map_err(|e| format!("value for '{ATTENTION_CODEX_MODE}' has invalid JSON shape: {e}"))?;
+    if setting.personas.iter().any(|id| id.trim().is_empty())
+        || setting
+            .model
+            .as_deref()
+            .is_some_and(|model| model.trim().is_empty())
+        || setting
+            .effort
+            .as_deref()
+            .is_some_and(|effort| effort.trim().is_empty())
+    {
+        return Err(format!(
+            "value for '{ATTENTION_CODEX_MODE}' contains an empty id, model or effort"
+        ));
+    }
+    // Mirrors the attention loop's own parse, so a typo is refused at the
+    // write instead of being logged and ignored at every tick.
+    const EFFORTS: &[&str] = &["minimal", "low", "medium", "high", "xhigh"];
+    if let Some(effort) = setting.effort.as_deref() {
+        if !EFFORTS.contains(&effort) {
+            return Err(format!(
+                "value for '{ATTENTION_CODEX_MODE}': effort '{effort}' is not one of {EFFORTS:?}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// An integer setting bounded to `min..=max` — the Autopilot steppers' shape.
 /// A value that is only whitespace is ABSENT, not malformed. Every reader of
 /// an optional setting in this file treats it that way already; saying so once
@@ -1968,6 +2013,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | MAX_ACTIVE_PERSONAS
         | ATTENTION_USAGE_STOP_PCT
         | ATTENTION_FLEET_START_MARGIN_PCT
+        | ATTENTION_CODEX_MODE
         | FLEET_AUTOPILOT_PACING
         | FLEET_AUTOPILOT_MAX_PARALLEL
         | FLEET_AUTOPILOT_WEEKLY_TARGET_PCT
@@ -2501,6 +2547,14 @@ mod tests {
         assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "NaN").is_err());
         assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "0").is_ok());
         assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "41").is_err());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":["p1"]}"#).is_ok());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":[]}"#).is_ok());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":"p1"}"#).is_err());
+        assert!(validate_value(
+            ATTENTION_CODEX_MODE,
+            r#"{"personas":["p1"],"effort":"hgih"}"#
+        )
+        .is_err());
         for key in [
             FLEET_AUTOPILOT_PACING,
             FLEET_AUTOPILOT_MAX_PARALLEL,

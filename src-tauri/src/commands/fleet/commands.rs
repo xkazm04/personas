@@ -111,18 +111,19 @@ pub async fn spawn_codex_worker_in_run(
     app: AppHandle,
     cwd: String,
     task: String,
-    model: String,
+    model_and_effort: (String, Option<String>),
     run_label: Option<&str>,
     provenance: Provenance,
     profile: Option<crate::db::models::ResourceProfile>,
 ) -> Result<String, String> {
+    let (model, effort) = model_and_effort;
     let admission = queue::admit(
         &app,
         DispatchRequest {
             cwd,
             name: None,
             title: None,
-            args: queue::codex_args(&task, &model),
+            args: queue::codex_args(&task, &model, effort.as_deref()),
             mode: FleetSessionMode::Headless,
             run_label: run_label.map(str::to_string),
             origin: provenance.origin(),
