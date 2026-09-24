@@ -50,3 +50,67 @@ export function isTopOrderingSeparated(stats: { wins: number; total: number }[])
   const second = wilsonInterval(stats[1]!.wins, stats[1]!.total);
   return first.low > second.high;
 }
+
+// ---------------------------------------------------------------------------
+// Seat win rates across decided contests.
+// ---------------------------------------------------------------------------
+
+/** One seat spec's record across decided contests. */
+export interface SeatWinRate extends WinRateInterval {
+  /** The seat spec string, `engine:model@effort[#label]`. */
+  spec: string;
+  /** Decided contests this spec sat in. */
+  entered: number;
+  /** Of those, the ones its variant won. */
+  wins: number;
+}
+
+/** Where the win-rate board stands: the rows, ordered, plus whether the
+ *  ordering's headline ("#1 beats #2") is statistically supported. */
+export interface SeatWinBoard {
+  rows: SeatWinRate[];
+  /** Leader's lower bound clears the runner-up's upper bound. */
+  separated: boolean;
+  /** Decided contests counted. */
+  decided: number;
+}
+
+/**
+ * Win rate per seat spec, keyed by spec across DECIDED contests: "entered" =
+ * a decided contest whose `seatSpecs` include the spec, "win" = it is the
+ * contest's `winnerSeatSpec`. Ordered by wins, then by the interval's lower
+ * bound (the honest tiebreak: more evidence first), then by spec for a stable
+ * order.
+ */
+export function seatWinRates(
+  summaries: readonly {
+    phase: string;
+    seatSpecs: readonly string[];
+    winnerSeatSpec: string | null;
+  }[],
+): SeatWinBoard {
+  const tally = new Map<string, { entered: number; wins: number }>();
+  let decided = 0;
+  for (const s of summaries) {
+    if (s.phase !== 'decided') continue;
+    decided += 1;
+    for (const spec of new Set(s.seatSpecs)) {
+      const row = tally.get(spec) ?? { entered: 0, wins: 0 };
+      row.entered += 1;
+      if (s.winnerSeatSpec === spec) row.wins += 1;
+      tally.set(spec, row);
+    }
+  }
+  const rows: SeatWinRate[] = [...tally.entries()].map(([spec, { entered, wins }]) => ({
+    spec,
+    entered,
+    wins,
+    ...wilsonInterval(wins, entered),
+  }));
+  rows.sort((a, b) => b.wins - a.wins || b.low - a.low || a.spec.localeCompare(b.spec));
+  return {
+    rows,
+    separated: isTopOrderingSeparated(rows.map((r) => ({ wins: r.wins, total: r.entered }))),
+    decided,
+  };
+}

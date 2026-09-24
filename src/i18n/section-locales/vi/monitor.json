@@ -819,5 +819,6 @@
   "usage_accounts_switch_aria": "Chuyển đăng nhập Claude sang {email}",
   "usage_provider_claude": "Claude",
   "usage_provider_codex": "OpenAI Codex",
-  "usage_provider_grok": "xAI Grok"
+  "usage_provider_grok": "xAI Grok",
+  "queue_origin_contest": "Cuộc thi"
 }

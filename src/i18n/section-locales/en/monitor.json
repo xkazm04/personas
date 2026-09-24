@@ -780,6 +780,7 @@
   "queue_origin_night_shift": "Night shift",
   "queue_origin_feed_impact": "Feed",
   "queue_origin_orphan_resume": "Resume",
+  "queue_origin_contest": "Contest",
   "queue_locked": "Running — holds a slot and is not in the queue",
   "queue_menu_aria": "Queue actions for {name}",
   "queue_cancel": "Cancel",

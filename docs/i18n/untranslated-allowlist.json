@@ -3970,5 +3970,19 @@
   "fr:studio.guide.layout_guide",
   "id:studio.guide.layout_guide",
   "de:twin.experience.table.training",
-  "id:studio.guide.template_region_footer"
+  "id:studio.guide.template_region_footer",
+  "*:plugins.contest.engine_codex",
+  "*:plugins.contest.engine_grok",
+  "cs:plugins.contest.chain_label",
+  "cs:plugins.contest.col_kind",
+  "cs:plugins.contest.col_interval",
+  "de:plugins.contest.chain_label",
+  "de:plugins.contest.pins_label",
+  "de:plugins.contest.col_phase",
+  "fr:plugins.contest.field_brief",
+  "fr:plugins.contest.variant_concept",
+  "fr:plugins.contest.col_phase",
+  "id:plugins.contest.chain_label",
+  "id:plugins.contest.seat_label_placeholder",
+  "id:plugins.contest.field_brief"
 ]

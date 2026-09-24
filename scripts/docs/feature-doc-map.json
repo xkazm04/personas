@@ -427,6 +427,14 @@
       "marketingModule": "plugins"
     },
     {
+      "doc": "docs/features/plugins/dev tools/dev-tools.md",
+      "sourceGlobs": [
+        "src/features/plugins/dev-tools/contest/**",
+        "src-tauri/src/commands/contest/**"
+      ],
+      "marketingModule": "plugins"
+    },
+    {
       "doc": "docs/features/plugins/dev tools/workspaces.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/sub_workspaces/**",

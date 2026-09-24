@@ -147,6 +147,10 @@ const FleetGridLayer = lazyRetry(() => import("@/features/plugins/fleet/FleetGri
 // notepad ships. The component is cheap (open/closed gate + the sweeper
 // listener) and lazy-loads the editor host on first open.
 const NotepadLayer = lazyRetry(() => import("@/features/notepad/NotepadLayer"));
+// Contest notices ("<title> is ready for review") for the live stack. Always
+// mounted so a notice lands with the Contest page and the Monitor closed; it
+// renders nothing and only listens to `contest-changed`.
+const ContestLiveFeeder = lazyRetry(() => import("@/features/plugins/dev-tools/contest/ContestLiveFeeder"));
 // Fleet's app-wide bootstrap (session listeners + snapshot + the Rust ticker
 // policy push). SEPARATE from FleetGridLayer on purpose and mounted UNGATED —
 // see the two mounts below and FleetBootstrap's own header.
@@ -441,6 +445,7 @@ export default function App() {
                       re-fuse them. */}
                   {import.meta.env.DEV && <OverlayIsland name="fleet-grid"><FleetGridLayer /></OverlayIsland>}
                   <OverlayIsland name="notepad"><NotepadLayer /></OverlayIsland>
+                  <OverlayIsland name="contest-live"><ContestLiveFeeder /></OverlayIsland>
                   <OverlayIsland name="fleet-bootstrap"><FleetBootstrap /></OverlayIsland>
                 </Suspense>
               </SilentErrorBoundary>

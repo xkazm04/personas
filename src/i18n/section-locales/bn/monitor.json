@@ -819,5 +819,6 @@
   "usage_accounts_switch_aria": "Claude লগইন {email}-এ পরিবর্তন করুন",
   "usage_provider_claude": "Claude",
   "usage_provider_codex": "OpenAI Codex",
-  "usage_provider_grok": "xAI Grok"
+  "usage_provider_grok": "xAI Grok",
+  "queue_origin_contest": "প্রতিযোগিতা"
 }
