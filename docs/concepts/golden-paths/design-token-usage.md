@@ -778,6 +778,268 @@ consistent with `raw-select` and `raw-web-storage`, which walk the same roots.
    `no-raw-radius-classes.cjs:46-52` and `no-direct-white-colors.cjs:28-33`.** Per P8, an
    exemption must name the gap it stands in for; these two name none, and §7.C is the bill.
 
+### Style-unification rules (added 2026-09-24)
+
+Six more census rules from the style-unification spark (Phase A, WP2). Each was measured on
+a HEAD export at `39f519143`, not on the shared working tree (where another session's
+untracked prototype adds hits), carries its precision spot-check in `signal.note` and the
+token to use instead in `signal.fix`, and is seeded red in `scripts/census/self-test.mjs`.
+
+C5 above says a status-colour rule is blocked because `STATUS_PALETTE` emits the palette
+spelling. `raw-palette-text-colour` takes the ratchet route instead: the three colour-token
+owners are excluded as the destination and every other site is frozen at its count, so the
+backlog can only shrink while Gap 3 waits. `phantom-typo-token` is an allow-list inside a
+static regex; `scripts/style/typo-allowlist.mjs`, run by `check-corpus-integrity.mjs` inside
+`npm run check`, fails when that list and the `.typo-*` selectors in `src/**/*.css` disagree.
+
+```json
+{
+  "rules": [
+    {
+      "id": "raw-arbitrary-text-size",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Arbitrary text size (text-[Npx]) instead of a typo-* token",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])text-\\[\\d*\\.?\\d+(?:px|rem|em)\\]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an arbitrary Tailwind font-size (text-[11px], text-[0.8rem], text-[1.1em]) in src/**/*.{ts,tsx}. PROXY FOR the stack-free condition: a call site picks a type size outside the type scale, so the size neither follows the scale nor the density/text-scale settings that restyle the typo-* tokens, and every such site is a private type ramp. Scope is src, one root wider than the WP2 brief (src/features): the only file outside src/features with a hit is src/lib/keyboard/ShortcutCheatSheet.tsx, and a narrower root would leave it outside the ratchet. Recall limit, stated: a size assembled at runtime (text-[${px}px]) is invisible to a static pattern.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export, not the shared working tree). PRECISION 12/12 on an even sample of the hit list: every hit is a class string choosing a pixel size, 10 of 12 at 9-13px, i.e. the typo-caption/typo-label band.",
+        "fix": "typo-caption (secondary, 14px) or typo-label (uppercase label); typo-body for prose; typo-code for mono. Never a private px size."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 208,
+        "matches": 601
+      },
+      "floor": 5000
+    },
+    {
+      "id": "raw-palette-text-colour",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Raw Tailwind palette text colour instead of a semantic colour token",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])text-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]00|950)(?![\\w-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a text colour taken from the raw Tailwind palette (text-emerald-400, text-red-500/70, hover:text-amber-300) anywhere in src/**/*.{ts,tsx}. PROXY FOR the stack-free condition: a surface authors colour by hue rather than by meaning, so the same state renders in different hues on different surfaces, a theme cannot restyle it, and the brightness-compensated status-* variables are bypassed. The three central token owners are excluded because they are the destination, not the defect; design-token-usage.md 7.G/C5 records that STATUS_PALETTE still emits palette spellings, so those owners converting to text-status-* is the upstream fix this ratchet waits on.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 12/12 on an even sample of className hits, plus 20/20 on hits OUTSIDE a className attribute (return values of colour helpers such as ideaColors.ts, pipelineHelpers.tsx, WebhookRequestInspector.tsx): all are class strings. Not every hit is equally wrong: identity colours (n8n colorTokens.ts) are a legitimate category that has no semantic token yet.",
+        "fix": "text-status-{success,warning,error,info,neutral} or a StatusToken from STATUS_PALETTE; text-primary for accent; text-foreground for body."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "src/lib/design/statusTokens.ts",
+          "reason": "STATUS_PALETTE is the sanctioned owner of status colour; call sites are routed TO it"
+        },
+        {
+          "path": "src/lib/utils/designTokens.ts",
+          "reason": "SEVERITY_ACCENTS / STATUS_COLORS: the second sanctioned colour-token owner named in Design.md section 3"
+        },
+        {
+          "path": "src/lib/design/eventTokens.ts",
+          "reason": "declares itself the single source of truth for event colours; the owner, not a call site"
+        }
+      ],
+      "baseline": {
+        "files": 984,
+        "matches": 4584
+      },
+      "floor": 5000
+    },
+    {
+      "id": "bare-rounded",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Bare rounded class with no semantic radius suffix",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<=[\"'`](?:[^\"'`\\n]*[\\s:])?)rounded(?=[\"'`]|\\s[^\"'`\\n]*[\"'`])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the Tailwind class rounded with no suffix, as a whitespace-delimited token inside a quoted string on one line. PROXY FOR the stack-free condition: a surface takes the framework default radius (0.25rem) that is not on the semantic radius scale, so it matches none of rounded-interactive/input/card/modal and a radius-scale change cannot reach it. custom/no-raw-radius-classes does not see it: that rule keys on rounded-sm/md/lg/xl. The string-context lookarounds are what keep the JS identifier rounded (const rounded = Math.round(x)) out. Recall limit, stated: a class list broken across lines inside one template literal, with rounded starting a line, is missed.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 16/16: 12 even-sample hits plus the 4 hits whose line has no className (GHOST_BAR consts, a size= prop, a const bar): all are class strings. A targeted hunt for prose or enum strings equal to rounded (\"rounded\" as a variant value) found none in src.",
+        "fix": "rounded-interactive (buttons, chips), rounded-input (fields), rounded-card (cards, ghost bars), rounded-modal; rounded-full / rounded-none stay legal."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 305,
+        "matches": 648
+      },
+      "floor": 5000
+    },
+    {
+      "id": "opacity-dimmed-text",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Text dimmed with an opacity utility on text-foreground",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w:-])text-foreground(?![\\w-])[^\"'`{}<>\\n]{0,160}?(?<![\\w:/-])opacity-[1-8]\\d(?![\\w-])|(?<![\\w:/-])opacity-[1-8]\\d(?![\\w-])[^\"'`{}<>\\n]{0,160}?(?<![\\w:-])text-foreground(?![\\w-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "text-foreground and an UNPREFIXED opacity-10..opacity-89 in one class string. PROXY FOR the stack-free condition: hierarchy is expressed by fading the whole element instead of by the type scale, which lowers contrast below what the theme AA gate (check:themes) verified, and fades icons, borders and children with it. custom/no-low-contrast-text-classes catches text-foreground/60 but not this spelling, so it is where that rule's violations went. Variant-prefixed opacity (disabled:opacity-50, hover:opacity-80, group-hover:) is deliberately NOT matched: that is the inert/hover state, a different condition.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 12/12 against the signature on an even sample. 3 of the 12 are a sub-class worth naming: icon buttons dimmed at rest and restored by hover:opacity-100 (AFFORDANCE_BTN in NodeSymbolParts.tsx, SinceYouLeftBriefing.tsx); same contrast outcome at rest, and the fix is the same.",
+        "fix": "bare text-foreground with a smaller typo-* tier (typo-caption for secondary); never opacity for hierarchy."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 89,
+        "matches": 239
+      },
+      "floor": 5000
+    },
+    {
+      "id": "phantom-typo-token",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "A typo-* class that no stylesheet defines",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])typo-(?!(?:body|body-lg|caption|card-label|code|data|data-lg|heading|heading-lg|hero|hero-shine|label|rtl|section-title|submodule-header|title|title-lg|weight-light)(?![\\w-]))[a-z0-9]+(?:-[a-z0-9]+)*(?![\\w-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a typo-* class name that is NOT one of the names a stylesheet under src/ defines (typo-body-sm, typo-overline, typo-heading-sm, typo-h3, typo-button, ...). PROXY FOR the stack-free condition: a call site names a type token that does not exist, so the element silently renders in inherited type while reading as if it were tokenised, and the gap is invisible in review. Implemented as an ALLOW-LIST in a static regex (a negative lookahead over the defined names), so a NEW phantom rises the count with no list to maintain. The allow-list itself is kept honest by scripts/style/typo-allowlist.mjs, which check-corpus-integrity.mjs runs inside npm run check: it fails when this list and the .typo-* selectors in src/**/*.css (style proposals in *.proposed.css skipped until promoted) disagree in either direction, which is the one drift a static list could otherwise hide (a token deleted from CSS but still allowed here). Recall limit, stated: a name built at runtime (typo-${size}) is invisible.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION: every one of the 49 hits sampled across the pre-exclude hit list was an undefined class name except the harness scenario ids in src/lib/harness/scenario-parser.ts, now excluded. Most common phantoms: typo-body-sm, typo-overline, typo-heading-sm, typo-body-strong, typo-heading-md, typo-h3.",
+        "fix": "a defined token: typo-body-sm -> typo-caption, typo-heading-sm/md -> typo-heading, typo-overline -> typo-label, typo-body-strong -> typo-title, typo-h3 -> typo-heading-lg."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "src/lib/harness/scenario-parser.ts",
+          "reason": "typo-mapping, typo-home, ... are harness scenario ids that happen to share the prefix; no class string in the file"
+        }
+      ],
+      "baseline": {
+        "files": 47,
+        "matches": 106
+      },
+      "floor": 5000
+    },
+    {
+      "id": "feature-css-type-literal",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Literal font size, font family or colour in a feature stylesheet",
+      "roots": [
+        "src/features"
+      ],
+      "extensions": [
+        ".css"
+      ],
+      "signal": {
+        "pattern": "\\bfont-size\\s*:\\s*-?\\d*\\.?\\d+(?:px|rem)\\b|\\bfont-family\\s*:(?!\\s*(?:var\\(|inherit\\b))[^;}\\n]*|:[^;{}\\n]*?(?:#[0-9a-fA-F]{3,8}(?![\\w-])|\\brgba?\\(\\s*\\d)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "in src/features/**/*.css: a font-size in px/rem, a font-family that is not var(...) or inherit, or a declaration whose value holds a hex or rgb()/rgba() colour literal (one match per declaration). PROXY FOR the stack-free condition: a bespoke stylesheet re-authors type and colour instead of consuming the tokens, so a theme, the text-scale setting and the density setting cannot reach it. Layout stays free in feature CSS; type and colour are tokenised (the bespoke-CSS rule in .claude/rules/ui.md). A literal assigned to a local custom property (--surface: #111a26) counts: a private palette is still a private palette. Recall limit, stated: hsl()/oklch() literals and the font shorthand are not matched.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 16/16 on an even sample after the font-family arm was fixed to refuse var(--font-mono) (a first draft counted it, because \\s* backtracked past the lookahead). heartlight-copy.css stays counted: it holds the words drawn over the art, which is type, the thing this rule governs.",
+        "fix": "size: put a typo-* class on the element and keep the stylesheet to layout; font-family: var(--font-sans|--font-mono); colour: var(--foreground|--primary|--status-*) or color-mix() over them."
+      },
+      "exclude": [
+        {
+          "path": "src/features/companions/landing/heartlight.css",
+          "reason": "the Heartlight art layer: decorative SVG-and-gradient art on pure black that stays dark in every theme, with the companions' identity colours fixed on purpose (see the file header); not a themed surface"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 389
+      },
+      "floor": 8
+    }
+  ]
+}
+```
+
 ---
 
 ## Type over gate — the answer

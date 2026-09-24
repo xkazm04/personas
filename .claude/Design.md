@@ -336,8 +336,14 @@ presets; `.icon-frame[-xs|-sm|-md|-lg]` (+ `-pop`) for persona icons.
 
 ## 8. Do's and Don'ts
 
-Every Don't is paired with the automated check that catches it. All custom
-rules currently report at **warn** — treat warnings as errors for new code.
+Every Don't is paired with the automated check that catches it. Measured
+2026-09-24 in `eslint.config.js`: 22 custom rules, 5 at `error`
+(`no-silent-catch`, `no-loose-event-payload`, `role-button-requires-keydown`,
+`no-whole-store-subscription`, `no-unstable-store-selector`), 16 at `warn`,
+1 `off`. Every style rule is `warn`, which fails no gate (`npm run check` has
+no `--max-warnings`); treat a warning as an error in new code anyway. What
+fails a style slip is a **census ratchet** in `scripts/census/rules.json`: its
+count may not rise (`npm run census -- --rule <id> --verbose` lists the sites).
 
 | Don't | Do instead | Caught by |
 |---|---|---|
@@ -354,7 +360,14 @@ rules currently report at **warn** — treat warnings as errors for new code.
 | Ad-hoc status pill markup | `display/StatusBadge` + `tokenLabel()` | `custom/prefer-status-badge` |
 | Empty `catch {}` | `toastCatch()` / `silentCatch()` | `custom/no-silent-catch` |
 | `bg-/ring-/border-brand-*` in new work | `primary` + `status-*` tokens | (no lint — known Tailwind v4 build unreliability, §3) |
-| Utility patch over a `typo-*` token (`typo-heading text-lg`) | Restyle the token in `typography.css` | (no lint — unlayered CSS silently wins, §2) |
+| Utility patch over a `typo-*` token (`typo-heading font-bold`) | Move to another token, or restyle it in `typography.css` | census `typo-token-overpainted` (font-weight patches; a size or colour patch is not matched) |
+| Raw palette text colour (`text-emerald-400`, `text-red-500/70`) | `text-status-*` / `STATUS_PALETTE`, `text-primary`, `text-foreground` | census `raw-palette-text-colour` |
+| Arbitrary text size (`text-[11px]`, `text-[0.8rem]`) | A `typo-*` tier (§2) | census `raw-arbitrary-text-size` + `custom/no-raw-text-classes` |
+| Bare `rounded` (the 0.25rem default, off the radius scale) | `rounded-interactive/input/card/modal` | census `bare-rounded` |
+| `text-foreground` dimmed with `opacity-10`..`opacity-89` | Bare `text-foreground` on a smaller `typo-*` tier | census `opacity-dimmed-text` |
+| A `typo-*` name no stylesheet defines (`typo-body-sm`, `typo-overline`) | A defined token from §2 | census `phantom-typo-token` + `custom/no-raw-text-classes` |
+| Styled raw `<button>` outside `shared/components` | `buttons/Button` / `buttons/AsyncButton` | census `raw-button-element` |
+| px/rem `font-size`, literal `font-family`, hex/rgb colour in feature CSS | `typo-*` on the element; `var(--font-*)`; `var(--foreground/--primary/--status-*)` | census `feature-css-type-literal` |
 | New theme or token color shipped unchecked | Run `npm run check:themes` (AA gate, CI) | `scripts/check-themes.mjs` |
 | Raw ad-hoc spacing where a token exists | `CARD_PADDING` / `SECTION_GAP` / `INPUT_FIELD` (§4) | `custom/no-raw-spacing-classes` (currently off — self-discipline) |
 | 200+ LOC component file | Extract sub-components | (review convention) |

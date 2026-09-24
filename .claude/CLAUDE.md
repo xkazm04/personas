@@ -63,7 +63,7 @@ Advisory pre-release scripts (manual, not CI-gated):
 > *real* gates **before** the branch leaves the box; CI is the backstop. Run these and confirm green
 > before opening a PR (the local lefthook hooks enforce the fast subset; the full suites run in CI):
 
-- `npm run check` — **seventeen gates, not two.** Fifteen project checks run *first*, in this order (`check:contracts`, `check:command-registration`, `check:command-features`, `check:bindings`, `check:glyphs`, `check:tiers`, `check:tauri-configs`, `check:csp-hosts`, `check:corpus`, `check:recipe-index`, `check:evidence`, `check:doc-map`, `check:promise-pins`, `check:i18n:escapes`, **`census:check`**), then `tsc --noEmit`, then `eslint src/` (21 custom rules — 3 at `error`, 17 at `warn`, 1 `off`). It is a `&&` chain: the first failure stops it and you never see the gates behind it, so a green `tsc` locally tells you nothing about the fifteen that run ahead of it. The census is the one most likely to fail a diff that compiles — see [The golden-path census](#the-golden-path-census--the-gate-most-likely-to-fail-a-clean-diff) below.
+- `npm run check` — **eighteen gates, not two** (re-counted 2026-09-24 from `package.json`). Sixteen project checks run *first*, in this order (`check:contracts`, `check:command-registration`, `check:command-features`, `check:test-cells`, `check:bindings`, `check:glyphs`, `check:tiers`, `check:tauri-configs`, `check:csp-hosts`, `check:corpus`, `check:recipe-index`, `check:evidence`, `check:doc-map`, `check:promise-pins`, `check:i18n:escapes`, **`census:check`**), then `typecheck:native` (`tsc --noEmit` on the TS 7 native compiler), then `eslint src/` (22 custom rules: 5 at `error`, 16 at `warn`, 1 `off`, counted from `eslint.config.js` 2026-09-24). It is a `&&` chain: the first failure stops it and you never see the gates behind it, so a green `tsc` locally tells you nothing about the sixteen that run ahead of it. The census is the one most likely to fail a diff that compiles — see [The golden-path census](#the-golden-path-census--the-gate-most-likely-to-fail-a-clean-diff) below.
 
   > **Re-counted 2026-09-06 against `package.json`, by counting the chain rather than the prose.** Two branches each added a gate and each updated this line in the same commit — obeying the rule below — and the merge still landed with both counts wrong, because each side had counted only its own addition. `check:command-features` and `check:recipe-index` came from one branch, `check:i18n:escapes` from the other; the chain now runs **fifteen** project checks and **seventeen** gates. The rule stands and needs a companion: if you add a gate, add it here in the same commit — and if you merge, re-count the chain instead of keeping either side's sentence. The earlier miss this note replaced was the same failure without a merge: `check:promise-pins` had been added and never made it into the prose, so the most recently adopted gate was the one an agent reading this had never heard of. `check:recipe-index` closed a separate hole — `recipeIndex.generated.json` had no generator and its `tags` field had been silently truncated to six characters for months.
 
@@ -94,7 +94,7 @@ changes and evaluates — never blind-merges minor/major. The human-facing DoD l
 never described it.** If your change compiles, type-checks, lints clean and still fails
 the push, this is almost certainly why.
 
-`scripts/census/rules.json` holds **204 regex-shaped rules** (recounted 2026-08-24 from `rules.json`; the 2026-08-20 full-run stats below still cite 201) — one per golden-path
+`scripts/census/rules.json` holds **212 regex-shaped rules** (recounted 2026-09-24 from `rules.json`, after the seven style rules of `454b4f343`; the 2026-08-20 full-run stats below still cite 201) — one per golden-path
 violation the repo has decided to stop growing (`hand-rolled-spinner`,
 `untyped-command-payload`, `native-title-tooltip`, `bindingless-catch-on-io`, …). Each
 carries a **ratcheting baseline**: the count measured at adoption. `scripts/census/run-census.mjs`
@@ -247,102 +247,11 @@ rather than reaching for a blanket rule.
 > comment justifying them". Personas prescribed this to its customers before it wrote
 > it down for itself.
 
-### Styling
-- **Canonical reference: [`.claude/Design.md`](./Design.md)** — single source of truth for tokens, typography, color, spacing, radius, elevation, motion, and component primitives. Read it before adding any new UI surface or extending an existing one.
-- Semantic design tokens: `typo-*` for text sizes, `rounded-{interactive,input,card,modal}` for radii, `shadow-elevation-1..4` for depth, JS spacing tokens (`CARD_PADDING`, `SECTION_GAP`, ...) for layout
-- `[data-theme^="light"]` CSS selectors for light theme overrides
-- Never use `text-white/*` or `bg-white/*` directly — use `text-foreground/*` or `bg-secondary/*`
-- ESLint warns on raw Tailwind classes that have semantic equivalents (see Design.md §8 Do's and Don'ts)
-
-### Reusing shared components — check the catalog before building UI
-
-> **Before you write any UI, check whether a shared component already exists.**
-> The project has **128 reusable, domain-agnostic primitives** (recounted 2026-08-17 from the generated catalog; this line said ~115, a figure from the 2026-06-18 curation that has drifted by 13) under `src/features/shared/components/`,
-> catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
-> (auto-generated, always fresh — the durable UI reference bundle). The #1 source of UI
-> drift is new code re-implementing a spinner / empty state / button / modal / tooltip /
-> badge / copy-button / relative-time / number-format that already exists.
->
-> **The catalog is a recommended reference, not a build gate.** `shared/components/**` is
-> meant to stay primitives-only — ideally it does not import from `@/stores`, `@/api`,
-> `@/lib/bindings`, or any `@/features/<feature>`. An ESLint rule in `eslint.config.js`
-> **warns** (advisory, non-blocking) when it does, but nothing fails the build. App-shell
-> chrome (sidebar, titlebar, footer, toasts, command palette) lives in **`src/features/shared/chrome/`**
-> (shared but NOT catalogued); domain components live in their owning feature. If a component
-> needs app state, prefer passing it via props or putting the component in `chrome/` or a
-> feature — but this is guidance, not enforcement. The 2026-06-18 curation (206→115) and the
-> rationale are in [`docs/refactor/catalog-curation.md`](../docs/refactor/catalog-curation.md).
-
-**Do NOT hand-roll these — import the shared one** (full table + import paths in
-[`docs/refactor/shared-component-reuse.md`](../docs/refactor/shared-component-reuse.md)):
-
-| Don't hand-roll | Use |
-|---|---|
-| a busy state on an **action control** (a button/row affordance the user just pressed) | `buttons/AsyncButton` — it renders a **real** spinner. **Never `feedback/LoadingSpinner`, which renders `null`.** See [the spinner boundary](#the-spinner-boundary--banned-for-surfaces-required-for-actions) below |
-| a loading state for a **surface** (a region fetching its data) | a calm delayed ghost under permanent chrome — see [Cold-load / loading UX](#cold-load--loading-ux--the-standard-loading-pattern-v2) below. **A spinner is never a surface loading state in this app.** |
-| "no data" block | `feedback/ScenarioEmptyState` (default export — call sites import it as `EmptyState`), plus its `NoResults` / `InboxZero` wrappers. Chart panels → `display/ChartEmptyState`; compact generic block → `display/EmptyIllustration` |
-| styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
-| `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
-| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` — ~~enforced by `custom/enforce-base-modal`~~ **not enforced; corrected 2026-08-17.** That rule is `"warn"` (`eslint.config.js:95`), and warn-level enforces nothing at either gate. Worse, it does not *detect* this either: driven over its whole anchor it reports **8 sites at precision 0/8** (all anchored popovers or an inline notice — converting them would be a regression) and **recall 0/19** (the 19 hand-painted modal files carry no `role="dialog"`, which is what it keys on). It is also satisfied by a bare *import*. Its own `RuleTester` fixtures contain no `fixed inset-0`, so no fixture could ever have failed. Census rule `hand-painted-modal-backdrop` covers the real condition at **19 files / 20 matches, precision 20/20**; adoption is 129 `<BaseModal>` : 20 hand-painted = **86.6%**. See [`modal-stacking.md`](../docs/concepts/golden-paths/modal-stacking.md). |
-| `title=` / custom tooltip | `display/Tooltip` |
-| `new Date().toLocaleString()` / "ago" | `display/RelativeTime` |
-| `.toFixed()` / `.toLocaleString()` for display | `display/Numeric` |
-| checkbox styled as switch | `forms/AccessibleToggle` |
-| `<select>` / custom dropdown | `forms/Listbox` |
-| label+input+error | `forms/FormField` |
-| custom tab strip | `layout/PanelTabBar` / `layout/SegmentedTabs` |
-| a table + its loading skeleton / empty state / row animation | `display/UnifiedTable` — pass `columns` + `data` + `isLoading`; you get ghost-under-chrome, empty-flash safety, and the id-guarded row-entrance cascade for free (see below) |
-| a loading skeleton for a lazy route/section chunk | `layout/RouteChunkSkeleton` as the `Suspense fallback` (delayed header-only ghost, invisible when warm — never `fallback={null}` or a centered spinner) |
-| a per-row/tile entrance stagger | `display/RevealItem` (polymorphic `as="tr"\|"li"\|"div"`) + `useRevealTracker` |
-
-### Cold-load / loading UX — the standard (loading pattern v2)
-
-**Never hand-roll a skeleton, spinner branch, or big-bang reveal for an async surface.** The single source of truth is [`docs/design/overview-loading.md`](../docs/design/overview-loading.md) (the five laws; reference impl `overview/sub_activity/components/GlobalExecutionList.tsx`). Compose the four shared mechanics:
-1. **Lazy route/section** → wrap in `<Suspense fallback={<RouteChunkSkeleton/>}>` (kills the blank chunk-load gap; invisible once the chunk is warm/idle-prefetched).
-2. **A list/table** → use `UnifiedTable` with `isLoading` + `data`. Its three-state body (ghost-under-header while `isLoading && empty` → settled-only empty → rows rippling in via a cascade **coupled to `isLoading`**) is the whole doctrine from two props.
-3. **A non-table data region** → static chrome always renders; ghost **under** it only when `isLoading && items.length===0` (a fetch never hides rendered rows — law 1); rows via `RevealItem` + `useRevealTracker`.
-4. **A view that fully unmounts on nav-away** (lazy routes do) → keep last fetch in a **module-scoped cache** keyed by entity so a remount paints warm, not a re-ghost (precedent: `sub_lifecycle/LifecyclePage.tsx`, `.../competitions/CompetitionList.tsx`). A single-slot warm cache built by hand (as in those two precedents) stays fine as-is; a cache with **multiple entries** — keyed by project/credential/file/etc. rather than one fixed slot — must use `createModuleCache` (`src/hooks/utility/data/useModuleSubscription.ts`, key + TTL + `maxSize` eviction + `invalidate`), not a hand-rolled `Map`, so it always names its cap.
-
-Import as `@/features/shared/components/<category>/<Name>`. If a genuinely new
-reusable pattern is needed, **add it to `shared/components/` (not a feature folder)**
-and give it a `@catalog <one-line>` JSDoc tag so it appears in the catalog. After
-adding/removing a shared component run `npm run gen:catalog` (also auto-runs in
-predev/prebuild, so CATALOG.md stays fresh on its own — but a stale catalog no
-longer fails `npm run check`; regeneration is a convenience, not a gate). The
-`check:catalog` / `check:catalog-boundary` scripts still exist for a manual
-staleness/boundary audit if you want one. Extraction/consolidation backlog
-(PanelShell, ContentCard, FilterToolbar, …) lives in the reuse doc above.
-
-### The spinner boundary — banned for surfaces, required for actions
-
-**These are two different situations with opposite prescriptions. Getting them
-confused is the single most common loading defect in this repo.**
-
-> **A spinner is banned for a surface loading its data. A spinner is required on
-> a control the user just pressed.**
-
-| | A **surface** loading its data | An **action** the user just triggered |
-|---|---|---|
-| Examples | a tab, page, panel, list, chart fetching on mount or on filter change | Save, Send, Retry, Test connection, row-level Approve |
-| Show | a calm geometry-matched ghost **under** the permanent chrome (see the four mechanics above) | a **real, visible spinner** on the control itself, plus `disabled` + `aria-busy` |
-| Use | `UnifiedTable` (`isLoading` + `data`) · `RouteChunkSkeleton` · a local delayed ghost | `buttons/AsyncButton` (returns-a-promise `onClick`, no state at all) or `buttons/Button loading={flag}` when the flag is externally owned |
-| Never | a spinner, `animate-pulse`, or `if (loading) return …` that replaces chrome | `useState(false)` + `try/finally`, a scalar flag for a per-row action, `onClick={() => void fn()}` (that silently disarms the double-submit guard) |
-| Doctrine | [`docs/design/overview-loading.md`](../docs/design/overview-loading.md) | [`docs/concepts/golden-paths/inline-busy-state.md`](../docs/concepts/golden-paths/inline-busy-state.md) |
-
-**`feedback/LoadingSpinner` renders `null`.** It is a compatibility shim that
-emits only an `sr-only` `role="status"` when you pass `label`. It is not a
-spinner and it is not a ghost — it is nothing. `{busy ? <LoadingSpinner/> :
-<Icon/>}` makes the icon vanish and puts nothing in its place. Do not render it
-as either half of the table above. The real spinners live inside `Button`
-(`Button.tsx:230,:237`) and `AsyncButton` (`AsyncButton.tsx:85`), which is
-deliberate.
-
-> ✅ **The `CATALOG.md` `LoadingSpinner` warning that stood here is RESOLVED** —
-> corrected 2026-08-13 in `ddeb19cc0`. Both the `CURATED` map
-> (`scripts/docs/gen-shared-catalog.mjs:57`) and the generated row now read
-> "RENDERS NOTHING. Spinners are disabled app-wide…". Verified 2026-08-17. The
-> owed follow-up this block described no longer exists — the stale artifact was
-> **this paragraph**, which outlived by four days the defect it named.
+### Styling and UI
+UI law loads by itself when you touch `src/**/*.tsx` or `src/**/*.css`: **[`.claude/rules/ui.md`](./rules/ui.md)** (which
+style gates actually fail, the don't-hand-roll table, the spinner boundary, loading pattern v2, the type/colour gotchas).
+Full reference: **[`.claude/Design.md`](./Design.md)**. Primitives: **[`CATALOG.md`](../src/features/shared/components/CATALOG.md)**.
+A new reusable primitive goes in `src/features/shared/components/` with a `@catalog <one-line>` JSDoc tag.
 
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
@@ -459,7 +368,7 @@ The product has three docs surfaces: **`docs/features/`** (implemented-product r
 
 **[`scripts/docs/feature-doc-map.json`](../scripts/docs/feature-doc-map.json) is the authoritative source → docs map.** Each entry declares `doc` (required), optional `onboardingFlows` (tour-flow IDs), optional `marketingModule` (`desktop-modules.ts` module ID). When you add a new feature area, add its entry in the same change.
 
-> **This rule stands unenforced — honor-system.** A Stop hook (`scripts/docs/check-doc-sync.mjs`) was registered to nag per turn, but **measured 2026-08-17 it has NEVER fired: replayed over 100 real transcripts, 477 turns edited files, 2,367 file-edits, 0 visible to the hook — 0.00%** (its backward transcript walk terminates on tool results, which share the shape it breaks on; same bug at `check-golden-path-touch.mjs:85`). Every dismissal ever recorded was of a message it never sent. The fix is deliberately deferred — repairing it flips a silent hook into one that fires most turns, which changes the operator's workflow and is theirs to schedule: registered in [`golden-path-deferred-fixes.md`](../docs/concepts/golden-path-deferred-fixes.md), derivation in [`documentation-sync.md`](../docs/concepts/golden-paths/documentation-sync.md). Until then, doc sync happens because you do it, not because anything makes you.
+> **This rule stands unenforced — honor-system.** A Stop hook (`scripts/docs/check-doc-sync.mjs`) was once registered to nag per turn; **it is registered nowhere now** (neither `.claude/settings.json` nor `settings.local.json`, verified 2026-09-24), and **measured 2026-08-17 it had NEVER fired: replayed over 100 real transcripts, 477 turns edited files, 2,367 file-edits, 0 visible to the hook — 0.00%** (its backward transcript walk terminates on tool results, which share the shape it breaks on; same bug at `check-golden-path-touch.mjs:85`). Every dismissal ever recorded was of a message it never sent. The fix is deliberately deferred — repairing it flips a silent hook into one that fires most turns, which changes the operator's workflow and is theirs to schedule: registered in [`golden-path-deferred-fixes.md`](../docs/concepts/golden-path-deferred-fixes.md), derivation in [`documentation-sync.md`](../docs/concepts/golden-paths/documentation-sync.md). Until then, doc sync happens because you do it, not because anything makes you.
 
 If drift accumulates, run `/guide-sync` manually for a full catch-up pass (`.claude/guide-sync-marker.json` tracks the last full-pass commit). The desktop-module → guide-category map is `personas-web/src/data/guide/desktop-modules.ts` (`TOPIC_MODULE_MAP`). Both repos run their own `git` — keep commits atomic per repo, and never `git stash` other sessions' work in either checkout.
 

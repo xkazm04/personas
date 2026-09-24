@@ -1,0 +1,67 @@
+{
+  "$comment": "Per-module data shared by the harness (registry.tsx), the recorder (record-tape.mjs) and the shooter. `record` is the /bridge-exec step list that brings the RUNNING app to the page while the tape rolls; `boot` lists commands the page needs from app boot (store preloads) that the recorder invokes itself so they land on the tape; `fill` answers commands a recording session does not reach on its own (they are appended as wildcards only when absent, and named in the tape's note).",
+  "overview/sub_events": {
+    "title": "Overview / Events",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-events"
+        }
+      }
+    ],
+    "boot": [
+      [
+        "list_personas",
+        null
+      ],
+      [
+        "get_persona_summaries",
+        null
+      ]
+    ],
+    "fill": {
+      "search_events": {
+        "events": [],
+        "has_more": false
+      }
+    }
+  },
+  "home/sub_releases": {
+    "title": "Home / What's New",
+    "record": [
+      {
+        "method": "navigate",
+        "params": {
+          "section": "overview"
+        }
+      },
+      {
+        "method": "navigate",
+        "params": {
+          "section": "home"
+        }
+      },
+      {
+        "method": "clickTestId",
+        "params": {
+          "testId": "tab-roadmap"
+        }
+      }
+    ],
+    "boot": [],
+    "fill": {}
+  }
+}

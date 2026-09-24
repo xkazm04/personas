@@ -82,6 +82,12 @@ function main() {
     process.exit(1);
   }
   const chunks = walk(assets, entry).sort((a, b) => b.bytes - a.bytes);
+  // Fail loud: a Vite entry always statically imports its vendor chunks, so a
+  // walk that reached only the entry means the matcher broke, not the bundle.
+  if (chunks.length < 2) {
+    console.error(`eager-bytes: walk reached only ${entry}; the import matcher is broken`);
+    process.exit(1);
+  }
   const totalBytes = chunks.reduce((s, c) => s + c.bytes, 0);
   const builtAt = fs.statSync(path.join(assets, entry)).mtime.toISOString();
   const result = { dist: args.dist, entry, builtAt, chunkCount: chunks.length, totalBytes, chunks };

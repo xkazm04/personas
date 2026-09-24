@@ -78,6 +78,7 @@ import { readBoardVariant, writeBoardVariant, type BoardVariant } from './board/
 import { NodeContext, type NodeContextValue } from './board/node/nodeContext';
 import { meanWaitMs } from './board/queue/queueVerbs';
 import { OrchestrationPanel } from './orchestration';
+import { ActivityPrototypeSwitcher } from './prototype/ActivityPrototypeSwitcher';
 
 // The usage strip carries a confirm dialog, a toggle and async buttons — a
 // chunk of its own, landing into a fallback that already occupies its footprint.
@@ -277,5 +278,10 @@ function FleetGridViewImpl({
   );
 }
 
-export const FleetGridView = memo(FleetGridViewImpl);
+// TODO(prototype, 2026-09-24): consolidate the Activity switcher.
+function FleetGridViewPrototype(props: Props) {
+  return <ActivityPrototypeSwitcher {...props} Baseline={FleetGridViewImpl} />;
+}
+
+export const FleetGridView = memo(FleetGridViewPrototype);
 export default FleetGridView;

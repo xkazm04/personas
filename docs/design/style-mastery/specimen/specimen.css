@@ -1,0 +1,100 @@
+/* Layout for the Gate 0 specimen page only. Geometry is free here; every
+   colour and every piece of type on the page resolves through the app's own
+   tokens, so each theme repaints it. Class names carry an sp- prefix so the
+   Tailwind scanner (which also reads docs/) generates nothing for them. */
+
+html, body, #root { min-height: 100%; margin: 0; }
+body { background: var(--background); color: var(--foreground); }
+
+.sp-page { max-width: 1680px; margin: 0 auto; padding: 0 2rem 4rem; }
+.sp-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem;
+  padding: 0.9rem 0; margin-bottom: 1.5rem;
+  background: var(--background);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.sp-bar label { display: inline-flex; align-items: center; gap: 0.5rem; }
+.sp-bar select {
+  background: var(--secondary); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-input); padding: 0.25rem 0.5rem;
+  font: inherit;
+}
+.sp-bar nav { display: flex; gap: 1rem; margin-left: auto; }
+.sp-bar a { color: var(--foreground); }
+
+.sp-section { margin: 0 0 3rem; scroll-margin-top: 5rem; }
+.sp-section-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding-bottom: 0.6rem; margin-bottom: 1.2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.sp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+.sp-cols.is-single { grid-template-columns: 1fr; }
+.sp-col {
+  border: 1px solid var(--card-border); background: var(--card-bg);
+  border-radius: var(--radius-card); padding: 1.25rem 1.5rem; min-width: 0;
+}
+.sp-col-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1rem; }
+
+.sp-spec { display: flex; flex-direction: column; gap: 0.15rem; }
+.sp-sample { min-width: 0; overflow-wrap: anywhere; }
+.sp-flag {
+  display: inline-block; margin-left: 0.4rem; padding: 0 0.4rem;
+  border: 1px solid currentColor; border-radius: var(--radius-interactive);
+}
+
+.sp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+.sp-swatch {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  padding: 0.9rem 1rem; border-radius: var(--radius-card);
+  border: 1px solid var(--card-border); background: var(--card-bg);
+}
+.sp-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem; width: fit-content;
+  padding: 0.15rem 0.6rem; border-radius: var(--radius-interactive); border-width: 1px; border-style: solid;
+}
+.sp-rule { height: 0; border-top-width: 2px; border-top-style: solid; }
+
+.sp-matrix { width: 100%; border-collapse: collapse; }
+.sp-matrix th, .sp-matrix td {
+  text-align: left; padding: 0.4rem 0.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.sp-dot { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 99px; vertical-align: middle; margin-right: 0.35rem; }
+
+.sp-listrow {
+  display: grid; grid-template-columns: 2.2rem minmax(0, 1.6fr) minmax(0, 1.6fr) auto 6.5rem;
+  align-items: center; gap: 1rem; padding: 0.6rem 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.sp-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem;
+  border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent);
+  background: color-mix(in srgb, var(--secondary) 30%, transparent);
+}
+.sp-card {
+  border: 1px solid var(--card-border); background: var(--card-bg);
+  border-radius: var(--radius-card); padding: 1rem 1.25rem;
+}
+.sp-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.sp-hair { border-bottom: 1px solid color-mix(in srgb, var(--primary) 10%, transparent); padding-bottom: 0.6rem; }
+.sp-stack > * + * { margin-top: 0.35rem; }
+.sp-stack-lg > * + * { margin-top: 1.25rem; }
+
+
+/* Type scale: one row per role, current and proposed cells side by side. */
+.sp-typegrid { display: grid; grid-template-columns: minmax(14rem, 20rem) 1fr 1fr; column-gap: 1.5rem; }
+.sp-typegrid.is-single { grid-template-columns: minmax(14rem, 20rem) 1fr; }
+.sp-typerow { display: contents; }
+.sp-typehead { padding: 0 0 0.6rem; }
+.sp-typerow > * {
+  padding: 0.9rem 0; min-width: 0;
+  border-top: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.sp-cell { display: flex; flex-direction: column; gap: 0.35rem; }
+
+@media (max-width: 900px) {
+  .sp-cols { grid-template-columns: 1fr; }
+  .sp-typegrid, .sp-typegrid.is-single { grid-template-columns: 1fr; }
+}
