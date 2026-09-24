@@ -36,6 +36,32 @@ for the specimen. Worklist: `migration-map.md`.
 Sections below describe what was decided. Where a proposal was rejected it stays
 visible, marked "considered, rejected at Gate 0".
 
+## 0b. How a module is revitalized (learned at Gates 0 and 1)
+
+Gate 1's first pass on `home/sub_releases` was judged a **degradation**: flat card
+surfaces replaced subtle gradients, a status label was restyled instead of removed,
+and the in-progress rail went from the theme's primary glow to `status-info`. The
+rework that reversed those three passed (`b9e540e62`). Together with Gate 0 keeping
+the title tint and the card-label glow, the rule for every module is:
+
+1. **The theme's primary tint and glow are identity, not decoration.** Where the old
+   colour was the theme's own hue (cyan is `primary` in the default dark theme),
+   keep it as `primary`, glow included. A status or role colour replaces a colour
+   only when the old one was a raw palette step with no theme link AND the meaning
+   is a status or role.
+2. **Unification fixes what is broken, not what reads well.** Raw sizes, raw palette
+   steps, below-floor text, hand-rolled controls and phantom tokens convert. A
+   gradient surface, a mono tracked micro-head or a glow that carries the module's
+   character stays, written over theme variables so light themes get it too.
+3. **Remove redundancy instead of restyling it.** A label that repeats what position,
+   colour or an icon already says goes.
+4. **Light theme parity is judged on its own.** Every colour goes through a theme
+   variable or token; a light theme that looked unstyled before is a real win.
+5. **A kept look no token reproduces is a declared deviation** at the site:
+   `// style-deviation: <why>`, naming the gate that kept it.
+6. **Show the page the operator will look at.** Shots include one tall viewport
+   (1440x3200) so the lower half of a surface is judged too.
+
 ## 1. Type roles
 
 A token is a ROLE: what the text is for. Its value can change; its role cannot.
