@@ -1,802 +1,171 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import {
-  Terminal as TerminalIcon,
-  Play,
-  RefreshCw,
-  Send,
-  Hourglass,
-  Loader2,
-  CheckCircle2,
-  Clock,
-  Ban,
-  Flag,
-  Sparkle,
-  Bell,
-  BellOff,
-  Search,
-  LayoutGrid,
-  BarChart3,
-  BookOpen,
-  Moon,
-  Sun,
-  Keyboard,
-  ListTodo,
-  ClipboardList,
-  ListOrdered,
-} from 'lucide-react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { Terminal as TerminalIcon } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ActionRow } from '@/features/shared/components/layout/ActionRow';
-import { Button } from '@/features/shared/components/buttons';
-import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
-import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, spawnHeadlessSession, writeInput, hibernateSession, wakeSession } from '@/api/fleet/fleet';
-import type { FleetSession } from '@/lib/bindings/FleetSession';
-import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import { useToastStore } from '@/stores/toastStore';
-import { FleetSessionCard } from '../FleetSessionCard';
-import { FleetTerminalPane } from '../FleetTerminalPane';
-import { FleetSessionInsights } from './FleetSessionInsights';
-import { FleetContextPill } from './FleetContextPill';
-import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
-import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
-import { replyToSession } from '../replyToSession';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
 import { useFleetOverlayActions } from '../useFleetOverlayActions';
-import { sessionAttention, attentionClass } from '../fleetAttention';
-import { FleetHooksPill } from '../FleetHooksPill';
+import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { FleetHarvestPanel } from '../sub_harvest/FleetHarvestPanel';
-import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { useFleetHotkeys } from '../useFleetHotkeys';
 import { FleetHotkeysHelp } from '../FleetHotkeysHelp';
 import { FleetSpawnTaskModal } from '../FleetSpawnTaskModal';
 import { FleetSummaryPills } from '../FleetSummaryPills';
 import { fleetStateCounts } from '../fleetStateMeta';
-import type { FleetLabelKey } from '../FleetStatusDots';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText, debtText } from '@/i18n/DebtText';
-
-
-// Visual order + label + icon + accent for the per-state group headers
-// in the left list. Attention-grabbing first; terminal states last.
-interface FleetGroupMeta {
-  id: FleetSessionState;
-  /** plugins.fleet key for the group header label. */
-  labelKey: FleetLabelKey;
-  icon: typeof Hourglass;
-  /** Tailwind text-color class for the icon + count badge. */
-  accent: string;
-}
-
-export const GROUP_ORDER = [
-  { id: 'awaiting_input', labelKey: 'state_awaiting_input', icon: Hourglass,    accent: 'text-violet-400' },
-  { id: 'running',        labelKey: 'state_working',        icon: Loader2,      accent: 'text-blue-400' },
-  { id: 'queued',         labelKey: 'state_queued',         icon: ListOrdered,  accent: 'text-slate-400' },
-  { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
-  { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
-  { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
-  { id: 'finished',       labelKey: 'state_finished',       icon: Flag,         accent: 'text-teal-400' },
-  { id: 'hibernated',     labelKey: 'state_hibernated',     icon: Moon,         accent: 'text-indigo-400' },
-  { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
-] as const satisfies ReadonlyArray<FleetGroupMeta>;
-
-// One authority per vocabulary: the grid is a consumer of FleetSessionState,
-// so a state added to the binding without a row above must be a compile
-// error here rather than a group that silently never renders (a `finished`
-// session was unreachable on this page while the summary pill counted it).
-type _StatesWithoutAGroup = Exclude<FleetSessionState, (typeof GROUP_ORDER)[number]['id']>;
-const _groupOrderIsExhaustive: _StatesWithoutAGroup extends never ? true : never = true;
-void _groupOrderIsExhaustive;
+import { debtText } from '@/i18n/DebtText';
+import { FleetGridHeaderActions } from './FleetGridHeaderActions';
+import { FleetGridToolbar } from './FleetGridToolbar';
+import { FleetSessionList } from './FleetSessionList';
+import { FleetFocusPane } from './FleetFocusPane';
+import type { FleetRightView } from './FleetPaneToolbar';
+import { useFleetGridListeners } from './useFleetGridListeners';
+import { useFleetGridNavigation } from './useFleetGridNavigation';
+import { useFleetGridSessionOps } from './useFleetGridSessionOps';
 
 /**
- * Sessions view — the only Fleet tab the user navigates between (Settings
- * still exists for uninstall + diagnostics). Layout:
+ * Sessions view: the Fleet tab the user works in (Settings keeps uninstall +
+ * diagnostics). Header (project, count, alert/shortcut/hooks controls), the
+ * state pills, the Needs-you banner, one band with the token glance and the
+ * actions, then the session list (left) beside the focused session's pane.
  *
- *   ContentHeader: Project · counters                 [Hooks pill]
- *   ActionRow:     [Spawn]  [Broadcast]  [Refresh]
- *   Grid:
- *     Left col 4:  compact session rows (FleetSessionCard, memoized)
- *     Right col 8: live terminal pane for the focused session
+ * The body fills the viewport: the list scrolls inside its column and the
+ * pane takes the height left under the bands, so a terminal is as tall as the
+ * window at any session count (it tracked the list's length before).
  *
- * Optimization choices for 5-10 parallel CLIs:
- *  - useShallow on the sessions read → reference equality bails out the
- *    parent re-render when no sessions changed even if other slice fields
- *    did. Patches that touch one session preserve the other session
- *    objects' identity (see fleetPatchSession), so React.memo on each
- *    card avoids re-rendering the rows that didn't change.
- *  - Only the active session mounts an xterm AND subscribes to live output.
- *    Unwatched sessions are not streamed at all: the Rust reader drains each
- *    PTY into a bounded ring buffer and emits nothing over IPC until a pane
- *    subscribes (then it replays the ring). So app IPC + xterm-parse cost
- *    tracks the number of *watched* sessions, not the number running — the key
- *    to scaling to 16 CLIs without out-rendering cmd.exe.
- *  - Event handlers (state / exited / registry-changed) are attached
- *    once via useEffect with empty-deps + stable refs for the slice
- *    actions; no resubscribe on every render.
+ * Scale notes for 5-10 parallel CLIs: sessions are read with useShallow and
+ * FleetSessionCard is memoised, so a patch to one session re-renders one row;
+ * only the focused session mounts an xterm and subscribes to live output.
  */
 export default function FleetGridPage() {
   const refresh = useSystemStore((s) => s.fleetRefresh);
-  const startSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
-  const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
-  const recordTransition = useSystemStore((s) => s.fleetRecordTransition);
-  const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const notifyAwaiting = useSystemStore((s) => s.fleetNotifyAwaiting);
-  const setNotifyAwaiting = useSystemStore((s) => s.fleetSetNotifyAwaiting);
-
-  // Session list, focus, project + the operations the fullscreen grid also
-  // drives (spawn / apply skill) — shared with `FleetGridOverlayHost` so both
-  // surfaces behave identically. The overlay itself is NOT rendered here: it
-  // is an app-wide layer (`FleetGridLayer`) so it can be raised from the
-  // footer on any page.
+  const gridOpen = useSystemStore((s) => s.fleetGridOpen);
+  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   const {
-    sessions,
-    liveSessions,
-    activeSessionId,
-    setActiveSession,
-    selectSession,
-    activeProject,
-    spawning,
-    handleSpawn,
-    handleApplySkill,
+    sessions, liveSessions, activeSessionId, setActiveSession, selectSession,
+    activeProject, spawning, handleSpawn, handleApplySkill,
   } = useFleetOverlayActions();
-
   const { t, tx } = useTranslation();
 
-  // Keep the persisted terminal settings (font, copy-on-select, theme) applied
-  // to every live managed terminal, and track the app's light/dark appearance.
+  // Persisted terminal settings applied to every live terminal.
   useFleetTerminalConfig();
+  useFleetGridListeners(sessions);
+  const ops = useFleetGridSessionOps(sessions, activeProject, setActiveSession);
+  const nav = useFleetGridNavigation(sessions, activeSessionId, setActiveSession);
 
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [harvestOpen, setHarvestOpen] = useState(false);
-  // Spawn-with-a-first-task composer (seeds the new session's prompt via argv).
   const [spawnTaskOpen, setSpawnTaskOpen] = useState(false);
-  // Fullscreen terminal grid overlay (transient — minimizing returns to the
-  // single-pane view showing the last-selected session). Driven by the store
-  // so the footer Fleet toggle and the app-wide layer share one flag.
-  const gridOpen = useSystemStore((s) => s.fleetGridOpen);
-  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
-  const [filter, setFilter] = useState<FleetSessionState | null>(null);
-  const [query, setQuery] = useState('');
-  // Right column shows either the live terminal or the transcript-intelligence
-  // panel (P2.1). The terminal stays alive in the manager while hidden.
-  const [rightView, setRightView] = useState<'terminal' | 'insights'>('terminal');
-  // Left skill-library drawer (F1 surfacing) — applies a skill to the focused session.
+  const [rightView, setRightView] = useState<FleetRightView>('terminal');
   const [skillsDrawerOpen, setSkillsDrawerOpen] = useState(false);
-  // Shortcuts reference modal (opened by `?` or the header keyboard button).
   const [hotkeysHelpOpen, setHotkeysHelpOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const addToast = useToastStore((s) => s.addToast);
 
-  // Hold the latest refresh/patch/remove in refs so the listener effect can
-  // stay attached once for the lifetime of the page. Without this, every
-  // sessions-array update would tear down + re-attach the three Tauri
-  // listeners (cheap individually but noisy under 5-10 sessions).
-  const actionsRef = useRef({ refresh, patchSession, removeLocal, recordTransition });
-  actionsRef.current = { refresh, patchSession, removeLocal, recordTransition };
-
-  // Refs read by the once-attached listener: the live notify preference, a
-  // snapshot of sessions (to resolve a name for the alert body), and the set
-  // of ids we've already alerted on so a re-emitted awaiting_input event
-  // doesn't double-notify. `t`/`tx` are stable proxies, safe to close over.
-  const notifyRef = useRef(notifyAwaiting);
-  notifyRef.current = notifyAwaiting;
-  const sessionsRef = useRef(sessions);
-  sessionsRef.current = sessions;
-  const awaitingSeenRef = useRef<Set<string>>(new Set());
-  const addToastRef = useRef(addToast);
-  addToastRef.current = addToast;
-
-  useEffect(() => {
-    actionsRef.current.refresh();
-    fetchProjects().catch(silentCatch('FleetGridPage:fetchProjects'));
-
-    // Store-level registration owns the session-row mutations (patch / record
-    // transition / remove / re-fetch) for FLEET_SESSION_STATE / _EXITED /
-    // _REGISTRY_CHANGED — attached once per process so the canvas and other
-    // surfaces stay live without a poll. This page keeps only its own
-    // UI-LOCAL side effects (awaiting-input push notification + live-slot
-    // eviction toast) on FLEET_SESSION_STATE — no double store-handling.
-    startSessionListeners();
-
-    const unStateP = listen<{ session_id: string; state: string; reason?: string }>(
-      EventName.FLEET_SESSION_STATE,
-      (event) => {
-        const { session_id, state, reason } = event.payload;
-
-        // Live-slot cap eviction is safe (Idle/Stale only, resumable) but was
-        // SILENT: the tile just vanished from the live grid with the reason
-        // only findable on hover / in the summary count (2026-07-16 UAT
-        // F-MAJOR-14). Announce it so the operator knows the session was
-        // parked, not killed.
-        if (state === 'hibernated' && reason?.includes('live-session limit')) {
-          const sess = sessionsRef.current.find((s) => s.id === session_id);
-          const name = sess?.name ?? sess?.projectLabel ?? session_id.slice(0, 8);
-          addToastRef.current(
-            tx(t.plugins.fleet.live_slot_hibernated_toast, { name }),
-            'warning',
-            8000,
-          );
-        }
-
-        // Desktop "push" alert on entering awaiting_input — once per entry.
-        const seen = awaitingSeenRef.current;
-        if (state === 'awaiting_input') {
-          if (!seen.has(session_id)) {
-            seen.add(session_id);
-            if (notifyRef.current) {
-              const sess = sessionsRef.current.find((s) => s.id === session_id);
-              const name = sess?.name ?? sess?.projectLabel ?? '';
-              // Richer alert: include the Notification message (what Claude
-              // wants) when the hook carried one, so the toast is actionable.
-              const detail = reason?.trim();
-              notifyFleetAwaiting(
-                t.plugins.fleet.notify_title,
-                detail
-                  ? tx(t.plugins.fleet.notify_body_detail, { name, detail })
-                  : tx(t.plugins.fleet.notify_body, { name }),
-              );
-            }
-          }
-        } else {
-          seen.delete(session_id);
-        }
-      },
-    );
-
-    return () => {
-      unStateP.then((fn) => fn());
-    };
-    // Effect intentionally has no deps — actions live behind a ref above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Stable callbacks so React.memo on FleetSessionCard isn't broken by a
-  // new closure identity every render.
-  // Selection goes through the wake-aware path: activating a dozing (or
-  // hibernated) session resumes it — "wake on return".
-  const handleActivate = useCallback(
-    (id: string) => void selectSession(id),
-    [selectSession],
-  );
-  const handleRemovedLocal = useCallback(
-    (id: string) => removeLocal(id),
-    [removeLocal],
-  );
-
-  // Inline reply from the "Needs you" banner — write the line to the
-  // session's PTY (trailing \r submits, mirroring the broadcast composer).
-  // Delegates to the shared gesture so the phone preview (and any future
-  // paired device) sends a reply the same way, carriage return included.
-  const handleReply = useCallback(async (id: string, replyText: string) => {
-    await replyToSession(id, replyText);
-  }, []);
-
-  // Compact a bloated session: write `/compact⏎` into its PTY (claude's native
-  // compaction). The session re-sends its whole conversation each turn, so this
-  // cuts per-turn cost for the rest of the run. Same write mechanism as skills.
-  const handleCompact = useCallback(async (id: string) => {
-    try {
-      await writeInput(id, '/compact\r');
-      const sess = sessions.find((s) => s.id === id);
-      addToast(
-        tx(t.plugins.fleet.compact_toast, { name: sess?.name ?? sess?.projectLabel ?? '' }),
-        'success',
-      );
-    } catch (e) {
-      toastCatch('FleetGridPage:compact', 'Failed to compact session')(e);
-    }
-  }, [sessions, addToast, t, tx]);
-
-  // Hibernate: free the process, keep the row resumable. Wake: respawn
-  // `claude --resume` and focus the new session. (F3)
-  const handleHibernate = useCallback(async (id: string) => {
-    try {
-      await hibernateSession(id);
-    } catch (e) {
-      toastCatch('FleetGridPage:hibernate', 'Failed to hibernate session')(e);
-    }
-  }, []);
-  const handleWake = useCallback(async (id: string) => {
-    try {
-      const newId = await wakeSession(id);
-      setActiveSession(newId);
-    } catch (e) {
-      toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
-    }
-  }, [setActiveSession]);
+  // Selection is wake-aware: activating a dozing or hibernated session resumes it.
+  const handleActivate = useCallback((id: string) => void selectSession(id), [selectSession]);
+  const handleRemovedLocal = useCallback((id: string) => removeLocal(id), [removeLocal]);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
   );
-
-  // Bound Claude session ids feed the fleet-wide token aggregate bar. Unbound
-  // (Spawning) sessions have no transcript yet, so they're excluded.
+  // Unbound (Spawning) sessions have no transcript to aggregate.
   const boundClaudeIds = useMemo(
     () => sessions.map((s) => s.claudeSessionId).filter((id): id is string => !!id),
     [sessions],
   );
+  const stateCounts = useMemo(() => fleetStateCounts(sessions), [sessions]);
 
-  // Reap managed terminals whose session disappeared (removed from the
-  // registry). Terminals persist across active-session switches and even
-  // across leaving/returning to the Fleet page — only an actual removal
-  // disposes one. Runs on the sessions list, never on unmount.
+  // Reap managed terminals whose session left the registry (never on unmount).
   useEffect(() => {
     gcTerminals(new Set(sessions.map((s) => s.id)));
   }, [sessions]);
-
-  // Spawn seeded with a first task — the prompt rides as a positional argv
-  // (`claude "<task>"`), so the session starts working the moment it boots.
-  // `headless` routes to the stream-json background lane (no PTY/terminal).
-  // Returns success so the modal keeps the draft open on failure for a retry.
-  const handleSpawnWithTask = useCallback(async (prompt: string, headless: boolean): Promise<boolean> => {
-    if (!activeProject) return false;
-    try {
-      const id = headless
-        ? await spawnHeadlessSession(activeProject.root_path, prompt)
-        : await spawnSession(activeProject.root_path, [prompt]);
-      setActiveSession(id);
-      refresh();
-      return true;
-    } catch (e) {
-      toastCatch('FleetGridPage:spawnTask', 'Failed to spawn Claude Code session')(e);
-      return false;
-    }
-  }, [activeProject, refresh, setActiveSession]);
-
-  // Count sessions in every lifecycle state — feeds the summary pills and
-  // the header subtitle. A full Record keeps the pill component honest about
-  // states the subtitle previously ignored (spawning, stale).
-  const stateCounts = useMemo(() => fleetStateCounts(sessions), [sessions]);
-
-  const toggleFilter = useCallback(
-    (state: FleetSessionState) => setFilter((cur) => (cur === state ? null : state)),
-    [],
-  );
-
-  // Sessions blocked on the operator — drives the "Needs you" attention
-  // banner. Newest activity first so the most recent prompt leads.
-  const waitingSessions = useMemo(
-    () =>
-      sessions
-        .filter((s) => s.state === 'awaiting_input')
-        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
-    [sessions],
-  );
-
-  // Cycle focus through the waiting sessions, wrapping around from the
-  // currently-focused one — fast triage when several are blocked at once.
-  const handleCycleNext = useCallback(() => {
-    if (waitingSessions.length === 0) return;
-    const idx = waitingSessions.findIndex((s) => s.id === activeSessionId);
-    const next = waitingSessions[(idx + 1) % waitingSessions.length];
-    if (next) setActiveSession(next.id);
-  }, [waitingSessions, activeSessionId, setActiveSession]);
-
-  // Group sessions by lifecycle state. Order matters: attention-grabbing
-  // first (awaiting_input → working → spawning → idle → stale → exited).
-  // Within a group, newest activity first.
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const buckets = new Map<FleetSessionState, FleetSession[]>();
-    for (const s of sessions) {
-      if (q && !`${s.projectLabel} ${s.name ?? ''}`.toLowerCase().includes(q)) continue;
-      const arr = buckets.get(s.state) ?? [];
-      arr.push(s);
-      buckets.set(s.state, arr);
-    }
-    for (const arr of buckets.values()) {
-      arr.sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs));
-    }
-    return GROUP_ORDER
-      .filter((g) => buckets.has(g.id) && (filter === null || g.id === filter))
-      .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
-  }, [sessions, filter, query]);
-
-  // Flattened visible sessions in display order (group order, then recency) —
-  // drives the ↑/↓ hotkey focus moves so keyboard order matches what's on screen.
-  const flatVisibleSessions = useMemo(() => groups.flatMap((g) => g.sessions), [groups]);
-
-  const handleMoveFocus = useCallback(
-    (delta: 1 | -1) => {
-      const list = flatVisibleSessions;
-      if (list.length === 0) return;
-      const idx = list.findIndex((s) => s.id === activeSessionId);
-      const next =
-        idx === -1
-          ? (delta === 1 ? list[0] : list[list.length - 1])
-          : list[(idx + delta + list.length) % list.length];
-      if (next) setActiveSession(next.id);
-    },
-    [flatVisibleSessions, activeSessionId, setActiveSession],
-  );
 
   const handleToggleGrid = useCallback(() => {
     if (gridOpen) setGridOpen(false);
     else if (liveSessions.length > 0) setGridOpen(true);
   }, [gridOpen, liveSessions.length, setGridOpen]);
 
-  // Triage hotkeys (n / ↑↓ / `/` / g / ?). Suspended while any modal or the
-  // skills drawer is open; the hook itself ignores typing contexts.
   useFleetHotkeys(!broadcastOpen && !skillsDrawerOpen && !hotkeysHelpOpen, gridOpen, {
-    onNextWaiting: handleCycleNext,
-    onMoveFocus: handleMoveFocus,
+    onNextWaiting: nav.handleCycleNext,
+    onMoveFocus: nav.handleMoveFocus,
     onFocusSearch: () => searchRef.current?.focus(),
     onToggleGrid: handleToggleGrid,
     onShowHelp: () => setHotkeysHelpOpen(true),
   });
 
-  const sessionCount =
-    sessions.length === 1
-      ? tx(t.plugins.fleet.sessions_one, { count: sessions.length })
-      : tx(t.plugins.fleet.sessions_other, { count: sessions.length });
-  const subtitle = activeProject
-    ? `${activeProject.name} · ${sessionCount}`
-    : t.plugins.fleet.no_project_hint;
+  const sessionCount = tx(sessions.length === 1 ? t.plugins.fleet.sessions_one : t.plugins.fleet.sessions_other, { count: sessions.length });
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<TerminalIcon className="w-5 h-5 text-primary" />}
         title={debtText("auto_fleet_sessions_691c1118")}
-        subtitle={subtitle}
-        actions={
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              data-testid="fleet-notify-toggle"
-              aria-pressed={notifyAwaiting}
-              aria-label={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
-              title={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
-              onClick={() => setNotifyAwaiting(!notifyAwaiting)}
-              className="flex items-center rounded-interactive px-1.5 py-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-            >
-              {notifyAwaiting
-                ? <Bell className="w-3.5 h-3.5" />
-                : <BellOff className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              type="button"
-              data-testid="fleet-hotkeys-open"
-              aria-label={t.plugins.fleet.hotkeys_title}
-              title={t.plugins.fleet.hotkeys_title}
-              onClick={() => setHotkeysHelpOpen(true)}
-              className="flex items-center rounded-interactive px-1.5 py-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-            >
-              <Keyboard className="w-3.5 h-3.5" />
-            </button>
-            <FleetHooksPill />
-          </div>
-        }
+        subtitle={activeProject ? `${activeProject.name} · ${sessionCount}` : t.plugins.fleet.no_project_hint}
+        actions={<FleetGridHeaderActions onShowHotkeys={() => setHotkeysHelpOpen(true)} />}
       />
-      <ContentBody>
-        <div data-testid="fleet-grid-page" />
-
-        <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
-
-        <FleetTokenSummaryBar claudeSessionIds={boundClaudeIds} />
-
-        <FleetNeedsYouBanner
-          waiting={waitingSessions}
-          onJump={handleActivate}
-          onReply={handleReply}
-          onCycleNext={handleCycleNext}
-        />
-
-        {sessions.length > 0 && waitingSessions.length === 0 && (
-          <div
-            data-testid="fleet-all-clear"
-            className="mb-3 inline-flex items-center gap-1.5 rounded-card border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 typo-caption text-emerald-300"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-            {t.plugins.fleet.all_clear}
-          </div>
-        )}
-
-        <ActionRow>
-          <Button
-            data-testid="fleet-grid-open"
-            variant="secondary"
-            size="sm"
-            icon={<LayoutGrid className="w-3.5 h-3.5" />}
-            disabled={liveSessions.length === 0}
-            onClick={() => setGridOpen(true)}
-            title={t.plugins.fleet.grid_open_aria}
-          >
-            {t.plugins.fleet.view_grid}
-          </Button>
-          <Button
-            data-testid="fleet-spawn"
-            variant="primary"
-            size="sm"
-            icon={<Play className="w-3.5 h-3.5" />}
-            disabled={!activeProject || spawning}
-            onClick={handleSpawn}
-            title={activeProject ? `Spawn at ${activeProject.root_path}` : 'Pick a project first'}
-          >
-            {spawning ? 'Spawning…' : 'Spawn'}
-          </Button>
-          <Button
-            data-testid="fleet-spawn-task-open"
-            variant="secondary"
-            size="sm"
-            icon={<ListTodo className="w-3.5 h-3.5" />}
-            disabled={!activeProject}
-            onClick={() => setSpawnTaskOpen(true)}
-            title={t.plugins.fleet.spawn_task_title}
-          >
-            {t.plugins.fleet.spawn_with_task}
-          </Button>
-          <Button
-            data-testid="fleet-broadcast-open"
-            variant="secondary"
-            size="sm"
-            icon={<Send className="w-3.5 h-3.5" />}
-            disabled={sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated').length === 0}
-            onClick={() => setBroadcastOpen(true)}
-          >
-            Broadcast
-          </Button>
-          <Button
-            data-testid="fleet-harvest-open"
-            variant="secondary"
-            size="sm"
-            icon={<ClipboardList className="w-3.5 h-3.5" />}
-            disabled={sessions.every((s) => s.state !== 'finished')}
-            onClick={() => setHarvestOpen(true)}
-            title={t.plugins.fleet.harvest_title}
-          >
-            {t.plugins.fleet.harvest_open}
-          </Button>
-          <Button
-            data-testid="fleet-grid-refresh"
-            variant="ghost"
-            size="sm"
-            icon={<RefreshCw className="w-3.5 h-3.5" />}
-            onClick={refresh}
-          >
-            Refresh
-          </Button>
-        </ActionRow>
-
-        <div className="grid grid-cols-12 gap-3 mt-3 min-h-[400px]">
-          {/* Compact session list, grouped by state (left).
-              Group header → divider → rows. Empty groups are filtered
-              out by `groups` so the dividers never strand a zero-row
-              section. */}
-          <div
-            data-testid="fleet-session-list"
-            className="col-span-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1"
-          >
-            {sessions.length > 1 && (
-              <div className="relative mb-2">
-                <Search className="pointer-events-none absolute left-2 top-1/2 w-3.5 h-3.5 -translate-y-1/2 text-foreground" aria-hidden="true" />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  data-testid="fleet-session-search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label={t.plugins.fleet.search_placeholder}
-                  placeholder={t.plugins.fleet.search_placeholder}
-                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
-                />
-              </div>
-            )}
-            {sessions.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
-                <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
-                  <TerminalIcon className="w-5 h-5 text-foreground" />
-                </div>
-                <p className="text-[13px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
-                <p className="text-[12px] text-foreground mt-1 px-3">
-                  {activeProject
-                    ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
-                    : 'Pick a project in Dev Tools → Projects.'}
-                </p>
-              </div>
-            ) : groups.length === 0 ? (
-              <div className="text-center py-6 text-[13px] text-foreground" data-testid="fleet-no-matches">
-                {t.plugins.fleet.search_no_matches}
-              </div>
-            ) : (
-              groups.map((g, idx) => {
-                const GroupIcon = g.icon;
-                const isFirst = idx === 0;
-                return (
-                  <div
-                    key={g.id}
-                    data-testid={`fleet-group-${g.id}`}
-                    className={isFirst ? '' : 'pt-2 mt-2 border-t border-primary/10'}
-                  >
-                    <div className="flex items-center gap-1.5 px-2 mb-1">
-                      <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
-                      <span className="typo-label text-foreground">
-                        {t.plugins.fleet[g.labelKey]}
-                      </span>
-                      <span
-                        className={`ml-auto text-[12px] font-semibold ${g.accent}`}
-                        aria-label={
-                          g.sessions.length === 1
-                            ? tx(t.plugins.fleet.sessions_one, { count: g.sessions.length })
-                            : tx(t.plugins.fleet.sessions_other, { count: g.sessions.length })
-                        }
-                      >
-                        {g.sessions.length}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {g.sessions.map((s) => (
-                        <FleetSessionCard
-                          key={s.id}
-                          session={s}
-                          isActive={s.id === activeSessionId}
-                          onActivate={handleActivate}
-                          onRemovedLocal={handleRemovedLocal}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Terminal area (right) — single focused pane. The fullscreen grid
-              overlay (Grid button) takes over for multi-session viewing; while
-              it's open we unmount this pane so the two don't contend for the
-              same managed terminal's holder element. */}
-          <div className="col-span-8 min-h-0">
-            {gridOpen ? (
-              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
-                <LayoutGrid className="w-10 h-10 mb-3 text-primary" />
-                <p className="typo-caption">{t.plugins.fleet.grid_active_hint}</p>
-              </div>
-            ) : activeSession ? (
-              activeSession.state === 'hibernated' ? (
-                <div
-                  data-testid="fleet-hibernated-panel"
-                  className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-indigo-400/25 rounded-modal bg-[#0a0a0c]"
-                >
-                  <Moon className="w-10 h-10 mb-3 text-indigo-400" aria-hidden="true" />
-                  <p className="typo-caption mb-1">{t.plugins.fleet.hibernated_panel_title}</p>
-                  <p className="text-[13px] text-center max-w-[340px] mb-3 opacity-70">{t.plugins.fleet.hibernated_panel_desc}</p>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    icon={<Sun className="w-3.5 h-3.5" />}
-                    data-testid="fleet-wake"
-                    onClick={() => handleWake(activeSession.id)}
-                  >
-                    {t.plugins.fleet.wake_session}
-                  </Button>
-                </div>
-              ) : (
-              <div
-                className={`h-full flex flex-col border rounded-modal overflow-hidden bg-[#0a0a0c] ${
-                  attentionClass(sessionAttention(activeSession)) || 'border-primary/10'
-                }`}
-              >
-                {/* Terminal / Insights view toggle. Terminal stays alive in
-                    the manager while Insights is shown; Insights works for
-                    exited sessions too (transcript outlives the PTY). */}
-                <div className="flex items-center gap-1 px-2 py-1.5 border-b border-primary/10 shrink-0">
-                  {([
-                    { id: 'terminal' as const, label: t.plugins.fleet.view_terminal, Icon: TerminalIcon },
-                    { id: 'insights' as const, label: t.plugins.fleet.view_insights, Icon: BarChart3 },
-                  ]).map((v) => (
-                    <button
-                      key={v.id}
-                      type="button"
-                      data-testid={`fleet-rightview-${v.id}`}
-                      aria-pressed={rightView === v.id}
-                      onClick={() => setRightView(v.id)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] transition-colors ${
-                        rightView === v.id
-                          ? 'bg-primary/10 text-primary border border-primary/25'
-                          : 'text-foreground hover:bg-secondary/40 border border-transparent'
-                      }`}
-                    >
-                      <v.Icon className="w-3.5 h-3.5" />
-                      {v.label}
-                    </button>
-                  ))}
-                  {/* Conversation-size efficiency indicator + inline compact (F2). */}
-                  <span className="ml-2">
-                    <FleetContextPill
-                      claudeSessionId={activeSession.claudeSessionId}
-                      sessionId={activeSession.id}
-                      canCompact={
-                        activeSession.state === 'idle' ||
-                        activeSession.state === 'awaiting_input' ||
-                        activeSession.state === 'stale'
-                      }
-                      onCompact={handleCompact}
-                    />
-                  </span>
-                  {/* Skills drawer trigger — sits above the CLI. */}
-                  <button
-                    type="button"
-                    data-testid="fleet-open-skills"
-                    onClick={() => setSkillsDrawerOpen(true)}
-                    title={t.plugins.fleet.skills_drawer_title}
-                    className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    {t.plugins.fleet.skills_button}
-                  </button>
-                  {/* Hibernate — free the process, keep it resumable (F3). */}
-                  <button
-                    type="button"
-                    data-testid="fleet-sleep"
-                    disabled={!activeSession.claudeSessionId}
-                    onClick={() => handleHibernate(activeSession.id)}
-                    title={activeSession.claudeSessionId ? t.plugins.fleet.sleep_session : t.plugins.fleet.sleep_unavailable}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Moon className="w-3.5 h-3.5" />
-                    {t.plugins.fleet.sleep_session}
-                  </button>
-                </div>
-                <div className="flex-1 min-h-0">
-                  {rightView === 'insights' ? (
-                    <FleetSessionInsights claudeSessionId={activeSession.claudeSessionId} />
-                  ) : activeSession.state === 'exited' ? (
-                    <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
-                      <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
-                      <p className="text-[12px]">
-                        {activeSession.exitCode !== null
-                          ? `Exit code ${activeSession.exitCode}`
-                          : 'Process exited unexpectedly'}
-                      </p>
-                    </div>
-                  ) : activeSession.mode === 'headless' ? (
-                    // Headless sessions have no TTY — there is nothing an xterm
-                    // could attach to. Show the transcript rollup instead;
-                    // replies go through the Needs-You banner / Athena.
-                    <div className="h-full flex flex-col min-h-0" data-testid="fleet-headless-pane">
-                      <p className="shrink-0 px-3 py-2 text-[12px] text-foreground opacity-70 border-b border-primary/10">
-                        {t.plugins.fleet.headless_no_terminal}
-                      </p>
-                      <div className="flex-1 min-h-0">
-                        <FleetSessionInsights claudeSessionId={activeSession.claudeSessionId} />
-                      </div>
-                    </div>
-                  ) : (
-                    <FleetTerminalPane sessionId={activeSession.id} />
-                  )}
-                </div>
-              </div>
-              )
-            ) : (
-              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
-                <TerminalIcon className="w-10 h-10 mb-3" />
-                <p className="typo-caption"><DebtText k="auto_select_a_session_to_view_its_terminal_921aba6c" /></p>
-              </div>
-            )}
+      <ContentBody flex>
+        {/* ContentBody's own padding, on a column the grid below can fill. */}
+        <div className="flex-1 min-h-0 flex flex-col py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5">
+          <div data-testid="fleet-grid-page" />
+          <FleetSummaryPills counts={stateCounts} activeFilter={nav.filter} onToggle={nav.toggleFilter} />
+          <FleetNeedsYouBanner waiting={nav.waitingSessions} onJump={handleActivate} onReply={ops.handleReply} onCycleNext={nav.handleCycleNext} />
+          <FleetGridToolbar
+            sessions={sessions}
+            liveCount={liveSessions.length}
+            waitingCount={nav.waitingSessions.length}
+            boundClaudeIds={boundClaudeIds}
+            activeProject={activeProject}
+            spawning={spawning}
+            onOpenGrid={() => setGridOpen(true)}
+            onSpawn={handleSpawn}
+            onSpawnTask={() => setSpawnTaskOpen(true)}
+            onBroadcast={() => setBroadcastOpen(true)}
+            onHarvest={() => setHarvestOpen(true)}
+            onRefresh={refresh}
+          />
+          <div className="flex-1 min-h-[400px] grid grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] gap-3">
+            <FleetSessionList
+              sessions={sessions}
+              groups={nav.groups}
+              activeSessionId={activeSessionId}
+              hasProject={!!activeProject}
+              query={nav.query}
+              onQuery={nav.setQuery}
+              searchRef={searchRef}
+              onActivate={handleActivate}
+              onRemovedLocal={handleRemovedLocal}
+            />
+            <div className="min-h-0">
+              <FleetFocusPane
+                session={activeSession}
+                gridOpen={gridOpen}
+                view={rightView}
+                onView={setRightView}
+                onCompact={ops.handleCompact}
+                onOpenSkills={() => setSkillsDrawerOpen(true)}
+                onHibernate={ops.handleHibernate}
+                onWake={ops.handleWake}
+              />
+            </div>
           </div>
         </div>
       </ContentBody>
 
       <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
       <FleetHarvestPanel open={harvestOpen} onClose={() => setHarvestOpen(false)} />
-
       <FleetHotkeysHelp open={hotkeysHelpOpen} onClose={() => setHotkeysHelpOpen(false)} />
-
       {activeProject && (
         <FleetSpawnTaskModal
           open={spawnTaskOpen}
           onClose={() => setSpawnTaskOpen(false)}
           projectPath={activeProject.root_path}
-          onSpawn={handleSpawnWithTask}
+          onSpawn={ops.handleSpawnWithTask}
         />
       )}
-
       <SkillLibraryDrawer
         open={skillsDrawerOpen}
         onClose={() => setSkillsDrawerOpen(false)}

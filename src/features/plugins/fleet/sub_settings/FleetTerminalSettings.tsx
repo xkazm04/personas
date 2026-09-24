@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { Button } from '@/features/shared/components/buttons';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 import { FLEET_FONT_MIN, FLEET_FONT_MAX } from '../fleetTerminalManager';
 import type { FleetTerminalTheme } from '@/stores/slices/system/fleetSlice';
 import { FleetSettingsCard } from './FleetSettingsCard';
@@ -41,10 +41,10 @@ export function FleetTerminalSettings() {
   const theme = useSystemStore((s) => s.fleetTerminalTheme);
   const setTheme = useSystemStore((s) => s.fleetSetTerminalTheme);
 
-  const themeTabs: { id: FleetTerminalTheme; label: string; testId: string }[] = [
-    { id: 'auto', label: f.settings_theme_auto, testId: `${THEME_TESTID}-auto` },
-    { id: 'dark', label: f.settings_theme_dark, testId: `${THEME_TESTID}-dark` },
-    { id: 'light', label: f.settings_theme_light, testId: `${THEME_TESTID}-light` },
+  const themeOptions: { value: FleetTerminalTheme; label: string }[] = [
+    { value: 'auto', label: f.settings_theme_auto },
+    { value: 'dark', label: f.settings_theme_dark },
+    { value: 'light', label: f.settings_theme_light },
   ];
 
   return (
@@ -84,16 +84,16 @@ export function FleetTerminalSettings() {
         </Row>
 
         <Row label={f.settings_theme} description={f.settings_theme_desc}>
-          <div data-testid={THEME_TESTID} className="shrink-0">
-            <SegmentedTabs
-              tabs={themeTabs}
-              activeTab={theme}
-              onTabChange={setTheme}
-              ariaLabel={f.settings_theme}
-              size="sm"
-              fullWidth={false}
-            />
-          </div>
+          {/* A choice of one value is a radio group (PillGroup), not a tab strip: it
+              selects no panel, and SegmentedTabs would declare one that never exists. */}
+          <PillGroup
+            options={themeOptions}
+            value={theme}
+            onChange={setTheme}
+            labelClass="typo-body"
+            aria-label={f.settings_theme}
+            data-testid={THEME_TESTID}
+          />
         </Row>
 
         <Row label={f.settings_copy_on_select} description={f.settings_copy_on_select_desc}>

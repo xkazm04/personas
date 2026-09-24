@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, AlertCircle, FileText, Wrench, Coins, MessagesSquare } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { sessionMetadata, readTranscript } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { readSummaryCache, writeSummaryCache, SUMMARY_TTL_MS } from './insightsCache';
+import { Stat, TokenCell, Section } from './InsightsParts';
 
 interface Props {
   /** Bound Claude session id; null while the session is still Spawning. */
@@ -19,53 +22,6 @@ interface Props {
  * (the transcript outlives the PTY), so it doubles as a "what did this run do"
  * review surface.
  */
-/** Short-lived summary cache (optimizer pass): the panel remounts on every
- *  session-focus change and every terminal↔insights toggle, and each mount
- *  refetched the rollup — toggling back and forth re-read the same data
- *  seconds apart. Manual refresh bypasses the cache. */
-const SUMMARY_CACHE = new Map<string, { summary: FleetTranscriptSummary; at: number }>();
-const SUMMARY_TTL_MS = 15_000;
-
-/** Max sessions kept in the summary cache. Entries are small (a rollup, not a
- *  transcript), but a long-lived fleet session cycles through hundreds of
- *  Claude sessions over days — cap it so the map doesn't grow unbounded. */
-const MAX_SUMMARY_CACHE_ENTRIES = 50;
-
-let summaryCacheEvictions = 0;
-
-/** Read a session's cached summary, touching it to the MRU end on a hit. */
-function readSummaryCache(id: string): { summary: FleetTranscriptSummary; at: number } | undefined {
-  const entry = SUMMARY_CACHE.get(id);
-  if (entry) {
-    SUMMARY_CACHE.delete(id);
-    SUMMARY_CACHE.set(id, entry);
-  }
-  return entry;
-}
-
-/** Write a session's summary, evicting the least-recently-used entry past the cap. */
-function writeSummaryCache(id: string, entry: { summary: FleetTranscriptSummary; at: number }): void {
-  SUMMARY_CACHE.delete(id);
-  SUMMARY_CACHE.set(id, entry);
-  while (SUMMARY_CACHE.size > MAX_SUMMARY_CACHE_ENTRIES) {
-    const oldestKey = SUMMARY_CACHE.keys().next().value;
-    if (oldestKey === undefined) break;
-    SUMMARY_CACHE.delete(oldestKey);
-    summaryCacheEvictions++;
-  }
-}
-
-/** Test-only / diagnostic accessor for the eviction counter. */
-export function __getInsightsCacheStats(): { size: number; evictions: number } {
-  return { size: SUMMARY_CACHE.size, evictions: summaryCacheEvictions };
-}
-
-/** Test-only: the module-scope cache leaks between vitest cases otherwise. */
-export function __resetInsightsCacheForTests(): void {
-  SUMMARY_CACHE.clear();
-  summaryCacheEvictions = 0;
-}
-
 export function FleetSessionInsights({ claudeSessionId }: Props) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
@@ -119,23 +75,25 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
     <div className="h-full overflow-y-auto p-4 text-foreground" data-testid={summary ? 'fleet-insights' : undefined}>
       {/* Header + refresh (transcripts grow live). Chrome stays up on cold load. */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="typo-label">{f.insights_title}</span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="ml-auto"
-          onClick={() => load(true)}
-          aria-label={t.common.refresh}
-          title={t.common.refresh}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-        </Button>
+        <span className="typo-heading">{f.insights_title}</span>
+        <Tooltip content={t.common.refresh}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto"
+            onClick={() => load(true)}
+            loading={loading}
+            aria-label={t.common.refresh}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+        </Tooltip>
       </div>
 
       {failed && !summary ? (
         <div className="flex flex-col items-center justify-center text-center py-8">
-          <AlertCircle className="w-8 h-8 mb-2 text-amber-400" aria-hidden="true" />
-          <p className="typo-caption text-foreground mb-3">{f.insights_error}</p>
+          <AlertCircle className="w-8 h-8 mb-2 text-status-warning" aria-hidden="true" />
+          <p className="typo-caption mb-3">{f.insights_error}</p>
           <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => load(true)}>
             {t.common.refresh}
           </Button>
@@ -171,25 +129,25 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
 
       {/* Token breakdown. */}
       <div className="grid grid-cols-4 gap-2 mb-4 text-center">
-        <TokenCell label={f.insights_input} value={Number(summary.tokens.input)} />
-        <TokenCell label={f.insights_output} value={Number(summary.tokens.output)} />
-        <TokenCell label={f.insights_cache_read} value={Number(summary.tokens.cacheRead)} />
-        <TokenCell label={f.insights_cache_write} value={Number(summary.tokens.cacheCreation)} />
+        <TokenCell label={f.insights_input}><Numeric value={Number(summary.tokens.input)} unit="count" /></TokenCell>
+        <TokenCell label={f.insights_output}><Numeric value={Number(summary.tokens.output)} unit="count" /></TokenCell>
+        <TokenCell label={f.insights_cache_read}><Numeric value={Number(summary.tokens.cacheRead)} unit="count" /></TokenCell>
+        <TokenCell label={f.insights_cache_write}><Numeric value={Number(summary.tokens.cacheCreation)} unit="count" /></TokenCell>
       </div>
 
       {/* Tools used. */}
       <Section icon={<Wrench className="w-3.5 h-3.5" />} title={f.insights_tools}>
         {summary.tools.length === 0 ? (
-          <p className="text-[13px] opacity-60">{f.insights_no_tools}</p>
+          <p className="typo-caption">{f.insights_no_tools}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {summary.tools.map((tool) => (
               <span
                 key={tool.name}
-                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 text-[13px]"
+                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 typo-label"
               >
-                <span className="font-medium">{tool.name}</span>
-                <span className="opacity-60">×{tool.count}</span>
+                <span>{tool.name}</span>
+                <span className="typo-caption">×{tool.count}</span>
               </span>
             ))}
           </div>
@@ -199,57 +157,28 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       {/* Files touched. */}
       <Section icon={<FileText className="w-3.5 h-3.5" />} title={tx(f.insights_files, { count: summary.filesTouched.length })}>
         {summary.filesTouched.length === 0 ? (
-          <p className="text-[13px] opacity-60">{f.insights_no_files}</p>
+          <p className="typo-caption">{f.insights_no_files}</p>
         ) : (
           <div className="max-h-[180px] overflow-y-auto space-y-0.5">
             {summary.filesTouched.map((file) => (
-              <p key={file} className="text-[13px] font-mono truncate" title={file}>{file}</p>
+              <Tooltip key={file} content={file}>
+                <p className="typo-code truncate">{file}</p>
+              </Tooltip>
             ))}
           </div>
         )}
       </Section>
 
       {/* Footer: models + span. */}
-      <div className="mt-3 pt-2 border-t border-primary/10 text-[12px] opacity-60 flex flex-wrap gap-x-3 gap-y-1">
+      <div className="mt-3 pt-2 border-t border-primary/10 typo-caption flex flex-wrap gap-x-3 gap-y-1">
         {summary.models.length > 0 && <span>{summary.models.join(', ')}</span>}
         {spanMin !== null && <span>{tx(f.insights_span, { minutes: spanMin })}</span>}
         {summary.parseErrors > 0 && (
-          <span className="text-amber-400/80">{tx(f.insights_parse_errors, { count: summary.parseErrors })}</span>
+          <span className="text-status-warning">{tx(f.insights_parse_errors, { count: summary.parseErrors })}</span>
         )}
       </div>
         </>
       )}
-    </div>
-  );
-}
-
-function Stat({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 px-2.5 py-2">
-      <div className="flex items-center gap-1 text-[12px] uppercase tracking-wider opacity-60 mb-0.5">
-        {icon}{label}
-      </div>
-      <div className="typo-card-label tabular-nums">{children}</div>
-    </div>
-  );
-}
-
-function TokenCell({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="text-[12px] uppercase tracking-wider opacity-60">{label}</div>
-      <div className="text-[14px] font-medium tabular-nums"><Numeric value={value} unit="count" /></div>
-    </div>
-  );
-}
-
-function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-3">
-      <div className="flex items-center gap-1.5 mb-1.5 typo-label opacity-80">
-        {icon}{title}
-      </div>
-      {children}
     </div>
   );
 }
