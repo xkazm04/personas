@@ -308,12 +308,26 @@
   --status-pending-raw: #fbbf24;
   --status-processing-raw: #60a5fa;
   --status-neutral-raw: #94a3b8;
+
+  /* Accent roles: what a colour MEANS, bound per theme (Gate 0, 2026-09-24).
+     agent = an agent made, proposed or is doing this; human = you made this or
+     it waits on you; external = a connector, service or webhook; highlight =
+     look here, nothing more. Every theme sets the -raw value; the outer name
+     is what brightness tiers re-mix, exactly like the status colours. */
+  --role-agent-raw: #a78bfa;
+  --role-human-raw: #f472b6;
+  --role-external-raw: #38bdf8;
+  --role-highlight-raw: #06b6d4;
   --status-success: var(--status-success-raw);
   --status-warning: var(--status-warning-raw);
   --status-error: var(--status-error-raw);
   --status-info: var(--status-info-raw);
   --status-pending: var(--status-pending-raw);
   --status-processing: var(--status-processing-raw);
+  --role-agent: var(--role-agent-raw);
+  --role-human: var(--role-human-raw);
+  --role-external: var(--role-external-raw);
+  --role-highlight: var(--role-highlight-raw);
   --status-neutral: var(--status-neutral-raw);
   --btn-primary: #0e7490;
   --btn-primary-fg: #ffffff;
@@ -474,6 +488,12 @@
   --color-status-pending: var(--status-pending);
   --color-status-processing: var(--status-processing);
   --color-status-neutral: var(--status-neutral);
+
+  /* Accent roles (text-role-agent, bg-role-agent/10, border-role-agent/30, ...) */
+  --color-role-agent: var(--role-agent);
+  --color-role-human: var(--role-human);
+  --color-role-external: var(--role-external);
+  --color-role-highlight: var(--role-highlight);
 
   /* Spacing -- bridged from shared tokens */
   --spacing-1: var(--spacing-1);
@@ -882,6 +902,10 @@ html {
   --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 80%, black);
   --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 80%, black);
   --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 80%, black);
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 80%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 80%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 80%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 80%, black);
 }
 
 /* Dark: mid = 1.38 → counteract 72% */
@@ -898,6 +922,10 @@ html {
   --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 72%, black);
   --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 72%, black);
   --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 72%, black);
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 72%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 72%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 72%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 72%, black);
 }
 
 /* Dark: high = 1.50 → counteract 67% */
@@ -914,6 +942,10 @@ html {
   --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 67%, black);
   --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 67%, black);
   --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 67%, black);
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 67%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 67%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 67%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 67%, black);
 }
 
 /* Light: low = 0.82 → counteract by mixing 18% white (1/0.82≈1.22) */
@@ -930,6 +962,10 @@ html {
   --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 82%, white);
   --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 82%, white);
   --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 82%, white);
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 82%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 82%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 82%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 82%, white);
 }
 
 /* Light: mid = 0.91 → counteract by mixing 9% white */
@@ -946,6 +982,10 @@ html {
   --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 91%, white);
   --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 91%, white);
   --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 91%, white);
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 91%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 91%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 91%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 91%, white);
 }
 
 /* Light: high = 1.0 → no counteraction needed, use raw values */
@@ -2344,6 +2384,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --glass-border: rgba(6, 182, 212, 0.12);
   --status-info: #22d3ee;
   --status-processing: #22d3ee;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #a78bfa;
+  --role-human-raw: #f472b6;
+  --role-external-raw: #7dd3fc;
+  --role-highlight-raw: #06b6d4;
 }
 
 /* Dark: Bronze — "Foundry". Restrained pattern (à la Red/Matrix): warm-graphite
@@ -2379,6 +2425,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-pending: #f0a73a;
   --status-processing: #d8a14a;
   --status-neutral: #978c79;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #b9a3e6;
+  --role-human-raw: #e59bb8;
+  --role-external-raw: #9cc9d0;
+  --role-highlight-raw: #e0820a;
 }
 
 /* Dark: Frost -- intentionally desaturated neutral slate; full surface coverage
@@ -2405,6 +2457,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --btn-primary: #475569;
   --glass-bg: rgba(255, 255, 255, 0.025);
   --glass-border: rgba(255, 255, 255, 0.06);
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #b8aee6;
+  --role-human-raw: #e3aecb;
+  --role-external-raw: #a7c9de;
+  --role-highlight-raw: #e2e8f0;
 }
 
 /* Dark: Purple — "Amethyst". Restrained pattern (à la Red/Matrix): slate-violet
@@ -2440,6 +2498,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-pending: #e2b340;
   --status-processing: #c4b5fd;
   --status-neutral: #968ca6;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #cdbdfd;
+  --role-human-raw: #eaa2c9;
+  --role-external-raw: #9ec0ef;
+  --role-highlight-raw: #b667f7;
 }
 
 /* Dark: Pink — "Rosewood". Restrained pattern (à la Red/Matrix): warm-graphite
@@ -2475,6 +2539,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-pending: #e8b045;
   --status-processing: #f9a8d4;
   --status-neutral: #a08e97;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #c1a7f0;
+  --role-human-raw: #fbc0dd;
+  --role-external-raw: #9ec3e8;
+  --role-highlight-raw: #f0529e;
 }
 
 /* Dark: Deadpool -- black/white canvas with blood-red accents */
@@ -2505,6 +2575,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-pending: #f5f5f5;
   --status-processing: #e5e5e5;
   --status-neutral: #a3a3a3;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #c8c8c8;
+  --role-human-raw: #f0f0f0;
+  --role-external-raw: #a8a8a8;
+  --role-highlight-raw: #ff4d4d;
 }
 
 /* Matrix -- deep black canvas with green phosphor reserved for accents */
@@ -2535,6 +2611,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --status-pending: #88cc44;
   --status-processing: #00ff41;
   --status-neutral: #808080;
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #b3ff99;
+  --role-human-raw: #e6ff80;
+  --role-external-raw: #66ffcc;
+  --role-highlight-raw: #00ff41;
 }
 
 /* Light -- "Paper Pro" — high-contrast neutral slate palette.
@@ -2588,6 +2670,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --shadow-elevation-4: 0 8px 24px rgba(15, 23, 42, 0.14), 0 16px 48px rgba(15, 23, 42, 0.12);
   --chart-grid-stroke: rgba(15, 23, 42, 0.08);
   --chart-axis-fill: rgba(15, 23, 42, 0.55);
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #6d28d9;
+  --role-human-raw: #9d174d;
+  --role-external-raw: #075985;
+  --role-highlight-raw: #1d4ed8;
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
@@ -2637,6 +2725,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --shadow-elevation-4: 0 8px 16px rgba(37, 99, 235, 0.1), 0 16px 32px rgba(37, 99, 235, 0.08);
   --chart-grid-stroke: rgba(37, 99, 235, 0.10);
   --chart-axis-fill: rgba(15, 23, 42, 0.55);
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #6d28d9;
+  --role-human-raw: #9d174d;
+  --role-external-raw: #075985;
+  --role-highlight-raw: #1d4ed8;
 }
 
 [data-theme="light"] * {
@@ -2768,6 +2862,12 @@ html[data-motion="reduce"] .animate-map-spin {
   --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.18), 0 16px 32px rgba(0, 0, 0, 0.12);
   --chart-grid-stroke: rgba(0, 0, 0, 0.12);
   --chart-axis-fill: rgba(17, 17, 17, 0.6);
+
+  /* Accent roles (Gate 0, 2026-09-24): agent, human, external, highlight. */
+  --role-agent-raw: #3d3d3d;
+  --role-human-raw: #262626;
+  --role-external-raw: #4d4d4d;
+  --role-highlight-raw: #1a1a1a;
 }
 
 [data-theme="light-news"] * {

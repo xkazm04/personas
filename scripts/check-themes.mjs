@@ -17,6 +17,10 @@
  *   status-error     / background
  *   status-warning   / background
  *   status-info      / background
+ *   role-agent|human|external|highlight / background  (hard fail below 4.5)
+ *
+ * A token spelled `var(--other)` is resolved one level, so the default theme
+ * (which sets --status-x: var(--status-x-raw)) is graded too.
  *
  * AA token-pairing gate (hard fail → exit 1):
  *   body, muted-foreground, muted-foreground@MIN_CAPTION_OPACITY, and muted
@@ -121,6 +125,15 @@ function parseVars(block) {
   return vars;
 }
 
+/** Returns map of var-name -> referenced var-name for `--name: var(--target);`. */
+function parseRefs(block) {
+  const refs = {};
+  const re = /--([a-z0-9-]+)\s*:\s*var\(--([a-z0-9-]+)\)\s*;/gi;
+  let m;
+  while ((m = re.exec(block))) refs[m[1].trim()] = m[2].trim();
+  return refs;
+}
+
 function extractBlock(css, selector) {
   // Match `<selector>` followed by optional whitespace and `{` — anchors to
   // the actual variable definition block, NOT to descendant selectors like
@@ -188,6 +201,13 @@ const PAIRS = [
   { id: 'warning',   label: 'warning/bg',   fg: 'status-warning',  bg: 'background', failBelow: 3.0 },
   { id: 'error',     label: 'error/bg',     fg: 'status-error',    bg: 'background', failBelow: 3.0 },
   { id: 'info',      label: 'info/bg',      fg: 'status-info',     bg: 'background', failBelow: 3.0 },
+  // Accent roles (Gate 0, 2026-09-24). Text colours by design, so AA is a hard
+  // floor, not the 3.0 status warning. Canvas only here; the chip and card
+  // ratios are in docs/design/style-mastery/specimen/contrast.generated.json.
+  { id: 'agent',     label: 'agent/bg',     fg: 'role-agent',      bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'human',     label: 'human/bg',     fg: 'role-human',      bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'external',  label: 'extern/bg',    fg: 'role-external',   bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'highlight', label: 'hilite/bg',    fg: 'role-highlight',  bg: 'background', failBelow: 4.5, hardFail: true },
 ];
 
 const css = readFileSync(CSS_PATH, 'utf8');
@@ -197,6 +217,7 @@ if (!rootBlock) {
   process.exit(2);
 }
 const rootVars = parseVars(rootBlock);
+const rootRefs = parseRefs(rootBlock);
 
 const rows = [];
 let hardFailures = 0;
@@ -210,8 +231,17 @@ for (const theme of THEMES) {
     continue;
   }
   const themeVars = parseVars(themeBlock);
+  const themeRefs = parseRefs(themeBlock);
   // Effective map: root → theme overrides on top
   const effective = { ...rootVars, ...themeVars };
+  // Resolve `--x: var(--y)` one level against the merged map, unless the theme
+  // itself sets --x to a literal. Without this every token the default theme
+  // spells as `var(--x-raw)` (all its status colours, all the roles) read n/a.
+  for (const [name, target] of Object.entries({ ...rootRefs, ...themeRefs })) {
+    if (name in themeVars) continue;
+    if (themeRefs[name] === undefined && name in rootVars) continue;
+    if (effective[target]) effective[name] = effective[target];
+  }
   const row = { id: theme.id, results: {} };
 
   for (const pair of PAIRS) {
@@ -289,11 +319,11 @@ if (hardFailures > 0) {
     DIM +
       '\nText tokens (body / muted-foreground / muted-foreground@' +
       Math.round(MIN_CAPTION_OPACITY * 100) +
-      '% / muted) must clear AA in every theme.\n' +
+      '% / muted / the accent roles) must clear AA in every theme.\n' +
       'Adjust the token in src/styles/globals.css; see docs/development/contrast.md.' +
       RESET,
   );
   process.exit(1);
 }
-console.log(GREEN + 'OK: all text-token pairings (body / muted-foreground / muted-foreground@80% / muted) meet AA in every theme' + RESET);
+console.log(GREEN + 'OK: all text-token pairings (body / muted-foreground / muted-foreground@80% / muted / the four accent roles) meet AA in every theme' + RESET);
 process.exit(0);
