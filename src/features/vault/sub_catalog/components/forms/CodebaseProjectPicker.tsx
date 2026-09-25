@@ -110,7 +110,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
     <div className="space-y-4">
       {onCredentialNameChange && (
         <div>
-          <label className="block typo-body font-medium text-foreground mb-1.5">
+          <label className="block typo-body text-foreground mb-1.5">
             {ps.credential_name}
           </label>
           <input
@@ -129,13 +129,13 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             <AlertTriangle className="w-7 h-7 text-amber-400/80" />
           </div>
           <div className="space-y-1">
-            <p className="typo-body font-medium text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
+            <p className="typo-body text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
             <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
           </div>
           <button
             type="button"
             onClick={() => void loadProjects()}
-            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
@@ -147,7 +147,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
             <Code2 className="w-7 h-7 text-indigo-400/60" />
           </div>
           <div className="space-y-1">
-            <p className="typo-body font-medium text-foreground">{t.common.no_results}</p>
+            <p className="typo-body text-foreground">{t.common.no_results}</p>
             <p className="typo-caption text-foreground max-w-xs">
               {ps.add_project_first}
             </p>
@@ -155,7 +155,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           <button
             type="button"
             onClick={goToDevTools}
-            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-card typo-body bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/25 transition-colors"
           >
             {ps.go_to_dev_tools}
             <ArrowRight className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           type="button"
           onClick={handleSave}
           disabled={!hasSelection}
-          className="flex-1 px-4 py-2 rounded-card typo-body font-medium bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-4 py-2 rounded-card typo-body bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>

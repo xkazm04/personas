@@ -104,7 +104,7 @@ export function TourNarrativeDeck({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="typo-heading text-foreground/90 leading-tight">{currentStep.title}</h4>
+              <h4 className="typo-heading text-foreground/90">{currentStep.title}</h4>
               {isStepCompleted && (
                 <StatusBadge
                   variant="success"
@@ -160,7 +160,7 @@ export function TourNarrativeDeck({
                 className="flex items-start gap-2 rounded-modal border border-amber-500/25 bg-amber-500/10 p-2.5"
               >
                 <EyeOff className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <p className="typo-body text-foreground leading-relaxed">{t.onboarding.tour_target_offscreen}</p>
+                <p className="typo-body text-foreground">{t.onboarding.tour_target_offscreen}</p>
               </div>
             )}
 
@@ -172,7 +172,7 @@ export function TourNarrativeDeck({
                 className="flex items-start gap-2 rounded-modal border border-primary/10 bg-secondary/15 p-2.5"
               >
                 <Volume2 className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${colors.text} animate-pulse`} />
-                <p className="typo-body text-foreground leading-relaxed italic">{narrationCaption}</p>
+                <p className="typo-body text-foreground italic">{narrationCaption}</p>
               </div>
             )}
 
@@ -180,13 +180,13 @@ export function TourNarrativeDeck({
               <TourIntroCard tourId={tourId} stepCount={steps.length} />
             )}
 
-            <p className="typo-body text-foreground leading-relaxed">{currentStep.description}</p>
+            <p className="typo-body text-foreground">{currentStep.description}</p>
 
             {activeHint && (
               <div className={`rounded-modal ${colors.subtle} border ${colors.accent} p-3`}>
                 <div className="flex items-start gap-2">
                   <ArrowRight className={`w-3.5 h-3.5 ${colors.text} mt-0.5 flex-shrink-0`} />
-                  <p className={`typo-heading ${colors.text} leading-relaxed`}>{activeHint}</p>
+                  <p className={`typo-heading ${colors.text}`}>{activeHint}</p>
                 </div>
               </div>
             )}

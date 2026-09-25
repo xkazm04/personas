@@ -25,6 +25,7 @@ mod kp_surface;
 mod oneshot;
 mod orchestrator;
 mod parser;
+mod provisional;
 pub mod reference;
 mod runner;
 mod session_prompt;

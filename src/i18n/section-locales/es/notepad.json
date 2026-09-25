@@ -55,6 +55,7 @@
   "suggestions_title": "Notas de Athena",
   "tabs_label": "Notas",
   "timeline_title": "Ciclo de vida",
+  "title": "Resumen de objetivos",
   "to_goals": "Convertir en objetivos",
   "variant_split": "Lienzo dividido",
   "variant_workbench": "Banco de trabajo",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "Abrir el proyecto",
   "desk_lane_brainstorm": "Carril Brainstorm",
   "desk_lane_plan": "Carril Plan",
-  "desk_room_back": "Escritorio",
-  "title": "Resumen de objetivos"
+  "desk_room_back": "Escritorio"
 }

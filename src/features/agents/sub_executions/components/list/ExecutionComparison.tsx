@@ -45,7 +45,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
       <div className="bg-primary/5 border border-primary/20 rounded-modal p-3">
         <div className="flex items-center gap-2 mb-2">
           <Zap className="w-3.5 h-3.5 text-primary/60" />
-          <span className="typo-heading text-foreground uppercase tracking-wider">{e.what_changed}</span>
+          <span className="typo-heading text-foreground uppercase">{e.what_changed}</span>
         </div>
         <ul className="space-y-1">
           {whatChanged.map((change, i) => (
@@ -98,7 +98,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Hash className="w-3.5 h-3.5 text-primary/50" />
-            <span className="typo-heading text-foreground uppercase tracking-wider">{e.tool_call_timeline}</span>
+            <span className="typo-heading text-foreground uppercase">{e.tool_call_timeline}</span>
           </div>
           <ToolTimelineComparison stepsLeft={stepsLeft} stepsRight={stepsRight} />
         </div>

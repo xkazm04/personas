@@ -89,20 +89,20 @@ export function DecisionCard({
         className="pointer-events-none absolute inset-1 rounded-card border border-primary/10"
       />
       <span aria-hidden className="absolute top-3 left-3 flex flex-col items-center text-primary/60">
-        <span className="typo-label tabular-nums leading-none">{rank}</span>
+        <span className="typo-label tabular-nums">{rank}</span>
         <Icon className="w-3 h-3 mt-0.5" />
       </span>
       <span
         aria-hidden
         className="absolute bottom-3 right-3 flex flex-col items-center rotate-180 text-primary/60"
       >
-        <span className="typo-label tabular-nums leading-none">{rank}</span>
+        <span className="typo-label tabular-nums">{rank}</span>
         <Icon className="w-3 h-3 mt-0.5" />
       </span>
 
       <span className="flex-1 flex flex-col justify-center px-8 py-8 gap-3">
-        <span className="tx-answer typo-body-lg text-foreground leading-relaxed">{card.text}</span>
-        <span className="tx-answer-note typo-caption leading-relaxed">{card.reason}</span>
+        <span className="tx-answer typo-body-lg text-foreground">{card.text}</span>
+        <span className="tx-answer-note typo-caption">{card.reason}</span>
       </span>
     </motion.button>
   );

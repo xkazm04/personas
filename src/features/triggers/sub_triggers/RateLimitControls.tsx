@@ -39,12 +39,12 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
         <Shield className="w-3 h-3" />
         {t.triggers.rate_limiting}
         {active && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-amber-500/15 text-amber-400 font-medium">
+          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-amber-500/15 text-amber-400">
             Active
           </span>
         )}
         {runtimeState?.isThrottled && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 font-medium animate-pulse">
+          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 animate-pulse">
             Throttled
           </span>
         )}

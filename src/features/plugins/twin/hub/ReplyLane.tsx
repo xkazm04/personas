@@ -60,7 +60,7 @@ export function ReplyLane({ contactHandle = null }: {
           <MessagesSquare className="w-3.5 h-3.5 text-primary" />
         </span>
         <span className="min-w-0">
-          <span className="block typo-card-label text-foreground">{t.title}</span>
+          <span className="block typo-card-label">{t.title}</span>
           <span className="block typo-caption text-foreground truncate">{t.subtitle}</span>
         </span>
       </header>

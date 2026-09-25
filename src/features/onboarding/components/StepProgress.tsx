@@ -50,7 +50,7 @@ export function StepProgress({
             title={step.title}
           >
             <span
-              className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption font-semibold flex-shrink-0 border ${
+              className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption flex-shrink-0 border ${
                 isCompleted
                   ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
                   : isCurrent
@@ -63,7 +63,7 @@ export function StepProgress({
             <span
               className={`typo-caption truncate ${
                 isCurrent
-                  ? `${colors.text} font-semibold`
+                  ? `${colors.text}`
                   : isCompleted
                     ? 'text-foreground/80'
                     : 'text-foreground'

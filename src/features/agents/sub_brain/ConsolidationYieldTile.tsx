@@ -182,7 +182,7 @@ function YieldTotals({ summary }: { summary: ReturnType<typeof summarizeConsolid
     >
       {cells.map((c) => (
         <div key={c.label}>
-          <dt className="typo-overline text-foreground/85 truncate">{c.label}</dt>
+          <dt className="typo-eyebrow text-foreground/85 truncate">{c.label}</dt>
           <dd className="typo-body text-foreground">{c.node}</dd>
         </div>
       ))}

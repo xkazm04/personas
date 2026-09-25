@@ -89,7 +89,7 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
       <span className="flex items-center gap-2 min-w-0">
         <Flag className="w-5 h-5 shrink-0" style={{ color: empty ? INK.blue : INK.teal }} aria-hidden />
         {empty ? (
-          <span className="typo-body-lg font-medium truncate" style={{ color: INK.blue }}>{t.ship.cover_empty}</span>
+          <span className="typo-body-lg truncate" style={{ color: INK.blue }}>{t.ship.cover_empty}</span>
         ) : (
           <>
             <span className="flex items-center gap-1.5 shrink-0" aria-hidden>
@@ -97,10 +97,10 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
                 <span key={s.id} className="w-2.5 h-2.5 rounded-full" style={PIP_STYLE[s.status]} title={s.name} />
               ))}
               {overflow > 0 && (
-                <span className="typo-body-lg font-medium text-foreground/70 leading-none">+{overflow}</span>
+                <span className="typo-body-lg text-foreground/70">+{overflow}</span>
               )}
             </span>
-            <span className="ml-auto shrink-0 typo-body-lg font-medium tabular-nums text-foreground/70">
+            <span className="ml-auto shrink-0 typo-body-lg tabular-nums text-foreground/70">
               {tx(t.ship.cover_shipped_count, { shipped: roadmap.shipped, total: roadmap.steps.length })}
             </span>
           </>
@@ -111,7 +111,7 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
       </span>
       <span className="mt-1 flex items-baseline gap-1.5 min-w-0">
         <span className="typo-body-lg text-foreground/70 shrink-0">{t.ship.cover_next}</span>
-        <span className="typo-body-lg font-medium truncate text-foreground">
+        <span className="typo-body-lg truncate text-foreground">
           {roadmap.next ? roadmap.next.name : t.ship.cover_all_shipped}
         </span>
         {roadmap.next?.targetDate && (

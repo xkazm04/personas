@@ -200,7 +200,7 @@ export default function TeamList() {
             <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)} data-testid="team-preset-btn">
               {t.pipeline.preset_team}
             </Button>
-            <Button variant="accent" accentColor="indigo" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
+            <Button variant="accent" tone="agent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
               {t.pipeline.auto_team}
             </Button>
             <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowCreate(true)}>

@@ -53,7 +53,7 @@ function KindFilterChip({
     >
       <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>{copy.label}</span>
-      <span className="typo-data tabular-nums">{count}</span>
+      <span className="typo-data">{count}</span>
     </button>
   );
 }
@@ -88,7 +88,7 @@ function BacklogChip({
       className={`focus-ring hidden shrink-0 items-center gap-1.5 rounded-pill border px-2.5 py-1 typo-caption transition-colors sm:inline-flex ${TONE_CHIP.warning} ${TONE_HOVER.warning}`}
     >
       <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span className="typo-data tabular-nums">{`${loaded} / ${pending}`}</span>
+      <span className="typo-data">{`${loaded} / ${pending}`}</span>
     </button>
   );
 }
@@ -228,7 +228,7 @@ export const DeckTopBar = memo(function DeckTopBar({
         ) : null}
 
         <div className="hidden items-center gap-2 sm:flex">
-          <span className="typo-data tabular-nums text-foreground">
+          <span className="typo-data text-foreground">
             {`${decided} / ${total}`}
           </span>
           <span

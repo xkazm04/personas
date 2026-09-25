@@ -45,7 +45,7 @@ export function HistoryLane({ feed }: HubDeskProps) {
           value={filter}
           onChange={setFilter}
           layoutId="hub-history-filter"
-          labelClass="typo-caption font-medium"
+          labelClass="typo-caption"
           data-testid="hub-history-filter"
         />
         <span className="ml-auto typo-caption text-foreground tabular-nums">

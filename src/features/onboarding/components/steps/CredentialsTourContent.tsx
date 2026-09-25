@@ -51,7 +51,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
       {/* Category grid */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="typo-body font-medium text-foreground">{t.onboarding.categories_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.categories_label}</span>
           <span className="text-[11px] text-foreground" data-testid="tour-cred-progress">
             {tx(t.onboarding.browsed_progress, { count: browsedCount })}
             {browsedCount >= 2 && <Check className="inline w-3 h-3 text-emerald-400 ml-1" />}
@@ -88,7 +88,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Built-in local tooling — connected from the start, no credential needed */}
       <div className="space-y-2" data-testid="tour-cred-builtin">
-        <span className="typo-body font-medium text-foreground">{t.onboarding.local_tooling_label}</span>
+        <span className="typo-body text-foreground">{t.onboarding.local_tooling_label}</span>
         <p className="text-[11px] text-foreground leading-relaxed">{t.onboarding.local_tooling_sentence}</p>
         <div className="grid grid-cols-3 gap-1.5">
           {BUILT_IN_TOOLING.map((tool) => (
@@ -106,7 +106,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
 
       {/* Connection types */}
       <div className="space-y-2">
-        <span className="typo-body font-medium text-foreground">{t.onboarding.connection_types_label}</span>
+        <span className="typo-body text-foreground">{t.onboarding.connection_types_label}</span>
         <div className="space-y-1.5">
           {CONNECTION_TYPES.map((ct) => (
             <div
@@ -122,7 +122,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
                 <ct.icon className="w-3.5 h-3.5 text-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="typo-body font-medium text-foreground">{t.onboarding[ct.labelKey]}</p>
+                <p className="typo-body text-foreground">{t.onboarding[ct.labelKey]}</p>
                 <p className="text-[11px] text-foreground leading-relaxed">{t.onboarding[ct.descKey]}</p>
               </div>
             </div>

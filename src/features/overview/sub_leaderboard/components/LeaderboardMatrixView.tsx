@@ -143,8 +143,8 @@ export function LeaderboardMatrixView({
         <table className="w-full border-separate border-spacing-0">
           <thead>
             <tr className="bg-primary/[0.03]">
-              <th className="w-12 px-2 py-3 text-center typo-caption font-semibold text-foreground">{COPY.rank}</th>
-              <th className="px-3 py-3 text-left typo-caption font-semibold text-foreground">{COPY.agent}</th>
+              <th className="w-12 px-2 py-3 text-center typo-caption text-foreground">{COPY.rank}</th>
+              <th className="px-3 py-3 text-left typo-caption text-foreground">{COPY.agent}</th>
               {RANK_OPTIONS.map((opt) => {
                 const active = sortKey === opt.key;
                 const flagged = opt.key === 'speed' && speedAllEqual;
@@ -154,7 +154,7 @@ export function LeaderboardMatrixView({
                     <button
                       type="button"
                       onClick={() => setSortKey(opt.key)}
-                      className={`mx-auto flex items-center justify-center gap-0.5 typo-caption font-semibold transition-colors ${active ? 'text-primary' : 'text-foreground hover:text-primary/80'}`}
+                      className={`mx-auto flex items-center justify-center gap-0.5 typo-caption transition-colors ${active ? 'text-primary' : 'text-foreground hover:text-primary/80'}`}
                     >
                       {lb[opt.labelKey]}
                       <ChevronDown className={`w-3 h-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
@@ -187,7 +187,7 @@ export function LeaderboardMatrixView({
               >
                 <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
                   {entry.medal ? (
-                    <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption font-bold tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
+                    <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
                       {entry.rank}
                     </span>
                   ) : (
@@ -201,7 +201,7 @@ export function LeaderboardMatrixView({
                     className="group/agent flex items-center gap-2.5 min-w-0 text-left"
                   >
                     <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} name={entry.personaName} display="pop" frameSize="sm" />
-                    <span className="typo-body font-medium text-foreground truncate group-hover/agent:text-primary transition-colors">{entry.personaName}</span>
+                    <span className="typo-body text-foreground truncate group-hover/agent:text-primary transition-colors">{entry.personaName}</span>
                     <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/agent:opacity-100 text-primary/70 transition-opacity" />
                   </button>
                 </td>
@@ -235,14 +235,14 @@ export function LeaderboardMatrixView({
             <tr className="bg-primary/[0.02]">
               <td className="border-t-2 border-dashed border-primary/20" />
               <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-primary/20">
-                <span className="typo-caption font-semibold text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
+                <span className="typo-caption text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
                 const v = Math.round(fleetValue(opt.key, fleetAvgScore, fleetBenchmark));
                 const tint = scoreTint(v);
                 return (
                   <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
-                    <span className={`typo-body font-mono font-semibold tabular-nums ${tint.text}`}>{v}</span>
+                    <span className={`typo-body font-mono tabular-nums ${tint.text}`}>{v}</span>
                   </td>
                 );
               })}
@@ -259,7 +259,7 @@ function MetricCell({ value, emphasized, headline }: { value: number; emphasized
   return (
     <td className={`px-1.5 py-1 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
       <div className={`relative rounded-card px-2 py-1 text-center overflow-hidden ${tint.bg} ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
-        <div className={`${headline ? 'typo-heading' : 'typo-body'} font-bold tabular-nums leading-tight ${tint.text}`}>{value}</div>
+        <div className={`${headline ? 'typo-heading' : 'typo-body'} tabular-nums ${tint.text}`}>{value}</div>
         <span
           aria-hidden
           className="absolute left-0 bottom-0 h-0.5 rounded-full opacity-60"

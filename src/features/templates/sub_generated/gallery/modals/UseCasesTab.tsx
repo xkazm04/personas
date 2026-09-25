@@ -59,9 +59,9 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
         <div key={flow.id} className="rounded-modal border border-primary/10 bg-secondary/10 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="typo-body-lg font-semibold text-foreground">{flow.name}</h3>
+              <h3 className="typo-body-lg text-foreground">{flow.name}</h3>
               {flow.description && (
-                <p className="typo-body text-foreground mt-0.5 leading-relaxed">{flow.description}</p>
+                <p className="typo-body text-foreground mt-0.5">{flow.description}</p>
               )}
             </div>
           </div>
@@ -97,7 +97,7 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
       <button
         type="button"
         onClick={onViewFlows}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body text-violet-300 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
       >
         <Workflow className="w-3.5 h-3.5" />
         {t.templates.detail.open_diagram}

@@ -97,7 +97,7 @@ export function DraftSettingsTab({
     >
       {/* Appearance */}
       <div className="space-y-3">
-        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           Appearance
         </h4>
@@ -150,7 +150,7 @@ export function DraftSettingsTab({
       {/* Notification Channels (opt-in, self-managed from draft.notification_channels) */}
       {showNotifications && (
         <div className="space-y-3">
-          <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
+          <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
             <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
             Notifications
           </h4>

@@ -55,9 +55,15 @@ describe('buildSessionSummary', () => {
 
     expect(s.tabsVisited).toContain(tabCountKey('overviewTab', 'incidents'));
     expect(s.tabsVisited).toContain(tabCountKey('settingsTab', 'account'));
-    // 'director' — an existing tab that the fixture never visits ('health'
-    // was retired with the 2026-08-25 monitoring consolidation).
-    expect(s.tabsIgnored).toContain(tabCountKey('overviewTab', 'director'));
+    // 'memories' — an existing tab that the fixture never visits. It replaced
+    // 'director' here on 2026-09-22, when the Director tab left Overview for
+    // the Companions section ('health' before that, retired with the
+    // 2026-08-25 monitoring consolidation). The assertion needs a LIVE tab the
+    // fixture skips; naming a retired one would pass for the wrong reason.
+    expect(s.tabsIgnored).toContain(tabCountKey('overviewTab', 'memories'));
+    // And the new dimension is enumerated: a Companions page nobody opened is
+    // ignored, not invisible.
+    expect(s.tabsIgnored).toContain(tabCountKey('companionsPage', 'curator:council'));
     expect(s.tabsVisited.length + s.tabsIgnored.length).toBe(s.tabsTotal);
   });
 

@@ -102,7 +102,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
               <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none list-none hover:bg-secondary/40 transition-colors">
                 {/* muted-ok: decorative category glyph */}
                 <Icon className="w-3.5 h-3.5 text-foreground/45 flex-shrink-0" aria-hidden />
-                <span className="typo-label uppercase tracking-wide text-foreground/60 flex-1 truncate">
+                <span className="typo-label uppercase text-foreground/60 flex-1 truncate">
                   {group.id === null ? p.category_unassigned : group.title}
                 </span>
                 {/* muted-ok: shelf count micro-label */}
@@ -123,7 +123,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
                         aria-current={active ? 'true' : undefined}
                         className={`w-full text-left pl-9 pr-3 py-1.5 typo-body truncate transition-colors border-l-2 ${
                           active
-                            ? 'border-primary text-foreground bg-primary/8 font-medium'
+                            ? 'border-primary text-foreground bg-primary/8'
                             : 'border-transparent text-foreground/70 hover:text-foreground hover:bg-secondary/40'
                         }`}
                       >
@@ -146,7 +146,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
               {/* Kicker + title + lede */}
               <div className="flex items-center gap-2 mb-2">
                 {/* muted-ok: kicker line, structural chrome */}
-                <span className="typo-label uppercase tracking-widest text-primary/80">{categoryTitle}</span>
+                <span className="typo-label uppercase text-primary/80">{categoryTitle}</span>
                 <HierarchyStatusChip status={subject.status} />
               </div>
               <h1 className="typo-hero text-foreground mb-3">{subject.title}</h1>
@@ -168,7 +168,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
               {/* Chapters — the techniques */}
               {techniques.length > 0 && (
                 <section id="codex-techniques" className="mt-10">
-                  <h2 className="typo-section-title text-foreground border-b border-border/50 pb-2 mb-4">
+                  <h2 className="typo-section-title border-b border-border/50 pb-2 mb-4">
                     {p.tab_techniques}
                   </h2>
                   <div className="space-y-4">
@@ -184,7 +184,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
                           >
                             <span className="flex items-baseline gap-3">
                               {/* muted-ok: chapter numeral, structural ornament */}
-                              <span className="typo-data-lg text-foreground/25 tabular-nums leading-none">
+                              <span className="typo-data-lg text-foreground/25">
                                 {String(i + 1).padStart(2, '0')}
                               </span>
                               <span className="flex-1 min-w-0">
@@ -212,7 +212,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
                                   />
                                 </span>
                                 {tech.summary && (
-                                  <span className="block typo-body text-foreground/80 mt-1 leading-relaxed">
+                                  <span className="block typo-body text-foreground/80 mt-1">
                                     {tech.summary}
                                   </span>
                                 )}
@@ -238,7 +238,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
               {/* Applications — worked examples */}
               {subject.applications.length > 0 && (
                 <section id="codex-applications" className="mt-10 scroll-mt-4">
-                  <h2 className="typo-section-title text-foreground border-b border-border/50 pb-2 mb-4">
+                  <h2 className="typo-section-title border-b border-border/50 pb-2 mb-4">
                     {p.tab_applications}
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -258,7 +258,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
                             {/* muted-ok: technique slug micro-label */}
                             <span className="typo-caption text-foreground/50 font-mono truncate">{app.technique}</span>
                           </span>
-                          <span className="typo-body font-medium text-foreground block truncate">{name}</span>
+                          <span className="typo-body text-foreground block truncate">{name}</span>
                         </button>
                       );
                     })}
@@ -268,7 +268,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
 
               {/* Appendix — evidence + deviations + legacy */}
               <section id="codex-appendix" className="mt-10 mb-16 scroll-mt-4">
-                <h2 className="typo-section-title text-foreground border-b border-border/50 pb-2 mb-4">
+                <h2 className="typo-section-title border-b border-border/50 pb-2 mb-4">
                   {p.tab_evidence}
                 </h2>
                 {subject.evidence.length === 0 ? (
@@ -319,7 +319,7 @@ export function SubjectsCodex(props: SubjectsVariantProps) {
             {/* ── Contents rail (sticky) ─────────────────────────────────── */}
             <aside className="hidden xl:block w-[200px] flex-shrink-0">
               <div className="sticky top-0 pt-1">
-                <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">{p.codex_contents}</h3>
+                <h3 className="typo-label uppercase text-foreground/50 mb-2">{p.codex_contents}</h3>
                 <ul className="space-y-1 border-l border-border/50">
                   <li>
                     <button type="button" onClick={() => jump('codex-golden-path')} className="w-full text-left typo-body text-foreground/70 hover:text-foreground pl-3 py-0.5 border-l-2 border-transparent hover:border-primary/50 -ml-px transition-colors">

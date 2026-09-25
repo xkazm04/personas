@@ -90,13 +90,13 @@ export function N8nParserResults({
                 </div>
               </div>
               <div className="text-center">
-                <p className="typo-body font-medium text-foreground">
+                <p className="typo-body text-foreground">
                   {t.templates.n8n.analyzing_workflow}
                 </p>
                 <p className="typo-body text-foreground mt-1.5">
                   {t.templates.n8n.usually_one_minute}
                 </p>
-                <p className="typo-code font-mono text-foreground mt-1">
+                <p className="typo-code text-foreground mt-1">
                   {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
                 </p>
               </div>
@@ -115,9 +115,9 @@ export function N8nParserResults({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="typo-heading font-semibold text-foreground/90">{workflowName}</h3>
+              <h3 className="typo-heading text-foreground/90">{workflowName}</h3>
               {platform && (
-                <span className={`typo-code font-mono uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
+                <span className={`typo-code uppercase px-1.5 py-0.5 rounded border flex-shrink-0 ${PLATFORM_COLORS[platform]}`}>
                   {PLATFORM_LABELS[platform]}
                 </span>
               )}
@@ -170,7 +170,7 @@ export function N8nParserResults({
 
       {/* Selection summary */}
       {hasSelection && (
-        <div className="flex items-center gap-2 typo-code font-mono uppercase tracking-wider text-foreground">
+        <div className="flex items-center gap-2 typo-code uppercase tracking-wider text-foreground">
           <span className={`px-2.5 py-1 rounded-modal border ${TAG_COLORS.blue}`}>
             {toolCount} tools
           </span>

@@ -95,7 +95,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           </div>
 
           {/* Theme label in the theme's foreground for true contrast preview */}
-          <span className="typo-heading font-semibold mt-auto" style={{ color: theme.foregroundSample }}>
+          <span className="typo-heading mt-auto" style={{ color: theme.foregroundSample }}>
             {theme.label}
           </span>
         </div>

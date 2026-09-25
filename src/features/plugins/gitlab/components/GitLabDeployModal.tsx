@@ -90,7 +90,7 @@ export function GitLabDeployModal({
     <div className="space-y-4">
       {/* Project picker */}
       <div>
-        <label htmlFor="target-project" className="block typo-body font-medium text-foreground mb-1.5">{t.gitlab.target_project}</label>
+        <label htmlFor="target-project" className="block typo-body text-foreground mb-1.5">{t.gitlab.target_project}</label>
         <ThemedSelect
           id="target-project"
           value={String(selectedProjectId ?? '')}
@@ -107,7 +107,7 @@ export function GitLabDeployModal({
 
       {/* Persona picker */}
       <div>
-        <label htmlFor="deploy-persona" className="block typo-body font-medium text-foreground mb-1.5">{t.gitlab.persona_to_deploy}</label>
+        <label htmlFor="deploy-persona" className="block typo-body text-foreground mb-1.5">{t.gitlab.persona_to_deploy}</label>
         <ThemedSelect
           id="deploy-persona"
           value={selectedPersonaId}
@@ -148,7 +148,7 @@ export function GitLabDeployModal({
           <div>
             <div className="flex items-center gap-1.5">
               <KeyRound className="w-3.5 h-3.5 text-orange-400" />
-              <span className="typo-body font-medium text-foreground/90">
+              <span className="typo-body text-foreground/90">
                 {t.gitlab.provision_api_credentials}
               </span>
             </div>
@@ -179,7 +179,7 @@ export function GitLabDeployModal({
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-amber-400" />
-              <span className="typo-body font-medium text-foreground/90">
+              <span className="typo-body text-foreground/90">
                 {t.gitlab.version_controlled_deploy}
               </span>
             </div>
@@ -213,7 +213,7 @@ export function GitLabDeployModal({
         type="button"
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
-        className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
@@ -232,7 +232,7 @@ export function GitLabDeployModal({
           <div className="flex items-start gap-2">
             <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="typo-body font-medium text-emerald-400">
+              <p className="typo-body text-emerald-400">
                 {tx(t.gitlab.deployed_successfully, { method: result.method === 'api' ? t.gitlab.duo_agent_api : t.gitlab.agents_md })}
               </p>
               {result.agentId && (

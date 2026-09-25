@@ -84,7 +84,7 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
     >
       <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
       <div>
-        <p className="typo-body font-medium text-foreground/90">
+        <p className="typo-body text-foreground/90">
           {tx(count === 1 ? forg.imported_to_vault_one : forg.imported_to_vault_other, { count })}
         </p>
         {forage.partialImportError && (
@@ -129,7 +129,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
     >
       <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
       <div>
-        <p className="typo-body font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
+        <p className="typo-body text-foreground/90">{t.vault.foraging.scan_failed}</p>
         <p className="typo-body text-red-400/70 mt-1">{translated.message}</p>
         {translated.suggestion && (
           <p className="typo-body text-foreground mt-1">{translated.suggestion}</p>

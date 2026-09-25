@@ -21,7 +21,6 @@ export const COPY = {
   buildLogEmpty: "No output yet.",
   back: "Back to the sheet",
   core: {
-    hint: "Who this agent is under the task: its mentality, its character and the model that runs it. Anything left alone is inferred by the build.",
     inferred: "Inferred",
   },
 
@@ -62,7 +61,7 @@ export const COPY = {
   casting: "Casting your persona",
   deliberating: "Weighing the final candidates",
   crowned: "Meet your persona",
-  firstPassNote: "The first pass usually lands between 50 s and 2 min 35 s, all at once.",
+  firstPassNote: "The first pass usually takes 50 s to 2 min 35 s. Frames develop as each result is drafted and are confirmed when the pass lands.",
   take: "Take",
   phase: "Phase",
   time: "Time",

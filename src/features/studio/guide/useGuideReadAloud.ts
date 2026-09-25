@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
-import { play, synthesize } from '@/features/plugins/companion/voicePlayback';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { useTtsVoiceSelection } from '@/features/plugins/companion/useTtsVoiceSelection';
-import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
+import { play, synthesize } from '@/features/companions/athena/voicePlayback';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
+import { useTtsVoiceSelection } from '@/features/companions/athena/useTtsVoiceSelection';
+import { useTtsSettings } from '@/features/companions/athena/useTtsSettings';
 
 /** The orb source Studio's read-aloud reports under while a clip plays. */
 export const READ_ALOUD_ORB_SOURCE = 'studio-read';
@@ -18,7 +18,7 @@ export function useGuideReadAloud() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const url = useRef<string | null>(null);
 
-  const setSpeaking = (on: boolean) => useCompanionStore.getState().setOrbSpeaking(READ_ALOUD_ORB_SOURCE, on);
+  const setSpeaking = (on: boolean) => useAthenaStore.getState().setOrbSpeaking(READ_ALOUD_ORB_SOURCE, on);
   const stop = useCallback(() => {
     audio.current?.pause();
     audio.current = null;

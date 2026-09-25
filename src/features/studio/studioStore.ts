@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { listen } from '@tauri-apps/api/event';
 import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
-import { extractAssistantTextDelta } from '@/features/plugins/companion/extractAssistantText';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { extractAssistantTextDelta } from '@/features/companions/athena/extractAssistantText';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
@@ -578,7 +578,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       turnStartedAt: startedAt,
       queuedNotes: [],
     });
-    useCompanionStore.getState().pulseForwardAck();
+    useAthenaStore.getState().pulseForwardAck();
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
@@ -600,7 +600,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         decisionSelector: q ? (result.selector ?? null) : null,
         ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
       });
-      useCompanionStore.getState().pulseMessageReaction();
+      useAthenaStore.getState().pulseMessageReaction();
       const cur = get().runtimes[id];
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });
@@ -958,7 +958,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 export const STUDIO_ORB_SOURCE = 'studio';
 useStudioStore.subscribe((s) => {
   const busy = Object.values(s.runtimes).some((r) => r.busy || r.autonomous);
-  useCompanionStore.getState().setOrbBusy(STUDIO_ORB_SOURCE, busy);
+  useAthenaStore.getState().setOrbBusy(STUDIO_ORB_SOURCE, busy);
 });
 
 // Dev-only: expose the store so the test-automation bridge can drive Studio

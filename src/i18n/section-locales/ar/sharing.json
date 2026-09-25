@@ -287,5 +287,8 @@
   "verifying_bundle": "جارٍ التحقق من الحزمة…",
   "verifying_enclave": "جارٍ التحقق من الجيب الآمن…",
   "view_details": "عرض التفاصيل",
-  "your_identity": "هويتك"
+  "your_identity": "هويتك",
+  "job_kind_fleet_session": "جلسة أسطول",
+  "job_kind_instruction": "تعليمة",
+  "job_receipt_title": "العمل المُعاد"
 }

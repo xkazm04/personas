@@ -91,7 +91,7 @@ export function ComparisonResults({
       {winner && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-modal bg-primary/5 border border-primary/20">
           <Trophy className="w-4 h-4 text-primary" />
-          <span className="typo-body font-medium text-foreground/90">
+          <span className="typo-body text-foreground/90">
             {winner === 'A' ? modelA.label : modelB.label} {mc.wins}
           </span>
           <span className="typo-body text-foreground">
@@ -119,9 +119,9 @@ export function ComparisonResults({
           <table className="w-full typo-body">
             <thead>
               <tr className="border-b border-primary/10 bg-secondary/30">
-                <th className="text-left px-3 py-2 font-medium text-foreground typo-caption">{mc.scenario}</th>
-                <th className="text-center px-3 py-2 font-medium text-blue-400/80 typo-caption">{modelA.label}</th>
-                <th className="text-center px-3 py-2 font-medium text-amber-400/80 typo-caption">{modelB.label}</th>
+                <th className="text-left px-3 py-2 text-foreground typo-caption">{mc.scenario}</th>
+                <th className="text-center px-3 py-2 text-blue-400/80 typo-caption">{modelA.label}</th>
+                <th className="text-center px-3 py-2 text-amber-400/80 typo-caption">{modelB.label}</th>
               </tr>
             </thead>
             <tbody>

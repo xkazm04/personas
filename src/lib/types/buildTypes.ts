@@ -252,6 +252,37 @@ export type BuildEvent =
       /** For `scope: "connector_category"` — which category the vault picker
        *  should filter by (e.g. "storage", "messaging"). */
       category?: string | null;
+    }
+  // Provisional streaming preview (first build turn only). Each finished
+  // capability_enumeration / capability_resolution is released mid-turn as a
+  // PREVIEW: never persisted, never mirrored to a cell_update, never counted
+  // as resolved. The post-turn validator stays the authority: its
+  // capability_*_update events follow as usual, then provisional_settled
+  // closes the preview — consumers drop ALL provisional state on it (the
+  // authoritative pass fully replaces the preview). See
+  // src-tauri/src/engine/build_session/provisional.rs.
+  | {
+      type: "provisional_capability_enumeration";
+      session_id: string;
+      data: unknown;
+    }
+  | {
+      type: "provisional_capability_resolution";
+      session_id: string;
+      capability_id: string;
+      field: string;
+      value: unknown;
+      /** The legacy cell this field lights once confirmed, decided by the
+       *  backend (null for a field with no frame). */
+      cell_key: string | null;
+    }
+  | {
+      type: "provisional_settled";
+      session_id: string;
+      /** Previewed capability ids the authoritative enumeration dropped. */
+      retracted_capability_ids: string[];
+      /** Previewed [capability_id, field] pairs the validator dropped or changed. */
+      retracted_resolutions: Array<[string, string]>;
     };
 
 /** A pending question the user needs to answer for a specific cell. */

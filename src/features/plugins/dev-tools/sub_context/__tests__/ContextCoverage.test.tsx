@@ -23,7 +23,7 @@ vi.mock('@/stores/overviewStore', () => ({
     selector({ setOverviewTab }),
 }));
 
-vi.mock('@/features/plugins/companion/guidance/appActions', () => ({
+vi.mock('@/features/companions/athena/guidance/appActions', () => ({
   openGoalsBoard: openGoalsBoardMock,
 }));
 

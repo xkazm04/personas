@@ -30,7 +30,7 @@ export const KT = {
   /** A sentence or plain value in a row. */
   text: 'typo-body',
   /** A figure in a row: same size, tabular so a column aligns. */
-  figure: 'typo-data tabular-nums',
+  figure: 'typo-data',
   /** Everything secondary: a context line, a hint, a unit. The one muting. */
   meta: 'typo-caption',
   /** A secondary figure (a rank, a denominator). */
@@ -38,9 +38,9 @@ export const KT = {
   /** A section head inside a surface or a tooltip: exactly the content
    *  grammar's `ContentEyebrow` (the execution detail's "SUGGESTED ACTIONS"),
    *  so a KPI section head and an execution section head are one thing. */
-  eyebrow: 'typo-heading uppercase tracking-wider',
+  eyebrow: 'typo-heading uppercase',
   /** The one figure a surface leads with. */
-  hero: 'typo-data-lg tabular-nums',
+  hero: 'typo-data-lg',
   /** A stat card's figure: one step under the hero, so the hero still leads. */
   stat: 'typo-heading-lg tabular-nums',
 } as const;

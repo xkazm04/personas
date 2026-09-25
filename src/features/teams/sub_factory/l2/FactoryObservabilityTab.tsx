@@ -163,7 +163,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
                     <span className="flex items-baseline gap-2 min-w-0">
                       <span className="typo-caption text-foreground/85 truncate">{name}</span>
                       <span className="text-[10px] text-foreground/40 shrink-0">{e.calls} calls · {[...e.models][0]}{e.models.size > 1 ? ` +${e.models.size - 1}` : ''}</span>
-                      <span className="typo-caption tabular-nums font-medium ml-auto shrink-0" style={{ color: heavy }}>
+                      <span className="typo-caption tabular-nums ml-auto shrink-0" style={{ color: heavy }}>
                         <Numeric value={e.cost} unit="usd" precision={2} />
                       </span>
                     </span>
@@ -199,7 +199,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
                     <span className="flex items-baseline gap-2 min-w-0">
                       <AlertTriangle className="w-3 h-3 shrink-0 self-center" style={{ color: heavy }} aria-hidden />
                       <span className="typo-caption text-foreground/85 truncate" title={i.title}>{i.title}</span>
-                      <span className="typo-caption tabular-nums font-medium ml-auto shrink-0" style={{ color: heavy }}>{i.count}</span>
+                      <span className="typo-caption tabular-nums ml-auto shrink-0" style={{ color: heavy }}>{i.count}</span>
                     </span>
                     {i.culprit && <span className="block text-[10px] text-foreground/40 truncate pl-5">{i.culprit}</span>}
                     <span className="block h-[2px] rounded-full mt-1" style={{ background: 'rgba(148,163,184,.10)' }}>

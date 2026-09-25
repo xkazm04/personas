@@ -32,7 +32,7 @@ export function ManifestCart({
             <PackageOpen className="w-4.5 h-4.5" />
           </span>
           <div className="min-w-0">
-            <h3 className="typo-heading font-semibold text-foreground leading-tight">{p.manifest_title}</h3>
+            <h3 className="typo-heading text-foreground">{p.manifest_title}</h3>
             <span
               className={`typo-caption ${picker.isFullExport ? 'text-emerald-300' : 'text-foreground'}`}
             >
@@ -42,7 +42,7 @@ export function ManifestCart({
         </div>
 
         {picker.totalSelected === 0 ? (
-          <p className="typo-caption text-foreground leading-relaxed">{p.manifest_empty}</p>
+          <p className="typo-caption text-foreground">{p.manifest_empty}</p>
         ) : (
           <div className="space-y-2.5">
             <CategoryCountRow icon={Bot} label={p.row_personas} {...picker.counts.personas} accent="bg-violet-500/10 text-violet-300" />
@@ -70,7 +70,7 @@ export function ManifestCart({
           type="button"
           onClick={onCancel}
           disabled={exporting}
-          className="w-full py-2 rounded-modal typo-caption font-medium text-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          className="w-full py-2 rounded-modal typo-caption text-foreground hover:text-foreground transition-colors disabled:opacity-50"
         >
           {s.cancel}
         </button>

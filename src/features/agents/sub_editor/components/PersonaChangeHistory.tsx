@@ -74,7 +74,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
 
   return (
     <div className="space-y-3">
-      <h4 className="flex items-center gap-2.5 typo-submodule-header tracking-wide">
+      <h4 className="flex items-center gap-2.5 typo-submodule-header">
         <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
         <History className="w-3.5 h-3.5" />
         {labels.title}
@@ -95,7 +95,7 @@ export function PersonaChangeHistory({ personaId }: PersonaChangeHistoryProps) {
           <ul className="divide-y divide-primary/10">
             {entries.map((e) => (
               <li key={e.id} className="flex items-center gap-2 py-2 first:pt-0 last:pb-0">
-                <span className="typo-body font-medium text-foreground min-w-0 shrink-0">
+                <span className="typo-body text-foreground min-w-0 shrink-0">
                   {fieldLabel(e.field)}
                 </span>
                 <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-foreground">

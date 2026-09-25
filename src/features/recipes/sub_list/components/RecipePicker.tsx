@@ -43,7 +43,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
           <BookOpen className="w-4 h-4 text-primary" />
-          <h2 className="typo-heading font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
+          <h2 className="typo-heading text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -89,7 +89,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
                     <BookOpen className="w-3 h-3 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="typo-body font-medium text-foreground truncate">{recipe.name}</p>
+                    <p className="typo-body text-foreground truncate">{recipe.name}</p>
                     {recipe.description && (
                       <p className="typo-body text-foreground truncate">{recipe.description}</p>
                     )}

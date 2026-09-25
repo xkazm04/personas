@@ -99,9 +99,9 @@ export function HealingIssuesPanel({
           <div className="w-8 h-8 rounded-modal bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
             <Stethoscope className="w-4 h-4 text-cyan-400" />
           </div>
-          <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.healing_issues_panel.title}</h3>
+          <h3 className="typo-heading text-foreground/90 uppercase">{t.overview.healing_issues_panel.title}</h3>
           {healingIssues.length > 0 && (
-            <StatusBadge variant="warning" className="typo-body font-black tracking-wide rounded-card shadow-elevation-1">
+            <StatusBadge variant="warning" className="typo-body tracking-wide rounded-card shadow-elevation-1">
               {healingIssues.length}
             </StatusBadge>
           )}
@@ -197,7 +197,7 @@ export function HealingIssuesPanel({
               onClick={() => setIssueFilter(chip.key)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
-                  ? 'bg-background text-foreground font-semibold shadow-elevation-1 border border-primary/20'
+                  ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                   : 'text-foreground hover:text-foreground/80'
               }`}
             >

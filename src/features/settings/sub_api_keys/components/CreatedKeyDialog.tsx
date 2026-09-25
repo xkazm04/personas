@@ -97,7 +97,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
         transition={reduce ? { duration: 0 } : PANEL_SPRING}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-          <h2 className="typo-body font-medium text-foreground inline-flex items-center gap-2">
+          <h2 className="typo-body text-foreground inline-flex items-center gap-2">
             <Check className="w-4 h-4 text-emerald-400" />
             {s.created_dialog_title}
           </h2>
@@ -139,7 +139,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
               <button
                 type="button"
                 onClick={copyKey}
-                className="inline-flex items-center justify-center gap-1.5 min-w-[88px] px-3 py-2 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 transition-opacity focus-ring"
+                className="inline-flex items-center justify-center gap-1.5 min-w-[88px] px-3 py-2 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity focus-ring"
               >
                 <CopyFeedback copied={keyCopied} idle={s.copy} done={s.copied} reduce={reduce} />
               </button>
@@ -151,7 +151,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             <label className="block typo-caption text-foreground mb-1.5">
               {s.created_mcp_config_label}
             </label>
-            <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-foreground/90 overflow-x-auto text-xs leading-relaxed max-h-48">
+            <pre className="px-3 py-2 bg-background border border-border/40 rounded-input typo-code text-foreground/90 overflow-x-auto max-h-48">
               {mcpConfig}
             </pre>
             <button
@@ -187,7 +187,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
             onClick={onClose}
             disabled={!acknowledged}
             className={[
-              'inline-flex items-center gap-1.5 px-4 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium transition-all duration-200 focus-ring',
+              'inline-flex items-center gap-1.5 px-4 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption transition-all duration-200 focus-ring',
               acknowledged
                 ? 'opacity-100 scale-100 ring-2 ring-primary/40 shadow-elevation-2'
                 : 'opacity-40 scale-[0.98] cursor-not-allowed',

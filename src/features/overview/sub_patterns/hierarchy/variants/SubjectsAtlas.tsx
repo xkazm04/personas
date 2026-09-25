@@ -198,7 +198,7 @@ function AtlasGrid({
                 <HierarchyStatusChip status={s.status} />
               </span>
               {s.summary && (
-                <span className="typo-body text-foreground/75 leading-snug line-clamp-3 flex-1">
+                <span className="typo-body text-foreground/75 line-clamp-3 flex-1">
                   {s.summary}
                 </span>
               )}
@@ -303,7 +303,7 @@ function AtlasDossier({
         <div className="flex items-center gap-2.5 flex-wrap mb-1">
           {/* h2, not h1: ContentHeader owns this page's single h1 and the parent
               panel already renders it. Two h1s made the plate a second page title. */}
-          <h2 className="typo-section-title text-foreground">{subject.title}</h2>
+          <h2 className="typo-section-title">{subject.title}</h2>
           <HierarchyStatusChip status={subject.status} />
         </div>
         {subject.summary && (
@@ -317,7 +317,7 @@ function AtlasDossier({
               onClick={() => stat.pane && setPane(stat.pane)}
               className="text-left group/stat"
             >
-              <span className={`block typo-data-lg tabular-nums ${stat.label === p.deviations_heading && (stat.value ?? 0) > 0 ? 'text-status-warning' : 'text-foreground'}`}>
+              <span className={`block typo-data-lg ${stat.label === p.deviations_heading && (stat.value ?? 0) > 0 ? 'text-status-warning' : 'text-foreground'}`}>
                 {stat.value ?? '—'}
               </span>
               {/* muted-ok: stat figure label, structural chrome */}
@@ -345,7 +345,7 @@ function AtlasDossier({
             onClick={() => setPane(id)}
             className={`typo-body pb-2 -mb-px border-b-2 transition-colors ${
               pane === id
-                ? 'border-primary text-foreground font-medium'
+                ? 'border-primary text-foreground'
                 : 'border-transparent text-foreground/60 hover:text-foreground'
             }`}
           >
@@ -395,7 +395,7 @@ function AtlasDossier({
                       <LawChips laws={tech.laws} graph={graph} onOpenLaw={onOpenLaw} />
                     </span>
                     {tech.summary && (
-                      <span className="block typo-body text-foreground/75 mt-1 leading-relaxed">{tech.summary}</span>
+                      <span className="block typo-body text-foreground/75 mt-1">{tech.summary}</span>
                     )}
                   </button>
                   {expanded && (
@@ -445,7 +445,7 @@ function AtlasDossier({
           <div className="space-y-5 max-w-[80ch]">
             <section>
               {/* muted-ok: section band header */}
-              <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">{p.evidence_heading}</h3>
+              <h3 className="typo-label uppercase text-foreground/50 mb-2">{p.evidence_heading}</h3>
               {subject.evidence.length === 0 && <p className="typo-body text-foreground">{p.evidence_empty}</p>}
               <ul className="space-y-1">
                 {subject.evidence.map((path) => (
@@ -457,7 +457,7 @@ function AtlasDossier({
             </section>
             {subject.counterEvidence.length > 0 && (
               <section>
-                <h3 className="typo-label uppercase tracking-wide text-status-warning mb-2">{p.counter_evidence_heading}</h3>
+                <h3 className="typo-label uppercase text-status-warning mb-2">{p.counter_evidence_heading}</h3>
                 <ul className="space-y-1">
                   {subject.counterEvidence.map((path) => (
                     <li key={path} className="rounded-interactive border border-status-warning/25 bg-status-warning/5 px-2.5 py-1.5">
@@ -469,7 +469,7 @@ function AtlasDossier({
             )}
             {subject.deviations.length > 0 && (
               <section>
-                <h3 className="typo-label uppercase tracking-wide text-foreground/50 mb-2">{p.deviations_heading}</h3>
+                <h3 className="typo-label uppercase text-foreground/50 mb-2">{p.deviations_heading}</h3>
                 <div className="flex flex-wrap gap-1.5">
                   {subject.deviations.map((anchor) => (
                     <button

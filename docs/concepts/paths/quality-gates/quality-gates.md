@@ -5,7 +5,6 @@ status: forged
 techniques:
   - gate-laddering
   - severity-by-construction
-  - ratchet-design
   - gate-liveness
   - hook-hygiene
   - false-positive-economics
@@ -118,27 +117,20 @@ every gap between them is a place the gate passes while the target fails
 Before trusting any green result, the question is never "did the check
 pass" but "what did the check read."
 
-## Ratchets: monotonic improvement as a gate
+## A count against a recorded count is a different subject
 
-Most quality metrics in a living codebase cannot be zeroed today — hundreds
-of legacy violations, a bundle that grew for two years, a warning class with
-deep roots. The wrong responses are the common ones: block on zero (instant
-bypass culture) or track it on a dashboard (numbers that only ever go up).
-The senior structure is the **ratchet**: record the current value as an
-explicit, committed baseline, and gate on direction — the metric may fall,
-never rise.
-
-A correct ratchet fails in **both** directions. Fail on rise, obviously.
-But also fail — or at minimum refuse silence — when the measured value drops
-below the baseline without a baseline update, because an unexplained
-improvement has two explanations and the likelier one is that **the
-measurement broke**. A counter that walked zero files reports zero
-violations; celebrating that number buries the instrument failure inside
-good news ([failure-not-empty-success](../_laws.md#failure-not-empty-success)).
-Improvements are welcomed by re-baselining as a deliberate, reviewed diff —
-the baseline file is the metric's audit log. Baseline mechanics, bucketing,
-and the endgame (a ratchet that reaches zero graduates into a hard ban) are
-[ratchet-design](techniques/ratchet-design.md).
+A gate whose verdict is a comparison between a measured number and a number
+recorded earlier — a violation count against a baseline, a bundle's bytes
+against last release — still needs everything above: a rung, a severity that
+can actually fail, an asserted instrument. But it carries two problems no
+predicate gate has, both about the recorded number: where it came from, and
+whether the instrument that produced it is still the same instrument. Those
+belong to [metric gates](../metric-gates/metric-gates.md), which owns the
+ratchet — record the current value as a committed baseline and gate on
+direction — and the provenance rules that keep such a comparison meaningful.
+The boundary is the shape of the verdict, not the subject matter: a check
+that blocks because a forbidden construct appeared is a quality gate even
+when it prints a count.
 
 ## A gate that cannot prove it ran has not run
 
@@ -213,9 +205,6 @@ how will we know the gate is alive next year.
 - [severity-by-construction](techniques/severity-by-construction.md) —
   tracing what a severity level can actually fail; advisory feedback vs
   enforcement; escalation paths for new rules.
-- [ratchet-design](techniques/ratchet-design.md) — committed baselines,
-  fail-on-rise and fail-on-silent-drop, reviewed re-baselining, and
-  graduating to a ban.
 - [gate-liveness](techniques/gate-liveness.md) — instrument assertion,
   portability, chain-abort ordering, and proving a gate red before
   trusting it green.

@@ -93,7 +93,7 @@ export default function GuideDeck({
                 }`}
               >
                 {i === 0 ? g.do_it : g.yes}
-                <kbd className="rounded border border-current/40 px-1 font-mono text-xs">{i + 1}</kbd>
+                <kbd className="rounded-interactive border border-current/40 px-1 font-mono text-xs">{i + 1}</kbd>
               </button>
               <button type="button" onClick={() => onDecline(c)} className="typo-body text-foreground/90 hover:text-foreground">
                 {g.not_now}

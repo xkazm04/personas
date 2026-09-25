@@ -118,7 +118,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           </p>
           {pendingQuestions.length > 0 && (
             <div className="p-3 rounded-modal bg-amber-500/5 border border-amber-500/15">
-              <p className="typo-body text-amber-300/80 font-medium">
+              <p className="typo-body text-amber-300/80">
                 {tx(pendingQuestions.length === 1 ? t.onboarding.questions_waiting_one : t.onboarding.questions_waiting_other, { count: pendingQuestions.length })}
               </p>
               <p className="text-[11px] text-foreground mt-1">
@@ -169,14 +169,14 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
         <div className="space-y-3">
           {buildTestPassed === true ? (
             <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
-              <p className="typo-body text-emerald-300 font-medium">{t.onboarding.all_tests_passed}</p>
+              <p className="typo-body text-emerald-300">{t.onboarding.all_tests_passed}</p>
               <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.promote_hint}
               </p>
             </div>
           ) : buildTestPassed === false ? (
             <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20">
-              <p className="typo-body text-red-300 font-medium">{t.onboarding.some_tests_failed}</p>
+              <p className="typo-body text-red-300">{t.onboarding.some_tests_failed}</p>
               <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.refine_hint}
               </p>
@@ -189,7 +189,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
               <div className="p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/15">
                 <div className="flex items-center gap-2">
                   <FlaskConical className="w-4 h-4 text-emerald-400" />
-                  <p className="typo-body text-emerald-300/80 font-medium">{t.onboarding.what_testing_checks}</p>
+                  <p className="typo-body text-emerald-300/80">{t.onboarding.what_testing_checks}</p>
                 </div>
                 <ul className="mt-2 space-y-1 text-[11px] text-foreground">
                   <li>• {t.onboarding.test_check_api}</li>
@@ -207,7 +207,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
             <div className="p-3 rounded-modal bg-emerald-500/15 border border-emerald-500/25">
               <div className="flex items-center gap-2">
                 <Rocket className="w-4 h-4 text-emerald-400" />
-                <p className="typo-body text-emerald-300 font-medium">{t.onboarding.agent_promoted}</p>
+                <p className="typo-body text-emerald-300">{t.onboarding.agent_promoted}</p>
               </div>
               <p className="text-[11px] text-foreground mt-1">
                 {t.onboarding.agent_promoted_hint}

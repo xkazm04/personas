@@ -75,7 +75,7 @@ export default function CardsVariant({
               <button
                 type="button"
                 onClick={() => onEdit(site)}
-                className="typo-heading-sm text-foreground truncate block text-left hover:underline focus-ring rounded-interactive"
+                className="typo-heading text-foreground truncate block text-left hover:underline focus-ring rounded-interactive"
               >
                 {site.label || site.origin}
               </button>
@@ -120,7 +120,7 @@ export default function CardsVariant({
               <AsyncButton
                 size="xs"
                 variant="accent"
-                accentColor="emerald"
+                tone="success"
                 icon={<Check className="w-3.5 h-3.5" />}
                 onClick={() => onConfirm(site)}
               >

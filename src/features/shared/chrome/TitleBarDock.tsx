@@ -206,7 +206,7 @@ function DockAction({
   showHint,
 }: DockActionProps) {
   const countEl = count > 0 && (
-    <span className={`typo-caption font-semibold leading-none tabular-nums ${countClass ?? ''}`}>
+    <span className={`typo-caption tabular-nums ${countClass ?? ''}`}>
       {count > 99 ? '99+' : count}
     </span>
   );
@@ -226,7 +226,7 @@ function DockAction({
         {hintKey && showHint && (
           <kbd
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-full mt-1.5 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-input border border-primary/20 bg-background typo-caption font-semibold text-foreground shadow-elevation-2"
+            className="pointer-events-none absolute left-1/2 top-full mt-1.5 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-input border border-primary/20 bg-background typo-caption text-foreground shadow-elevation-2"
           >
             {hintKey}
           </kbd>

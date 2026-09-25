@@ -46,7 +46,7 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
   if (decisions.length === 0) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-3 typo-caption text-foreground">
-        {t.plugins.companion.decision_log_empty}
+        {t.athena.decision_log_empty}
       </div>
     );
   }
@@ -59,7 +59,7 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
       <header className="flex items-baseline gap-2 typo-caption text-fuchsia-300/85">
         <ScrollText className="w-3.5 h-3.5" />
         <span className="font-medium">
-          {title || t.plugins.companion.decision_log_title}
+          {title || t.athena.decision_log_title}
         </span>
         {intent && (
           <span className="text-foreground truncate" title={intent}>
@@ -68,10 +68,10 @@ export function DecisionLogWidget({ config, title }: CockpitWidgetProps) {
         )}
         <span
           className="inline-flex items-center gap-1 text-foreground ml-auto shrink-0"
-          title={t.plugins.companion.decision_log_persisted_tooltip}
+          title={t.athena.decision_log_persisted_tooltip}
         >
           <Save className="w-3 h-3" />
-          <span>{t.plugins.companion.decision_log_persisted_badge}</span>
+          <span>{t.athena.decision_log_persisted_badge}</span>
         </span>
       </header>
       <ol className="relative space-y-3 pl-4">

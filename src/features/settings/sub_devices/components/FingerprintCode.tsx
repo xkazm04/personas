@@ -13,7 +13,7 @@ export function FingerprintCode({ fingerprint, 'data-testid': testId }: Fingerpr
   return (
     <span
       data-testid={testId ?? 'pairing-fingerprint'}
-      className="typo-heading-lg font-mono tracking-[0.35em] text-foreground select-all"
+      className="typo-heading-lg font-mono text-foreground select-all"
     >
       {fingerprint}
     </span>

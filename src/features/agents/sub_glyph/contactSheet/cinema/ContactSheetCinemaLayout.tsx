@@ -134,7 +134,7 @@ export function ContactSheetCinemaLayout(props: GlyphFullLayoutProps) {
         >
           <SheetPrint
             frozen={sleep.frozen} premiere={premiere} stage={stage} labels={dimText.label}
-            frameStates={s.frameStates} petalStates={s.petalStates} values={values} populated={populated}
+            frameStates={s.frameStates} petalStates={s.petalStates} values={s.frameValues} populated={populated}
             accent={s.cast.accent} presence={s.presence} onOpenFrame={openFrame} frameRef={frameRef} centreRef={centreRef}
             centre={
               <SheetCentre

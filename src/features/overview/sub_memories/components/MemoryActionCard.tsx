@@ -43,7 +43,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
             <span className={`typo-heading px-1.5 py-0.5 rounded-input ${meta.bgClass} ${meta.textClass}`}>
               {meta.label}
             </span>
-            <span className="typo-code text-foreground font-mono">{action.score}/10</span>
+            <span className="typo-code text-foreground">{action.score}/10</span>
           </div>
           <p className="typo-heading text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
           <p className="typo-body text-foreground line-clamp-2">{action.rule}</p>

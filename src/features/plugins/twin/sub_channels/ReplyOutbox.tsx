@@ -307,7 +307,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
       </div>
 
       <div className="flex justify-end mt-3">
-        <Button onClick={() => void handleGenerate()} disabled={!canGenerate} size="sm" variant="accent" accentColor="violet">
+        <Button onClick={() => void handleGenerate()} disabled={!canGenerate} size="sm" variant="accent" tone="agent">
           {drafting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
           {drafting ? 'Drafting…' : replyDraft ? 'Regenerate' : 'Generate draft'}
         </Button>
@@ -338,7 +338,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
             disabled={approving || !replyDraft?.trim()}
             size="sm"
             variant="accent"
-            accentColor="emerald"
+            tone="success"
           >
             {approving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
             {approving ? 'Recording…' : 'Approve & log'}

@@ -33,14 +33,14 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`typo-heading font-semibold ${config.color}`}>{ace[config.labelKey]}</p>
+          <p className={`typo-heading ${config.color}`}>{ace[config.labelKey]}</p>
           <p className="typo-body text-foreground mt-0.5">
             {isGuided ? ace[config.guidedSublabelKey] : ace[config.sublabelKey]}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {elapsed && (
-            <span className="flex items-center gap-1 typo-data text-foreground tabular-nums">
+            <span className="flex items-center gap-1 typo-data text-foreground">
               <Clock className="w-3 h-3" />
               {elapsed}
             </span>

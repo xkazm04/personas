@@ -42,7 +42,7 @@ export function ToolRunnerModal({ isOpen, onClose, tools, personaId }: ToolRunne
             <div className="min-w-0">
               <h3
                 id="tool-runner-modal"
-                className="typo-heading font-semibold text-foreground uppercase tracking-wider"
+                className="typo-heading text-foreground uppercase"
               >
                 {t.agents.tool_runner.panel_title}
               </h3>

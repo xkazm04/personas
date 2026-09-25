@@ -7,19 +7,28 @@ stack: react
 
 # React application — status color mapping
 
-## The one file that does the whole chain
+## The one file that did the whole chain, and the anchor it left behind
 
-`src/features/overview/sub_certification/components/VerdictBadge.tsx` is
-the exemplar to copy: one `VERDICT_CONFIG` carrying accent **and**
-`tokenKey` together (`:16`), label via `tokenLabel(t, 'verdict', tokenKey)`
-(`:42`), render via `StatusBadge` (`:44`), a dash for the null state
-(`:33`) — and a docstring (`:5-14`) that is a post-mortem of the exact
-drift the technique names: *"the accent color and the
-`status_tokens.verdict` token key were two independently hand-maintained
-literal maps in this file — a new verdict added to one but not the other
-degraded silently."* Its residual gaps are instructive too:
-`Record<string, …>` instead of `Record<Verdict, …>` (`:40`) and the
-`?? verdict.toLowerCase()` raw-token fallback (`:41`).
+**RETIRED 2026-09-22.** The exemplar this section was written around,
+`src/features/overview/sub_certification/components/VerdictBadge.tsx`, was
+deleted with the Certification Command Center. It is worth recording what it
+demonstrated, because nothing in the tree has replaced it: one `VERDICT_CONFIG`
+carrying the accent **and** the `tokenKey` together, the label resolved through
+`tokenLabel(t, 'verdict', tokenKey)`, the render through `StatusBadge`, a dash
+for the null state, and a docstring that was itself a post-mortem of the exact
+drift this technique names: *"the accent color and the `status_tokens.verdict`
+token key were two independently hand-maintained literal maps in this file - a
+new verdict added to one but not the other degraded silently."* Its residual
+gaps were instructive too: `Record<string, …>` instead of `Record<Verdict, …>`,
+and a `?? verdict.toLowerCase()` raw-token fallback.
+
+**This is an open gap, stated rather than papered over.** Seven files in the
+tree reach both `tokenLabel(` and `StatusBadge` and any of them may turn out to
+do the whole chain, but promoting one into the corpus is a judgement about its
+merit and none has been made. Until it is, the sections below carry the
+technique on their own: the palette and the best-typed table are the parts that
+survived, and `eventTokens.ts` is the closest thing the repo now has to a
+complete presentation table.
 
 ## The palette and the best-typed table
 

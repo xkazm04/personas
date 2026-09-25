@@ -48,14 +48,14 @@ export function SandboxWarningBanner({ verification, className = '' }: SandboxWa
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className={`typo-heading font-semibold ${titleColor}`}>
+            <h4 className={`typo-heading ${titleColor}`}>
               {isUntrusted ? t.templates.sandbox.title_unverified : t.templates.sandbox_banner.community_sandbox}
             </h4>
             <span className={`typo-body px-1.5 py-0.5 rounded ${isUntrusted ? 'bg-red-500/15 text-red-400/80' : 'bg-amber-500/15 text-amber-400/80'}`}>
               {ORIGIN_LABELS[origin]}
             </span>
           </div>
-          <p className={`typo-body ${textColor} leading-relaxed mb-3`}>
+          <p className={`typo-body ${textColor} mb-3`}>
             {isUntrusted
               ? t.templates.sandbox.desc_unverified
               : t.templates.sandbox.desc_community}

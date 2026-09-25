@@ -29,7 +29,7 @@ export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title:
           </div>
           <p className="typo-body text-primary mb-1">{t.emptyState.noTwinSelected}</p>
           <p className="typo-caption text-foreground mb-4">{t.emptyState.createFirstTwin}</p>
-          <Button onClick={() => setTwinTab('profiles')} size="sm" variant="accent" accentColor="violet">
+          <Button onClick={() => setTwinTab('profiles')} size="sm" variant="accent" tone="agent">
             <Plus className="w-4 h-4 mr-1.5" />
             {t.selector.createTwin}
           </Button>

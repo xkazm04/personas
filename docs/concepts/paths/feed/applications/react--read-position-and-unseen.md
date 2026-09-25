@@ -90,7 +90,7 @@ It would be the wrong shape for a single feed's watermark, which is Adoption
 
 ## The half-adoption — a jump pill with no count
 
-`src/features/plugins/companion/useChatScroll.ts` implements the scroll
+`src/features/companions/athena/useChatScroll.ts` implements the scroll
 contract cleanly: `atBottom` tracked within a band (`:30-40`), auto-scroll only
 while pinned (`:63`), and the doc comment (`:13-19`) hands the caller a
 "jump to latest" affordance off `atBottom`. What the caller gets is a boolean.

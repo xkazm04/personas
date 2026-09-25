@@ -27,7 +27,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
             <ShieldOff className="w-5 h-5 text-red-400" />
           )}
           <div>
-            <div className="typo-body font-medium text-foreground">
+            <div className="typo-body text-foreground">
               {result.personaName}
             </div>
             <div className="text-[10px] text-foreground">
@@ -63,7 +63,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
 
       {/* Creator identity */}
       <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-1.5">
-        <div className="typo-caption text-foreground font-medium">{st.creator_identity}</div>
+        <div className="typo-caption text-foreground">{st.creator_identity}</div>
         <div className="text-[10px] text-foreground font-mono">
           {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
         </div>
@@ -71,7 +71,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
 
       {/* Policy details */}
       <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2">
-        <div className="typo-caption text-foreground font-medium">{st.execution_policy}</div>
+        <div className="typo-caption text-foreground">{st.execution_policy}</div>
         <div className="grid grid-cols-2 gap-2 typo-caption">
           <div>
             <span className="text-foreground">{st.max_cost_label}</span>{' '}

@@ -175,11 +175,11 @@ export function BuildSimulatePanel({
           <div>
             <h2
               id="build-simulate-title"
-              className="typo-heading-md text-foreground"
+              className="typo-title-lg text-foreground"
             >
               {t.agents.build_simulate.title}
             </h2>
-            <p className="typo-body-sm text-foreground mt-1">
+            <p className="typo-body text-foreground mt-1">
               {t.agents.build_simulate.subtitle}
             </p>
           </div>
@@ -265,7 +265,7 @@ export function BuildSimulatePanel({
               {error && (
                 <div
                   role="alert"
-                  className="p-3 rounded-card border border-orange-400/40 bg-orange-500/10 typo-body-sm text-orange-200"
+                  className="p-3 rounded-card border border-orange-400/40 bg-orange-500/10 typo-body text-orange-200"
                 >
                   <strong>{t.agents.build_simulate.error_label}:</strong>{" "}
                   {error}
@@ -333,7 +333,7 @@ function ArtefactsPreview({
       className="border border-border/30 rounded-card p-4 bg-background/40"
     >
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="typo-heading-sm text-foreground">{artefactsTitleLabel}</h3>
+        <h3 className="typo-heading text-foreground">{artefactsTitleLabel}</h3>
         <div className="flex gap-3 typo-caption text-foreground">
           <span>
             {executionLabel}: <code>{execution.id.slice(0, 8)}…</code>
@@ -353,7 +353,7 @@ function ArtefactsPreview({
               {reviewsHeading}
             </h4>
             {reviews.length === 0 ? (
-              <p className="typo-body-sm text-foreground">{noReviewsLabel}</p>
+              <p className="typo-body text-foreground">{noReviewsLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {reviews.map((r) => (
@@ -362,7 +362,7 @@ function ArtefactsPreview({
                     className="p-2 rounded-input bg-secondary/40 border border-border/20"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body-sm font-medium text-foreground">
+                      <span className="typo-body font-medium text-foreground">
                         {r.title}
                       </span>
                       <code className="typo-caption text-foreground">
@@ -390,7 +390,7 @@ function ArtefactsPreview({
               {memoriesHeading}
             </h4>
             {memories.length === 0 ? (
-              <p className="typo-body-sm text-foreground">{noMemoriesLabel}</p>
+              <p className="typo-body text-foreground">{noMemoriesLabel}</p>
             ) : (
               <ul className="space-y-1.5">
                 {memories.map((m) => (
@@ -399,7 +399,7 @@ function ArtefactsPreview({
                     className="p-2 rounded-input bg-secondary/40 border border-border/20"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body-sm font-medium text-foreground">
+                      <span className="typo-body font-medium text-foreground">
                         {m.title}
                       </span>
                       {m.category && (

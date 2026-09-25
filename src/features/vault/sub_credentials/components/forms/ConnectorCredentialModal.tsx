@@ -124,7 +124,7 @@ export function ConnectorCredentialModal({
               </div>
             )}
             <div>
-              <h3 id="connector-credential-title" className="typo-heading font-semibold text-foreground">{label}</h3>
+              <h3 id="connector-credential-title" className="typo-heading text-foreground">{label}</h3>
               {category && (
                 <span className="typo-body text-foreground px-1.5 py-0.5 bg-muted/30 rounded mt-0.5 inline-block">
                   {category}
@@ -157,7 +157,7 @@ export function ConnectorCredentialModal({
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-3 mb-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-modal typo-body text-foreground hover:bg-amber-500/15 hover:border-amber-500/40 transition-colors group"
           >
-            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center typo-heading font-bold text-amber-400 flex-shrink-0">
+            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center typo-heading text-amber-400 flex-shrink-0">
               1
             </span>
             <div className="flex-1 min-w-0">
@@ -189,10 +189,10 @@ export function ConnectorCredentialModal({
         {/* Setup instructions */}
         {connector.setup_instructions && (
           <div className="mb-4 px-3.5 py-2.5 bg-secondary/60 border border-primary/10 rounded-modal">
-            <p className="typo-code font-mono text-foreground uppercase tracking-wider mb-1.5">
+            <p className="typo-code text-foreground uppercase tracking-wider mb-1.5">
               {cf.setup_instructions_label}
             </p>
-            <p className="typo-body text-foreground whitespace-pre-line leading-relaxed">
+            <p className="typo-body text-foreground whitespace-pre-line">
               {connector.setup_instructions}
             </p>
           </div>

@@ -65,7 +65,7 @@ export function RecipeInputSection({
   return (
     <div className="p-4 border-b border-border/40 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
+        <h3 className="typo-heading text-foreground uppercase">
           {t.recipes.input}
         </h3>
         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export function RecipeInputSection({
             type="button"
             onClick={onExecute}
             disabled={running || executionPhase === 'executing'}
-            className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           >
             {running || executionPhase === 'executing' ? (
               <RecipePageFlipLoader className="text-emerald-400" />
@@ -112,7 +112,7 @@ export function RecipeInputSection({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Test Input */}
         <div>
-          <p className="typo-body font-medium text-foreground mb-2">{t.recipes.test_input}</p>
+          <p className="typo-body text-foreground mb-2">{t.recipes.test_input}</p>
           {fields.length > 0 ? (
             <div className="space-y-2.5">
               {fields.map((field) => (
@@ -165,14 +165,14 @@ export function RecipeInputSection({
               onChange={(e) => onFreeInputChange(e.target.value)}
               placeholder={t.recipes.free_input_placeholder}
               rows={3}
-              className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-code font-mono text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
+              className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-code text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-emerald-500/50 resize-y"
             />
           )}
         </div>
 
         {/* Right: Saved Mock Values */}
         <div>
-          <p className="typo-body font-medium text-foreground mb-2">{t.recipes.saved_mock_values}</p>
+          <p className="typo-body text-foreground mb-2">{t.recipes.saved_mock_values}</p>
           <div className="rounded-card border border-border/40 bg-card/30 p-3 max-h-60 overflow-y-auto">
             {mockValues ? (
               <div className="space-y-1.5">

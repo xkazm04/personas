@@ -55,7 +55,7 @@ export function SetupProposalRow({ proposal, resolution, onAccept, onEdit, onDis
         )}
         {resolution && (
           <span
-            className={`ml-auto typo-caption font-medium ${
+            className={`ml-auto typo-caption ${
               resolution === 'accepted' ? 'text-status-success' : ''
             }`}
           >
@@ -64,7 +64,7 @@ export function SetupProposalRow({ proposal, resolution, onAccept, onEdit, onDis
         )}
       </div>
 
-      <p className={`px-3 py-2.5 typo-body leading-relaxed whitespace-pre-wrap ${
+      <p className={`px-3 py-2.5 typo-body whitespace-pre-wrap ${
         resolution === 'dismissed' ? 'text-foreground line-through decoration-foreground/25' : 'text-foreground'
       }`}>
         {proposal.value}
@@ -79,7 +79,7 @@ export function SetupProposalRow({ proposal, resolution, onAccept, onEdit, onDis
           <AsyncButton
             size="sm"
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             icon={<Check className="w-3.5 h-3.5" />}
             onClick={() => onAccept(proposal)}
             data-testid="setup-proposal-accept"

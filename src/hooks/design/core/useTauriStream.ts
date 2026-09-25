@@ -1,6 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { silentCatch } from "@/lib/silentCatch";
+import { getActiveTranslations } from '@/i18n/useTranslation';
+import {
+  initialArtifactJobState,
+  readJobId,
+  stepArtifactJob,
+  type ArtifactJobCommand,
+  type ArtifactJobConfig,
+  type ArtifactJobInput,
+} from './artifactJobCorrelator';
 
 /** Cap the streamed-line buffer. This hook backs many CLI-driven design flows
  *  (reviews, credential/schema/n8n/AI-artifact generation); a long run streams
@@ -59,7 +68,22 @@ export interface TauriStreamOptions<TResult, TQuestion = never> {
   startErrorMessage?: string;
   /** Timeout in ms for the running phase. Auto-resets to idle if no completion arrives. Default: 5 minutes. */
   timeoutMs?: number;
+  /**
+   * Correlate by backend job id: the key the start command's result and every
+   * event carry the id under (the Rust `AiArtifactMessages.id_field`). Events
+   * of any other run are dropped, early events are held until the id is known,
+   * and another run's initial status ends this one as `superseded`. Omit it
+   * and every event of the generation applies, as before.
+   */
+  idField?: string;
+  /** The backend's first status for a run. Default: `runningPhase`. */
+  initialStatus?: string;
+  /** Called once when the deadline expires, so the abandoned backend job stops too. */
+  invokeCancelOnTimeout?: () => Promise<unknown>;
 }
+
+/** Why the stream itself ended in `error`. `null` while it has not. */
+export type TauriStreamErrorKind = 'failed' | 'start' | 'timeout' | 'superseded';
 
 export interface TauriStreamState<TResult, TQuestion = never> {
   phase: string;
@@ -68,6 +92,7 @@ export interface TauriStreamState<TResult, TQuestion = never> {
   /** The most recent clarification question, if the generator asked one. */
   question: TQuestion | null;
   error: string | null;
+  errorKind: TauriStreamErrorKind | null;
 }
 
 export interface TauriStreamActions<TResult, TQuestion = never> {
@@ -104,6 +129,9 @@ export function useTauriStream<TResult, TQuestion = never>(
     awaitingInputPhase = 'awaiting-input',
     startErrorMessage = 'Stream failed to start',
     timeoutMs = 5 * 60 * 1000, // 5 minutes default
+    idField,
+    initialStatus = runningPhase,
+    invokeCancelOnTimeout,
   } = options;
 
   const [phase, setPhase] = useState('idle');
@@ -111,6 +139,7 @@ export function useTauriStream<TResult, TQuestion = never>(
   const [result, setResult] = useState<TResult | null>(null);
   const [question, setQuestion] = useState<TQuestion | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<TauriStreamErrorKind | null>(null);
   const unlistenersRef = useRef<UnlistenFn[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Monotonic generation counter — incremented on every start/cancel/reset to
@@ -143,25 +172,30 @@ export function useTauriStream<TResult, TQuestion = never>(
     setResult(null);
     setQuestion(null);
     setError(null);
+    setErrorKind(null);
 
-    try {
-      // Register both listeners before starting the backend command to avoid
-      // a race where fast completions emit events before listeners are ready.
-      const [unlistenProgress, unlistenStatus] = await Promise.all([
-        listen(progressEvent, (event) => {
-          if (generationRef.current !== gen) return;
-          const line = getLine(event.payload as Record<string, unknown>);
+    const fail = (message: string, kind: TauriStreamErrorKind) => {
+      cleanup();
+      setError(message);
+      setErrorKind(kind);
+      setPhase('error');
+    };
+
+    /** Execute one correlator command. Returns true when the stream ended. */
+    const execute = (cmd: ArtifactJobCommand): boolean => {
+      switch (cmd.type) {
+        case 'line': {
+          const line = getLine(cmd.payload);
           setLines((prev) =>
             prev.length >= MAX_STREAM_LINES
               ? [...prev.slice(prev.length - MAX_STREAM_LINES + 1), line]
               : [...prev, line],
           );
-        }),
-        listen(statusEvent, (event) => {
-          if (generationRef.current !== gen) return;
-          const outcome = resolveStatus(event.payload as Record<string, unknown>);
-          if (!outcome) return;
-
+          return false;
+        }
+        case 'status': {
+          const outcome = resolveStatus(cmd.payload);
+          if (!outcome) return false;
           if ('result' in outcome) {
             setResult(outcome.result);
             setPhase(completedPhase);
@@ -170,9 +204,48 @@ export function useTauriStream<TResult, TQuestion = never>(
             setPhase(awaitingInputPhase);
           } else {
             setError(outcome.error);
+            setErrorKind('failed');
             setPhase('error');
           }
           cleanup();
+          return true;
+        }
+        case 'superseded':
+          // Read at the moment it happens: `errors` is a core section, loaded on every route.
+          fail(getActiveTranslations().errors.run_superseded, 'superseded');
+          return true;
+        case 'timeout':
+          fail('Operation timed out. Please try again.', 'timeout');
+          return true;
+        case 'cancelBackend':
+          invokeCancelOnTimeout?.().catch(silentCatch('tauriStream:cancelOnTimeout'));
+          return false;
+      }
+    };
+
+    const jobConfig: ArtifactJobConfig = { idField: idField ?? null, initialStatus };
+    let job = initialArtifactJobState(jobConfig);
+    let ended = false;
+    const dispatch = (input: ArtifactJobInput) => {
+      if (generationRef.current !== gen || ended) return;
+      const step = stepArtifactJob(job, input, jobConfig);
+      job = step.state;
+      for (const cmd of step.commands) {
+        // The deadline's timeout ends the stream, and its cancelBackend must still run.
+        if (ended && cmd.type !== 'cancelBackend') continue;
+        if (execute(cmd)) ended = true;
+      }
+    };
+
+    try {
+      // Register both listeners before starting the backend command to avoid
+      // a race where fast completions emit events before listeners are ready.
+      const [unlistenProgress, unlistenStatus] = await Promise.all([
+        listen(progressEvent, (event) => {
+          dispatch({ type: 'progress', payload: event.payload as Record<string, unknown> });
+        }),
+        listen(statusEvent, (event) => {
+          dispatch({ type: 'status', payload: event.payload as Record<string, unknown> });
         }),
       ]);
 
@@ -186,24 +259,21 @@ export function useTauriStream<TResult, TQuestion = never>(
 
       unlistenersRef.current = [unlistenProgress, unlistenStatus];
 
-      // Start timeout — auto-reset to error if no completion arrives.
-      // The generation guard prevents this from firing after a cancel/reset.
+      // Start timeout — the correlator turns it into an error (and a backend
+      // cancel). The generation guard prevents this from firing after a cancel/reset.
       clearTimeout_();
-      timeoutRef.current = setTimeout(() => {
-        if (generationRef.current !== gen) return;
-        cleanup();
-        setError('Operation timed out. Please try again.');
-        setPhase('error');
-      }, timeoutMs);
+      timeoutRef.current = setTimeout(() => dispatch({ type: 'deadline' }), timeoutMs);
 
-      await invokeBackend();
+      const startResult = await invokeBackend();
+      if (idField) dispatch({ type: 'idKnown', id: readJobId(startResult, idField) });
     } catch (err) {
       if (generationRef.current !== gen) return;
-      setError(err instanceof Error ? err.message : startErrorMessage);
-      setPhase('error');
       cleanup();
+      setError(err instanceof Error ? err.message : startErrorMessage);
+      setErrorKind('start');
+      setPhase('error');
     }
-  }, [cleanup, clearTimeout_, progressEvent, statusEvent, getLine, resolveStatus, completedPhase, runningPhase, awaitingInputPhase, startErrorMessage, timeoutMs]);
+  }, [cleanup, clearTimeout_, progressEvent, statusEvent, getLine, resolveStatus, completedPhase, runningPhase, awaitingInputPhase, startErrorMessage, timeoutMs, idField, initialStatus, invokeCancelOnTimeout]);
 
   const cancel = useCallback((invokeCancel?: () => Promise<void>) => {
     ++generationRef.current;
@@ -213,6 +283,7 @@ export function useTauriStream<TResult, TQuestion = never>(
     setLines([]);
     setQuestion(null);
     setError(null);
+    setErrorKind(null);
   }, [cleanup]);
 
   const reset = useCallback(() => {
@@ -223,6 +294,7 @@ export function useTauriStream<TResult, TQuestion = never>(
     setResult(null);
     setQuestion(null);
     setError(null);
+    setErrorKind(null);
   }, [cleanup]);
 
   return {
@@ -231,6 +303,7 @@ export function useTauriStream<TResult, TQuestion = never>(
     result,
     question,
     error,
+    errorKind,
     start,
     cancel,
     reset,

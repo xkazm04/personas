@@ -95,7 +95,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
         >
           <Icon className="w-4 h-4" style={{ color: '#fff' }} />
         </span>
-        <span className="typo-label font-bold text-foreground">
+        <span className="typo-label text-foreground">
           {dimText.label[dim]}
         </span>
       </div>
@@ -124,7 +124,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
           className="flex flex-col gap-2 px-4 py-3 border-t border-card-border"
           style={{ background: `linear-gradient(180deg, transparent, ${meta.color}0a)` }}
         >
-          <label className="typo-label font-semibold text-foreground">
+          <label className="typo-label text-foreground">
             {c.refine_dim_label}
           </label>
           <textarea
@@ -144,7 +144,7 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
             type="button"
             disabled={!refineText.trim()}
             onClick={submitRefine}
-            className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-label font-semibold text-foreground cursor-pointer transition-colors"
+            className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed typo-label text-foreground cursor-pointer transition-colors"
           >
             <Send className="w-3.5 h-3.5" /> {c.refine_dim_apply}
           </button>

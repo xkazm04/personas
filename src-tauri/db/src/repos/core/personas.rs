@@ -882,6 +882,27 @@ pub fn count_active(pool: &DbPool) -> Result<usize, AppError> {
     })
 }
 
+/// How many personas the operator owns — the denominator Overseer's Setup page
+/// draws his scope against ("3 of 16 watched").
+///
+/// System-owned personas (the Director itself, and anything else the app mints
+/// for its own machinery) are excluded, because they are not agents the
+/// operator can put in or out of scope: counting them would make a fully
+/// watched roster read as incomplete forever. Same predicate the add-to-scope
+/// picker filters by.
+pub fn count_non_system(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("personas", "personas::count_non_system", {
+        let conn = pool.conn("personas::count_non_system")?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) AS n FROM personas \
+             WHERE COALESCE(trust_origin, '') != 'system'",
+            [],
+            |r| r.get("n"),
+        )?;
+        Ok(n.max(0) as usize)
+    })
+}
+
 /// The two columns [`count_active`] counts by, for ONE persona.
 /// `Ok(None)` = no such persona.
 ///

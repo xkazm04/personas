@@ -21,6 +21,7 @@ import { createTtlValueCache } from '@/lib/async/createTtlValueCache';
 
 import { mapWithConcurrency } from './passport/usePassportData';
 import { silentCatch } from '@/lib/silentCatch';
+import { codeProjectsOnly } from '@/lib/devProjectKind';
 
 import type {
   MockProject,
@@ -251,7 +252,11 @@ async function loadFactoryTree(progress?: TreeProgress): Promise<MockProject[]> 
   // L1 / L2 first paint only needs id+name+stack. KPIs, measurements, and the
   // per-project tree used to gate a single setState, so a cover click could
   // not enter L2 until the last sibling assembled.
-  const projects = await devApi.listProjects();
+  // Registry checkouts are excluded: a Factory cover promises KPIs, contexts
+  // and use cases, and a knowledge repo has none of the three. This is also
+  // the list the KPI-scan pickers (`KpiProposalsPanel`, `FactoryOverviewTab`)
+  // take their project from.
+  const projects = codeProjectsOnly(await devApi.listProjects());
   const skeletons: MockProject[] = projects.map((p) => ({ id: p.id, name: p.name, stack: p.tech_stack ?? '', groups: [] }));
   progress?.onSkeleton(skeletons);
   const assembledById = new Map<string, MockProject>();

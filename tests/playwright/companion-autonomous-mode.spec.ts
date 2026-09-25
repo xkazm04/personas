@@ -5,7 +5,7 @@ import { bridge, CompanionBridge } from './companion-bridge';
  * A2 — autonomous-mode header toggle.
  *
  * These tests stay UI-only (no real Claude turns): the toggle's
- * job is to flip `companionAutonomousMode` in systemStore and reflect
+ * job is to flip `athenaAutonomousMode` in systemStore and reflect
  * that visually in the header button. A full end-to-end chain
  * (turn → `OP: continue_autonomously` → scheduled tick → next turn)
  * requires real Opus calls and lives in a different suite where the

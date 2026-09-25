@@ -25,6 +25,8 @@
   "triggers": [],
   "citations": {
     "ResearchLabPage.tsx": {"count":1,"sections":[9],"lines":["24"],"contexts":["`ResearchLabPage.tsx:24` (which cannot go stale) as the risk. **The index variable's name is not its"],"resolved":false},
+    "plugins/companion/CompanionPluginPage.tsx": {"count":1,"sections":[7],"contexts":["`plugins/companion/CompanionPluginPage.tsx` (4), `plugins/fleet/FleetPage.tsx` (3),"],"resolved":false},
+    "plugins/companion/sub_setup/SetupPanel.tsx": {"count":1,"sections":[7],"contexts":["(`plugins/companion/sub_setup/SetupPanel.tsx`, and `sub_portability/StorageUsageSection.tsx` nested"],"resolved":false},
     "plugins/twin/sub_brain/BrainAtelier.tsx": {"count":1,"sections":[7],"contexts":["`plugins/twin/sub_brain/BrainAtelier.tsx` (3), `teams/sub_factory/l2/FactoryProjectTabs.tsx` (3)."],"resolved":false},
     "research-lab/ResearchLabPage.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["`research-lab/ResearchLabPage.tsx:24` `const Active = TAB_COMPONENTS[researchLabTab]` — is the"],"resolved":false},
     "scripts/census/lib/instruments/": {"count":1,"sections":[],"contexts":["two imports `matchJsxTags` from `scripts/census/lib/instruments/` — and §12.3 records that the"],"resolved":false,"isDir":true},
@@ -53,21 +55,7 @@
       "verbatim": "editorTabConstants.ts"
     },
     "src/features/agents/sub_model_config/components/ProviderCredentialField.tsx": {"count":3,"sections":[7],"lines":["37","39"],"contexts":["| `ProviderCredentialField.tsx:37` | — | — |"],"resolvedFrom":"basename","verbatim":"ProviderCredentialField.tsx"},
-    "src/features/overview/sub_manual-review/components/ReviewInboxPanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["elsewhere (`ReviewInboxPanel.tsx` gates its splitter on it) — the scaffold does not use it, so this"],
-      "resolvedFrom": "basename",
-      "verbatim": "ReviewInboxPanel.tsx"
-    },
-    "src/features/plugins/companion/CompanionPluginPage.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["`plugins/companion/CompanionPluginPage.tsx` (4), `plugins/fleet/FleetPage.tsx` (3),"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/CompanionPluginPage.tsx"
-    },
-    "src/features/plugins/companion/chat/athenaChatNavigation.ts": {
+    "src/features/companions/athena/chat/athenaChatNavigation.ts": {
       "count": 1,
       "sections": [12],
       "lines": ["82"],
@@ -75,12 +63,12 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatNavigation.ts"
     },
-    "src/features/plugins/companion/sub_setup/SetupPanel.tsx": {
+    "src/features/overview/sub_manual-review/components/ReviewInboxPanel.tsx": {
       "count": 1,
       "sections": [7],
-      "contexts": ["(`plugins/companion/sub_setup/SetupPanel.tsx`, and `sub_portability/StorageUsageSection.tsx` nested"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/sub_setup/SetupPanel.tsx"
+      "contexts": ["elsewhere (`ReviewInboxPanel.tsx` gates its splitter on it) — the scaffold does not use it, so this"],
+      "resolvedFrom": "basename",
+      "verbatim": "ReviewInboxPanel.tsx"
     },
     "src/features/plugins/dev-tools/DevToolsPage.tsx": {
       "count": 1,

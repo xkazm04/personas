@@ -27,6 +27,7 @@ import { sessionLabel, sessionStateMeta } from './fleetSessionModel';
 import { AFFORDANCE_BTN, FleetNode } from './board/node/FleetNode';
 import { asOrigin } from './board/queue/useQueueModel';
 import { originLabel } from './board/queue/originLabel';
+import { useDeviceName } from './remote/useDeviceName';
 
 export const SessionTile = memo(function SessionTile({
   session, width, height, onOpen, onRecap, flash = false,
@@ -45,9 +46,13 @@ export const SessionTile = memo(function SessionTile({
   const meta = sessionStateMeta(session.state);
   const stateLabel = t.plugins.fleet[meta.labelKey];
   const label = sessionLabel(session);
+  // A paired device sent this one here: say which, where the origin goes.
+  const originDevice = useDeviceName(session.originPeerId);
   const title = [
     [label, stateLabel, session.projectLabel].filter(Boolean).join(' · '),
-    tx(t.monitor.node_symbol_origin, { origin: originLabel(t.monitor, asOrigin(session.origin)) }),
+    originDevice
+      ? tx(t.monitor.remote_from_device, { device: originDevice })
+      : tx(t.monitor.node_symbol_origin, { origin: originLabel(t.monitor, asOrigin(session.origin)) }),
   ].join('\n');
 
   return (
@@ -61,7 +66,8 @@ export const SessionTile = memo(function SessionTile({
       ariaLabel={title}
       tooltip={<span className="whitespace-pre-line">{title}</span>}
       bodyTestId="fleet-grid-session"
-      data={{ state: session.state }}
+      data={{ state: session.state, 'origin-peer': session.originPeerId ?? undefined }}
+      originDevice={originDevice}
       symbols={onOpen && onRecap ? (
         <Tooltip content={t.monitor.grid_session_recap_open}>
           <button

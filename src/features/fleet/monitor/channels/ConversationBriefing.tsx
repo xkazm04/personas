@@ -264,7 +264,7 @@ export function ConversationBriefing({
         <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
           <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
         </div>
-        <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
+        <span className="typo-body text-foreground">{t.monitor.conv_title}</span>
         {/* Passive: the active project's Slack bridge, if it has one. */}
         <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
         {layoutControl && <span className="ml-auto flex items-center">{layoutControl}</span>}

@@ -147,7 +147,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
           <div className="w-10 h-10 rounded-interactive bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shrink-0">
             <Target className="w-5 h-5 text-violet-400" />
           </div>
-          <h2 id="goal-editor-title" className="typo-section-title text-foreground">
+          <h2 id="goal-editor-title" className="typo-section-title">
             {isEdit ? dl.goal_edit_title : dl.goal_new_title}
           </h2>
         </div>
@@ -159,7 +159,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
       <div className="space-y-4">
         {/* Title */}
         <div>
-          <label htmlFor="goal-title" className="typo-caption font-medium text-foreground mb-1.5 block">
+          <label htmlFor="goal-title" className="typo-caption text-foreground mb-1.5 block">
             {dl.goal_field_title}
           </label>
           {/* No placeholder by design — a suggested title/description reads as a
@@ -176,7 +176,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
 
         {/* Description */}
         <div>
-          <label htmlFor="goal-description" className="typo-caption font-medium text-foreground mb-1.5 block">
+          <label htmlFor="goal-description" className="typo-caption text-foreground mb-1.5 block">
             {dl.goal_field_description}
           </label>
           <textarea
@@ -191,7 +191,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
         {/* Status + target date */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">{dl.goal_field_status}</label>
+            <label className="typo-caption text-foreground mb-1.5 block">{dl.goal_field_status}</label>
             <ThemedSelect value={status} onValueChange={setStatus}>
               {GOAL_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -201,7 +201,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             </ThemedSelect>
           </div>
           <div>
-            <span className="typo-caption font-medium text-foreground mb-1.5 block">
+            <span className="typo-caption text-foreground mb-1.5 block">
               {dl.goal_field_target_date}
             </span>
             <div role="radiogroup" aria-label={dl.goal_field_target_date} className="flex gap-1.5">
@@ -216,7 +216,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
                     aria-checked={selected}
                     // Click again to clear (no target).
                     onClick={() => setTargetChoice(selected ? null : c)}
-                    className={`flex-1 px-2 py-2 typo-caption font-medium rounded-input border transition-colors focus-ring ${
+                    className={`flex-1 px-2 py-2 typo-caption rounded-input border transition-colors focus-ring ${
                       selected
                         ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
                         : 'border-primary/10 bg-secondary/40 text-foreground hover:bg-secondary/60'
@@ -236,7 +236,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             Only shown when the project has measurable KPIs. */}
         {projectKpis.length > 0 && (
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 block">
+            <label className="typo-caption text-foreground mb-1.5 block">
               {dl.goal_field_kpi}
             </label>
             <ThemedSelect value={kpiId} onValueChange={setKpiId} data-testid="goal-kpi-select">
@@ -258,7 +258,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="typo-caption text-foreground">{dl.goal_delete_confirm}</span>
-                <Button variant="accent" accentColor="rose" size="sm" disabled={saving} onClick={handleDelete}>
+                <Button variant="accent" tone="error" size="sm" disabled={saving} onClick={handleDelete}>
                   {t.common.delete}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>{t.common.cancel}</Button>
@@ -274,7 +274,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
           <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim() || saving}

@@ -55,6 +55,7 @@
   "suggestions_title": "Notes d’Athena",
   "tabs_label": "Notes",
   "timeline_title": "Cycle de vie",
+  "title": "Vue d'ensemble des objectifs",
   "to_goals": "Transformer en objectifs",
   "variant_split": "Vue partagée",
   "variant_workbench": "Atelier",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "Ouvrir le projet",
   "desk_lane_brainstorm": "Voie Brainstorm",
   "desk_lane_plan": "Voie Plan",
-  "desk_room_back": "Bureau",
-  "title": "Vue d'ensemble des objectifs"
+  "desk_room_back": "Bureau"
 }

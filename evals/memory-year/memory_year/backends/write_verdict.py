@@ -49,6 +49,24 @@ NEEDS_NEIGHBOUR: frozenset[str] = frozenset({"merge", "skip", "support", "contex
 # neighbour-bearing verdict is downgraded rather than applied to an unrelated item
 MIN_NEIGHBOUR_SIM = 0.40
 
+# How a row's standing is set when a correction inserts it, and whether standing reaches
+# the read path at all. `off` is the shipped behaviour: `confidence` is written on every
+# `support` and no reader ever looks at it.
+#   off      - standing is recorded and ignored; recall ranks on cosine alone
+#   const    - standing reaches recall and is pinned at 1.0 (plumbing live, signal dead)
+#   carry    - standing reaches recall; a correction hands the new row its predecessor's
+#              standing unchanged, so correcting costs nothing
+#   penalty  - a correction hands the new row `predecessor.weight - WEIGHT_STEP`
+#   reason   - the correction's declared reason decides: a `supersede` (the value changed
+#              in the world) carries the predecessor's standing; a `contradict` or
+#              `contextualize` (the record may have been wrong) starts fresh at 1.0
+#   recency  - recall ranks on the row's day alone, ignoring cosine (instrument control)
+WEIGHT_POLICIES: tuple[str, ...] = ("off", "const", "carry", "penalty", "reason", "recency")
+WEIGHT_STEP = 0.1
+# `support` is the only signal the shipped tree already accumulates, so a policy that
+# reads standing at all reads this too; one confirmation is worth one step
+SUPPORT_STEP = 0.1
+
 SYSTEM = (
     "You are the admission gate of a long-running assistant's memory. You are shown a small batch of new "
     "messages and the memory items already nearest to them. In ONE reply you do two things: extract the "
@@ -69,6 +87,8 @@ class StoredFact:
     day: int                                  # simulated day it was admitted
     verdict: str                              # the verdict that admitted it
     confidence: int = 1                       # bumped by `support`
+    weight: float = 1.0                       # standing: what the read path may multiply cosine by
+    corrections: int = 0                      # how many corrections this row's subject has taken
     context_of: Optional[str] = None          # `contextualize`: the item this narrows
     contradicts: Optional[str] = None         # `contradict`: the item this conflicts with
     contradicted_by: list[str] = field(default_factory=list)
@@ -125,7 +145,9 @@ class WriteVerdict(Backend):
     name = "write-verdict"
 
     def __init__(self, model: str = DEFAULT_MODEL, cache_dir: Path | str | None = None,
-                 embedder: str = DEFAULT_EMBEDDER, watermark: int = 4, neighbours: int = 3):
+                 embedder: str = DEFAULT_EMBEDDER, watermark: int = 4, neighbours: int = 3,
+                 weight_policy: str = "off", weight_step: float = WEIGHT_STEP,
+                 item_cap: int = 60):
         # the runner forwards cache_dir only to the rungs it names, so fall back to the
         # harness's own out/cache: the sqlite content cache is what makes a re-run free
         cd = Path(cache_dir) if cache_dir else Path(__file__).resolve().parents[2] / "out" / "cache"
@@ -134,6 +156,15 @@ class WriteVerdict(Backend):
         self.embedder = Embedder(embedder, cd / "emb.sqlite")
         self.watermark = max(1, int(watermark))
         self.neighbours = max(1, int(neighbours))
+        if weight_policy not in WEIGHT_POLICIES:
+            raise SystemExit(f"weight_policy must be one of {WEIGHT_POLICIES}: {weight_policy!r}")
+        self.weight_policy = weight_policy
+        self.weight_step = float(weight_step)
+        # the shipped value is 60 against ~159 active rows: the cap, not the token budget,
+        # is what makes the ranking decide anything, so it is an axis and not a constant
+        self.item_cap = max(1, int(item_cap))
+        # corrections counted on the SUBJECT, not priced into the newest row
+        self.subject_corrections: dict[tuple[str, str], int] = {}
 
         self.facts: list[StoredFact] = []
         self.buffer: list[tuple[Event, Clock]] = []
@@ -305,12 +336,14 @@ class WriteVerdict(Backend):
             return
         if verdict == "support":
             neighbour.confidence += 1           # type: ignore[union-attr]
+            if self.weight_policy not in ("off", "const", "recency"):
+                neighbour.weight += SUPPORT_STEP        # type: ignore[union-attr]
             return
         if verdict == "merge":
             neighbour.value = value             # type: ignore[union-attr]
             neighbour.vec = self.embedder.embed([neighbour.embed_text()])[0]   # type: ignore[union-attr]
             return
-        new = self._insert(scope, key, value, clock, verdict)
+        new = self._insert(scope, key, value, clock, verdict, neighbour)
         if verdict == "contextualize":
             new.context_of = neighbour.id       # type: ignore[union-attr]
         elif verdict == "contradict":
@@ -341,14 +374,63 @@ class WriteVerdict(Backend):
         top, sim = near[0]
         return top if sim >= MIN_NEIGHBOUR_SIM else None
 
-    def _insert(self, scope: str, key: str, value: str, clock: Clock, verdict: str) -> StoredFact:
+    def _insert(self, scope: str, key: str, value: str, clock: Clock, verdict: str,
+                predecessor: Optional[StoredFact] = None) -> StoredFact:
         self._seq += 1
         f = StoredFact(id=f"m{self._seq:05d}", scope=scope, key=key, value=value, day=clock.day, verdict=verdict)
+        if predecessor is not None:
+            k = (scope, key)
+            self.subject_corrections[k] = self.subject_corrections.get(k, 0) + 1
+            f.corrections = self.subject_corrections[k]
+            f.weight = self._standing_for_correction(predecessor, verdict)
         f.vec = self.embedder.embed([f.embed_text()])[0]
         self.facts.append(f)
         return f
 
+    def _standing_for_correction(self, predecessor: StoredFact, verdict: str) -> float:
+        """What standing a row gets for having been written as a correction.
+
+        The whole question of this seam lives in this function. A value returned below
+        the predecessor's is a charge for the act of correcting, and it is paid by the
+        row that is right now, while the row nobody maintained keeps what it had.
+        """
+        p = self.weight_policy
+        if p in ("off", "const", "recency"):
+            return 1.0
+        if p == "carry":
+            return predecessor.weight
+        if p == "penalty":
+            return max(0.0, predecessor.weight - self.weight_step)
+        if p == "reason":
+            # `supersede` is the gate saying the world moved: the subject's standing is
+            # about the subject, so it survives a change of value. `contradict` and
+            # `contextualize` are the gate saying it cannot rule, or that this is a
+            # narrower case - neither inherits a standing it has not earned.
+            return predecessor.weight if verdict == "supersede" else 1.0
+        return 1.0
+
     # ----------------------------------------------------------------- read path
+
+    def _scores(self, question: str, active: list[StoredFact]) -> np.ndarray:
+        """The ranking, and the one place a row's standing can reach it."""
+        q = self.embedder.embed([question])[0]
+        scores = np.vstack([f.vec for f in active]) @ q
+        if self.weight_policy == "recency":
+            # instrument control: rank on the row's day alone. If the measurement cannot
+            # tell this apart from cosine, it is not reading the ranking at all.
+            return np.array([float(f.day) for f in active], dtype=np.float64)
+        if self.weight_policy != "off":
+            return scores * np.array([f.weight for f in active], dtype=np.float64)
+        return scores
+
+    def ranking(self, question: str) -> list[StoredFact]:
+        """The active store in ranked order, written nowhere. A read-only view for a
+        check that needs to know WHERE a row landed, not only whether it was carried."""
+        active = self._active()
+        if not active:
+            return []
+        order = np.argsort(-self._scores(question, active))
+        return [active[int(i)] for i in order]
 
     def recall(self, probe: Probe, clock: Clock, budget_tokens: int) -> Context:
         # the flush admits events the timeline already delivered, so nothing is stranded
@@ -358,8 +440,7 @@ class WriteVerdict(Backend):
         active = self._active()
         if not active:
             return Context("", [], 0)
-        q = self.embedder.embed([probe.question])[0]
-        scores = np.vstack([f.vec for f in active]) @ q
+        scores = self._scores(probe.question, active)
         chosen: list[int] = []
         used = 0
         for i in np.argsort(-scores):
@@ -371,7 +452,7 @@ class WriteVerdict(Backend):
                 continue
             chosen.append(int(i))
             used += t
-            if len(chosen) >= 60:
+            if len(chosen) >= self.item_cap:
                 break
         chosen.sort(key=lambda i: (active[i].day, active[i].id))
         return Context("\n".join(active[i].render() for i in chosen), [active[i].id for i in chosen], used)
@@ -388,6 +469,14 @@ class WriteVerdict(Backend):
     def describe(self) -> dict:
         return {
             "name": self.name, "model": self.model, "watermark": self.watermark, "neighbours": self.neighbours,
+            "weight_policy": self.weight_policy, "weight_step": self.weight_step,
+            "item_cap": self.item_cap,
+            "weight_min": round(min((f.weight for f in self._active()), default=1.0), 4),
+            "weight_max": round(max((f.weight for f in self._active()), default=1.0), 4),
+            "weight_distinct": len({round(f.weight, 4) for f in self._active()}),
+            "weight_below_one": sum(1 for f in self._active() if f.weight < 1.0),
+            "weight_above_one": sum(1 for f in self._active() if f.weight > 1.0),
+            "deepest_correction_chain": max(self.subject_corrections.values(), default=0),
             "passes": self.passes, "facts_extracted": self.extracted,
             "facts_active": len(self._active()), "facts_stored": len(self.facts),
             "verdicts": dict(self.verdict_counts),

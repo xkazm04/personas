@@ -136,7 +136,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
       <div className="rounded-card px-3 py-2 mb-3" style={frame} data-testid="crew-foundry-panel">
         <span className="flex items-center gap-2 flex-wrap min-w-0">
           <Users className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-          <span className="typo-caption font-medium text-foreground/90 truncate">
+          <span className="typo-caption text-foreground/90 truncate">
             {fitness ? `Crew: ${fitness.teamName}` : 'Crew'}
           </span>
           {forged && (
@@ -188,7 +188,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
     <div className="rounded-card px-3 py-2 mb-3" style={frame} data-testid="crew-foundry-panel">
       <span className="flex items-center gap-2 flex-wrap">
         <Hammer className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-        <span className="typo-caption font-medium text-foreground/90">Crew Foundry</span>
+        <span className="typo-caption text-foreground/90">Crew Foundry</span>
         <span className="typo-caption text-foreground/45 min-w-0">
           {noContexts
             ? 'Scan contexts first — I forge the crew from the project map.'
@@ -200,7 +200,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
           type="button"
           onClick={doForge}
           disabled={composing || noContexts || !compiled}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption font-medium transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50 shrink-0"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50 shrink-0"
           style={{ color: INK.violet, border: `1px solid ${INK.violet}55` }}
           data-testid="crew-foundry-forge"
         >

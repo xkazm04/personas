@@ -22,6 +22,8 @@
       "contexts": ["| `research-lab/literature` | `LiteratureSearchPanel.tsx` 11,797 B | `…Atelier` 19,418 + `…Workbench` 20,380 = **39,798 B** | **77%** |"],
       "resolved": false
     },
+    "MastermindHexMosaic.tsx": {"count":3,"sections":[7],"lines":["12"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolved":false},
+    "MosaicIsland.tsx": {"count":2,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolved":false},
     "PrototypeTabs.tsx": {"count":6,"sections":[7],"lines":["11-16","33","44"],"contexts":["- **What a type can do.** `PrototypeVariant` (`PrototypeTabs.tsx:11-16`) declares"],"resolved":false},
     "ResearchLabPage.tsx": {"count":2,"sections":[5,7],"lines":["11-18","12-13"],"contexts":["`lazy()` route that fully unmounts on nav-away (`ResearchLabPage.tsx:11-18`), and"],"resolved":false},
     "ResearchProjectList.tsx": {
@@ -53,7 +55,7 @@
     "src/features/agents/quick-answer/QuickAnswerPopover.tsx": {"count":1,"sections":[7],"lines":["104"],"contexts":["(→ `QuickAnswerPopover.tsx:104`). **Each has exactly one importer and no"],"resolvedFrom":"basename","verbatim":"QuickAnswerPopover.tsx"},
     "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx": {"count":1,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolvedFrom":"basename","verbatim":"TriageDeckVariant.tsx"},
     "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx": {"count":1,"sections":[],"contexts":["`factoryModel.ts`, a throwaway id in `useDeckControls.tsx`, a test fixture, a"],"resolvedFrom":"basename","verbatim":"useDeckControls.tsx"},
-    "src/features/plugins/companion/sub_voice/audioToReferenceWav.ts": {"count":1,"sections":[],"contexts":["unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object in"],"resolvedFrom":"basename","verbatim":"audioToReferenceWav.ts"},
+    "src/features/companions/athena/sub_voice/audioToReferenceWav.ts": {"count":1,"sections":[],"contexts":["unrelated — a throwaway buffer in `audioToReferenceWav.ts`, a throwaway object in"],"resolvedFrom":"basename","verbatim":"audioToReferenceWav.ts"},
     "src/features/plugins/radio/components/RadioConsoleVariant.tsx": {"count":1,"sections":[7],"contexts":["`TrendVariant.tsx` (→ `FactoryPage.tsx:25`), `RadioConsoleVariant.tsx`"],"resolvedFrom":"basename","verbatim":"RadioConsoleVariant.tsx"},
     "src/features/plugins/radio/components/RadioPage.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolvedFrom":"basename","verbatim":"RadioPage.tsx"},
     "src/features/plugins/twin/sub_tone/TonePage.tsx": {"count":2,"sections":[3],"contexts":["**The site to copy is 21 lines**: `src/features/plugins/twin/sub_tone/TonePage.tsx`."],"resolved":false},
@@ -81,15 +83,6 @@
     "src/features/teams/sub_factory/TrendVariant.tsx": {"count":1,"sections":[7],"contexts":["`TrendVariant.tsx` (→ `FactoryPage.tsx:25`), `RadioConsoleVariant.tsx`"],"resolvedFrom":"basename","verbatim":"TrendVariant.tsx"},
     "src/features/teams/sub_factory/factoryModel.ts": {"count":1,"sections":[],"contexts":["`factoryModel.ts`, a throwaway id in `useDeckControls.tsx`, a test fixture, a"],"resolvedFrom":"basename","verbatim":"factoryModel.ts"},
     "src/features/teams/sub_mastermind/MastermindPage.tsx": {"count":2,"sections":[7],"lines":["841"],"contexts":["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],"resolvedFrom":"basename","verbatim":"MastermindPage.tsx"},
-    "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["12"],
-      "contexts": ["(→ `RadioPage.tsx:54`), `MastermindHexMosaic.tsx` (→ `MastermindPage.tsx:841`),"],
-      "resolvedFrom": "basename",
-      "verbatim": "MastermindHexMosaic.tsx"
-    },
-    "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx": {"count":2,"sections":[7],"contexts":["`MosaicIsland.tsx` (→ `MastermindHexMosaic.tsx:12`), `TriageDeckVariant.tsx`"],"resolvedFrom":"basename","verbatim":"MosaicIsland.tsx"},
     "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["(→ `ucTimeCard.tsx:7`), `TeamStudioSplitVariant.tsx` (→ `TeamCanvas.tsx:41`),"],"resolvedFrom":"basename","verbatim":"TeamCanvas.tsx"},
     "src/features/teams/sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx": {"count":2,"sections":[7,12],"contexts":["(→ `ucTimeCard.tsx:7`), `TeamStudioSplitVariant.tsx` (→ `TeamCanvas.tsx:41`),"],"resolvedFrom":"basename","verbatim":"TeamStudioSplitVariant.tsx"},
     "src/features/templates/sub_generated/adoption/ucPicker/ucClockVariant.tsx": {"count":1,"sections":[7],"contexts":["The 7 survivors, each verified by opening its importer: `ucClockVariant.tsx`"],"resolvedFrom":"basename","verbatim":"ucClockVariant.tsx"},

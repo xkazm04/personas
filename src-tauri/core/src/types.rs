@@ -93,9 +93,22 @@ pub enum StreamLineType {
     AssistantText {
         text: String,
     },
+    /// A tool call, decoded ONCE by the parser from the full `input` value.
+    ///
+    /// `input_preview` is a DISPLAY string, cut at 500 chars with `...`
+    /// appended, so it is invalid JSON for any input over the cap (every real
+    /// Write, most Edits). Never re-parse it: the facts a consumer needs are
+    /// carried decoded in `file_path` and `protocol`.
     AssistantToolUse {
+        /// The block's `id` (`toolu_…`); pairs this call with its `ToolResult`.
+        tool_use_id: Option<String>,
         tool_name: String,
         input_preview: String,
+        /// The target path of a file tool (Read/Write/Edit/…), `None` otherwise.
+        file_path: Option<String>,
+        /// The decoded message when `tool_name` is a virtual protocol tool
+        /// (`propose_backlog`, `emit_memory`, …), `None` otherwise.
+        protocol: Option<ProtocolMessage>,
     },
     /// `TodoWrite` tool call parsed into structured items so the chat UI can
     /// render a checklist instead of a truncated JSON preview. The full latest
@@ -105,6 +118,8 @@ pub enum StreamLineType {
         items: Vec<TodoItem>,
     },
     ToolResult {
+        /// The `tool_use_id` of the call this result answers, when the CLI sent one.
+        tool_use_id: Option<String>,
         content_preview: String,
     },
     Result {

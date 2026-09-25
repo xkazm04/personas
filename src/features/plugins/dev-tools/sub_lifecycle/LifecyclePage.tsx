@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, GitBranch, Sparkles } from 'lucide-react';
 
 import { installLifecycle } from '@/api/devTools/lifecycle';
-import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
+import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 import { Button } from '@/features/shared/components/buttons';
 import { Banner } from '@/features/shared/components/feedback/Banner';
 import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
@@ -140,7 +140,7 @@ export default function LifecyclePage() {
               )}
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="sm"
                 icon={<Sparkles className="w-3.5 h-3.5" />}
                 onClick={handleAskAthena}

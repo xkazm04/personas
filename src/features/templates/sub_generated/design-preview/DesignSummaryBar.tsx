@@ -53,7 +53,7 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
         const inner = (
           <>
             <p.icon className={`w-3.5 h-3.5 ${p.color}`} />
-            <span className="typo-body font-medium text-foreground">{p.count}</span>
+            <span className="typo-body text-foreground">{p.count}</span>
             <span className="typo-caption text-foreground">{p.label}</span>
           </>
         );
@@ -75,7 +75,7 @@ export function DesignSummaryBar({ result, channelCount, subscriptionCount, feas
       {feasibility && (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input ml-auto ${feasColors.bg} border ${feasColors.border}`}>
           <FeasIcon className={`w-3.5 h-3.5 ${feasColors.text}`} />
-          <span className={`typo-caption font-medium ${feasColors.text}`}>{feasLabel}</span>
+          <span className={`typo-caption ${feasColors.text}`}>{feasLabel}</span>
         </span>
       )}
     </div>

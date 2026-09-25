@@ -64,7 +64,7 @@ export function HubShell({ feed }: { feed: HubFeed }) {
               <div key={key} className="flex flex-col items-start gap-1 min-w-[3.25rem]">
                 <span className={`flex items-center gap-1 ${role.text}`}>
                   <role.Icon className="w-3 h-3" />
-                  <span className="typo-data-lg tabular-nums">{value}</span>
+                  <span className="typo-data-lg">{value}</span>
                 </span>
                 <span className="typo-label text-foreground">{t.counts[key]}</span>
                 <span className="h-0.5 w-full rounded-full bg-secondary/60 overflow-hidden">

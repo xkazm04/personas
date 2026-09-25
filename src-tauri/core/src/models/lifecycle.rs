@@ -4,7 +4,7 @@
 //! task (frame, recall, isolate, link, sync / gate, tests, docs, commit, land,
 //! record). Each step names its bindings: injected by the app, installed in the
 //! repo (managed CLAUDE.md block, lefthook, CI) or advisory. Versions are stored
-//! append-only in `dev_lifecycle_versions` (migration `e53_dev_lifecycle`); an
+//! append-only in `dev_lifecycle_versions` (migration `e54_dev_lifecycle`); an
 //! absent row is the implicit Solo default (version 0, author `default`).
 //!
 //! The enum string values are the contract (see the Lifecycle v2 design brief)

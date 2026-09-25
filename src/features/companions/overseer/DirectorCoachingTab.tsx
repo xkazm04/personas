@@ -1,0 +1,521 @@
+import { useEffect, useRef, useState } from 'react';
+import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags, Inbox } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { Button } from '@/features/shared/components/buttons';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { StatCard } from '@/features/shared/components/display/StatCard';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
+import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useDirector } from './useDirector';
+import { DirectorSection } from './DirectorSection';
+import { scoreTone } from './directorScore';
+import { PersonaCoachingTable } from './components/PersonaCoachingTable';
+import { PersonaDetailModal } from './components/PersonaDetailModal';
+import { AddToScopeModal } from './components/AddToScopeModal';
+import { ValueLeakBar } from './components/ValueLeakBar';
+import { PeriodSelect } from './components/PeriodSelect';
+import { ScoreDistribution } from './components/ScoreDistribution';
+import { AttentionTriageBar } from './components/AttentionTriageBar';
+import { CategoryRollup } from './components/CategoryRollup';
+import { MomentumSummary } from './components/MomentumSummary';
+import { ReviewFilteredAction } from './components/ReviewFilteredAction';
+import { StaleSweepButton } from './components/StaleSweepButton';
+import { BatchOutcomeLine } from './components/BatchOutcomeLine';
+import { CampaignReportPanel } from './components/CampaignReportPanel';
+import { filterRoster, type RosterFilter } from './rosterFilter';
+import { describeBatchOutcome } from './batchOutcome';
+import { resolveDirectorSurface } from './directorSurface';
+import type { DirectorRosterEntry } from '@/api/director';
+
+/**
+ * Director coaching — a single Overview sub-tab consolidating what used to be
+ * five Director tabs. Top to bottom: a thin subheader (scope stats + Memory
+ * toggle), the portfolio scorecard (KPIs + score distribution + model
+ * efficiency), and one coaching table (Roster + Attention) whose rows open a
+ * per-agent detail modal (Reviews). Add-to-scope is a modal so the surface
+ * stays compact. All data flows through the shared `useDirector` hook.
+ */
+export default function DirectorCoachingTab() {
+  const { t, tx } = useTranslation();
+  const d = useDirector();
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setPluginTab = useSystemStore((s) => s.setPluginTab);
+
+  const [running, setRunning] = useState(false);
+  const [selected, setSelected] = useState<DirectorRosterEntry | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter | null>(null);
+
+  // One-shot entrance ripple for the scorecard sections (docs/design/overview-loading.md
+  // §"Panels & metric grids"): plays only the render where `ready` first flips true.
+  // A later refresh/period-change re-render leaves the sections already mounted —
+  // `enteredRef` flips permanently so the animate classes never re-apply.
+  const enteredRef = useRef(false);
+  const playEntrance = d.ready && !enteredRef.current;
+  useEffect(() => {
+    if (d.ready) enteredRef.current = true;
+  }, [d.ready]);
+
+  // A facet (e.g. score-band 5) can become stale when the window changes and
+  // that band empties — clear the filter on period change so it never points at
+  // an absent facet, leaving a confusing empty table behind a live clear-chip.
+  useEffect(() => {
+    setRosterFilter(null);
+  }, [d.period]);
+
+  const p = d.portfolio;
+  const inScope = p?.inScope ?? 0;
+  const lastReviewAt = d.verdicts[0]?.createdAt ?? null;
+  // Agents the active facet narrowed the table to — the "Review these N" target.
+  const filteredAgents = rosterFilter && p ? filterRoster(p.roster, rosterFilter, Date.now()) : [];
+  // Agents whose last review is stale (>14d) — the standing stale-sweep target.
+  const staleAgents = p ? filterRoster(p.roster, { type: 'flag', flag: 'stale' }, Date.now()) : [];
+  // Director coaching verdicts still awaiting the user's decision in the queue.
+  const openReviewCount = d.verdicts.filter((v) => v.status === 'pending').length;
+  // A failed portfolio read is not a first run - it must never reach the
+  // empty-scope hero, which would invite the operator to star agents into a
+  // hole. See directorSurface.ts.
+  const surface = resolveDirectorSurface({
+    ready: d.ready,
+    portfolioError: d.portfolioError,
+    hasPortfolio: !!p,
+    inScope,
+  });
+
+  // The report is the close of the primary CTA: `run_director_batch` returns
+  // evaluated / emitted / skipped so the operator can tell a no-op freshness
+  // skip from a cycle that actually spent LLM budget. Toast on completion; the
+  // same line persists in the subheader until the next run.
+  const runAll = async () => {
+    setRunning(true);
+    try {
+      const report = await d.runBatch();
+      const outcome = describeBatchOutcome(report);
+      useToastStore.getState().addToast(
+        outcome.kind === 'reviewed'
+          ? tx(t.director.batch_outcome_reviewed, {
+              evaluated: outcome.evaluated,
+              verdicts: outcome.verdicts,
+            })
+          : t.director.batch_outcome_nothing,
+        outcome.kind === 'reviewed' ? 'success' : 'warning',
+      );
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const openBrain = () => {
+    setPluginTab('obsidian-brain');
+    setSidebarSection('plugins');
+  };
+
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={<RefreshCw className={`w-3.5 h-3.5 ${d.refreshing ? 'animate-spin' : ''}`} />}
+        onClick={d.refresh}
+      >
+        {t.director.refresh}
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={<UserPlus className="w-3.5 h-3.5" />}
+        onClick={() => setAddOpen(true)}
+      >
+        {t.director.add_to_scope}
+      </Button>
+      <StaleSweepButton agents={staleAgents} onReview={d.runOnPersona} />
+      <AsyncButton
+        variant="accent"
+        tone="agent"
+        size="sm"
+        isLoading={running}
+        loadingText={t.director.running}
+        disabled={inScope === 0}
+        title={inScope === 0 ? t.director.no_scope_hint : t.director.run_batch_hint}
+        onClick={runAll}
+        data-testid="director-run-batch"
+      >
+        {t.director.run_all}
+      </AsyncButton>
+    </div>
+  );
+
+  return (
+    <ContentBox>
+      <ContentHeader
+        icon={
+          <span className="relative inline-flex items-center justify-center">
+            <span aria-hidden className="absolute -inset-2 rounded-full bg-violet-500/30 blur-md animate-glow-breathe motion-reduce:hidden" />
+            <span className="relative inline-flex">
+              {d.director ? (
+                <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-5 h-5" />
+              ) : (
+                <Clapperboard className="w-5 h-5 text-violet-300" />
+              )}
+            </span>
+          </span>
+        }
+        iconColor="violet"
+        title={t.director.panel_title}
+        subtitle={inScope > 0 ? tx(t.director.scope_summary, { count: inScope }) : t.director.scope_empty}
+        actions={headerActions}
+      />
+
+      {/* `flex` mode gives the scroll container a DEFINITE height (h-full flex
+          column), which is what lets the stage below stretch to the full
+          viewport height on short content — in the default mode the backdrop
+          was clipped to whatever the inner content happened to measure. The
+          padding ContentBody would have applied is re-applied on the stage, so
+          the backdrop covers the gutters too. */}
+      <ContentBody flex>
+       <div className="relative flex-1 flex flex-col py-4 md:py-6 xl:py-8 px-3 md:px-4 xl:px-5">
+        {/* Decorative Athena backdrop — very low opacity, non-interactive, behind all content. */}
+        <img
+          aria-hidden
+          src="/athena/athena_baseline.jpg"
+          className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
+        />
+        <div className="relative z-10 flex-1 flex flex-col">
+        {surface === 'loading' ? (
+          <DirectorScorecardPlaceholder />
+        ) : surface === 'portfolio-error' ? (
+          <div className="flex-1 flex items-start justify-center pt-10">
+            <InlineErrorBanner
+              severity="error"
+              title={t.director.portfolio_error_title}
+              message={t.director.portfolio_error_message}
+              onRetry={d.refresh}
+              className="max-w-[44ch]"
+            />
+          </div>
+        ) : surface === 'empty-scope' ? (
+          /* The empty state sits directly over the Athena backdrop, so it gets
+             its own darker, bordered surface — the copy reads against a flat
+             field instead of whatever the photo happens to be behind it. No
+             backdrop-blur (WebView2 flicker; see the ContentHeader note). */
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              glyph={COACHING_GLYPH}
+              title={t.director.empty_title}
+              action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
+            >
+              {/* Only the description sits on the darker card — glyph, title
+                  and CTA stay on the stage. */}
+              <p className="typo-body-lg text-foreground max-w-[44ch] rounded-modal border border-primary/15 bg-secondary/60 shadow-elevation-2 px-5 py-4">
+                {t.director.empty_subtitle}
+              </p>
+            </EmptyState>
+          </div>
+        ) : !p ? null : (
+          <div className="space-y-4 pb-6">
+            {/* A partial failure (portfolio ok, verdicts down) keeps the
+                scorecard and says the review feed is stale - it does not
+                render an empty coaching history as if there were none. */}
+            {d.verdictsError && (
+              <InlineErrorBanner
+                severity="warning"
+                compact
+                message={t.director.verdicts_error_message}
+                onRetry={d.refresh}
+              />
+            )}
+            {/* Thin subheader: secondary stats + Memory toggle */}
+            <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
+              <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
+                <PeriodSelect value={d.period ?? p.periodDays} onChange={d.setPeriod} />
+                {p.avgScore != null && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Star className="w-3.5 h-3.5 text-violet-300" />
+                    {t.director.kpi_avg_score}
+                    <Numeric value={p.avgScore} precision={1} className="text-foreground font-medium tabular-nums" />
+                  </span>
+                )}
+                {lastReviewAt && (
+                  <span className="inline-flex items-center gap-1.5">
+                    {t.director.last_review}
+                    <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
+                  </span>
+                )}
+                {d.lastReport && <BatchOutcomeLine outcome={describeBatchOutcome(d.lastReport)} />}
+                {openReviewCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
+                    title={t.director.open_reviews_hint}
+                    className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
+                    data-testid="director-open-reviews"
+                  >
+                    <Inbox className="w-3.5 h-3.5 text-amber-400" />
+                    {tx(t.director.open_reviews, { count: openReviewCount })}
+                  </button>
+                )}
+              </div>
+              {/* Memory toggle */}
+              {d.vaultConfigured ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-violet-300' : 'text-foreground'}`} />
+                  <span className="typo-caption text-foreground">{t.director.brain_title}</span>
+                  <AccessibleToggle
+                    checked={d.brainEnabled}
+                    onChange={() => d.setBrainEnabled(!d.brainEnabled)}
+                    label={t.director.brain_title}
+                    data-testid="director-brain-toggle"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openBrain}
+                  className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors shrink-0"
+                  title={t.director.brain_unavailable}
+                >
+                  <Brain className="w-3.5 h-3.5" />
+                  {t.director.brain_title}
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Scorecard */}
+            <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} playEntrance={playEntrance} />
+
+            {/* Coaching table */}
+            <DirectorSection
+              className={playEntrance ? 'animate-fade-in' : undefined}
+              style={playEntrance ? { animationDelay: '105ms' } : undefined}
+              label={t.director.table_title}
+              icon={Star}
+              action={
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {rosterFilter && <ReviewFilteredAction agents={filteredAgents} onReview={d.runOnPersona} />}
+                  <AttentionTriageBar roster={p.roster} filter={rosterFilter} onSelect={setRosterFilter} />
+                </div>
+              }
+            >
+              <PersonaCoachingTable
+                roster={p.roster}
+                onSelect={setSelected}
+                onRemove={(id) => d.setStarred(id, false)}
+                filter={rosterFilter}
+                onFilterChange={setRosterFilter}
+              />
+            </DirectorSection>
+
+            {/* Director's Lab — campaign report (batch-3 v1) */}
+            <CampaignReportPanel verdicts={d.verdicts} playEntrance={playEntrance} />
+          </div>
+        )}
+        </div>
+       </div>
+      </ContentBody>
+
+      {/* Modals */}
+      <PersonaDetailModal entry={selected} onClose={() => setSelected(null)} onRunReview={d.runOnPersona} />
+      <AddToScopeModal open={addOpen} onClose={() => setAddOpen(false)} personas={d.personas} onAdd={(id) => d.setStarred(id, true)} />
+    </ContentBox>
+  );
+}
+
+/** Portfolio scorecard — KPIs + score distribution + model efficiency. */
+function Scorecard({
+  d,
+  filter,
+  onFilterChange,
+  playEntrance,
+}: {
+  d: ReturnType<typeof useDirector>;
+  filter: RosterFilter | null;
+  onFilterChange: (filter: RosterFilter | null) => void;
+  /** One-shot entrance ripple, true only on the render where the surface first
+   * becomes ready — never replayed by a refresh/period-change re-render. */
+  playEntrance: boolean;
+}) {
+  const { t, tx } = useTranslation();
+  const p = d.portfolio!;
+  const { rollup } = p;
+  const avgTone = p.avgScore != null ? scoreTone(p.avgScore) : null;
+  const maxModelRuns = Math.max(1, ...rollup.models.map((m) => m.executions));
+  const entrance = (delayMs: number) =>
+    playEntrance ? { className: 'animate-fade-in', style: { animationDelay: `${delayMs}ms` } } : {};
+
+  return (
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          style={{ animationDelay: '0ms' }} className="animate-fade-slide-in"
+          label={t.director.kpi_value_rate}
+          value={<Numeric value={rollup.valueDeliveredRate} unit="ratio" precision={0} />}
+          icon={Gauge}
+          tone={rollup.valueDeliveredRate >= 0.6 ? 'success' : rollup.valueDeliveredRate >= 0.3 ? 'warning' : 'danger'}
+          hint={t.director.kpi_value_rate_hint}
+        />
+        <StatCard
+          style={{ animationDelay: '40ms' }} className="animate-fade-slide-in"
+          label={t.director.kpi_avg_score}
+          value={p.avgScore != null ? <Numeric value={p.avgScore} precision={1} /> : '—'}
+          icon={Star}
+          tone={avgTone?.tier === 'high' ? 'success' : avgTone?.tier === 'mid' ? 'warning' : avgTone?.tier === 'low' ? 'danger' : 'neutral'}
+          hint={t.director.kpi_avg_score_hint}
+        />
+        <StatCard
+          style={{ animationDelay: '80ms' }} className="animate-fade-slide-in"
+          label={t.director.kpi_cost_per_value}
+          value={rollup.costPerValueDelivered != null ? <Numeric value={rollup.costPerValueDelivered} unit="usd" /> : '—'}
+          icon={Coins}
+          tone="info"
+          hint={t.director.kpi_cost_per_value_hint}
+        />
+        <StatCard
+          style={{ animationDelay: '120ms' }} className="animate-fade-slide-in"
+          label={t.director.kpi_in_scope}
+          value={<Numeric value={p.inScope} />}
+          icon={Star}
+          tone="neutral"
+          hint={tx(t.director.kpi_in_scope_hint, { reviewed: p.reviewed, unreviewed: p.unreviewed })}
+        />
+      </div>
+
+      <div {...entrance(0)}>
+        <MomentumSummary roster={p.roster} filter={filter} onSelect={onFilterChange} />
+      </div>
+
+      <DirectorSection label={t.director.value_leak_title} icon={Layers} {...entrance(35)}>
+        <ValueLeakBar rollup={rollup} />
+      </DirectorSection>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DirectorSection label={t.director.score_distribution} icon={BarChart3} {...entrance(70)}>
+          <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} filter={filter} onSelect={onFilterChange} />
+        </DirectorSection>
+
+        {rollup.models.length > 0 && (
+          <DirectorSection label={t.director.model_efficiency} icon={Cpu} {...entrance(70)}>
+            <div className="space-y-1.5">
+              {rollup.models.map((m) => {
+                const runPct = (m.executions / maxModelRuns) * 100;
+                const valuePct = m.executions > 0 ? (m.valueDelivered / m.executions) * 100 : 0;
+                return (
+                  <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded">
+                    <div className="min-w-0">
+                      <div className="typo-caption text-foreground truncate" title={m.model}>{m.model}</div>
+                      <div className="mt-1 h-1.5 rounded-pill bg-secondary/60 overflow-hidden" style={{ width: `${Math.max(runPct, 8)}%` }}>
+                        <div className="h-full rounded-pill" style={{ width: `${valuePct}%`, background: 'var(--status-success)' }} />
+                      </div>
+                    </div>
+                    <Numeric value={m.executions} className="typo-caption text-foreground text-right tabular-nums" />
+                    <Numeric value={m.costUsd} unit="usd" className="typo-caption text-foreground text-right tabular-nums" />
+                    <span className="typo-caption text-right tabular-nums" style={{ color: 'var(--status-success)' }}>
+                      <Numeric value={m.valueDelivered} />
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </DirectorSection>
+        )}
+      </div>
+
+      {d.verdicts.length > 0 && (
+        <DirectorSection label={t.director.category_rollup_title} icon={Tags} {...entrance(105)}>
+          <CategoryRollup verdicts={d.verdicts} />
+        </DirectorSection>
+      )}
+    </>
+  );
+}
+
+/**
+ * Calm, sized placeholder mirroring the Scorecard + coaching-table silhouette
+ * (subheader bar, 4 KPI tiles, momentum row, value-leak card, a two-up grid,
+ * table rows) — shown only while `!d.ready`, swapped for real content via a
+ * plain conditional (no gate, no held content). Per §C of
+ * `docs/design/overview-loading.md`, the whole placeholder is invisible for
+ * its first 150ms (`animate-fade-in` + `fill-mode: both`) so a fast fetch
+ * never paints it, and its sections stagger in +35ms apart underneath that
+ * root delay. No pulse — the entrance stagger is the only motion.
+ */
+function DirectorScorecardPlaceholder() {
+  const bar = 'bg-primary/[0.06] rounded';
+  /** Absolute delay for a section, `stepMs` past the root's own 150ms gate. */
+  const delayOf = (stepMs: number) => `${150 + stepMs}ms`;
+  return (
+    <div className="space-y-4 pb-6 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
+      {/* Thin subheader */}
+      <div
+        className="h-9 rounded-card border border-primary/10 bg-secondary/10 animate-fade-in"
+        style={{ animationDelay: delayOf(0) }}
+      />
+
+      {/* KPI tiles */}
+      <div
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
+        style={{ animationDelay: delayOf(35) }}
+      >
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-card border border-primary/10 bg-secondary/10 p-3.5 flex flex-col gap-2"
+            style={{ height: 96 }}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`h-2.5 w-16 ${bar}`} />
+              <span className={`w-6 h-6 rounded-input ${bar}`} />
+            </div>
+            <span className={`h-5 w-14 ${bar}`} />
+          </div>
+        ))}
+      </div>
+
+      {/* Momentum row */}
+      <div className={`h-6 w-64 ${bar} animate-fade-in`} style={{ animationDelay: delayOf(70) }} />
+
+      {/* Value-leak card */}
+      <div
+        className="rounded-card border border-primary/10 bg-secondary/10 p-4 animate-fade-in"
+        style={{ height: 72, animationDelay: delayOf(105) }}
+      >
+        <span className={`h-2.5 w-24 block mb-3 ${bar}`} />
+        <span className={`h-3 w-full block ${bar}`} />
+      </div>
+
+      {/* Score distribution + model efficiency */}
+      <div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in"
+        style={{ animationDelay: delayOf(140) }}
+      >
+        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 160 }}>
+          <span className={`h-2.5 w-32 block mb-3 ${bar}`} />
+          <span className={`h-24 w-full block ${bar}`} />
+        </div>
+        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 160 }}>
+          <span className={`h-2.5 w-32 block mb-3 ${bar}`} />
+          <span className={`h-24 w-full block ${bar}`} />
+        </div>
+      </div>
+
+      {/* Coaching table */}
+      <div
+        className="rounded-card border border-primary/10 bg-secondary/10 p-4 animate-fade-in"
+        style={{ animationDelay: delayOf(175) }}
+      >
+        <span className={`h-2.5 w-28 block mb-3 ${bar}`} />
+        <ListSkeleton calm rows={5} rowHeight={44} />
+      </div>
+    </div>
+  );
+}

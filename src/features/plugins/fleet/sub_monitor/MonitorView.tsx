@@ -132,7 +132,7 @@ export function MonitorView({
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <FleetStatusDots state={openSession.state} reason={openSession.stateReason} />
-                <span className="typo-body font-medium text-foreground truncate">
+                <span className="typo-body text-foreground truncate">
                   {openSession.name ?? openSession.title ?? openSession.projectLabel}
                 </span>
                 <span className="typo-caption text-foreground opacity-50">{openSession.projectLabel}</span>

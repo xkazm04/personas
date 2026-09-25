@@ -90,7 +90,7 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             size="sm"
             disabled={selected.size === 0}
             onClick={() => onConfirm([...selected])}

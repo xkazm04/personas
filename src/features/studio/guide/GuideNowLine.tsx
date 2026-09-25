@@ -1,6 +1,6 @@
 import { Wand2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useAthenaOrbShown } from '@/features/plugins/companion/orb/athenaOrbPresence';
+import { useAthenaOrbShown } from '@/features/companions/athena/orb/athenaOrbPresence';
 import { AUTO_MAX_TURNS } from '../studioStore';
 import type { StudioActivity } from '../studioActivity';
 import { activityText, guideStrings } from './guideCopy';
@@ -86,7 +86,7 @@ export default function GuideNowLine({
           className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10"
         >
           <Wand2 className="h-4 w-4" />
-          <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
+          <kbd className="absolute -right-2 -top-1.5 rounded-interactive border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
             O
           </kbd>
         </button>
@@ -106,7 +106,7 @@ export default function GuideNowLine({
           }}
         >
           {busy && <span className="absolute inset-0 animate-ping rounded-full border border-primary/60" />}
-          <kbd className="absolute -right-2 -top-1.5 rounded border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
+          <kbd className="absolute -right-2 -top-1.5 rounded-interactive border border-border bg-background px-1 font-mono text-xs leading-4 text-foreground/90 opacity-0 transition-opacity group-hover:opacity-100">
             O
           </kbd>
         </button>

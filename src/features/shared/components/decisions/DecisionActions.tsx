@@ -7,7 +7,7 @@
  * ghost — same act, three looks. Tone (`accept` / `reject` / `neutral`) decides
  * the styling, so a caller can never invent a fourth.
  *
- * Manual Review is the reference path, so `accept` keeps its emerald accent and
+ * Manual Review is the reference path, so `accept` keeps its success tone and
  * `reject` stays quiet until hover — a destructive-looking reject button makes
  * reviewers hesitate on a queue they are supposed to burn down.
  */
@@ -15,7 +15,7 @@ import Button from '../buttons/Button';
 import type { DecisionAction } from './decisionTypes';
 
 const TONE_PROPS = {
-  accept: { variant: 'accent', accentColor: 'emerald' },
+  accept: { variant: 'accent', tone: 'success' },
   reject: { variant: 'ghost' },
   neutral: { variant: 'ghost' },
 } as const;
@@ -40,13 +40,13 @@ export function DecisionActions({
       className={`flex ${stacked ? 'flex-col' : 'items-center'} gap-1.5 ${className ?? ''}`.trim()}
     >
       {actions.map((a) => {
-        const tone = TONE_PROPS[a.tone];
+        const look = TONE_PROPS[a.tone];
         return (
           <Button
             key={a.id}
             size={size}
-            variant={tone.variant}
-            accentColor={'accentColor' in tone ? tone.accentColor : undefined}
+            variant={look.variant}
+            tone={'tone' in look ? look.tone : undefined}
             icon={a.icon}
             block={stacked}
             loading={a.loading}

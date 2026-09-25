@@ -68,7 +68,7 @@ export function GoalKpiLink({ kpiId }: { kpiId: string }) {
         </span>
       </div>
       <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="typo-body font-semibold text-foreground">{kpi.name}</span>
+        <span className="typo-body text-foreground">{kpi.name}</span>
         <span className="inline-flex items-center gap-1 typo-caption tabular-nums" style={{ color }}>
           {fmt(kpi.current_value, unit)}
           <ArrowRight className="w-3 h-3 opacity-60" />

@@ -32,14 +32,14 @@ export function PreviewModal({
         <div className="flex-1 min-w-0 pr-4">
           <h3
             id="uc-preview-title"
-            className="typo-body-lg font-semibold text-foreground/95 tracking-tight inline-flex items-center gap-2.5"
+            className="typo-body-lg text-foreground/95 tracking-tight inline-flex items-center gap-2.5"
           >
             <span className="inline-flex items-center justify-center w-8 h-8 rounded-card bg-primary/15 ring-1 ring-primary/30 text-primary">
               <Inbox className="w-5 h-5" />
             </span>
             {title}
           </h3>
-          {subtitle && <p className="typo-body text-foreground mt-1 leading-relaxed">{subtitle}</p>}
+          {subtitle && <p className="typo-body text-foreground mt-1">{subtitle}</p>}
         </div>
         <button
           type="button"

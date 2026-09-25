@@ -54,8 +54,8 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
 
       {/* Solid content panel */}
       <div className="flex-1 p-4 flex flex-col gap-2">
-        <h3 className="typo-heading font-semibold text-foreground/90">{preset.name}</h3>
-        <p className="typo-body text-foreground line-clamp-2 leading-snug">{preset.description}</p>
+        <h3 className="typo-heading text-foreground/90">{preset.name}</h3>
+        <p className="typo-body text-foreground line-clamp-2">{preset.description}</p>
         <div className="mt-auto pt-2 flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
             <Users className="w-3.5 h-3.5" />
@@ -67,7 +67,7 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
             )}
           </span>
           <span
-            className="inline-flex items-center gap-1 typo-caption font-medium transition-transform group-hover:translate-x-0.5"
+            className="inline-flex items-center gap-1 typo-caption transition-transform group-hover:translate-x-0.5"
             style={{ color }}
           >
             {t.pipeline.preset_setup_cta}

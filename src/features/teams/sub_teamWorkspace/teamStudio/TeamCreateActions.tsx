@@ -36,7 +36,7 @@ export function TeamCreateActions() {
       </Button>
       <Button
         variant="accent"
-        accentColor="indigo"
+        tone="agent"
         size="sm"
         icon={<Zap className="w-4 h-4" />}
         onClick={() => setAutoOpen(true)}

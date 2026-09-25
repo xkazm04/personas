@@ -106,7 +106,7 @@ export const MergedRow = memo(function MergedRow({
           : alert ? <AlertCircle className="w-3 h-3 text-status-warning" />
           : <span className="typo-caption text-foreground">·</span>}
       </span>
-      <span className="typo-caption font-medium flex-shrink-0 max-w-[110px] truncate" style={{ color: accent }}>{source}</span>
+      <span className="typo-caption flex-shrink-0 max-w-[110px] truncate" style={{ color: accent }}>{source}</span>
       <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${tone}`}>{event}</span>
       {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
       {artifact && <span className="inline-flex items-center gap-0.5 typo-caption text-status-info flex-shrink-0"><ExternalLink className="w-3 h-3" />{artifact.label}</span>}

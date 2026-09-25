@@ -19,27 +19,14 @@
  * sources — signal-source links ignore the condition field (a schedule has no
  * upstream output to match).
  */
-import type { CreateTriggerInput } from '@/lib/bindings/CreateTriggerInput';
 import type { DraftLink } from './studioDraftModel';
+import { FORM_COMMITTABLE_SOURCE_TYPES } from './routeCodec';
+
+// The write side lives in routeCodec beside its inverse (triggersToRoutes);
+// re-exported so existing call sites keep this import path.
+export { FORM_COMMITTABLE_SOURCE_TYPES, draftLinkToTriggerInput, formConfigToTriggerInput } from './routeCodec';
 
 export type CommitBlocker = 'signal_source' | 'output_match';
-
-/**
- * Signal-source trigger types whose per-type config the full trigger form can
- * collect — these commit through the configure-&-commit modal. `chain` is
- * excluded (a chain source IS a persona-completion source: arm the persona
- * instead); `manual` is excluded (nothing to trigger on).
- */
-export const FORM_COMMITTABLE_SOURCE_TYPES: ReadonlySet<string> = new Set([
-  'schedule',
-  'polling',
-  'webhook',
-  'event_listener',
-  'file_watcher',
-  'clipboard',
-  'app_focus',
-  'composite',
-]);
 
 /** True when the link commits through the configure-&-commit modal. */
 export function linkCommitsViaForm(link: DraftLink): boolean {
@@ -62,78 +49,4 @@ export function commitBlocker(link: DraftLink): CommitBlocker | null {
     return om && om.path.trim() && om.expected.trim() ? null : 'output_match';
   }
   return null;
-}
-
-/**
- * Build the `create_trigger` input for a directly-committable persona→persona
- * link. Returns `null` when the link isn't directly committable — signal
- * sources go through the modal path instead (see {@link linkCommitsViaForm}).
- */
-export function draftLinkToTriggerInput(link: DraftLink): CreateTriggerInput | null {
-  // Marketplace feed → an event_listener trigger on the target persona that
-  // fires on `shared:<slug>` (the bus event the local relay publishes). Fully
-  // specified by the subscription, so it commits directly with no form.
-  if (link.source.kind === 'marketplace') {
-    return {
-      persona_id: link.targetPersonaId,
-      trigger_type: 'event_listener',
-      config: JSON.stringify({ listen_event_type: `shared:${link.source.slug}` }),
-      enabled: true,
-      use_case_id: null,
-    };
-  }
-  if (link.source.kind !== 'persona') return null;
-
-  let condition: Record<string, unknown>;
-  switch (link.condition) {
-    case 'on_success': condition = { type: 'success' }; break;
-    case 'on_failure': condition = { type: 'failure' }; break;
-    case 'output_match': {
-      const om = link.outputMatch;
-      if (!om || !om.path.trim() || !om.expected.trim()) return null;
-      // Backend shape (engine/chain.rs:75-77): the path field is literally
-      // named "jsonpath"; unresolvable paths log + treat as non-matching.
-      condition = { type: 'jsonpath', jsonpath: om.path.trim(), expected: om.expected.trim() };
-      break;
-    }
-    case null: condition = { type: 'any' }; break;
-    default: return null;
-  }
-
-  return {
-    persona_id: link.targetPersonaId,
-    trigger_type: 'chain',
-    config: JSON.stringify({
-      source_persona_id: link.source.personaId,
-      condition,
-      event_type: 'chain_triggered',
-      // Forward the source step's output so the target can see the previous
-      // step's result. The engine only injects `source_output` into the next
-      // step when this flag is true (engine/chain.rs); without it a Studio-built
-      // A->B chain advanced control flow but B received no upstream payload
-      // (UAT L1 F-CHAIN-NO-PAYLOAD-FORWARD). team_handoff wiring already sets it.
-      payload_forward: true,
-    }),
-    enabled: true,
-    use_case_id: null,
-  };
-}
-
-/**
- * Build the `create_trigger` input for a signal-source link committed through
- * the configure-&-commit modal: the form-collected config becomes a trigger of
- * the source's type on the TARGET persona.
- */
-export function formConfigToTriggerInput(
-  link: DraftLink,
-  triggerType: string,
-  config: Record<string, unknown>,
-): CreateTriggerInput {
-  return {
-    persona_id: link.targetPersonaId,
-    trigger_type: triggerType,
-    config: JSON.stringify(config),
-    enabled: true,
-    use_case_id: null,
-  };
 }

@@ -91,7 +91,7 @@ export function Slider({
         <div
           ref={bubbleRef}
           aria-hidden
-          className="pointer-events-none absolute -top-7 z-10 -translate-x-1/2 rounded-card border border-primary/15 bg-background px-1.5 py-0.5 typo-caption font-medium text-foreground tabular-nums shadow-elevation-2"
+          className="pointer-events-none absolute -top-7 z-10 -translate-x-1/2 rounded-card border border-primary/15 bg-background px-1.5 py-0.5 typo-caption text-foreground tabular-nums shadow-elevation-2"
           style={{ left: `calc(${fraction} * (100% - 14px) + 7px)` }}
         >
           {label}

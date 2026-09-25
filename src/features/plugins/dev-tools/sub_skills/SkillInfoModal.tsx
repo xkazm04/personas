@@ -88,7 +88,7 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
               {/* summary — the description (what + when) */}
               <div className="rounded-input bg-background/40 border border-primary/10 px-3 py-2.5">
                 {meta?.description
-                  ? <p className="typo-caption text-foreground/75 leading-relaxed">{meta.description}</p>
+                  ? <p className="typo-caption text-foreground/75">{meta.description}</p>
                   : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
                 {meta?.bodySummary && meta.bodySummary !== meta.description && (
                   <p className="typo-caption mt-2">{meta.bodySummary}</p>

@@ -333,7 +333,7 @@ export default function CloudSyncPanel() {
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400 font-medium">1</span>
+                <span className="typo-caption text-blue-400">1</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step1_title}</p>
@@ -342,7 +342,7 @@ export default function CloudSyncPanel() {
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400 font-medium">2</span>
+                <span className="typo-caption text-blue-400">2</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step2_title}</p>
@@ -351,7 +351,7 @@ export default function CloudSyncPanel() {
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="typo-caption text-blue-400 font-medium">3</span>
+                <span className="typo-caption text-blue-400">3</span>
               </div>
               <div>
                 <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step3_title}</p>

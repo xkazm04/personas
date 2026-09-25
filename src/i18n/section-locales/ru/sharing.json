@@ -287,5 +287,8 @@
   "verifying_bundle": "Проверка пакета…",
   "verifying_enclave": "Проверка анклава…",
   "view_details": "Подробнее",
-  "your_identity": "Ваша идентификация"
+  "your_identity": "Ваша идентификация",
+  "job_kind_fleet_session": "Сессия Fleet",
+  "job_kind_instruction": "Инструкция",
+  "job_receipt_title": "Возвращённая работа"
 }

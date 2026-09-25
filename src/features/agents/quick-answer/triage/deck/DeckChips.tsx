@@ -206,7 +206,7 @@ export function bandTone(value: number, max: number, invert?: boolean): TriageTo
 export function Chip({ label, tone, icon: Icon }: { label: string; tone: TriageTone; icon?: LucideIcon }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-0.5 typo-caption font-medium capitalize ${TONE_CHIP[tone]}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-0.5 typo-caption capitalize ${TONE_CHIP[tone]}`}
     >
       {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
       {label}

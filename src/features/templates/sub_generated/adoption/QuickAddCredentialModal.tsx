@@ -157,7 +157,7 @@ export function QuickAddCredentialModal({
               </button>
             )}
             <div className="min-w-0">
-              <h2 className="typo-body-lg font-semibold text-foreground truncate">
+              <h2 className="typo-body-lg text-foreground truncate">
                 {phase === 'pick'
                   ? `Connect a ${humanCategory} provider`
                   : `Set up ${picked?.label}`}
@@ -280,11 +280,11 @@ function InlineCredentialForm({
   return (
     <div className="space-y-4">
       {summary && (
-        <p className="typo-body text-foreground leading-relaxed">{summary}</p>
+        <p className="typo-body text-foreground">{summary}</p>
       )}
 
       <div className="space-y-1.5">
-        <label className="typo-body text-foreground font-medium">Name</label>
+        <label className="typo-body text-foreground">Name</label>
         <input
           type="text"
           value={credentialName}
@@ -357,7 +357,7 @@ function CredentialField({ field, value, onChange }: CredentialFieldProps) {
 
   return (
     <div className="space-y-1.5">
-      <label className="typo-body text-foreground font-medium">
+      <label className="typo-body text-foreground">
         {field.label}
         {field.required && <span className="text-status-error ml-0.5">*</span>}
       </label>

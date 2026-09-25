@@ -20,10 +20,10 @@ export function QuestionnaireBlockedCredentialCta({
       <div className="flex items-start gap-3 mb-3">
         <AlertCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h4 className="typo-body-lg font-semibold text-status-error">
+          <h4 className="typo-body-lg text-status-error">
             {t.templates.adopt_modal.credentials_required_title}
           </h4>
-          <p className="typo-body text-status-error/80 leading-relaxed mt-1">
+          <p className="typo-body text-status-error/80 mt-1">
             {tx(t.templates.adopt_modal.credential_required, { category })}
           </p>
         </div>
@@ -31,7 +31,7 @@ export function QuestionnaireBlockedCredentialCta({
       <button
         type="button"
         onClick={() => onAddCredential(category)}
-        className="inline-flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors ml-8"
+        className="inline-flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-status-error/15 border border-status-error/40 text-status-error hover:bg-status-error/25 transition-colors ml-8"
       >
         <Plus className="w-4 h-4" />
         {t.templates.adopt_modal.add_credential}

@@ -88,7 +88,7 @@ export function MemoryTiersTile({
         )}
 
         <div className="mt-4 pt-3 border-t border-primary/10">
-          <p className="typo-overline text-foreground/85 mb-2">{b.categories_title}</p>
+          <p className="typo-eyebrow text-foreground/85 mb-2">{b.categories_title}</p>
           {categories.length === 0 ? (
             <p className="typo-caption text-foreground/85">{b.categories_empty}</p>
           ) : (

@@ -65,6 +65,7 @@
     "governance.rs": {"count":1,"sections":[8],"contexts":["`governance.rs`'s `applied_by.is_some()` ⇒ `\"approved\"` / `None` ⇒ `\"auto_approved\"` — and applies"],"resolved":false},
     "index.html": {"count":1,"sections":[7],"contexts":["`tests`, `e2e`, `index.html`) found no test helper, no migration and no Rust `eval` that writes it"]},
     "lefthook.yml": {"count":1,"sections":[9],"lines":["74-75"],"contexts":["**Where it runs.** `lefthook.yml:74-75` — the `golden-path-census` **pre-push** job runs"]},
+    "main.tsx": {"count":18,"sections":[0,2,3,4,7,9,12],"lines":["304","36"],"contexts":["`settings/sub_account/components/AccountSettings.tsx`, `main.tsx`, `App.tsx`,"],"resolved":false},
     "migrations/0001_init.sql": {"count":2,"sections":[8],"lines":["52-61"],"contexts":["`provenance(actor_kind text -- human | agent | pipeline)` (`migrations/0001_init.sql:52-61`) and"],"resolved":false},
     "migrations/0030_library_proposals.sql": {"count":1,"sections":[],"lines":["10,17"],"contexts":["attribution nobody signed (`migrations/0030_library_proposals.sql:10,17`:"],"resolved":false},
     "package.json": {"count":2,"sections":[9],"lines":["52"],"contexts":["`package.json`) and the *name* (consent / cookie / terms / GDPR / opt-in / first-run / telemetry) —"]},
@@ -275,14 +276,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "lib/telemetryPreference.ts"
     },
-    "src/main.tsx": {
-      "count": 19,
-      "sections": [0,2,3,4,6,7,9,12],
-      "lines": ["304","36"],
-      "contexts": ["`settings/sub_account/components/AccountSettings.tsx`, `main.tsx`, `App.tsx`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
-    },
+    "src/main.tsx": {"count":1,"sections":[6],"lines":["36"],"contexts":["### The one site to copy: `src/main.tsx:36` + `src/lib/appearanceMirror.ts:185-215`"]},
     "src/stores/slices/system/onboardingSlice.ts": {
       "count": 5,
       "sections": [0,5,6,7],

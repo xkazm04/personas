@@ -20,16 +20,18 @@
 // That last property is why this modal can exist at all on a board showing
 // hundreds of sessions: work tracks watched sessions, not running ones.
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Terminal, Trash2 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { FleetTerminalPane } from '@/features/plugins/fleet/FleetTerminalPane';
-import { killSession } from '@/api/fleet/fleet';
+import { killSession, wakeSession } from '@/api/fleet/fleet';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { sessionLabel, sessionStateMeta } from './fleetSessionModel';
+import { isSleeping, NoTerminalPanel, SessionReplyBar, SleepingSessionPanel } from './FleetTerminalFallback';
 
 const TITLE_ID = 'fleet-terminal-modal-title';
 
@@ -40,14 +42,24 @@ export function FleetTerminalModal({
   session: FleetSession | null;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [killing, setKilling] = useState(false);
 
+  // The modal FOLLOWS the session rather than freezing the row it was opened
+  // with: its state moves while it is open, and a wake replaces the row with a
+  // new id (`fleet_wake_session`), which the modal must track to show the
+  // resumed terminal instead of the tombstone it just left.
+  const [currentId, setCurrentId] = useState<string | null>(session?.id ?? null);
+  useEffect(() => { setCurrentId(session?.id ?? null); }, [session?.id]);
+  const liveRow = useSystemStore((st) => st.fleetSessions.find((s) => s.id === currentId) ?? null);
+  const fleetRefresh = useSystemStore((st) => st.fleetRefresh);
+  const row = liveRow ?? (session && session.id === currentId ? session : null);
+
   const kill = useCallback(async () => {
-    if (!session || killing) return;
+    if (!row || killing) return;
     setKilling(true);
     try {
-      await killSession(session.id);
+      await killSession(row.id);
       // The registry emits `fleet-session-exited`; the board's own listener
       // patches the row. Nothing to write here — a second write path into a
       // list the store already owns is how two copies of one fleet disagree.
@@ -57,16 +69,34 @@ export function FleetTerminalModal({
     } finally {
       setKilling(false);
     }
-  }, [session, killing, onClose]);
+  }, [row, killing, onClose]);
 
-  if (!session) return null;
+  const wake = useCallback(async () => {
+    if (!row) return;
+    try {
+      const newId = await wakeSession(row.id);
+      // Hold the button busy until the resumed row is in the store, so the pane
+      // never attaches to an id the registry snapshot has not caught up with.
+      await fleetRefresh();
+      setCurrentId(newId);
+    } catch (e) {
+      toastCatch('fleet-terminal:wake')(e);
+    }
+  }, [row, fleetRefresh]);
 
-  const meta = sessionStateMeta(session.state);
-  const label = sessionLabel(session);
-  // A session with no PTY on this side (restored after a restart, headless, or
-  // already exited) has no terminal to attach. Saying so beats a black box the
-  // operator cannot tell from a session that has not printed yet.
-  const attachable = session.state !== 'exited';
+  if (!session || !row) return null;
+
+  const meta = sessionStateMeta(row.state);
+  const label = sessionLabel(row);
+  const f = t.plugins.fleet;
+  // Four bodies, one per kind of row. Only a live interactive process has a
+  // terminal; every other row used to fall through to a black pane.
+  const sleeping = isSleeping(row);
+  const exited = row.state === 'exited';
+  const headless = row.mode === 'headless';
+  const queued = row.state === 'queued';
+  const live = !sleeping && !exited && !headless && !queued;
+  const stateText = sleeping ? tx(f.monitor_dozing_suffix, { state: f[meta.labelKey] }) : f[meta.labelKey];
 
   return (
     <BaseModal
@@ -87,17 +117,17 @@ export function FleetTerminalModal({
           className={`flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
-          {t.plugins.fleet[meta.labelKey]}
+          {stateText}
         </span>
-        {session.projectLabel && (
-          <span className="min-w-0 truncate typo-caption text-foreground opacity-50">
-            {session.projectLabel}
+        {row.projectLabel && (
+          <span className="min-w-0 truncate typo-caption text-foreground">
+            {row.projectLabel}
           </span>
         )}
         <span className="ml-auto flex-shrink-0">
           <AsyncButton
             onClick={kill}
-            disabled={killing || !attachable}
+            disabled={killing || !live}
             variant="secondary"
             size="sm"
             data-testid="fleet-terminal-kill"
@@ -108,15 +138,16 @@ export function FleetTerminalModal({
         </span>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden p-2" data-testid="fleet-terminal-modal">
-        {attachable ? (
-          <FleetTerminalPane sessionId={session.id} className="h-full" />
+      <div className="min-h-0 flex-1 overflow-hidden p-2" data-testid="fleet-terminal-modal" data-kind={live ? 'live' : sleeping ? 'sleeping' : 'none'}>
+        {live ? (
+          <FleetTerminalPane key={row.id} sessionId={row.id} className="h-full" />
+        ) : sleeping ? (
+          <SleepingSessionPanel session={row} onWake={wake} />
         ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center">
-            <p className="typo-body text-foreground opacity-55">{t.monitor.grid_fleet_exited}</p>
-          </div>
+          <NoTerminalPanel text={exited ? t.monitor.grid_fleet_exited : headless ? f.headless_no_terminal : f.state_queued} />
         )}
       </div>
+      {live && row.state === 'awaiting_input' && <SessionReplyBar session={row} />}
     </BaseModal>
   );
 }

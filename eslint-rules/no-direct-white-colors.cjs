@@ -54,10 +54,14 @@ module.exports = {
       return {};
     }
 
-    // Match `text-white` or `bg-white`, optionally followed by `/<digits>`.
+    // Match `text-white` or `bg-white`, optionally followed by `/<digits>`,
+    // including behind state variants (`hover:bg-white/5`, `focus:text-white`).
     // Anchored on a leading whitespace or string-start to avoid matching
-    // inside e.g. `subtle-text-white-ish` accidentally.
-    const WHITE_RE = /(?:^|[\s])((?:text|bg)-white(?:\/\d+)?)\b/;
+    // inside e.g. `subtle-text-white-ish` accidentally. Before 2026-09-24 the
+    // anchor was whitespace only, so every variant-prefixed use escaped:
+    // 15 of 25 uses in src/ at the time. A chain containing `dark:` is left
+    // alone - it only applies under a dark theme, where white is the contract.
+    const WHITE_RE = /(?:^|[\s])((?:[\w-]+:)*(?:text|bg)-white(?:\/\d+)?)\b/g;
 
     function extractStrings(node) {
       if (!node) return [];
@@ -111,8 +115,9 @@ module.exports = {
     }
 
     function findViolation(value) {
-      const m = WHITE_RE.exec(value);
-      if (m) return { raw: m[1] };
+      for (const m of value.matchAll(WHITE_RE)) {
+        if (!m[1].split(":").slice(0, -1).includes("dark")) return { raw: m[1] };
+      }
       return null;
     }
 

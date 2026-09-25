@@ -43,7 +43,7 @@ export function LoupeHeader({ head, color, onClose }: { head: LoupeHead; color: 
       <span className="font-mono typo-body tracking-[0.14em]" style={{ color }} aria-hidden>
         {`▸ ${head.code}`}
       </span>
-      <h2 className="m-0 min-w-0 truncate typo-heading-lg font-semibold uppercase tracking-[0.08em]" style={{ color }}>
+      <h2 className="m-0 min-w-0 truncate typo-heading-lg uppercase tracking-[0.08em]" style={{ color }}>
         {head.title}
       </h2>
       {head.status && <StatusChip label={head.status.label} strong={head.status.strong} color={color} />}

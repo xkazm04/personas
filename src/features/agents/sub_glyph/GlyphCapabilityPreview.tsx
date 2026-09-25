@@ -143,7 +143,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
               {behaviorCore.identity.role}
             </div>
           )}
-          <div className="typo-body text-foreground/90 leading-snug">{behaviorCore.mission}</div>
+          <div className="typo-body text-foreground/90">{behaviorCore.mission}</div>
         </div>
       )}
       <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-1">

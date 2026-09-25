@@ -98,7 +98,7 @@ export function CredentialTypePicker({
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h3 className="typo-heading font-semibold text-foreground">{t.vault.type_picker.title}</h3>
+          <h3 className="typo-heading text-foreground">{t.vault.type_picker.title}</h3>
           <p className="typo-body text-foreground">{t.vault.type_picker.subtitle}</p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export function CredentialTypePicker({
                   draggable={false}
                 />
                 <div className="flex items-center gap-1.5">
-                  <h4 className="typo-body font-medium text-foreground">{label}</h4>
+                  <h4 className="typo-body text-foreground">{label}</h4>
                   {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">{t.vault.type_picker.dev_badge}</span>}
                 </div>
               </div>
@@ -145,7 +145,7 @@ export function CredentialTypePicker({
             <Globe className="w-[1.125rem] h-[1.125rem] text-blue-400" />
           </div>
           <div>
-            <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
+            <h4 className="typo-body text-foreground">{t.vault.type_picker.workspace_connect}</h4>
             <p className="typo-body text-foreground">
               {ps.workspace_connect_description}
             </p>
@@ -166,7 +166,7 @@ export function CredentialTypePicker({
               <Radar className="w-[1.125rem] h-[1.125rem] text-violet-400" />
             </div>
             <div>
-              <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
+              <h4 className="typo-body text-foreground">{t.vault.type_picker.auto_discover}</h4>
               <p className="typo-body text-foreground">
                 {ps.foraging_description}
               </p>

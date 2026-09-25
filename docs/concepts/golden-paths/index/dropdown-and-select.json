@@ -37,6 +37,7 @@
     "BaseModal.tsx": {"count":1,"sections":[4],"lines":["9"],"contexts":["`Z_INDEX_PORTAL_BASE = 10000` from `BaseModal.tsx:9`) are the two sanctioned"],"resolved":false},
     "ChannelsAtelier.tsx": {"count":1,"sections":[7],"lines":["202,209"],"contexts":["`matrixShared.tsx:127` · `ChannelsAtelier.tsx:202,209` · `ReplyOutbox.tsx:236` ·"],"resolved":false},
     "ClusterPatternsModal.tsx": {"count":1,"sections":[7],"lines":["290"],"contexts":["`ClusterPatternsModal.tsx:290` · `CreatePlaybookModal.tsx:138` ·"],"resolved":false},
+    "CompanionToolbar.tsx": {"count":1,"sections":[7],"lines":["453"],"contexts":["`DriveToolbar.tsx:447` · `CompanionToolbar.tsx:453` · `StationPicker.tsx:186`."],"resolved":false},
     "ConnectorDimCard.tsx": {
       "count": 1,
       "sections": [7],
@@ -194,6 +195,7 @@
       "verbatim": "ArenaPanelColosseum.tsx"
     },
     "src/features/agents/sub_model_config/components/compare/ModelDropdown.tsx": {"count":2,"sections":[5,7],"lines":["35","30"],"contexts":["`TimezoneSelect.tsx:64`, `ModelDropdown.tsx:35`), `rounded-md`"],"resolvedFrom":"basename","verbatim":"ModelDropdown.tsx"},
+    "src/features/companions/athena/ConversationSwitcher.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["· `PersonaOverviewBatchBar.tsx:108` · `ConversationSwitcher.tsx:149` ·"],"resolvedFrom":"basename","verbatim":"ConversationSwitcher.tsx"},
     "src/features/fleet/monitor/channels/ConversationComposer.tsx": {"count":2,"sections":[7],"lines":["162"],"contexts":["· `PlaygroundHeader.tsx:166` · `ConversationComposer.tsx:162`. Plus"],"resolvedFrom":"basename","verbatim":"ConversationComposer.tsx"},
     "src/features/overview/sub_activity/components/GlobalExecutionList.tsx": {"count":1,"sections":[7],"lines":["388"],"contexts":["`GlobalExecutionList.tsx:388` · `AnnotateModal.tsx:55,67` ·"],"resolvedFrom":"basename","verbatim":"GlobalExecutionList.tsx"},
     "src/features/overview/sub_knowledge/components/AnnotateModal.tsx": {"count":2,"sections":[7],"lines":["49,61","55,67"],"contexts":["`AutomationTriggerStep.tsx:186` · `AnnotateModal.tsx:49,61` ·"],"resolvedFrom":"basename","verbatim":"AnnotateModal.tsx"},
@@ -231,8 +233,6 @@
       "resolvedFrom": "basename",
       "verbatim": "SystemTraceViewer.tsx"
     },
-    "src/features/plugins/companion/CompanionToolbar.tsx": {"count":1,"sections":[7],"lines":["453"],"contexts":["`DriveToolbar.tsx:447` · `CompanionToolbar.tsx:453` · `StationPicker.tsx:186`."],"resolvedFrom":"basename","verbatim":"CompanionToolbar.tsx"},
-    "src/features/plugins/companion/ConversationSwitcher.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["· `PersonaOverviewBatchBar.tsx:108` · `ConversationSwitcher.tsx:149` ·"],"resolvedFrom":"basename","verbatim":"ConversationSwitcher.tsx"},
     "src/features/plugins/dev-tools/components/DevToolsProjectDropdown.tsx": {"count":3,"sections":[5,7],"lines":["88","85"],"contexts":["`DevToolsProjectDropdown.tsx:88` `\"Select DevTools project\"`)."],"resolvedFrom":"basename","verbatim":"DevToolsProjectDropdown.tsx"},
     "src/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker.tsx": {
       "count": 3,

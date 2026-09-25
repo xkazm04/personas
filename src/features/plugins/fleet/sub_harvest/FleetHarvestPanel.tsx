@@ -65,7 +65,7 @@ export function FleetHarvestPanel({ open, onClose }: Props) {
     <BaseModal isOpen={open} onClose={onClose} titleId="fleet-harvest-title" size="lg" staggerChildren={false}>
       <div className="flex max-h-[80vh] flex-col" data-testid="fleet-harvest-panel">
         <div className="flex items-center gap-2 border-b border-primary/10 px-4 py-3">
-          <h2 id="fleet-harvest-title" className="flex-1 typo-h3">
+          <h2 id="fleet-harvest-title" className="flex-1 typo-heading-lg">
             {t.plugins.fleet.harvest_title}
           </h2>
           {markdown && (

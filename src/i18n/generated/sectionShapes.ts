@@ -20,8 +20,12 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "gate": {},
     "evidence": {},
     "state": {},
-    "member": {}
+    "trust": {},
+    "member": {},
+    "variant": {},
+    "fused": {}
   },
+  "features": {},
   "chrome": {
     "system_load": {},
     "shortcuts": {}
@@ -157,7 +161,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "assertions": {},
     "brain": {},
-    "responsibilities": {}
+    "responsibilities": {},
+    "promote_preview": {}
   },
   "director": {},
   "vault": {
@@ -281,7 +286,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "type_labels": {}
     },
     "health": {},
-    "certification": {},
     "leaderboard": {},
     "observability_extra": {},
     "widgets": {},
@@ -589,9 +593,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     },
     "doc_signing": {},
     "obsidian_brain": {},
-    "companion": {
-      "orchestration": {}
-    },
     "artist_gallery": {},
     "artist_media_studio": {},
     "dev_lifecycle": {},
@@ -611,6 +612,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
         "station_status": {}
       }
     }
+  },
+  "athena": {
+    "orchestration": {}
   },
   "media_studio": {},
   "research_lab": {},
@@ -774,5 +778,31 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "detail": {},
     "webview": {},
     "twin": {}
+  },
+  "companions": {
+    "nav": {},
+    "state": {},
+    "blocker": {},
+    "identity": {},
+    "landing": {},
+    "setup": {
+      "curator_level": {},
+      "curator_level_gloss": {}
+    },
+    "errors": {},
+    "blueprint": {
+      "channel": {},
+      "state": {},
+      "engine": {},
+      "kind": {},
+      "keys": {},
+      "reach": {},
+      "console": {
+        "lane": {},
+        "request_state": {},
+        "lane_tag": {}
+      }
+    },
+    "process": {}
   }
 } as Record<string, Record<string, unknown>>);

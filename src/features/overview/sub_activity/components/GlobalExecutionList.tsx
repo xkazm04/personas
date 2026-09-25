@@ -84,7 +84,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   title={showDashboard ? act.show_list : act.show_metrics}
                 >
                   <BarChart3 className="w-5 h-5" />
-                  <span className="typo-body font-medium">{showDashboard ? act.list : act.metrics}</span>
+                  <span className="typo-body">{showDashboard ? act.list : act.metrics}</span>
                 </button>
                 <button
                   type="button"
@@ -94,7 +94,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   title={t.common.refresh}
                 >
                   <RefreshCw className={`w-5 h-5 ${feed.isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="typo-body font-medium">{t.common.refresh}</span>
+                  <span className="typo-body">{t.common.refresh}</span>
                 </button>
               </>
             )}

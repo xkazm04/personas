@@ -155,7 +155,15 @@
     "ghost_reject_failed": "Couldn't dismiss the suggestion",
     "ghost_dry_run_failed": "Dry-run failed — nothing was wired. {error}",
     "ghost_not_enough_signal": "Not enough signal yet — I only suggest a route after seeing the same event followed by the same manual run at least {count} times.",
-    "ghost_miner_off": "Route suggestions are off — set a project's autopilot to Suggest or Full and I'll start watching for patterns."
+    "ghost_miner_off": "Route suggestions are off — set a project's autopilot to Suggest or Full and I'll start watching for patterns.",
+    "proto_paused": "paused",
+    "route_paused": "Paused",
+    "pause_route": "Pause route",
+    "resume_route": "Resume route",
+    "last_fired": "Last fired",
+    "never_fired": "Never fired",
+    "route_toggle_failed": "Couldn't change this route",
+    "resume_dry_run_failed": "Dry-run failed, so the route stays paused. {error}"
   },
   "subscription_list": {
     "active": "Active",

@@ -83,7 +83,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                       <input
                         value={rule.name}
                         onChange={(e) => onUpdate(idx, { name: e.target.value })}
-                        className="typo-body font-medium bg-transparent border-none outline-none text-foreground"
+                        className="typo-body bg-transparent border-none outline-none text-foreground"
                         placeholder={s.compliance_name_placeholder}
                       />
                     </div>

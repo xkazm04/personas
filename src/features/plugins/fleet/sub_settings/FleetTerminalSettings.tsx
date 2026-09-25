@@ -1,115 +1,29 @@
-import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Terminal as TerminalIcon, ZoomIn, ZoomOut } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import {
-  FLEET_FONT_MIN,
-  FLEET_FONT_MAX,
-  getFleetTerminalStats,
-  type FleetTerminalStats,
-} from '../fleetTerminalManager';
+import { Button } from '@/features/shared/components/buttons';
+import { PillGroup } from '@/features/shared/components/forms/PillGroup';
+import { FLEET_FONT_MIN, FLEET_FONT_MAX } from '../fleetTerminalManager';
 import type { FleetTerminalTheme } from '@/stores/slices/system/fleetSlice';
+import { FleetSettingsCard } from './FleetSettingsCard';
+import { TerminalBudgets } from './FleetTerminalBudgets';
 
-/**
- * The manager's budget bookkeeping, on screen.
- *
- * `getFleetTerminalStats()` was written and unit-tested as the early-warning
- * instrument for a MAX_PARKED / MAX_WEBGL set too low, and until this row its
- * only caller in the whole tree was its own test file. Its docblock prescribed
- * reading `__fleetTerminalEvictions__` from a devtools console — the one thing a
- * packaged Tauri build does not hand the operator. So the discriminating number
- * existed in memory during exactly the report it was built for ("my terminals
- * keep going blank and replaying") and no surface displayed it, leaving triage
- * to guesswork.
- *
- * Deliberately NOT behind `import.meta.env.DEV`: gating the only readout of a
- * packaged build's budgets to builds that already have a console would restate
- * the defect rather than fix it. The numbers are read from memory, so the poll
- * costs nothing; 2s is fast enough to watch a budget being hit while switching
- * tiles in another window.
- */
-function TerminalBudgets() {
-  const { t, tx } = useTranslation();
-  const [stats, setStats] = useState<FleetTerminalStats>(getFleetTerminalStats);
-
-  useEffect(() => {
-    const id = setInterval(() => setStats(getFleetTerminalStats()), 2_000);
-    return () => clearInterval(id);
-  }, []);
-
+/** One setting: its name and a caption on the left, the control on the right. */
+function Row({ label, description, children }: { label: string; description?: string; children: ReactNode }) {
   return (
-    <div className="border-t border-primary/10 pt-3" data-testid="fleet-terminal-budgets">
-      <p className="typo-label text-foreground">{t.plugins.fleet.settings_budgets_title}</p>
-      <p className="mb-1.5 text-[13px] text-foreground">{t.plugins.fleet.settings_budgets_desc}</p>
-      <dl className="space-y-0.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[13px] text-foreground">{t.plugins.fleet.settings_budgets_terminals}</dt>
-          <dd
-            className="tabular-nums text-[13px] text-foreground"
-            data-testid="fleet-budget-terminals"
-          >
-            {tx(t.plugins.fleet.settings_budgets_terminals_value, {
-              live: stats.live,
-              parked: stats.parked,
-              max: stats.maxParked,
-              dropped: stats.evictions,
-            })}
-          </dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-3">
-          <dt className="text-[13px] text-foreground">{t.plugins.fleet.settings_budgets_renderers}</dt>
-          <dd
-            className="tabular-nums text-[13px] text-foreground"
-            data-testid="fleet-budget-renderers"
-          >
-            {tx(t.plugins.fleet.settings_budgets_renderers_value, {
-              active: stats.webglContexts,
-              max: stats.maxWebgl,
-              dropped: stats.webglEvictions,
-            })}
-          </dd>
-        </div>
-      </dl>
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="typo-title">{label}</p>
+        {description && <p className="typo-caption">{description}</p>}
+      </div>
+      {children}
     </div>
   );
 }
 
-/** Small inline segmented control — local to terminal settings. */
-function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-  testid,
-}: {
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (v: T) => void;
-  testid: string;
-}) {
-  return (
-    <div
-      className="flex items-center rounded-interactive border border-primary/10 bg-secondary/30 p-0.5"
-      role="group"
-      data-testid={testid}
-    >
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          data-testid={`${testid}-${o.id}`}
-          aria-pressed={value === o.id}
-          onClick={() => onChange(o.id)}
-          className={`rounded-interactive px-2 py-0.5 text-[13px] transition-colors ${
-            value === o.id ? 'bg-primary/15 text-primary' : 'text-foreground/70 hover:text-foreground'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+const THEME_TESTID = 'fleet-settings-theme';
 
 /**
  * Terminal appearance + behaviour controls (font zoom, copy-on-select,
@@ -119,6 +33,7 @@ function Segmented<T extends string>({
  */
 export function FleetTerminalSettings() {
   const { t } = useTranslation();
+  const f = t.plugins.fleet;
   const fontSize = useSystemStore((s) => s.fleetTerminalFontSize);
   const nudgeFont = useSystemStore((s) => s.fleetNudgeTerminalFont);
   const copyOnSelect = useSystemStore((s) => s.fleetTerminalCopyOnSelect);
@@ -126,79 +41,72 @@ export function FleetTerminalSettings() {
   const theme = useSystemStore((s) => s.fleetTerminalTheme);
   const setTheme = useSystemStore((s) => s.fleetSetTerminalTheme);
 
-  const themeOptions: { id: FleetTerminalTheme; label: string }[] = [
-    { id: 'auto', label: t.plugins.fleet.settings_theme_auto },
-    { id: 'dark', label: t.plugins.fleet.settings_theme_dark },
-    { id: 'light', label: t.plugins.fleet.settings_theme_light },
+  const themeOptions: { value: FleetTerminalTheme; label: string }[] = [
+    { value: 'auto', label: f.settings_theme_auto },
+    { value: 'dark', label: f.settings_theme_dark },
+    { value: 'light', label: f.settings_theme_light },
   ];
 
   return (
-    <div
-      className="border border-primary/10 rounded-modal px-4 py-3 bg-secondary/20 space-y-3"
+    <FleetSettingsCard
       data-testid="fleet-terminal-settings"
+      icon={<TerminalIcon className="w-4 h-4 text-primary" />}
+      title={f.settings_terminal_title}
+      description={f.settings_terminal_desc}
     >
-      <div className="flex items-center gap-2">
-        <TerminalIcon className="w-4 h-4 text-primary" />
-        <div>
-          <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.settings_terminal_title}</p>
-          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_terminal_desc}</p>
-        </div>
-      </div>
+      <div className="space-y-3">
+        <Row label={f.settings_font_size}>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              data-testid="fleet-settings-font-dec"
+              onClick={() => nudgeFont(-1)}
+              disabled={fontSize <= FLEET_FONT_MIN}
+              aria-label={f.terminal_font_decrease}
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </Button>
+            <span className="w-10 text-center typo-body tabular-nums text-foreground" data-testid="fleet-settings-font-value">
+              {fontSize}px
+            </span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              data-testid="fleet-settings-font-inc"
+              onClick={() => nudgeFont(1)}
+              disabled={fontSize >= FLEET_FONT_MAX}
+              aria-label={f.terminal_font_increase}
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </Row>
 
-      {/* Font size */}
-      <div className="flex items-center justify-between">
-        <span className="typo-caption text-foreground">{t.plugins.fleet.settings_font_size}</span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            data-testid="fleet-settings-font-dec"
-            onClick={() => nudgeFont(-1)}
-            disabled={fontSize <= FLEET_FONT_MIN}
-            aria-label={t.plugins.fleet.terminal_font_decrease}
-            className="flex items-center rounded-interactive p-1 text-foreground transition-colors hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          <span className="w-9 text-center tabular-nums text-[14px] text-foreground" data-testid="fleet-settings-font-value">
-            {fontSize}px
-          </span>
-          <button
-            type="button"
-            data-testid="fleet-settings-font-inc"
-            onClick={() => nudgeFont(1)}
-            disabled={fontSize >= FLEET_FONT_MAX}
-            aria-label={t.plugins.fleet.terminal_font_increase}
-            className="flex items-center rounded-interactive p-1 text-foreground transition-colors hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+        <Row label={f.settings_theme} description={f.settings_theme_desc}>
+          {/* A choice of one value is a radio group (PillGroup), not a tab strip: it
+              selects no panel, and SegmentedTabs would declare one that never exists. */}
+          <PillGroup
+            options={themeOptions}
+            value={theme}
+            onChange={setTheme}
+            labelClass="typo-body"
+            aria-label={f.settings_theme}
+            data-testid={THEME_TESTID}
+          />
+        </Row>
 
-      {/* Color theme */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="typo-caption text-foreground">{t.plugins.fleet.settings_theme}</span>
-          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_theme_desc}</p>
-        </div>
-        <Segmented value={theme} options={themeOptions} onChange={setTheme} testid="fleet-settings-theme" />
-      </div>
+        <Row label={f.settings_copy_on_select} description={f.settings_copy_on_select_desc}>
+          <AccessibleToggle
+            checked={copyOnSelect}
+            onChange={() => setCopyOnSelect(!copyOnSelect)}
+            label={f.settings_copy_on_select}
+            data-testid="fleet-settings-copy-on-select"
+          />
+        </Row>
 
-      {/* Copy on select */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="typo-caption text-foreground">{t.plugins.fleet.settings_copy_on_select}</span>
-          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_copy_on_select_desc}</p>
-        </div>
-        <AccessibleToggle
-          checked={copyOnSelect}
-          onChange={() => setCopyOnSelect(!copyOnSelect)}
-          label={t.plugins.fleet.settings_copy_on_select}
-          data-testid="fleet-settings-copy-on-select"
-        />
+        <TerminalBudgets />
       </div>
-
-      <TerminalBudgets />
-    </div>
+    </FleetSettingsCard>
   );
 }

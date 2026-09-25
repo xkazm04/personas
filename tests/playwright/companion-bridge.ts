@@ -208,22 +208,34 @@ export class CompanionBridge {
   }
 
   /**
-   * Open the companion plugin sub-page (Setup / Memory / Voice tabs).
-   * Polls `query` directly (cheaper than `/wait` and works even when
+   * Open one of Athena's pages (Setup / Memory / Voice / Decisions / Create).
+   *
+   * She stopped being a plugin on 2026-09-22: her pages are rows in the
+   * Companions section's L2 nav, each with a stable `companions-nav-athena-*`
+   * testid. Polls `query` directly (cheaper than `/wait` and works even when
    * the target is `position: fixed`).
    */
   async openCompanionPlugin(timeoutMs = 5_000): Promise<void> {
-    await this.navigate('plugins');
+    await this.openAthenaPage('setup', timeoutMs);
+  }
+
+  /** Click one of Athena's rows in the Companions L2 nav. */
+  async openAthenaPage(
+    tab: 'create-athena' | 'setup' | 'memory' | 'voice' | 'decisions',
+    timeoutMs = 5_000,
+  ): Promise<void> {
+    const testId = `companions-nav-athena-${tab}`;
+    await this.navigate('companions');
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      const nodes = await this.query('[data-testid="tab-companion"]');
+      const nodes = await this.query(`[data-testid="${testId}"]`);
       if (nodes.some((n) => n.visible)) {
-        await this.clickTestId('tab-companion');
+        await this.clickTestId(testId);
         return;
       }
       await sleep(150);
     }
-    throw new Error('openCompanionPlugin: tab-companion not found');
+    throw new Error(`openAthenaPage: ${testId} not found`);
   }
 
   /**

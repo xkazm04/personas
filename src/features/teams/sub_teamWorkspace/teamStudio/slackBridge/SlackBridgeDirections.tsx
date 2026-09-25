@@ -15,7 +15,7 @@ function ToggleRow({
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <div className="typo-body text-foreground">{label}</div>
-        {hint && <p className="typo-caption font-normal text-foreground">{hint}</p>}
+        {hint && <p className="typo-caption text-foreground">{hint}</p>}
       </div>
       <AccessibleToggle
         checked={checked}

@@ -31,7 +31,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                 style={{ borderColor: m.color + '55' }}
               >
                 <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
-                <span className="typo-caption font-medium" style={{ color: m.color }}>
+                <span className="typo-caption" style={{ color: m.color }}>
                   {m.label}
                 </span>
               </span>
@@ -74,7 +74,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                 <SlidersHorizontal className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="typo-caption font-mono font-medium text-foreground">{p.name}</span>
+                    <span className="typo-caption font-mono text-foreground">{p.name}</span>
                     {p.type && (
                       <span className="typo-label text-foreground">{p.type}</span>
                     )}
@@ -85,7 +85,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                     )}
                   </div>
                   {p.description && (
-                    <div className="typo-caption text-foreground leading-snug">{p.description}</div>
+                    <div className="typo-caption text-foreground">{p.description}</div>
                   )}
                 </div>
               </li>
@@ -108,7 +108,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                 <Plug className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="typo-caption font-medium text-foreground">{b.label}</span>
+                    <span className="typo-caption text-foreground">{b.label}</span>
                     {b.required && (
                       <span className="typo-label text-status-warning/85">{t.common.required}</span>
                     )}
@@ -116,7 +116,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                       {bindingKindLabel(b.kind.type, t)}
                     </span>
                   </div>
-                  <div className="typo-caption text-foreground leading-snug">{b.description}</div>
+                  <div className="typo-caption text-foreground">{b.description}</div>
                 </div>
               </li>
             ))}

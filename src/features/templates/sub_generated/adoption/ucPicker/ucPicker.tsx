@@ -107,7 +107,7 @@ export function UseCasePickerStep(props: UseCasePickerVariantProps) {
             subtitle={`In-App Message preview · ${previewUc.name}`}
             onClose={() => state.setPreviewUcId(null)}
           >
-            <MarkdownRenderer content={previewSample.body} className="typo-body leading-relaxed" />
+            <MarkdownRenderer content={previewSample.body} className="typo-body" />
           </PreviewModal>
         )}
       </AnimatePresence>

@@ -108,7 +108,7 @@ export function InstallButton({
     <div className="mt-2 flex items-center gap-2 flex-wrap">
       <Button
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="xs"
         onClick={onInstall}
         icon={<Download className="w-3 h-3" />}

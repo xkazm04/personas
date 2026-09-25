@@ -41,6 +41,7 @@
     "lib/useTinderItems.ts": {"count":1,"sections":[],"lines":["234-235"],"contexts":["(`lib/useTinderItems.ts:234-235`). **Three of four advertised chords do not exist.**"],"resolved":false},
     "package.json": {"count":1,"sections":[9],"lines":["52"],"contexts":["(`package.json:52`) and, more importantly, in the **`golden-path-census` pre-push job**"]},
     "plugins/artist/sub_gallery/{Gallery2D,Gallery3D}.tsx": {"count":1,"sections":[],"contexts":["`plugins/artist/sub_gallery/{Gallery2D,Gallery3D}.tsx`,"],"resolved":false},
+    "plugins/companion/orb/AthenaOrbLayer.tsx": {"count":1,"sections":[],"contexts":["`shared/components/forms/Listbox.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`,"],"resolved":false},
     "registry-keyboard-shortcut-registration-composer.json": {"count":1,"sections":[9],"contexts":["(`registry-keyboard-shortcut-registration-composer.json` — a filename unique to this composer,"],"resolved":false},
     "shared/chrome/{CommandPalette,TitleBarDock}.tsx": {"count":1,"sections":[],"contexts":["`lib/ui/BaseModal.tsx`, `shared/chrome/{CommandPalette,TitleBarDock}.tsx`,"],"resolved":false},
     "shortcutTypes.ts": {"count":1,"sections":[],"lines":["14"],"contexts":["handlers\"* (`docs/features/dashboard/reviews.md:90`). Its `shortcutTypes.ts:14` documents `?` ="],"resolved":false},
@@ -96,6 +97,14 @@
       "resolvedFrom": "basename",
       "verbatim": "ComposerPickerShell.tsx"
     },
+    "src/features/companions/athena/orb/AthenaOrbLayer.tsx": {
+      "count": 2,
+      "sections": [7,12],
+      "lines": ["19","15-16"],
+      "contexts": ["`ShortcutCheatSheet.tsx:15` and `AthenaOrbLayer.tsx:19` each define a private copy — **two of them"],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaOrbLayer.tsx"
+    },
     "src/features/overview/sub_incidents/components/IncidentsInbox.tsx": {
       "count": 1,
       "sections": [7],
@@ -103,14 +112,6 @@
       "contexts": ["`useRunnerExecution.ts:141` (`closest('[role=\"dialog\"]')`) and `IncidentsInbox.tsx:366`"],
       "resolvedFrom": "basename",
       "verbatim": "IncidentsInbox.tsx"
-    },
-    "src/features/plugins/companion/orb/AthenaOrbLayer.tsx": {
-      "count": 3,
-      "sections": [7,12],
-      "lines": ["19","15-16"],
-      "contexts": ["`shared/components/forms/Listbox.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`,"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/orb/AthenaOrbLayer.tsx"
     },
     "src/features/plugins/drive/DrivePage.tsx": {
       "count": 3,

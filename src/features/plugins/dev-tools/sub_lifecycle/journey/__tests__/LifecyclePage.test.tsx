@@ -14,7 +14,7 @@ const askAthena = vi.hoisted(() => vi.fn());
 let activeProjectId: string | null = 'p1';
 
 vi.mock('@/api/devTools/lifecycle', () => ({ getLifecycle, installLifecycle }));
-vi.mock('@/features/plugins/companion/useAskAthena', () => ({ useAskAthena: () => askAthena }));
+vi.mock('@/features/companions/athena/useAskAthena', () => ({ useAskAthena: () => askAthena }));
 vi.mock('../../LifecycleProjectPicker', () => ({ LifecycleProjectPicker: () => null }));
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>

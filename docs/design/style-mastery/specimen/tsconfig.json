@@ -1,0 +1,7 @@
+{
+  "//": "Type-checks the Gate 0 specimen, which the root tsconfig (src only) never sees: npx tsc -p docs/design/style-mastery/specimen",
+  "extends": "../../../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "incremental": false },
+  "include": ["./**/*.ts", "./**/*.tsx", "../../../../src/vite-env.d.ts"],
+  "exclude": []
+}

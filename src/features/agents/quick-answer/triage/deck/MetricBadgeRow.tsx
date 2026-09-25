@@ -41,7 +41,7 @@ function MetricBadge({ fact }: { fact: TriageFact }) {
       className={`flex items-center gap-2 rounded-pill border bg-background px-3 py-1.5 shadow-elevation-2 ${TONE_BORDER[tone]}`}
     >
       <span className="typo-label text-foreground">{fact.label}</span>
-      <span className={`typo-data font-semibold tabular-nums ${TONE_TEXT[tone]}`}>{fact.value}</span>
+      <span className={`typo-data ${TONE_TEXT[tone]}`}>{fact.value}</span>
       {reading ? (
         <>
           <reading.Icon className={`h-3 w-3 shrink-0 ${TONE_TEXT[tone]}`} aria-hidden />

@@ -137,7 +137,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(false)}
-        className="flex items-center gap-1.5 typo-caption font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 typo-caption text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
       >
         <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
@@ -169,7 +169,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           type="button"
           onClick={handleSend}
           disabled={sending || !body.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/25 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {sending
             ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -246,7 +246,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
               <span className="text-foreground">{response.model}</span>
             )}
           </div>
-          <pre className={`typo-code font-mono rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
+          <pre className={`typo-code rounded-card p-2.5 overflow-x-auto whitespace-pre-wrap break-words
                           border max-h-64 overflow-y-auto ${
             response.status === 'success'
               ? 'bg-emerald-500/5 border-emerald-500/15 text-foreground/85'

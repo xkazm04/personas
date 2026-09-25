@@ -179,7 +179,7 @@ const GuideGoalsRail = forwardRef<
               <Plus className="h-4 w-4" />
               {g.add_goal}
             </span>
-            <kbd className="rounded border border-border px-1.5 font-mono text-xs text-foreground/90">G</kbd>
+            <kbd className="rounded-interactive border border-border px-1.5 font-mono text-xs text-foreground/90">G</kbd>
           </button>
         )}
       </div>

@@ -35,7 +35,7 @@ function FieldRow({ label, field, workspaceName, mask }: {
         <Tooltip content={field.value != null && !mask ? String(field.value) : ''}>
           <span
             tabIndex={field.value != null && !mask ? 0 : undefined}
-            className={`typo-code font-mono truncate max-w-[140px] ${
+            className={`typo-code truncate max-w-[140px] ${
               field.source === 'default' ? 'text-foreground italic' : 'text-foreground'
             }`}
           >
@@ -115,7 +115,7 @@ export function EffectiveConfigPanel({ config, loading }: EffectiveConfigPanelPr
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 hover:bg-secondary/30 transition-colors"
       >
-        <span className="flex items-center gap-1.5 typo-caption font-medium text-foreground">
+        <span className="flex items-center gap-1.5 typo-caption text-foreground">
           <Layers className="w-3 h-3 text-primary/60" />
           {mc.effective_config}
           {pending && (

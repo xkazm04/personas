@@ -64,7 +64,7 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
         type="button"
         onClick={checkStored}
         disabled={isHealthchecking}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
       >
         {isHealthchecking ? (
           <Loader2 className="w-3 h-3 animate-spin" />

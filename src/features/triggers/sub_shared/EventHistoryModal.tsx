@@ -119,11 +119,11 @@ export function EventHistoryModal({ entry, onClose }: Props) {
                   <span className="absolute -left-[1.4rem] top-1.5 w-2.5 h-2.5 rounded-full bg-primary/60 ring-4 ring-background" />
                   <div className="flex flex-col gap-2 rounded-card border border-primary/10 bg-card/50 p-3.5">
                     <div className="flex items-start justify-between gap-3">
-                      <span className="typo-body font-semibold text-foreground">{c.title}</span>
+                      <span className="typo-body text-foreground">{c.title}</span>
                       <SeverityBadge severity={p.severity} label={severityLabel(t, p.severity)} />
                     </div>
                     {p.summary && (
-                      <p className="typo-body text-foreground/90 leading-relaxed">{p.summary}</p>
+                      <p className="typo-body text-foreground/90">{p.summary}</p>
                     )}
                     {p.tags && p.tags.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5">

@@ -28,7 +28,7 @@ export function IntervalConfig({
   const { t } = useTranslation();
   return (
     <div>
-      <label className="block typo-body font-medium text-foreground mb-1.5">
+      <label className="block typo-body text-foreground mb-1.5">
         {t.triggers.schedule.interval_label}
       </label>
       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -44,7 +44,7 @@ export function IntervalConfig({
             key={preset.value}
             type="button"
             onClick={() => { setIntervalValue(preset.value); setCustomInterval(false); }}
-            className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
+            className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
               !customInterval && interval === preset.value
                 ? 'bg-primary/15 text-primary border-primary/30'
                 : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -56,7 +56,7 @@ export function IntervalConfig({
         <button
           type="button"
           onClick={() => setCustomInterval(true)}
-          className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
+          className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
             customInterval
               ? 'bg-primary/15 text-primary border-primary/30'
               : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
@@ -78,7 +78,7 @@ export function IntervalConfig({
             placeholder={t.triggers.interval_seconds_placeholder}
             aria-invalid={!!validationError}
             aria-describedby={validationError ? 'interval-error' : undefined}
-            className={`w-full px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code focus-ring transition-all ${
+            className={`w-full px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-code focus-ring transition-all ${
               validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30'
                 : 'border-primary/15 focus-visible:border-primary/40'
@@ -152,7 +152,7 @@ export function CronConfig({
     <div className="space-y-3">
       {/* Presets */}
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {t.triggers.quick_presets_label}
         </label>
         <div className="flex flex-wrap gap-1.5">
@@ -163,7 +163,7 @@ export function CronConfig({
               onClick={() => onPresetSelect(p.cron)}
               className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
                 cronExpression === p.cron
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 font-medium'
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                   : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'
               }`}
             >
@@ -175,7 +175,7 @@ export function CronConfig({
 
       {/* Expression input */}
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {t.triggers.cron_expression_label}
         </label>
         <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export function CronConfig({
             placeholder={t.triggers.cron_expression_placeholder}
             aria-invalid={!!(hasError || validationError)}
             aria-describedby={validationError ? 'cron-validation-error' : hasError ? 'cron-preview-error' : undefined}
-            className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
+            className={`flex-1 px-3 py-2 bg-background/50 border rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all ${
               hasError || validationError
                 ? 'border-red-500/30 ring-1 ring-red-500/30'
                 : 'border-primary/15 focus-visible:border-amber-500/40'
@@ -207,13 +207,13 @@ export function CronConfig({
 
         {/* Human description */}
         {cronPreview?.valid && (
-          <p className="typo-body text-amber-400/80 mt-1.5 font-medium">
+          <p className="typo-body text-amber-400/80 mt-1.5">
             {cronPreview.description}
           </p>
         )}
 
         {/* Field legend */}
-        <div className="flex items-center gap-3 mt-2 typo-code text-foreground font-mono">
+        <div className="flex items-center gap-3 mt-2 typo-code text-foreground">
           <span>min</span>
           <span>hour</span>
           <span>day</span>
@@ -224,7 +224,7 @@ export function CronConfig({
 
       {/* Timezone */}
       <div>
-        <label htmlFor="cron-timezone" className="block typo-body font-medium text-foreground mb-1.5">
+        <label htmlFor="cron-timezone" className="block typo-body text-foreground mb-1.5">
           Timezone
         </label>
         <TimezoneSelect id="cron-timezone" value={timezone} onChange={setTimezone} />
@@ -235,7 +235,7 @@ export function CronConfig({
 
       {/* Max backfill */}
       <div>
-        <label htmlFor="cron-max-backfill" className="block typo-body font-medium text-foreground mb-1.5">
+        <label htmlFor="cron-max-backfill" className="block typo-body text-foreground mb-1.5">
           <DebtText k="auto_catch_up_after_downtime_562fc6d6" />
         </label>
         <select

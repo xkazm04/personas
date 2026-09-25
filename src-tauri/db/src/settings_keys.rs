@@ -422,6 +422,179 @@ pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD: &str = "director_weekly_experim
 /// ceiling (`personas_core::run_budget::DEFAULT_EVOLUTION_CEILING_USD`).
 pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT: f64 = 2.0;
 
+// -----------------------------------------------------------------------------
+// The Companions category — one switch per built-in companion
+// -----------------------------------------------------------------------------
+// Three companions, one runtime: Athena (the assistant), Overseer (keeps the
+// operator's agents running and worth their cost) and Curator (keeps a mapped
+// knowledge registry world-class). `enabled` is the OPERATOR'S INTENT and is
+// kept separately from eligibility, so losing a prerequisite never silently
+// rewrites the switch. Read by `commands::companions`.
+
+/// Whether Athena runs at all. OFF unmounts her orb, chat panel, guide layer
+/// and footer icon, refuses `companion_init`, and no-ops every companion
+/// background loop per tick (the proactive scheduler, the job worker, the
+/// execution-review debouncer, the remote-job seam). Her pages stay reachable
+/// so she can be switched back on. Stored `"true"` / `"false"`.
+///
+/// Default ON: she is the assistant the app is built around, and an install
+/// that has never seen this key is an install that has always had her.
+pub const ATHENA_ENABLED: &str = "athena_enabled";
+/// Default for [`ATHENA_ENABLED`] — on (unset means she runs).
+pub const ATHENA_ENABLED_DEFAULT: bool = true;
+
+/// RFC3339 timestamp Athena's onboarding wizard was finished, written by
+/// `athena_mark_onboarded`. PRESENCE is the whole contract — the value is a
+/// free-form timestamp for the operator's benefit and carries no typed
+/// validation.
+///
+/// The marker is newer than the wizard, so its absence does NOT mean
+/// "not onboarded": `commands::companions` also accepts the pre-existing
+/// brain-shaped predicate (episodes exist, or the identity layer has moved off
+/// its seeded placeholders) so an install that onboarded before this key
+/// existed still reads as onboarded.
+pub const ATHENA_ONBOARDED_AT: &str = "athena_onboarded_at";
+
+/// Whether Overseer runs. OFF (or no starred persona) makes the Director
+/// coaching entry points — `run_director_on_persona`, `run_director_batch` and
+/// the storm subscription — refuse instead of running. Does NOT reach the App
+/// master probation path, which raises its own review packets.
+/// Stored `"true"` / `"false"`. Default OFF: he spends LLM budget unattended.
+pub const OVERSEER_ENABLED: &str = "overseer_enabled";
+/// Default for [`OVERSEER_ENABLED`] — off (opt-in autonomy).
+pub const OVERSEER_ENABLED_DEFAULT: bool = false;
+
+/// Whether Curator runs. She has no backend loop yet (a later stage builds
+/// one), so today this key is the operator's intent and nothing reads it but
+/// the status door. Stored `"true"` / `"false"`. Default OFF.
+pub const CURATOR_ENABLED: &str = "curator_enabled";
+/// Default for [`CURATOR_ENABLED`] — off (opt-in).
+pub const CURATOR_ENABLED_DEFAULT: bool = false;
+
+// ---------------------------------------------------------------------------
+// Curator's policy — the nine keys `CuratorPolicy` is projected from
+//
+// These are the OPERATOR'S standing answers, read as one typed value by
+// `commands::curator::curator_policy_get`. They are stored as ordinary
+// `app_settings` rows rather than in a `curator_policy` table deliberately:
+// there is exactly one operator and one policy, `set_app_setting` already
+// carries the allow-list, the audit log and the change broadcast, and a
+// one-row table would be a second store for a fact this one already holds.
+//
+// Every one of them is validated in `validate_value` below. That is not
+// decoration: `repos::core::settings::set` calls it on every write, so an
+// out-of-set level or a negative cap is refused at the door rather than
+// clamped on read — the shape of setting that otherwise "does not take".
+//
+// The four caps have NO default constant, and that is the point. An unset cap
+// is not a cap of zero: `CuratorPolicy` carries `None`, which means the
+// operator has declared no ceiling. A `0` default would read as a companion
+// that may never run, which is a different claim entirely.
+// ---------------------------------------------------------------------------
+
+/// Authority level for research-shaped work (a scan, a read, a report).
+/// One of `L0`..`L3`; `L0` is always asked, `L3` runs under a standing grant.
+pub const CURATOR_LEVEL_RESEARCH: &str = "curator_level_research";
+/// Authority level for forging new subjects into the corpus.
+pub const CURATOR_LEVEL_FORGE: &str = "curator_level_forge";
+/// Authority level for judging a consumer project against the standard.
+pub const CURATOR_LEVEL_CONFORM: &str = "curator_level_conform";
+/// Authority level for a maintenance sweep over the corpus.
+pub const CURATOR_LEVEL_SWEEP: &str = "curator_level_sweep";
+/// Default for all four levels — `L0`, always ask.
+///
+/// An autonomy setting that has never been touched must not be read as
+/// permission, which is the same call [`CURATOR_ENABLED_DEFAULT`] makes.
+pub const CURATOR_LEVEL_DEFAULT: &str = "L0";
+
+/// Dollars Curator may spend in a day. Unset means NO ceiling declared.
+/// Stored as a decimal string; validated as a finite non-negative number.
+pub const CURATOR_DAILY_BUDGET_USD: &str = "curator_daily_budget_usd";
+/// Dispatches Curator may start in a day. Unset means no cap declared.
+pub const CURATOR_DAILY_RUN_CAP: &str = "curator_daily_run_cap";
+/// Commits Curator may land in a day. Unset means no cap declared.
+pub const CURATOR_DAILY_COMMIT_CAP: &str = "curator_daily_commit_cap";
+/// A window during which Curator stays quiet, e.g. `"22:00-07:00"`, in the
+/// machine's LOCAL time. A window that starts after it ends wraps midnight.
+///
+/// **Free-form until 2026-09-24, and now a grammar**, because the reader the
+/// old comment was waiting for exists: `commands::curator::tick` refuses to
+/// dispatch inside this window. While nothing read it, a typo was harmless;
+/// now a typo is a brake that silently does not take - the reader can only
+/// treat an unparseable window as no window, which is the exact shape of
+/// setting this file refuses everywhere else. A blank still clears it.
+///
+/// The parse itself is `attention::parse_quiet_hours`, which the persona
+/// attention loop has used against the same `"HH:MM-HH:MM"` spelling since it
+/// shipped; this validator and that reader must accept the same strings, which
+/// is what the test below asserts.
+pub const CURATOR_QUIET_HOURS: &str = "curator_quiet_hours";
+
+/// How many decisions awaiting an answer stop Curator queueing more. This is
+/// backpressure on the OPERATOR, not on the machine: a queue nobody is
+/// answering is a queue that should stop growing.
+pub const CURATOR_BACKPRESSURE_N: &str = "curator_backpressure_n";
+/// Default for [`CURATOR_BACKPRESSURE_N`].
+pub const CURATOR_BACKPRESSURE_N_DEFAULT: u32 = 8;
+/// Upper bound accepted by the validator — past this the setting is not
+/// backpressure any more.
+pub const CURATOR_BACKPRESSURE_N_MAX: u32 = 100;
+
+/// How many workers Curator may hold at once.
+pub const CURATOR_WORKER_CAP: &str = "curator_worker_cap";
+/// Default for [`CURATOR_WORKER_CAP`] — TWO concurrent terminals.
+///
+/// One until 2026-09-24. **Two is not a cap of two processes**: a
+/// dispatcher skill spawns its own pool (`librarian` and `forge` cap at 10,
+/// `harvest` at 5, `hygiene` at 6), which is why `CuratorRuntime.fanned_out`
+/// is reported separately and is nullable.
+///
+/// Mirrored by `CuratorPolicy::default()` in the `core` crate, which cannot
+/// depend on this one; both carry an assertion for this value.
+pub const CURATOR_WORKER_CAP_DEFAULT: u32 = 2;
+/// Upper bound accepted by the validator. The registry's own librarian caps a
+/// dispatch fan-out at 10 concurrent workers, which is the number two existing
+/// skills converged on across measured runs; this app must not exceed it.
+pub const CURATOR_WORKER_CAP_MAX: u32 = 10;
+
+/// When Curator's reconcile sleep last COMPLETED, RFC3339.
+///
+/// A stamp the loop writes, never a person - it is not part of `CuratorPolicy`
+/// and has no setting row in her Setup page. It lives here rather than in a
+/// table for the reason the policy does: there is exactly one Curator, this is
+/// one scalar, and `app_settings` already carries the allow-list and the audit
+/// trail. Absent means "she has never slept", which is the reading that makes
+/// her sleep on the first tick - a stamp that defaulted to `now` would skip the
+/// one pass that reconciles a plan made before the app restarted.
+pub const CURATOR_LAST_SLEEP_AT: &str = "curator_last_sleep_at";
+
+/// The `librarian/harvest/queue.md` fingerprint Curator's **drain** rung
+/// (`/harvest auto`) was last dispatched against.
+///
+/// A brake on cost, not a cache. On 2026-09-24 her standing lane dispatched
+/// eight consecutive passes that each cost about $0.26 and a minute to discover
+/// they had nothing to do, against a queue file that had not changed between
+/// any of them. A rung whose last run left the file byte-identical moved
+/// nothing the lane is about, so it is not dispatched again until the file
+/// does move - by the other rung, by a worker in another lane, or by a person.
+/// Absent means "this rung has never run", which arms it.
+pub const CURATOR_HARVEST_DRAIN_MARK: &str = "curator_harvest_drain_mark";
+
+/// The same mark for her **refill** rung (`/harvest research`). Kept apart from
+/// [`CURATOR_HARVEST_DRAIN_MARK`] because a drain that found nothing says
+/// nothing about whether the gap list has a source worth fetching - and because
+/// two rungs sharing one mark would let either silence the other.
+pub const CURATOR_HARVEST_REFILL_MARK: &str = "curator_harvest_refill_mark";
+
+/// Whether `spec` is a window Curator's tick and the attention loop will both
+/// honour. Delegates to the ONE parser
+/// ([`personas_core::quiet_hours::parse`]) rather than restating the grammar,
+/// so a validator that accepts a string can never disagree with a reader that
+/// then cannot read it.
+fn parses_as_quiet_window(spec: &str) -> bool {
+    personas_core::quiet_hours::parse(spec.trim()).is_some()
+}
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -483,6 +656,9 @@ pub const ATTENTION_USAGE_STOP_PCT: &str = "attention.usage_stop_pct";
 /// up to the stop; only the long-running worker needs the margin. Default 10,
 /// clamped 0..=40 by the reader.
 pub const ATTENTION_FLEET_START_MARGIN_PCT: &str = "attention.fleet_start_margin_pct";
+/// Temporary per-persona codex routing: JSON with `personas`, optional `model`
+/// and optional `effort`. Absent or an empty persona list leaves routing alone.
+pub const ATTENTION_CODEX_MODE: &str = "attention.codex_mode";
 /// The attention loop's recent HOLD windows - the stretches in which the quota
 /// governor or the Autopilot pacing stopped every persona, as a bounded JSON
 /// list (newest last, at most [`ATTENTION_LOOP_HOLDS_MAX`]). Written by
@@ -1133,12 +1309,32 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
+    // The Companions category's three switches + Athena's onboarding marker.
+    ATHENA_ENABLED,
+    ATHENA_ONBOARDED_AT,
+    OVERSEER_ENABLED,
+    CURATOR_ENABLED,
+    // Curator's policy — the nine keys `CuratorPolicy` is projected from.
+    CURATOR_LEVEL_RESEARCH,
+    CURATOR_LEVEL_FORGE,
+    CURATOR_LEVEL_CONFORM,
+    CURATOR_LEVEL_SWEEP,
+    CURATOR_DAILY_BUDGET_USD,
+    CURATOR_DAILY_RUN_CAP,
+    CURATOR_DAILY_COMMIT_CAP,
+    CURATOR_QUIET_HOURS,
+    CURATOR_BACKPRESSURE_N,
+    CURATOR_WORKER_CAP,
+    CURATOR_LAST_SLEEP_AT,
+    CURATOR_HARVEST_DRAIN_MARK,
+    CURATOR_HARVEST_REFILL_MARK,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ATTENTION_LOOP,
     ATTENTION_WAKE_REQUESTS,
     ATTENTION_USAGE_STOP_PCT,
     ATTENTION_FLEET_START_MARGIN_PCT,
+    ATTENTION_CODEX_MODE,
     ATTENTION_LOOP_HOLDS,
     FLEET_AUTOPILOT_PACING,
     FLEET_AUTOPILOT_MAX_PARALLEL,
@@ -1293,6 +1489,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // owed" — a silently dropped wake is exactly the failure the durable
         // row exists to prevent.
         ATTENTION_WAKE_REQUESTS => validate_json_wellformed(key, value),
+        ATTENTION_CODEX_MODE => validate_attention_codex_mode(value),
         // The scheme is checked because the consumer concatenates this value
         // into a URL. A bare host would produce `127.0.0.1:3000/api/...`, which
         // reqwest reads as a RELATIVE url and refuses at send time — a failure
@@ -1408,6 +1605,71 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             ATTENTION_FLEET_START_MARGIN_PCT_MIN,
             ATTENTION_FLEET_START_MARGIN_PCT_MAX,
         ),
+        // Curator's four authority levels. A level outside the set would be
+        // read as its fallback, which is the shape of setting that silently
+        // "does not take" - so it is refused here instead.
+        CURATOR_LEVEL_RESEARCH | CURATOR_LEVEL_FORGE | CURATOR_LEVEL_CONFORM
+        | CURATOR_LEVEL_SWEEP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            if personas_core::models::CURATOR_DECISION_LEVELS.contains(&value.trim()) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "value for '{key}' must be one of L0|L1|L2|L3, got {value:?}"
+                ))
+            }
+        }
+        // The four caps. A BLANK value is accepted and means "no ceiling
+        // declared" - which is not the same as zero, and is why none of them
+        // has a default constant. A negative or non-finite one is refused.
+        CURATOR_DAILY_BUDGET_USD => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_float_range(key, value, 0.0, f64::MAX)
+        }
+        CURATOR_DAILY_RUN_CAP | CURATOR_DAILY_COMMIT_CAP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 0, u32::MAX)
+        }
+        // A grammar since 2026-09-24, when the reader landed. See the constant.
+        CURATOR_QUIET_HOURS => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            if parses_as_quiet_window(value) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "value for '{key}' must be a window like \"22:00-07:00\" \
+                     (24-hour, local time, wrapping midnight is fine), got {value:?}"
+                ))
+            }
+        }
+        // A stamp the loop writes, never a person. Any non-blank string is
+        // accepted: it is compared for staleness against `now` and an
+        // unparseable one reads as "never slept", which is the safe answer -
+        // it makes her sleep, it cannot make her skip one.
+        // The two rung marks join it for the same reason: each is an opaque
+        // content digest of a file, and an unparseable one reads as "this rung
+        // has never run", which arms the rung rather than silencing it.
+        CURATOR_LAST_SLEEP_AT | CURATOR_HARVEST_DRAIN_MARK | CURATOR_HARVEST_REFILL_MARK => Ok(()),
+        CURATOR_BACKPRESSURE_N => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 1, CURATOR_BACKPRESSURE_N_MAX)
+        }
+        CURATOR_WORKER_CAP => {
+            if is_blank(value) {
+                return Ok(());
+            }
+            validate_int_range(key, value, 1, CURATOR_WORKER_CAP_MAX)
+        }
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -1586,7 +1848,55 @@ fn validate_json_wellformed(key: &str, value: &str) -> Result<(), String> {
         .map_err(|e| format!("value for '{key}' is not well-formed JSON: {e}"))
 }
 
+fn validate_attention_codex_mode(value: &str) -> Result<(), String> {
+    if is_blank(value) {
+        return Ok(());
+    }
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Setting {
+        personas: Vec<String>,
+        model: Option<String>,
+        effort: Option<String>,
+    }
+    let setting: Setting = serde_json::from_str(value)
+        .map_err(|e| format!("value for '{ATTENTION_CODEX_MODE}' has invalid JSON shape: {e}"))?;
+    if setting.personas.iter().any(|id| id.trim().is_empty())
+        || setting
+            .model
+            .as_deref()
+            .is_some_and(|model| model.trim().is_empty())
+        || setting
+            .effort
+            .as_deref()
+            .is_some_and(|effort| effort.trim().is_empty())
+    {
+        return Err(format!(
+            "value for '{ATTENTION_CODEX_MODE}' contains an empty id, model or effort"
+        ));
+    }
+    // Mirrors the attention loop's own parse, so a typo is refused at the
+    // write instead of being logged and ignored at every tick.
+    const EFFORTS: &[&str] = &["minimal", "low", "medium", "high", "xhigh"];
+    if let Some(effort) = setting.effort.as_deref() {
+        if !EFFORTS.contains(&effort) {
+            return Err(format!(
+                "value for '{ATTENTION_CODEX_MODE}': effort '{effort}' is not one of {EFFORTS:?}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// An integer setting bounded to `min..=max` — the Autopilot steppers' shape.
+/// A value that is only whitespace is ABSENT, not malformed. Every reader of
+/// an optional setting in this file treats it that way already; saying so once
+/// here is what lets a "clear this field" write reach the store rather than be
+/// refused as a bad number.
+fn is_blank(value: &str) -> bool {
+    value.trim().is_empty()
+}
+
 fn validate_int_range(key: &str, value: &str, min: u32, max: u32) -> Result<(), String> {
     match value.trim().parse::<u32>() {
         Ok(n) if (min..=max).contains(&n) => Ok(()),
@@ -1635,6 +1945,10 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     COMPANION_DAILY_ROLLUP_LAST,
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS_LAST,
+    // Athena's onboarding marker: stamped once by the wizard's finish step.
+    // Nobody sets it from Settings and nobody can unset it, so it is a
+    // milestone, not a config change the History tab should carry.
+    ATHENA_ONBOARDED_AT,
     COMPANION_REGISTER_REFLECTION_LAST,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
@@ -1740,6 +2054,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | MAX_ACTIVE_PERSONAS
         | ATTENTION_USAGE_STOP_PCT
         | ATTENTION_FLEET_START_MARGIN_PCT
+        | ATTENTION_CODEX_MODE
         | FLEET_AUTOPILOT_PACING
         | FLEET_AUTOPILOT_MAX_PARALLEL
         | FLEET_AUTOPILOT_WEEKLY_TARGET_PCT
@@ -1796,7 +2111,26 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
         | AUTONOMOUS_KPI_GOAL_DERIVATION
         | AUTONOMOUS_KPI_EVALUATION
-        | AUTONOMOUS_DIRECTOR_STORM => "autonomy",
+        | AUTONOMOUS_DIRECTOR_STORM
+        // The Companions category's three switches: switching a companion on
+        // or off is the most consequential autonomy change in the app, so it
+        // belongs in the History tab beside the loops it governs.
+        | ATHENA_ENABLED
+        | OVERSEER_ENABLED
+        | CURATOR_ENABLED
+        | CURATOR_LEVEL_RESEARCH
+        | CURATOR_LEVEL_FORGE
+        | CURATOR_LEVEL_CONFORM
+        | CURATOR_LEVEL_SWEEP
+        | CURATOR_DAILY_BUDGET_USD
+        | CURATOR_DAILY_RUN_CAP
+        | CURATOR_DAILY_COMMIT_CAP
+        | CURATOR_QUIET_HOURS
+        | CURATOR_BACKPRESSURE_N
+        | CURATOR_WORKER_CAP
+        | CURATOR_LAST_SLEEP_AT
+        | CURATOR_HARVEST_DRAIN_MARK
+        | CURATOR_HARVEST_REFILL_MARK => "autonomy",
         // Obsidian brain / dev-tools integrations.
         OBSIDIAN_BRAIN_CONFIG
         | OBSIDIAN_MIRROR_CONFIG
@@ -1892,6 +2226,197 @@ mod tests {
         );
         // Nobody set it, so it is not a settings change the History tab shows.
         assert_eq!(audit_category(MIGRATION_E31_NOTES_ADOPT_MILESTONES), None);
+    }
+
+    #[test]
+    fn companion_switches_registered_named_and_categorised() {
+        // An unregistered key is REJECTED on write, so a switch that is not in
+        // the allow-list can never persist: the toggle would appear to move and
+        // be back where it started on the next read. Pin all four names, their
+        // registration, their defaults and where the History tab files them.
+        assert_eq!(ATHENA_ENABLED, "athena_enabled");
+        assert_eq!(ATHENA_ONBOARDED_AT, "athena_onboarded_at");
+        assert_eq!(OVERSEER_ENABLED, "overseer_enabled");
+        assert_eq!(CURATOR_ENABLED, "curator_enabled");
+        for key in [
+            ATHENA_ENABLED,
+            ATHENA_ONBOARDED_AT,
+            OVERSEER_ENABLED,
+            CURATOR_ENABLED,
+        ] {
+            assert!(validate_key(key).is_ok(), "{key} is not registered");
+            // Free-form values: the switches are "true"/"false" and the marker
+            // is a timestamp; none carries a typed contract.
+            assert!(validate_value(key, "true").is_ok());
+        }
+        // Athena runs unless told otherwise; the other two are opt-in.
+        assert!(ATHENA_ENABLED_DEFAULT);
+        assert!(!OVERSEER_ENABLED_DEFAULT);
+        assert!(!CURATOR_ENABLED_DEFAULT);
+        // The switches are autonomy changes; the onboarding marker is not a
+        // change anyone made.
+        assert_eq!(audit_category(ATHENA_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(OVERSEER_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(CURATOR_ENABLED), Some("autonomy"));
+        assert_eq!(audit_category(ATHENA_ONBOARDED_AT), None);
+        // None of them is deprecated.
+        assert!(deprecated_replacement(ATHENA_ENABLED).is_none());
+        assert!(deprecated_replacement(OVERSEER_ENABLED).is_none());
+        assert!(deprecated_replacement(CURATOR_ENABLED).is_none());
+    }
+
+    /// Curator's nine policy keys. The registration half is the same argument
+    /// as the switches above - an unregistered key is refused on write, so the
+    /// setting would appear to move and be back on the next read. The
+    /// validation half is what makes the typed contract real: `repos::core::
+    /// settings::set` calls `validate_value` on every write, so a level
+    /// outside the set is refused at the door rather than silently read as its
+    /// fallback.
+    #[test]
+    fn curator_policy_keys_registered_named_validated_and_categorised() {
+        let all = [
+            (CURATOR_LEVEL_RESEARCH, "curator_level_research"),
+            (CURATOR_LEVEL_FORGE, "curator_level_forge"),
+            (CURATOR_LEVEL_CONFORM, "curator_level_conform"),
+            (CURATOR_LEVEL_SWEEP, "curator_level_sweep"),
+            (CURATOR_DAILY_BUDGET_USD, "curator_daily_budget_usd"),
+            (CURATOR_DAILY_RUN_CAP, "curator_daily_run_cap"),
+            (CURATOR_DAILY_COMMIT_CAP, "curator_daily_commit_cap"),
+            (CURATOR_QUIET_HOURS, "curator_quiet_hours"),
+            (CURATOR_BACKPRESSURE_N, "curator_backpressure_n"),
+            (CURATOR_WORKER_CAP, "curator_worker_cap"),
+        ];
+        for (key, name) in all {
+            assert_eq!(key, name);
+            assert!(validate_key(key).is_ok(), "{key} is not registered");
+            assert_eq!(audit_category(key), Some("autonomy"), "{key}");
+            assert!(deprecated_replacement(key).is_none(), "{key}");
+            // A blank value is ABSENT, never malformed - it is how a field is
+            // cleared back to "no ceiling declared".
+            assert!(validate_value(key, "").is_ok(), "{key} must accept blank");
+            assert!(
+                validate_value(key, "   ").is_ok(),
+                "{key} must accept blank"
+            );
+        }
+
+        for key in [
+            CURATOR_LEVEL_RESEARCH,
+            CURATOR_LEVEL_FORGE,
+            CURATOR_LEVEL_CONFORM,
+            CURATOR_LEVEL_SWEEP,
+        ] {
+            for level in personas_core::models::CURATOR_DECISION_LEVELS {
+                assert!(validate_value(key, level).is_ok(), "{key} = {level}");
+            }
+            assert!(validate_value(key, "L4").is_err(), "{key} accepted L4");
+            assert!(
+                validate_value(key, "l0").is_err(),
+                "{key} accepted lowercase"
+            );
+            assert!(validate_value(key, "yes").is_err(), "{key} accepted prose");
+        }
+        assert_eq!(CURATOR_LEVEL_DEFAULT, "L0");
+        assert!(personas_core::models::CURATOR_DECISION_LEVELS.contains(&CURATOR_LEVEL_DEFAULT));
+
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "12.50").is_ok());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "0").is_ok());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "-1").is_err());
+        assert!(validate_value(CURATOR_DAILY_BUDGET_USD, "lots").is_err());
+
+        assert!(validate_value(CURATOR_DAILY_RUN_CAP, "20").is_ok());
+        assert!(validate_value(CURATOR_DAILY_RUN_CAP, "-2").is_err());
+        assert!(validate_value(CURATOR_DAILY_COMMIT_CAP, "3").is_ok());
+        assert!(validate_value(CURATOR_DAILY_COMMIT_CAP, "3.5").is_err());
+
+        // Backpressure and the worker cap are bounded BELOW at 1: a zero here
+        // would not be "no cap", it would be a companion that can never queue
+        // or never run, and the blank form above already says "unset".
+        assert!(validate_value(CURATOR_BACKPRESSURE_N, "8").is_ok());
+        assert!(validate_value(CURATOR_BACKPRESSURE_N, "0").is_err());
+        assert!(validate_value(
+            CURATOR_BACKPRESSURE_N,
+            &(CURATOR_BACKPRESSURE_N_MAX + 1).to_string()
+        )
+        .is_err());
+        assert!(validate_value(CURATOR_WORKER_CAP, "1").is_ok());
+        assert!(validate_value(CURATOR_WORKER_CAP, "0").is_err());
+        // The registry's own librarian caps a dispatch fan-out at 10; this app
+        // must not be able to exceed it.
+        assert_eq!(CURATOR_WORKER_CAP_MAX, 10);
+        assert!(validate_value(CURATOR_WORKER_CAP, "10").is_ok());
+        assert!(validate_value(CURATOR_WORKER_CAP, "11").is_err());
+
+        assert_eq!(CURATOR_BACKPRESSURE_N_DEFAULT, 8);
+        assert_eq!(CURATOR_WORKER_CAP_DEFAULT, 2);
+    }
+
+    /// Quiet hours stopped being free-form on 2026-09-24, when the reader that
+    /// old comment was waiting for landed. The validator and the reader must
+    /// accept exactly the same strings, so this asserts against the ONE parser
+    /// rather than against a restated grammar.
+    #[test]
+    fn a_quiet_window_must_be_one_the_reader_can_actually_read() {
+        for good in [
+            "22:00-07:00",
+            " 9:15 - 17:45 ",
+            "00:00-23:59",
+            "09:00-09:00",
+        ] {
+            assert!(validate_value(CURATOR_QUIET_HOURS, good).is_ok(), "{good}");
+            assert!(
+                personas_core::quiet_hours::parse(good.trim()).is_some(),
+                "the validator accepted {good:?} but the reader cannot read it"
+            );
+        }
+        // A blank still CLEARS the window - that is how "no quiet hours" is
+        // said, and it must not be confused with a malformed one.
+        assert!(validate_value(CURATOR_QUIET_HOURS, "").is_ok());
+        assert!(validate_value(CURATOR_QUIET_HOURS, "   ").is_ok());
+        // Each of these used to be accepted and would then have quieted
+        // nothing: a brake that silently does not take.
+        for bad in ["nights", "22:00", "25:00-07:00", "22:61-07:00", "10pm-7am"] {
+            assert!(
+                validate_value(CURATOR_QUIET_HOURS, bad).is_err(),
+                "{bad} should be refused at the door"
+            );
+        }
+    }
+
+    /// The sleep stamp is the loop's, not the operator's: registered, in the
+    /// autonomy audit category, and not part of `CuratorPolicy`.
+    #[test]
+    fn the_sleep_stamp_is_registered_and_free_form() {
+        assert_eq!(CURATOR_LAST_SLEEP_AT, "curator_last_sleep_at");
+        assert!(validate_key(CURATOR_LAST_SLEEP_AT).is_ok());
+        assert_eq!(audit_category(CURATOR_LAST_SLEEP_AT), Some("autonomy"));
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "2026-09-24T10:00:00Z").is_ok());
+        // Unparseable reads as "never slept", which makes her sleep rather
+        // than skip one - so the door has no reason to refuse it.
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "whenever").is_ok());
+        assert!(validate_value(CURATOR_LAST_SLEEP_AT, "").is_ok());
+    }
+
+    /// Her two standing-rung marks are the loop's too, and they are TWO keys:
+    /// one mark shared between the drain and the refill would let either
+    /// silence the other, which is the failure the pair was added to stop.
+    #[test]
+    fn the_standing_rung_marks_are_registered_and_distinct() {
+        assert_eq!(CURATOR_HARVEST_DRAIN_MARK, "curator_harvest_drain_mark");
+        assert_eq!(CURATOR_HARVEST_REFILL_MARK, "curator_harvest_refill_mark");
+        assert_ne!(CURATOR_HARVEST_DRAIN_MARK, CURATOR_HARVEST_REFILL_MARK);
+        for key in [CURATOR_HARVEST_DRAIN_MARK, CURATOR_HARVEST_REFILL_MARK] {
+            assert!(validate_key(key).is_ok(), "{key} must be registered");
+            assert_eq!(audit_category(key), Some("autonomy"), "{key}");
+            // A content digest has no grammar, and an absent mark arms the
+            // rung - so neither a hex string nor a blank is refusable. The
+            // sample is deliberately low-entropy hex: a realistic digest here
+            // trips the pre-commit gitleaks `generic-api-key` rule, and a test
+            // literal is not worth an allowlist entry.
+            assert!(validate_value(key, "aaaabbbbccccdddd").is_ok());
+            assert!(validate_value(key, "absent").is_ok());
+            assert!(validate_value(key, "").is_ok());
+        }
     }
 
     #[test]
@@ -2087,6 +2612,14 @@ mod tests {
         assert!(validate_value(ATTENTION_USAGE_STOP_PCT, "NaN").is_err());
         assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "0").is_ok());
         assert!(validate_value(ATTENTION_FLEET_START_MARGIN_PCT, "41").is_err());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":["p1"]}"#).is_ok());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":[]}"#).is_ok());
+        assert!(validate_value(ATTENTION_CODEX_MODE, r#"{"personas":"p1"}"#).is_err());
+        assert!(validate_value(
+            ATTENTION_CODEX_MODE,
+            r#"{"personas":["p1"],"effort":"hgih"}"#
+        )
+        .is_err());
         for key in [
             FLEET_AUTOPILOT_PACING,
             FLEET_AUTOPILOT_MAX_PARALLEL,

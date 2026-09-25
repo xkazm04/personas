@@ -363,6 +363,76 @@ pub async fn call_claude_outcome(
     }
 }
 
+pub async fn call_codex_outcome(
+    pool: &UserDbPool,
+    prompt: &str,
+    model: &str,
+    effort: &str,
+    leg: &str,
+    backstop: Duration,
+) -> Result<OneshotOutcome, AppError> {
+    let result = run_codex_oneshot(prompt, model, effort, leg, backstop).await;
+    match result {
+        Ok(run) => {
+            turn_ledger::record_cli_leg(
+                pool,
+                turn_ledger::ORIGIN_MAINTENANCE,
+                leg,
+                model,
+                run.usage,
+                false,
+            );
+            Ok(run.outcome)
+        }
+        Err(e) => {
+            turn_ledger::record_failed_leg(pool, turn_ledger::ORIGIN_MAINTENANCE, leg, model, &e);
+            Err(e)
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CliKind {
+    Claude,
+    Codex,
+}
+
+impl CliKind {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Claude => "claude",
+            Self::Codex => "codex",
+        }
+    }
+}
+
+async fn run_codex_oneshot(
+    prompt: &str,
+    model: &str,
+    effort: &str,
+    label: &str,
+    backstop: Duration,
+) -> Result<OneshotRun, AppError> {
+    let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
+    let (program, mut argv) =
+        crate::commands::fleet::headless::resolve_codex_launch().map_err(AppError::ProcessSpawn)?;
+    argv.extend([
+        "exec".into(),
+        "--json".into(),
+        "--skip-git-repo-check".into(),
+        "--sandbox".into(),
+        "read-only".into(),
+        "-C".into(),
+        cwd.to_string_lossy().to_string(),
+        "-m".into(),
+        model.into(),
+        "-c".into(),
+        format!("model_reasoning_effort={effort}"),
+    ]);
+    let cmd = piped_command(&program.to_string_lossy(), &argv, &cwd);
+    spawn_and_supervise(cmd, prompt, label, CliKind::Codex, backstop).await
+}
+
 /// What one maintenance leg produced: its outcome plus the terminal `result`
 /// event's usage (`None` when the CLI emitted none, which is what a crashed or
 /// very old CLI looks like).
@@ -420,9 +490,20 @@ async fn run_oneshot(
     cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
     // Subscription-only — never the API account.
     crate::engine::cli_process::force_subscription_auth(&mut cmd);
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| AppError::Internal(format!("spawn claude ({label}): {e}")))?;
+    spawn_and_supervise(cmd, prompt, label, CliKind::Claude, backstop).await
+}
+
+async fn spawn_and_supervise(
+    mut cmd: Command,
+    prompt: &str,
+    label: &str,
+    kind: CliKind,
+    backstop: Duration,
+) -> Result<OneshotRun, AppError> {
+    let mut child = cmd.spawn().map_err(|e| match kind {
+        CliKind::Claude => AppError::Internal(format!("spawn claude ({label}): {e}")),
+        CliKind::Codex => AppError::ProcessSpawn(format!("spawn codex ({label}): {e}")),
+    })?;
 
     if let Some(mut stdin) = child.stdin.take() {
         stdin
@@ -435,18 +516,19 @@ async fn run_oneshot(
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| AppError::Internal(format!("claude stdout missing ({label})")))?;
+        .ok_or_else(|| AppError::Internal(format!("{} stdout missing ({label})", kind.name())))?;
     let stderr = child
         .stderr
         .take()
-        .ok_or_else(|| AppError::Internal(format!("claude stderr missing ({label})")))?;
+        .ok_or_else(|| AppError::Internal(format!("{} stderr missing ({label})", kind.name())))?;
 
-    supervise(
+    supervise_kind(
         &mut child,
         stdout,
         stderr,
         label,
         Supervision::production(backstop),
+        kind,
     )
     .await
 }
@@ -459,12 +541,24 @@ async fn run_oneshot(
 ///
 /// Never returns while the child is still running: every exit path either
 /// observed stdout EOF or killed the child explicitly first.
+#[cfg(test)]
 async fn supervise(
     child: &mut Child,
     stdout: ChildStdout,
     stderr: ChildStderr,
     label: &str,
     rule: Supervision,
+) -> Result<OneshotRun, AppError> {
+    supervise_kind(child, stdout, stderr, label, rule, CliKind::Claude).await
+}
+
+async fn supervise_kind(
+    child: &mut Child,
+    stdout: ChildStdout,
+    stderr: ChildStderr,
+    label: &str,
+    rule: Supervision,
+    kind: CliKind,
 ) -> Result<OneshotRun, AppError> {
     let started = Instant::now();
     let deadline = started + rule.backstop;
@@ -510,6 +604,7 @@ async fn supervise(
     // The first stdout line that looks like an account usage cap. Kept verbatim
     // so `parse_usage_limit` sees exactly what the CLI wrote.
     let mut limit_line: Option<String> = None;
+    let mut codex_error: Option<String> = None;
     let mut reader = BufReader::new(stdout).lines();
 
     let mut probe = tokio::time::interval_at(started + rule.probe_interval, rule.probe_interval);
@@ -526,7 +621,9 @@ async fn supervise(
                     Ok(Some(line)) => {
                         touch(&last_line_ms);
                         stdout_lines += 1;
-                        if let Some(delta) = extract_assistant_text(&line) {
+                        if kind == CliKind::Codex {
+                            read_codex_line(&line, &mut assistant_text, &mut usage, &mut codex_error);
+                        } else if let Some(delta) = extract_assistant_text(&line) {
                             assistant_text.push_str(&delta);
                         }
                         // The terminal `result` event carries this leg's real
@@ -534,8 +631,10 @@ async fn supervise(
                         // reading it is what made every maintenance leg
                         // free-looking for 77 days. Same parser the tracked
                         // headless path feeds — one implementation, no drift.
-                        if let Some(u) = CliUsage::from_line(&line) {
+                        if kind == CliKind::Claude {
+                          if let Some(u) = CliUsage::from_line(&line) {
                             usage = Some(u);
+                          }
                         }
                         // The model's own words are never the provider's
                         // signal: an App Master that writes "the session limit
@@ -545,7 +644,7 @@ async fn supervise(
                         // 2026-09-09 because this scan read the assistant
                         // line. Only non-assistant stream lines (result,
                         // system, bare text) can carry the cap.
-                        if limit_line.is_none()
+                        if kind == CliKind::Claude && limit_line.is_none()
                             && line_can_carry_the_cap(&line)
                             && personas_engine::parser::is_session_limit_error(&line)
                         {
@@ -605,22 +704,38 @@ async fn supervise(
     let status = child
         .wait()
         .await
-        .map_err(|e| AppError::Internal(format!("await claude ({label}): {e}")))?;
+        .map_err(|e| AppError::Internal(format!("await {} ({label}): {e}", kind.name())))?;
     let stderr_text = stderr_buf.lock().await.clone();
 
     // A usage cap is checked BEFORE the exit code, because a capped CLI exits
     // non-zero and reporting it as "claude exited 1" is exactly the collapse
     // this outcome exists to prevent.
-    if let Some(pause) = detect_usage_limit(limit_line.as_deref(), &stderr_text, &assistant_text) {
-        return Ok(OneshotRun {
-            outcome: OneshotOutcome::UsageLimited(pause),
-            usage,
-        });
+    if kind == CliKind::Codex {
+        if let Some(error) = codex_error.as_deref() {
+            if let Some(pause) = codex_usage_limit(error) {
+                return Ok(OneshotRun {
+                    outcome: OneshotOutcome::UsageLimited(pause),
+                    usage,
+                });
+            }
+            return Err(AppError::External(format!("codex {label}: {error}")));
+        }
+    }
+    if kind == CliKind::Claude {
+        if let Some(pause) =
+            detect_usage_limit(limit_line.as_deref(), &stderr_text, &assistant_text)
+        {
+            return Ok(OneshotRun {
+                outcome: OneshotOutcome::UsageLimited(pause),
+                usage,
+            });
+        }
     }
 
     if !status.success() {
         return Err(AppError::Internal(format!(
-            "claude {label} exited {}: {}",
+            "{} {label} exited {}: {}",
+            kind.name(),
             status.code().map(|c| c.to_string()).unwrap_or("?".into()),
             stderr_text
         )));
@@ -644,6 +759,68 @@ async fn supervise(
         outcome: OneshotOutcome::Text(assistant_text),
         usage,
     })
+}
+
+fn read_codex_line(
+    line: &str,
+    assistant_text: &mut String,
+    usage: &mut Option<CliUsage>,
+    error: &mut Option<String>,
+) {
+    let Ok(event) = serde_json::from_str::<serde_json::Value>(line) else {
+        return;
+    };
+    match event.get("type").and_then(|v| v.as_str()) {
+        Some("item.completed")
+            if event.pointer("/item/type").and_then(|v| v.as_str()) == Some("agent_message") =>
+        {
+            if let Some(text) = event.pointer("/item/text").and_then(|v| v.as_str()) {
+                *assistant_text = text.to_string();
+            }
+        }
+        Some("turn.completed") => {
+            // codex emits `error` events for retries it then recovers from
+            // (a dropped stream, a reconnect); a turn that completed is the
+            // verdict, so an earlier transient error must not fail it.
+            *error = None;
+            if let Some(tokens) = event.get("usage") {
+                *usage = CliUsage::from_result_event(
+                    &serde_json::json!({"type":"result", "usage":tokens}),
+                );
+            }
+        }
+        Some("turn.failed" | "error") => {
+            *error = event
+                .pointer("/error/message")
+                .or_else(|| event.get("message"))
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+                .or_else(|| Some(line.to_string()));
+        }
+        _ => {}
+    }
+}
+
+fn codex_usage_limit(error: &str) -> Option<UsageLimitPause> {
+    let lower = error.to_ascii_lowercase();
+    if [
+        "rate limit",
+        "rate_limit",
+        "usage limit",
+        "quota",
+        "too many requests",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
+    {
+        Some(UsageLimitPause {
+            scope: personas_core::error_taxonomy::UsageLimitScope::Window,
+            resets_at: None,
+            detail: preview(error, 300),
+        })
+    } else {
+        None
+    }
 }
 
 /// Read a usage-limit pause out of whatever the call produced.
@@ -1113,6 +1290,51 @@ mod tests {
         ));
         // A short notice, arriving as the whole assistant text, still pauses.
         assert!(detect_usage_limit(None, "", "Claude AI usage limit reached|1736187600").is_some());
+    }
+
+    #[test]
+    fn codex_jsonl_uses_the_last_agent_message_and_terminal_usage() {
+        let fixture = concat!(
+            "{\"type\":\"thread.started\",\"thread_id\":\"t1\"}\n",
+            "{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"first\"}}\n",
+            "{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"last\"}}\n",
+            "{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":7,\"output_tokens\":3}}\n"
+        );
+        let (mut text, mut usage, mut error) = (String::new(), None, None);
+        for line in fixture.lines() {
+            read_codex_line(line, &mut text, &mut usage, &mut error);
+        }
+        assert_eq!(text, "last");
+        assert_eq!(usage.unwrap().input_tokens, Some(7));
+        assert!(error.is_none());
+    }
+
+    #[test]
+    fn codex_recovered_retry_error_does_not_fail_a_completed_turn() {
+        let (mut text, mut usage, mut error) = (String::new(), None, None);
+        for line in [
+            r#"{"type":"error","message":"stream disconnected - retrying turn (1/5)"}"#,
+            r#"{"type":"item.completed","item":{"type":"agent_message","text":"ok"}}"#,
+            r#"{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":1}}"#,
+        ] {
+            read_codex_line(line, &mut text, &mut usage, &mut error);
+        }
+        assert!(error.is_none());
+        assert_eq!(text, "ok");
+    }
+
+    #[test]
+    fn codex_usage_limit_classification_reads_provider_errors() {
+        let (mut text, mut usage, mut error) = (String::new(), None, None);
+        read_codex_line(
+            r#"{"type":"turn.failed","error":{"message":"Rate limit exceeded"}}"#,
+            &mut text,
+            &mut usage,
+            &mut error,
+        );
+        let pause = codex_usage_limit(error.as_deref().unwrap()).unwrap();
+        assert!(pause.resets_at.is_none());
+        assert!(codex_usage_limit("invalid model").is_none());
     }
 
     #[test]

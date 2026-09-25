@@ -15,7 +15,7 @@ evidence:
   - src/features/overview/sub_usage/components/LazyChart.tsx       # viewport-deferred mounting: one-shot observer, geometry-matched skeleton, reaper on unmount
   - src/features/overview/libs/metricIdentity.ts                   # registered metric-identity variants (id names surface+window+source) over one shared resolver
   - src/features/overview/libs/computeTrends.ts                    # one derivation source; returns null rather than fabricate a trend; avg-metric zero-baseline treated as no-sample
-  - src/features/overview/sub_director/directorScore.ts            # the declared-domain sparkline exemplar: fixed scale, its docstring states the doctrine
+  - src/features/companions/overseer/directorScore.ts            # the declared-domain sparkline exemplar: fixed scale, its docstring states the doctrine
   - src/features/teams/sub_kpis/kpiMath.ts                         # cross-language metric identity: declared mirror of the engine-side derivation
   - src-tauri/src/engine/kpi_derivation.rs                         # the other half of that mirror (comment-coupled, no shared-fixture gate — see report)
   - src/features/shared/glyph/types.ts                             # a fixed dimension vocabulary as an encoding language shared across surfaces

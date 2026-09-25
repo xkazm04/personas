@@ -148,7 +148,7 @@ export function ConnectorsSection({
                     <Plug className="w-3.5 h-3.5 text-foreground" />
                   </div>
                 )}
-                <span className="typo-body font-medium text-foreground flex-1 truncate">
+                <span className="typo-body text-foreground flex-1 truncate">
                   {item.connDef?.label || (isGeneral ? t.templates.design.general_tools : item.connector.name)}
                 </span>
                 {!isGeneral && (

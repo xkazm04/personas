@@ -80,6 +80,8 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     runId: null,
     contestId: null,
     contestProjectId: null,
+    remoteJobId: null,
+    originPeerId: null,
     ...partial,
   };
 }

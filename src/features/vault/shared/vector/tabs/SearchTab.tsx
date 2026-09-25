@@ -198,7 +198,7 @@ export function SearchTab({ kb }: SearchTabProps) {
           */}
           <Button
             variant="accent"
-            accentColor="violet"
+            tone="agent"
             icon={<ArrowRight className="w-3.5 h-3.5" />}
             loading={searching}
             disabled={!query.trim()}

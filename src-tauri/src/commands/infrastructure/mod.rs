@@ -18,6 +18,7 @@ pub mod context_declaration;
 pub mod context_fingerprints;
 pub mod context_generation;
 pub mod context_map_export;
+pub mod dev_registries;
 pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod dev_workspaces;

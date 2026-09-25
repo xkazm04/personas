@@ -121,7 +121,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     return (
       <span className={`inline-flex items-center gap-1 ${config.color}`} title={label}>
         <StatusIcon className="w-3.5 h-3.5" />
-        <span className="typo-caption font-medium">
+        <span className="typo-caption">
           {overall === 'ready'
             ? t.templates.connector_readiness.ready
             : overall === 'partial'
@@ -150,7 +150,7 @@ export function ConnectorReadiness({ statuses, compact = true, simplified = fals
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <StatusIcon className={`w-4 h-4 ${config.color}`} />
-        <span className="typo-body font-medium text-foreground/90">{label}</span>
+        <span className="typo-body text-foreground/90">{label}</span>
       </div>
       {statuses.map((status) => {
         const Icon = STATUS_ICON[status.health];

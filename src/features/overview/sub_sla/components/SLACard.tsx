@@ -31,7 +31,7 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
         {icon}
         <span className="typo-label font-mono opacity-80">{label}</span>
       </div>
-      <div className="typo-data-lg tabular-nums">{value}</div>
+      <div className="typo-data-lg">{value}</div>
       <div className="typo-caption opacity-60 mt-1">{sub}</div>
     </div>
   );
@@ -60,15 +60,15 @@ export function SlaMatrixTable({ rows, onSelectAgent }: {
       <table className="w-full border-separate border-spacing-0">
         <thead>
           <tr className="bg-primary/[0.03]">
-            <th className="px-3 py-2 text-left typo-caption font-semibold text-foreground">{sc.agent}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.success_rate}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.runs}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_avg_latency}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_p95_latency}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_cost}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_mtbf}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.auto_healed}</th>
-            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.streak}</th>
+            <th className="px-3 py-2 text-left typo-caption text-foreground">{sc.agent}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sla.success_rate}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sc.runs}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sla.metric_avg_latency}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sla.metric_p95_latency}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sla.metric_cost}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sla.metric_mtbf}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sc.auto_healed}</th>
+            <th className="px-2 py-2 text-center typo-caption text-foreground">{sc.streak}</th>
           </tr>
         </thead>
         <tbody>
@@ -86,10 +86,10 @@ export function SlaMatrixTable({ rows, onSelectAgent }: {
                 className={`hover:bg-primary/[0.03] transition-colors ${onSelectAgent ? 'cursor-pointer' : ''}`}
               >
                 <td className="px-3 py-1.5 align-middle border-t border-primary/[0.06]">
-                  <span className="typo-body font-medium text-foreground truncate block max-w-[200px]">{stats.persona_name}</span>
+                  <span className="typo-body text-foreground truncate block max-w-[200px]">{stats.persona_name}</span>
                 </td>
                 <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
-                  <span className={`typo-body tabular-nums font-semibold ${rateHealth.text}`}>{formatPercent(stats.success_rate)}</span>
+                  <span className={`typo-body tabular-nums ${rateHealth.text}`}>{formatPercent(stats.success_rate)}</span>
                 </td>
                 <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
                   <span className="typo-body tabular-nums text-foreground">{String(stats.total_executions)}</span>

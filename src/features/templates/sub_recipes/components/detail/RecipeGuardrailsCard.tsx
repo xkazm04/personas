@@ -84,7 +84,7 @@ function PolicyBlock({ icon: Icon, label, badge, body }: PolicyBlockProps) {
     <div className="min-w-0">
       <div className="flex items-center gap-1.5 mb-1.5">
         <Icon className="w-3.5 h-3.5 text-foreground shrink-0" />
-        <span className="typo-caption font-medium text-foreground">{label}</span>
+        <span className="typo-caption text-foreground">{label}</span>
         {badge && (
           <span className={`typo-label px-1.5 py-0.5 rounded border ${badge.cls}`}>
             {badge.label}
@@ -92,7 +92,7 @@ function PolicyBlock({ icon: Icon, label, badge, body }: PolicyBlockProps) {
         )}
       </div>
       {body && (
-        <p className="typo-caption text-foreground/90 leading-relaxed">{body}</p>
+        <p className="typo-caption text-foreground/90">{body}</p>
       )}
     </div>
   );

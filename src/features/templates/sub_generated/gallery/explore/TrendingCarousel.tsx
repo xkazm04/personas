@@ -40,11 +40,11 @@ export function TrendingCarousel({
               onClick={() => onSelectTemplate(tmpl)}
               className="w-[200px] p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 group-hover/trend:bg-emerald-500/10 transition-all text-left"
             >
-              <div className="typo-body font-medium text-foreground group-hover/trend:text-emerald-300 truncate pr-7">
+              <div className="typo-body text-foreground group-hover/trend:text-emerald-300 truncate pr-7">
                 {tmpl.test_case_name}
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="inline-flex items-center gap-1 typo-code font-mono text-emerald-400/70">
+                <span className="inline-flex items-center gap-1 typo-code text-emerald-400/70">
                   <Download className="w-2.5 h-2.5" />
                   {tmpl.adoption_count}
                 </span>

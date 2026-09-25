@@ -9,7 +9,7 @@ vi.mock('@/stores/systemStore', () => ({
 vi.mock('@/stores/overviewStore', () => ({
   useOverviewStore: (selector: (s: Record<string, unknown>) => unknown) => selector({}),
 }));
-vi.mock('@/features/plugins/companion/guidance/appActions', () => ({ openGoalsBoard: vi.fn() }));
+vi.mock('@/features/companions/athena/guidance/appActions', () => ({ openGoalsBoard: vi.fn() }));
 
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 

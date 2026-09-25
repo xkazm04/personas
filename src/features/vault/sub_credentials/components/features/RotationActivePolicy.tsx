@@ -129,7 +129,7 @@ export function RotationActivePolicy({
                   onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
                   min={1}
                   data-testid="rotation-days-input"
-                  className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none font-mono"
+                  className="w-16 px-2 py-1 bg-transparent typo-code text-foreground text-center focus-visible:outline-none"
                 />
               }
               data-testid="rotation-edit-presets"

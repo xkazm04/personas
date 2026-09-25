@@ -23,7 +23,7 @@ export function EditFormFields({
   const { t } = useTranslation();
   return (
     <div>
-      <h4 className="typo-heading font-semibold uppercase tracking-wider text-foreground mb-3">
+      <h4 className="typo-heading uppercase text-foreground mb-3">
         {t.vault.forms.credential_fields_heading}
       </h4>
       <div className="space-y-3">

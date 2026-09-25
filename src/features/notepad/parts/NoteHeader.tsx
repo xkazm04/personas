@@ -36,7 +36,7 @@ export function NoteHeader({ note, onRename, readOnly, className }: NoteHeaderPr
           onCommit={onRename}
           disabled={note.status === 'archived'}
           maxLength={120}
-          className="typo-title text-foreground"
+          className="typo-title"
           renameLabel={t.notepad.rename}
         />
         <span className="typo-caption text-foreground/60 flex items-center gap-1.5">

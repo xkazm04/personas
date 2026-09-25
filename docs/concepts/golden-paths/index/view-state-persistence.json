@@ -39,6 +39,14 @@
     "TimeRangeSelector.tsx": {"count":1,"sections":[],"lines":["3-6"],"contexts":["`ascent` puts it in the **URL** and says so (`TimeRangeSelector.tsx:3-6`: *\"URL-as-state keeps the"],"resolved":false},
     "ascent/src/lib/window.ts": {"count":1,"sections":[],"lines":["39-44"],"contexts":["- `ascent/src/lib/window.ts:39-44` — `parsePeriodCookie` returns null on an unknown range key."],"resolved":false},
     "cliSessionStore.ts": {"count":1,"sections":[],"lines":["418-489"],"contexts":["`cliSessionStore.ts:418-489` at `version: 9` with a nine-step chained migration ladder."],"resolved":false},
+    "companionStore.ts": {
+      "count": 1,
+      "sections": [9],
+      "contexts": [
+        "| **`raw-web-storage`** (72/186, `client-state-persistence`) | every `localStorage` / `sessionStorage` identifier in `src/**` | **The nearest neighbour by subject and it is structurally blind to this…"
+      ],
+      "resolved": false
+    },
     "dev_tools.rs": {"count":1,"sections":[12],"lines":["271-283"],"contexts":["— `dev_tools_get_active_project` (`dev_tools.rs:271-283`) resolves the remembered project id against"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[9],"contexts":["importantly, in the **`golden-path-census` pre-push job** (`lefthook.yml`). Deliberately **not**"]},
     "package.json": {"count":1,"sections":[],"contexts":["`autoSaveId` appear in **0 of 5** `package.json` files. `vibeman`'s `panelWidth` is *computed*"]},
@@ -74,6 +82,14 @@
       "contexts": ["resets in the whole tree (`OrbQuickInputBar.tsx:55`, `useDeckDialog.tsx:112`, and one inside"],
       "resolvedFrom": "basename",
       "verbatim": "useDeckDialog.tsx"
+    },
+    "src/features/companions/athena/orb/OrbQuickInputBar.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["55"],
+      "contexts": ["resets in the whole tree (`OrbQuickInputBar.tsx:55`, `useDeckDialog.tsx:112`, and one inside"],
+      "resolvedFrom": "basename",
+      "verbatim": "OrbQuickInputBar.tsx"
     },
     "src/features/fleet/monitor/channels/ConversationComposer.tsx": {
       "count": 6,
@@ -127,23 +143,6 @@
       "verbatim": "overview/sub_incidents/libs/incidentFilterDefaults.ts"
     },
     "src/features/personas/PersonasPage.tsx": {"count":1,"sections":[],"contexts":["`stores/slices/system/devToolsProjectSlice.ts`, `personas/PersonasPage.tsx`,"],"resolvedFrom":"suffix","verbatim":"personas/PersonasPage.tsx"},
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 1,
-      "sections": [9],
-      "contexts": [
-        "| **`raw-web-storage`** (72/186, `client-state-persistence`) | every `localStorage` / `sessionStorage` identifier in `src/**` | **The nearest neighbour by subject and it is structurally blind to this…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "companionStore.ts"
-    },
-    "src/features/plugins/companion/orb/OrbQuickInputBar.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["55"],
-      "contexts": ["resets in the whole tree (`OrbQuickInputBar.tsx:55`, `useDeckDialog.tsx:112`, and one inside"],
-      "resolvedFrom": "basename",
-      "verbatim": "OrbQuickInputBar.tsx"
-    },
     "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx": {
       "count": 1,
       "sections": [7],

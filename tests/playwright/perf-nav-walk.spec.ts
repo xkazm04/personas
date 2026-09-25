@@ -131,7 +131,6 @@ const STOPS: NavStop[] = [
 
   // Plugin tabs (setPluginTab + navigate('plugins'))
   { id: 'plugins/browse',         group: 'plugins', description: 'Plugin browse page',         setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'browse' }); } },
-  { id: 'plugins/companion',      group: 'plugins', description: 'Companion plugin page',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'companion' }); } },
   { id: 'plugins/dev-tools',      group: 'plugins', description: 'Dev tools plugin',           setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'dev-tools' }); } },
   { id: 'plugins/obsidian-brain', group: 'plugins', description: 'Obsidian Brain plugin',      setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'obsidian-brain' }); } },
   { id: 'plugins/drive',          group: 'plugins', description: 'Drive plugin',               setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'drive' }); } },

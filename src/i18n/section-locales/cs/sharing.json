@@ -287,5 +287,8 @@
   "verifying_bundle": "Ověřování balíčku…",
   "verifying_enclave": "Ověřování enklávy…",
   "view_details": "Zobrazit detaily",
-  "your_identity": "Tvoje identita"
+  "your_identity": "Tvoje identita",
+  "job_kind_fleet_session": "Relace Fleet",
+  "job_kind_instruction": "Instrukce",
+  "job_receipt_title": "Vrácená práce"
 }

@@ -179,7 +179,7 @@ export function AmbientContextPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-blue-400" />
-          <h3 className="typo-body font-medium text-foreground">{s.title}</h3>
+          <h3 className="typo-body text-foreground">{s.title}</h3>
         </div>
         <AccessibleToggle
           checked={ambientEnabled}
@@ -210,7 +210,7 @@ export function AmbientContextPanel() {
       {ambientEnabled && ambientSnapshot && (
         <div className="border border-primary/10 rounded-card bg-secondary/20 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="typo-caption font-medium text-foreground">{s.live_context}</span>
+            <span className="typo-caption text-foreground">{s.live_context}</span>
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <span>{tx(s.total_signals, { count: Number(ambientSnapshot.totalSignalsCaptured) })}</span>
               <button
@@ -265,7 +265,7 @@ export function AmbientContextPanel() {
       {ambientEnabled && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="typo-caption font-medium text-foreground">{s.sensory_policy}</span>
+            <span className="typo-caption text-foreground">{s.sensory_policy}</span>
             <button
               type="button"
               onClick={handleReset}
@@ -299,7 +299,7 @@ export function AmbientContextPanel() {
 
           {/* Focus App Filter */}
           <div className="space-y-1.5">
-            <span className="typo-caption font-medium text-foreground">{s.focus_filter}</span>
+            <span className="typo-caption text-foreground">{s.focus_filter}</span>
             <p className="typo-caption text-foreground">
               {s.focus_filter_hint}
             </p>
@@ -349,7 +349,7 @@ export function AmbientContextPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="typo-caption font-medium text-foreground">{s.context_rules}</span>
+              <span className="typo-caption text-foreground">{s.context_rules}</span>
             </div>
             <button
               type="button"
@@ -479,7 +479,7 @@ export function AmbientContextPanel() {
                   <div className="flex items-center gap-2 min-w-0">
                     <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-foreground'}`} />
                     <div className="min-w-0">
-                      <span className="typo-caption font-medium text-foreground block truncate">{rule.name}</span>
+                      <span className="typo-caption text-foreground block truncate">{rule.name}</span>
                       <span className="typo-caption text-foreground block truncate">
                         {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : s.all_sources}
                         {rule.pattern.summaryContains && ` / "${rule.pattern.summaryContains}"`}

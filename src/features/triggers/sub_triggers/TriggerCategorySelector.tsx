@@ -22,7 +22,7 @@ export function TriggerCategorySelector({
   const categories = useMemo(() => getTriggerCategories(t), [t]);
   return (
     <div>
-      <label className="block typo-body font-medium text-foreground mb-1.5">
+      <label className="block typo-body text-foreground mb-1.5">
         {t.triggers.category_section_label}
       </label>
       <div className="grid grid-cols-2 gap-2">
@@ -46,7 +46,7 @@ export function TriggerCategorySelector({
             >
               <div className="flex items-center gap-2">
                 <CatIcon className={`w-4 h-4 ${cat.color}`} />
-                <span className="typo-heading font-semibold text-foreground/90">{cat.label}</span>
+                <span className="typo-heading text-foreground/90">{cat.label}</span>
                 <span className="ml-auto typo-caption text-foreground">{cat.types.length}</span>
               </div>
               <span className="typo-caption text-foreground">{cat.description}</span>
@@ -68,7 +68,7 @@ export function TriggerCategorySelector({
         >
           <div className="flex items-center gap-2">
             {(() => { const ManualIcon = TRIGGER_TYPE_META.manual?.Icon ?? Zap; return <ManualIcon className="w-4 h-4 text-emerald-400" />; })()}
-            <span className="typo-heading font-semibold text-foreground/90">{t.triggers.category_manual}</span>
+            <span className="typo-heading text-foreground/90">{t.triggers.category_manual}</span>
           </div>
           <span className="typo-caption text-foreground">{t.triggers.category_manual_hint}</span>
         </button>

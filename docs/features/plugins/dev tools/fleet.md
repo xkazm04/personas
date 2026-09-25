@@ -526,6 +526,38 @@ Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pai
 
 All of the above are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview/reply/alert/pairing strings).
 
+## Run on another device
+
+A fleet session can run on one of the operator's other **paired devices**
+instead of this one (pairing: Settings → Devices, documented in
+[Sharing → Devices](../../sharing/README.md#devices-run-a-session-on-another-device)).
+
+- **The doors.** The universal dispatch chooser (`DispatchChooser`) and the
+  Monitor's dispatch dock (`QuickDispatchDock`) carry a **Run on** picker:
+  **This machine** plus every paired device with a reachability dot. It is
+  hidden when the build has no p2p or nothing is paired. The Fleet page's own
+  spawn modal does not carry it; that would be a second door to the same thing.
+- **Transports.** On another device the **Fleet** method runs an interactive
+  session and **Claude CLI** a headless one. The dev runner and the console
+  exist only on this machine and are disabled with the reason. From the dock a
+  remote dispatch always runs headless; the model and effort presets are this
+  machine's and do not travel.
+- **What the other machine does.** It admits the session through its own
+  dispatch queue with origin `remote` (the node's origin symbol is a laptop,
+  and it reads **From <device>**), on a fresh branch the asking device minted
+  (`remote/<peer>/<job>`). When the session ends it pushes the branch if it
+  has commits, and reports the pushed SHA from `git ls-remote`, never from the
+  model's own account. The asking device then fetches the branch and marks the
+  receipt verified, not found, or could-not-verify.
+- **Requirements.** The project needs a git remote (the work comes back as a
+  pushed branch; without one every device is disabled), and the other machine
+  needs the same project registered, matched by git remote first. A device
+  that is offline still takes the dispatch: it waits in this machine's outbox
+  and goes out when the link comes back.
+- **Watching and steering.** From here the session is a remote tile on the
+  Monitor's Activity board, with a read-only terminal mirror and three steering
+  verbs (send input, wake, kill); see [Monitor → Remote sessions](../../monitor.md#remote-sessions).
+
 ## Terminal experience
 
 The session terminals are rendered with **xterm.js**, but the xterm instances are no longer owned by the React pane. They live in a singleton **terminal manager** (`fleetTerminalManager.ts`, parked on `globalThis` so HMR doesn't reset them), keyed by session id. `FleetTerminalPane` is a thin **mount point** that *attaches* a session's terminal into its container on mount and *detaches* (never disposes) on unmount.

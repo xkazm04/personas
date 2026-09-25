@@ -84,7 +84,7 @@ function FacetRow({
       {dot && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />}
       {dotColor && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />}
       <span
-        className={`typo-caption truncate ${on ? 'text-foreground font-medium' : 'text-foreground opacity-60'} ${color ? 'font-mono' : ''}`}
+        className={`typo-caption truncate ${on ? 'text-foreground' : 'text-foreground opacity-60'} ${color ? 'font-mono' : ''}`}
         style={color ? { color } : undefined}
       >
         {label}
@@ -216,8 +216,8 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
         <div className="w-6 h-6 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
           <Radio className="w-3.5 h-3.5 text-status-error" />
         </div>
-        <span className="typo-body font-semibold text-foreground">{t.monitor.stream_title}</span>
-        <span className="typo-data text-foreground tabular-nums">
+        <span className="typo-body text-foreground">{t.monitor.stream_title}</span>
+        <span className="typo-data text-foreground">
           {visible.length}
           {visible.length !== rows.length && <span className="opacity-40"> / {rows.length}</span>}
         </span>
@@ -276,7 +276,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 flex-shrink-0 text-foreground ${on ? '' : 'opacity-50'}`} />
-                  <span className={`typo-caption text-foreground ${on ? 'font-medium' : 'opacity-60'}`}>
+                  <span className={`typo-caption text-foreground ${on ? '' : 'opacity-60'}`}>
                     {t.monitor[KIND_META[k].labelKey]}
                   </span>
                   <span className="ml-auto typo-caption tabular-nums text-foreground opacity-50">
@@ -297,7 +297,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   onClick={() => setMemoryMode(m)}
                   aria-pressed={lens.memoryMode === m}
                   className={`w-full px-2 py-1 rounded-interactive text-left typo-caption capitalize text-foreground transition-colors ${
-                    lens.memoryMode === m ? 'bg-primary/12 font-medium' : 'opacity-60 hover:bg-secondary/30'
+                    lens.memoryMode === m ? 'bg-primary/12' : 'opacity-60 hover:bg-secondary/30'
                   }`}
                 >
                   {m === 'diff'
@@ -314,7 +314,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
               only the loaded window — they narrow rows already fetched. Different
               numbers meaning different things is exactly the kind of quiet lie
               this rail exists to avoid, so it says which is which. */}
-          <p className="px-2 pb-1.5 typo-caption text-foreground opacity-40 leading-snug">
+          <p className="px-2 pb-1.5 typo-caption text-foreground opacity-40">
             {t.monitor.stream_facet_scope_note}
           </p>
 

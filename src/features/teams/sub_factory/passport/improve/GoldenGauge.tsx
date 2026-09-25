@@ -18,7 +18,7 @@ export function GoldenGauge({ passport }: { passport: AppPassport }) {
         <span className="relative flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--foreground) 9%, transparent)' }}>
           <span className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500" style={{ width: `${r.goldenPct}%`, background: tint.hex }} />
         </span>
-        <span className={`typo-caption tabular-nums font-semibold leading-none ${tint.text} flex-shrink-0`}>{r.goldenPct}%</span>
+        <span className={`typo-caption tabular-nums ${tint.text} flex-shrink-0`}>{r.goldenPct}%</span>
         {r.belowTarget.length > 0 && (
           <span className="typo-label text-foreground/40 flex-shrink-0">· {r.belowTarget.length}&nbsp;below</span>
         )}

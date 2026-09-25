@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { silentCatch } from '@/lib/silentCatch';
 import { webbuildListRoutes } from '@/api/webbuild';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 import { useStudioStore } from './studioStore';
 import { previewTargetOrigin } from './studioBuildModel';
 
@@ -205,7 +205,7 @@ export function useStudioPreview() {
   // Fly Athena's global orb to the element a precise decision is about. The
   // element's rect is in the iframe's viewport; add the iframe's screen offset.
   useEffect(() => {
-    const setTarget = useCompanionStore.getState().setOrbGuideTarget;
+    const setTarget = useAthenaStore.getState().setOrbGuideTarget;
     if (active?.question && pointerRect) {
       const iframe = document.querySelector<HTMLIFrameElement>(`iframe[data-tab="${CSS.escape(activeId ?? '')}"]`);
       const ir = iframe?.getBoundingClientRect();
@@ -213,7 +213,7 @@ export function useStudioPreview() {
     } else {
       setTarget(null);
     }
-    return () => useCompanionStore.getState().setOrbGuideTarget(null);
+    return () => useAthenaStore.getState().setOrbGuideTarget(null);
   }, [activeId, active?.question, pointerRect]);
 
   const reloadActive = useCallback(() => {

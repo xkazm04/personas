@@ -292,6 +292,16 @@
       "resolvedFrom": "basename",
       "verbatim": "PersonaChangeHistory.tsx"
     },
+    "src/features/companions/athena/AthenaActionsStrip.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["17"],
+      "contexts": [
+        "| `fleet_decisions` | **46** | **none.** `fleet_decisions::recent(pool, limit)` is documented *\"Recent decisions, newest first — for an observability surface\"* and has **zero callers**; no Tauri comm…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "AthenaActionsStrip.tsx"
+    },
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 7,
       "sections": [0,5,7,12],
@@ -319,26 +329,6 @@
       "verbatim": "ReviewDetailPanel.tsx"
     },
     "src/features/overview/sub_manual-review/libs/reviewHelpers.ts": {"count":2,"sections":[0,7],"lines":["79-80","75-87"],"contexts":["The reader, `src/features/overview/sub_manual-review/libs/reviewHelpers.ts:79-80`:"]},
-    "src/features/plugins/companion/AthenaActionsStrip.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["17"],
-      "contexts": [
-        "| `fleet_decisions` | **46** | **none.** `fleet_decisions::recent(pool, limit)` is documented *\"Recent decisions, newest first — for an observability surface\"* and has **zero callers**; no Tauri comm…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AthenaActionsStrip.tsx"
-    },
-    "src/features/plugins/companion/useFleetCompanionBridge.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["150"],
-      "contexts": [
-        "| `fleet_decisions` | **46** | **none.** `fleet_decisions::recent(pool, limit)` is documented *\"Recent decisions, newest first — for an observability surface\"* and has **zero callers**; no Tauri comm…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useFleetCompanionBridge.ts"
-    },
     "src/features/plugins/gitlab/components/GitOpsVersionHistory.tsx": {
       "count": 4,
       "sections": [5,6,7,9],
@@ -431,6 +421,15 @@
       "verbatim": "healingSlice.ts"
     },
     "sub_hypotheses/HypothesesPanel.tsx": {"count":1,"sections":[7],"lines":["162"],"contexts":["`sub_hypotheses/HypothesesPanel.tsx:162` — `{f.generatedBy && …}`: the provenance of a"],"resolved":false},
+    "useFleetCompanionBridge.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["150"],
+      "contexts": [
+        "| `fleet_decisions` | **46** | **none.** `fleet_decisions::recent(pool, limit)` is documented *\"Recent decisions, newest first — for an observability surface\"* and has **zero callers**; no Tauri comm…"
+      ],
+      "resolved": false
+    },
     "vibeman/preferenceLearning.ts": {
       "count": 1,
       "sections": [6],

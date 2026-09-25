@@ -253,7 +253,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
             </>
           )}
           <ConfidenceArc value={confidencePct} />
-          <span className="typo-code font-mono text-foreground w-8 text-right">{confidencePct}%</span>
+          <span className="typo-code text-foreground w-8 text-right">{confidencePct}%</span>
           <motion.div
             animate={{ rotate: expanded ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}

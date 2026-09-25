@@ -186,7 +186,7 @@ export function SelfHealingPanel({
           {autoFixable.length > 0 && (
             <Button
               variant="accent"
-              accentColor="amber"
+              tone="warning"
               size="sm"
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={handleHealAll}

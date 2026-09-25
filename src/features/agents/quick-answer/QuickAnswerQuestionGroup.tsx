@@ -65,7 +65,7 @@ export function QuickAnswerQuestionGroup({
     >
       <div className="flex items-center gap-2">
         <PersonaIcon icon={group.personaIcon} color={group.personaColor} display="framed" frameSize="sm" />
-        <span className="typo-body font-semibold text-foreground truncate min-w-0">
+        <span className="typo-body text-foreground truncate min-w-0">
           {tx(t.monitor.quick_building, { persona: group.personaName })}
         </span>
       </div>
@@ -112,7 +112,7 @@ function SimpleQuestion({
   const options = question.options ?? [];
   return (
     <div className="flex flex-col gap-2">
-      <p className="typo-body text-foreground leading-snug">{question.question}</p>
+      <p className="typo-body text-foreground">{question.question}</p>
       {options.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {options.map((opt, i) => (
@@ -123,7 +123,7 @@ function SimpleQuestion({
               aria-pressed={value === opt}
               className={`px-3 py-1.5 rounded-interactive border typo-body transition-colors ${
                 value === opt
-                  ? 'bg-primary/25 border-primary/50 text-foreground font-medium'
+                  ? 'bg-primary/25 border-primary/50 text-foreground'
                   : 'bg-primary/10 border-card-border text-foreground/85 hover:bg-primary/20 hover:text-foreground'
               }`}
             >
@@ -148,7 +148,7 @@ function ComplexQuestion({ question, onOpen }: { question: BuildQuestion; onOpen
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1.5 rounded-input border border-card-border/70 bg-secondary/20 p-2.5">
-      <p className="typo-body text-foreground leading-snug flex items-start gap-1.5">
+      <p className="typo-body text-foreground flex items-start gap-1.5">
         <HelpCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-foreground" />
         {question.question}
       </p>

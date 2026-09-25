@@ -79,7 +79,7 @@ export function ManifestTab({ personaId }: { personaId: string }) {
     <div className="space-y-5 pb-10" data-testid="manifest-tab">
       <header className="max-w-3xl space-y-1 border-b border-primary/10 pb-3">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="typo-title text-foreground inline-flex items-center gap-2">
+          <h2 className="typo-title inline-flex items-center gap-2">
             <ScrollText className="w-4 h-4 text-primary" />
             {m.title}
           </h2>
@@ -137,7 +137,7 @@ export function ManifestTab({ personaId }: { personaId: string }) {
         >
           {orphans.length > 0 && (
             <section className="space-y-2 pt-2" data-testid="manifest-orphan-proposals">
-              <h3 className="typo-section-title text-foreground">{m.orphan_title}</h3>
+              <h3 className="typo-section-title">{m.orphan_title}</h3>
               <p className="typo-caption text-foreground">{m.orphan_body}</p>
               {orphans.map(({ proposal, previews }) => (
                 <ManifestProposalCard

@@ -148,7 +148,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
         <Suspense fallback={<div className="w-36 h-36 mb-2" />}>
           <GoalsEmptyGlyph />
         </Suspense>
-        <h3 className="typo-section-title text-foreground">{dl.timeline_no_dated}</h3>
+        <h3 className="typo-section-title">{dl.timeline_no_dated}</h3>
         <p className="typo-body text-foreground mt-1 max-w-md">{dl.timeline_no_dated_sub}</p>
       </div>
     );

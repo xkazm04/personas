@@ -47,6 +47,7 @@
       ],
       "resolved": false
     },
+    "DecisionsPanel.tsx": {"count":2,"sections":[7,9],"lines":["55"],"contexts":["`DecisionsPanel.tsx:55` · `HeroHeader.tsx:97` ·"],"resolved":false},
     "DisputeBench.tsx": {"count":2,"sections":[4],"contexts":["(`Observatory.tsx`, `DisputeBench.tsx`) have no `<h1>` at all, purely because"],"resolved":false},
     "DriveFileList.tsx": {
       "count": 1,
@@ -167,7 +168,6 @@
       "resolvedFrom": "basename",
       "verbatim": "sectionRouter.tsx"
     },
-    "src/features/plugins/companion/sub_decisions/DecisionsPanel.tsx": {"count":2,"sections":[7,9],"lines":["55"],"contexts":["`DecisionsPanel.tsx:55` · `HeroHeader.tsx:97` ·"],"resolvedFrom":"basename","verbatim":"DecisionsPanel.tsx"},
     "src/features/plugins/dev-tools/DevToolsPageHeader.tsx": {
       "count": 2,
       "sections": [7],

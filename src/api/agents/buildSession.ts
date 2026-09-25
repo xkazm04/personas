@@ -16,6 +16,7 @@ import type {
 } from "@/lib/types/buildTypes";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { SimulationArtefacts } from "@/lib/bindings/SimulationArtefacts";
+import type { PromotePreview } from "@/lib/bindings/PromotePreview";
 
 /**
  * Start a new build session for a persona. Returns the session ID.
@@ -218,6 +219,24 @@ export async function promoteBuildDraft(
   excludedUseCaseIds?: string[],
 ): Promise<PromoteBuildResult> {
   return invokeWithTimeout<PromoteBuildResult>("promote_build_draft", {
+    sessionId,
+    personaId,
+    excludedUseCaseIds: excludedUseCaseIds ?? null,
+  });
+}
+
+/**
+ * Read-only promote preview: runs the same preparation promote runs and
+ * reports which triggers it would arm (and when they first fire), which
+ * connectors still block, what the design-pass hygiene repaired, and the
+ * refusal when promote would refuse the draft. Writes nothing.
+ */
+export async function previewPromoteBuildDraft(
+  sessionId: string,
+  personaId: string,
+  excludedUseCaseIds?: string[],
+): Promise<PromotePreview> {
+  return invokeWithTimeout<PromotePreview>("preview_promote_build_draft", {
     sessionId,
     personaId,
     excludedUseCaseIds: excludedUseCaseIds ?? null,

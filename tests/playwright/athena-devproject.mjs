@@ -27,7 +27,7 @@ const frag = REPO_PATH.split(/[\\/]/).filter(Boolean).pop();
   console.log('app alive at', BASE, '| repo frag:', frag);
 
   await ev('location.reload()'); await sleep(9000);
-  // open Athena's chat panel (the real CompanionPanel overlay, not the plugins tab)
+  // open Athena's chat panel (the real AthenaChatPanel overlay, not the plugins tab)
   const nav = await ev(`(()=>{try{return JSON.stringify(window.__TEST__.openCompanion())}catch(e){return 'ERR '+e.message}})()`);
   await sleep(2000);
   console.log('companion panel present:', await exists('[data-testid="companion-panel"]'), '| open:', JSON.stringify(nav).slice(0, 60));

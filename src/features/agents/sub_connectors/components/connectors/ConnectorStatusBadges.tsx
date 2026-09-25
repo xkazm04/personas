@@ -30,7 +30,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
           <div className="mt-3 border border-primary/10 rounded-card bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
               <>
-                <p className="px-3 py-1.5 typo-heading font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
+                <p className="px-3 py-1.5 typo-heading text-foreground uppercase border-b border-primary/10">{t.agents.connectors.st_best_match}</p>
                 {matchingCreds.map((cred) => (
                   <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/40 transition-colors border-b border-primary/10 last:border-0">
@@ -46,7 +46,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
             {otherCreds.length > 0 && (
               <>
                 {matchingCreds.length > 0 && (
-                  <p className="px-3 py-1.5 typo-heading font-semibold text-foreground uppercase tracking-wider border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
+                  <p className="px-3 py-1.5 typo-heading text-foreground uppercase border-b border-primary/10">{t.agents.connectors.st_other_creds}</p>
                 )}
                 {otherCreds.map((cred) => (
                   <button type="button" key={cred.id} onClick={() => onLinkCredential(status.name, cred.id, cred.name)}

@@ -27,7 +27,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
       <div className="p-4 rounded-modal border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent space-y-3">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-orange-400" />
-          <h4 className="typo-heading font-semibold text-foreground">
+          <h4 className="typo-heading text-foreground">
             {dd.permission_required}
           </h4>
         </div>
@@ -54,7 +54,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
                   }`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="typo-caption font-medium text-foreground">{caps[info.labelKey]}</p>
+                  <p className="typo-caption text-foreground">{caps[info.labelKey]}</p>
                   <p className="typo-caption text-foreground">{caps[info.descriptionKey]}</p>
                 </div>
                 <span
@@ -84,7 +84,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 px-3 py-1.5 typo-caption font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
+            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
           >
             {t.common.cancel}
           </button>
@@ -97,7 +97,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
             // theme-aware text-foreground would render dark-on-orange on
             // light theme — passing WCAG but visually weaker. Keep until a
             // text-foreground-on-primary token lands.
-            className="flex-1 px-3 py-1.5 typo-caption font-medium text-foreground bg-orange-500 rounded-card hover:bg-orange-600 transition-colors disabled:opacity-50"
+            className="flex-1 px-3 py-1.5 typo-caption text-foreground bg-orange-500 rounded-card hover:bg-orange-600 transition-colors disabled:opacity-50"
           >
             {approving ? (
               <LoadingSpinner size="sm" className="mx-auto" />

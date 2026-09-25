@@ -75,7 +75,7 @@ export function BacklogDetailLedger({
             {idea.origin && <FindingBadge origin={idea.origin} evidence={idea.evidence} />}
             <VerdictChip verifyState={idea.verifyState} />
           </div>
-          <h2 id="backlog-detail" className="typo-title-lg text-foreground max-w-[68ch]">
+          <h2 id="backlog-detail" className="typo-title-lg max-w-[68ch]">
             {idea.title}
           </h2>
         </div>
@@ -128,10 +128,10 @@ export function BacklogDetailLedger({
               {idea.description ? (
                 <MarkdownRenderer
                   content={idea.description}
-                  className="typo-body-lg text-foreground leading-relaxed"
+                  className="typo-body-lg text-foreground"
                 />
               ) : (
-                <p className="typo-body-lg text-foreground leading-relaxed">
+                <p className="typo-body-lg text-foreground">
                   {r.backlog_no_description}
                 </p>
               )}
@@ -143,7 +143,7 @@ export function BacklogDetailLedger({
                 </span>
                 <MarkdownRenderer
                   content={idea.reasoning}
-                  className="typo-body text-foreground/90 leading-relaxed"
+                  className="typo-body text-foreground/90"
                 />
               </div>
             )}

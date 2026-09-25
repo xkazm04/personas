@@ -91,12 +91,12 @@ pub(super) fn render_paired_devices(devices: &[PairedDeviceRow]) -> String {
         return String::new();
     }
     let mut block = BoundedBlock::new(
-        "\n\n# Paired devices (remote_instruct targets)\n\n\
+        "\n\n# Paired devices (remote_instruct / remote_fleet_dispatch targets)\n\n\
          The user's OTHER Personas installs. Name one by the exact name shown; \
          never invent one. Omitting `device` means the home device, which is \
          the right default unless the work belongs on a specific machine. \
-         `unreachable` means it is not on the network right now — say that \
-         rather than proposing to send it work.\n\n",
+         `unreachable` means it is not on the network right now: work sent \
+         there is queued until it wakes, so say that rather than \"sent\".\n\n",
         DEVICE_CHAR_BUDGET,
         DEVICE_FOOTER_RESERVE,
     );

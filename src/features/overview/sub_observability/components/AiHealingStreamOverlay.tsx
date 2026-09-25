@@ -120,7 +120,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               <Stethoscope className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
             )}
           </div>
-          <span className="typo-heading text-foreground/90 uppercase tracking-widest typo-body">
+          <span className="typo-heading text-foreground/90 uppercase typo-body">
             <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
           </span>
           {isDone && elapsed > 0 && (
@@ -188,7 +188,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                       <div className={`w-6 h-6 rounded-card border flex items-center justify-center transition-colors ${dotClass} ${isCurrent ? 'animate-pulse' : ''}`}>
                         <Icon className="w-3 h-3" />
                       </div>
-                      <span className={`typo-caption font-medium tracking-wide ${labelClass}`}>
+                      <span className={`typo-caption tracking-wide ${labelClass}`}>
                         {step.label}
                       </span>
                     </div>
@@ -211,7 +211,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {/* Fixes applied */}
           {healing.fixesApplied.length > 0 && (
             <div className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/15 typo-body space-y-1">
-              <span className="font-medium text-emerald-400 typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
+              <span className="text-emerald-400 typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
               {healing.fixesApplied.map((fix, i) => (
                 <div key={i} className="flex items-start gap-2 text-emerald-300/80">
                   <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -228,7 +228,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-secondary/80 to-transparent backdrop-blur-sm z-10 rounded-t-card pointer-events-none" />
               <div
                 ref={logRef}
-                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code leading-relaxed text-foreground scroll-smooth"
+                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code text-foreground scroll-smooth"
               >
                 {healing.lines.map((line, i) => (
                   <div key={i} className="whitespace-pre-wrap break-all">

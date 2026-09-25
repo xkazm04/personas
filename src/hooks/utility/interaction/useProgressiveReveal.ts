@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 
 /**
  * useProgressiveReveal — spread the *mounting* of an already-fetched list
@@ -174,14 +175,39 @@ export function useProgressiveReveal(
 }
 
 /**
+ * Surface-scoped entrance seen-sets that outlive the mount, keyed by
+ * `surfaceKey` + `resetKey`. Bounded: at most 64 surfaces resident (least
+ * recently created evicted first), each capped at {@link MAX_SEEN_IDS} ids
+ * (oldest dropped first), so an infinite-scroll feed cannot grow it without end.
+ */
+const SURFACE_SEEN = createModuleCache<string, Set<string>>({ maxSize: 64 });
+const MAX_SEEN_IDS = 2000;
+
+function surfaceSeenKey(surfaceKey: string, resetKey: string | number | undefined): string {
+  return `${surfaceKey}::${resetKey ?? ''}`;
+}
+
+/**
  * Companion to {@link useProgressiveReveal} for per-item entrance animations.
  *
- * Tracks which item ids have already played their entrance in a ref-backed Set
- * that survives virtualized row unmount/remount (so scrolling never re-triggers
- * the fade) and clears when `resetKey` changes (a filter/view switch replays
- * the cascade). Pair with the shared `RevealItem` component.
+ * Tracks which item ids have already played their entrance, so scrolling a
+ * virtualized list never re-triggers the fade, and clears when `resetKey`
+ * changes (a filter/view switch replays the cascade). Pair with the shared
+ * `RevealItem` component.
+ *
+ * Where the seen-set lives:
+ * - Without `surfaceKey` (the default): a per-mount ref. It dies with the
+ *   component, so a surface that unmounts on navigation replays its cascade on
+ *   every return.
+ * - With `surfaceKey`: a module-scoped set per `surfaceKey` + `resetKey`, so
+ *   returning to the same surface plays no cascade for ids it already showed,
+ *   while a genuinely new id still enters alone. Pass the identity of "where
+ *   you are" (a table id, a scroll-restore key), never a per-mount value.
+ *
+ * Reduced motion is unaffected: callers skip the entrance before consulting
+ * the tracker.
  */
-export function useRevealTracker(resetKey?: string | number): {
+export function useRevealTracker(resetKey?: string | number, surfaceKey?: string): {
   hasEntered: (id: string) => boolean;
   markEntered: (id: string) => void;
 } {
@@ -191,9 +217,37 @@ export function useRevealTracker(resetKey?: string | number): {
     keyRef.current = resetKey;
     seenRef.current = new Set();
   }
-  const hasEntered = useCallback((id: string) => seenRef.current.has(id), []);
-  const markEntered = useCallback((id: string) => {
-    seenRef.current.add(id);
-  }, []);
+  const moduleKey = surfaceKey === undefined ? undefined : surfaceSeenKey(surfaceKey, resetKey);
+  // Reads never write (a render may call `hasEntered`); the module entry is
+  // created by `markEntered`, which runs from an animationend handler.
+  const hasEntered = useCallback(
+    (id: string) =>
+      moduleKey === undefined ? seenRef.current.has(id) : (SURFACE_SEEN.get(moduleKey)?.has(id) ?? false),
+    [moduleKey],
+  );
+  const markEntered = useCallback(
+    (id: string) => {
+      if (moduleKey === undefined) {
+        seenRef.current.add(id);
+        return;
+      }
+      let seen = SURFACE_SEEN.get(moduleKey);
+      if (!seen) {
+        seen = new Set();
+        SURFACE_SEEN.set(moduleKey, seen);
+      }
+      seen.add(id);
+      if (seen.size > MAX_SEEN_IDS) {
+        const oldest = seen.values().next().value;
+        if (oldest !== undefined) seen.delete(oldest);
+      }
+    },
+    [moduleKey],
+  );
   return { hasEntered, markEntered };
+}
+
+/** Test-only: forget every surface-scoped seen-set. */
+export function __resetSurfaceRevealForTests(): void {
+  SURFACE_SEEN.clear();
 }

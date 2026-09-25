@@ -8,6 +8,30 @@ use crate::{cloud, commands, notifications, test_automation};
 pub(super) fn shard(
 ) -> Shard<impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Sync + 'static> {
     personas_macros::ipc_shard!(tauri::generate_handler![
+        // Companions -- the CATEGORY: who exists, who may be switched on, who is
+        // on. Each companion's own surface keeps its own module; `companion_*`
+        // is the shared runtime, `athena_*` is what only she has.
+        commands::companions::companions_status,
+        commands::companions::companions_set_enabled,
+        commands::companions::athena_mark_onboarded,
+        // Curator -- what she KNOWS: the registry instrument, the projection
+        // she makes from it, her allowlist and her policy. Nothing here acts:
+        // there is no dispatch and no commit writer yet.
+        commands::curator::curator_policy_get,
+        commands::curator::curator_projects_list,
+        commands::curator::curator_project_set_enabled,
+        commands::curator::curator_project_set_consent,
+        commands::curator::curator_plan_current,
+        commands::curator::curator_plan_refresh,
+        commands::curator::curator_process_read,
+        // Her RUNTIME: the operator's request lane, the skills she could
+        // dispatch, and every brake on her. Still nothing that acts - the lane
+        // has a claim function with no caller, by design.
+        commands::curator::curator_requests_list,
+        commands::curator::curator_request_create,
+        commands::curator::curator_request_cancel,
+        commands::curator::curator_skills_list,
+        commands::curator::curator_runtime_get,
         // Execution -- Genome Breeding
         commands::execution::genome::genome_extract,
         commands::execution::genome::genome_fitness,
@@ -64,6 +88,7 @@ pub(super) fn shard(
         commands::design::build_sessions::get_build_status,
         commands::design::build_sessions::test_build_draft,
         commands::design::build_sessions::promote_build_draft,
+        commands::design::build_sessions::preview_promote_build_draft,
         commands::design::archetypes::list_archetypes,
         commands::design::build_sessions::create_adoption_session,
         commands::design::build_sessions::save_adoption_answers,

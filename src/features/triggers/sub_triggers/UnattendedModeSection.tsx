@@ -61,7 +61,7 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
 
   return (
     <div className="space-y-2" data-testid="trigger-unattended-mode">
-      <div className="typo-section-title text-foreground">{u.title}</div>
+      <div className="typo-section-title">{u.title}</div>
       <p className="typo-caption text-foreground">{u.subtitle}</p>
       <div role="radiogroup" aria-label={u.title} className="grid gap-1.5">
         {options.map((o) => {
@@ -80,7 +80,7 @@ export function UnattendedModeSection({ trigger }: { trigger: PersonaTrigger }) 
             >
               <o.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${selected ? o.iconCls : 'text-foreground'}`} />
               <div className="min-w-0">
-                <div className="typo-body font-medium text-foreground">{o.label}</div>
+                <div className="typo-body text-foreground">{o.label}</div>
                 <div className="typo-caption text-foreground">{o.desc}</div>
               </div>
             </button>

@@ -731,7 +731,15 @@
     "tab_compose": "作成",
     "tab_routes": "ルート",
     "targets_subtitle": "実行するペルソナ",
-    "targets_title": "ターゲット"
+    "targets_title": "ターゲット",
+    "last_fired": "最終実行",
+    "never_fired": "未実行",
+    "pause_route": "ルートを一時停止",
+    "proto_paused": "一時停止中",
+    "resume_dry_run_failed": "ドライランに失敗したため、ルートは一時停止のままです。{error}",
+    "resume_route": "ルートを再開",
+    "route_paused": "一時停止中",
+    "route_toggle_failed": "このルートを変更できませんでした"
   },
   "subscription_list": {
     "active": "アクティブ",

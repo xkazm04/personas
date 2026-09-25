@@ -80,8 +80,8 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
       {/* Name + tagline + signature trait strip */}
       <span className="min-w-0 flex flex-col gap-1.5">
         <span className="flex flex-col">
-          <span className="typo-title-lg text-foreground truncate" style={active ? { color: a.color } : undefined}>{a.name}</span>
-          {a.tagline && <span className="typo-caption line-clamp-2 leading-snug">{a.tagline}</span>}
+          <span className="typo-title-lg truncate" style={active ? { color: a.color } : undefined}>{a.name}</span>
+          {a.tagline && <span className="typo-caption line-clamp-2">{a.tagline}</span>}
         </span>
         {traits.length > 0 && (
           <span className="flex flex-wrap gap-1">

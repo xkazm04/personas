@@ -14,7 +14,7 @@ export interface KeyValue {
 export function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <span className="typo-heading uppercase tracking-wider text-cyan-400/70 font-semibold">
+      <span className="typo-heading uppercase text-cyan-400/70">
         {label}
       </span>
       {children}
@@ -54,14 +54,14 @@ export function KeyValueEditor({
             value={entry.key}
             onChange={(e) => update(i, 'key', e.target.value)}
             placeholder="key"
-            className="flex-1 px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
           <input
             type="text"
             value={entry.value}
             onChange={(e) => update(i, 'value', e.target.value)}
             placeholder="value"
-            className="flex-1 px-2 py-1.5 rounded typo-code font-mono bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
+            className="flex-1 px-2 py-1.5 rounded typo-code bg-secondary/20 border border-primary/10 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/25"
           />
           <button
             onClick={() => remove(i)}

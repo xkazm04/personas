@@ -61,6 +61,29 @@ describe('FullScreenOverlay as a dialog', () => {
     expect(overlay().contains(document.activeElement)).toBe(true);
   });
 
+  // Enter or Space on open must never dismiss: the Close button in the slim bar
+  // is the first focusable in DOM order, so "first focusable" is the wrong rule.
+  it('opens with focus on the first content control, never on Close', () => {
+    render(<Summoner />);
+    act(() => screen.getByTestId('opener').click());
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Close' }));
+    expect(document.activeElement).toBe(screen.getByTestId('inner-first'));
+  });
+
+  it('focuses the dialog itself when the content has nothing focusable', () => {
+    function Inert() {
+      const [open] = useState(true);
+      return open ? (
+        <FullScreenOverlay testId="overlay" ariaLabel="Schedules" onClose={() => {}}>
+          <p>nothing to press here</p>
+        </FullScreenOverlay>
+      ) : null;
+    }
+    render(<Inert />);
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Close' }));
+    expect(document.activeElement).toBe(overlay());
+  });
+
   it('traps Tab inside the overlay, both directions', () => {
     render(<Summoner />);
     act(() => screen.getByTestId('opener').click());

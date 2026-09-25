@@ -121,7 +121,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
             {quickTestResults[recipe.id] && (
               <div className="mt-2 rounded-card border border-border/40 bg-card/30 p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="typo-body font-medium text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
+                  <p className="typo-body text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
                     type="button"
                     onClick={() => dismissResult(recipe.id)}

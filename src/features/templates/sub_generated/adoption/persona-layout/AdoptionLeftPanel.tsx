@@ -50,7 +50,7 @@ function CardRow({ cn }: { cn: AdoptionConnectorCard }) {
           <ConnectorIcon meta={meta} size="w-5 h-5" />
         </span>
         <span className="min-w-0 flex flex-col">
-          <span className="typo-body-lg leading-snug text-foreground truncate">{cn.label}</span>
+          <span className="typo-body-lg text-foreground truncate">{cn.label}</span>
           {cn.purpose && <span className="typo-caption text-foreground truncate">{cn.purpose}</span>}
         </span>
       </div>
@@ -111,7 +111,7 @@ export function AdoptionLeftPanel({ connectors, channels = [], summaryEntries, o
 
       {!hasConnectors && !hasChannels && !hasSummary && (
         <div className="rounded-card border border-dashed border-card-border/60 bg-secondary/10 px-3 py-4">
-          <span className="typo-caption text-foreground leading-relaxed">
+          <span className="typo-caption text-foreground">
             {t.templates.adopt_modal.left_empty_placeholder}
           </span>
         </div>

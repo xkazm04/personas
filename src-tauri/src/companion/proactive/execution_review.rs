@@ -82,6 +82,13 @@ pub async fn run_execution_review_debouncer(
             .await
             .is_ok()
         {}
+        // Athena's master switch, re-read on every signal (never cached at
+        // spawn) so switching her off stops the event-driven review leg on the
+        // live process. The loop itself keeps parking, so switching her back on
+        // resumes without a restart.
+        if !crate::commands::companions::athena_enabled(&sys_db) {
+            continue;
+        }
         if !crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
             continue; // mode off — drop the signal, no reviews
         }

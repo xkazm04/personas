@@ -55,6 +55,7 @@
   "suggestions_title": "Ghi chú của Athena",
   "tabs_label": "Ghi chú",
   "timeline_title": "Vòng đời",
+  "title": "Tổng quan mục tiêu",
   "to_goals": "Chuyển thành mục tiêu",
   "variant_split": "Canvas chia đôi",
   "variant_workbench": "Bàn làm việc",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "Mở dự án",
   "desk_lane_brainstorm": "Làn ý tưởng",
   "desk_lane_plan": "Làn kế hoạch",
-  "desk_room_back": "Bàn làm việc",
-  "title": "Tổng quan mục tiêu"
+  "desk_room_back": "Bàn làm việc"
 }

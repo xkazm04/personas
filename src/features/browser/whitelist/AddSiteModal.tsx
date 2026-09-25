@@ -85,7 +85,7 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="browser-add-site-title" size="sm" portal>
       <div className="p-6 space-y-4">
-        <h2 id="browser-add-site-title" className="typo-heading-md text-foreground">
+        <h2 id="browser-add-site-title" className="typo-title-lg text-foreground">
           {editing ? a.title_edit : a.title}
         </h2>
 

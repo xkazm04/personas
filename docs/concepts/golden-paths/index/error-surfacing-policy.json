@@ -96,6 +96,30 @@
       "verbatim": "useConnectorStatuses.ts"
     },
     "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx": {"count":1,"sections":[7],"lines":["46"],"contexts":["(`ErrorExplanationCard.tsx:46`)."],"resolvedFrom":"basename","verbatim":"ErrorExplanationCard.tsx"},
+    "src/features/companions/athena/BrainViewer.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["616"],
+      "contexts": ["five are worth naming, because they are the compliant shapes (`BrainViewer.tsx:616` sets inline error"],
+      "resolvedFrom": "basename",
+      "verbatim": "BrainViewer.tsx"
+    },
+    "src/features/companions/athena/sub_setup/SensorySignalsModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["83-90"],
+      "contexts": ["| `SensorySignalsModal.tsx:83-90` | delete a sensory signal | `refresh()` runs, the row stays, no explanation |"],
+      "resolvedFrom": "basename",
+      "verbatim": "SensorySignalsModal.tsx"
+    },
+    "src/features/companions/athena/sub_voice/PocketVoicePanel.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["104-113"],
+      "contexts": ["| `PocketVoicePanel.tsx:104-113` | delete a cloned voice | the dialog closes, `refresh()` is skipped (it sits after the throwing call), the row stays |"],
+      "resolvedFrom": "basename",
+      "verbatim": "PocketVoicePanel.tsx"
+    },
     "src/features/overview/sub_memories/libs/memoryActions.ts": {"count":1,"sections":[7],"lines":["75"],"contexts":["`FleetSessionCard.tsx:128` reverts an optimistic patch; `memoryActions.ts:75` and"],"resolvedFrom":"basename","verbatim":"memoryActions.ts"},
     "src/features/overview/sub_observability/components/AlertRulesPanel.tsx": {
       "count": 1,
@@ -105,23 +129,7 @@
       "resolvedFrom": "basename",
       "verbatim": "AlertRulesPanel.tsx"
     },
-    "src/features/plugins/companion/BrainViewer.tsx": {"count":2,"sections":[6,7],"lines":["610-620","616"],"contexts":["- `src/features/plugins/companion/BrainViewer.tsx:610-620` — `setError(…)` for the user **and**"]},
-    "src/features/plugins/companion/sub_setup/SensorySignalsModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["83-90"],
-      "contexts": ["| `SensorySignalsModal.tsx:83-90` | delete a sensory signal | `refresh()` runs, the row stays, no explanation |"],
-      "resolvedFrom": "basename",
-      "verbatim": "SensorySignalsModal.tsx"
-    },
-    "src/features/plugins/companion/sub_voice/PocketVoicePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["104-113"],
-      "contexts": ["| `PocketVoicePanel.tsx:104-113` | delete a cloned voice | the dialog closes, `refresh()` is skipped (it sits after the throwing call), the row stays |"],
-      "resolvedFrom": "basename",
-      "verbatim": "PocketVoicePanel.tsx"
-    },
+    "src/features/plugins/companion/BrainViewer.tsx": {"count":1,"sections":[6],"lines":["610-620"],"contexts":["- `src/features/plugins/companion/BrainViewer.tsx:610-620` — `setError(…)` for the user **and**"],"resolved":false},
     "src/features/plugins/fleet/FleetSessionCard.tsx": {"count":2,"sections":[6,7],"lines":["118-131","128"],"contexts":["- `src/features/plugins/fleet/FleetSessionCard.tsx:118-131` — an optimistic rename **reverted on"]},
     "src/features/shared/chrome/ToastContainer.tsx": {
       "count": 2,

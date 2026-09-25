@@ -55,7 +55,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             <GroupIcon className="w-4.5 h-4.5 text-primary/80" />
           </div>
           <div>
-            <h3 className="typo-heading font-semibold text-foreground/85">{group.label}</h3>
+            <h3 className="typo-heading text-foreground/85">{group.label}</h3>
             <p className="typo-caption text-foreground">{group.description}</p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
                   {meta.label}
                 </span>
                 {count > 0 && (
-                  <span className="typo-data text-foreground tabular-nums">{count}</span>
+                  <span className="typo-data text-foreground">{count}</span>
                 )}
               </button>
             );
@@ -99,7 +99,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
               >
                 <span className="flex-1 truncate">{tmpl.test_case_name}</span>
                 {tmpl.adoption_count > 0 && (
-                  <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50 tabular-nums">
+                  <span className="inline-flex items-center gap-0.5 typo-data text-emerald-400/50">
                     <Download className="w-2.5 h-2.5" />
                     {tmpl.adoption_count}
                   </span>

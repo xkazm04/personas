@@ -110,6 +110,25 @@ impl ConnectionMetrics {
     }
 }
 
+/// Where this device's handshake identity comes from.
+///
+/// Production has exactly one: the process identity in [`crate::identity`],
+/// whose private key lives in the OS keyring and is cached in process-global
+/// statics. That is also why a second, test-only source exists: two nodes in
+/// ONE test process would share those statics and could never tell each other
+/// apart, so the two-node loopback test injects a keypair per node instead.
+/// The injected variant does not exist outside `cfg(test)`, so no production
+/// path can reach it.
+enum LocalSigner {
+    Process,
+    #[cfg(test)]
+    Injected {
+        peer_id: String,
+        public_key_b64: String,
+        key: ed25519_dalek::SigningKey,
+    },
+}
+
 /// Active QUIC connection handle to a peer.
 pub struct PeerConnection {
     pub info: PeerConnectionInfo,
@@ -135,6 +154,7 @@ pub struct ConnectionManager {
     #[allow(dead_code)]
     max_retries: u32,
     metrics: ConnectionMetrics,
+    signer: LocalSigner,
 }
 
 impl ConnectionManager {
@@ -155,7 +175,94 @@ impl ConnectionManager {
             max_peers,
             max_retries: 3,
             metrics: ConnectionMetrics::new(),
+            signer: LocalSigner::Process,
         }
+    }
+
+    /// A manager whose handshake identity is `key` instead of the process
+    /// identity. Test-only: see [`LocalSigner`].
+    #[cfg(test)]
+    pub(crate) fn with_test_identity(
+        transport: Arc<QuicTransport>,
+        pool: DbPool,
+        key: ed25519_dalek::SigningKey,
+        local_display_name: String,
+        max_peers: usize,
+    ) -> Self {
+        use base64::Engine as _;
+        let verifying = key.verifying_key();
+        let peer_id = crate::identity::public_key_to_peer_id(&verifying);
+        let public_key_b64 = base64::engine::general_purpose::STANDARD.encode(verifying.as_bytes());
+        let mut manager = Self::new(
+            transport,
+            pool,
+            peer_id.clone(),
+            local_display_name,
+            max_peers,
+        );
+        manager.signer = LocalSigner::Injected {
+            peer_id,
+            public_key_b64,
+            key,
+        };
+        manager
+    }
+
+    /// `(peer_id, public_key_b64)` this device presents in the handshake.
+    fn local_identity(&self) -> Result<(String, String), AppError> {
+        match &self.signer {
+            LocalSigner::Process => {
+                let local = crate::identity::get_or_create_identity(&self.pool)?;
+                Ok((local.peer_id, local.public_key_b64))
+            }
+            #[cfg(test)]
+            LocalSigner::Injected {
+                peer_id,
+                public_key_b64,
+                ..
+            } => Ok((peer_id.clone(), public_key_b64.clone())),
+        }
+    }
+
+    /// Sign a handshake transcript with this device's identity key (base64).
+    fn sign(&self, message: &[u8]) -> Result<String, AppError> {
+        match &self.signer {
+            LocalSigner::Process => crate::identity::sign_message(&self.pool, message),
+            #[cfg(test)]
+            LocalSigner::Injected { key, .. } => {
+                use base64::Engine as _;
+                use ed25519_dalek::Signer as _;
+                Ok(base64::engine::general_purpose::STANDARD.encode(key.sign(message).to_bytes()))
+            }
+        }
+    }
+
+    /// This device's peer_id.
+    pub fn local_peer_id(&self) -> &str {
+        &self.local_peer_id
+    }
+
+    /// The display name this device presents in the handshake.
+    pub fn local_display_name(&self) -> &str {
+        &self.local_display_name
+    }
+
+    /// The deterministic dial rule for AUTOMATIC connects (registry
+    /// `connection-lifecycle`): of two devices that can both see each other,
+    /// only the one with the lexicographically smaller peer_id dials. It is the
+    /// same ordering [`Self::try_insert_connection`] already uses to settle a
+    /// simultaneous connect, so the rule only removes the wasted second
+    /// handshake (and the close-and-replace churn it causes); correctness never
+    /// depended on it. A manual connect ignores it.
+    pub fn should_dial(&self, remote_peer_id: &str) -> bool {
+        self.outgoing_wins(remote_peer_id)
+    }
+
+    /// True when an authenticated connection to `peer_id` is up. A connection
+    /// the peer has closed (its app quit, its laptop slept) stays in the map
+    /// until the next health check notices; this reads it as down right away.
+    pub async fn is_connected(&self, peer_id: &str) -> bool {
+        self.get_quinn_conn(peer_id).await.is_some()
     }
 
     /// Update the max_peers limit.
@@ -226,9 +333,21 @@ impl ConnectionManager {
             return Err(AppError::Validation("Cannot connect to self".into()));
         }
 
-        // Check if already connected
-        if self.connections.read().await.contains_key(peer_id) {
-            return Ok(());
+        // Check if already connected. A connection the peer has already closed
+        // does not count: drop it now instead of waiting for the next health
+        // check, so an owned device that went away and came back reconnects on
+        // its next discovery instead of up to one health interval later.
+        {
+            let existing_closed = match self.connections.read().await.get(peer_id) {
+                Some(conn) if conn.quinn_conn.close_reason().is_none() => return Ok(()),
+                Some(_) => true,
+                None => false,
+            };
+            if existing_closed {
+                let _ = self
+                    .disconnect_peer_with_reason(peer_id, DisconnectReason::HealthCheck)
+                    .await;
+            }
         }
 
         // NOTE: max_peers is NOT checked here. The only capacity check lives in
@@ -292,7 +411,20 @@ impl ConnectionManager {
     ) -> Result<bool, AppError> {
         let mut conns = self.connections.write().await;
 
-        if let Some(existing) = conns.get(peer_id) {
+        if let Some(existing) = conns
+            .get(peer_id)
+            .filter(|c| c.quinn_conn.close_reason().is_some())
+        {
+            // The existing entry is a DEAD connection (the peer closed it and no
+            // health check has reaped it yet). It is not a rival: the tie-break
+            // below would keep a corpse whenever the new link came from the
+            // "wrong" side, so a reconnect replaces it unconditionally.
+            // Capacity is unchanged (replacement, not net-new).
+            tracing::debug!(peer_id = %peer_id, "Replacing a closed connection with a fresh one");
+            existing
+                .quinn_conn
+                .close(quinn::VarInt::from_u32(0), b"superseded");
+        } else if let Some(existing) = conns.get(peer_id) {
             // Simultaneous connect detected — apply tie-breaker.
             // Capacity is unchanged (replacement, not net-new) so no check needed.
             let dominated = if self.outgoing_wins(peer_id) {
@@ -384,20 +516,21 @@ impl ConnectionManager {
         // TLS sessions cannot make the two ends agree on it, which is what
         // stops it forwarding these signed messages verbatim.
         let channel_binding = super::transport::channel_binding(&quinn_conn)?;
-        let local = crate::identity::get_or_create_identity(&self.pool)?;
+        let (local_peer_id, local_public_key_b64) = self.local_identity()?;
         let client_nonce = protocol::generate_nonce();
-        let hello_sig = crate::identity::sign_message(
-            &self.pool,
-            &protocol::hello_transcript(&local.peer_id, &channel_binding, &client_nonce),
-        )?;
+        let hello_sig = self.sign(&protocol::hello_transcript(
+            &local_peer_id,
+            &channel_binding,
+            &client_nonce,
+        ))?;
 
         protocol::write_message(
             &mut send,
             &Message::Hello {
-                peer_id: local.peer_id.clone(),
+                peer_id: local_peer_id.clone(),
                 display_name: self.local_display_name.clone(),
                 version: PROTOCOL_VERSION,
-                public_key_b64: local.public_key_b64.clone(),
+                public_key_b64: local_public_key_b64,
                 nonce: client_nonce.clone(),
                 signature: hello_sig,
             },
@@ -466,15 +599,12 @@ impl ConnectionManager {
         .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming HelloAck", e))?;
 
         // Close the loop: prove liveness to the responder by signing ITS nonce.
-        let confirm_sig = crate::identity::sign_message(
-            &self.pool,
-            &protocol::hello_confirm_transcript(
-                &local.peer_id,
-                &channel_binding,
-                &client_nonce,
-                &server_nonce,
-            ),
-        )?;
+        let confirm_sig = self.sign(&protocol::hello_confirm_transcript(
+            &local_peer_id,
+            &channel_binding,
+            &client_nonce,
+            &server_nonce,
+        ))?;
         protocol::write_message(
             &mut send,
             &Message::HelloConfirm {
@@ -633,25 +763,22 @@ impl ConnectionManager {
         )
         .inspect_err(|e| Self::log_handshake_rejection(&remote_peer_id, "incoming Hello", e))?;
 
-        let local = crate::identity::get_or_create_identity(&self.pool)?;
+        let (local_peer_id, local_public_key_b64) = self.local_identity()?;
         let server_nonce = protocol::generate_nonce();
-        let ack_sig = crate::identity::sign_message(
-            &self.pool,
-            &protocol::hello_ack_transcript(
-                &local.peer_id,
-                &channel_binding,
-                &server_nonce,
-                &client_nonce,
-            ),
-        )?;
+        let ack_sig = self.sign(&protocol::hello_ack_transcript(
+            &local_peer_id,
+            &channel_binding,
+            &server_nonce,
+            &client_nonce,
+        ))?;
 
         protocol::write_message(
             &mut send,
             &Message::HelloAck {
-                peer_id: local.peer_id.clone(),
+                peer_id: local_peer_id,
                 display_name: self.local_display_name.clone(),
                 version: PROTOCOL_VERSION,
-                public_key_b64: local.public_key_b64.clone(),
+                public_key_b64: local_public_key_b64,
                 nonce: server_nonce.clone(),
                 signature: ack_sig,
             },
@@ -776,15 +903,17 @@ impl ConnectionManager {
         pairing: Arc<DevicePairing>,
         remote_jobs: Arc<RemoteJobs>,
     ) {
-        // The link is up (again). Ask this peer to replay anything we missed for
-        // the jobs we asked it to run. Spawned separately from the accept loop so
-        // a slow or hostile peer cannot delay us starting to serve it — and it is
-        // a no-op unless the peer is paired and has unfinished work with us.
+        // The link is up (again). Drain this peer's outbox, then ask it to
+        // replay anything we missed for the jobs we asked it to run. Spawned
+        // separately from the accept loop so a slow or hostile peer cannot delay
+        // us starting to serve it — and it is a no-op unless the peer is paired
+        // and has work with us. `on_link_up` logs its own failures and leaves
+        // every undelivered job queued, so nobody needs to wait on this task.
         {
             let remote_jobs = remote_jobs.clone();
             let peer_id = peer_id.clone();
             tokio::spawn(async move {
-                remote_jobs.resume_with_peer(&peer_id).await;
+                remote_jobs.on_link_up(&peer_id).await;
             });
         }
 
@@ -903,7 +1032,12 @@ impl ConnectionManager {
             | Message::RemoteJobAck { .. }
             | Message::RemoteJobProgress { .. }
             | Message::RemoteJobResult { .. }
-            | Message::RemoteJobResume { .. }) => {
+            | Message::RemoteJobResume { .. }
+            | Message::RemoteSessionMirror { .. }
+            | Message::RemoteSessionOutputSubscribe { .. }
+            | Message::RemoteSessionOutput { .. }
+            | Message::RemoteJobCommand { .. }
+            | Message::RemoteJobCommandAck { .. }) => {
                 for reply in remote_jobs.handle_message(peer_id, job).await? {
                     protocol::write_message(send, &reply).await?;
                 }
@@ -1013,11 +1147,16 @@ impl ConnectionManager {
     }
 
     /// Get the QUIC connection for a peer (for sending messages/requests).
+    ///
+    /// `None` when there is no connection OR when the one on file has already
+    /// been closed by either side: a caller asking "can I send?" must not be
+    /// handed a corpse that the next health check has not reaped yet.
     pub async fn get_quinn_conn(&self, peer_id: &str) -> Option<quinn::Connection> {
         self.connections
             .read()
             .await
             .get(peer_id)
+            .filter(|c| c.quinn_conn.close_reason().is_none())
             .map(|c| c.quinn_conn.clone())
     }
 

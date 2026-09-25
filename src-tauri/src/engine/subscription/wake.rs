@@ -42,3 +42,24 @@ static ATTENTION_WAKE: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync
 pub fn attention_wake_signal() -> &'static tokio::sync::Notify {
     &ATTENTION_WAKE
 }
+
+/// Wake signal for Curator's loop.
+///
+/// Fired when the operator files a request into her lane (`curator_request_create`),
+/// because her human lane drains FIRST and a request that waited out a whole
+/// poll interval would make the one lane the operator can see the slowest one.
+///
+/// Same durability posture as the two above, and it matters more here: the
+/// SIGNAL IS NOT THE REQUEST. The request is a `curator_request` row, so a wake
+/// that fires while the loop is mid-tick, switched off, or not yet started is
+/// honoured on the next poll rather than lost. Losing the signal costs latency,
+/// never the dispatch. Double-dispatch is impossible however many wakes fire:
+/// `repos::curator::claim_next_queued` flips queued to dispatched inside one
+/// `Immediate` transaction, so two racing ticks cannot take the same row.
+static CURATOR_WAKE: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync::Notify::new);
+
+/// Curator's wake signal. Producers call `.notify_one()`; her subscription
+/// awaits it alongside the poll interval.
+pub fn curator_wake_signal() -> &'static tokio::sync::Notify {
+    &CURATOR_WAKE
+}

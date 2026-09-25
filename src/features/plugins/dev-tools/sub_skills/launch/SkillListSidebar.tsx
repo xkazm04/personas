@@ -57,7 +57,7 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
                     : 'border-transparent hover:bg-secondary/30'
                 }`}
               >
-                <span className={`typo-body truncate ${active ? 'text-primary font-medium' : 'text-foreground'}`}>
+                <span className={`typo-body truncate ${active ? 'text-primary' : 'text-foreground'}`}>
                   {s.name}
                 </span>
                 <span

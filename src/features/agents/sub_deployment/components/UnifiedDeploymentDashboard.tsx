@@ -240,14 +240,14 @@ export function UnifiedDeploymentDashboard() {
       <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="typo-section-title text-foreground/90">{dt.title}</h1>
+            <h1 className="typo-section-title">{dt.title}</h1>
             <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
           </div>
           <button
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {dt.refresh}

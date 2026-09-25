@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Compass, MessageSquareText, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { WALKTHROUGHS } from '@/features/plugins/companion/guidance/walkthroughs';
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
+import { WALKTHROUGHS } from '@/features/companions/athena/guidance/walkthroughs';
 import { useTourStore } from '@/stores/tourStore';
 import { composeTour, ingestComposedTour } from '@/stores/slices/system/dynamicTours';
 import { silentCatch } from '@/lib/silentCatch';
@@ -29,7 +29,7 @@ type ComposeState = 'idle' | 'composing' | 'failed';
  */
 export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
   const { t, tx } = useTranslation();
-  const c = t.plugins.companion;
+  const c = t.athena;
   const topic = typeof config?.topic === 'string' ? config.topic : '';
   const summary = typeof config?.summary === 'string' ? config.summary.trim() : '';
   const staticWalkthrough = WALKTHROUGHS[topic];
@@ -38,7 +38,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
 
   const showMe = () => {
     if (staticWalkthrough) {
-      useCompanionStore.getState().startGuidance(topic);
+      useAthenaStore.getState().startGuidance(topic);
       return;
     }
     // Generative Tours: no static tour matches — compose one.
@@ -61,7 +61,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
   };
 
   const tellMe = () => {
-    useCompanionStore.getState().setPendingPrompt({
+    useAthenaStore.getState().setPendingPrompt({
       text: tx(c.walkthrough_offer_tell_prompt, { topic: label.toLowerCase() }),
       autoSend: true,
     });
@@ -93,7 +93,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
         >
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-4 h-4 shrink-0 text-primary animate-pulse" />
-            <span className="typo-body font-medium text-foreground">{c.walkthrough_composing}</span>
+            <span className="typo-body text-foreground">{c.walkthrough_composing}</span>
           </div>
           <p className="typo-caption text-foreground">{c.walkthrough_composing_hint}</p>
           <div className="space-y-1.5 pt-1" aria-hidden="true">
@@ -122,7 +122,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
             >
               <Compass className="w-4 h-4 shrink-0" />
               <span className="flex flex-col">
-                <span className="typo-body font-medium">{c.walkthrough_offer_show}</span>
+                <span className="typo-body">{c.walkthrough_offer_show}</span>
                 <span className="typo-caption opacity-90">{c.walkthrough_offer_show_hint}</span>
               </span>
             </button>
@@ -135,7 +135,7 @@ export function WalkthroughOfferWidget({ config }: CockpitWidgetProps) {
           >
             <MessageSquareText className="w-4 h-4 shrink-0 text-primary" />
             <span className="flex flex-col">
-              <span className="typo-body font-medium">{c.walkthrough_offer_tell}</span>
+              <span className="typo-body">{c.walkthrough_offer_tell}</span>
               <span className="typo-caption text-foreground">{c.walkthrough_offer_tell_hint}</span>
             </span>
           </button>

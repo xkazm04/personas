@@ -54,7 +54,7 @@ export function ProviderCredentialField({
 
   return (
     <div className={`space-y-1.5 ${containerClassName ?? ''}`}>
-      <label className="block typo-body font-medium text-foreground mb-1">
+      <label className="block typo-body text-foreground mb-1">
         {label}
         {sublabel && (
           <span className="text-foreground font-normal ml-1">{sublabel}</span>

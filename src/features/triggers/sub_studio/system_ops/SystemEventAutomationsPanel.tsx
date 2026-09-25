@@ -49,7 +49,7 @@ export function SystemEventAutomationsPanel({
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="typo-body font-medium text-foreground truncate">
+                <span className="typo-body text-foreground truncate">
                   {projectName(a) ?? a.opKind}
                 </span>
                 <span className="typo-caption font-mono text-foreground truncate">

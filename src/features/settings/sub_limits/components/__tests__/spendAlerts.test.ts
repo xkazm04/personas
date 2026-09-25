@@ -12,6 +12,7 @@ import {
   readSentBands,
   recordSentBand,
   SPEND_WARNING_RATIO,
+  runSpendAlertTick,
 } from '../spendAlerts';
 
 const MONTH = '2026-09';
@@ -91,5 +92,49 @@ describe('the sent ledger', () => {
     expect(first).toBe('approaching');
     recordSentBand(month, first!);
     expect(decideSpendAlert({ ...input, alreadySent: readSentBands(month) })).toBeNull();
+  });
+});
+
+/**
+ * The runner half. The alert used to run only in a LimitsSettings effect, so
+ * it fired only while the operator was looking at the Limits tab. The tick is
+ * the whole decision from raw inputs, with no render involved, so an
+ * always-mounted watcher can run it.
+ */
+describe('runSpendAlertTick', () => {
+  it('case 6: an approaching crossing is decided with no LimitsSettings render, once', () => {
+    const first = runSpendAlertTick({
+      ceilingRaw: '10',
+      prefsRaw: null,
+      chartPoints: [{ date: '2026-09-03', cost: 9 }],
+      alreadySent: [],
+    });
+    expect(first).toEqual({ monthKey: '2026-09', band: 'approaching' });
+    const second = runSpendAlertTick({
+      ceilingRaw: '10',
+      prefsRaw: null,
+      chartPoints: [{ date: '2026-09-03', cost: 9 }],
+      alreadySent: first ? bandsRetiredBy(first.band) : [],
+    });
+    expect(second).toBeNull();
+  });
+
+  it('case 7: spend alerts off, or no ceiling, decides nothing', () => {
+    expect(
+      runSpendAlertTick({
+        ceilingRaw: '10',
+        prefsRaw: '{"spend_alerts":false}',
+        chartPoints: [{ date: '2026-09-03', cost: 12 }],
+        alreadySent: [],
+      }),
+    ).toBeNull();
+    expect(
+      runSpendAlertTick({
+        ceilingRaw: '0',
+        prefsRaw: null,
+        chartPoints: [{ date: '2026-09-03', cost: 12 }],
+        alreadySent: [],
+      }),
+    ).toBeNull();
   });
 });

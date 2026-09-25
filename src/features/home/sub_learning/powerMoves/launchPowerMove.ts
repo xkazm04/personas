@@ -1,3 +1,4 @@
+import { navigateToCompanions } from '@/features/companions/navigation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { flashSpotlight } from './flashSpotlight';
@@ -46,6 +47,14 @@ export function launchPowerMove(move: PowerMove): void {
   }
 
   const nav = move.nav;
+  if (nav.companionsPage) {
+    // The Companions section moves its page and its section together, so there
+    // is nothing to land on a delay — and nothing to yank if the user navigates
+    // again meanwhile.
+    navigateToCompanions(nav.companionsPage);
+    creditOnLanding(move);
+    return;
+  }
   sys.setSidebarSection(nav.section);
   if (nav.overviewTab || nav.eventBusTab || nav.pluginTab) {
     window.setTimeout(() => {

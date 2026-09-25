@@ -13,7 +13,7 @@ import { QuickEditPopover } from '@/features/shared/components/overlays/QuickEdi
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
-import { useAskAthena } from '@/features/plugins/companion/useAskAthena';
+import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 import type { PipelineFieldId } from '../sub_projects/pipeline/pipelineTypes';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';

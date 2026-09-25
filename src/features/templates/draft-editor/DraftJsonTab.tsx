@@ -84,7 +84,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
         {/* Highlighted pre (visual layer) */}
         <pre
           ref={preRef}
-          className="absolute inset-0 p-3 typo-code leading-relaxed overflow-hidden pointer-events-none m-0 whitespace-pre-wrap break-words json-highlight"
+          className="absolute inset-0 p-3 typo-code overflow-hidden pointer-events-none m-0 whitespace-pre-wrap break-words json-highlight"
           aria-hidden="true"
           dangerouslySetInnerHTML={{ __html: highlightedHtml + '\n' }}
         />
@@ -94,7 +94,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
           value={draftJson}
           onChange={(e) => handleChange(e.target.value)}
           onScroll={handleScroll}
-          className="relative w-full h-72 p-3 typo-code leading-relaxed resize-y bg-transparent text-transparent caret-foreground/80 focus-ring transition-all whitespace-pre-wrap break-words"
+          className="relative w-full h-72 p-3 typo-code resize-y bg-transparent text-transparent caret-foreground/80 focus-ring transition-all whitespace-pre-wrap break-words"
           style={{ caretColor: 'var(--foreground)' }}
           disabled={disabled}
           spellCheck={false}

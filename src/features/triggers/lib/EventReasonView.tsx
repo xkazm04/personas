@@ -78,7 +78,7 @@ export function EventReasonNote({ event }: { event: ReasonEvent }) {
 
   if (reason.kind === 'text') {
     return (
-      <div className="typo-code text-red-300/80 bg-red-500/10 rounded px-2.5 py-1.5 font-mono break-all">
+      <div className="typo-code text-red-300/80 bg-red-500/10 rounded px-2.5 py-1.5 break-all">
         {reason.text}
       </div>
     );

@@ -170,7 +170,7 @@ export function PersonaIconPickerModal({
           <div>
             <h2
               id="persona-icon-picker-title"
-              className="typo-heading font-semibold text-foreground/90"
+              className="typo-heading text-foreground/90"
             >
               {t.shared.forms_extra.select_persona_icon}
             </h2>
@@ -191,7 +191,7 @@ export function PersonaIconPickerModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Built-in catalog */}
           <section>
-            <h3 className="typo-caption font-semibold uppercase tracking-wide text-foreground mb-3">
+            <h3 className="typo-caption uppercase tracking-wide text-foreground mb-3">
               {t.shared.forms_extra.builtin_icons}
             </h3>
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
@@ -224,14 +224,14 @@ export function PersonaIconPickerModal({
           {/* User uploads */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="typo-caption font-semibold uppercase tracking-wide text-foreground">
+              <h3 className="typo-caption uppercase tracking-wide text-foreground">
                 {t.shared.forms_extra.your_icons}
               </h3>
               <button
                 type="button"
                 onClick={handleUpload}
                 disabled={uploading}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card border border-primary/20 bg-background/50 text-foreground hover:bg-secondary/50 hover:border-primary/40 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+                className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/20 bg-background/50 text-foreground hover:bg-secondary/50 hover:border-primary/40 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
               >
                 {uploading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -290,7 +290,7 @@ export function PersonaIconPickerModal({
           {/* AI generation — only when the vault has an image-gen credential */}
           {genCreds.length > 0 && (
             <section>
-              <h3 className="typo-caption font-semibold uppercase tracking-wide text-foreground mb-3 flex items-center gap-1.5">
+              <h3 className="typo-caption uppercase tracking-wide text-foreground mb-3 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 {t.shared.forms_extra.generate_with_ai}
               </h3>
@@ -341,7 +341,7 @@ export function PersonaIconPickerModal({
                     type="button"
                     onClick={handleGenerate}
                     disabled={generating || !prompt.trim() || !selectedCredId}
-                    className="flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card border border-primary/30 bg-primary/10 text-foreground hover:bg-primary/20 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/30 bg-primary/10 text-foreground hover:bg-primary/20 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default flex-shrink-0"
                   >
                     {generating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

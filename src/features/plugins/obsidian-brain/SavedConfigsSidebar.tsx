@@ -66,7 +66,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
       </div>
 
       {configs.length === 0 ? (
-        <p className="typo-caption text-foreground px-1 py-2 leading-relaxed">
+        <p className="typo-caption text-foreground px-1 py-2">
           {emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint}
         </p>
       ) : (

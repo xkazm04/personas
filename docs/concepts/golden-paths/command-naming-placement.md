@@ -25,7 +25,7 @@
 > 1. **"`companion` and `jobs` totalling 3,055 lines" is wrong by ~6×.**
 >    `src-tauri/src/commands/companion/` is **18,506 LOC across 40 files** carrying **133**
 >    commands — the fourth-largest command area, and it *is* documented
->    (`docs/features/companion/README.md`, mapped at `feature-doc-map.json` via
+>    (`docs/features/companions/athena/README.md`, mapped at `feature-doc-map.json` via
 >    `src-tauri/src/commands/companion/**`).
 > 2. **`jobs` is not a module at all.** No directory, no `mod.rs`, nothing to be large. Seven
 >    files in six directories share the word: `commands/companion/jobs.rs` (70 LOC, 5 cmds),

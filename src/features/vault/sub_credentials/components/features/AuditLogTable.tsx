@@ -90,7 +90,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             key={f}
             type="button"
             onClick={() => handleFilterChange(f)}
-            className={`px-2 py-0.5 rounded typo-caption font-medium transition-colors ${
+            className={`px-2 py-0.5 rounded typo-caption transition-colors ${
               auditFilter === f
                 ? 'bg-primary/15 text-foreground/90 border border-primary/20'
                 : 'text-foreground hover:text-muted-foreground/90 hover:bg-secondary/30'
@@ -107,9 +107,9 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
         <table className="w-full typo-body">
           <thead>
             <tr className="border-b border-primary/10 bg-secondary/10">
-              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.operation}</th>
-              <th className="text-left px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.detail}</th>
-              <th className="text-right px-3 py-1.5 typo-label font-medium text-foreground">{t.vault.features.intelligence.time}</th>
+              <th className="text-left px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.operation}</th>
+              <th className="text-left px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.detail}</th>
+              <th className="text-right px-3 py-1.5 typo-label text-foreground">{t.vault.features.intelligence.time}</th>
             </tr>
           </thead>
           <tbody>
@@ -118,7 +118,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
               return (
                 <tr key={entry.id} className="border-b border-primary/5 last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
                   <td className="px-3 py-1.5">
-                    <span className={`inline-flex items-center gap-1.5 typo-caption font-medium ${op.color}`}>
+                    <span className={`inline-flex items-center gap-1.5 typo-caption ${op.color}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />
                       {op.label}
                     </span>

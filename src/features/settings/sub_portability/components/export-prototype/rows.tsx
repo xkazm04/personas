@@ -53,7 +53,7 @@ export function PersonaPickRow({
         frameStyle={{ backgroundColor: `${persona.color ?? 'var(--primary)'}15` }}
       />
       <div className="min-w-0 flex-1">
-        <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
+        <span className="typo-body text-foreground truncate">{persona.name}</span>
       </div>
       <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
         {!persona.enabled && (
@@ -108,7 +108,7 @@ export function TeamPickRow({
         <Users className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{team.name}</div>
+        <div className="typo-body text-foreground truncate">{team.name}</div>
         {team.description && (
           <p className="typo-caption text-foreground truncate">{team.description}</p>
         )}
@@ -152,7 +152,7 @@ export function CredentialRow({
         <KeyRound className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{credential.name}</div>
+        <div className="typo-body text-foreground truncate">{credential.name}</div>
         <div className="typo-caption text-foreground truncate">{credential.serviceType}</div>
       </div>
       {credential.lastUsedAt && (
@@ -192,7 +192,7 @@ export function ProjectPickRow({
         <FolderGit2 className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{project.name}</div>
+        <div className="typo-body text-foreground truncate">{project.name}</div>
         <div className="typo-caption text-foreground truncate" title={project.root_path}>
           {truncatePathMiddle(project.root_path)}
         </div>
@@ -229,7 +229,7 @@ export function WorkspacePickRow({
               aria-hidden
             />
           )}
-          <span className="typo-body font-medium text-foreground truncate">{workspace.name}</span>
+          <span className="typo-body text-foreground truncate">{workspace.name}</span>
         </div>
         {workspace.description && (
           <p className="typo-caption text-foreground truncate">{workspace.description}</p>
@@ -263,7 +263,7 @@ export function TwinPickRow({
         <Fingerprint className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{twin.name}</div>
+        <div className="typo-body text-foreground truncate">{twin.name}</div>
         <div className="typo-caption text-foreground truncate" title={twin.obsidian_subpath}>
           {twin.obsidian_subpath}
         </div>
@@ -322,7 +322,7 @@ export function AthenaTierPickRow({
         <Sparkles className="w-4 h-4" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium text-foreground truncate">{title}</div>
+        <div className="typo-body text-foreground truncate">{title}</div>
         <p className="typo-caption text-foreground truncate">{hint}</p>
       </div>
       <StatChip icon={<Library className="w-3 h-3" />} tone="violet" title={p.athena_items_label}>

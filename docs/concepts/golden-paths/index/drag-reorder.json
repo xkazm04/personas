@@ -31,6 +31,7 @@
   "citations": {
     ".../flow-composer/": {"count":1,"sections":[11],"contexts":["marketing playground (`.../flow-composer/`), a decorative wave field"],"resolved":false,"isDir":true},
     ".../memories/Archive.tsx": {"count":1,"sections":[11],"lines":["373-378"],"contexts":["playhead (`.../memories/Archive.tsx:373-378`). Neither has a move-up/move-down"],"resolved":false},
+    "CanvasShell.tsx": {"count":4,"sections":[4,7],"lines":["912-914","754-757"],"contexts":["DOM before the move (`CanvasShell.tsx:912-914` is the shape) announcing"],"resolved":false},
     "DriveFileList.tsx": {
       "count": 1,
       "sections": [7],
@@ -48,6 +49,8 @@
       ],
       "resolved": false
     },
+    "GroupLayer.tsx": {"count":3,"sections":[5,7],"lines":["139-140,152-153"],"contexts":["an intent. `GroupLayer.tsx:139-140,152-153` does exactly this."],"resolved":false},
+    "NoteLayer.tsx": {"count":1,"sections":[7],"contexts":["| `NoteLayer.tsx` | yes | yes | yes |"],"resolved":false},
     "ReferenceBoard.tsx": {
       "count": 3,
       "sections": [7],
@@ -155,36 +158,6 @@
       "verbatim": "teams/sub_goals/__tests__/GoalKanban.test.tsx"
     },
     "src/features/teams/sub_mastermind/lib/": {"count":1,"sections":[7],"contexts":["`src/features/teams/sub_mastermind/lib/` contains **five** independent"],"resolved":false,"isDir":true},
-    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx": {
-      "count": 4,
-      "sections": [4,7],
-      "lines": ["912-914","754-757"],
-      "contexts": ["DOM before the move (`CanvasShell.tsx:912-914` is the shape) announcing"],
-      "resolvedFrom": "basename",
-      "verbatim": "CanvasShell.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/GroupLayer.tsx": {"count":3,"sections":[5,7],"lines":["139-140,152-153"],"contexts":["an intent. `GroupLayer.tsx:139-140,152-153` does exactly this."],"resolvedFrom":"basename","verbatim":"GroupLayer.tsx"},
-    "src/features/teams/sub_mastermind/lib/NoteLayer.tsx": {
-      "count": 2,
-      "sections": [6,7],
-      "lines": ["13-47"],
-      "contexts": [
-        "| `teams/sub_mastermind/lib/NoteLayer.tsx:13-47` | `onNotesChange(next, persist: boolean)` — **the persist decision is a parameter**, `false` on every move frame and `true` once on release. The commi…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_mastermind/lib/NoteLayer.tsx"
-    },
-    "src/features/teams/sub_mastermind/lib/useCanvasCamera.ts": {"count":1,"sections":[7],"contexts":["| `useCanvasCamera.ts` | yes | yes | yes |"],"resolvedFrom":"basename","verbatim":"useCanvasCamera.ts"},
-    "src/features/teams/sub_mastermind/lib/useIslandDrag.ts": {
-      "count": 3,
-      "sections": [6,7,11],
-      "lines": ["44-79","62"],
-      "contexts": [
-        "| `teams/sub_mastermind/lib/useIslandDrag.ts:44-79` | The pointer-drag contract: capture, 4px threshold, imperative transform, `useLayoutEffect` re-assertion, one commit on release, and `onSelect` wh…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_mastermind/lib/useIslandDrag.ts"
-    },
     "src/features/vault/shared/vector/ingest/IngestDropZone.tsx": {"count":1,"sections":[7],"contexts":["- **`IngestDropZone.tsx` and `DriveToolbar.tsx` call `preventDefault()` in"],"resolvedFrom":"basename","verbatim":"IngestDropZone.tsx"},
     "src/stores/slices/system/devToolsContextSlice.ts": {
       "count": 1,
@@ -216,6 +189,26 @@
       "contexts": ["| `shared/components/feedback/DropZoneGlow` | Dashed marching border + label for a drop *target* region. Reduced-motion handled in `globals.css:1512-1516`. |"],
       "resolvedFrom": "basename",
       "verbatim": "globals.css"
-    }
+    },
+    "teams/sub_mastermind/lib/NoteLayer.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["13-47"],
+      "contexts": [
+        "| `teams/sub_mastermind/lib/NoteLayer.tsx:13-47` | `onNotesChange(next, persist: boolean)` — **the persist decision is a parameter**, `false` on every move frame and `true` once on release. The commi…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_mastermind/lib/useIslandDrag.ts": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["44-79"],
+      "contexts": [
+        "| `teams/sub_mastermind/lib/useIslandDrag.ts:44-79` | The pointer-drag contract: capture, 4px threshold, imperative transform, `useLayoutEffect` re-assertion, one commit on release, and `onSelect` wh…"
+      ],
+      "resolved": false
+    },
+    "useCanvasCamera.ts": {"count":1,"sections":[7],"contexts":["| `useCanvasCamera.ts` | yes | yes | yes |"],"resolved":false},
+    "useIslandDrag.ts": {"count":2,"sections":[7,11],"lines":["62"],"contexts":["| `useIslandDrag.ts` | yes | yes | yes |"],"resolved":false}
   }
 }

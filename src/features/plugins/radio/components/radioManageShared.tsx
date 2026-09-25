@@ -92,7 +92,7 @@ export function RadioMasterControls({
         <div className="flex items-center gap-2.5 min-w-0">
           <Power className={`w-4 h-4 shrink-0 ${radioEnabled ? 'text-emerald-400' : 'text-foreground/50'}`} />
           <div className="min-w-0">
-            <p className="typo-body font-medium text-foreground" style={TITLE_STYLE}>{t.radio.master_footer_title}</p>
+            <p className="typo-body text-foreground" style={TITLE_STYLE}>{t.radio.master_footer_title}</p>
             <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.master_footer_desc}</p>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function RadioMasterControls({
         <div className="flex items-center gap-2.5 min-w-0">
           <RotateCcw className="w-4 h-4 shrink-0 text-foreground" />
           <div className="min-w-0">
-            <p className="typo-body font-medium text-foreground" style={TITLE_STYLE}>{t.radio.master_resume_title}</p>
+            <p className="typo-body text-foreground" style={TITLE_STYLE}>{t.radio.master_resume_title}</p>
             <p className="typo-caption text-foreground" style={DESC_STYLE}>{t.radio.master_resume_desc}</p>
           </div>
         </div>

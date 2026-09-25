@@ -57,7 +57,7 @@ export function ImportPreview({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h3 className="typo-body font-medium text-foreground">
+            <h3 className="typo-body text-foreground">
               {tx(secrets.length !== 1 ? vi.secrets_found_other : vi.secrets_found_one, { count: secrets.length })}
             </h3>
             <p className="typo-body text-foreground">
@@ -98,7 +98,7 @@ export function ImportPreview({
                       : '#6B7280',
                   }}
                 />
-                <span className="typo-body font-medium text-foreground">{service}</span>
+                <span className="typo-body text-foreground">{service}</span>
                 {mapping?.confidence === 'high' && (
                   <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
                     {vi.auto_detected}
@@ -120,12 +120,12 @@ export function ImportPreview({
                         className="rounded border-primary/30 text-primary focus-visible:ring-primary/30"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="typo-code font-mono text-foreground truncate">{secret.key}</p>
+                        <p className="typo-code text-foreground truncate">{secret.key}</p>
                         {secret.sourcePath && (
                           <p className="text-[11px] text-foreground truncate">{secret.sourcePath}</p>
                         )}
                       </div>
-                      <span className="typo-code text-foreground font-mono">
+                      <span className="typo-code text-foreground">
                         {secret.value.slice(0, 4)}{'...'}
                       </span>
                     </label>
@@ -151,7 +151,7 @@ export function ImportPreview({
           type="button"
           onClick={onImport}
           disabled={selectedCount === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Import className="w-4 h-4" />
           {tx(selectedCount !== 1 ? vi.import_secrets_other : vi.import_secrets_one, { count: selectedCount })}

@@ -146,7 +146,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               )}
             </span>
             <div className="min-w-0 flex-1">
-              <h2 id="channel-detail-title" className="typo-title-lg text-foreground truncate">
+              <h2 id="channel-detail-title" className="typo-title-lg truncate">
                 {authorName(item, persona)}
               </h2>
               <p className="flex items-center gap-2 flex-wrap mt-0.5 min-w-0">
@@ -168,13 +168,13 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
             {head && (
-              <p className="typo-heading-lg text-foreground leading-snug">
+              <p className="typo-heading-lg text-foreground">
                 {head.verb && <span className="text-muted">{t.monitor[STEP_VERB_KEY[head.verb]]} · </span>}
                 {head.title}
               </p>
             )}
             {heroText ? (
-              <MarkdownRenderer content={heroText} className="typo-body-lg leading-relaxed" />
+              <MarkdownRenderer content={heroText} className="typo-body-lg" />
             ) : head ? null : detail.fields.length === 0 ? (
               <p className="typo-body text-foreground">{t.monitor.channel_no_body}</p>
             ) : null}

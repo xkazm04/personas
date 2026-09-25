@@ -41,7 +41,7 @@ export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
             <div className="relative h-full flex flex-col justify-end p-3.5 gap-0.5">
               <span className={`text-foreground drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)] ${big ? 'typo-heading-lg' : 'typo-heading'}`}>{domainLabel(d, t.explore)}</span>
               <div className="flex items-center gap-1.5">
-                <span className="typo-caption font-medium" style={{ color: d.color }}>{templateCounts[d.id] ?? 0}</span>
+                <span className="typo-caption" style={{ color: d.color }}>{templateCounts[d.id] ?? 0}</span>
                 <span className="typo-caption text-foreground opacity-70">{t.explore.agents}</span>
               </div>
             </div>

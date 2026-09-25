@@ -92,7 +92,7 @@ export default function AccountSettings() {
       icon: <Download className="w-4 h-4 text-blue-400" />,
       content: (
         <div className="space-y-4">
-          <p className="typo-body text-foreground leading-relaxed">{s.updates_description}</p>
+          <p className="typo-body text-foreground">{s.updates_description}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {appVersion && (
               <span className="inline-flex items-center px-2 py-0.5 typo-caption rounded-full bg-secondary/30 border border-primary/10 text-foreground">
@@ -159,14 +159,14 @@ export default function AccountSettings() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="typo-body-lg font-medium text-foreground/90 truncate">
+                  <div className="typo-body-lg text-foreground/90 truncate">
                     {user.display_name ?? user.email}
                   </div>
                   {user.display_name && (
                     <div className="typo-body text-foreground truncate">{user.email}</div>
                   )}
                   {isOffline && (
-                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 typo-heading rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
                       {s.offline}
                     </span>
                   )}
@@ -201,7 +201,7 @@ export default function AccountSettings() {
 
               {isLoading ? (
                 <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal typo-body font-medium
+                  <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-modal typo-body
                     bg-primary/10 text-primary border border-primary/20">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     {s.waiting_sign_in}

@@ -58,7 +58,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
       className="animate-fade-in p-6 space-y-6"
     >
       <div className="space-y-1.5">
-        <label className="typo-heading font-semibold text-foreground uppercase tracking-wider">
+        <label className="typo-heading text-foreground uppercase">
           {t.templates.generation.template_name_label_step}
         </label>
         <input
@@ -72,7 +72,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
       </div>
 
       <div className="space-y-1.5">
-        <label className="typo-heading font-semibold text-foreground uppercase tracking-wider">
+        <label className="typo-heading text-foreground uppercase">
           {t.templates.generation.description_label}
         </label>
         <textarea

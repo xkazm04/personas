@@ -15,8 +15,8 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
   return (
     <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-2">
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="typo-caption font-medium text-foreground">{title} — current level</span>
-        <span className={`typo-caption font-semibold ${tint.text}`}>{steps[currentIndex]}</span>
+        <span className="typo-caption text-foreground">{title} — current level</span>
+        <span className={`typo-caption ${tint.text}`}>{steps[currentIndex]}</span>
       </div>
       <div className="flex items-stretch gap-0.5" aria-hidden>
         {steps.map((label, i) => (
@@ -26,7 +26,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
               style={{ background: i <= currentIndex ? tint.hex : 'color-mix(in srgb, var(--foreground) 12%, transparent)' }}
             />
             <span
-              className={`block mt-1 typo-label leading-tight truncate text-center ${i === currentIndex ? `${tint.text} font-semibold` : 'text-foreground/40'}`}
+              className={`block mt-1 typo-label truncate text-center ${i === currentIndex ? `${tint.text}` : 'text-foreground/40'}`}
               title={label}
             >
               {label}
@@ -34,7 +34,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
           </div>
         ))}
       </div>
-      <p className="typo-caption text-foreground/55 mt-1.5 leading-snug" style={{ fontWeight: 400 }}>{note}</p>
+      <p className="typo-caption text-foreground/55 mt-1.5" style={{ fontWeight: 400 }}>{note}</p>
     </div>
   );
 }

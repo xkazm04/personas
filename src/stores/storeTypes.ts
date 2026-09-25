@@ -34,7 +34,6 @@ import type { HealthCheckSlice } from "./slices/agents/healthCheckSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
-import type { CertificationSlice } from "./slices/overview/certificationSlice";
 import type { HomeSpineSlice } from "./slices/overview/homeSpineSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { FleetSlice } from "./slices/system/fleetSlice";
@@ -42,11 +41,12 @@ import type { NotepadSlice } from "./slices/system/notepadSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { DevicesSlice } from "./slices/network/devicesSlice";
 import type { RemoteJobsSlice } from "./slices/network/remoteJobsSlice";
+import type { RemoteSessionsSlice } from "./slices/network/remoteSessionsSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
-import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
+import type { AthenaSlice } from "./slices/system/athenaSlice";
 import type { RadioSlice } from "./slices/system/radioSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
@@ -220,7 +220,6 @@ export type OverviewStore = CoreState &
   CronAgentsSlice &
   AlertSlice &
   PersonaHealthSlice &
-  CertificationSlice &
   ProcessActivitySlice &
   HomeSpineSlice;
 
@@ -259,10 +258,11 @@ export type SystemStore = CoreState &
   NetworkSlice &
   DevicesSlice &
   RemoteJobsSlice &
+  RemoteSessionsSlice &
   SetupSlice &
   AmbientContextSlice &
   ObsidianBrainSlice &
   TwinSlice &
-  CompanionPluginSlice &
+  AthenaSlice &
   RadioSlice;
 

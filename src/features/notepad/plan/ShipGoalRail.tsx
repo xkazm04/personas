@@ -76,7 +76,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
         <button
           type="button"
           onClick={onNewGoal}
-          className={`ml-auto shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
+          className={`ml-auto shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}
           data-testid="ship-new-goal"
         >
           <Target className="w-3 h-3" aria-hidden />

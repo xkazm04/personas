@@ -92,6 +92,9 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     completedPhase: 'guiding',
     startFn: startCredentialNegotiation,
     cancelFn: cancelCredentialNegotiation,
+    // The backend job's id_field and timeout_secs, from negotiator.rs NEGOTIATION_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'negotiation_id',
+    backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate provisioning plan',
     traceOperation: 'credential_negotiation',
   });

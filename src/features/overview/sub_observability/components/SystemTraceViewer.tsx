@@ -181,7 +181,7 @@ function SpanRowCompact({
           style={{ left: `${leftPct}%`, width: `${widthPct}%`, minWidth: '2px' }}
         />
         {span.duration_ms != null && (
-          <span className="absolute top-0 typo-code text-foreground leading-4 text-[10px]" style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}>
+          <span className="absolute top-0 typo-code text-foreground text-[10px]" style={{ left: `${Math.min(leftPct + widthPct + 0.5, 85)}%` }}>
             {formatDuration(span.duration_ms)}
           </span>
         )}

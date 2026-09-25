@@ -142,7 +142,7 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
 
   return (
     <div className="rounded-card border border-violet-400/25 bg-violet-500/[0.06] px-4 py-3" data-testid="kpi-sim-suggestions">
-      <h3 className="flex items-center gap-1.5 typo-overline text-foreground mb-2">
+      <h3 className="flex items-center gap-1.5 typo-eyebrow text-foreground mb-2">
         <Sparkles className="w-3.5 h-3.5 text-violet-300" aria-hidden />
         {tx(t.kpis.suggest_title, { count: suggestions.length })}
       </h3>
@@ -204,7 +204,7 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="typo-data">{headline.label}</span>
-          {headline.detail && <span className="typo-code font-mono truncate">{headline.detail}</span>}
+          {headline.detail && <span className="typo-code truncate">{headline.detail}</span>}
           {s.citations.length > 0 && (
             <Tooltip content={s.citations.join('\n')} placement="top">
               <span className="typo-caption text-violet-300/90 cursor-help">
@@ -220,7 +220,7 @@ function SuggestionRow({ s, kpiName, unit, busy, onApply, onDismiss }: {
           type="button"
           onClick={onApply}
           disabled={busy}
-          className="inline-flex items-center gap-1 typo-caption font-medium rounded-interactive border border-violet-400/40 bg-violet-500/15 text-violet-200 px-2 py-0.5 hover:bg-violet-500/25 disabled:opacity-50 transition-colors focus-ring"
+          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-violet-400/40 bg-violet-500/15 text-violet-200 px-2 py-0.5 hover:bg-violet-500/25 disabled:opacity-50 transition-colors focus-ring"
           data-testid={`kpi-suggest-apply-${s.kind}`}
         >
           <Check className="w-3 h-3" aria-hidden />

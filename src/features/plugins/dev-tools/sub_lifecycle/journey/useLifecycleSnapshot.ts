@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLifecycle } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
@@ -63,7 +64,8 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
       .catch((err: unknown) => {
         if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycle')(err);
-        setError(err instanceof Error ? err.message : String(err));
+        // The page shows this sentence, so it goes through the product's own wording.
+        setError(resolveError(err instanceof Error ? err.message : String(err)).message);
         setLoading(false);
       });
   }, [projectId, revision, gen, latestWins]);

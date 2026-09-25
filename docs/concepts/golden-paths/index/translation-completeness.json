@@ -36,6 +36,8 @@
     "LiteratureSearchPanelWorkbench.tsx": {"count":1,"sections":[9],"lines":["309"],"contexts":["`SystemTraceViewer.tsx:251`, `LiteratureSearchPanelWorkbench.tsx:309`). The rest index icon,"],"resolved":false},
     "PermalinkPage.tsx": {"count":1,"sections":[],"lines":["185"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
     "TrailFinder.tsx": {"count":1,"sections":[],"lines":["264"],"contexts":["(`PermalinkPage.tsx:185`, `TrailFinder.tsx:264`, `VariantTrasy.tsx:110,:189`,"],"resolved":false},
+    "VerdictBadge.test.tsx": {"count":1,"sections":[7],"lines":["12-16"],"contexts":["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],"resolved":false},
+    "VerdictBadge.tsx": {"count":1,"sections":[7],"lines":["41"],"contexts":["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],"resolved":false},
     "check-i18n-coverage.mjs": {"count":2,"sections":[7],"lines":["127","8-14"],"contexts":["`personas-web` does the exact opposite — missing keys hard-fail (`check-i18n-coverage.mjs:127`)"],"resolved":false},
     "dev_tools.rs": {"count":1,"sections":[7],"lines":["1362"],"contexts":["(`LabRunStatus.ts:3`), `dev_tasks.status` (`dev_tools.rs:1362`), `team_assignments.status`"],"resolved":false},
     "docs/tests/autonomy-eval/runs/_example-run/scorecard.json": {"count":1,"sections":[7],"contexts":["into `tokenLabel`, and the Rust side passes a `scorecard.json` string through unvalidated"],"resolvedFrom":"basename","verbatim":"scorecard.json"},
@@ -50,6 +52,7 @@
       "contexts": ["| **politicas** | 17 (`KG_EDGE_RELS`, `lib/analysis/kg-verdict.ts:25-58`) | 13 | **4** | raw key `graph.rels.rapporteur` |"],
       "resolved": false
     },
+    "main.tsx": {"count":3,"sections":[7],"lines":["173-181","161-171"],"contexts":["`lefthook.yml` and `main.tsx` read in full. All **61** catalog sections and all **13** non-English"],"resolved":false},
     "messages.test.ts": {"count":1,"sections":[],"contexts":["`messages.test.ts`** — it is the one large feature never enrolled, and it is exactly where the"],"resolved":false},
     "mvp-passport.json": {"count":1,"sections":[],"lines":["43"],"contexts":["English-only as an explicit launch decision (`mvp-passport.json:43`) and has zero i18n crates"],"resolved":false},
     "opengraph-image.tsx": {"count":2,"sections":[8],"lines":["137-139"],"contexts":["(`t.has(kindKey) ? t(kindKey) : …`, `opengraph-image.tsx:137-139`)."],"resolved":false},
@@ -232,6 +235,30 @@
       "resolvedFrom": "basename",
       "verbatim": "LabResultModal.tsx"
     },
+    "src/features/companions/athena/orb/RemoteJobNoticeChip.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["57"],
+      "contexts": ["(`const st = t.sharing;` — `RemoteJobNoticeChip.tsx:57`, `TeamPublishButton.tsx:23`,"],
+      "resolvedFrom": "basename",
+      "verbatim": "RemoteJobNoticeChip.tsx"
+    },
+    "src/features/companions/athena/voicePlayback.ts": {
+      "count": 1,
+      "sections": [9],
+      "lines": ["36"],
+      "contexts": ["a pure false positive (`voicePlayback.ts:36`, `bytes as BlobPart`). **A gate that fires on correct"],
+      "resolvedFrom": "basename",
+      "verbatim": "voicePlayback.ts"
+    },
+    "src/features/companions/overseer/components/PersonaDetailModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["21-30"],
+      "contexts": ["- **`severity.warning` renders correctly-coloured and wrongly-worded.** `PersonaDetailModal.tsx:21-30`"],
+      "resolvedFrom": "basename",
+      "verbatim": "PersonaDetailModal.tsx"
+    },
     "src/features/home/sub_cockpit/CockpitPanel.tsx": {
       "count": 2,
       "sections": [7],
@@ -256,30 +283,6 @@
       "resolvedFrom": "basename",
       "verbatim": "LlmCallsTable.tsx"
     },
-    "src/features/overview/sub_certification/components/VerdictBadge.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["41"],
-      "contexts": ["asserts a **frontend** map against the catalog, while `VerdictBadge.tsx:41` falls back past that map"],
-      "resolvedFrom": "basename",
-      "verbatim": "VerdictBadge.tsx"
-    },
-    "src/features/overview/sub_certification/components/__tests__/VerdictBadge.test.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["12-16"],
-      "contexts": ["`VerdictBadge.test.tsx:12-16` is a *second* parity test in the repo and does not close the gap: it"],
-      "resolvedFrom": "basename",
-      "verbatim": "VerdictBadge.test.tsx"
-    },
-    "src/features/overview/sub_director/components/PersonaDetailModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["21-30"],
-      "contexts": ["- **`severity.warning` renders correctly-coloured and wrongly-worded.** `PersonaDetailModal.tsx:21-30`"],
-      "resolvedFrom": "basename",
-      "verbatim": "PersonaDetailModal.tsx"
-    },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -303,22 +306,6 @@
       "contexts": ["`ChartErrorBoundary.tsx:44` — `en.overview.chart_error.chart_unavailable`, read inside a class"],
       "resolvedFrom": "basename",
       "verbatim": "ChartErrorBoundary.tsx"
-    },
-    "src/features/plugins/companion/orb/RemoteJobNoticeChip.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["57"],
-      "contexts": ["(`const st = t.sharing;` — `RemoteJobNoticeChip.tsx:57`, `TeamPublishButton.tsx:23`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "RemoteJobNoticeChip.tsx"
-    },
-    "src/features/plugins/companion/voicePlayback.ts": {
-      "count": 1,
-      "sections": [9],
-      "lines": ["36"],
-      "contexts": ["a pure false positive (`voicePlayback.ts:36`, `bytes as BlobPart`). **A gate that fires on correct"],
-      "resolvedFrom": "basename",
-      "verbatim": "voicePlayback.ts"
     },
     "src/features/recipes/shared/SchemaParseErrorBanner.tsx": {
       "count": 1,
@@ -485,14 +472,6 @@
       "contexts": ["| `xhigh` | thinking | UI-selectable at `modelCatalog.ts:87` → stamped at `runner/mod.rs:1813-1818` | `LlmCallsTable.tsx:219`, `ExecutionValueBadges.tsx:44` |"],
       "resolvedFrom": "basename",
       "verbatim": "modelCatalog.ts"
-    },
-    "src/main.tsx": {
-      "count": 3,
-      "sections": [7],
-      "lines": ["173-181","161-171"],
-      "contexts": ["`lefthook.yml` and `main.tsx` read in full. All **61** catalog sections and all **13** non-English"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
     },
     "sub_director/PersonaDetailModal.tsx": {
       "count": 1,
