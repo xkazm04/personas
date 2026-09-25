@@ -4,6 +4,9 @@
 // the backend reads REVIEW.md (refine's feedback) and the owner's note.
 // Only what the backend can honour in the contest's phase is offered
 // (`canDecide`); outside it the bar reads-only with a one-line reason.
+// A refine retries with the owner's shortlist buckets, or, when there are
+// none (a shortlisted parent with no saved review), with the shortlist
+// contest.json recorded.
 import { useState } from 'react';
 import { GitBranch, Trophy } from 'lucide-react';
 
@@ -73,7 +76,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
   }
   if (!review) return null;
 
-  const ready = decisionReadiness(review);
+  const ready = decisionReadiness(review, refineOpen ? detail.summary.shortlist : []);
   const runnerUpOptions = [
     { value: '', label: s.runner_up_none },
     ...ready.shortlist.map((k) => ({ value: k, label: k })),
@@ -107,7 +110,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
       await draft.flush();
       const child = await decideContest(projectId, contestId, {
         kind: 'shortlist',
-        keys: ready.shortlist,
+        keys: ready.refineKeys,
         note: review.field,
       });
       primeSummary(child);
@@ -183,7 +186,7 @@ export function DecisionBar({ detail, draft, onRefined, onDecided, className = '
       {confirming === 'refine' && (
         <ConfirmDialog
           danger={deletions.length > 0}
-          title={tx(s.confirm_refine_title, { count: ready.shortlist.length })}
+          title={tx(s.confirm_refine_title, { count: ready.refineKeys.length })}
           body={refineBody}
           confirmLabel={s.decide_refine}
           onCancel={() => setConfirming(null)}

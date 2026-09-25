@@ -85,6 +85,37 @@ describe('DecisionBar phase gate', () => {
   });
 });
 
+describe('DecisionBar refine retry from the recorded shortlist', () => {
+  // A shortlisted parent whose review.json was never saved (or was lost):
+  // the owner's buckets are empty, but contest.json recorded the shortlist.
+  // That recorded shortlist is the one the refine retry sends.
+  function shortlistedWithoutReview(shortlist: string[]): ContestDetail {
+    const base = detailFixture();
+    return { ...base, summary: summaryFixture({ phase: 'shortlisted', shortlist }), review: null };
+  }
+
+  it('arms Refine and sends the recorded shortlist', async () => {
+    api.decideContest.mockResolvedValue(summaryFixture({ contestId: 'draft-1-r2', phase: 'draft' }));
+    render(<Bar detail={shortlistedWithoutReview(['A/1', 'B/1'])} />);
+    const refine = screen.getByTestId('contest-decide-refine');
+    expect(refine).not.toBeDisabled();
+    await act(async () => {
+      fireEvent.click(refine);
+    });
+    const dialog = await screen.findByRole('dialog');
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Refine shortlist' }));
+    });
+    expect(api.decideContest).toHaveBeenCalledTimes(1);
+    expect(api.decideContest.mock.calls[0]![2]).toMatchObject({ kind: 'shortlist', keys: ['A/1', 'B/1'] });
+  });
+
+  it('stays disarmed when nothing was recorded either', () => {
+    render(<Bar detail={shortlistedWithoutReview([])} />);
+    expect(screen.getByTestId('contest-decide-refine')).toBeDisabled();
+  });
+});
+
 describe('DecisionBar runner-up (FE-13)', () => {
   it('a runner-up later promoted to Winner is not sent as runner-up', async () => {
     api.decideContest.mockResolvedValue(summaryFixture({ phase: 'decided', winner: 'B/1' }));

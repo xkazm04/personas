@@ -125,15 +125,27 @@ export function isReviewEmpty(review: ContestReview): boolean {
   );
 }
 
-/** What each decision needs, from the review alone. The DecisionBar's gate. */
-export function decisionReadiness(review: ContestReview) {
+/**
+ * What each decision needs. The DecisionBar's gate.
+ *
+ * The owner's buckets decide, with one fallback: a shortlisted parent whose
+ * review was never saved (or was lost) has no shortlist buckets, yet
+ * contest.json recorded the shortlist it was refined with. When the review has
+ * no shortlist buckets, `recordedShortlist` is the shortlist a refine retries
+ * with — the same fallback the track and the trays take (`arenaModel.recordedBucket`).
+ * Pass it only in a phase where a refine is open. `shortlist` stays the
+ * owner's own buckets: the runner-up choices are theirs, never the record's.
+ */
+export function decisionReadiness(review: ContestReview, recordedShortlist: readonly string[] = []) {
   const winners = keysInBucket(review, 'winner');
   const shortlist = keysInBucket(review, 'shortlist');
+  const refineKeys = shortlist.length > 0 ? shortlist : [...recordedShortlist];
   return {
     winner: winners.length === 1 ? winners[0]! : null,
     canDeclare: winners.length === 1,
     shortlist,
-    canRefine: shortlist.length > 0,
+    refineKeys,
+    canRefine: refineKeys.length > 0,
   };
 }
 

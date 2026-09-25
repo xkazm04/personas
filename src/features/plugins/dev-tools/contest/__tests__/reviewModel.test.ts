@@ -98,6 +98,20 @@ describe('reviewModel', () => {
     expect(decisionReadiness(r)).toMatchObject({ canDeclare: true, winner: 'B/1' });
   });
 
+  it('decision readiness: with no shortlist buckets, the recorded shortlist is the refine set', () => {
+    const empty = emptyReview(variants);
+    // Nothing sorted, nothing recorded: no refine.
+    expect(decisionReadiness(empty, [])).toMatchObject({ canRefine: false, refineKeys: [] });
+    // Nothing sorted, a recorded shortlist: refine retries with it. The
+    // runner-up choices stay the owner's own buckets.
+    expect(decisionReadiness(empty, ['A/1', 'B/1'])).toMatchObject({
+      canRefine: true, refineKeys: ['A/1', 'B/1'], shortlist: [],
+    });
+    // The owner's buckets win over the record once there are any.
+    const sorted = setBucket(empty, 'A/2', 'shortlist');
+    expect(decisionReadiness(sorted, ['A/1', 'B/1'])).toMatchObject({ canRefine: true, refineKeys: ['A/2'] });
+  });
+
   it('the winner note is the owner words on the winner, else the field note', () => {
     let r = setField(emptyReview(variants), 'field words');
     expect(winnerNote(r, 'A/1')).toBe('field words');
