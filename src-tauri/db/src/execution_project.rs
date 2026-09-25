@@ -17,7 +17,9 @@
 //! 1. the project exists, is switched on, and its `root_path` is an existing
 //!    directory — otherwise [`ProjectBindingError::NotFound`];
 //! 2. the project's folder lies strictly inside one of the configured HTTP
-//!    project roots (`PERSONAS_HTTP_PROJECT_ROOTS`, see [`allowed_project_roots`])
+//!    project roots (`PERSONAS_HTTP_PROJECT_ROOTS` when set, else the
+//!    persisted `management.http_project_roots` setting — see
+//!    [`allowed_project_roots`])
 //!    — otherwise [`ProjectBindingError::OutsideAllowedRoots`]. This is what
 //!    stops a project someone assigned to the workspace through the UI (this
 //!    very checkout, say) from becoming a skip-permissions working directory
@@ -65,9 +67,82 @@ pub fn project_roots_from(value: Option<OsString>) -> Vec<PathBuf> {
         .collect()
 }
 
-/// The configured HTTP project roots, read from [`HTTP_PROJECT_ROOTS_ENV`] now.
-pub fn allowed_project_roots() -> Vec<PathBuf> {
-    project_roots_from(std::env::var_os(HTTP_PROJECT_ROOTS_ENV))
+/// Where the effective roots came from — reported by the operator GET so a
+/// mismatch between instances is visible instead of inferred.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RootsSource {
+    /// `PERSONAS_HTTP_PROJECT_ROOTS` is set and non-empty in THIS process.
+    Env,
+    /// The persisted `management.http_project_roots` setting.
+    Setting,
+    /// Neither: nothing may be registered or bound (fail-closed).
+    None,
+}
+
+impl RootsSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Env => "env",
+            Self::Setting => "setting",
+            Self::None => "none",
+        }
+    }
+}
+
+/// Parse the persisted setting (a JSON array of paths) into canonical
+/// directories; entries that do not exist are ignored, a malformed value is
+/// no roots at all (fail-closed).
+pub fn project_roots_from_setting(value: Option<&str>) -> Vec<PathBuf> {
+    let Some(list) = value.and_then(|v| serde_json::from_str::<Vec<String>>(v).ok()) else {
+        return Vec::new();
+    };
+    list.iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| std::fs::canonicalize(s).ok())
+        .filter(|p| p.is_dir())
+        .collect()
+}
+
+/// The resolution order, pure over its inputs: the env var when set and
+/// non-empty (an explicit per-process override — even if none of its entries
+/// exist, it is not silently replaced by the setting), else the setting, else
+/// nothing.
+pub fn resolve_project_roots(
+    env: Option<OsString>,
+    setting: Option<&str>,
+) -> (Vec<PathBuf>, RootsSource) {
+    match env.filter(|v| !v.is_empty()) {
+        Some(v) => (project_roots_from(Some(v)), RootsSource::Env),
+        None => match setting {
+            Some(raw) => (project_roots_from_setting(Some(raw)), RootsSource::Setting),
+            None => (Vec::new(), RootsSource::None),
+        },
+    }
+}
+
+/// The effective HTTP project roots for THIS check, read now — the env
+/// override from this process, else the setting from the shared database, so
+/// every instance on one database agrees unless one was launched with an
+/// explicit override.
+pub fn allowed_project_roots_with_source(pool: &DbPool) -> (Vec<PathBuf>, RootsSource) {
+    let setting = match crate::repos::core::settings::get(
+        pool,
+        crate::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS,
+    ) {
+        Ok(v) => v,
+        Err(e) => {
+            // Fail closed: an unreadable setting is no roots, never "anything".
+            tracing::warn!(error = %e, "could not read the HTTP project roots setting");
+            None
+        }
+    };
+    resolve_project_roots(std::env::var_os(HTTP_PROJECT_ROOTS_ENV), setting.as_deref())
+}
+
+/// [`allowed_project_roots_with_source`] without the source.
+pub fn allowed_project_roots(pool: &DbPool) -> Vec<PathBuf> {
+    allowed_project_roots_with_source(pool).0
 }
 
 /// One path component, normalised for comparison: case-folded on Windows
@@ -219,7 +294,7 @@ pub fn resolve_bound_project(
         pool,
         persona_home_team_id,
         project_id,
-        &allowed_project_roots(),
+        &allowed_project_roots(pool),
     )
 }
 
@@ -256,7 +331,8 @@ pub fn resolve_bound_project_with_roots(
             if allowed_roots.is_empty() {
                 format!(
                     "project {project_id} cannot be bound: no HTTP project roots are configured \
-                 ({HTTP_PROJECT_ROOTS_ENV} is unset or names no existing directory)"
+                 (neither {HTTP_PROJECT_ROOTS_ENV} nor the management.http_project_roots \
+                 setting names an existing directory)"
                 )
             } else {
                 format!(
@@ -289,7 +365,12 @@ pub fn bound_project_for_input(
     persona_home_team_id: Option<&str>,
     input: Option<&serde_json::Value>,
 ) -> Result<Option<DevProject>, ProjectBindingError> {
-    bound_project_for_input_with_roots(pool, persona_home_team_id, input, &allowed_project_roots())
+    bound_project_for_input_with_roots(
+        pool,
+        persona_home_team_id,
+        input,
+        &allowed_project_roots(pool),
+    )
 }
 
 /// [`bound_project_for_input`] against an explicit roots list.
@@ -382,6 +463,59 @@ mod tests {
 
         let only_missing = std::env::join_paths([a.0.join("nope")]).unwrap();
         assert!(project_roots_from(Some(only_missing)).is_empty());
+    }
+
+    #[test]
+    fn env_overrides_the_setting_and_neither_means_none() {
+        let a = TempRoot::new("res_env");
+        let b = TempRoot::new("res_setting");
+        let setting = serde_json::to_string(&vec![b.s()]).unwrap();
+        let canon = |p: &Path| std::fs::canonicalize(p).unwrap();
+
+        let (roots, src) =
+            resolve_project_roots(Some(std::env::join_paths([&a.0]).unwrap()), Some(&setting));
+        assert_eq!((roots, src), (vec![canon(&a.0)], RootsSource::Env));
+
+        // An empty env var is unset.
+        let (roots, src) = resolve_project_roots(Some(OsString::new()), Some(&setting));
+        assert_eq!((roots, src), (vec![canon(&b.0)], RootsSource::Setting));
+
+        let (roots, src) = resolve_project_roots(None, Some(&setting));
+        assert_eq!((roots, src), (vec![canon(&b.0)], RootsSource::Setting));
+
+        assert_eq!(
+            resolve_project_roots(None, None),
+            (vec![], RootsSource::None)
+        );
+
+        // A malformed setting, or one naming only missing folders, is no roots.
+        assert!(resolve_project_roots(None, Some("not json")).0.is_empty());
+        let gone = serde_json::to_string(&vec![a.0.join("gone")]).unwrap();
+        assert!(resolve_project_roots(None, Some(&gone)).0.is_empty());
+    }
+
+    /// The pool-reading entry point sees the persisted setting — the thing a
+    /// second instance on the same database reads.
+    #[test]
+    fn the_persisted_setting_is_read_from_the_database() {
+        if std::env::var_os(HTTP_PROJECT_ROOTS_ENV).is_some_and(|v| !v.is_empty()) {
+            return; // an env override on the test runner would mask the setting
+        }
+        let pool = init_test_db().unwrap();
+        assert_eq!(
+            allowed_project_roots_with_source(&pool).1,
+            RootsSource::None
+        );
+        let root = TempRoot::new("persisted");
+        crate::repos::core::settings::set_operator_only(
+            &pool,
+            crate::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS,
+            &serde_json::to_string(&vec![root.s()]).unwrap(),
+        )
+        .unwrap();
+        let (roots, src) = allowed_project_roots_with_source(&pool);
+        assert_eq!(src, RootsSource::Setting);
+        assert_eq!(roots, vec![std::fs::canonicalize(&root.0).unwrap()]);
     }
 
     #[test]

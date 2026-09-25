@@ -1224,10 +1224,39 @@ pub const PLATFORM_PROJECT_ID: &str = "platform_project_id";
 /// which is worse than leaving it in the tray.
 pub const DEVTOOLS_ACTIVE_WORKSPACE: &str = "devtools.active_workspace";
 
+/// The folders an HTTP-registered or `_projectId`-bound project must live under
+/// (`personas_db::execution_project`). JSON array of absolute directory paths.
+///
+/// Persisted rather than per-process because every desktop instance sharing
+/// this database must answer the containment question the same way: with an
+/// env-only list, one instance accepted a binding at its route and a second
+/// instance's runner, launched without the variable, claimed the execution and
+/// refused it. `PERSONAS_HTTP_PROJECT_ROOTS` still wins when set (an explicit
+/// per-process override); otherwise every instance reads this row at check
+/// time.
+///
+/// **Operator-only** ([`is_operator_only`]): the generic writers
+/// (`settings::set` / `delete`, hence `set_app_setting`, the Athena import, the
+/// management API's settings routes) refuse it. The one writer is
+/// `PUT /api/settings/http-project-roots`, which demands `personas:approve` —
+/// a kp key can never widen its own containment.
+pub const MANAGEMENT_HTTP_PROJECT_ROOTS: &str = "management.http_project_roots";
+
+/// Keys the generic settings writers refuse. They carry a security boundary
+/// the operator alone may move, so they are written only through
+/// `repos::core::settings::set_operator_only`.
+const OPERATOR_ONLY_KEYS: &[&str] = &[MANAGEMENT_HTTP_PROJECT_ROOTS];
+
+/// Whether `key` may be written only through the operator path.
+pub fn is_operator_only(key: &str) -> bool {
+    OPERATOR_ONLY_KEYS.contains(&key)
+}
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     PLATFORM_PROJECT_ID,
     DEVTOOLS_ACTIVE_WORKSPACE,
+    MANAGEMENT_HTTP_PROJECT_ROOTS,
     EXECUTIONS_FTS_STALE,
     MIGRATION_E31_NOTES_ADOPT_MILESTONES,
     OLLAMA_API_KEY,
@@ -1434,6 +1463,16 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 /// - `SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR` → positive integer (u32 range)
 /// - `FILE_WATCHER_DEBOUNCE_MS` → non-negative integer (u32 range, milliseconds)
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
+    // A JSON array of strings; the path checks (absolute, existing directory,
+    // not a root) live at the write route, which can touch the filesystem.
+    if key == MANAGEMENT_HTTP_PROJECT_ROOTS {
+        return match serde_json::from_str::<Vec<String>>(value) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!(
+                "value for '{key}' must be a JSON array of path strings: {e}"
+            )),
+        };
+    }
     // Per-project autopilot mode (prefix key) — constrained enum value.
     if key.starts_with(AUTOPILOT_MODE_PREFIX) {
         return match value {
@@ -2006,6 +2045,8 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
     let category = match key {
         // Secrets / credentials.
         OLLAMA_API_KEY | LITELLM_MASTER_KEY | BROWSER_BRIDGE_PAIRING_TOKEN => "api_keys",
+        // The management API's containment boundary.
+        MANAGEMENT_HTTP_PROJECT_ROOTS => "security",
         // Engine wiring: which CLI/remote engine, routing, capabilities, concurrency.
         CLI_ENGINE
         | QWEN_BASE_URL

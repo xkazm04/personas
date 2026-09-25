@@ -110,7 +110,8 @@ paths:
         folder (else 404 `project_not_found`), and it must be in the workspace
         whose cross-project group is the persona's home team (else 403
         `project_outside_persona_workspace`), and its folder must lie strictly
-        inside an allowed HTTP project root from `PERSONAS_HTTP_PROJECT_ROOTS`
+        inside an allowed HTTP project root (`PERSONAS_HTTP_PROJECT_ROOTS` in
+        the running process, else the `management.http_project_roots` setting)
         (else 403 `project_outside_allowed_roots`, also when no root is
         configured). A valid binding runs the persona
         IN the project's folder with the `CODEBASE_*` env of that project; the
@@ -172,9 +173,11 @@ paths:
         Requires `personas:build`. `rootPath` must be absolute, contain no `..`,
         and canonicalise to an existing directory that is not a filesystem or
         drive root. **Fail-closed allowed roots:** the canonical folder must lie
-        STRICTLY inside one of the roots in the env var `PERSONAS_HTTP_PROJECT_ROOTS`
-        (a platform path list — `;` on Windows, `:` elsewhere — read per request;
-        entries that do not exist are ignored). Unset/empty ⇒ 403
+        STRICTLY inside one of the allowed roots: the env var
+        `PERSONAS_HTTP_PROJECT_ROOTS` in the running process when set (a platform
+        path list — `;` on Windows, `:` elsewhere), else the persisted setting
+        written by `PUT /api/settings/http-project-roots`; read per request,
+        entries that do not exist are ignored. Neither ⇒ 403
         `project_roots_not_configured`, nothing registered; outside every root, or
         the root itself ⇒ 403 `root_path_outside_allowed_roots`. Containment is
         component-wise (case-insensitive on Windows), so root `C:\gigs` does not
@@ -831,6 +834,45 @@ paths:
         "200": { description: "`{nonce, status: rejected, origin, decidedBy}`" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: "`code`: pairing_not_found" }
+
+  /api/settings/http-project-roots:
+    get:
+      summary: Read the allowed HTTP project roots
+      description: |
+        Any valid key. `roots` = the persisted setting (shared by every desktop
+        instance on this database); `effectiveRoots` = what this process
+        enforces now, after the env override (`source`: env | setting | none).
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roots: { type: array, items: { type: string } }
+                  effectiveRoots: { type: array, items: { type: string } }
+                  source: { type: string, enum: [env, setting, none] }
+                  envOverride: { type: boolean }
+    put:
+      summary: "Operator: set the allowed HTTP project roots"
+      description: |
+        Requires `personas:approve` (the operator key). The generic settings
+        writers cannot write this key. Each root must be absolute, contain no
+        `..`, and be an existing directory that is not a filesystem or drive
+        root; at most 32, stored canonical. `[]` clears it (fail-closed).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roots: { type: array, maxItems: 32, items: { type: string } }
+              required: [roots]
+      responses:
+        "200": { description: Same view as the GET }
+        "400": { description: "`code`: invalid_body | invalid_root_path | root_path_not_found | root_path_not_a_directory | root_path_is_filesystem_root" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 
   /api/kp/connector-catalog:
     get:

@@ -217,6 +217,12 @@ pub fn management_router(state: ManagementState) -> Router {
         .route(
             "/api/pairings/{nonce}/reject",
             post(operator::reject_pairing),
+        )
+        // The persisted HTTP project roots (`management.http_project_roots`):
+        // readable by any valid key, writable only with `personas:approve`.
+        .route(
+            "/api/settings/http-project-roots",
+            get(operator::get_http_project_roots).put(operator::put_http_project_roots),
         );
 
     // Headless bridge test mode (§13). The route is ADDED, not merely refused,
@@ -550,6 +556,17 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
             Ok(())
         } else {
             Err("api key lacks the personas:approve scope")
+        };
+    }
+    if path == "/api/settings/http-project-roots" {
+        // The containment boundary of every project-bound run. Reading it is a
+        // read; moving it is the operator's alone — `personas:execute` (which
+        // the generic `/api/settings/*` writes need) is NOT enough, so a kp key
+        // can never widen its own containment.
+        return match *method {
+            Method::GET | Method::HEAD | Method::OPTIONS => Ok(()),
+            _ if has(SCOPE_APPROVE) => Ok(()),
+            _ => Err("api key lacks the personas:approve scope"),
         };
     }
     if path.starts_with("/api/build") {
@@ -5171,6 +5188,32 @@ mod tests {
                 "{m} {path}"
             );
         }
+        // The roots setting: readable by any key, written only by the operator.
+        let kp_after_hire = vec![
+            "personas:read".to_string(),
+            "personas:build".to_string(),
+            personas_engine::kp_execute_grant::execute_scope_for("p1"),
+        ];
+        let roots = "/api/settings/http-project-roots";
+        assert!(authorize(&Method::GET, roots, &kp_after_hire).is_ok());
+        for m in [Method::PUT, Method::POST, Method::DELETE, Method::PATCH] {
+            assert!(authorize(&m, roots, &kp_after_hire).is_err(), "{m}");
+            assert!(
+                authorize(&m, roots, &scopes(&["personas:execute"])).is_err(),
+                "{m}"
+            );
+            assert!(authorize(&m, roots, &scopes(&["personas:read", "personas:approve"])).is_ok());
+        }
+        // The generic settings writes a broad execute key CAN reach name their
+        // own prefixed keys, which can never equal an operator-only key (and
+        // `settings::set` refuses operator-only keys regardless).
+        for prefix in [
+            crate::db::settings_keys::AUTO_OPTIMIZE_PREFIX,
+            crate::db::settings_keys::HEALTH_WATCH_PREFIX,
+        ] {
+            assert!(!crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS.starts_with(prefix));
+        }
+
         // The operator key reaches nothing that mutates besides its own routes.
         let operator = scopes(&["personas:read", "personas:approve"]);
         assert!(authorize(&Method::POST, "/api/execute/p1", &operator).is_err());

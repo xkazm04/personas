@@ -458,7 +458,7 @@ shapes and the §39 route counts predate the test surface):
 | KP hiring bridge | `POST /api/kp/persona-requests` · `GET /api/kp/persona-requests/{id}` · `GET /api/kp/connector-catalog` | `personas:build` scope on the mutating POST; GETs follow the any-valid-key read rule | §10.1 |
 | Device pairing | `POST /pair/request` · `POST /pair/claim` | outside the api-key middleware — the nonce + human-approval ceremony is the gate (auto-approved only in headless mode, §13.3) | §4.2 |
 | Gate audit write door | `POST /api/app-master/gate-runs` | a mutating `/api/*` route, so `authorize` demands the broad `personas:execute` scope; the body names gate outcomes (`passed` / `failed` / `did_not_run`, at most 64 per call) and never a table or a statement — the repo half is `app_master_gates::record_gate_audit`, which files the rows under the named branch or `(working tree)` and attributes them to the project's mandate holder when no persona is named | `management_api::record_gate_runs` |
-| Operator approval API | `GET /api/approvals` · `POST /api/approvals/{id}/approve` · `POST /api/approvals/{id}/reject` · `GET /api/pairings/pending` · `POST /api/pairings/{nonce}/approve` · `POST /api/pairings/{nonce}/reject` | `personas:approve`, on every method, reads included — held only by the file-delivered `operator-local` key, never pairable, never implied | §10.10 |
+| Operator approval API | `GET /api/approvals` · `POST /api/approvals/{id}/approve` · `POST /api/approvals/{id}/reject` · `GET /api/pairings/pending` · `POST /api/pairings/{nonce}/approve` · `POST /api/pairings/{nonce}/reject` · `PUT /api/settings/http-project-roots` (its `GET` is any valid key) | `personas:approve`, on every method, reads included — held only by the file-delivered `operator-local` key, never pairable, never implied | §10.10 |
 | Workspaces + projects | `POST /api/dev/workspaces` · `POST /api/dev/projects` (beside the Ship layer's `GET /api/dev/projects`) | writes under `/api/dev/`, so `authorize` demands `personas:build` | §10.9 |
 | Headless test surface | `POST /api/kp/test/tick` · `POST /api/kp/test/seed-work` | routes are **added** only while `PERSONAS_HEADLESS_BRIDGE=1` (§13.1) — with the mode off they 404 rather than 403 — and `authorize` demands `personas:test` for the whole `/api/kp/test/` prefix | §13.6 (tick) · §13.9 (seed-work) |
 
@@ -851,15 +851,54 @@ response that predates it.
 | `placement: {workspaceId}` on `POST /api/kp/persona-requests` | `personas:build` | Optional, top level. Validated at intake (nothing is queued on a refusal); the raw body is still stored verbatim. The approval card's rationale gains "— filed under workspace '<name>'". On approval — the human click **and** the headless auto-exec, which run the same executor — the new persona is filed under that workspace's group (`resolve_hire_placement` + `file_new_hire` in `approval_exec_core.rs`) instead of the active workspace's. A workspace deleted between intake and approval **fails** the hire (`approved_failed`, nothing created) rather than falling back. Absent ⇒ today's active-workspace filing, unchanged. An `appMaster` block still re-files the persona under its project's team afterwards (the specific home wins by running last). | 400 `workspace_not_found` · `invalid_placement` |
 | `input_data._projectId` on `POST /api/execute/{persona_id}` | `personas:execute` or `personas:execute:persona:<id>` | Optional top-level string. Checked **synchronously before queueing** by `personas_db::execution_project::bound_project_for_input`. On success the run's working directory is the project's `root_path`, and `CODEBASE_ROOT_PATH` / `CODEBASE_PROJECT_NAME` / `CODEBASE_TECH_STACK` / `CODEBASE_PROJECT_ID` plus the personas-mcp sidecar's project pin describe that project, exactly as for a `devProjectId` pin. | 400 `invalid_project_id` (present but not a non-empty string); 404 `project_not_found` (no such project, switched off, or its folder is not an existing directory); 403 `project_outside_allowed_roots` (its folder is not strictly inside an allowed HTTP project root — also when no root is configured) · `project_outside_persona_workspace` |
 
-**Allowed HTTP project roots — fail-closed.** `PERSONAS_HTTP_PROJECT_ROOTS` names the
-folders projects may live under, as a platform path list (`;`-separated on Windows,
-`:` elsewhere; parsed with `std::env::split_paths`). It is read **at request time**, so
-changing it needs no restart. Each entry is canonicalised; entries that do not exist
-(or are not directories) are ignored. The rule (`personas_db::execution_project`):
+**Allowed HTTP project roots — fail-closed, persisted, operator-set.** Projects may
+live only under the operator's roots. Resolution, at every check (the project route,
+the `_projectId` route check, and the runner's re-validation):
 
-- **Unset, empty, or naming no existing folder** ⇒ `POST /api/dev/projects` answers
-  403 `project_roots_not_configured` and registers nothing, and every `_projectId`
-  binding is refused with 403 `project_outside_allowed_roots`.
+1. `PERSONAS_HTTP_PROJECT_ROOTS` when set and non-empty **in this process** — an
+   explicit per-process override (a platform path list, `;` on Windows / `:`
+   elsewhere, `std::env::split_paths`). Even if none of its entries exist it is not
+   silently replaced by the setting.
+2. else the persisted app setting **`management.http_project_roots`** (a JSON array of
+   absolute directory paths) in the shared database;
+3. else nothing — `POST /api/dev/projects` answers 403 `project_roots_not_configured`
+   and every `_projectId` binding 403 `project_outside_allowed_roots`.
+
+Each entry is canonicalised at check time; entries that no longer exist are ignored,
+and a malformed setting is no roots at all.
+
+**Why a setting and not only the env var (2026-09-25).** Two desktop instances ran on
+one database: the one serving :9420 had the variable, the other did not. kp's
+executions passed the first instance's route check and were then run by the second
+instance's runner, whose re-validation refused them — fail-closed held, but a
+per-process variable cannot give instances sharing a database one answer. The setting
+is read from that database by every instance. (How a second instance comes to run an
+execution: `requeue_persisted_executions` re-admits every `queued` row at each boot,
+in every instance, not leader-gated — §10.11.)
+
+**Who may set it: the operator only.** `management.http_project_roots` is an
+**operator-only** settings key (`settings_keys::is_operator_only`): the generic
+writers — `settings::set` / `settings::delete`, and therefore `set_app_setting`, the
+Athena import, and the management API's `/api/settings/auto-optimize|health-watch`
+routes (which name their own `auto_optimize:` / `health_watch:` keys anyway) — refuse
+it. The one writer is `settings::set_operator_only`, reached only from:
+
+| Route | Scope | Behaviour |
+| --- | --- | --- |
+| `GET /api/settings/http-project-roots` | any valid key (a read) | `{roots, effectiveRoots, source: "env"\|"setting"\|"none", envOverride}` — `roots` is what the database holds (every instance), `effectiveRoots` what THIS process enforces now, canonical. |
+| `PUT /api/settings/http-project-roots` `{roots: string[]}` | **`personas:approve`** (the operator key; `personas:execute`, kp's `read + build` and a hire's `execute:persona:<id>` get 403) | Each entry must be absolute, contain no `..`, and canonicalise to an existing directory that is not a filesystem/drive root; at most 32, deduplicated, stored canonical. `[]` clears the setting (nothing may be registered or bound). Answers the same view as the GET. 400 `invalid_body` · `invalid_root_path` · `root_path_not_found` · `root_path_not_a_directory` · `root_path_is_filesystem_root`. Audited in Settings → History under "security". |
+
+Set it with the operator key file (§10.10):
+
+```bash
+curl -s -X PUT http://127.0.0.1:9420/api/settings/http-project-roots \
+  -H "Authorization: Bearer $(cat "$APPDATA/com.personas.desktop/operator-api-key")" \
+  -H "Content-Type: application/json" \
+  -d '{"roots":["C:\\Users\\me\\gigs"]}'
+```
+
+The containment itself:
+
 - A folder is accepted only when its canonical path is **strictly inside** a root: a
   root itself is not a project, and containment is compared **component-wise**
   (`is_strictly_inside`; case-insensitive on Windows), never by string prefix — root
@@ -869,10 +908,6 @@ changing it needs no restart. Each entry is canonicalised; entries that do not e
   runner. A project someone assigned to the gig workspace **through the UI** — this
   checkout, say — therefore still cannot become a skip-permissions working directory
   for a kp key unless its folder lives under a gig root.
-
-Set it before launching the app, e.g. `set PERSONAS_HTTP_PROJECT_ROOTS=C:\Users\me\gigs`
-(Windows) or `export PERSONAS_HTTP_PROJECT_ROOTS=$HOME/gigs` (elsewhere). Only the
-Personas process's own environment counts.
 
 **The containment rule is the security boundary.** A run executes the Claude CLI with
 permissions skipped, so a binding is write access to a folder. A key allowed to run
@@ -914,12 +949,13 @@ changed:
 **What a `personas:build` key can and cannot do.** It can register a project only under
 an allowed root, and adopt into its workspace only a pre-existing project whose folder
 is under one; it can bind its personas' runs only to projects under an allowed root in
-their own workspace. The roots are the operator's, set in the process environment —
-nothing on the wire can widen them.
+their own workspace. The roots are the operator's — the `personas:approve`-only route
+or a process-level env override — and nothing a kp key can send widens them.
 
 Tested in `personas-db` (`execution_project::tests` — 12: input parsing, valid, unknown,
 switched off, folder gone, no workspace, other workspace / project team / unhomed, roots
-list parsing (separators, missing entries), strict component-wise containment incl. the
+list parsing (separators, missing entries), env-over-setting resolution and the
+setting read from the database, strict component-wise containment incl. the
 sibling-prefix trick and the root itself, case-insensitivity on Windows, `..` escape
 after canonicalisation, a binding outside the roots / with no roots / at the root;
 `workspaces::org::tests::ensure_workspace_is_idempotent_by_name_and_does_not_modify`)
@@ -1028,6 +1064,38 @@ removes, the env switch is default-on), `personas-engine`
 are not pending, the actor stamp, the shared pending read carries the requesting key;
 `management_api::operator::tests` — timestamps, the kp summary, the pairing ceiling;
 `management_api::tests::authorize_operator_routes_need_the_exact_approve_scope`).
+
+### 10.11 Two desktop instances on one database — who runs an execution (recorded, not changed)
+
+Measured from the code on 2026-09-25, after a live run in which one instance accepted
+kp's executions and another ran them:
+
+- `POST /api/execute/{id}` inserts the execution row as `queued`
+  (`management_api::execute_persona` → `executions::create`) and calls
+  `start_execution` on **the serving process's own engine**. With a free slot in that
+  process's in-memory tracker it spawns the run in-process at once
+  (`src/engine/execution.rs`, `start_execution` / `spawn_execution_task`); without
+  one, the context is held only in that process's memory (`queued_contexts`) and the
+  row stays `queued`.
+- **Re-admission is per boot, per instance, not leader-gated.**
+  `requeue_persisted_executions` selects every `status='queued'` row and starts each on
+  the booting process's engine (`execution.rs`, spawned from `boot/mod.rs` /
+  `boot/workers.rs`) — before, and independent of, `start_engine_leadership`. A second
+  instance booting while a row is still `queued` therefore runs it on **its** runner.
+  There is no periodic cross-process drain.
+- **The claim is not atomic on those paths**: `running` is written with an
+  unconditional `update_status`. A compare-and-swap exists only for promoting a run
+  that waited in the same process's memory (`executions::promote_if_queued`);
+  `executions::claim_for_instance` (CAS with a TTL) has no production caller.
+- **The engine-leader lock gates background loops**, not executions: subscription loops
+  are leader-only by default (one opts out), and persona-jobs, the curation scheduler,
+  workspace GC, the Discord/Slack pollers and cloud sync check `is_leader()`. A second
+  instance fails `try_acquire`, runs as a follower and retries leadership on each
+  heartbeat; `PERSONAS_FOLLOWER=1` pins it a follower. Crash recovery is skipped on a
+  follower; queue re-admission is not.
+
+Consequence for this bridge: every check a runner repeats must read shared state, not
+process state — which is why the allowed roots moved into the database (§10.9).
 
 ---
 

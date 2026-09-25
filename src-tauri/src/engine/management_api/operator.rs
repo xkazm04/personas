@@ -495,6 +495,122 @@ pub(super) async fn reject_pairing(
     .into_response()
 }
 
+// ── /api/settings/http-project-roots ────────────────────────────────────────
+
+const MAX_ROOTS: usize = 32;
+
+/// Validate and canonicalise the operator's roots: each absolute, no `..`,
+/// an existing directory, not a filesystem or drive root (the same checks a
+/// project folder gets — `workspaces::canonical_project_root`). Deduplicated,
+/// order kept.
+pub(super) fn validate_roots(body: &Value) -> Result<Vec<String>, Box<Response>> {
+    let Some(list) = body.get("roots").and_then(Value::as_array) else {
+        return Err(refuse(
+            StatusCode::BAD_REQUEST,
+            "invalid_body",
+            "body must be `{\"roots\": [\"<absolute dir>\", ...]}`",
+        ));
+    };
+    if list.len() > MAX_ROOTS {
+        return Err(refuse(
+            StatusCode::BAD_REQUEST,
+            "invalid_body",
+            format!("at most {MAX_ROOTS} roots"),
+        ));
+    }
+    let mut out: Vec<String> = Vec::with_capacity(list.len());
+    for entry in list {
+        let Some(raw) = entry.as_str() else {
+            return Err(refuse(
+                StatusCode::BAD_REQUEST,
+                "invalid_body",
+                "`roots` must be an array of strings",
+            ));
+        };
+        let canonical = super::workspaces::canonical_project_root(raw)
+            .map_err(|e| Box::new(e.into_response()))?;
+        let text = canonical.to_string_lossy().to_string();
+        if !out.contains(&text) {
+            out.push(text);
+        }
+    }
+    Ok(out)
+}
+
+fn roots_view(pool: &DbPool) -> Value {
+    use crate::db::execution_project::{allowed_project_roots_with_source, RootsSource};
+    let stored: Vec<String> = crate::db::repos::core::settings::get(
+        pool,
+        crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS,
+    )
+    .ok()
+    .flatten()
+    .and_then(|v| serde_json::from_str(&v).ok())
+    .unwrap_or_default();
+    let (effective, source) = allowed_project_roots_with_source(pool);
+    json!({
+        // What the shared database holds — every instance reads this.
+        "roots": stored,
+        // What THIS process enforces right now (canonical), and why.
+        "effectiveRoots": effective
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect::<Vec<_>>(),
+        "source": source.as_str(),
+        "envOverride": source == RootsSource::Env,
+    })
+}
+
+/// `GET /api/settings/http-project-roots` — any valid key (a read).
+pub(super) async fn get_http_project_roots(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+) -> Response {
+    ok_json(roots_view(&state.pool)).into_response()
+}
+
+/// `PUT /api/settings/http-project-roots` `{roots: string[]}` — the operator
+/// only (`personas:approve`). Writes through `set_operator_only`, the one door
+/// the generic settings writers cannot reach. An empty list clears the setting
+/// (fail-closed: nothing may be registered or bound).
+pub(super) async fn put_http_project_roots(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Extension(key): Extension<AuthedApiKey>,
+    body: Bytes,
+) -> Response {
+    let body = match parse_optional_body(&body) {
+        Ok(b) => b,
+        Err(r) => return *r,
+    };
+    let roots = match validate_roots(&body) {
+        Ok(r) => r,
+        Err(r) => return *r,
+    };
+    let setting = crate::db::settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS;
+    let written = if roots.is_empty() {
+        crate::db::repos::core::settings::delete_operator_only(&state.pool, setting).map(|_| ())
+    } else {
+        match serde_json::to_string(&roots) {
+            Ok(json) => {
+                crate::db::repos::core::settings::set_operator_only(&state.pool, setting, &json)
+            }
+            Err(e) => Err(crate::error::AppError::Internal(e.to_string())),
+        }
+    };
+    if let Err(e) = written {
+        return fail(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal_error",
+            e.to_string(),
+        );
+    }
+    tracing::info!(
+        actor = %operator_actor(&key.id),
+        count = roots.len(),
+        "operator api: HTTP project roots set"
+    );
+    ok_json(roots_view(&state.pool)).into_response()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -554,5 +670,57 @@ mod tests {
         }
         assert!(pairing_scopes(&json!({}), &[]).is_err(), "no scopes");
         assert!(pairing_scopes(&json!({"scopes": "personas:read"}), &requested).is_err());
+    }
+
+    async fn code_of(r: Box<Response>) -> String {
+        let bytes = axum::body::to_bytes(r.into_body(), 1 << 16).await.unwrap();
+        serde_json::from_slice::<Value>(&bytes).unwrap()["code"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    }
+
+    #[tokio::test]
+    async fn roots_are_validated_like_project_folders() {
+        let base = std::env::temp_dir().join(format!("personas_roots_{}", uuid::Uuid::new_v4()));
+        let gigs = base.join("gigs");
+        std::fs::create_dir_all(&gigs).unwrap();
+        let file = base.join("f.txt");
+        std::fs::write(&file, "x").unwrap();
+        let g = gigs.to_str().unwrap();
+
+        let ok = validate_roots(&json!({"roots": [g, g]})).unwrap();
+        assert_eq!(ok.len(), 1, "deduplicated");
+        assert!(validate_roots(&json!({"roots": []})).unwrap().is_empty());
+
+        let fs_root = gigs
+            .ancestors()
+            .last()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let cases = [
+            (json!({}), "invalid_body"),
+            (json!({"roots": [3]}), "invalid_body"),
+            (json!({"roots": ["relative/gigs"]}), "invalid_root_path"),
+            (
+                json!({"roots": [base.join("missing").to_str().unwrap()]}),
+                "root_path_not_found",
+            ),
+            (
+                json!({"roots": [file.to_str().unwrap()]}),
+                "root_path_not_a_directory",
+            ),
+            (json!({"roots": [fs_root]}), "root_path_is_filesystem_root"),
+        ];
+        for (body, want) in cases {
+            assert_eq!(
+                code_of(validate_roots(&body).unwrap_err()).await,
+                want,
+                "{body}"
+            );
+        }
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

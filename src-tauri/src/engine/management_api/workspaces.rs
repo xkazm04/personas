@@ -279,7 +279,7 @@ pub(super) fn create_project_flow(
     create_project_flow_with_roots(
         pool,
         body,
-        &crate::db::execution_project::allowed_project_roots(),
+        &crate::db::execution_project::allowed_project_roots(pool),
     )
 }
 
@@ -325,7 +325,7 @@ pub(super) fn create_project_flow_with_roots(
         return Err(forbidden(
             "project_roots_not_configured",
             format!(
-                "no HTTP project roots are configured: set {HTTP_PROJECT_ROOTS_ENV} to the folder(s) projects may be registered under"
+                "no HTTP project roots are configured: the operator sets them with PUT /api/settings/http-project-roots (or {HTTP_PROJECT_ROOTS_ENV} overrides per process)"
             ),
         ));
     }

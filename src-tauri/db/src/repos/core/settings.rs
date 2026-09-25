@@ -119,6 +119,35 @@ pub fn get_bool(pool: &DbPool, key: &str, default: bool) -> bool {
 /// cannot bypass the validation that the Tauri command layer also applies.
 /// Malformed keys or values are rejected with [`AppError::Validation`].
 pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
+    refuse_operator_only(key)?;
+    write_validated(pool, key, value)
+}
+
+/// The generic writers must not move an operator-only boundary
+/// ([`settings_keys::is_operator_only`]).
+fn refuse_operator_only(key: &str) -> Result<(), AppError> {
+    if settings_keys::is_operator_only(key) {
+        return Err(AppError::Validation(format!(
+            "settings key '{key}' is written only through the operator API"
+        )));
+    }
+    Ok(())
+}
+
+/// Write an operator-only key. The ONE caller is the operator route
+/// (`PUT /api/settings/http-project-roots`, `personas:approve`); it refuses
+/// every key that is not operator-only, so it cannot become a side door for
+/// ordinary settings either.
+pub fn set_operator_only(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
+    if !settings_keys::is_operator_only(key) {
+        return Err(AppError::Validation(format!(
+            "settings key '{key}' is not an operator-only key"
+        )));
+    }
+    write_validated(pool, key, value)
+}
+
+fn write_validated(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
     settings_keys::validate_key(key).map_err(AppError::Validation)?;
     settings_keys::validate_value(key, value).map_err(AppError::Validation)?;
     // Quarantined-key breadcrumb: writing a DEPRECATED key still persists (the
@@ -246,6 +275,21 @@ pub fn get_by_prefix(pool: &DbPool, prefix: &str) -> Result<Vec<(String, String)
 /// Emits a `tracing::warn!` breadcrumb (but does not fail) when called with a
 /// key that is not on the [`settings_keys`] allowlist, mirroring [`get`].
 pub fn delete(pool: &DbPool, key: &str) -> Result<bool, AppError> {
+    refuse_operator_only(key)?;
+    delete_unchecked(pool, key)
+}
+
+/// Delete an operator-only key (the operator route, with an empty list).
+pub fn delete_operator_only(pool: &DbPool, key: &str) -> Result<bool, AppError> {
+    if !settings_keys::is_operator_only(key) {
+        return Err(AppError::Validation(format!(
+            "settings key '{key}' is not an operator-only key"
+        )));
+    }
+    delete_unchecked(pool, key)
+}
+
+fn delete_unchecked(pool: &DbPool, key: &str) -> Result<bool, AppError> {
     if let Err(msg) = settings_keys::validate_key(key) {
         tracing::warn!(key = key, reason = %msg, "settings::delete called with unknown key");
     }
@@ -268,6 +312,30 @@ pub fn delete(pool: &DbPool, key: &str) -> Result<bool, AppError> {
 mod tests {
     use super::*;
     use crate::init_test_db;
+
+    /// The allowed-roots boundary cannot be moved by any generic writer — the
+    /// door every command, import and management route writes through.
+    #[test]
+    fn operator_only_keys_refuse_the_generic_writers() {
+        let pool = init_test_db().unwrap();
+        let key = settings_keys::MANAGEMENT_HTTP_PROJECT_ROOTS;
+        assert!(set(&pool, key, r#"["C:\\gigs"]"#).is_err());
+        assert!(delete(&pool, key).is_err());
+        assert_eq!(get(&pool, key).unwrap(), None);
+
+        set_operator_only(&pool, key, r#"["/srv/gigs"]"#).unwrap();
+        assert_eq!(
+            get(&pool, key).unwrap().as_deref(),
+            Some(r#"["/srv/gigs"]"#)
+        );
+        assert!(set(&pool, key, "[]").is_err(), "still refused once set");
+        assert!(set_operator_only(&pool, key, "not json").is_err());
+        assert!(delete_operator_only(&pool, key).unwrap());
+
+        // The operator door is not a side door for ordinary keys.
+        assert!(set_operator_only(&pool, settings_keys::CLI_ENGINE, "claude").is_err());
+        assert!(delete_operator_only(&pool, settings_keys::CLI_ENGINE).is_err());
+    }
 
     #[test]
     fn test_get_set_delete() {
