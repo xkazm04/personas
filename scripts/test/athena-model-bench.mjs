@@ -713,6 +713,47 @@ const pctl = (arr, p) => {
 };
 const fmtS = (ms) => (ms == null ? '—' : `${(ms / 1000).toFixed(1)}s`);
 
+/** Failure signatures beside the pass rate. Two cells with the same pass %
+ *  can have failed for different reasons — one emitting malformed ops, the
+ *  other omitting the action — and the pass % alone cannot say which lever
+ *  (prompt, format contract, model/effort) to pull. Each failing check maps
+ *  to one family; a failing run counts once per family it hit (a CASE count,
+ *  not an event count — one run with three rejected ops is one format case).
+ *  A family can only be counted on runs whose scenario declared a check of
+ *  that family, so the report prints how many runs declared each one: a 0
+ *  over 0 declaring runs is "not measured", not "clean". */
+const FAILURE_FAMILIES = [
+  ['format', (name) => /^(noRejectedOps|noParseErrors|noLeak|replyShape)$/.test(name)],
+  ['omission', (name) => /^(job:|approval:|nav:|reportCard$|anyOf\()/.test(name)],
+  ['over-action', (name) => /^(noSideEffects|noNewJobs)$/.test(name)],
+  ['stall', (name, detail) => name === 'delegated-promptly' || /still running/.test(detail ?? '')],
+  ['voice', (name) => /^(requireTts|spokenFriendly|ttsNotDuplicate)$/.test(name)],
+];
+const FAMILY_NAMES = [...FAILURE_FAMILIES.map(([f]) => f), 'other'];
+const familyOf = (check) => (FAILURE_FAMILIES.find(([, test]) => test(check.name, check.detail)) ?? ['other'])[0];
+/** Families a run failed on (deduped). */
+const failedFamilies = (r) => [...new Set((r.checks ?? []).filter((c) => !c.pass).map(familyOf))];
+/** Families a run's scenario declared at least one check of. */
+const declaredFamilies = (r) => new Set((r.checks ?? []).map(familyOf));
+/** Raw-output signatures, read on EVERY scored run from the validator report
+ *  regardless of which checks the scenario declared — so a passing run that
+ *  emitted a rejected op still shows up. */
+const RAW_SIGNATURES = [
+  ['rejected op', (r) => (r.validator?.warnings ?? []).length > 0],
+  ['grammar leak', (r) => r.validator?.machineGrammarLeak === true],
+];
+function signatureProfile(runs) {
+  const failing = runs.filter((r) => !r.pass);
+  const byFamily = Object.fromEntries(FAMILY_NAMES.map((f) => [f, failing.filter((r) => failedFamilies(r).includes(f)).length]));
+  const declared = Object.fromEntries(FAMILY_NAMES.map((f) => [f, runs.filter((r) => declaredFamilies(r).has(f)).length]));
+  const raw = Object.fromEntries(
+    RAW_SIGNATURES.map(([name, test]) => [name, { onPass: runs.filter((r) => r.pass && test(r)).length, onFail: failing.filter(test).length }]),
+  );
+  return { failing: failing.length, byFamily, declared, raw };
+}
+const fmtFamilies = (p) =>
+  FAMILY_NAMES.filter((f) => p.byFamily[f]).map((f) => `${f} ${p.byFamily[f]}`).join(', ') || '—';
+
 function report() {
   if (!fs.existsSync(RESULTS)) {
     console.error('no results yet');
@@ -787,6 +828,24 @@ function report() {
   md += `\n## Accuracy by class (pass/runs)\n\n| cell | prompt class | ${classes.join(' | ')} |\n|---|---|${classes.map(() => '---').join('|')}|\n`;
   for (const c of cells) {
     md += `| ${c} | ${CELLS[c].promptClass} | ${classes.map((k) => `${agg[c].byClass[k].pass}/${agg[c].byClass[k].n}`).join(' | ')} |\n`;
+  }
+
+  md += `\n## Failure signatures beside the pass rate\n\nFailing runs by the family of check they failed (a run counts once per family). Equal pass rates with different families are different problems: format → the op grammar / format contract, omission → the model did not take the expected action, over-action → it acted when it should not, stall → it held the turn instead of delegating. Raw signatures are read from the validator report on every scored run, passing ones included (pass/fail).\n\n| cell | pass % | failing runs | ${FAMILY_NAMES.join(' | ')} | ${RAW_SIGNATURES.map(([n]) => `${n} (pass/fail)`).join(' | ')} |\n|---|---|---|${FAMILY_NAMES.map(() => '---').join('|')}|${RAW_SIGNATURES.map(() => '---').join('|')}|\n`;
+  for (const c of cells) {
+    const p = signatureProfile(rows.filter((r) => r.cell === c));
+    md += `| ${c} | ${agg[c].passRate} | ${p.failing} | ${FAMILY_NAMES.map((f) => `${p.byFamily[f]}`).join(' | ')} | ${RAW_SIGNATURES.map(([n]) => `${p.raw[n].onPass}/${p.raw[n].onFail}`).join(' | ')} |\n`;
+  }
+  const allProfile = signatureProfile(rows);
+  md += `\nRuns that declared a check of each family (a family column can only count on these; 0 declaring runs means not measured, not clean): ${FAMILY_NAMES.map((f) => `${f} ${allProfile.declared[f]}/${rows.length}`).join(' · ')}\n`;
+  md += `\n### By class (pass/runs [failing families])\n\n| cell | ${classes.join(' | ')} |\n|---|${classes.map(() => '---').join('|')}|\n`;
+  for (const c of cells) {
+    md += `| ${c} | ${classes
+      .map((k) => {
+        const b = agg[c].byClass[k];
+        const p = signatureProfile(rows.filter((r) => r.cell === c && r.class === k));
+        return `${b.pass}/${b.n}${p.failing ? ` [${fmtFamilies(p)}]` : ''}`;
+      })
+      .join(' | ')} |\n`;
   }
 
   md += `\n## Gate verdicts vs ${BASELINE}\n\nGates: accuracy drop ≤ ${GATES.maxAccuracyDropPts}pts per class; ANY drop in ${GATES.hardFailClasses.join(', ')} is a hard fail. Latency (p50 total win ≥ ${GATES.minLatencyWinPct}%) is reported beside the verdict: it decides the headline for a model/effort cell and is informational for a prompt-class cell, whose speed lever is the warm session this cold-spawn bench cannot see.\n\n`;

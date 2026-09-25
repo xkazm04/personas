@@ -39,6 +39,7 @@ pub use personas_core;
 
 #[macro_use]
 pub mod macros;
+pub mod agent_sql_guard;
 pub mod attribution;
 mod backup;
 pub mod builtin_connectors;

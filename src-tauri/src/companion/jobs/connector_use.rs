@@ -1502,7 +1502,9 @@ async fn personas_db_execute_mutation(pool: &UserDbPool, args: &Value) -> Result
         ));
     }
     let conn = pool.get()?;
-    let changed = conn.execute(trimmed, [])?;
+    // The companion's own records (turn ledger, approvals, jobs, budgets) share
+    // this database so she can read them; the guard keeps them unwritable by her.
+    let changed = crate::db::agent_sql_guard::run_agent_mutation(&conn, trimmed)?;
     Ok(format!(
         "## Personas database -- mutation executed\n\nQuery:\n```sql\n{trimmed}\n```\n\nRows affected: **{changed}**."
     ))
