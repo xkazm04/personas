@@ -167,6 +167,36 @@ export function TeamsSidebarNav() {
     useSystemStore.getState().setIsCreatingPersona(false);
   };
 
+  // The Development rows: the Teams tabs, then Studio. Studio is a content
+  // section of its own rather than a Teams tab, so it switches `sidebarSection`
+  // instead of `teamsTab` (the registry nests it under Projects, which keeps
+  // Projects lit in the rail). It is experimental (registry `devOnly`), so it
+  // shares the rows' golden rail.
+  const devRows = [
+    ...DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => ({
+      key: item.id as string,
+      icon: item.icon,
+      label: t.sidebar[item.labelKey],
+      testId: item.testId,
+      devOnly: item.devOnly === true,
+      active: teamsTab === item.id,
+      prefetch: PREFETCH_ON_INTENT.has(item.id),
+      onSelect: () => go(item.id),
+    })),
+    ...(showStudio
+      ? [{
+          key: 'studio',
+          icon: PenTool,
+          label: t.sidebar.studio,
+          testId: 'teams-studio-nav',
+          devOnly: true,
+          active: sidebarSection === 'studio',
+          prefetch: false,
+          onSelect: () => setSidebarSection('studio'),
+        }]
+      : []),
+  ];
+
   return (
     <nav className="space-y-1" aria-label={t.sidebar.teams}>
       {/* Manage — the section's landing page (project/workspace table).
@@ -294,18 +324,18 @@ export function TeamsSidebarNav() {
           {t.sidebar.development}
         </div>
         <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-          {DEV_ITEMS.filter((item) => !item.devOnly || import.meta.env.DEV).map((item) => {
+          {devRows.map((item) => {
             const Icon = item.icon;
-            const active = teamsTab === item.id;
+            const active = item.active;
             return (
               <button
                 type="button"
-                key={item.id}
+                key={item.key}
                 data-testid={item.testId}
                 data-experimental={item.devOnly ? 'true' : undefined}
-                onClick={() => go(item.id)}
-                onPointerEnter={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
-                onFocus={PREFETCH_ON_INTENT.has(item.id) ? prefetchMastermindIntent : undefined}
+                onClick={item.onSelect}
+                onPointerEnter={item.prefetch ? prefetchMastermindIntent : undefined}
+                onFocus={item.prefetch ? prefetchMastermindIntent : undefined}
                 aria-current={active ? 'page' : undefined}
                 // The golden rail is `border-l-2` ON THE ROW, drawn just inside
                 // the group's own grey rail, plus a squared left corner so the
@@ -322,13 +352,13 @@ export function TeamsSidebarNav() {
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${item.devOnly ? 'text-amber-400/80' : ''}`} />
-                <span className="truncate">{t.sidebar[item.labelKey]}</span>
+                <span className="truncate">{item.label}</span>
                 {/* The rail carries the meaning on screen and is `border`, so it
                     reaches no screen reader at all — this is the only thing
                     standing between the row and an experimental surface that
                     announces itself as a shipped one. */}
                 {item.devOnly && <span className="sr-only">{t.sidebar.experimental}</span>}
-                {item.id === 'factory' && factoryRunning && (
+                {item.key === 'factory' && factoryRunning && (
                   // Decorative pulse — the running state is announced by the
                   // 1st-level badge tooltip, so aria-hidden avoids double-reading.
                   <span className="ml-auto relative flex items-center justify-center w-2.5 h-2.5" aria-hidden>
@@ -339,29 +369,6 @@ export function TeamsSidebarNav() {
               </button>
             );
           })}
-          {/* Studio — the app builder. A content section of its own, not a
-              Teams tab, so it switches `sidebarSection` instead of `teamsTab`
-              (the registry nests it under Projects, so the rail keeps Projects
-              lit). Experimental (the registry gates it `devOnly`), so it wears
-              the DEV_ITEMS golden rail. */}
-          {showStudio && (
-            <button
-              type="button"
-              data-testid="teams-studio-nav"
-              data-experimental="true"
-              onClick={() => setSidebarSection('studio')}
-              aria-current={sidebarSection === 'studio' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body transition-colors border-l-2 border-amber-400/70 rounded-r-md ${
-                sidebarSection === 'studio'
-                  ? 'bg-primary/10 text-foreground/90 font-medium'
-                  : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
-              }`}
-            >
-              <PenTool className="w-3.5 h-3.5 flex-shrink-0 text-amber-400/80" />
-              <span className="truncate">{t.sidebar.studio}</span>
-              <span className="sr-only">{t.sidebar.experimental}</span>
-            </button>
-          )}
         </div>
       </div>
 
