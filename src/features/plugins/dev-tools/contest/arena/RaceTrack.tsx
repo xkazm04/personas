@@ -9,13 +9,14 @@ import { cancelContest, launchContest } from '@/api/contest';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ContestDetail } from '@/lib/bindings/ContestDetail';
 import { toastCatch } from '@/lib/silentCatch';
 
 import type { ReviewDraft } from '../hooks/useReviewDraft';
 import { phaseLabel, phaseTone } from '../model/labels';
-import { buildLanes, isLivePhase, makerSpec, raceStartMs, recordedBucket, relevantLayer, variantName, type Lane } from './arenaModel';
+import { buildLanes, formatUntil, isLivePhase, makerSpec, raceStartMs, recordedBucket, relevantLayer, variantName, type Lane } from './arenaModel';
 import { FinishLine } from './FinishLine';
 import { SeatLabel } from './SeatLabel';
 import { SeatLane } from './SeatLane';
@@ -79,9 +80,9 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
             {start && (
               <>
                 <span aria-hidden>·</span>
-                <span>
+                <span data-testid="arena-track-start">
                   {start.upcoming ? a.starts : a.started}{' '}
-                  <RelativeTime timestamp={start.ms} className="typo-caption" />
+                  {start.upcoming ? <StartsIn ms={start.ms} /> : <RelativeTime timestamp={start.ms} className="typo-caption" />}
                 </span>
               </>
             )}
@@ -180,4 +181,11 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
       )}
     </section>
   );
+}
+
+/** A scheduled start's distance, ticking on the shared 30 s clock. */
+function StartsIn({ ms }: { ms: number }) {
+  const { language } = useTranslation();
+  useFixedTicker(30_000);
+  return <span className="typo-caption">{formatUntil(ms, Date.now(), language)}</span>;
 }

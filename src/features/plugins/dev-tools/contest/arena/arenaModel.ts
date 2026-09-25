@@ -162,6 +162,22 @@ export function raceStartMs(
   return detail.notBeforeMs !== null ? { ms: detail.notBeforeMs, upcoming: false } : null;
 }
 
+/**
+ * A start still ahead, as a future distance ("in 6 hours"). The shared
+ * `RelativeTime` clamps the future to "now" on purpose (a finished row with
+ * clock skew); a countdown needs the opposite. Minutes round up (a start
+ * seconds away reads "in 1 minute"), hours and days to the nearest.
+ */
+export function formatUntil(ms: number, nowMs: number, language: string): string {
+  const rtf = new Intl.RelativeTimeFormat(language, { numeric: 'always' });
+  const seconds = Math.max(0, (ms - nowMs) / 1000);
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  if (minutes < 60) return rtf.format(minutes, 'minute');
+  const hours = Math.round(seconds / 3600);
+  if (hours < 24) return rtf.format(Math.max(1, hours), 'hour');
+  return rtf.format(Math.round(hours / 24), 'day');
+}
+
 /** Seconds since a start time, or null when the start is unknown. */
 export function elapsedSince(startMs: number | null | undefined, nowMs: number): number | null {
   if (startMs == null || !Number.isFinite(startMs) || startMs <= 0) return null;
