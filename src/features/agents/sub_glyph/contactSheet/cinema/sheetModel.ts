@@ -66,6 +66,34 @@ export function frameStateFromPetal(p: PetalState, settled: boolean): FrameState
   }
 }
 
+export interface FrameStateInputs {
+  isCompose: boolean;
+  act: SheetAct;
+  /** The state the build store implies (frameStateFromPetal); ignored in compose. */
+  fromBuild: FrameState;
+  /** The user answered this dimension on the sheet. */
+  answered: boolean;
+  /** A CONFIRMED value exists (useFrameValues; never the preview). */
+  hasValue: boolean;
+  /** The first turn's streaming preview touches this frame (provisionalFrames). */
+  previewing: boolean;
+}
+
+/** One frame's photographic state. A confirmed value or an answer lights a
+ *  frame; the first turn's preview only DEVELOPS it ("filling"), and a
+ *  stopped build un-develops it again. */
+export function deriveFrameState(i: FrameStateInputs): FrameState {
+  if (i.isCompose) return i.hasValue ? "lit" : "blank";
+  let st = i.fromBuild;
+  const empty = st === "blank" || st === "unset";
+  if (i.answered) st = "lit";
+  else if (empty && i.hasValue) st = "lit";
+  else if (empty && i.previewing) st = "filling";
+  if (i.act === "stopped" && st === "filling") st = "blank";
+  if (i.act === "premiere" && st !== "lit") st = "unset";
+  return st;
+}
+
 /** THE definition of a "populated" dimension, shared by the frame and the
  *  sigil petal: only a populated dimension gets full colour (tinted paper,
  *  coloured crop marks, coloured label, a lit petal); an empty one stays in
@@ -76,7 +104,9 @@ export function frameStateFromPetal(p: PetalState, settled: boolean): FrameState
  *   - once the draft's rows exist, a row that uses the dimension (presence
  *     other than "none"): the rows are the truth, so a cell the build merely
  *     marked resolved while deciding "not used" stays empty;
- *   - before any row exists, a resolved cell. */
+ *   - before any row exists, a resolved cell.
+ *  The first turn's streaming preview (provisionalFrames.ts) never counts: it
+ *  only develops a frame ("filling") until the authoritative pass confirms. */
 const RESOLVED_CELL: ReadonlySet<CellBuildStatus> = new Set<CellBuildStatus>(["resolved", "updated", "highlighted"]);
 
 export function isPopulated(dim: GlyphDimension, hasValue: boolean, cellStates: Record<string, CellBuildStatus>, rows: readonly GlyphRow[]): boolean {

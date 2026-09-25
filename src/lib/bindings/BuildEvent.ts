@@ -69,4 +69,14 @@ accepts_webhook_source: boolean,
  * options. See the `Question` variant for the full contract. Only
  * meaningful for `scope: "connector_category"`.
  */
-suggested: Array<string>, };
+suggested: Array<string>, } | { "type": "provisional_capability_enumeration", session_id: string, data: JsonValue, } | { "type": "provisional_capability_resolution", session_id: string, capability_id: string, field: string, value: JsonValue, } | { "type": "provisional_settled", session_id: string, 
+/**
+ * Provisionally enumerated capability ids absent from the
+ * authoritative enumeration.
+ */
+retracted_capability_ids: Array<string>, 
+/**
+ * Provisional `(capability_id, field)` resolutions the validator
+ * dropped or changed.
+ */
+retracted_resolutions: Array<[string, string]>, };

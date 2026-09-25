@@ -13,6 +13,7 @@ import { describeTriggerConfig } from "@/features/agents/shared/quickConfig/quic
 import { getConnectorMeta } from "@/lib/connectors/connectorMeta";
 import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from "@/i18n/useTranslation";
+import type { Translations } from "@/i18n/en";
 import { capabilityTitles, dedupeConnectorNames } from "@/features/agents/sub_glyph/cinemaShared";
 import { weekFromCron, weekFromQuickConfig, type WeekPicture } from "./sheetModel";
 import { COPY } from "./copy";
@@ -43,6 +44,22 @@ const uniq = (xs: string[]) => Array.from(new Set(xs.filter(Boolean)));
 const cronOf = (cfg: Record<string, unknown> | undefined) =>
   typeof cfg?.cron === "string" ? cfg.cron : typeof cfg?.schedule === "string" ? cfg.schedule : null;
 
+type TriggerLike = { trigger_type: string; config?: unknown; description?: string };
+
+/** The trigger frame's picture for one trigger (shared with the provisional
+ *  preview in provisionalFrames.ts, so a developing frame shows the same
+ *  picture it will settle into). */
+export function triggerFrameValue(trig: TriggerLike, lines: string[], t: Translations): FrameValue {
+  const cron = cronOf(trig.config as Record<string, unknown> | undefined);
+  return {
+    week: cron ? weekFromCron(cron) : null,
+    triggerKind: trig.trigger_type,
+    caption: cron ? humanizeCron(t, cron) : trig.description || trig.trigger_type,
+    lines,
+    by: "ai",
+  };
+}
+
 export function useFrameValues({ glyphRows, quickConfig: qc, toggles, intentText, answered, isCompose }: Args) {
   const { t } = useTranslation();
   const storeCaps = useAgentStore((s) => s.buildCapabilities);
@@ -61,14 +78,7 @@ export function useFrameValues({ glyphRows, quickConfig: qc, toggles, intentText
         const trig = rows.flatMap((r) => r.triggers)[0]
           ?? liveCaps.map((c) => c.suggested_trigger).find(Boolean) ?? null;
         if (trig) {
-          const cron = cronOf(trig.config as Record<string, unknown> | undefined);
-          v = {
-            week: cron ? weekFromCron(cron) : null,
-            triggerKind: trig.trigger_type,
-            caption: cron ? humanizeCron(t, cron) : trig.description || trig.trigger_type,
-            lines: uniq(rows.flatMap((r) => r.triggers.map((x) => x.description || x.trigger_type))),
-            by: "ai",
-          };
+          v = triggerFrameValue(trig, uniq(rows.flatMap((r) => r.triggers.map((x) => x.description || x.trigger_type))), t);
         } else if (qc && (qc.frequency || qc.selectedEvents.length)) {
           const lines = describeTriggerConfig(qc);
           v = { week: weekFromQuickConfig(qc.frequency, qc.days, qc.time), triggerKind: qc.frequency ? "schedule" : "event", caption: lines.join(" · "), lines, by: "you" };

@@ -64,6 +64,40 @@ export interface MatrixEditState {
   useCases?: Array<{ id: string; title: string; category: string }>;
 }
 
+// -- Provisional first-turn preview -----------------------------------------
+
+/** A capability as the first build turn's stream previews it. */
+export interface ProvisionalCapability {
+  id: string;
+  title: string;
+  /** Previewed field values, keyed by v3 field name (suggested_trigger, ...). */
+  fields: Record<string, unknown>;
+}
+
+/**
+ * The first build turn's streaming PREVIEW, held apart from confirmed state.
+ *
+ * The backend releases each finished capability_enumeration /
+ * capability_resolution mid-turn as a `provisional_*` event so the build sheet
+ * can show results developing instead of all at once. Nothing here is
+ * confirmed: it never feeds `capabilities`, `cellStates` or anything that
+ * counts as resolved or populated. Contract (provisional.rs): the
+ * authoritative pass fully REPLACES the preview. `provisional_settled` (sent
+ * after the turn's authoritative events) clears it whole, and so does a build
+ * error. It is never persisted, so hydration starts it empty.
+ */
+export interface ProvisionalBuildState {
+  capabilities: Record<string, ProvisionalCapability>;
+  /** Preview order (enumeration order, then first-seen resolutions). */
+  order: string[];
+}
+
+export const EMPTY_PROVISIONAL: ProvisionalBuildState = { capabilities: {}, order: [] };
+
+function hasProvisional(p: ProvisionalBuildState): boolean {
+  return p.order.length > 0;
+}
+
 // -- Per-session build state ------------------------------------------------
 
 /**
@@ -130,6 +164,9 @@ export interface BuildSessionState {
     category?: string | null;
   } | null;
 
+  /** First-turn streaming preview; see {@link ProvisionalBuildState}. */
+  provisional: ProvisionalBuildState;
+
   createdAt: number;
 }
 
@@ -182,6 +219,8 @@ export interface MatrixBuildSlice {
     question: string;
     options: string[] | null;
   } | null;
+  /** Mirror of the active session's first-turn preview (never confirmed state). */
+  buildProvisional: ProvisionalBuildState;
 
   /** Read-only snapshot for MatrixTab viewing promoted agents. Isolated from
    * live build sessions so MatrixTab can't clobber an in-progress build. */
@@ -224,6 +263,17 @@ export interface MatrixBuildSlice {
   ) => void;
   handleClarifyingQuestionV3: (
     event: Extract<BuildEvent, { type: "clarifying_question_v3" }>,
+  ) => void;
+
+  // Provisional first-turn preview handlers (never touch confirmed state)
+  handleProvisionalCapabilityEnumeration: (
+    event: Extract<BuildEvent, { type: "provisional_capability_enumeration" }>,
+  ) => void;
+  handleProvisionalCapabilityResolution: (
+    event: Extract<BuildEvent, { type: "provisional_capability_resolution" }>,
+  ) => void;
+  handleProvisionalSettled: (
+    event: Extract<BuildEvent, { type: "provisional_settled" }>,
   ) => void;
 
   clearClarifyingQuestionV3: () => void;
@@ -337,6 +387,7 @@ function emptySessionState(personaId: string, sessionId: string): BuildSessionSt
     excludedCapabilityIds: [],
     personaResolution: {},
     clarifyingQuestionV3: null,
+    provisional: EMPTY_PROVISIONAL,
     createdAt: Date.now(),
   };
 }
@@ -350,7 +401,7 @@ type ScalarsProjection = Pick<MatrixBuildSlice,
   | 'buildTestError' | 'buildToolTestResults' | 'buildTestSummary' | 'buildTestConnectors'
   | 'buildEditState' | 'buildEditDirty' | 'editingCellKey'
   | 'buildBehaviorCore' | 'buildCapabilities' | 'buildCapabilityOrder'
-  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3'>;
+  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3' | 'buildProvisional'>;
 
 /**
  * Memoize the projection by session reference. Each `updater(existing)` returns
@@ -406,6 +457,7 @@ function scalarsFromSession(s: BuildSessionState | null): ScalarsProjection {
       buildCapabilityOrder: [],
       buildPersonaResolution: {},
       buildClarifyingQuestionV3: null,
+      buildProvisional: EMPTY_PROVISIONAL,
     };
     return nullScalarsCached;
   }
@@ -444,6 +496,7 @@ function scalarsFromSession(s: BuildSessionState | null): ScalarsProjection {
     buildCapabilityOrder: s.capabilityOrder,
     buildPersonaResolution: s.personaResolution,
     buildClarifyingQuestionV3: s.clarifyingQuestionV3,
+    buildProvisional: s.provisional,
   };
   scalarsCache.set(s, projection);
   return projection;
@@ -558,6 +611,7 @@ export const createMatrixBuildSlice: StateCreator<
   buildCapabilityOrder: [],
   buildPersonaResolution: {},
   buildClarifyingQuestionV3: null,
+  buildProvisional: EMPTY_PROVISIONAL,
 
   savedBuildSnapshot: null,
 
@@ -752,6 +806,8 @@ export const createMatrixBuildSlice: StateCreator<
       ...sess,
       error: event.message,
       phase: "failed",
+      // A failed turn never settles its preview; nothing provisional survives it.
+      provisional: EMPTY_PROVISIONAL,
     })));
   },
 
@@ -920,6 +976,61 @@ export const createMatrixBuildSlice: StateCreator<
       },
       phase: 'awaiting_input',
     })));
+  },
+
+  // -- Provisional first-turn preview ---------------------------------------
+  // Kept in `provisional` only. Nothing here reaches capabilities/cellStates,
+  // so no frame counts it as resolved or populated.
+
+  handleProvisionalCapabilityEnumeration: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const payload = (event.data ?? {}) as { capabilities?: CapabilityDraft[] };
+      const caps: Record<string, ProvisionalCapability> = { ...sess.provisional.capabilities };
+      const order = [...sess.provisional.order];
+      for (const d of payload.capabilities ?? []) {
+        if (!d?.id) continue;
+        const prev = caps[d.id];
+        caps[d.id] = { id: d.id, title: d.title ?? prev?.title ?? d.id, fields: prev?.fields ?? {} };
+        if (!prev) order.push(d.id);
+      }
+      if (order.length === 0) return sess;
+      return { ...sess, provisional: { capabilities: caps, order } };
+    }));
+  },
+
+  handleProvisionalCapabilityResolution: (event) => {
+    set((state) => updateSessionInState(state, event.session_id, (sess) => {
+      const { capability_id, field, value } = event;
+      if (!capability_id || !field) return sess;
+      const prev = sess.provisional.capabilities[capability_id];
+      const cap: ProvisionalCapability = {
+        id: capability_id,
+        title: prev?.title ?? capability_id,
+        fields: { ...(prev?.fields ?? {}), [field]: value },
+      };
+      return {
+        ...sess,
+        provisional: {
+          capabilities: { ...sess.provisional.capabilities, [capability_id]: cap },
+          order: prev ? sess.provisional.order : [...sess.provisional.order, capability_id],
+        },
+      };
+    }));
+  },
+
+  handleProvisionalSettled: (event) => {
+    // The authoritative pass has already landed (the backend sends this after
+    // the turn's confirmed events), and it fully replaces the preview: drop it
+    // whole. The retraction lists are informational.
+    if (event.retracted_capability_ids.length || event.retracted_resolutions.length) {
+      console.debug('[matrixBuildSlice] provisional preview retracted', {
+        capabilities: event.retracted_capability_ids,
+        resolutions: event.retracted_resolutions,
+      });
+    }
+    set((state) => updateSessionInState(state, event.session_id, (sess) =>
+      hasProvisional(sess.provisional) ? { ...sess, provisional: EMPTY_PROVISIONAL } : sess,
+    ));
   },
 
   clearClarifyingQuestionV3: () => {

@@ -11,12 +11,15 @@ import { CELL_KEY_TO_DIM, derivePetalState } from "@/features/agents/sub_glyph/g
 import { usePersonaCore } from "@/features/agents/sub_glyph/personaCore";
 import { useComposeConfig } from "@/features/agents/sub_glyph/useComposeConfig";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
-import { deriveAct, frameStateFromPetal, populatedDims, type FrameState } from "./sheetModel";
+import { deriveAct, deriveFrameState, frameStateFromPetal, populatedDims, type FrameState } from "./sheetModel";
 import { useSheetClock } from "./useSheetClock";
 import { useCinemaCast } from "./useCinemaCast";
 import { useQuestionFlow } from "./useQuestionFlow";
 import { useFrameValues } from "./useFrameValues";
 import { useCinemaRecipes } from "./useCinemaRecipes";
+import { provisionalDims, provisionalFrameValues } from "./provisionalFrames";
+import type { FrameValue } from "./useFrameValues";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const NO_TOGGLES = { memory: false, review: false };
 
@@ -33,6 +36,9 @@ export function useSheetState(props: GlyphFullLayoutProps) {
   const sessionId = useAgentStore((s) => s.buildSessionId);
   const coreRole = useAgentStore((s) => s.buildBehaviorCore?.identity?.role ?? null);
   const coreMission = useAgentStore((s) => s.buildBehaviorCore?.mission ?? null);
+  // First-turn streaming preview: develops frames, never lights them.
+  const provisional = useAgentStore((s) => s.buildProvisional);
+  const { t } = useTranslation();
   const isCompose = sessionId === null && !hasDesignResult;
   const pendingCount = pendingQuestions?.length ?? 0;
 
@@ -89,25 +95,38 @@ export function useSheetState(props: GlyphFullLayoutProps) {
     intentText, answered: flow.answeredByDim, isCompose,
   });
 
+  const preview = useMemo(
+    () => ({ dims: provisionalDims(provisional), values: provisionalFrameValues(provisional, t) }),
+    [provisional, t],
+  );
+
   const frameStates = useMemo(() => {
     const pendingDims = new Set<GlyphDimension>();
     for (const q of pendingQuestions ?? []) { const d = CELL_KEY_TO_DIM[q.cellKey]; if (d) pendingDims.add(d); }
     const settled = act === "draft" || act === "verdict" || act === "screening" || act === "premiere";
     const out = {} as Record<GlyphDimension, FrameState>;
     for (const dim of GLYPH_DIMENSIONS) {
-      let st: FrameState;
-      if (isCompose) st = values[dim] ? "lit" : "blank";
-      else {
-        st = frameStateFromPetal(derivePetalState(dim, cellStates, pendingDims, null), settled);
-        if (flow.answeredByDim[dim]) st = "lit";
-        else if ((st === "blank" || st === "unset") && values[dim]) st = "lit";
-        if (act === "stopped" && st === "filling") st = "blank";
-        if (act === "premiere" && st !== "lit") st = "unset";
-      }
-      out[dim] = st;
+      out[dim] = deriveFrameState({
+        isCompose, act,
+        fromBuild: isCompose ? "blank" : frameStateFromPetal(derivePetalState(dim, cellStates, pendingDims, null), settled),
+        answered: !!flow.answeredByDim[dim],
+        hasValue: !!values[dim],
+        previewing: preview.dims.has(dim),
+      });
     }
     return out;
-  }, [pendingQuestions, act, isCompose, values, cellStates, flow.answeredByDim]);
+  }, [pendingQuestions, act, isCompose, values, cellStates, flow.answeredByDim, preview]);
+
+  // What each frame SHOWS: confirmed values, plus the preview's picture on a
+  // frame that is only developing. `values` stays confirmed-only, because it
+  // is what populatedDims counts (full colour is never earned by a preview).
+  const frameValues = useMemo(() => {
+    const out = {} as Record<GlyphDimension, FrameValue | null>;
+    for (const dim of GLYPH_DIMENSIONS) {
+      out[dim] = values[dim] ?? (frameStates[dim] === "filling" ? preview.values[dim] : null);
+    }
+    return out;
+  }, [values, frameStates, preview]);
 
   const petalStates = useMemo(() => {
     const out = {} as Record<GlyphDimension, PetalState>;
@@ -120,7 +139,7 @@ export function useSheetState(props: GlyphFullLayoutProps) {
 
   return {
     sessionId, isCompose, act, core, cfg, launch, launching, recipes, flow, clock, cast,
-    values, frameStates, petalStates, presence: crown ? 0.4 + (litCount / 8) * 0.6 : litCount / 16,
+    values, frameValues, frameStates, petalStates, presence: crown ? 0.4 + (litCount / 8) * 0.6 : litCount / 16,
   };
 }
 

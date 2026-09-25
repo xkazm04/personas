@@ -471,6 +471,15 @@ const registry: EventRegistration[] = [
             case "clarifying_question_v3":
               store.handleClarifyingQuestionV3(payload as Parameters<typeof store.handleClarifyingQuestionV3>[0]);
               break;
+            case "provisional_capability_enumeration":
+              store.handleProvisionalCapabilityEnumeration(payload);
+              break;
+            case "provisional_capability_resolution":
+              store.handleProvisionalCapabilityResolution(payload);
+              break;
+            case "provisional_settled":
+              store.handleProvisionalSettled(payload);
+              break;
           }
         },
       );

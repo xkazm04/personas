@@ -539,6 +539,21 @@ export type BuildSessionEventPayload =
       field: string | null;
       question: string;
       options: string[] | null;
+    }
+  // Provisional first-turn preview (engine/build_session/provisional.rs).
+  | { type: 'provisional_capability_enumeration'; session_id: string; data: unknown }
+  | {
+      type: 'provisional_capability_resolution';
+      session_id: string;
+      capability_id: string;
+      field: string;
+      value: unknown;
+    }
+  | {
+      type: 'provisional_settled';
+      session_id: string;
+      retracted_capability_ids: string[];
+      retracted_resolutions: Array<[string, string]>;
     };
 
 /** Build test tool result (engine/build_session.rs). */
