@@ -80,7 +80,7 @@ interface DateRangePopoverProps {
   onChange: (range: CustomDateRange | null) => void;
 }
 
-const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
+export const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
   function DateRangePopover({ value, onChange }, ref) {
     const { t } = useTranslation();
     const today = new Date().toISOString().slice(0, 10);

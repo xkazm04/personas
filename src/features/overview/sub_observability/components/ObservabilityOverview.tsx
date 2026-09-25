@@ -7,14 +7,17 @@
  */
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { ChipRow, Dot, KitButton, Section, StatStrip, Toolbar, UnitStrip, apportion, type Chip } from '@/features/shared/components/kit';
-import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
+import { ChipRow, Dot, KitButton, RangePicker, Section, StatStrip, Toolbar, UnitStrip, apportion, type Chip } from '@/features/shared/components/kit';
+import { DateRangePopover } from '@/features/overview/sub_usage/components/DayRangePicker';
+import type { OverviewDayRange } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import type { useObservabilityData } from '../libs/useObservabilityData';
 import { quantumFor } from '../libs/quantum';
 import type { ObservabilityWords } from '../libs/useObservabilityWords';
 
 const STALE_MS = 300_000;
+// Unit labels, untranslated as before (DayRangePicker).
+const PRESETS: Array<{ v: OverviewDayRange; label: string }> = [{ v: 1, label: '24h' }, { v: 7, label: '7d' }, { v: 30, label: '30d' }, { v: 90, label: '90d' }];
 
 export interface OverviewProps {
   d: ReturnType<typeof useObservabilityData>;
@@ -56,6 +59,8 @@ export function ObservabilityOverview(p: OverviewProps) {
   const costQ = quantumFor(s ? s.totalCostUsd : 0, 60, 0.1);
   const runQ = quantumFor(runs, 60, 1);
   const chips = sourceChips(p);
+  const dayFmt = new Intl.DateTimeFormat(w.language, { month: 'short', day: 'numeric' });
+  const fmtDay = (iso: string) => dayFmt.format(new Date(`${iso}T00:00:00`));
   return (
     <Section
       id="s-obs-overview"
@@ -81,7 +86,19 @@ export function ObservabilityOverview(p: OverviewProps) {
     >
       <Toolbar label={o.observability.title}>
         <PersonaSelect value={d.selectedPersonaId} onChange={d.setSelectedPersonaId} personas={d.personas} />
-        <DayRangePicker value={d.days} onChange={d.setDays} customDateRange={d.customDateRange} onCustomDateRangeChange={d.setCustomDateRange} />
+        <RangePicker
+          label={o.usage_filters.time_range_label}
+          presets={PRESETS}
+          value={d.days}
+          onChange={d.setDays}
+          custom={{
+            label: d.customDateRange ? `${fmtDay(d.customDateRange[0])} - ${fmtDay(d.customDateRange[1])}` : w.t.triggers.schedule.custom,
+            active: d.customDateRange != null,
+            render: (close) => (
+              <DateRangePopover value={d.customDateRange ?? null} onChange={(r) => { d.setCustomDateRange(r); if (r) close(); }} />
+            ),
+          }}
+        />
         <KitButton pressed={p.showAlerts} onClick={p.onToggleAlerts} testId="obs-alerts-toggle">
           <span className="inline-flex items-center gap-2">
             {p.activeAlertCount > 0 && <Dot tone="error" />}

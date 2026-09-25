@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { companionGetSpendRollup } from '@/api/companion';
 import type { AthenaSpendRow } from '@/lib/bindings/AthenaSpendRow';
-import { DataTable, KitButton, Meta, Section, type TableRow } from '@/features/shared/components/kit';
+import { DataTable, KitButton, Meta, Section, sortRows, type TableRow, type TableSort } from '@/features/shared/components/kit';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -19,7 +19,7 @@ import { silentCatch } from '@/lib/silentCatch';
  * how a future migration would double-count.
  *
  * Composed from the kit: a level-2 Section (totals in its meta) over a
- * DataTable, newest day first, 14 rows until Show all. The head always
+ * DataTable, newest day first (every column sorts), 14 rows until Show all. The head always
  * renders; the table ghosts only while loading with no rows, so a refetch
  * never hides rows already on screen (pattern v2).
  */
@@ -62,22 +62,22 @@ function useAthenaSpend() {
 }
 
 export const AthenaSpendSection = memo(function AthenaSpendSection() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const a = t.overview.athena;
   const { rows, loading } = useAthenaSpend();
   const [all, setAll] = useState(false);
+  const [sort, setSort] = useState<TableSort<Col>>({ key: 'day', dir: 'desc' });
 
   const totalCost = useMemo(() => rows.reduce((sum, r) => sum + r.costUsd, 0), [rows]);
   const totalTurns = useMemo(() => rows.reduce((sum, r) => sum + r.turnCount, 0), [rows]);
-  const sorted = useMemo(() => [...rows].sort((x, y) => y.day.localeCompare(x.day) || y.costUsd - x.costUsd), [rows]);
-  const shown = all ? sorted : sorted.slice(0, SHOWN);
   const ledgerLabel = useCallback(
     (ledger: string) => (ledger === 'dev_spend' ? a.spend_ledger_dev : a.spend_ledger_turn),
     [a.spend_ledger_dev, a.spend_ledger_turn],
   );
 
-  const table: Array<TableRow<Col>> = shown.map((r) => ({
+  const allRows: Array<TableRow<Col>> = rows.map((r) => ({
     id: `${r.ledger}:${r.day}:${r.origin}`,
+    sort: { day: r.day, turns: r.turnCount, cost: r.costUsd },
     mark: { tone: r.ledger === 'dev_spend' ? 'external' : 'agent', glyph: 'soft', label: ledgerLabel(r.ledger) },
     cells: {
       day: (
@@ -90,6 +90,9 @@ export const AthenaSpendSection = memo(function AthenaSpendSection() {
       cost: <span className="typo-data k-regular"><Numeric value={r.costUsd} unit="usd" /></span>,
     },
   }));
+  // Sorted over every row before the page is cut, so Show all never reorders what was on screen.
+  const sorted = sortRows(allRows, sort, language);
+  const table = all ? sorted : sorted.slice(0, SHOWN);
 
   return (
     <Section
@@ -102,15 +105,18 @@ export const AthenaSpendSection = memo(function AthenaSpendSection() {
           label={a.spend_title}
           loading={loading && rows.length === 0}
           cols={[
-            { key: 'day', label: a.spend_day },
-            { key: 'turns', label: a.spend_turns, num: true },
-            { key: 'cost', label: a.spend_cost, num: true },
+            { key: 'day', label: a.spend_day, sortable: 'desc' },
+            { key: 'turns', label: a.spend_turns, num: true, sortable: 'desc' },
+            { key: 'cost', label: a.spend_cost, num: true, sortable: 'desc' },
           ]}
           rows={table}
+          sort={sort}
+          onSortChange={setSort}
+          locale={language}
           empty={{ title: a.spend_empty_title, hint: a.spend_empty_description }}
           pager={sorted.length > SHOWN && !all ? (
             <>
-              <span className="typo-data k-regular k-quiet">{shown.length} / {sorted.length}</span>
+              <span className="typo-data k-regular k-quiet">{table.length} / {sorted.length}</span>
               <KitButton onClick={() => setAll(true)}>{t.overview.heartbeats.show_all}</KitButton>
             </>
           ) : undefined}
