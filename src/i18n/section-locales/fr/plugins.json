@@ -4365,7 +4365,8 @@
       "winner": "Vainqueur",
       "setup_close_title": "Fermer la configuration ?",
       "setup_close_body": "Votre saisie est conservée : Nouvelle course la restaure jusqu’à ce que vous créiez la course ou vidiez le formulaire.",
-      "setup_close_confirm": "Fermer la configuration"
+      "setup_close_confirm": "Fermer la configuration",
+      "chain_stopped": "Arrêtée"
     },
     "decide_locked_decided": "Tranché : {key} a gagné.",
     "decide_locked_shortlisted": "Présélectionné : le gagnant est désigné lors de la manche d’affinage.",

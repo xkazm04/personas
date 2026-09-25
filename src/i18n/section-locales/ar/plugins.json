@@ -4365,7 +4365,8 @@
       "winner": "الفائز",
       "setup_close_title": "هل تريد إغلاق الإعداد؟",
       "setup_close_body": "يُحتفظ بما أدخلته: يعيده «سباق جديد» حتى تنشئ السباق أو تمسح النموذج.",
-      "setup_close_confirm": "إغلاق الإعداد"
+      "setup_close_confirm": "إغلاق الإعداد",
+      "chain_stopped": "توقفت"
     },
     "decide_locked_decided": "تم الحسم: فاز {key}.",
     "decide_locked_shortlisted": "في القائمة المختصرة: يُعلن الفائز في جولة التحسين.",

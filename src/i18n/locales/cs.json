@@ -15159,7 +15159,8 @@
         "winner": "Vítěz",
         "setup_close_title": "Zavřít nastavení?",
         "setup_close_body": "Zadané údaje zůstanou: Nový závod je vrátí, dokud závod nevytvoříte nebo formulář nevymažete.",
-        "setup_close_confirm": "Zavřít nastavení"
+        "setup_close_confirm": "Zavřít nastavení",
+        "chain_stopped": "Zastaveno"
       },
       "decide_locked_decided": "Rozhodnuto: vyhrála varianta {key}.",
       "decide_locked_shortlisted": "Na užším výběru: vítěz se vyhlásí v kole zpřesnění.",

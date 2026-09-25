@@ -4365,7 +4365,8 @@
       "winner": "विजेता",
       "setup_close_title": "सेटअप बंद करें?",
       "setup_close_body": "आपका भरा हुआ बना रहेगा: जब तक आप रेस नहीं बनाते या फ़ॉर्म साफ़ नहीं करते, नई रेस उसे वापस ले आएगी।",
-      "setup_close_confirm": "सेटअप बंद करें"
+      "setup_close_confirm": "सेटअप बंद करें",
+      "chain_stopped": "रुक गई"
     },
     "decide_locked_decided": "फ़ैसला हो गया: {key} जीता।",
     "decide_locked_shortlisted": "शॉर्टलिस्ट में: विजेता की घोषणा सुधार वाले दौर में होगी।",

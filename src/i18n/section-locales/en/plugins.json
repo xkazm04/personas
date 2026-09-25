@@ -4365,7 +4365,8 @@
       },
       "setup_close_title": "Close the setup?",
       "setup_close_body": "Your input is kept: New race brings it back until you create the race or clear the form.",
-      "setup_close_confirm": "Close the setup"
+      "setup_close_confirm": "Close the setup",
+      "chain_stopped": "Stopped"
     },
     "decide_locked_decided": "Decided: {key} won.",
     "decide_locked_shortlisted": "Shortlisted: the winner is declared in the refine round.",

@@ -15159,7 +15159,8 @@
         "winner": "Sieger",
         "setup_close_title": "Einrichtung schließen?",
         "setup_close_body": "Deine Eingaben bleiben erhalten: Neues Rennen holt sie zurück, bis du das Rennen anlegst oder das Formular leerst.",
-        "setup_close_confirm": "Einrichtung schließen"
+        "setup_close_confirm": "Einrichtung schließen",
+        "chain_stopped": "Angehalten"
       },
       "decide_locked_decided": "Entschieden: {key} hat gewonnen.",
       "decide_locked_shortlisted": "In der engeren Auswahl: Der Sieger wird in der Verfeinerungsrunde gekürt.",

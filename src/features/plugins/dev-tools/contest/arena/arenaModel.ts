@@ -181,12 +181,26 @@ export interface ChainStation {
 const STATION_ORDER: readonly ChainStationId[] = ['collect', 'visual', 'judges', 'ready'];
 
 /**
- * The chain as four stations. The sidecar records the step it is ON, not the
- * one that failed, so a failed chain marks only the final station failed and
- * leaves the rest pending (the retry buttons name the steps).
+ * The station a failure reason names, if any. The sidecar records the step the
+ * chain is ON, not the one that failed, but the reason does name it — "collect:
+ * …" / "visual pass failed: …" / "contest judge failed (exit 1): …".
+ */
+export function failedStation(reason: string | null | undefined): ChainStationId | null {
+  if (!reason) return null;
+  const firstLine = reason.split('\n', 1)[0] ?? '';
+  const m = /\b(collect|visual|judge|aggregate)\b(?=:|\s+(?:pass\s+)?failed)/i.exec(firstLine);
+  if (!m) return null;
+  const step = m[1]!.toLowerCase();
+  return step === 'collect' ? 'collect' : step === 'visual' ? 'visual' : 'judges';
+}
+
+/**
+ * The chain as four stations. A failed chain marks the station its reason
+ * names (the ones before it done, the rest waiting) and otherwise blames none;
+ * "Ready for review" is never the failed step, it never ran.
  */
 export function chainStations(
-  chain: Pick<ContestChain, 'step'>,
+  chain: Pick<ContestChain, 'step'> & { reason?: string | null },
   judgesEnabled: boolean,
   phase: ContestPhase,
 ): ChainStation[] {
@@ -202,7 +216,12 @@ export function chainStations(
   const at = activeIndex[chain.step];
   return STATION_ORDER.map((id, i) => {
     if (id === 'judges' && !judgesEnabled) return { id, status: 'skipped' };
-    if (at === -2) return { id, status: id === 'ready' ? 'failed' : 'pending' };
+    if (at === -2) {
+      const blamed = failedStation(chain.reason);
+      const failedAt = blamed ? STATION_ORDER.indexOf(blamed) : -1;
+      if (i === failedAt) return { id, status: 'failed' };
+      return { id, status: failedAt > i ? 'done' : 'pending' };
+    }
     if (at === -1) return { id, status: 'pending' };
     if (i < at || at === 4) return { id, status: 'done' };
     if (i === at) return { id, status: 'active' };

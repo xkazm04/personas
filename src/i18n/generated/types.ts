@@ -19248,6 +19248,7 @@ export type Translations = {
         setup_close_title: string;
         setup_close_body: string;
         setup_close_confirm: string;
+        chain_stopped: string;
       };
       decide_locked_decided: string;
       decide_locked_shortlisted: string;

@@ -110,10 +110,34 @@ describe('chainStations', () => {
     ]);
   });
 
-  it('a failed chain flags the finish, not a guessed step', () => {
-    expect(ids(chainStations({ step: 'failed' }, true, 'failed'))).toEqual([
-      'collect:pending', 'visual:pending', 'judges:pending', 'ready:failed',
+  it('a failed chain blames the step its reason names, never "Ready for review" (FE-12)', () => {
+    const failed = (reason: string | null, judges = true) =>
+      ids(chainStations({ step: 'failed', reason }, judges, 'failed'));
+    expect(failed('collect: 0 of 2 seats delivered a variant')).toEqual([
+      'collect:failed', 'visual:pending', 'judges:pending', 'ready:pending',
     ]);
+    expect(failed('visual: playwright exited 1')).toEqual([
+      'collect:done', 'visual:failed', 'judges:pending', 'ready:pending',
+    ]);
+    expect(failed('judge: 2 of 3 judges returned no verdict')).toEqual([
+      'collect:done', 'visual:done', 'judges:failed', 'ready:pending',
+    ]);
+    expect(failed('aggregate: scoreboard.json missing')).toEqual([
+      'collect:done', 'visual:done', 'judges:failed', 'ready:pending',
+    ]);
+    // The instrument's own wording (node::run_instrument) names the step too.
+    expect(failed('Internal error: contest collect failed (exit 1): 0 of 2 seats delivered a variant')).toEqual([
+      'collect:failed', 'visual:pending', 'judges:pending', 'ready:pending',
+    ]);
+    expect(failed('visual: no browser', false)).toEqual([
+      'collect:done', 'visual:failed', 'judges:skipped', 'ready:pending',
+    ]);
+  });
+
+  it('a failed chain whose reason names no step blames none', () => {
+    const st = chainStations({ step: 'failed', reason: 'Error: EPERM' }, true, 'failed');
+    expect(st.some((x) => x.status === 'failed')).toBe(false);
+    expect(st.find((x) => x.id === 'ready')?.status).toBe('pending');
   });
 });
 

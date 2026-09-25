@@ -15159,7 +15159,8 @@
         "winner": "Người chiến thắng",
         "setup_close_title": "Đóng phần thiết lập?",
         "setup_close_body": "Nội dung đã nhập được giữ lại: Cuộc đua mới sẽ khôi phục cho đến khi bạn tạo cuộc đua hoặc xóa biểu mẫu.",
-        "setup_close_confirm": "Đóng phần thiết lập"
+        "setup_close_confirm": "Đóng phần thiết lập",
+        "chain_stopped": "Đã dừng"
       },
       "decide_locked_decided": "Đã quyết định: {key} thắng.",
       "decide_locked_shortlisted": "Đã vào danh sách rút gọn: người thắng được công bố ở vòng tinh chỉnh.",

@@ -15159,7 +15159,8 @@
         "winner": "Pemenang",
         "setup_close_title": "Tutup pengaturan?",
         "setup_close_body": "Isian Anda disimpan: Balapan baru memulihkannya sampai Anda membuat balapan atau mengosongkan formulir.",
-        "setup_close_confirm": "Tutup pengaturan"
+        "setup_close_confirm": "Tutup pengaturan",
+        "chain_stopped": "Berhenti"
       },
       "decide_locked_decided": "Sudah diputuskan: {key} menang.",
       "decide_locked_shortlisted": "Masuk daftar pendek: pemenang diumumkan di babak penyempurnaan.",

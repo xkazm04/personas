@@ -4365,7 +4365,8 @@
       "winner": "우승자",
       "setup_close_title": "설정을 닫을까요?",
       "setup_close_body": "입력한 내용은 유지됩니다. 레이스를 만들거나 양식을 비울 때까지 새 레이스에서 다시 불러옵니다.",
-      "setup_close_confirm": "설정 닫기"
+      "setup_close_confirm": "설정 닫기",
+      "chain_stopped": "중단됨"
     },
     "decide_locked_decided": "결정됨: {key} 우승.",
     "decide_locked_shortlisted": "후보 선정됨: 우승자는 다듬기 라운드에서 정해집니다.",
