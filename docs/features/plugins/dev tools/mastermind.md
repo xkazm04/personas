@@ -1,307 +1,154 @@
-# Mastermind — Multi-Project Development Canvas
+# Mastermind — Multi-Project Portfolio (Soundings)
 
 **Location:** Projects (sidebar) → Development → Mastermind
 **Source:** `src/features/teams/sub_mastermind/`
-**Status:** consolidated (2026-08). The Hex Mosaic is the final view mode — the variant switcher and the Inverse Grid prototype are retired. Mastermind is also the **primary channel** into the deeper dev-tools layers: it deep-links into Factory L2 (Overview/Ship), and the Skills manager with project context.
+**Status:** Soundings is the only view (2026-09-25). The Hex Mosaic canvas it replaced and the 3D audition before it are retired (§8). Mastermind is also the **primary channel** into the deeper dev-tools layers: it deep-links into Factory L2, the project's release plan in the notepad, and the Run Desk.
 
-Mastermind renders every dev-tools project as an **island** on an infinite pan/zoom canvas — Civilization-style islands with Figma-style manipulation. The goal: understand the whole portfolio's scope and state at first sight (healthy / building / warning / critical / erroring), and react directly on the canvas (run scans, dispatch upgrades, open terminals) without leaving it.
+Mastermind draws every dev-tools project as a **station** on a nautical sounding chart where **depth means urgency**: the project that most needs you floats at the surface, a calm one rests deep. The goal is the same one the canvas had: understand the whole portfolio's state at first sight and act on it (Improve a reading, run an idea scan, dispatch Fleet, open a terminal) without leaving it. Design, data mapping and phases: [`docs/design/mastermind-soundings.md`](../../../design/mastermind-soundings.md).
 
 ---
 
-## 1. Concept and visual identity
-
-- Each project is an island: a **core** cell surrounded by **dimension** cells (DB, Monitoring, CI, … — see §5), plus an ops row below (fleet terminals + running personas) and stat columns at the sides.
-- **Lines between islands** show integration: derived relations/similarity from the cross-project scan (dotted arcs) and user-drawn links (straight, styled, labelled).
-- The canvas forges its **own typographic identity** deliberately distinct from the app UI: cartographic serif (`SERIF` in `lib/ink.ts`) for identity/details, mono (`MONO`) for instrumentation. All colour flows through **semantic theme tokens** (`var(--status-*)`, `var(--primary)`, `color-mix(...)`) so every switchable theme — including pre-darkened light skins — renders correctly. Never paint raw hex here (one documented exception: fleet violet/indigo states that have no semantic token).
-- **Animation austerity:** entry/exit fades and click-gated transitions only; the single sanctioned always-on motion is the pulsing `awaiting_input` fleet badge (a terminal literally waiting on the user).
-- **Floating chrome sits UNDER the map, not on it** (`.mm-chrome` in `styles/globals.css` — mode toolbar, zoom cluster, legend, Athena revert, demo badge). The panels used to be `bg-secondary/70`, which is the same token the sea's outer gradient stop is mixed from: on every dark theme the chrome floated *lighter* than the map it sits on, reading as content rather than as controls, and its edges dissolved into the sea's rim. `.mm-chrome` is a step darker than the darkest point of the sea, so controls recede and the islands stay the brightest thing on screen; a `[data-theme^="light"]` override points the same rule the other way (chrome comes forward as near-white over the soft gray canvas), matching the light palette's own tonal ladder. It lives in `@layer components` so callers can still layer `hover:` utilities on top — unlayered rules would outrank Tailwind's utilities and silently kill every hover state.
-
-## 2. Entry point and wiring
+## 1. Entry point and wiring
 
 | Piece | Where |
 | --- | --- |
-| Sidebar entry | `TeamsSidebarNav.tsx` `DEV_ITEMS` → id `mastermind` (Network icon), i18n key `sidebar.mastermind` (codename, allowlisted untranslated in `docs/i18n/untranslated-allowlist.json`) |
+| Sidebar entry | `TeamsSidebarNav.tsx` `DEV_ITEMS` → id `mastermind` (Network icon), i18n key `sidebar.mastermind` (codename, allowlisted untranslated in `docs/i18n/untranslated-allowlist.json`). Hovering or focusing the entry, and entering the Projects section, prefetch Mastermind's data (`lib/prefetchMastermind.ts`). |
 | Tab union | `src/lib/types/types.ts` → `TeamsTab` includes `"mastermind"` |
 | Route | `PersonasPage.tsx` → `teamsTab === 'mastermind'` → lazy `MastermindPage` |
-| Page shell | `MastermindPage.tsx` — wraps content in `FactoryDataProvider` (KPI rollups) and `ImproveProvider` (row-action engine) |
+| Page shell | `MastermindPage.tsx` — wraps content in `FactoryDataProvider` (KPI rollups) and `ImproveProvider` (row-action engine); lazy-loads `soundings/SoundingsView` |
 
-## 3. Architecture
+## 2. Architecture
 
 ```
-MastermindPage (data joins, popover/sidebar state, mode state)
-└── MastermindHexMosaic — thin wrapper
-    └── CanvasShell (shared: sea, camera, groups/links/notes tools,
-        │            hover focus, connect gesture, zoom chrome)
-        └── renderIsland(island, ctx) → MosaicIsland
-            ├── IslandBanner (counter-scaled header = drag handle + Ship milestone chip)
-            ├── FarProcessHex (far band — one large hex: live-process count
-            │                  or a sleeping mark, breakdown on its border)
-            ├── MidFacetCube (mid band — the same hex split into three cube
-            │                 faces: Fleet / Personas / Runners, count per face;
-            │                 live faces open their lane's list popover)
-            ├── dimension cells (MosaicCell hexes; near/close only)
-            ├── StatColumns (side stats, band-gated — REAL sensors via lib/islandStats: KPI attainment, live Sentry errors, 30d LLM spend via lib/llmSpend, tests/auto/prod from the passport; demo islands keep statsMock)
-            └── FleetBadges (terminals + personas ops row; mid and closer)
+MastermindPage (data joins, settle gate, every surface a reading opens)
+├── SoundingsView (soundings/ — the chart: levels, focus, keys, Athena's grammar)
+│   ├── soundingsModel.ts     urgency metrics, ranking, reasons, lanes (pure)
+│   ├── soundingsGeometry.ts  chart geometry, buoy depth, columns, labels (pure)
+│   ├── SoundingsCard.tsx     L2 reading card + project file (+ MemorySection)
+│   └── soundingsParts.tsx    status marks, ladder, tide, glyphs
+├── DataHealthBar             failed data families + one retry
+├── AthenaPanel               Athena's composed panel for the focused project
+└── popovers / modals         Improve, IdeaScan, Goals, KPIs, stack lists,
+                              personas, runners, Fleet preview, Dispatch,
+                              Skills Workbench, New project (from the demo notice)
 ```
 
 Key libs (all under `lib/`):
 
 | Module | Responsibility |
 | --- | --- |
-| `types.ts` | Scene model (`Island`, `DimNode`, `IslandEdge`, `FleetNode`, `GroupRect`, `UserLink`, `CanvasNote`), zoom bands, `CanvasMode`, `VariantProps` page↔canvas contract, `IslandShip` (banner Ship chip) |
-| `sceneStore.ts` | **The data spine** (zustand): batch-fetches relations + idea scans + monitoring with per-family fetch STATUS; surgical event-driven invalidation instead of polling; ≤1 IPC per family at open |
-| `deriveScene.ts` | Passports (+ KPI/scan/live extras) → `Scene`; demo scene fallback when nothing is scanned |
-| `dimRegistry.ts` | **Single source of truth for dimensions** — label, `derive()`, icon, wall `rowKey`, action kind, far-payload kind. Adding a dimension = one entry here |
-| `dimActions.ts` | Canvas dim → Passport-wall Improve applicability (mirrors `ImproveCell` checks) |
-| `liveState.ts` | Live island colour: real Sentry error counts via bound monitoring credentials + fleet attention (awaiting/stale); pure combination logic, unit-tested; honest fallback to readiness-only colour |
-| `layoutStore.ts` | **Durable layout doc** — positions, groups, links, notes, hidden set as ONE versioned JSON document in app settings (`mastermind.layout.v1`); sync in-memory reads, debounced (~500 ms) write-through; one-time localStorage migration; browser-only fallback |
-| `positions.ts` / `groups.ts` / `links.ts` / `notes.ts` | Stable import surfaces re-exporting layoutStore (plus `LINK_PALETTE`, `NOTE_SIZE_PX`, `NOTE_FONT`) |
-| `useCanvasCamera.ts` | Camera: wheel zoom-to-cursor (native non-passive listener), pointer-capture pan (**render-free** — world transform driven imperatively; one culling commit per ~350 world units of travel), dblclick zoom, `fit(bounds, animate?)` with **linear rAF tween** (~380 ms) cancelled by any input |
-| `tidyLayout.ts` | One-shot relation-aware layout (bounded spring-electrical pass + overlap resolution). Deterministic (no Date/random); user-pinned islands are immovable anchors; group members pulled to their centroid |
-| `hex.ts` | Hex geometry, axial→pixel, deterministic `spiralPlace` + `hash01` |
-| `ink.ts` | `STATE_INK`, `DIM_INK`, `FLEET_INK`, `scoreInkVar`, `mix()`, font stacks |
-| `useIslandDrag.ts` | Header-handle drag with click-vs-drag threshold (≤4 px release = select). **Render-free**: the island <g> transform is written imperatively mid-drag; state commits once on release (GroupLayer moves member islands the same way) |
-| `useEventCallback.ts` | Stable-identity callbacks so memoized islands skip re-renders |
-| `ListPopover.tsx` | **The one list-popover shell** — positioned surface, header band (glyph/dot + title + trailing), scrolling list, and `usePopoverDismiss` (Escape + outside click, attached next tick). All six list popovers (goals, KPIs, personas, stack lists, categories, fleet sessions) render their own ROWS into it; only the shell is shared. `anchor="absolute"` for the fleet list, which lives inside CanvasShell and lets the shell own dismissal. |
+| `types.ts` | Scene model (`Island`, `DimNode`, `IslandEdge`, `FleetNode`, `RunnerNode`, `IslandShip`), `ZoomBand` (the action grammar's band vocabulary) |
+| `sceneStore.ts` | **The data spine** (zustand): relations, idea scans, goals, monitoring, LLM spend and runners, each with a fetch STATUS; event-driven invalidation instead of polling; a 30 s freshness window so a prefetch is reused |
+| `deriveScene.ts` | Passports (+ KPI/scan/live extras) → `Scene`; unsettled passports become provisional; demo scene fallback when nothing is scanned |
+| `useSceneSettle.ts` | The settle gate: the chart receives the scene once every family that changes a verdict has answered (5 s ceiling, latched per session), so stations paint once with final values |
+| `dimRegistry.ts` | **Single source of truth for dimensions** — label, lane (`category`), `derive()`, wall `rowKey`, action kind. Adding a dimension = one entry here |
+| `dimActions.ts` | Reading → Passport-wall Improve applicability (mirrors `ImproveCell` checks) |
+| `liveState.ts` | Live project colour: real Sentry error counts via bound monitoring credentials + fleet attention; honest fallback to readiness-only colour |
+| `islandStats.ts` / `statsMock.ts` / `llmSpend.ts` | Real per-project stats (KPI attainment, errors, 30d LLM spend, tests/auto/prod); demo projects keep deterministic mock stats |
+| `shipSummaries.ts` | One batched `projectWallSummary` IPC → each project's next release, cached for the prefetch |
+| `scenePublish.ts` | Publishes the settled scene to `mastermind.scene.v1` for Athena |
+| `canvasActionStore.ts` / `canvasTestBridge.ts` | The action grammar Athena (and the dev test bridge, `window.__mmCanvas`) dispatch into; SoundingsView answers it |
+| `focusStore.ts` | "This project is the subject": set by Athena's compose op, read by the page (panel) and the chart (travel) |
+| `layoutStore.ts` | **Durable layout doc** (`mastermind.layout.v1`): Athena's composed panels. Fields the retired canvas wrote (positions, groups, links, notes, hidden) are carried through on every write, never erased; a doc from a newer build is never downgraded |
+| `ListPopover.tsx` | The one list-popover shell (header band, scrolling rows, Escape + outside-click dismissal) behind the goals, KPIs, personas, runners and stack lists |
 
-**Render scale (optimizer pass, hundreds of islands):** island props carry a **quantized z** (~6% steps — islands re-render ~12× per zoom doubling, not per frame); `positioned` islands in MastermindPage are **content-stable** (per-slug cache; a fleet tick re-renders only the affected island); neighbor-dimming on hover writes opacity **imperatively** to the island `<g>`s (`data-mm-island`); halos are shared per-state **radialGradients** / layered plates, not per-island Gaussian filters; passports publish **two-phase** (evidence-less first paint, probe evidence merged in a second commit). Cold-open staggering is two independent wave systems: CanvasShell **mounts** visible islands a wave per animation frame, and MastermindPage's **hydration waves** cap how many already-painted islands may **adopt changed content** per pass (`HYDRATE_WAVE` = 6, drained one rAF at a time) — so the ~9 data families resolving in quick succession after mount roll across the canvas island-by-island instead of reconciling the whole world in one synchronous commit. Islands over budget briefly keep their previous painted content (identical reference → memo skip); single-island updates (drag, busy flag, one fleet tick) always fit the first wave.
+Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActions, layoutStore, liveState, sceneStore, scene settle, scene publish, canvas action store, Athena panel, jump palette, popovers, Soundings model/geometry and the mounted view).
 
-The mount wave is **adaptive and centre-first**. Adaptive: each wave is timed (a passive effect, so the measurement covers render + commit + paint) and the next is sized from the result — halved past `MOUNT_FRAME_BUDGET_MS` (24 ms), grown when a wave lands in under half of it, clamped to 1–14. One island is ~150 SVG nodes, and how many of those fit in a frame is a property of the machine, not of the canvas, so a fixed number either stalls a busy laptop or wastes frames on a workstation. Centre-first: the camera opens framed on the WHOLE portfolio, so every island passes the cull and the waves used to fill in scene order (alphabetical) — the middle of the screen, where the user is looking, arrived last. Islands are now ranked by distance to the viewport centre, but only the *set* is chosen by rank; render order stays scene order so SVG paint order and React's child keys never shuffle underneath. Measured on a 14-project portfolio: 4 → 8 → 14 across three frames.
-
-Two per-frame **serializations** were removed in the same pass, both of which ran once per hydration frame. The island cache's "did this change?" test was `JSON.stringify(island)` — a multi-kilobyte string per island (15 dimension nodes + 6 stats), unable to bail early; it is now `sameIslandContent` (`lib/islandEquality.ts`), an early-exit structural walk that allocates nothing, with the cheap scalar checks (fleet key, drag override, busy flag) ordered ahead of it. And `publishCanvasScene` debounced its IPC *write* but still built and serialized the whole portfolio on every call to compute its dedupe key, so the **call** is now debounced too (`SCENE_PUBLISH_SETTLE_MS`); a settled scene serializes exactly once. **If you add a field to `Island` or `DimNode`, add it to `islandEquality.ts`** — the comparison is exhaustive by design, and a field missing there is a field whose changes the canvas will not repaint.
-| `CanvasShell.tsx` | Everything shared per §1/§7/§8; owns groups/links/notes state + editors |
-| `DataHealthBar.tsx` | Page chrome naming FAILED data families (relations/scans/monitoring/KPI/fleet) + retry; renders nothing when clean |
-
-Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActions, layoutStore + persistence, liveState, sceneStore, tidyLayout, camera).
-
-## 4. Data sources (all read paths)
+## 3. Data sources (all read paths)
 
 | Family | Source | Notes |
 | --- | --- | --- |
-| Islands (passports) | `usePassportData()` (Factory) — cross-project scan + project config → `AppPassport[]`; slug **is** the dev-project id | |
-| Edges | `sceneStore` → `dev_tools_get_cross_project_metadata` → `cross_project.relations` (kind `relation`) + `similarity_matrix ≥ 0.5` (kind `similarity`) | deduped per pair; endpoints must both exist |
-| KPI dimension | `FactoryDataProvider` + `collectKpiAttention` / `groupKpis` — the SAME rollup the Passport wall's warning badges use | |
-| Idea scans | `sceneStore` → `dev_tools_list_scans` (`DevScan` rows: scan_type, status, created_at) | freshness = newest row's `created_at` |
-| Fleet sessions | `systemStore.fleetSessions` (+ event-driven refresh); session→project by **longest `cwd` ↔ `root_path` prefix match** (a session has no project id) | |
-| Running personas | `overviewStore.activeProcesses` (status `running`, `personaId`) → persona → `home_team_id` → `dev_projects.team_id` — the Monitor's join | teamless projects can't attribute persona work |
-| Live monitoring | `liveState.loadMonitoringSummaries` — per-project bound monitoring credential → the Observability tab's Sentry adapter | absent credential ⇒ readiness-only colour |
-| Goals | `sceneStore` → `dev_tools_list_all_goals` (one batched IPC, grouped by project) | ongoing = `isOngoing` from sub_goals/goalStatus |
-| LLM spend | `sceneStore` → `lib/llmSpend` — `fetchLlmPinpoints(serviceType, credId, '30d')` per project with a bound live tracing credential (LlmTrackingCell's sum), 5-min throttle | absent key ⇒ not wired ("—") |
-| Layout artifacts | `layoutStore` (app-settings document) | |
+| Projects (passports) | `usePassportData()` (Factory) — cross-project scan + project config → `AppPassport[]`; slug **is** the dev-project id | two-phase publish; `measured` gates the settle |
+| Currents (edges) | `sceneStore` → `dev_tools_get_cross_project_metadata` → `cross_project.relations` (kind `relation`) + `similarity_matrix ≥ 0.5` (kind `similarity`) | deduped per pair; endpoints must both exist |
+| KPI reading | `FactoryDataProvider` + `collectKpiAttention` / `groupKpis` — the SAME rollup the Passport wall's warning badges use | |
+| Idea scans | `sceneStore` → `dev_tools_list_scans` | freshness = newest row's `created_at` |
+| Fleet sessions | `systemStore.fleetSessions` (+ event-driven refresh); session→project by **longest `cwd` ↔ `root_path` prefix match** | |
+| Running personas | `overviewStore.activeProcesses` → persona → `home_team_id` → `dev_projects.team_id` — the Monitor's join | teamless projects can't attribute persona work |
+| Runner tasks | `sceneStore` → one batched `listTasks` IPC, live statuses only; kept live by `useRunnerRefresh` | |
+| Live monitoring | `liveState.loadMonitoringSummaries` — per-project bound monitoring credential → Sentry adapter | absent credential ⇒ readiness-only colour |
+| Goals | `sceneStore` → `dev_tools_list_goals` per project | ongoing = `isOngoing` from sub_goals/goalStatus |
+| LLM spend | `sceneStore` → `lib/llmSpend` (30d trace spend per bound tracing credential, 5-min throttle) | absent key ⇒ "—" |
+| Next release | `lib/shipSummaries` | |
 
-**Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands). A centered **DemoNotice card** (`lib/DemoNotice.tsx`) makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project; dismissing it leaves a corner "sample data" badge for the session — which is itself a **button that re-opens the notice**, since a dismissed demo canvas is otherwise a wall of cells that refuse every click. Demo islands are inert for Improve/terminal actions (they carry no passport, so `dimAction` resolves nothing), and their cells append *"sample project — actions are disabled"* to the native tooltip so a refused click explains itself instead of reading broken. The canvas is also held back behind a spinner during the FIRST passport load (not just layout hydration), so an in-flight fetch never renders as an empty world.
+**Cold load.** No skeleton: until the scene settles the chart shows its own chrome (water, depth bands) and a "loading projects" line, then the stations fade in at their final depth in one commit. A ghost of stations that did not exist yet had a different geometry from the chart that replaced it and read as a blink.
 
-**Data honesty:** each fetch family carries a status; failures surface in `DataHealthBar` by name with a retry — the canvas never silently renders a partial truth. The passport family itself is included (a failed passport load joins the bar rather than rendering a raw error string), and the bar anchors ABOVE the mode toolbar so degraded data never hides mode switching. Idea-scan dispatches are busy **per project** with a 3-minute safety timeout; the in-flight Ideas cell pulses. The canvas also mounts the R22 auto-verify loop (`sub_factory/passport/useAutoRescanOnFleetExit`): when a `passport:*` Fleet session exits — a wall-row setup, an onboard, a ship-criterion dispatch — a scoped passport rescan of that project runs automatically, so island dimensions reflect the agent's actual result without a manual rescan.
+**Demo scene.** With zero scanned projects, `deriveScene` emits a built-in 6-project demo. A centred **DemoNotice** card makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project (`ProjectModal`); dismissing it leaves a "sample data" badge that re-opens the notice. Demo projects refuse every action (no passport behind them).
 
-## 5. Dimensions (the island body)
+**Data honesty.** Each fetch family carries a status; a failed or stale family surfaces in `DataHealthBar` (under the chart's top bar) by name with one retry — the chart never silently renders a partial truth. Idea-scan dispatches are busy **per project** with a 3-minute safety timeout. The page also mounts the R22 auto-verify loop (`useAutoRescanOnFleetExit`): when a `passport:*` Fleet session exits, a scoped passport rescan of that project runs automatically.
 
-15 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
+## 4. Dimensions (readings)
 
-| Key | Label | Derived from | Improve rowKey → popover |
-| --- | --- | --- | --- |
-| `db` | Database | `stack.persistence` (+ migrations ⇒ solid) | `migrations` → Deploy |
-| `monitoring` | Monitoring | monitoring tools + observability level | `observability` → Deploy/connector |
-| `ci` | CI | `productionReadiness.ci` | `ci` → **Standards** (Tier-0 config) |
-| `tests` | Tests | tests level (+ coverage detail) | `tests` → Deploy |
-| `security` | Security | security level/tools | `security` → Deploy |
-| `hosting` | Hosting | `stack.hosting` | `hosting` → Deploy |
-| `auth` | Auth | `stack.auth` | — (**view-only by design**, see below) |
-| `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
-| `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
-| `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
-| `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | any KPI defined → **KpiListPopover** |
-| `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
-| `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
-| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | anything declared → **DimListPopover** |
-| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | anything declared → **DimListPopover** |
+15 dimensions per project, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus`): `absent` ("null is a first-class answer"), `solid`, `partial`, `risk`, `alert`, `unknown` (the data family failed).
 
-**KPI rule:** the cell's colour comes from the Factory rollup (`off > 0` ⇒ `alert`, else `solid`, none defined ⇒ `absent`). Clicking it answers *which* — `KpiListPopover` lists every KPI on the project sorted worst-status first (`crit` → `warn` → `ok` → `met` → unmeasured), each with its `current / target unit` reading. The rollup keeps only counts, so the page projects the list separately from the same Factory projects (`kpiListByProject`). A project with zero KPIs is downgraded to inert.
+| Key | Label | Lane | Derived from | Improve rowKey → surface |
+| --- | --- | --- | --- | --- |
+| `db` | Database | runtime | `stack.persistence` (+ migrations ⇒ solid) | `persistence` → Deploy |
+| `monitoring` | Monitoring | runtime | monitoring tools + observability level | `monitoring` → Deploy/connector |
+| `ci` | CI | delivery | `productionReadiness.ci` | `ci` → **Standards** (Tier-0 config) |
+| `tests` | Tests | delivery | tests level (+ coverage detail) | `tests` → Deploy |
+| `security` | Security | delivery | security level/tools | `security` → Deploy |
+| `hosting` | Hosting | runtime | `stack.hosting` | `hosting` → Deploy |
+| `auth` | Auth | runtime | `stack.auth` | — (**view-only by design**, §9) |
+| `agents` | Agents | agentic | automation level L1–L5 | `aiflow` → Deploy |
+| `skills` | Skills | agentic | `artifacts.skills` | green (installed) → **Skills Workbench**; else adopt → Deploy |
+| `llm` | LLM cost | agentic | `stack.llmTracking` | `llmtracking` → Deploy/connector |
+| `kpi` | KPIs | product | Factory KPI rollup; off-track ⇒ `alert` | any KPI defined → **KpiListPopover** |
+| `ideas` | Ideas | product | days since last `DevScan` | always actionable → **IdeaScanPopover** |
+| `goals` | Goals | product | ongoing dev-goal count | count > 0 → **MastermindGoalsModal** |
+| `datalinks` | Data analysis | product | `stack.dataLinks` | anything declared → **DimListPopover** |
+| `support` | Support | product | `stack.supportChannels` | anything declared → **DimListPopover** |
 
-**Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
+**KPI rule:** `off > 0` ⇒ `alert`, else `solid`, none defined ⇒ `absent`. Clicking answers *which* — `KpiListPopover` lists every KPI worst-status first; its door opens the project's Factory KPI matrix.
 
-**Ideas freshness rule:** `<7d` green (`solid`), `7–30d` amber (`risk`), `>30d` red (`alert`), never-scanned grey (`absent`). At mid zoom the cell renders the **day count** (`12d`) as its payload (`payloadKind` in the registry) instead of an icon.
+**Ideas freshness:** `<7d` solid, `7–30d` risk, `>30d` alert, never scanned absent.
 
-**Brand icons:** `DimGlyph` prefers the identified tool's official mark via the Passport wall's `resolveTechIcon` (simple-icons set — Supabase, Sentry, GitHub, Postgres, …) at every LOD; generic lucide outline otherwise; absent cells always generic + muted.
+**Skills Workbench (shared with the Passport wall):** a green Skills reading resolves to `'skills-run'` and opens `SkillsWorkbench` (`sub_factory/passport/improve/`) on its landing chooser; Dispatch runs `/skill <args>` as a background Fleet session.
 
-**Actionability affordance:** a cell whose registry/engine checks yield an action gets `cursor: pointer` + a quiet primary ring on hover; inert cells ignore clicks and show no affordance.
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note); deriveScene, dimActions and Soundings (which places it in its lane) pick it up.
 
-**Memory section (project sidebar):** real projects show a Memory block at the bottom of the project sidebar — Project Memory Ledger coverage (`contexts with fresh ≤30d memory / all contexts` + unanchored count, `dev_tools_memory_coverage`). When the Obsidian Brain plugin has a vault configured, two actions appear: **Sync to vault** (projects active ledger nodes as notes under `<vault>/personas/<project>/`, wikilinks per edge) and **Import from vault** (explicit scan — projected-note edits flow back; hand-authored notes in the subtree become new nodes and get stamped). The ledger itself fills automatically: dispatched skills write `.personas/memory-outbox.jsonl`, swept on session exit; `map`-kind nodes additionally trigger a delta context scan (structure-drift reconciler). Design: `docs/plans/skill-memory-unification.md`.
+## 5. The chart (Soundings)
 
-**Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list grouped by category — Development / Testing / Maintenance / Data / Other from SKILL.md `category:` frontmatter, groups name-asc, uncategorized under Other; the share LLM assigns the category when generalizing into the library + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
+- **L0 chart.** Stations sit at fixed positions (project name order, so a place always means the same project). Each buoy floats at an urgency depth: `3 x alerts + risks + 2 late + 2 agent waiting + 3 critical / 1 warning + 1 no monitoring bound + 0.25 per gap`; bands Surface (>= 6), Shallows (>= 2), Mid-water (>= 1), Deep. Names are placed by urgency: the most urgent keeps its label above the buoy, a clashing one moves below, a third hides until hover or focus. Floats on the waterline name why (alert count, late release, a lilac flag for an agent awaiting input). Relations are currents along the seabed.
+- **L1 station.** Enter widens the station into a water column; the others shrink to slivers that keep their order and a status tick. The fifteen readings sit in four lanes (runtime, delivery, agentic, product) at the band their status puts them in. A strip carries live work (sessions, personas, runner tasks), next release, LLM spend, errors and blockers.
+- **L2.** Enter lifts a reading into a card: tooling, the real **Improve** action (the page's `onDimOpen`), the progress ladder, its depth, and the same reading across the portfolio. `I` opens the **project file**: sessions (open the Fleet preview), personas and runner tasks (open their lists), the release plan (opens the notepad), readiness, relations to follow, **Memory** (below), and Dispatch fleet / Open terminal / Open in Factory.
+- **Keys** (through the app keyboard ladder at route priority): arrows, Enter, Esc, `I`, `/` (jump palette), `A` (next agent waiting), `R` (follow a current), `H`, `?` (help sheet).
+- **Theming.** `soundings/soundings.css` derives every colour from the theme tokens, so the sea re-tints with all 11 themes; status is a hue AND a shape, so it still reads in the monochrome themes. Buoys move by `transform`, never `top`, so a depth change is compositor-only.
 
-**Dimension categories (menu + action grammar).** The four registry `category` groups — **Runtime · Delivery · Agentic · Product** — used to render as the mid band's body (four rolled-up cells). That body was retired when the whole zoomed-out ladder moved to the live-process story (§6.1–6.2): categories no longer render as cells at any band, but the grouping itself is alive in the island **context menu** (dimensions grouped by category, worst-first) and in the **canvas-action grammar** (`category.open` still opens `CategoryPopover` programmatically — Athena's door). `lib/dimCategories.ts` owns the pure rollup (unit-tested in `__tests__/dimCategories.test.ts`); the registry's `category` field, reserved since it was written, is what it reads.
+**Memory (project file).** Real projects show Project Memory Ledger coverage (`contexts with fresh ≤30d memory / all contexts` + unanchored count, `dev_tools_memory_coverage`). When the Obsidian Brain plugin has a vault configured, two actions appear: **Sync to vault** and **Import from vault** (the only door for importing projected-note edits and hand-authored notes back into the ledger). Design: `docs/plans/skill-memory-unification.md`.
 
-Rollup rule, pessimistic about problems and strict about green: any `alert` → `alert`; else any `risk` → `risk`; else any `unknown` → `unknown` (a failed data family must never read as healthy); else all-`absent` → `absent`; else all-`solid` → `solid`; else `partial`. Each cell renders the category icon (`Cpu` / `PackageCheck` / `Sparkles` / `Compass`) in that colour plus a `solid/total` ratio, with a native `<title>` carrying "*{solid} of {total} wired*". A category holding `alert` or `risk` dimensions also gets a corner **attention badge** with that count — the colour says *something* is wrong, the badge says *how many*. `attention` deliberately excludes `absent`: a gap you chose is not a problem (pinned by a test).
+## 6. Ops (live work)
 
-Geometry: four oversized cells in a symmetric quad around the core (`CAT_AXIAL` in `MosaicIsland`). Cluster extents are **always measured from the full lattice**, so the halo/plate, banner, stat columns and fleet badges hold still across the band change — only the cells inside swap. In **edit** mode a click opens **`CategoryPopover`** — the category's dimensions sorted worst status first (`STATUS_RANK`), rendered as the SAME rows the island context menu uses (shared `MenuGlyph`, same actionable/inert convention), each actionable row routing through the same `onDimOpen`. So a red Delivery cell at mid zoom tells you *which* dimension is red and lets you act on it without zooming in first. A **double-click** frames the island instead (the drill-in gesture that explodes it back into real cells). In connect/group/note mode the cell is inert so it never swallows the mode's own drag.
+- **Fleet sessions** — click a session to open **`FleetPreviewPanel`**, the live managed terminal (typing goes straight to the PTY). **Open terminal** spawns an interactive session in the project's `root_path`; **Dispatch fleet** (`DispatchFleetModal`) seeds a *background* session with a typed instruction and stays on the chart. Both are disabled for demo projects and projects without a folder.
+- **Personas** — `PersonaListPopover`: one row per persona with a running execution, live elapsed time, and a click that navigates through `navigateToProcess` (the Monitor's switch).
+- **Runner tasks** — `RunnerListPopover`: task title, running % or status; rows open the **Run Desk** with the project active (`openRunDesk` in `lib/navigate.ts`).
+- **Attention** — an awaiting/stale session raises the project's attention (and its urgency); real monitoring errors drive its colour.
 
-This is what lifts the ~15-cell ceiling: a 16th dimension needs a registry entry and a lattice slot as before, but the far-zoom read no longer degrades with the count.
+## 7. Actionable layer and doors
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and the cell renderer pick it up — plus one lattice coord in MosaicIsland `AXIAL` (currently 15). The mid **dimension-categories** collapse (below) has since landed, so the zoomed-out read no longer degrades with the count — and far no longer renders dimensions at all (§6.1).
+Mastermind shares the Passport wall's row-action machinery via **`useImproveEngine`** provided through `ImproveProvider`; every reading routes through one `ImproveSurface` router, so a dimension added to the wall's ladder is reachable here too. The Ideas reading opens `IdeaScanPopover` (agent combination, context scope, target count) and dispatches through the canonical recorded pipeline (`dev_tools_run_scan`). Deploys and scans launched here appear in the titlebar activity dock.
 
-## 6. Zoom bands and level-of-detail
+Doors (`lib/navigate.ts`): **Open in Factory** rides `pendingFactoryFocus {projectId, l2Tab}` (consumed by `FactoryShell`); the next-release line opens the project's plan in the notepad; runner rows open the Run Desk after `setActiveProject`.
 
-`ZOOM_THRESHOLDS` in `types.ts` — the single source of truth: `far < 0.20 ≤ mid < 0.50 ≤ near < 0.80 ≤ close` (i.e. Mid triggers at 20% zoom, Near at 50%, Close at 80%).
+## 8. History (retired views)
 
-| Band | Cells render | Identity |
-| --- | --- | --- |
-| far | **one process hex** (see §6.1) — the live-process count, or a sleeping mark when nothing is running; process breakdown on the border | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
-| mid | **the Facet cube** (see §6.2) — the same hex, its interior split into three rhombic faces (Fleet / Personas / Runners) with a count per face and the far total at the centre seam | banner 18 px |
-| near | the full lattice **explodes back** — the dimension icon fills the hex as a low-opacity watermark and the **state value** (ordinal progress `2/4`, freshness `12d`, or a status mark for boolean dims) is the foreground, uppercase label below | banner 17 px; stat columns visible |
-| close | inspection detail — small icon + label + tool detail + ordinal progress bar | banner 16 px |
+- **Hex Mosaic** (retired 2026-09-25). The shipped canvas from 2026-08: islands of hex dimension cells on an infinite pan/zoom sea with far/mid/near/close zoom bands, Figma-like edit/group/connect/note modes, drag-to-place positions, a tidy layout, a project list sidebar with hide/show, a passport sidebar, a milestone status bar and group-wide Fleet dispatch. Soundings replaced it once it had been tuned beside it. What carried over: every data family, every popover and modal, live work (now including runner tasks), Athena's grammar and panels, the demo notice, the data-health bar and the memory block. What did not: spatial authoring (positions, groups, links, notes) and the hidden-project filter — a fixed-geometry chart has no place for them, and ranking by urgency does the decluttering. Their stored data is kept in the layout doc. Everything is in git history before this change.
+- **The 3D audition** (retired 2026-09-24). Strata and Holo (react-three-fiber worlds) and the dev-only design Board. "The three.js approach capped us into what we can do with design quality." A static HTML/CSS contest replaced it; its winner is Soundings. What it taught and still holds: position must carry stable meaning, levels beat one layer, and palette changes over an unchanged structure do not read as a new design.
+- Earlier prototypes (deleted, in git history): Archipelago, Command Grid, Grid Board, Inverse Grid, fleet "Cells", stats Panels/Strip/Gauges.
 
-The banner is rendered in world space but **counter-scaled by 1/z** (the Civilization city-label trick), so identity holds at any distance. Native `<title>` tooltips on every cell name the dimension + tool regardless of LOD. Stat columns hide at far. The dev-only `ZoomBadge` (top-right, `import.meta.env.DEV`) shows exact z / % / band for tuning.
+## 9. Athena on Mastermind
 
-### 6.1 Far band — the process hex
+**Reading it.** The scene is derived in the client, so the page publishes a snapshot to the `mastermind.scene.v1` app setting after each settled derive (debounced, deduped, never the demo scene), and the companion reads it. Until it publishes, her ops say plainly that the canvas is not reachable. Her block is worst-first triage with a footer carrying the true project count and any degraded families; `describe_canvas_project` and `describe_canvas_freshness` return bounded detail on demand.
 
-Far used to share mid's four category cells, which was the wrong content twice over: at that distance four same-sized cells are four dots you cannot read, and readiness/wiring — what those cells encode — is an inspection question, not an orbital one. From orbit the operator is scanning a portfolio for **activity**, so far now answers exactly that and nothing else, with a single large hex (`lib/FarProcessHex.tsx`, circumradius chosen to match the mid quad's visual mass so crossing the threshold changes the island's *content*, never its size).
+**Acting on it.** `canvas_dispatch`, `canvas_group_dispatch` and `canvas_run_idea_scan` are thin slug-resolving wrappers onto the same plan rows, validation and executors as the chat plan card; group dispatch stays sequential and capped, demo projects are refused by name, and every dispatch writes one row to the decision ledger.
 
-Two states:
+**Steering it.** `canvas_control` dispatches into `canvasActionStore`; SoundingsView answers: `camera.focus` opens a station, `camera.fit` returns to the chart and marks the named projects, `dim.open` lifts a reading and opens its Improve surface, `category.open` opens the station at that lane, `island.menu` opens the project file, `island.read` / `dim.read` return the model. Each move writes one line to the dock and pings the target with a sonar ring.
 
-- **Idle** — quiet fill, dashed muted border, and a **sleeping mark** (`lib/SleepingMark.tsx`): a crescent moon with three rising Z's, purpose-drawn in the `FleetShipIcon` mould (24×24 viewBox, `currentColor`, no fills) because lucide's stock `Moon` says "night" or "dark theme", which on a development canvas is the wrong reading entirely.
-- **Active** — the hex is filled by the **count** of live processes behind the project.
+**Composing a panel.** `compose_canvas_panel` sends a surface spec for one project. It renders through `SurfaceRenderer` (schema-validated, consent-gated actions) in the right dock. Panels persist per project in the layout document; composing routes to the tab, focuses the project (`focusStore`) and the chart opens its station. Each panel has its own reset, and a spec version this build does not understand is dropped rather than retained.
 
-**What counts** (`lib/farProcesses.ts`, unit-tested): Fleet CLI sessions **and** personas with an execution in progress, added together — the canvas's two live LLM-operation lanes. Sessions in the `exited` state are excluded: the number claims work is *running*, and a finished session is not. Buckets are ordered attention-first (`FLEET_STATE_ORDER`, persona lane last), and unrecognised session states are kept rather than dropped — an unknown state is still a running thing, and omitting it would make the number lie.
+## 10. Known gaps / deferred
 
-**What the border says.** Each bucket owns an arc of the hexagon's perimeter proportional to its share, in that bucket's own ink (`FLEET_INK` per session state; `--status-processing` for the persona lane — the same tokens `FleetBadges` uses, so the two surfaces agree). Arcs are drawn as dash segments on a copy of the same polygon, so each one traces the exact hexagon edge rather than an approximation, with a floor (`SEG_MIN`) so one session among fifty is still a visible arc instead of a rounding error. The body tint comes from the *first* bucket, so an island with one session awaiting input reads violet even when nine others are quietly running. `attention` (a session awaiting input or gone stale) adds a static outer ring — static, not a pulse, for the same reason `IslandBanner` refuses one: this band can show a hundred islands at once.
-
-So the number says *how much*, the border says *of what kind and in what state*, and neither needs a label the band has no room for. Readiness has not gone anywhere — the island's state halo sits behind the hex and still carries it as colour. The full breakdown in words lives in the native `<title>` (the group is deliberately hit-testable, with no handlers of its own, because a `pointer-events: none` group would make that tooltip unreachable; every gesture still bubbles to the island root and the canvas).
-
-`FleetBadges` and the core cell are suppressed at far: the badges are the same fleet/persona readout the hex now *is*, and a second small hex inside the big one reads as a target, not a project. Badges resume at mid, where they are the clickable way into each state's session list.
-
-### 6.2 Mid band — the Facet cube
-
-Mid continues far's story one step closer (`lib/MidFacetCube.tsx`, the consolidated `/prototype` winner): the SAME hex stays on screen and its interior resolves into three rhombic faces meeting at the centre — the isometric-cube reading a hexagon carries for free. Top face = **Fleet**, lower-left = **Personas**, lower-right = **Runners** (dev-runner tasks — the `runners` scene family; one batched `listTasks` IPC, live statuses only). Both bands reduce from the same `farProcesses` lane model, so the three face counts provably sum to the far number, which is held in a chip at the seam junction.
-
-Each face: the lane's glyph fills it as a **low-opacity watermark** (the near band's icon strategy — identity without a label the band has no room for), one bold numeral (`NUM_FS` 67), and the lane's ink on that face's stretch of the hexagon border — far's border-as-lane-colour rule, owned per-face. Runner progress fills the runner rim as its running tasks advance; a stopped session re-strokes the fleet rim in the awaiting ink (static, no pulse). An **empty face shows only its dim watermark** — no numeral, no placeholder. An idle island sleeps at mid exactly as it sleeps at far.
-
-**Click reactions** (edit mode, live faces only — empty faces are inert): fleet face → `FleetListPopover` with `state='all'` (every live session, each row in its own state's ink + translated state label); persona face → the existing `PersonaListPopover`; runner face → `RunnerListPopover` (`lib/RunnerListPopover.tsx`, ListPopover shell: task title, running % or execution status token, hollow/filled dot per the queued/running encoding), whose rows open the **Run Desk** with the project active (`openRunDesk` in `lib/navigate.ts`).
-
-Sizing discipline (why this shape survived where two prototype rounds died): everything lives inside the far hex's silhouette, so nothing can collide with the banner/badges/stat columns; the only text is numerals (mid spans z 0.20–0.50 — a 12-world-px label renders at 2–6 screen px); and every lane glyph is an explicitly sized nested svg (`FleetShipIcon` forwards SVG props — an unsized nested svg defaults to 100% of the viewport, which painted ship icons across the whole canvas in prototype round 1).
-
-## 7. Canvas view
-
-- **Hex Mosaic** (`MosaicIsland`, final) — core + dimensions snapped edge-to-edge on the axial hex lattice (ring-1 six + contiguous ring-2 caps); state halo behind the honeycomb; reads as an interlocking mosaic when far.
-
-Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, Inverse Grid (+ its `DimTile` renderer and the variant switcher), fleet "Cells", stats Panels/Strip/Gauges.
-
-### 7b. The 3D audition, retired (2026-09-24)
-
-Strata and Holo (react-three-fiber worlds) and the dev-only design Board auditioned a layered,
-"Jarvis" experience from 2026-09-09. The owner ended the line on 2026-09-24: "The three.js approach
-capped us into what we can do with design quality." Text in WebGL was either blurry or a DOM label
-floating in front of a scene it did not belong to, and every label was its own React root, so
-density had to be cut instead of designed. A static HTML/CSS contest replaced it
-(`docs/design/mastermind-soundings.md`); its winner, **Soundings**, is the second view beside the
-Baseline. Everything 3D (`three/`, the `three` and `@react-three/*` packages, the `vendor-three`
-chunk) was deleted; it is in git history before this change. What the audition taught and still
-holds: position must carry stable meaning (the planetary Orbit variant failed on it), levels beat
-one layer, and palette changes over an unchanged structure do not read as a new design.
-
-### 7c. Soundings (second view, 2026-09-24)
-
-The view switcher (`lib/ViewSwitcher.tsx`) offers **Baseline** and **Soundings**; the choice is
-session-local. Soundings (`soundings/`, its own lazy chunk) draws the portfolio as a nautical
-sounding chart where **depth means urgency**. Design, data mapping and phases:
-[`docs/design/mastermind-soundings.md`](../../../design/mastermind-soundings.md).
-
-- **L0 chart.** Stations sit at fixed positions (project name order, so a place always means the
-  same project). Each buoy floats at an urgency depth: `3 x alerts + risks + 2 late + 2 agent
-  waiting + 3 critical / 1 warning + 1 no monitoring bound + 0.25 per gap`; bands Surface (>= 6),
-  Shallows (>= 2), Mid-water (>= 1), Deep. Floats on the waterline name why (alert count, late
-  release, a lilac flag for an agent awaiting input). Relations are currents along the seabed.
-  A provisional island is a calm ghost until its scan lands.
-- **L1 station.** Enter widens the station into a water column; the others shrink to slivers
-  that keep their order and a status tick. The fifteen readings sit in four lanes (runtime,
-  delivery, agentic, product) at the band their status puts them in. A strip carries live work,
-  next ship, LLM spend, errors and blockers.
-- **L2.** Enter lifts a reading into a card: tooling, the real **Improve** action (the same
-  popovers the Baseline cell opens, via the page's `onDimOpen`), the progress ladder, its depth,
-  and the same reading across the portfolio at the chart's positions. `I` opens the project file:
-  sessions (open the Fleet preview), personas, the release plan (opens the notepad), readiness,
-  relations to follow, and Dispatch fleet / Open terminal / Open in Factory.
-- **Keys** (through the app keyboard ladder at route priority): arrows, Enter, Esc, `I`, `/`
-  (jump palette), `A` (next agent waiting), `R` (follow a current), `H`, `?` (help sheet).
-- **Athena.** Soundings answers the same `canvasActionStore` grammar as the Baseline:
-  `camera.focus` opens a station, `camera.fit` returns to the chart and marks the named projects,
-  `dim.open` lifts a reading and opens its Improve surface, `category.open` / `island.menu` /
-  `island.read` / `dim.read` as on the Baseline. Each move writes one line to the dock and pings
-  the target with a sonar ring.
-- **Theming.** `soundings/soundings.css` derives every colour from the theme tokens, so the sea
-  re-tints with all 11 themes; status is a hue AND a shape, so it still reads in the monochrome
-  themes.
-
-## 8. Interaction model (Figma-like, edit-first)
-
-**Modes** (bottom toolbar, `CanvasToolbar`, keyboard `E`/`G`/`C`/`N`, `Esc` = universal cancel). Each mode's one-line hint — what the mouse does in it — rides on that mode's **own tooltip** rather than a second toolbar row, so the toolbar is a single row at every width and the orientation is readable *before* you commit to a mode instead of only for the active one:
-
-| Mode | Behaviour |
-| --- | --- |
-| **Edit** (default) | sea drag = pan; **header (banner) drag** moves an island (body is inert for moving); header click (≤4 px) opens the right sidebar; groups move (carrying contained islands), resize (corner handle), rename; notes drag/edit; link labels editable |
-| **Group** | drag draws a labelled rectangle (dashed, primary-tinted); label inline-renamable; × deletes. The label plate is also the group's **rollup**: a **state histogram** (one dot+count per state present, worst first — a single worst-state dot would summarize ten projects by their unluckiest member), total blockers (error-red, only when non-zero), and — in edit mode — a rocket that dispatches ONE instruction to every dispatchable project in the box (`DispatchFleetModal` with a `targetCount` badge; spawns run sequentially, since firing six PTY+Claude processes at once is how a portfolio dispatch stalls the machine). Plate width tracks whichever segments render. |
-| **Connect** | drag from island A → rubber-band line, nearest island in radius highlights, release links; click-click fallback; editor popover: label, full/dashed, 6-colour palette |
-| **Note** | click places a world-space text note — sizes S/M/L/XL (16/26/42/64), fonts Inter/Roboto/**Caveat** (import-free stacks; Caveat falls back to Segoe Script/Ink Free) |
-
-**Camera:** wheel zoom-to-cursor; dblclick zoom (island dblclick = **linear tween focus** onto it); zoom cluster bottom-right: −/+/Fit-all/**Tidy**/Undo. Tidy runs the deterministic relation-aware layout once (pinned islands anchored, groups kept contiguous) with single-level undo.
-
-**Hover focus:** hovering an island dims everything except it and its integration neighbours.
-
-**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions **grouped by category** (Runtime / Delivery / Agentic / Product — the same shape the collapsed island shows at mid zoom) and sorted worst-status-first inside each group, with the same glyphs; hovering a dimension row echoes a double ring on the matching cell. **Clicking an actionable dimension row does exactly what clicking its cell does** — the island's nodes reach the menu already decorated by `MastermindPage`'s `dimAction` pass, so the row routes through the same `onDimOpen` (Improve / Deploy popover, `IdeaScanPopover`, `GoalListPopover`, Skills Workbench), anchored at the row. Inert dimensions render as plain non-focusable rows with no pointer and no hover affordance — the same "no action, no affordance" convention §5 defines for cells. Both Fleet rows are disabled for demo islands / projects with no `root_path`.
-
-**Motion:** sidebars fade+slide, islands fade in/out on hide/show/create (AnimatePresence), all linear.
-
-## 9. Ops layer (terminals + personas)
-
-Below each island, an ops-badge row (`FleetBadges`, counter-scaled):
-
-- **Terminal state badges** — one badge per fleet-session state present (attention-first order; `awaiting_input` dot pulses). Click → `FleetListPopover` listing that state's sessions, each with a deterministic **animal glyph** (hash of session id — Cat/Dog/Bird/Fish/Rabbit/Squirrel/Turtle/Snail) so parallel terminals stay tellable. Picking one opens…
-- **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path), and a **Dispatch Fleet…** action (`DispatchFleetModal` — a textarea instruction seeds a *background* session via `spawnSession(root, [instruction])`; no preview panel opens, so the canvas stays put and the session docks as an island fleet badge for later).
-- **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover`: one row per persona with the Monitor's own status dot, a live elapsed-time column (ticking while open), and a click that navigates to whatever surface the process declared. That routing goes through `navigateToProcess` (`features/fleet/monitor/`, extracted from `MonitorDrawer` for this) so a persona click lands identically from the canvas and from the Monitor. Rows whose process declares no destination — and demo islands, which have names but no processes — stay inert.
-- **Live attention:** any awaiting/stale session raises the island's "needs you" marker; real monitoring errors can drive island colour (§4).
-
-## 10. Actionable layer (Improve + scans)
-
-Mastermind shares the Passport wall's row-action machinery via the extracted **`useImproveEngine`** (`sub_factory/passport/improve/useImproveEngine.ts`) provided through `ImproveProvider`:
-
-- **Canvas cells** — clicking an actionable dimension opens the SAME `ImprovePopover` (Tier-0 standards) or `DeployPopover` (Claude deploy / connector bind) the wall uses, anchored at the click point via a synthetic `DOMRect`; both popovers flip vertically and clamp horizontally themselves.
-- **Right sidebar rows** — every `IMPROVABLE_ROWS` row wraps in `ImproveCell` (gear/sparkle affordances, busy spin, identical popovers).
-- **Ideas cell** — opens `IdeaScanPopover`: the Idea Scanner's `SCAN_AGENTS` in their category groups + last-run line; picking an agent dispatches a single-agent scan for that project through the **canonical recorded pipeline** (`dev_tools_run_scan` — writes the `DevScan` row, registers in the activity dock, streams `IDEA_SCAN_STATUS`; completion anywhere refreshes freshness). *Deliberate deviation:* dispatching via a raw fleet session was rejected because it would bypass `DevScan` recording — swap the execution lane only once fleet dispatch records scans.
-
-Deploys/scans launched here appear in the titlebar activity dock and busy-spin the corresponding wall cell — one machinery, two views.
-
-## 11. Sidebars
-
-- **Left — project list** (`ProjectListSidebar`): hidden by default behind a panel icon on the canvas; name-asc rows (name click opens the project sidebar) with state dot + eye toggle hiding/showing the island on the canvas (persisted in the layout doc; the list always shows all). Header **+** = the Projects manager's `ProjectModal` (same create/update store actions, path-dedup, background context scan), then passport reload. It is a project navigator, and the app already has a slot for exactly that — so rather than floating a second nav beside the real one, it **portals into the app's 2nd-level sidebar and covers it** (`[data-sidebar-l2]` on the L2 container in `chrome/sidebar/Sidebar.tsx`), in L2's own vocabulary: 240 px, header band, row typography, scrollbar. Docking into the *element* rather than fixed-positioning over a measured rect means the browser owns the geometry, so sidebar collapse and the mobile drawer keep working with no offsets of our own. The covered nav is marked `inert` for as long as the panel sits on it — covering a nav visually does not silence it, and a keyboard user would otherwise tab straight into controls they cannot see. `Esc` gives the menu back. When there is no L2 to take over (collapsed rail) it falls back to the in-canvas overlay it used to be.
-- **Right — project passport** (`ProjectSidebar`): opens on header click (or a left-list row click); a **door row** under the header deep-links this project into Factory / its Ship plan / the Skills manager; below it the wall's exported `CoverBody` (R18 Statband, `stats={null}`) + every dimension section with `InkWallCell`, dividers brightened for the panel backdrop (`border-foreground/12`).
-
-## 11b. Primary-channel doors (cross-module navigation)
-
-Mastermind hands projects off to the deeper layers with context instead of duplicating their UI:
-
-- **Ship milestone chip** on the banner (every zoom band): one batched `projectWallSummary` IPC + `buildCoverRoadmap` (the passport wall's own reducer) gives each island `Island.ship` — next milestone, shipped/total, late forecast (late = warning tint, all-shipped = success). Clicking it (edit mode) opens the project's **Factory Ship tab**.
-- **Island context menu** rows *Open in Factory / Open Ship plan / Open Skills manager* (disabled on the demo scene).
-- **Project sidebar door row** — Factory / Ship / Skills buttons.
-- Mechanics (`lib/navigate.ts`): Factory rides `pendingFactoryFocus {projectId, l2Tab}` in `uiSlice`, consumed + cleared by `FactoryShell` (the only way to land Factory on a specific project from outside — its nav state is local). Skills rides `setActiveProject(projectId)` + the plugins/dev-tools tab setters.
-
-Both sidebars, the context menu, and the list popovers share the app sidebar-menu language: `bg-secondary/95 backdrop-blur` + `border-primary/15` + `shadow-elevation-4` surfaces, `bg-primary/5` header bands with `typo-label text-foreground/90`, `typo-body text-foreground/70 hover:bg-secondary/40` rows.
-
-## 12. Athena on the canvas
-
-She had no link to Mastermind at all until now: she could not read the scene, could not route to the tab, and no tool touched the scene or layout stores.
-
-**Reading it.** The canvas is derived entirely in the client, folding a readiness passport through the fifteen dimension closures plus five independently loaded data families whose per-family load status is itself part of the picture (`unknown` is a failed load, not a missing capability). None of that lives in SQLite, so re-deriving it in Rust would drift and could never report a client-side load failure. Instead the canvas publishes a snapshot to the `mastermind.scene.v1` app setting after each derive (debounced, deduped on the serialized body, never the demo scene), and the companion reads it. Until it publishes, the prompt block is absent and every op says plainly that the canvas is not reachable. Her block is worst-first triage, hard-capped at its own token budget, with a footer carrying the true project count and any degraded families. `describe_canvas_project` and `describe_canvas_freshness` return bounded detail on demand.
-
-**Acting on it.** `canvas_dispatch`, `canvas_group_dispatch` and `canvas_run_idea_scan` are thin slug-resolving wrappers: they turn canvas slugs into the same plan rows the chat plan card produces, run the same validation, and reach the same executors. Group dispatch stays sequential and capped, containment is unchanged, demo islands are refused by name, and every dispatch writes one row to the decision ledger. They follow the boldness dial like the other fleet actions.
-
-**Annotating it.** Groups, links and notes carry an author. Athena's render with a distinct accent and a provenance marker, and one control removes only hers. The layout document is version 2 for this; the DB key is unchanged, and existing objects migrate as the user's.
-
-**Composing a panel.** `compose_canvas_panel` sends a surface spec for one project. It renders through `SurfaceRenderer` (schema-validated, salvage-parsed, consent-gated actions) in the right dock, taking precedence over the passport sidebar while it is open. Panels persist per project in the layout document and restore when that project is focused. Each panel has its own reset, and a spec whose version this build does not understand is dropped rather than retained, so a bad compose can never become a permanent error box. Composing routes to the tab and asks the canvas to travel to the island; because off-screen islands are not mounted, focus is a request the shell answers, never a node lookup.
-
-## 13. Known gaps / deferred
-
-- `auth` stays inert on purpose. Making it actionable is a **Passport-wall** change, not a canvas one: there is no `auth` row in `deployActions`/`connectors`, the wall renders it as a plain presence cell, and `passportModel` marks `stack.auth` view-only. A canvas action would break `dimActions`' invariant that a cell is clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true` so its cells say so in the tooltip.
+- `auth` stays inert on purpose: making it actionable is a Passport-wall change (no `auth` row in `deployActions`/`connectors`, `stack.auth` is view-only), and `dimActions` keeps a reading clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true`, and its card says so.
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
-- **Fleet-lane scan dispatch** (see §10 deviation).
-- **Dimension categories** shipped (see §5) — the ceiling is lifted. Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
-- Demo islands cannot exercise Improve actions, terminals, or real scan freshness.
+- The urgency weights are a first cut from the contest; tune them against the real portfolio.
+- Demo projects cannot exercise Improve actions, terminals, or real scan freshness.
 - Persona attribution requires the project to have a `team_id`.
