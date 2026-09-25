@@ -388,7 +388,7 @@ body {
      factor (--type-f) still multiplies the result.
 
        step   normal     compact    at Standard (larger, 16.5px root, f=1)
-       0      0.875rem   0.8125rem  14.4px -> 13.4px  label, code, card label
+       0      0.875rem   0.8125rem  14.4px -> 13.4px  label, code (card label moves to step 1)
        1      1rem       0.875rem   16.5px -> 14.4px  body, caption, title, data, heading
        2      1.125rem   1rem       18.6px -> 16.5px  body-lg, title-lg
        3      1.25rem    1.125rem   20.6px -> 18.6px  section title
@@ -409,9 +409,16 @@ body {
     --type-1: 0.875rem;
     --type-2: 1rem;
     --type-3: 1.125rem;
+    /* Control labels (the shared Button) take the row step here; outside a
+       tier --type-control is unset and a Button inherits, as it always has. */
+    --type-control: calc(var(--type-1) * var(--type-f));
   }
   /* Body line-height tightens with the size so a compact row keeps its rhythm. */
   [data-type-density="compact"] .typo-body { line-height: 1.5; }
+  /* A card label in a compact row names the row's thing: it sits on the row
+     step (one size in a row) and keeps its glow, which with its weight is
+     what sets it apart (Gate 3b: the operator kept the glow on Fleet Activity). */
+  [data-type-density="compact"] .typo-card-label { font-size: calc(var(--type-1) * var(--type-f)); }
 }
 
 @layer base {

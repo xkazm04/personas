@@ -76,7 +76,7 @@ Nothing sits below step 0 (0.875rem) at Standard. The tinted tokens
 `typo-card-label`) keep their colour: removing it was considered and rejected at
 Gate 0.
 
-**Compact type density (Gate 3, opt-in):** a dense tool surface sets `data-type-density="compact"` on its root and steps 0-3 move one step down (label/code 13.4px, row 14.4px at Standard; weights and tints unchanged), and each row carries ONE element emphasised by weight while figures and meta stay 400 (see typography.css).
+**Compact type density (Gate 3, opt-in):** a dense tool surface sets `data-type-density="compact"` on its root and steps 0-3 move one step down (label/code 13.4px, row 14.4px at Standard; weights and tints unchanged; `typo-card-label` and Button labels take the row step), and each row carries ONE element emphasised by weight while figures and meta stay 400 (see typography.css).
 
 Composable feature presets: `.font-data` (tabular+lining nums), `.font-code`
 (slashed zero), `.font-display` (kern+liga+calt), `.font-smallcaps`. Modifier:

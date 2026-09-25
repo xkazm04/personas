@@ -18,8 +18,9 @@ function baseName(path: string): string {
  * that are always drawn (empty when the run used none), so every row is the
  * same height. From 2xl the tools and files share the second line.
  *
- * One emphasis per row (Gate 3b): the project name carries the weight
- * (typo-title, the theme's tint); figures, model, time and file names are
+ * One emphasis per row (Gate 3b): the project name carries the weight and
+ * the card-label glow, on the row's size (the compact tier puts
+ * typo-card-label on the row step); figures, model, time and file names are
  * regular weight and muted, tool chips regular, so the eye lands on which
  * project ran before how much it cost.
  *
@@ -52,7 +53,7 @@ export function FleetActivityRow({ row, query, onOpen }: {
       className="block w-full rounded-card border border-primary/10 bg-card/30 px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-secondary/30"
     >
       <div className="flex items-baseline gap-3 min-w-0">
-        <span className="typo-title truncate">{projectLabel(row.cwd)}</span>
+        <span className="typo-card-label truncate">{projectLabel(row.cwd)}</span>
         {row.models.length > 0 && <span className="typo-caption truncate">{row.models[0]}</span>}
         <span className="ml-auto flex shrink-0 items-baseline gap-3 typo-caption tabular-nums">
           <span><Numeric value={tokens} unit="count" /> {f.insights_tokens.toLowerCase()}</span>
