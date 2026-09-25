@@ -82,7 +82,7 @@ export function SharedEventsTab() {
       render: (e) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <FeedIcon entry={e} className="w-8 h-8" />
-          <span className="typo-body font-medium text-foreground truncate">{e.name}</span>
+          <span className="typo-body text-foreground truncate">{e.name}</span>
         </div>
       ),
     },
@@ -197,7 +197,7 @@ export function SharedEventsTab() {
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           {t.common.refresh}

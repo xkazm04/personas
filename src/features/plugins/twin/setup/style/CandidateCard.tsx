@@ -43,7 +43,7 @@ export function CandidateCard({ candidate, n, pins, onTogglePin, onUse }: Candid
       <DimensionChips dims={candidate.dims} pins={pins} onTogglePin={onTogglePin} />
       <Button
         variant="accent"
-        accentColor="violet"
+        tone="agent"
         size="sm"
         className="mt-auto self-start"
         onClick={() => onUse(candidate.id)}

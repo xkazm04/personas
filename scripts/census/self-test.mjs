@@ -20,13 +20,14 @@
  *
  *   node scripts/census/self-test.mjs
  */
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertRule, isCommentOnlyLine, patternToRegExp, scanRule, validateRule } from './lib/engine.mjs';
 import { runCensus } from './run-census.mjs';
+import { findPhantoms } from '../style/typo-allowlist.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = resolve(HERE, '__fixtures__');
@@ -525,6 +526,107 @@ test('zero-width patterns cannot hang the scanner', () => {
   });
   const result = scanRule(rule, { root: FIXTURES }); // must terminate
   ok(result.walked === 4, 'scan completed');
+});
+
+// ------------------------- 6. style-unification rules, on seeded fixtures ---
+// The seven rules added 2026-09-24 (spark style-unification, WP2) are loaded
+// from the REAL rules.json, never copied: a fixture registry holding a twin
+// pattern proves the twin works, not the gate. Each is pointed at a temp tree
+// with a hand-counted seed file and a near-miss file, and asserted exactly;
+// then its baseline is set one below the seed count to prove the gate goes red.
+// Temp trees rather than __fixtures__/: rules such as pinned-harness-endpoint
+// walk scripts/ for .tsx, so committed seeds would leak into real counts.
+const REAL_RULES = JSON.parse(readFileSync(resolve(HERE, 'rules.json'), 'utf8')).rules;
+const STYLE_SEEDS = {
+  'raw-arbitrary-text-size': {
+    ext: '.tsx',
+    red: '<p className="text-[11px] x" /><p className="text-[0.8rem]" /><p className="sm:text-[13px]" />',
+    near: '<p className="text-[color:var(--x)] leading-[11px] max-w-[11px]" />\n// text-[11px] in a comment\n',
+    count: 3,
+  },
+  'raw-palette-text-colour': {
+    ext: '.tsx',
+    red: '<i className="text-emerald-400" /><i className="hover:text-red-500/70" />',
+    near: '<i className="text-status-success bg-emerald-500 text-emerald text-foreground" />',
+    count: 2,
+  },
+  'bare-rounded': {
+    ext: '.tsx',
+    red: '<i className="p-1 rounded text-x" />\nconst ghost = \'rounded\';\n',
+    near: '<i className="rounded-card rounded-full" />\nconst rounded = Math.round(x);\n',
+    count: 2,
+  },
+  'opacity-dimmed-text': {
+    ext: '.tsx',
+    red: '<i className="text-foreground opacity-60" /><i className="opacity-40 typo-caption text-foreground" />',
+    near: '<i className="text-foreground disabled:opacity-50 hover:opacity-80" /><i className="text-foreground opacity-100 text-foreground/60" />',
+    count: 2,
+  },
+  'raw-button-element': {
+    ext: '.tsx',
+    red: '<button className="x">a</button>\n<button\n  type="button"\n  onClick={() => a > b}\n  className="y"\n>b</button>\n',
+    near: '<button type="button">t</button><span className="z" />\n<Button className="x" />\n',
+    count: 2,
+  },
+  'feature-css-type-literal': {
+    ext: '.css',
+    red: '.a { font-size: 12px; }\n.b { font-family: "Inter", sans-serif; }\n.c { color: #fff; }\n.d { background: rgba(0, 0, 0, 0.4); }\n',
+    near: '.a { font-family: var(--font-mono); font-size: 1em; }\n.b { font-family: inherit; color: var(--foreground); }\n/* color: #fff */\n',
+    count: 4,
+  },
+};
+
+test('every style-unification rule is registered and has a seed', () => {
+  for (const id of Object.keys(STYLE_SEEDS)) ok(REAL_RULES.some((r) => r.id === id), `${id} is in rules.json`);
+});
+
+for (const [id, seed] of Object.entries(STYLE_SEEDS)) {
+  test(`style rule ${id}: exact count on its seed, zero on the near-miss, red over baseline`, () => {
+    const real = REAL_RULES.find((r) => r.id === id);
+    ok(real, `${id} in rules.json`);
+    const dir = mkdtempSync(join(tmpdir(), `census-style-${id}-`));
+    try {
+      mkdirSync(join(dir, 'tree'), { recursive: true });
+      writeFileSync(join(dir, 'tree', `seed${seed.ext}`), seed.red, 'utf8');
+      writeFileSync(join(dir, 'tree', `near${seed.ext}`), seed.near, 'utf8');
+      const rule = { ...real, roots: ['tree'], exclude: [], floor: 2, baseline: { files: 1, matches: seed.count } };
+      const result = scanRule(rule, { root: dir });
+      eq(result.walked, 2, `${id} walked`);
+      eq(result.matches, seed.count, `${id} matches on the seed`);
+      eq(result.hits.map((h) => h.file), [`tree/seed${seed.ext}`], `${id} fires only on the seed, never on the near-miss`);
+      eq(assertRule(rule, result).length, 0, `${id} green at its own count`);
+      const red = { ...rule, baseline: { files: 1, matches: seed.count - 1 } };
+      expectProblem(assertRule(red, result), 'rose', 'drift');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('phantom typo-* check: zero tolerance, derived from the stylesheets, loud on a broken walk', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'census-typo-phantom-'));
+  const floors = { files: 1, uses: 1 };
+  try {
+    mkdirSync(join(dir, 'src', 'styles'), { recursive: true });
+    mkdirSync(join(dir, 'src', 'ui', '__tests__'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'styles', 't.css'), '.typo-body { } /* .typo-ghost */ .typo-title { }', 'utf8');
+    writeFileSync(join(dir, 'src', 'styles', 't.proposed.css'), '.typo-eyebrow { }', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', 'a.tsx'), '<i className="typo-body typo-title" />\n// typo-ghost in prose is not a use\n', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', '__tests__', 'x.tsx'), '<i className="typo-fixture-only" />', 'utf8');
+    writeFileSync(join(dir, 'src', 'ui', 'b.test.tsx'), '<i className="typo-fixture-only" />', 'utf8');
+    eq(findPhantoms(dir, floors).ok, true, 'defined names pass; comments, tests and __tests__ are not uses');
+
+    writeFileSync(join(dir, 'src', 'ui', 'c.tsx'), '<i className="typo-ghost typo-eyebrow" />', 'utf8');
+    const r = findPhantoms(dir, floors);
+    eq(r.sites.length, 2, 'a commented-out selector and an unpromoted proposal define nothing');
+    ok(r.problems.some((p) => /c\.tsx:1 typo-ghost is defined by no stylesheet/.test(p)), 'the site is named by file:line');
+
+    eq(findPhantoms(dir, { files: 99, uses: 1 }).broken, true, 'too few files walked is a broken walker, not a clean tree');
+    rmSync(join(dir, 'src', 'styles'), { recursive: true, force: true });
+    ok(findPhantoms(dir, floors).problems.some((p) => /reader is broken/.test(p)), 'reading zero stylesheets fails loudly');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ------------------------------------------------------------------- run ---

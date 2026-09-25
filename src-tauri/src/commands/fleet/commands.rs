@@ -111,18 +111,19 @@ pub async fn spawn_codex_worker_in_run(
     app: AppHandle,
     cwd: String,
     task: String,
-    model: String,
+    model_and_effort: (String, Option<String>),
     run_label: Option<&str>,
     provenance: Provenance,
     profile: Option<crate::db::models::ResourceProfile>,
 ) -> Result<String, String> {
+    let (model, effort) = model_and_effort;
     let admission = queue::admit(
         &app,
         DispatchRequest {
             cwd,
             name: None,
             title: None,
-            args: queue::codex_args(&task, &model),
+            args: queue::codex_args(&task, &model, effort.as_deref()),
             mode: FleetSessionMode::Headless,
             run_label: run_label.map(str::to_string),
             origin: provenance.origin(),
@@ -368,6 +369,9 @@ pub async fn fleet_wake_session(
     if let Some((created_at_ms, name)) = lineage {
         registry().adopt_lineage(&new_id, created_at_ms, name);
     }
+    // A session a paired device dispatched here stays that device's job
+    // across the id change.
+    super::remote_exec::carry_over(&session_id, &new_id);
     // Logged against the NEW id (the one that lives on) with the old one in the
     // detail, so a reader can follow a hibernate → wake chain across the id
     // change instead of seeing a session vanish and an unrelated one appear.

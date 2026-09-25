@@ -55,7 +55,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
         onClick={handleDownloadHtml}
         disabled={downloading}
         data-testid="export-report-html"
-        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors disabled:opacity-50`}
+        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors disabled:opacity-50`}
       >
         {downloading
           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -66,7 +66,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
         type="button"
         onClick={handleCopyMarkdown}
         data-testid="export-report-md"
-        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors`}
+        className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors`}
       >
         {copyState === 'copied'
           ? <Check className="w-3.5 h-3.5 text-status-success" />

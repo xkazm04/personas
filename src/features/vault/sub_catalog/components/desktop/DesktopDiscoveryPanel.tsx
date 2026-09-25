@@ -133,7 +133,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <h3 className="typo-heading font-semibold text-foreground">{dd.title}</h3>
+          <h3 className="typo-heading text-foreground">{dd.title}</h3>
           <p className="typo-body text-foreground">
             {dd.connect_description}
           </p>
@@ -156,7 +156,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           type="button"
           onClick={() => setTab('apps')}
-          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption transition-colors ${
             tab === 'apps'
               ? 'bg-secondary/80 text-foreground'
               : 'text-foreground hover:text-foreground'
@@ -169,7 +169,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           type="button"
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
-          className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
+          className={`flex-1 px-3 py-1.5 rounded-input typo-caption transition-colors ${
             tab === 'mcp-import'
               ? 'bg-secondary/80 text-foreground'
               : 'text-foreground hover:text-foreground'

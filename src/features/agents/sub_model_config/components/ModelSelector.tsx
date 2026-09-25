@@ -159,7 +159,7 @@ export function ModelSelector({
   return (
     <div className="space-y-3">
       {!hideHeader && (
-        <h4 className="flex items-center gap-2.5 typo-heading font-semibold text-foreground/90 tracking-wide">
+        <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
           <Cpu className="w-3.5 h-3.5" />
           {mc.model_and_provider}
@@ -174,7 +174,7 @@ export function ModelSelector({
             <div key={col.key} className="space-y-1 rounded-card" style={{ backgroundColor: colorWithAlpha(col.color, 0.03) }}>
               {/* Column header */}
               <div
-                className="flex items-center justify-center gap-1.5 typo-heading font-semibold uppercase tracking-wider px-2 py-1.5 rounded-card"
+                className="flex items-center justify-center gap-1.5 typo-heading uppercase px-2 py-1.5 rounded-card"
                 style={{ color: col.color, backgroundColor: colorWithAlpha(col.color, 0.07) }}
               >
                 {Logo && <Logo color={col.color} />}
@@ -216,12 +216,12 @@ export function ModelSelector({
                       <div className="w-3.5 h-3.5 rounded-full border border-primary/20 flex-shrink-0" />
                     )}
                     {/* Name */}
-                    <span className="typo-body font-medium text-foreground/90 flex-1 truncate">
+                    <span className="typo-body text-foreground/90 flex-1 truncate">
                       {model.value === 'custom' && <Settings2 className="w-3 h-3 inline mr-1 text-foreground" />}
                       {model.name}
                     </span>
                     {/* Cost */}
-                    <span className={`typo-code font-mono flex-shrink-0 ${model.cost === FREE_COST ? 'text-emerald-400/80' : 'text-foreground'}`}>
+                    <span className={`typo-code flex-shrink-0 ${model.cost === FREE_COST ? 'text-emerald-400/80' : 'text-foreground'}`}>
                       {model.cost}
                     </span>
                   </button>

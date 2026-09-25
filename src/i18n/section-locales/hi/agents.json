@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} संपादित हो रहा है",
     "header_subtitle_new": "शुरुआत से एक नया एजेंट बनाएं",
     "header_title": "बिल्ड",
-    "new_agent": "नया एजेंट"
+    "new_agent": "नया एजेंट",
+    "promote_receipt_connect": "कनेक्टर खोलें",
+    "promote_receipt_connectors": "अभी जोड़ना बाकी: {names}",
+    "promote_receipt_failed_title": "प्रमोट पूरा नहीं हुआ",
+    "promote_receipt_later": "बाद में",
+    "promote_receipt_needs_setup_title": "प्रमोट हो गया, लेकिन चलने से पहले सेटअप ज़रूरी है",
+    "promote_receipt_retry": "प्रमोट दोबारा आज़माएँ",
+    "promote_receipt_unverified": "इसका पहला जाँच रन कोई नतीजा नहीं दे सका। इस पर भरोसा करने से पहले इसके कनेक्टर देखें।"
   },
   "matrix_tab": {
     "loading": "मैट्रिक्स लोड हो रहा है",
@@ -2708,7 +2715,7 @@
     "all_saved": "सभी परिवर्तन सहेजे गए",
     "changed": "{sections} बदल गया",
     "cli_awareness": "Claude CLI सत्र जागरूकता",
-    "cli_awareness_desc": "इस पर्सोना को अतिरिक्त संदर्भ के रूप में आपके सक्रिय इंटरैक्टिव Claude CLI सत्र से हाल के टर्न पढ़ने दें। इसके लिए साथी → सेटअप → संवेदी संकेत में मौजूद वैश्विक टॉगल का भी चालू होना ज़रूरी है। केवल पढ़ने के लिए — आपका CLI सत्र कभी नहीं बदला जाता।",
+    "cli_awareness_desc": "इस पर्सोना को अतिरिक्त संदर्भ के रूप में आपके सक्रिय इंटरैक्टिव Claude CLI सत्र से हाल के टर्न पढ़ने दें। इसके लिए Athena → सेटअप → संवेदी संकेत में मौजूद वैश्विक टॉगल का भी चालू होना ज़रूरी है। केवल पढ़ने के लिए — आपका CLI सत्र कभी नहीं बदला जाता।",
     "execution": "निष्पादन",
     "execution_retention": "निष्पादन अवधारण",
     "failed_health_watch": "हेल्थ वॉच सेटिंग अपडेट करने में विफल",
@@ -3275,5 +3282,16 @@
     "parse": "पार्स",
     "paste_json": "या JSON सीधे पेस्ट करें",
     "paste_placeholder": "अपना वर्कफ़्लो JSON यहाँ पेस्ट करें…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "प्रमोट अस्वीकार करेगा: {reason}",
+    "heading": "प्रमोट क्या करेगा",
+    "needs_setup": "पहले सेटअप चाहिए: {connectors}",
+    "refused": "प्रमोट इस ड्राफ़्ट को अस्वीकार करेगा",
+    "refused_hint": "इसे ठीक करने के लिए ड्राफ़्ट को परिष्कृत करें, फिर प्रमोट करें।",
+    "repaired": "बिल्ड द्वारा समायोजित",
+    "runs_manual": "जब आप शुरू करें तब चलता है",
+    "runs_next": "{type} ट्रिगर, अगला रन {time}",
+    "runs_on_event": "{type} ट्रिगर, सक्रिय होने पर चलता है"
   }
 }

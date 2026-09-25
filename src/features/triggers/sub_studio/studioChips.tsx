@@ -22,7 +22,7 @@ export function SourceChip({ source, personas, completesLabel }: {
         <span className={`w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 ${tpl?.color ?? 'text-amber-400'}`}>
           <Icon className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body font-medium text-foreground truncate">{tpl?.label ?? source.triggerType}</span>
+        <span className="typo-body text-foreground truncate">{tpl?.label ?? source.triggerType}</span>
       </span>
     );
   }
@@ -32,7 +32,7 @@ export function SourceChip({ source, personas, completesLabel }: {
         <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-sky-400">
           <Store className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body font-medium text-foreground truncate">{source.label}</span>
+        <span className="typo-body text-foreground truncate">{source.label}</span>
       </span>
     );
   }
@@ -40,7 +40,7 @@ export function SourceChip({ source, personas, completesLabel }: {
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body font-medium text-foreground truncate">{p?.name ?? personaName(source.personaId, personas)}</span>
+      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(source.personaId, personas)}</span>
       <span className="typo-body opacity-80 text-foreground shrink-0">{completesLabel}</span>
     </span>
   );
@@ -51,7 +51,7 @@ export function TargetChip({ targetId, personas }: { targetId: string; personas:
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body font-medium text-foreground truncate">{p?.name ?? personaName(targetId, personas)}</span>
+      <span className="typo-body text-foreground truncate">{p?.name ?? personaName(targetId, personas)}</span>
     </span>
   );
 }
@@ -72,7 +72,7 @@ export function PatchEndChip({ source, targetId, systemOpKind, personas, kinds, 
         <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-violet-400">
           <Cog className="w-3.5 h-3.5" />
         </span>
-        <span className="typo-body font-medium text-foreground truncate">{k?.label ?? systemOpKind}</span>
+        <span className="typo-body text-foreground truncate">{k?.label ?? systemOpKind}</span>
       </span>
     );
   }

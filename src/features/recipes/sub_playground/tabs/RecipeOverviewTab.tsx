@@ -25,7 +25,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
     <div className="p-4 space-y-4">
       {/* Details */}
       <div className="space-y-3">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">{t.recipes.details}</h3>
+        <h3 className="typo-heading text-foreground uppercase">{t.recipes.details}</h3>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-card border border-border/40 bg-card/30 p-3">
             <p className="typo-body text-foreground mb-1">{t.recipes.category}</p>
@@ -41,7 +41,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
       {/* Tags */}
       {tags.length > 0 && (
         <div className="space-y-2">
-          <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <h3 className="typo-heading text-foreground uppercase flex items-center gap-1.5">
             <Tag className="w-3 h-3" /> Tags
           </h3>
           <div className="flex flex-wrap gap-1.5">
@@ -57,7 +57,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
       {/* Input Schema */}
       {inputs.length > 0 && (
         <div className="space-y-2">
-          <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <h3 className="typo-heading text-foreground uppercase flex items-center gap-1.5">
             <FileText className="w-3 h-3" /> {t.recipes.input_fields}
           </h3>
           <UnifiedTable
@@ -70,7 +70,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
 
       {/* Prompt Template Preview */}
       <div className="space-y-2">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+        <h3 className="typo-heading text-foreground uppercase flex items-center gap-1.5">
           <Cpu className="w-3 h-3" /> {t.recipes.prompt_template}
         </h3>
         <PromptTemplateRenderer content={recipe.prompt_template || '(empty)'} maxHeight="max-h-60" />

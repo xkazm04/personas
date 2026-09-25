@@ -125,7 +125,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
             <Users className="w-4 h-4 text-emerald-400" />
           )}
           <div className="flex-1">
-            <h3 className="typo-heading font-semibold text-foreground">
+            <h3 className="typo-heading text-foreground">
               {capabilityStep
                 ? `Scope "${capabilityStep.name}" to…`
                 : eventLabel
@@ -275,7 +275,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body-lg font-medium text-foreground truncate">{p.name}</div>
+                      <div className="typo-body-lg text-foreground truncate">{p.name}</div>
                     </div>
                     <Plus className="w-3.5 h-3.5 text-emerald-400/40 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
                   </button>

@@ -220,7 +220,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
             <HardDriveDownload className="w-4.5 h-4.5" />
           </span>
           <div className="min-w-0">
-            <h2 id="export-selection-title" className="typo-heading-lg font-semibold text-foreground">
+            <h2 id="export-selection-title" className="typo-heading-lg text-foreground">
               {s.export_title}
             </h2>
             <p className="typo-caption text-foreground">{s.export_subtitle}</p>
@@ -269,7 +269,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                     type="button"
                     key={chip.key}
                     onClick={() => setPersonaFilter(chip.key)}
-                    className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
+                    className={`px-2.5 py-1 rounded-input typo-caption border transition-colors ${
                       personaFilter === chip.key
                         ? 'bg-primary/15 border-primary/25 text-foreground'
                         : 'bg-secondary/20 border-primary/10 text-foreground hover:text-foreground'
@@ -286,7 +286,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
                 disabled={shownIds.length === 0}
                 data-testid="portability-select-filtered"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-medium border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {allShownSelected
@@ -302,7 +302,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
             ) : shownIds.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center py-20 gap-1.5">
                 <Search className="w-7 h-7 text-foreground" />
-                <p className="typo-body font-medium text-foreground">{p.no_results_title}</p>
+                <p className="typo-body text-foreground">{p.no_results_title}</p>
                 <p className="typo-caption text-foreground">{p.no_results_hint}</p>
               </div>
             ) : (

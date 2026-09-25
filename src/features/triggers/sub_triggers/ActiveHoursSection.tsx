@@ -126,7 +126,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
         <Clock className="w-3 h-3" />
         {t.triggers.active_hours}
         {aw.enabled && (
-          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-sky-500/15 text-sky-400 font-medium">
+          <span className="ml-1 px-1.5 py-0.5 rounded-full typo-body bg-sky-500/15 text-sky-400">
             {summaryLabel}
           </span>
         )}
@@ -161,7 +161,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                           key={d.key}
                           onClick={() => toggleDay(d.key)}
                           title={d.label}
-                          className={`w-7 h-7 rounded-card typo-caption font-medium transition-colors ${
+                          className={`w-7 h-7 rounded-card typo-caption transition-colors ${
                             aw.days.includes(d.key)
                               ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
                               : 'bg-secondary/30 text-foreground border border-primary/5 hover:border-primary/15'

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Gauge, Minimize2 } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { readTranscript, sessionMetadata } from '@/api/fleet/fleet';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -58,36 +60,39 @@ export function FleetContextPill({ claudeSessionId, sessionId, canCompact = fals
 
   // Lean → large → very large. Crude absolute buckets (a glance signal, not
   // a precise % of any one model's window).
-  const tone = ctx > BLOAT_TOKENS ? 'text-red-400' : ctx > 50_000 ? 'text-amber-400' : 'text-emerald-400';
+  // A size verdict, so a status: lean is success, large a warning, bloated an error.
+  const tone = ctx > BLOAT_TOKENS ? 'text-status-error' : ctx > 50_000 ? 'text-status-warning' : 'text-status-success';
   // Offer the remedy only where the problem is real: a red (bloated) session
   // re-sends its whole conversation every turn, so compacting it cuts per-turn
   // cost for the rest of the run.
   const showCompact = ctx > BLOAT_TOKENS && !!onCompact && !!sessionId;
 
+  // Disabled while the session is mid-turn; the Button's own disabledReason explains why.
+  const compact = (
+    <Button
+      variant="accent"
+      tone="warning"
+      size="xs"
+      data-testid="fleet-context-compact"
+      icon={<Minimize2 className="w-3 h-3" aria-hidden="true" />}
+      disabled={!canCompact}
+      disabledReason={f.compact_unavailable_hint}
+      onClick={() => onCompact!(sessionId!)}
+    >
+      {f.compact_button}
+    </Button>
+  );
+
   return (
     <span className="inline-flex items-center gap-2">
-      <span
-        data-testid="fleet-context-pill"
-        className={`inline-flex items-center gap-1 text-[13px] tabular-nums ${tone}`}
-        title={f.context_size_hint}
-      >
-        <Gauge className="w-3 h-3" aria-hidden="true" />
-        <span className="opacity-80">{f.context_size_label}</span>
-        <Numeric value={ctx} unit="count" />
-      </span>
-      {showCompact && (
-        <button
-          type="button"
-          data-testid="fleet-context-compact"
-          disabled={!canCompact}
-          onClick={() => onCompact!(sessionId!)}
-          title={canCompact ? f.compact_hint : f.compact_unavailable_hint}
-          className="inline-flex items-center gap-1 rounded-card border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[12px] text-amber-300 transition-colors hover:bg-amber-400/20 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Minimize2 className="w-3 h-3" aria-hidden="true" />
-          {f.compact_button}
-        </button>
-      )}
+      <Tooltip content={f.context_size_hint}>
+        <span data-testid="fleet-context-pill" className={`inline-flex items-center gap-1 typo-body tabular-nums ${tone}`}>
+          <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>{f.context_size_label}</span>
+          <Numeric value={ctx} unit="count" />
+        </span>
+      </Tooltip>
+      {showCompact && (canCompact ? <Tooltip content={f.compact_hint}>{compact}</Tooltip> : compact)}
     </span>
   );
 }

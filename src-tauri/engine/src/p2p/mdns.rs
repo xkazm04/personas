@@ -9,7 +9,7 @@
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use tokio_util::sync::CancellationToken;
 
@@ -26,6 +26,12 @@ const MAX_ADDRESSES: usize = 8;
 
 /// Expected decoded length of a peer_id (SHA-256 = 32 bytes).
 const PEER_ID_DECODED_LEN: usize = 32;
+
+/// How long an absent STRANGER's row is kept (demoted, reading stale) before it
+/// is deleted. Owned devices are never deleted by the prune: their row is the
+/// address book an auto-connect dials, and a paired laptop that was asleep for
+/// a week must still read "stale", not vanish.
+pub const STRANGER_RETENTION_SECS: i64 = 7 * 24 * 60 * 60;
 
 /// Outcome of validating raw mDNS peer data.
 struct ValidatedPeerData {
@@ -103,7 +109,7 @@ fn is_trusted_peer(pool: &DbPool, peer_id: &str) -> bool {
     result
 }
 
-fn load_trusted_peer_ids(pool: &DbPool) -> std::collections::HashSet<String> {
+pub(crate) fn load_trusted_peer_ids(pool: &DbPool) -> std::collections::HashSet<String> {
     let conn = match pool.get() {
         Ok(c) => c,
         Err(_) => return std::collections::HashSet::new(),
@@ -196,6 +202,19 @@ pub struct MdnsService {
     service_fullname: Mutex<Option<String>>,
     /// Buffer of validated peers keyed by peer_id, flushed periodically.
     pending_peers: Mutex<HashMap<String, BufferedPeer>>,
+    /// Raised after every flush that wrote at least one peer, so the
+    /// auto-connect sweep can dial a newly discovered owned device at once
+    /// instead of on its next periodic tick.
+    discovered: Arc<tokio::sync::Notify>,
+}
+
+/// What one prune pass did.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PruneOutcome {
+    /// Absent peers kept with `is_connected = 0` (they read stale).
+    pub demoted: u64,
+    /// Strangers absent longer than [`STRANGER_RETENTION_SECS`], deleted.
+    pub deleted: u64,
 }
 
 impl MdnsService {
@@ -206,7 +225,13 @@ impl MdnsService {
             browse_daemon: Mutex::new(None),
             service_fullname: Mutex::new(None),
             pending_peers: Mutex::new(HashMap::new()),
+            discovered: Arc::new(tokio::sync::Notify::new()),
         }
+    }
+
+    /// The signal raised whenever a discovery flush wrote peers to the DB.
+    pub fn discovery_signal(&self) -> Arc<tokio::sync::Notify> {
+        self.discovered.clone()
     }
 
     /// Register this node on the LAN via mDNS.
@@ -454,28 +479,64 @@ impl MdnsService {
                 let _ = conn.execute_batch("ROLLBACK");
             } else {
                 tracing::debug!("mDNS batch flushed {} peers", count);
+                self.discovered.notify_one();
             }
         } else {
             let _ = conn.execute_batch("ROLLBACK");
         }
     }
 
-    /// Prune peers not seen within the given timeout.
-    pub fn prune_stale_peers(&self, timeout_secs: u64) -> Result<u64, AppError> {
-        let cutoff = chrono::Utc::now() - chrono::Duration::seconds(timeout_secs as i64);
-        let cutoff_str = cutoff.to_rfc3339();
+    /// Demote peers not seen within `timeout_secs` to stale instead of deleting
+    /// them, and delete only STRANGERS absent for [`STRANGER_RETENTION_SECS`].
+    ///
+    /// This used to `DELETE` every disconnected peer after two minutes, which
+    /// threw away the only address an owned device could be re-dialled at and
+    /// left the UI with no stale state between "here" and "never heard of it"
+    /// (a recorded registry deviation). Now an absent peer keeps its row with
+    /// `is_connected = 0` (reachability reads it as stale); an owned device's row
+    /// is never deleted here (unpairing removes the device, not the prune); a
+    /// stranger's row ages out after a week so the table stays bounded on a busy
+    /// LAN. A row with a live connection is never touched: `is_connected` is
+    /// owned by the connection manager, which clears it on disconnect.
+    pub fn prune_stale_peers(&self, timeout_secs: u64) -> Result<PruneOutcome, AppError> {
+        let now = chrono::Utc::now();
+        let cutoff = (now - chrono::Duration::seconds(timeout_secs as i64)).to_rfc3339();
+        let retention = (now - chrono::Duration::seconds(STRANGER_RETENTION_SECS)).to_rfc3339();
 
         let conn = self.pool.get()?;
         let deleted = conn.execute(
-            "DELETE FROM discovered_peers WHERE last_seen_at < ?1 AND is_connected = 0",
-            rusqlite::params![cutoff_str],
+            "DELETE FROM discovered_peers
+              WHERE last_seen_at < ?1 AND is_connected = 0
+                AND peer_id NOT IN (SELECT peer_id FROM owned_devices)",
+            rusqlite::params![retention],
+        )?;
+        let demoted: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM discovered_peers WHERE last_seen_at < ?1 AND is_connected = 0",
+            rusqlite::params![cutoff],
+            |row| row.get(0),
         )?;
 
         if deleted > 0 {
-            tracing::debug!("Pruned {} stale discovered peers", deleted);
+            tracing::debug!(deleted, "Pruned long-absent stranger peers");
         }
 
-        Ok(deleted as u64)
+        Ok(PruneOutcome {
+            demoted: demoted.max(0) as u64,
+            deleted: deleted as u64,
+        })
+    }
+
+    /// Whether this device has EVER seen `peer_id` on the LAN (a discovered_peers
+    /// row exists, however old). Reachability reads a row without a live
+    /// connection as stale.
+    pub fn has_discovered_row(&self, peer_id: &str) -> Result<bool, AppError> {
+        let conn = self.pool.get()?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM discovered_peers WHERE peer_id = ?1",
+            rusqlite::params![peer_id],
+            |row| row.get(0),
+        )?;
+        Ok(n > 0)
     }
 
     /// Get all discovered peers from DB.
@@ -616,6 +677,92 @@ mod tests {
         let result = validate_addresses(addrs);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], "192.168.1.1:4242");
+    }
+
+    fn test_pool() -> DbPool {
+        let pool = personas_db::init_test_db().expect("test db");
+        pool.get()
+            .map_err(personas_core::error::AppError::from)
+            .and_then(|conn| {
+                conn.execute(
+                    "INSERT INTO local_identity (id, peer_id, public_key, display_name)
+                     VALUES (1, 'local-peer', X'00', 'This Device')",
+                    [],
+                )
+                .map_err(Into::into)
+            })
+            .expect("seed local_identity");
+        pool
+    }
+
+    fn seen(pool: &DbPool, peer_id: &str, ago_secs: i64, connected: bool) -> Result<(), AppError> {
+        let at = (chrono::Utc::now() - chrono::Duration::seconds(ago_secs)).to_rfc3339();
+        pool.get()?.execute(
+            "INSERT INTO discovered_peers
+               (peer_id, display_name, addresses, last_seen_at, first_seen_at, is_connected, metadata, trust_status)
+             VALUES (?1, ?1, '[\"127.0.0.1:4242\"]', ?2, ?2, ?3, NULL, 'unverified')",
+            rusqlite::params![peer_id, at, connected as i32],
+        )?;
+        Ok(())
+    }
+
+    /// THE regression test for the recorded deviation: an absent peer is
+    /// DEMOTED (row kept, `is_connected = 0`, reads stale), never deleted on
+    /// the two-minute prune; an owned device is never deleted at all; only a
+    /// stranger absent past the retention window goes.
+    #[test]
+    fn the_prune_demotes_absent_peers_instead_of_deleting_them() -> Result<(), AppError> {
+        let pool = test_pool();
+        let group = personas_db::repos::resources::owned_devices::ensure_device_group_id(&pool)
+            .expect("group");
+        for owned in ["owned-recent", "owned-ancient"] {
+            personas_db::repos::resources::owned_devices::register_paired_device(
+                &pool, owned, &group, owned, "pk",
+            )
+            .expect("pair");
+        }
+        seen(&pool, "owned-recent", 300, false)?; // absent 5 min
+        seen(&pool, "owned-ancient", 30 * 24 * 3600, false)?; // absent 30 days
+        seen(&pool, "stranger-recent", 300, false)?;
+        seen(&pool, "stranger-ancient", 30 * 24 * 3600, false)?;
+        seen(&pool, "stranger-live", 300, true)?; // quiet on mDNS but connected
+
+        let mdns = MdnsService::new(pool.clone());
+        let outcome = mdns.prune_stale_peers(120).expect("prune");
+        assert_eq!(outcome.deleted, 1, "only the long-absent stranger goes");
+        assert_eq!(outcome.demoted, 3);
+
+        for kept in [
+            "owned-recent",
+            "owned-ancient",
+            "stranger-recent",
+            "stranger-live",
+        ] {
+            assert!(
+                mdns.has_discovered_row(kept).expect("row"),
+                "{kept} must be kept"
+            );
+        }
+        assert!(!mdns.has_discovered_row("stranger-ancient").expect("row"));
+
+        let peers = mdns.get_discovered_peers().expect("peers");
+        let recent = peers
+            .iter()
+            .find(|p| p.peer_id == "owned-recent")
+            .expect("owned");
+        assert!(
+            !recent.is_connected,
+            "an absent peer reads not-connected (stale)"
+        );
+        let live = peers
+            .iter()
+            .find(|p| p.peer_id == "stranger-live")
+            .expect("live");
+        assert!(
+            live.is_connected,
+            "a live connection is never demoted by the prune"
+        );
+        Ok(())
     }
 
     #[test]

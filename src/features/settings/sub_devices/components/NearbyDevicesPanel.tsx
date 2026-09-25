@@ -68,7 +68,7 @@ export function NearbyDevicesPanel({ peers, isBusy, onLink, onRefresh }: NearbyD
                 label={peer.is_connected ? st.link_state_online : st.link_state_idle}
               />
               <div className="min-w-0 flex-1">
-                <p className="typo-body font-medium text-foreground truncate">{peer.display_name}</p>
+                <p className="typo-body text-foreground truncate">{peer.display_name}</p>
                 <div className="flex items-center gap-2 typo-caption text-foreground/90">
                   <UuidLabel value={peer.peer_id} />
                   <RelativeTime timestamp={peer.last_seen_at} />

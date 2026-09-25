@@ -152,7 +152,7 @@ export function DevToolsProjectDropdown({
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Wrench className="w-5 h-5 text-primary/60" />
               </div>
-              <p className="typo-body font-medium text-foreground mb-1">{t.shared.devtools_no_projects}</p>
+              <p className="typo-body text-foreground mb-1">{t.shared.devtools_no_projects}</p>
               <p className="typo-caption text-foreground mb-3">
                 {t.shared.devtools_no_projects_hint}
               </p>
@@ -162,7 +162,7 @@ export function DevToolsProjectDropdown({
               <button
                 type="button"
                 onClick={() => useSystemStore.getState().setSidebarSection('credentials')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 {t.shared.devtools_no_projects_action}
@@ -192,7 +192,7 @@ export function DevToolsProjectDropdown({
                   >
                     <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body font-medium text-foreground/90 truncate">
+                      <div className="typo-body text-foreground/90 truncate">
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">

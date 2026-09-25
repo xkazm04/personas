@@ -58,7 +58,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             key={m.id}
             type="button"
             onClick={() => setMode(m.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body transition-all ${
               mode === m.id
                 ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-elevation-1'
                 : 'text-foreground hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
@@ -157,7 +157,7 @@ function FileUploadTab({
           <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-violet-300' : 'text-violet-400'}`} />
         </div>
         <div className="text-center">
-          <p className="typo-body font-medium text-foreground">
+          <p className="typo-body text-foreground">
             {isDragging ? t.templates.n8n.drop_file_here : t.templates.n8n.import_from_any_platform}
           </p>
           <p className="typo-body text-foreground mt-1">
@@ -170,7 +170,7 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
@@ -195,7 +195,7 @@ function PasteTab({
       <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
-          <span className="typo-body font-medium text-foreground">{t.templates.n8n.paste_workflow_json}</span>
+          <span className="typo-body text-foreground">{t.templates.n8n.paste_workflow_json}</span>
           <span className="typo-body text-foreground ml-auto">
             {pasteText.length > 0 && formatFileSize(pasteText.length)}
           </span>
@@ -205,7 +205,7 @@ function PasteTab({
           onChange={(e) => { setPasteText(e.target.value); validatePastedContent(e.target.value); }}
           aria-label={t.templates.n8n.paste_aria}
           placeholder={t.templates.n8n.paste_placeholder}
-          className="w-full h-48 px-4 py-3 bg-transparent typo-code font-mono text-foreground placeholder:text-foreground resize-none outline-none"
+          className="w-full h-48 px-4 py-3 bg-transparent typo-code text-foreground placeholder:text-foreground resize-none outline-none"
           spellCheck={false}
           data-testid="paste-json-textarea"
         />
@@ -215,7 +215,7 @@ function PasteTab({
             type="button"
             onClick={handlePasteImport}
             disabled={pastePreview?.kind !== 'valid'}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-modal typo-body font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-modal typo-body transition-all ${
               pastePreview?.kind === 'valid'
                 ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
                 : 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
@@ -249,7 +249,7 @@ function UrlTab({
       <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
-          <span className="typo-body font-medium text-foreground">{t.templates.n8n.import_from_url}</span>
+          <span className="typo-body text-foreground">{t.templates.n8n.import_from_url}</span>
         </div>
         <p className="typo-body text-foreground">
           {t.templates.n8n.url_description}
@@ -269,7 +269,7 @@ function UrlTab({
             type="button"
             onClick={() => void handleUrlFetch()}
             disabled={urlFetching || !urlValue.trim()}
-            className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body transition-all ${
               urlFetching || !urlValue.trim()
                 ? 'bg-secondary/40 text-foreground border border-primary/10 disabled:cursor-not-allowed'
                 : 'bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30'
@@ -284,17 +284,17 @@ function UrlTab({
         </div>
         <div className="flex items-center gap-3 typo-body text-foreground">
           <span>{t.templates.n8n.accepts_label}</span>
-          <span className="font-mono typo-code">{t.templates.n8n.url_format_github}</span>
+          <span className="typo-code">{t.templates.n8n.url_format_github}</span>
           <span className="text-primary/20">|</span>
-          <span className="font-mono typo-code">{t.templates.n8n.url_format_gist}</span>
+          <span className="typo-code">{t.templates.n8n.url_format_gist}</span>
           <span className="text-primary/20">|</span>
-          <span className="font-mono typo-code">{t.templates.n8n.url_format_raw}</span>
+          <span className="typo-code">{t.templates.n8n.url_format_raw}</span>
         </div>
       </div>
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>

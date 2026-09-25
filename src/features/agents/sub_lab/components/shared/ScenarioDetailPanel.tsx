@@ -91,8 +91,8 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
         <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="typo-caption font-medium text-foreground">{label}</span>
-            <span className={`typo-caption font-semibold ${scoreColor(score)}`}>{scoreLabel(score)}</span>
+            <span className="typo-caption text-foreground">{label}</span>
+            <span className={`typo-caption ${scoreColor(score)}`}>{scoreLabel(score)}</span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
             <div
@@ -101,11 +101,11 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
             />
           </div>
         </div>
-        <span className={`typo-heading-lg font-bold tabular-nums ${scoreColor(score)}`}>{score ?? '—'}</span>
+        <span className={`typo-heading-lg tabular-nums ${scoreColor(score)}`}>{score ?? '—'}</span>
       </div>
       {rationale && (
         <div className="px-3 pb-2.5 -mt-0.5">
-          <p className="typo-caption text-foreground leading-relaxed">{rationale}</p>
+          <p className="typo-caption text-foreground">{rationale}</p>
         </div>
       )}
     </div>
@@ -151,7 +151,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border-b border-primary/10">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="typo-body font-medium text-foreground/90 truncate">{result.scenarioName}</span>
+          <span className="typo-body text-foreground/90 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="typo-caption px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
         </div>
         <button type="button" onClick={onClose} aria-label={debtText("auto_close_details_433da6d1")} className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
@@ -164,15 +164,15 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {structured?.verdict && (
           <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-card bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">
             <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-            <p className="typo-body text-foreground leading-relaxed">{structured.verdict}</p>
+            <p className="typo-body text-foreground">{structured.verdict}</p>
           </div>
         )}
 
         {/* Composite score header */}
         <div className="flex items-center gap-4 py-2">
-          <div className={`typo-hero font-black tracking-tight ${scoreColor(composite)}`}>{composite ?? '—'}</div>
+          <div className={`typo-hero ${scoreColor(composite)}`}>{composite ?? '—'}</div>
           <div>
-            <span className={`typo-heading font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
+            <span className={`typo-heading ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
             <p className="typo-caption text-foreground"><DebtText k="auto_composite_score_ta_40_oq_40_pc_20_0839893e" /></p>
           </div>
           <div className="flex-1" />
@@ -213,11 +213,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Plain rationale fallback (for older results without structured data) */}
         {plain && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-foreground">
+            <h5 className="flex items-center gap-1.5 typo-label text-foreground">
               <MessageSquare className="w-3 h-3" />
               {t.agents.lab.evaluation_notes}
             </h5>
-            <p className="typo-body text-foreground leading-relaxed bg-secondary/20 rounded-card px-3 py-2.5 border border-primary/5">
+            <p className="typo-body text-foreground bg-secondary/20 rounded-card px-3 py-2.5 border border-primary/5">
               {plain}
             </p>
           </div>
@@ -226,11 +226,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Suggestions */}
         {result.suggestions && (
           <div className="space-y-1.5">
-            <h5 className="flex items-center gap-1.5 typo-label font-semibold text-amber-400/80">
+            <h5 className="flex items-center gap-1.5 typo-label text-amber-400/80">
               <Lightbulb className="w-3 h-3" />
               {t.agents.lab.how_to_fix}
             </h5>
-            <p className="typo-body text-foreground leading-relaxed bg-amber-500/5 rounded-card px-3 py-2.5 border border-amber-500/10">
+            <p className="typo-body text-foreground bg-amber-500/5 rounded-card px-3 py-2.5 border border-amber-500/10">
               {result.suggestions}
             </p>
           </div>
@@ -250,7 +250,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Output preview */}
         {result.outputPreview && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label text-foreground cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.agent_output}
             </summary>
@@ -268,7 +268,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {/* Tool calls */}
         {(expectedCalls.length > 0 || actualCalls.length > 0) && (
           <details className="group">
-            <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground cursor-pointer hover:text-muted-foreground/80">
+            <summary className="flex items-center gap-1.5 typo-label text-foreground cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
               {t.agents.lab.tool_calls}
             </summary>

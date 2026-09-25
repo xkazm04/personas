@@ -23,8 +23,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
-import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
+import { useIllustration } from '@/features/companions/athena/inbox/hooks/useIllustration';
+import { firstGrapheme } from '@/features/companions/athena/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -87,7 +87,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-foreground p-6">
         <Bot className="w-6 h-6" />
-        <div className="typo-caption">{t.plugins.companion.persona_overview_empty}</div>
+        <div className="typo-caption">{t.athena.persona_overview_empty}</div>
       </div>
     );
   }
@@ -126,18 +126,18 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-[10px] uppercase tracking-[0.22em] ${heroTier.textClass} font-medium opacity-80`}>
-              {title ?? t.plugins.companion.persona_overview_eyebrow_default}
+              {title ?? t.athena.persona_overview_eyebrow_default}
             </p>
-            <h1 className="typo-heading-sm text-foreground/95 truncate font-semibold">
+            <h1 className="typo-heading text-foreground/95 truncate font-semibold">
               {hero.name}
             </h1>
           </div>
           <button
             type="button"
             onClick={() => openPersona(hero.id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption font-medium ${heroTier.btnClass} transition-colors`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption ${heroTier.btnClass} transition-colors`}
           >
-            {t.plugins.companion.persona_overview_open_short}
+            {t.athena.persona_overview_open_short}
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>
@@ -157,7 +157,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
             {rest.length > 0 && (
               <div className="rounded-card border border-foreground/8 bg-background/30 p-2.5">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium mb-2 px-1">
-                  {t.plugins.companion.persona_overview_rest_heading}
+                  {t.athena.persona_overview_rest_heading}
                 </p>
                 <ul className="flex flex-col gap-1">
                   {rest.map((p) => (
@@ -209,7 +209,7 @@ function HeroCard({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input typo-caption font-medium ${tierAccent.bgSoftClass} ${tierAccent.borderClass} border ${tierAccent.textClass}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input typo-caption ${tierAccent.bgSoftClass} ${tierAccent.borderClass} border ${tierAccent.textClass}`}>
               {tierLabel}
             </span>
             {flag && (
@@ -220,7 +220,7 @@ function HeroCard({
             {recentActivity(persona.updated_at) && (
               <span className="typo-caption text-emerald-300">
                 ·{' '}
-                {tx(t.plugins.companion.persona_overview_active_relative, {
+                {tx(t.athena.persona_overview_active_relative, {
                   when: relativeUpdated(persona.updated_at),
                 })}
               </span>
@@ -235,19 +235,19 @@ function HeroCard({
       <div className="grid grid-cols-3 gap-2">
         <KpiPanel
           icon={Shield}
-          label={t.plugins.companion.persona_overview_kpi_trust}
+          label={t.athena.persona_overview_kpi_trust}
           value={`${trust.pct}%`}
           tone={trust.overflow ? 'warn' : trustTone}
-          hint={trust.overflow ? t.plugins.companion.persona_overview_kpi_trust_clamped : undefined}
+          hint={trust.overflow ? t.athena.persona_overview_kpi_trust_clamped : undefined}
         />
         <KpiPanel
           icon={Coins}
-          label={t.plugins.companion.persona_overview_kpi_budget}
+          label={t.athena.persona_overview_kpi_budget}
           value={budgetLabel(persona.max_budget_usd)}
         />
         <KpiPanel
           icon={Gauge}
-          label={t.plugins.companion.persona_overview_kpi_max_turns}
+          label={t.athena.persona_overview_kpi_max_turns}
           value={persona.max_turns?.toString() ?? '—'}
         />
       </div>
@@ -258,7 +258,7 @@ function HeroCard({
           onClick={() => onOpen(persona.id)}
           className="typo-caption text-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
         >
-          {t.plugins.companion.persona_overview_view_full}
+          {t.athena.persona_overview_view_full}
           <ArrowRight className="w-3 h-3" />
         </button>
       </div>
@@ -270,16 +270,16 @@ function StoryStrip() {
   const { t } = useTranslation();
   const steps = [
     {
-      label: t.plugins.companion.persona_overview_next_step_pick_label,
-      body: t.plugins.companion.persona_overview_next_step_pick_body,
+      label: t.athena.persona_overview_next_step_pick_label,
+      body: t.athena.persona_overview_next_step_pick_body,
     },
     {
-      label: t.plugins.companion.persona_overview_next_step_tune_label,
-      body: t.plugins.companion.persona_overview_next_step_tune_body,
+      label: t.athena.persona_overview_next_step_tune_label,
+      body: t.athena.persona_overview_next_step_tune_body,
     },
     {
-      label: t.plugins.companion.persona_overview_next_step_run_label,
-      body: t.plugins.companion.persona_overview_next_step_run_body,
+      label: t.athena.persona_overview_next_step_run_label,
+      body: t.athena.persona_overview_next_step_run_body,
     },
   ];
   return (
@@ -287,7 +287,7 @@ function StoryStrip() {
       <div className="flex items-center gap-1.5 mb-2">
         <Sparkles className="w-3 h-3 text-primary/70" />
         <p className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">
-          {t.plugins.companion.persona_overview_next_steps_label}
+          {t.athena.persona_overview_next_steps_label}
         </p>
       </div>
       <ol className="space-y-2">
@@ -297,7 +297,7 @@ function StoryStrip() {
               {i + 1}
             </span>
             <div className="min-w-0">
-              <p className="typo-caption text-foreground/95 font-medium leading-snug">{s.label}</p>
+              <p className="typo-caption text-foreground/95">{s.label}</p>
               <p className="text-[11px] text-foreground leading-snug">{s.body}</p>
             </div>
           </li>
@@ -330,7 +330,7 @@ function KpiPanel({
           ? 'text-rose-300'
           : 'text-foreground/95';
   const valueNode = (
-    <span className={`typo-data-md font-semibold ${valueClass}`}>
+    <span className={`typo-data font-semibold ${valueClass}`}>
       {value}
       {hint != null && <span aria-hidden className="ml-0.5 opacity-70">*</span>}
     </span>
@@ -360,7 +360,7 @@ function RosterThumb({ persona, onOpen }: { persona: Persona; onOpen: (id: strin
       className="w-full flex items-center gap-2 px-2 py-1.5 rounded-input hover:bg-foreground/[0.04] transition-colors text-left group"
     >
       <span
-        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 typo-caption font-semibold ${tier.bgSoftClass} ${tier.borderClass} border ${tier.textClass}`}
+        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 typo-caption ${tier.bgSoftClass} ${tier.borderClass} border ${tier.textClass}`}
       >
         {initial}
       </span>

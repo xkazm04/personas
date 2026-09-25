@@ -72,7 +72,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
       {/* Filter by persona */}
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          <label htmlFor="history-persona-filter" className="block typo-body font-medium text-foreground mb-1.5">
+          <label htmlFor="history-persona-filter" className="block typo-body text-foreground mb-1.5">
             {t.gitlab.filter_by_persona}
           </label>
           <select
@@ -106,7 +106,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <History className="w-4 h-4 text-amber-400" />
-        <h3 className="typo-body font-medium text-foreground">{t.gitlab.deployment_timeline}</h3>
+        <h3 className="typo-body text-foreground">{t.gitlab.deployment_timeline}</h3>
         <span className="ml-auto typo-caption text-foreground">
           {history.length} deployment{history.length !== 1 ? 's' : ''}
         </span>
@@ -220,7 +220,7 @@ function DeploymentRow({
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="typo-body font-medium text-foreground/90">
+              <span className="typo-body text-foreground/90">
                 {record.personaName}
               </span>
               {isLatest && (
@@ -263,7 +263,7 @@ function DeploymentRow({
                     type="button"
                     onClick={onRollback}
                     disabled={rollingBack}
-                    className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+                    className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
                   >
                     {rollingBack ? (
                       <LoadingSpinner size="xs" />
@@ -285,7 +285,7 @@ function DeploymentRow({
                 <button
                   type="button"
                   onClick={onRollback}
-                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
                   title={t.gitlab.rollback_to_deployment}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

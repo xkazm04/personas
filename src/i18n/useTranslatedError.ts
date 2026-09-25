@@ -80,6 +80,11 @@ export const ERROR_KEY_MAP: TranslatedErrorRule[] = [
   // ERROR_RULES. Kept first for the same reason: the raw string carries generic
   // words a later rule would otherwise claim.
   { match: /already (?:decided|resolved)[\s\S]{0,80}?by a concurrent action/i, keyPrefix: 'decision_conflict', category: 'recoverable' },
+  // Remote devices — before the generic offline rule (see ERROR_RULES).
+  { match: /\bremote_peer_offline\b|is not reachable right now|stopped responding before it answered/, keyPrefix: 'remote_peer_offline', category: 'recoverable' },
+  { match: /\bproject_not_found\b/, keyPrefix: 'project_not_found', category: 'user_action' },
+  { match: /\bremote_command_refused\b/, keyPrefix: 'remote_command_refused', category: 'recoverable' },
+  { match: /\bremote_dispatch_failed\b|Device-to-device dispatch is not enabled/, keyPrefix: 'remote_dispatch_failed', category: 'system' },
   { match: /NetworkOffline|Network offline:/, keyPrefix: 'network_offline', category: 'system' },
   { match: 'timed out', keyPrefix: 'timed_out', category: 'recoverable' },
   { match: 'Failed to build HTTP client', keyPrefix: 'http_client', category: 'system' },

@@ -116,7 +116,7 @@ export const StreamRow = memo(function StreamRow({
       </span>
       {verb && <span className={`typo-label flex-shrink-0 ${tone}`}>{verb}</span>}
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
-      <span className="typo-body leading-none text-foreground truncate" title={head.title}>
+      <span className="typo-body text-foreground truncate" title={head.title}>
         {head.title}
       </span>
       {heard > 0 && (

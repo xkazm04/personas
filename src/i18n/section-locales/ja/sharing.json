@@ -287,5 +287,8 @@
   "verifying_bundle": "バンドルを検証中…",
   "verifying_enclave": "エンクレーブを検証中…",
   "view_details": "詳細を表示",
-  "your_identity": "あなたのID"
+  "your_identity": "あなたのID",
+  "job_kind_fleet_session": "Fleet セッション",
+  "job_kind_instruction": "指示",
+  "job_receipt_title": "返された作業"
 }

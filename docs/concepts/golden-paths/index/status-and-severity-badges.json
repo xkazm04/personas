@@ -42,6 +42,8 @@
     "StationModules.tsx": {"count":1,"sections":[5],"lines":["151"],"contexts":["has one (`StationModules.tsx:151`). *Failure mode: the type system was right there and you turned"],"resolved":false},
     "StatusBadge.tsx": {"count":1,"sections":[],"lines":["67"],"contexts":["`StatusBadge.tsx:67` is `<StatusBadge status={BadgeStatus} />` with the token→presentation table"],"resolved":false},
     "StatusPageView.tsx": {"count":1,"sections":[7],"lines":["24"],"contexts":["raw `border-emerald-400` palette classes — also a design-token violation); `StatusPageView.tsx:24`"],"resolved":false},
+    "VerdictBadge.test.tsx": {"count":3,"sections":[5,7],"lines":["26-30"],"contexts":["`VerdictBadge.test.tsx`) for 26 categories, and both are hand-maintained mirrors of a Rust list."],"resolved":false},
+    "VerdictBadge.tsx": {"count":4,"sections":[4,5,7],"lines":["16","8-14","41","40"],"contexts":["`VerdictBadge.tsx:16` — read it before writing yours."],"resolved":false},
     "console/src/docs/facets.ts": {"count":2,"sections":[4],"lines":["10-16"],"contexts":["`brainiac`'s `console/src/docs/facets.ts:10-16` argues this explicitly — an unknown policy"],"resolved":false},
     "dev_workspaces.rs": {"count":1,"sections":[7],"contexts":["all in `dev_workspaces.rs`, against 66 vocabularies. Everywhere else, an invalid token reaches SQLite"],"resolved":false},
     "displayUseCase.ts": {"count":1,"sections":[8],"lines":["101"],"contexts":["cannot supply — hence `STATE_HEX` (`displayUseCase.ts:101`), `HEALTH_HEX` (`GraphCanvas.tsx:29`)"],"resolved":false},
@@ -103,15 +105,7 @@
       "verbatim": "traceInspectorTypes.ts"
     },
     "src/features/agents/sub_executions/libs/traceHelpers.ts": {"count":1,"sections":[7],"contexts":["in one object literal. Concentrations: `traceHelpers.ts` (36) and `traceInspectorTypes.ts` (12) are"],"resolvedFrom":"basename","verbatim":"traceHelpers.ts"},
-    "src/features/overview/sub_certification/components/VerdictBadge.tsx": {"count":5,"sections":[4,5,6,7],"lines":["16","8-14","41","40"],"contexts":["`VerdictBadge.tsx:16` — read it before writing yours."],"resolvedFrom":"basename","verbatim":"VerdictBadge.tsx"},
-    "src/features/overview/sub_certification/components/__tests__/VerdictBadge.test.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["26-30"],
-      "contexts": ["`VerdictBadge.test.tsx`) for 26 categories, and both are hand-maintained mirrors of a Rust list."],
-      "resolvedFrom": "basename",
-      "verbatim": "VerdictBadge.test.tsx"
-    },
+    "src/features/overview/sub_certification/components/VerdictBadge.tsx": {"count":1,"sections":[6],"contexts":["**Copy this one: `src/features/overview/sub_certification/components/VerdictBadge.tsx`.**"],"resolved":false},
     "src/features/overview/sub_events/components/EventLogList.tsx": {
       "count": 1,
       "sections": [7],

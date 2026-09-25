@@ -1,0 +1,194 @@
+import { useCallback, useState } from 'react';
+import { Loader2, RadioTower, RefreshCw, Sparkles, TrendingDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
+import {
+  companionDecayUnusedFacts,
+  companionReembedMissing,
+  companionRunReflection,
+} from '@/api/companion';
+import { BrainViewer } from '../BrainViewer';
+import { useAthenaStore } from '../athenaStore';
+import { ConsolidationReview } from './ConsolidationReview';
+
+type MemoryView = 'brain' | 'consolidation';
+
+/**
+ * Memory tab — three concerns share this surface:
+ *   - **Bulk-action toolbar** at the top: run consolidation, generate
+ *     reflection, decay unused facts. These are manual maintenance
+ *     passes; nothing here runs on a schedule.
+ *   - **Brain inspector** (default view): the same `BrainViewer` the
+ *     chat panel uses, in inline mode.
+ *   - **Consolidation review** (drill-in): the diff-review surface for
+ *     proposals that came out of a consolidation pass.
+ *
+ * Toggle between the two views with the toolbar; back arrow returns to
+ * the brain inspector. The brain viewer's nested state is preserved
+ * via the companion store, so flipping doesn't lose the user's place.
+ */
+export default function MemoryPanel() {
+  const { t, tx } = useTranslation();
+  const [view, setView] = useState<MemoryView>('brain');
+  const [reflecting, setReflecting] = useState(false);
+  const [decaying, setDecaying] = useState(false);
+  const [reembedding, setReembedding] = useState(false);
+  const setBrainView = useAthenaStore((s) => s.setBrainView);
+
+  const addToast = useToastStore((s) => s.addToast);
+
+  const generateReflection = useCallback(async () => {
+    setReflecting(true);
+    try {
+      const id = await companionRunReflection();
+      addToast(t.athena.reflections, 'success');
+      // Jump straight to the new reflection so the result is visible.
+      setBrainView({ open: true, kind: 'reflection', id });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(`${t.athena.reflection_failed}: ${msg}`, 'error');
+      silentCatch('companion_run_reflection')(err);
+    } finally {
+      setReflecting(false);
+    }
+  }, [addToast, setBrainView, t]);
+
+  const decayFacts = useCallback(async () => {
+    setDecaying(true);
+    try {
+      const n = await companionDecayUnusedFacts();
+      addToast(
+        n === 0
+          ? t.athena.decay_none
+          : `${n} ${t.athena.decay_done.replace('{{count}}', String(n)).replace(/^\d+\s+/, '')}`,
+        'success',
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(msg, 'error');
+      silentCatch('companion_decay_unused_facts')(err);
+    } finally {
+      setDecaying(false);
+    }
+  }, [addToast, t]);
+
+  // Memory only ever got a vector at the moment it was written, so anything
+  // that arrived another way — an imported brain, a write made while the
+  // embedder was down, a change of embedding model — was findable by recency
+  // and importance but never by meaning. This is the repair, and it is safe to
+  // run at any time: a second pass finds nothing left to do.
+  const rebuildSearchIndex = useCallback(async () => {
+    setReembedding(true);
+    try {
+      const r = await companionReembedMissing();
+      if (!r.available) {
+        addToast(t.athena.memory_rebuild_search_unavailable, 'warning');
+      } else if (r.embedded === 0) {
+        addToast(t.athena.memory_rebuild_search_none, 'success');
+      } else {
+        addToast(
+          tx(t.athena.memory_rebuild_search_done, { count: r.embedded }),
+          'success',
+        );
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(msg, 'error');
+      silentCatch('companion_reembed_missing')(err);
+    } finally {
+      setReembedding(false);
+    }
+  }, [addToast, t]);
+
+  return (
+    <div className="h-full -mx-4 -mb-6 sm:-mx-6 lg:-mx-8 rounded-card overflow-hidden border border-foreground/10 bg-secondary/40 flex flex-col">
+      <div className="px-4 py-2 border-b border-foreground/10 flex items-center justify-between gap-2 shrink-0">
+        <div className="min-w-0">
+          <div className="typo-caption text-foreground">
+            {t.athena.memory_bulk_actions_title}
+          </div>
+          <div className="typo-caption text-foreground hidden sm:block">
+            {t.athena.memory_bulk_actions_desc}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setView('consolidation')}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
+              view === 'consolidation'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-foreground/5 hover:bg-foreground/10 text-foreground/85'
+            }`}
+            title={t.athena.memory_run_consolidation}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              {t.athena.memory_run_consolidation}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={generateReflection}
+            disabled={reflecting}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            title={t.athena.memory_generate_reflection}
+          >
+            {reflecting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {reflecting
+                ? t.athena.reflection_running
+                : t.athena.memory_generate_reflection}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={decayFacts}
+            disabled={decaying}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            title={t.athena.memory_decay_unused}
+          >
+            {decaying ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <TrendingDown className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {t.athena.memory_decay_unused}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={rebuildSearchIndex}
+            disabled={reembedding}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+            title={t.athena.memory_rebuild_search}
+          >
+            {reembedding ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RadioTower className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {reembedding
+                ? t.athena.memory_rebuild_search_running
+                : t.athena.memory_rebuild_search}
+            </span>
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0">
+        {view === 'consolidation' ? (
+          <ConsolidationReview onClose={() => setView('brain')} />
+        ) : (
+          <BrainViewer />
+        )}
+      </div>
+    </div>
+  );
+}

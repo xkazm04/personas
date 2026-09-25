@@ -23,13 +23,13 @@ export default function AppearanceTextSizeSettings() {
                   : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
               }`}
             >
-              <span className={`font-semibold typo-body-lg ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
+              <span className={`typo-body-lg ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
                 Aa
               </span>
-              <span className={`typo-heading ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
+              <span className={`typo-heading ${isActive ? 'text-foreground' : 'text-foreground'}`}>
                 {scale.label}
               </span>
-              <span className="typo-caption text-foreground leading-snug">
+              <span className="typo-caption text-foreground">
                 {scale.description}
               </span>
               {isActive && (

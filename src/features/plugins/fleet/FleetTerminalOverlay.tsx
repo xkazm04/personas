@@ -291,7 +291,7 @@ export function FleetTerminalOverlay({
     // scoped to that subtree and this portal painted straight over it.
     // Dismissal: titlebar/overlay Back, Escape, or the footer's fleet toggle.
     <div
-      className="fleet-typescale fixed left-0 right-0 top-12 z-[200] flex flex-col bg-background"
+      className="fixed left-0 right-0 top-12 z-[200] flex flex-col bg-background"
       style={{ bottom: DESKTOP_FOOTER_HEIGHT_PX }}
       data-testid="fleet-terminal-overlay"
       role="region"

@@ -84,13 +84,13 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <GitFork className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">Data analysis — {raw.project.name}</span>
+        <span className="typo-caption text-foreground truncate">Data analysis — {raw.project.name}</span>
         <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <p className="px-3 pt-2 typo-caption text-foreground/55 leading-snug" style={{ fontWeight: 400 }}>
+      <p className="px-3 pt-2 typo-caption text-foreground/55" style={{ fontWeight: 400 }}>
         Which registered projects post-process this app’s data? Declared by hand for now — a future
         scan may propose links once the connection exists in code.
       </p>
@@ -111,7 +111,7 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
                   className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer"
                   style={{ accentColor: 'var(--primary)' }}
                 />
-                <span className="typo-caption font-medium text-foreground truncate">{r.name}</span>
+                <span className="typo-caption text-foreground truncate">{r.name}</span>
               </label>
             </li>
           ))}
@@ -123,7 +123,7 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
           type="button"
           onClick={save}
           disabled={saving}
-          className="px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50"
+          className="px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save links'}
         </button>

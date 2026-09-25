@@ -94,7 +94,7 @@ test.describe('Companion stream-phase indicator (synthetic)', () => {
 
   test('streaming text takes precedence over phase', async () => {
     // When real prose arrives the phase should be cleared by the
-    // CompanionPanel stream handler, but forceStreaming lets us seed
+    // AthenaChatPanel stream handler, but forceStreaming lets us seed
     // both at once — assert the bubble shows the text, not the phase.
     await app.forceStreaming(true, 'Hello, world!', {
       kind: 'tool_use',

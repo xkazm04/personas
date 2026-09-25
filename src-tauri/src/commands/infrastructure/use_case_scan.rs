@@ -179,10 +179,12 @@ fn parse_missing_shared_context(line: &str) -> Option<MissingSharedContext> {
 /// A context that holds a behavior's tests rather than the behavior. It may be
 /// listed in a slice and does not count against the span ceiling: tests are
 /// often the only place a use case's measurable behavior is pinned.
-pub(crate) fn is_test_context(name: &str) -> bool {
-    let n = name.trim().to_lowercase();
-    n.starts_with("tests-") || n.starts_with("test-") || n.ends_with("-tests")
-}
+///
+/// The rule itself moved to `personas_core::models` when the Features board
+/// started deriving a context's ROLE from it inside the `db` crate, which
+/// cannot reach this module. Re-exported rather than copied: two predicates
+/// would be two answers to the same question about the same row.
+pub(crate) use personas_core::models::is_test_context;
 
 /// How many distinct groups a resolved slice crosses. An ungrouped context is
 /// its own group of one, so it can never make a slice look narrower than it is.

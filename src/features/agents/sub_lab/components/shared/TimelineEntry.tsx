@@ -70,7 +70,7 @@ export function TimelineEntry({
         >
           <div className="flex items-start gap-2">
             {/* Version number */}
-            <span className="typo-code font-mono font-semibold text-foreground flex-shrink-0">
+            <span className="typo-code text-foreground flex-shrink-0">
               v{version.version_number}
             </span>
 

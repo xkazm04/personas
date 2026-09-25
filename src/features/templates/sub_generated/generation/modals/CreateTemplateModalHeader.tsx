@@ -21,7 +21,7 @@ export function CreateTemplateModalHeader({
           <Wand2 className="w-4 h-4 text-violet-400" />
         </div>
         <div>
-          <h2 id="create-template-title" className="typo-body-lg font-semibold text-foreground">{t.templates.generation.create_template}</h2>
+          <h2 id="create-template-title" className="typo-body-lg text-foreground">{t.templates.generation.create_template}</h2>
           <p className="typo-body text-foreground">{t.templates.generation.create_template_subtitle}</p>
         </div>
       </div>

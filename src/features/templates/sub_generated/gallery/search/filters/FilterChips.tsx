@@ -173,14 +173,14 @@ export function FilterChips({
                   tabIndex={isActive ? 0 : -1}
                   data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
-                  className={`px-2.5 py-1.5 typo-body font-medium transition-colors flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 typo-body transition-colors flex items-center gap-1 ${
                     isActive ? activeClass : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
                   }`}
                 >
                   {Icon && <Icon className="w-3 h-3" />}
                   {opt.label}
                   {count !== undefined && count > 0 && (
-                    <span className={`ml-0.5 typo-data tabular-nums ${isActive ? 'opacity-80' : 'opacity-50'}`}>
+                    <span className={`ml-0.5 typo-data ${isActive ? 'opacity-80' : 'opacity-50'}`}>
                       {count}
                     </span>
                   )}

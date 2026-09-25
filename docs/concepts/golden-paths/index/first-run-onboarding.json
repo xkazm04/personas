@@ -52,6 +52,7 @@
       "resolved": false
     },
     "first-run.ts": {"count":1,"sections":[],"lines":["19"],"contexts":["(`first-run.ts:19`) is the honest answer: derive by default, and give the"],"resolved":false},
+    "main.tsx": {"count":9,"sections":[0,7,12],"lines":["48","75","175","149-159"],"contexts":["`App.tsx`, `main.tsx`, `routeSections.ts`, `home/sub_welcome/**`, `DesktopFooter.tsx`"],"resolved":false},
     "package.json": {"count":1,"sections":[],"contexts":["libraries in any `package.json` across the five). `personas-web` has the full"]},
     "scratchpad/wbB-flows/wbB-anchors-implA.mjs": {"count":1,"sections":[12],"contexts":["`scratchpad/wbB-flows/wbB-anchors-implA.mjs`, `wbB-anchors-implB.mjs`,"],"resolved":false},
     "scripts/check-csp-hosts.mjs": {"count":1,"sections":[9],"contexts":["guards. `check-csp-hosts.mjs` exists because of exactly this class, and it"],"resolvedFrom":"basename","verbatim":"check-csp-hosts.mjs"},
@@ -122,14 +123,6 @@
       "contexts": ["`App.tsx`, `main.tsx`, `routeSections.ts`, `home/sub_welcome/**`, `DesktopFooter.tsx`"],
       "resolvedFrom": "basename",
       "verbatim": "routeSections.ts"
-    },
-    "src/main.tsx": {
-      "count": 9,
-      "sections": [0,7,12],
-      "lines": ["48","75","175","149-159"],
-      "contexts": ["`App.tsx`, `main.tsx`, `routeSections.ts`, `home/sub_welcome/**`, `DesktopFooter.tsx`"],
-      "resolvedFrom": "basename",
-      "verbatim": "main.tsx"
     },
     "src/stores/i18nStore.ts": {"count":3,"sections":[0,7],"lines":["103","72"],"contexts":["`language: 'en'` (`i18nStore.ts:103`) and `preloadPersistedLocaleBeforeMount()`"],"resolvedFrom":"basename","verbatim":"i18nStore.ts"},
     "src/stores/onboardingStore.ts": {

@@ -26,7 +26,7 @@ export function ScopeMismatchBanner({
     <div className="flex items-start gap-2 px-3 py-2 rounded-card bg-amber-500/8 border border-amber-500/20">
       <ShieldAlert className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="typo-caption text-amber-300/90 font-medium">
+        <p className="typo-caption text-amber-300/90">
           {card.scope_mismatch}
         </p>
         <p className="typo-caption text-amber-300/60 mt-0.5">

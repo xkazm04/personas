@@ -60,7 +60,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
         role="log"
         aria-live="polite"
         aria-label={t.templates.generation.terminal_aria_label}
-        className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono typo-code bg-background transition-all`}
+        className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto typo-code bg-background transition-all`}
       >
         {!hasStarted ? (
           <div className="flex items-center justify-center h-full text-foreground typo-body">

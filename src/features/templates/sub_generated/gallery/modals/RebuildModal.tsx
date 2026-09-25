@@ -81,7 +81,7 @@ export function RebuildModal({
               <RefreshCw className={`w-4 h-4 text-blue-400 ${displayPhase === 'processing' ? 'animate-spin' : ''}`} />
             </div>
             <div className="min-w-0">
-              <h2 id="rebuild-modal-title" className="typo-heading font-semibold text-foreground/90 truncate">
+              <h2 id="rebuild-modal-title" className="typo-heading text-foreground/90 truncate">
                 {t.templates.rebuild_modal.title}
               </h2>
               <p className="typo-body text-foreground truncate">
@@ -100,17 +100,17 @@ export function RebuildModal({
             <div className="space-y-4">
               {/* Instruction context */}
               <div className="bg-secondary/30 rounded-modal border border-primary/10 p-4">
-                <div className="typo-body font-medium text-foreground uppercase tracking-wide mb-1.5">
+                <div className="typo-body text-foreground uppercase tracking-wide mb-1.5">
                   {t.templates.rebuild_modal.template_instruction}
                 </div>
-                <p className="typo-body text-foreground leading-relaxed">
+                <p className="typo-body text-foreground">
                   {review.instruction}
                 </p>
               </div>
 
               {/* User direction */}
               <div>
-                <label className="block typo-body font-medium text-foreground mb-1.5">
+                <label className="block typo-body text-foreground mb-1.5">
                   {t.templates.rebuild_modal.custom_direction}
                 </label>
                 <textarea
@@ -140,7 +140,7 @@ export function RebuildModal({
               </div>
 
               {/* Streaming output */}
-              <div className="bg-[#0d1117] rounded-modal border border-primary/10 p-4 h-64 overflow-y-auto font-mono typo-code leading-relaxed">
+              <div className="bg-[#0d1117] rounded-modal border border-primary/10 p-4 h-64 overflow-y-auto typo-code">
                 {lines.length === 0 && (
                   <span className="text-foreground">{t.templates.rebuild_modal.waiting_for_output}</span>
                 )}
@@ -173,7 +173,7 @@ export function RebuildModal({
               <div className="p-3 rounded-modal bg-emerald-500/10 border border-emerald-500/20 mb-4">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
-              <h3 className="typo-heading font-semibold text-foreground/90 mb-1">
+              <h3 className="typo-heading text-foreground/90 mb-1">
                 {t.templates.rebuild_modal.rebuild_complete}
               </h3>
               <p className="typo-body text-foreground max-w-sm">
@@ -187,7 +187,7 @@ export function RebuildModal({
               <div className="p-3 rounded-modal bg-red-500/10 border border-red-500/20 mb-4">
                 <XCircle className="w-8 h-8 text-red-400" />
               </div>
-              <h3 className="typo-heading font-semibold text-foreground/90 mb-1">
+              <h3 className="typo-heading text-foreground/90 mb-1">
                 {t.templates.rebuild_modal.rebuild_failed}
               </h3>
               <p className="typo-body text-foreground max-w-sm">

@@ -6,7 +6,7 @@
  *
  * Separated from the (very large) `@/api/companion` module because these are
  * consumed exclusively by the always-mounted bridge hooks under
- * `src/features/plugins/companion/**`, not by the chat UI.
+ * `src/features/companions/athena/**`, not by the chat UI.
  *
  * Added by the 2026-05-10 orphan-commands wrap ADR: bridge hooks used to call
  * `invokeWithTimeout` directly, which meant the fleet-event discriminator and

@@ -79,7 +79,7 @@ export function FlowSteps({ flow }: { flow: NonNullable<ParsedOutput['executionF
             <span className="text-sm font-mono text-foreground w-5 text-right">{String(s.step ?? i + 1)}</span>
             <ChevronRight className="w-3 h-3 text-foreground" />
             <span className="typo-body text-foreground flex-1">{String(s.action ?? '').replace(/_/g, ' ')}</span>
-            <span className={`typo-body font-medium ${statusColor}`}>{status}</span>
+            <span className={`typo-body ${statusColor}`}>{status}</span>
           </div>
         );
       })}
@@ -105,7 +105,7 @@ export function ReviewsList({ reviews }: { reviews: Record<string, unknown>[] })
             ) : undefined
           }
         >
-          {typeof r.description === 'string' && <p className="typo-body text-foreground leading-relaxed">{r.description}</p>}
+          {typeof r.description === 'string' && <p className="typo-body text-foreground">{r.description}</p>}
           {typeof r.context_data === 'string' && <ContentWell>{r.context_data}</ContentWell>}
           {Array.isArray(r.suggested_actions) && r.suggested_actions.length > 0 && (
             <div className="space-y-1 pt-1">
@@ -128,7 +128,7 @@ export function MemoriesList({ memories }: { memories: Record<string, unknown>[]
           <div className="flex items-start gap-2">
             <Brain className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              {typeof m.title === 'string' && <div className="typo-body font-medium text-foreground/85 mb-1">{m.title}</div>}
+              {typeof m.title === 'string' && <div className="typo-body text-foreground/85 mb-1">{m.title}</div>}
               <div className="typo-body text-foreground">{String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}</div>
               <div className="flex items-center gap-2 mt-1.5">
                 {typeof m.category === 'string' && <span className="typo-body px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400/80">{m.category}</span>}
@@ -149,7 +149,7 @@ export function EventsList({ events }: { events: Record<string, unknown>[] }) {
         <div key={i} className="rounded-lg border border-amber-500/15 bg-amber-500/5 px-4 py-3">
           <div className="flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span className="typo-body font-medium text-amber-400/80">{String(e.type ?? e.event_type ?? 'event')}</span>
+            <span className="typo-body text-amber-400/80">{String(e.type ?? e.event_type ?? 'event')}</span>
           </div>
           {typeof e.data === 'object' && e.data && (
             <div className="mt-2 px-3 py-2 rounded-lg bg-black/10 font-mono text-sm text-foreground whitespace-pre-wrap">
@@ -181,7 +181,7 @@ export function KnowledgeSection({ annotation }: { annotation: Record<string, un
         <span className="inline-block text-sm px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80 font-mono">{annotation.scope}</span>
       )}
       {typeof annotation.note === 'string' && (
-        <p className="typo-body text-foreground leading-relaxed">{annotation.note}</p>
+        <p className="typo-body text-foreground">{annotation.note}</p>
       )}
     </ContentCard>
   );
@@ -195,15 +195,15 @@ export function OutcomeSection({ data }: { data: Record<string, unknown> }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2.5">
         <Target className="w-4 h-4 text-primary/60" />
-        <span className="typo-heading font-semibold text-foreground/85">{t.shared.execution_detail.outcome_assessment}</span>
-        <span className={`typo-heading px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+        <span className="typo-heading text-foreground/85">{t.shared.execution_detail.outcome_assessment}</span>
+        <span className={`typo-heading px-1.5 py-0.5 rounded-full uppercase ${
           oa.accomplished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
         }`}>{oa.accomplished ? 'Accomplished' : 'Not Accomplished'}</span>
       </div>
-      {typeof oa.summary === 'string' && <p className="typo-body text-foreground leading-relaxed">{oa.summary}</p>}
+      {typeof oa.summary === 'string' && <p className="typo-body text-foreground">{oa.summary}</p>}
       {Array.isArray(oa.blockers) && oa.blockers.length > 0 && (
         <div className="space-y-1">
-          <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{t.shared.execution_detail.blockers}</span>
+          <span className="typo-heading text-foreground uppercase">{t.shared.execution_detail.blockers}</span>
           {(oa.blockers as string[]).map((b, i) => (
             <div key={i} className="flex items-start gap-2 typo-body text-red-400/80">
               <span className="mt-0.5">&#8226;</span><span>{b}</span>

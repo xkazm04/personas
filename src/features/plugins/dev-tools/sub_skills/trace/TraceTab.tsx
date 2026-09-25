@@ -43,7 +43,7 @@ export function TraceTab({ activeProjectId, onOpenInfo }: TraceTabProps) {
           className="inline-block w-2.5 h-2.5 rounded-full"
           style={model.header.color ? { backgroundColor: model.header.color } : undefined}
         />
-        <span className="typo-body font-medium">{model.header.name}</span>
+        <span className="typo-body">{model.header.name}</span>
         <span className="typo-caption text-foreground">
           {tx(t.plugins.dev_tools.trace_summary, { projects: model.projects.length })}
         </span>

@@ -95,7 +95,7 @@ export function DesignHub(_props: DesignHubProps) {
                 key={tab.id}
                 data-testid={`design-subtab-${tab.id}`}
                 onClick={() => setDesignSubTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors whitespace-nowrap ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 typo-body transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
                 }`}
               >

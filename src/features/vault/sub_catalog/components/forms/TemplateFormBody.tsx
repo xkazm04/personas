@@ -78,7 +78,7 @@ export function TemplateFormBody({
     return (
       <div className="space-y-4">
         <div className="rounded-modal border border-primary/8 bg-secondary/20 p-4 space-y-2">
-          <p className="typo-body font-medium text-foreground">
+          <p className="typo-body text-foreground">
             {cf.no_config_required_heading}
           </p>
           <p className="typo-body text-foreground">
@@ -97,7 +97,7 @@ export function TemplateFormBody({
   return (
     <>
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {cf.credential_name}
         </label>
         <input

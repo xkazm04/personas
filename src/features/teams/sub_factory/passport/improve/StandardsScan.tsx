@@ -113,7 +113,7 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <ShieldCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">Standards · {projectName}</span>
+        <span className="typo-caption text-foreground truncate">Standards · {projectName}</span>
         {pct !== null && <span className="typo-caption text-foreground/55 tabular-nums ml-auto">{pct}%</span>}
         <button type="button" onClick={onClose} aria-label="Close" className={`p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors ${pct !== null ? '' : 'ml-auto'}`}>
           <X className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
         <div className="px-3 py-5 text-center space-y-2">
           <p className="typo-caption text-foreground/70">{scanning ? 'Scanning the repo against the golden ruleset…' : findings.length === 0 ? 'No scan yet.' : 'No open findings 🎉'}</p>
           {!scanning && (
-            <button type="button" onClick={scan} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors">
+            <button type="button" onClick={scan} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors">
               <ScanSearch className="w-3 h-3" /> {findings.length === 0 ? 'Run standards scan' : 'Re-scan'}
             </button>
           )}
@@ -139,12 +139,12 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
                 <div className="flex items-start gap-2">
                   <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SEV_COLOR[f.severity] ?? SEV_COLOR.info }} aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <span className="typo-caption font-medium text-foreground block">{f.title}</span>
-                    {f.recommendation && <span className="typo-caption text-foreground/55 block leading-snug" style={{ fontWeight: 400 }}>{f.recommendation}</span>}
+                    <span className="typo-caption text-foreground block">{f.title}</span>
+                    {f.recommendation && <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{f.recommendation}</span>}
                   </div>
                 </div>
                 <div className="flex items-center justify-end mt-1.5">
-                  <button type="button" onClick={() => claudeFix(f)} disabled={busy === f.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50">
+                  <button type="button" onClick={() => claudeFix(f)} disabled={busy === f.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50">
                     <Rocket className="w-3 h-3" /> {busy === f.id ? '…' : 'Fix with Claude'}
                   </button>
                 </div>

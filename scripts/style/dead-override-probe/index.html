@@ -1,0 +1,18 @@
+<!doctype html>
+<!--
+  The Chromium probe behind scripts/style/codemod-dead-overrides.mjs. It renders
+  (token set) and (token set + utility) against the app's real globals.css in
+  every theme x text-scale context and reports the computed type properties, so
+  the codemod deletes a utility only where the browser shows it changes nothing.
+  Driven by the codemod through Vite; not part of the app.
+-->
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dead override probe</title>
+  </head>
+  <body class="bg-background text-foreground">
+    <div id="probe"></div>
+    <script type="module" src="./probe.ts"></script>
+  </body>
+</html>

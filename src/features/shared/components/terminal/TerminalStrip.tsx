@@ -116,7 +116,7 @@ export function TerminalStrip({
       {isExpanded && (
         <div
           ref={scrollRef}
-          className={`${expandedMaxHeight} overflow-y-auto px-4 pb-2 typo-code leading-4 space-y-px border-t border-primary/5`}
+          className={`${expandedMaxHeight} overflow-y-auto px-4 pb-2 typo-code space-y-px border-t border-primary/5`}
         >
           {lines.map((line, i) => (
             <div

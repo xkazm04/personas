@@ -131,7 +131,7 @@ export function ExpandedRowContent({
               title={`${stat.count} ${stat.label}`}
             >
               <Icon className="w-4 h-4" style={{ color: hasItems ? stat.color : undefined }} />
-              <span className="typo-data tabular-nums text-foreground">{stat.count}</span>
+              <span className="typo-data text-foreground">{stat.count}</span>
             </div>
           );
         })}

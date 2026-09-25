@@ -60,6 +60,15 @@
     },
     "eslint-rules/no-noop-busy-state.cjs": {"count":1,"sections":[9],"contexts":["One rule file, `eslint-rules/no-noop-busy-state.cjs`, registered in"],"resolved":false},
     "eslint.config.js": {"count":2,"sections":[9],"contexts":["`eslint.config.js` beside its 21 peers, with three `messageId`s:"]},
+    "overview/sub_director/components/StaleSweepButton.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["26-38"],
+      "contexts": [
+        "- `overview/sub_director/components/StaleSweepButton.tsx:26-38` — the long-running variant: `isLoading={running}` plus `loadingText={tx(t.director.review_filtered_progress, { done, total })}`, so a m…"
+      ],
+      "resolved": false
+    },
     "overview/sub_patterns/CreatePracticeModal.tsx": {
       "count": 1,
       "sections": [7],
@@ -213,17 +222,17 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_tool_runner/components/ToolInvocationCard.tsx"
     },
-    "src/features/fleet/monitor/MonitorCapabilities.tsx": {
+    "src/features/companions/athena/inbox/hooks/useInboxActions.ts": {
       "count": 1,
-      "sections": [8],
-      "lines": ["31"],
+      "sections": [7],
+      "lines": ["92"],
       "contexts": [
-        "2. **No keyed-busy primitive.** `useKeyedCopyFlag` proves the shape is wanted for copy feedback (6 adopters) but there is no `useBusySet` / `useKeyedBusy`. Consequence: **9** hand-rolled busy sets —…"
+        "| `stores/slices/overview/healingSlice.ts:26` (`resolveHealingIssue(id, personaId?)`) | **The case study.** No in-flight state of any kind, so four consumers invented four answers: `HealingIssueModal…"
       ],
       "resolvedFrom": "basename",
-      "verbatim": "MonitorCapabilities.tsx"
+      "verbatim": "useInboxActions.ts"
     },
-    "src/features/overview/sub_director/components/ReviewFilteredAction.tsx": {
+    "src/features/companions/overseer/components/ReviewFilteredAction.tsx": {
       "count": 1,
       "sections": [6],
       "lines": ["29-41"],
@@ -233,15 +242,25 @@
       "resolvedFrom": "basename",
       "verbatim": "ReviewFilteredAction.tsx"
     },
-    "src/features/overview/sub_director/components/StaleSweepButton.tsx": {
-      "count": 2,
-      "sections": [4,6],
-      "lines": ["31","26-38"],
+    "src/features/companions/overseer/components/StaleSweepButton.tsx": {
+      "count": 1,
+      "sections": [4],
+      "lines": ["31"],
       "contexts": [
         "7. **Give any action over ~2 s a label, not just a spinner.** `loadingText` / `loadingLabel`, or a progress interpolation like `useSequentialReview`'s `{done}/{total}` (`StaleSweepButton.tsx:31`). A…"
       ],
       "resolvedFrom": "basename",
       "verbatim": "StaleSweepButton.tsx"
+    },
+    "src/features/fleet/monitor/MonitorCapabilities.tsx": {
+      "count": 1,
+      "sections": [8],
+      "lines": ["31"],
+      "contexts": [
+        "2. **No keyed-busy primitive.** `useKeyedCopyFlag` proves the shape is wanted for copy feedback (6 adopters) but there is no `useBusySet` / `useKeyedBusy`. Consequence: **9** hand-rolled busy sets —…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "MonitorCapabilities.tsx"
     },
     "src/features/overview/sub_memories/components/MemoriesPageDense.tsx": {
       "count": 2,
@@ -280,16 +299,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_observability/components/HealingIssuesPanel.tsx"
-    },
-    "src/features/plugins/companion/inbox/hooks/useInboxActions.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["92"],
-      "contexts": [
-        "| `stores/slices/overview/healingSlice.ts:26` (`resolveHealingIssue(id, personaId?)`) | **The case study.** No in-flight state of any kind, so four consumers invented four answers: `HealingIssueModal…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "useInboxActions.ts"
     },
     "src/features/plugins/dev-tools/sub_context/contextMapPerf.tsx": {
       "count": 1,

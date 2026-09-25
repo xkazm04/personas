@@ -294,7 +294,7 @@ export function StepRelay({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`typo-body font-medium ${
+                      className={`typo-body ${
                         s.status === 'skipped' ? 'text-foreground/45 line-through' : 'text-foreground'
                       }`}
                     >
@@ -357,7 +357,7 @@ export function StepRelay({
                   </button>
                   {isOpen && (
                     <div className="mt-1.5 rounded-card border border-primary/10 bg-background/50 px-3 py-2 max-h-72 overflow-y-auto">
-                      <MarkdownRenderer content={output} className="typo-caption leading-relaxed" />
+                      <MarkdownRenderer content={output} className="typo-caption" />
                     </div>
                   )}
                 </div>

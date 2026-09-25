@@ -1,0 +1,168 @@
+{
+  "worker": "c0923-3",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    {
+      "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/vault/oauthGatewayApi.ts:31 still sends the OAuth client secret across IPC as plaintext (also startOAuth at :58) while credential field values cross session-encrypted (src/api/vault/credentials.ts:115), so one class of foreign secret bypasses the envelope the rest of the vault uses.",
+      "techniques": [
+        { "technique": "brokered-egress", "verdict": "deviation", "evidence": "src/api/vault/oauthGatewayApi.ts:31 clientSecret travels as a plain IPC argument; values are supposed to cross only inside the vault's sealed door." },
+        { "technique": "encryption-at-rest", "verdict": "conformant", "evidence": "src/api/vault/credentials.ts:115 field updates cross IPC only as a session-encrypted value." },
+        { "technique": "acquisition", "verdict": "conformant", "evidence": "src/api/vault/foraging.ts:16 a foraged candidate is adopted by id (foragedId), never by passing its value back." },
+        { "technique": "token-refresh-lifecycle", "verdict": "conformant", "evidence": "src/api/vault/oauthGatewayApi.ts:70 the raw refresh_token IPC command was retired; refresh runs server-side from the stored grant." },
+        { "technique": "health-probing", "verdict": "conformant", "evidence": "src/api/vault/credentials.ts:76 the probe returns HealthcheckResult, whose state union carries verified|unverifiable|failed|unreachable." },
+        { "technique": "rotation-and-remediation", "verdict": "conformant", "evidence": "src/api/vault/rotation.ts:43 rotation status is read from the backend authority by credential id, never recomputed client-side." }
+      ]
+    },
+    {
+      "context": "8b5d1d60-a129-4cd1-9567-d795589bde29", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/slices/vault/credentialSlice.ts:377 now persists the typed healthcheck_last_state (the old boolean-only flatten is FIXED), :363 leaves the stored verdict alone on unreachable and :389 maps a transport throw to unreachable, not failed.",
+      "techniques": [
+        { "technique": "health-probing", "verdict": "conformant", "evidence": "src/stores/slices/vault/credentialSlice.ts:363 an unreachable probe returns without overwriting the stored verdict; :377 writes the typed state token; :151 exposes the full HealthcheckResult." },
+        { "technique": "encryption-at-rest", "verdict": "conformant", "evidence": "src/stores/slices/vault/credentialSlice.ts:227 field values are session-encrypted before they cross IPC." },
+        { "technique": "token-refresh-lifecycle", "verdict": "conformant", "evidence": "src/stores/slices/vault/credentialSlice.ts:225 OAuth tokens travel as a one-time session reference split out of the payload, never as token values." },
+        { "technique": "acquisition", "verdict": "conformant", "evidence": "src/stores/slices/vault/credentialSlice.ts:236 healthcheckPassed is only a hint; the admission door re-probes server-side (src-tauri/src/commands/credentials/crud.rs:82)." },
+        { "technique": "rotation-and-remediation", "verdict": "conformant", "evidence": "src/stores/slices/vault/rotationSlice.ts:154 after a rotation the slice re-reads the backend's authoritative status instead of assuming success." }
+      ]
+    },
+    {
+      "context": "0dabb588-48ce-4c35-b425-c344fd723ce7", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 the context consumes credential events only as {id, name}; nothing here retains or uses a foreign secret (the webhook HMAC secret is app-minted, which the golden path excludes).",
+      "techniques": [
+        { "technique": "brokered-egress", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:28 only credential-event identities cross into triggers; no credentialed call is made from this context." }
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 still masks a captured field only when the template types it 'password' (and :108 offers copy), so a captured API key typed 'text' renders in cleartext on a review screen where every field is a secret.",
+      "techniques": [
+        { "technique": "acquisition", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredReview.tsx:107 captured values are echoed unless typed password; confirmation should be by identity, never by value." },
+        { "technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/ReviewActions.tsx:36 the review probe renders green/red from success alone (type at :10 has no state), so an unreachable or unverifiable probe reads as a rejected key." }
+      ]
+    },
+    {
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267 still classifies probe failures by substring-matching backend prose (also :308 'skipped automatic healthcheck') and :256 regexes an HTTP status out of the message, so the taxonomy dies at the boundary and breaks on the first reworded message.",
+      "techniques": [
+        { "technique": "token-refresh-lifecycle", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:256 the failure kind is recovered by regex from message text rather than branched on a typed field." },
+        { "technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/design/CredentialDesignHelpers.ts:267 could-not-reach is inferred from the substring 'request failed:' instead of the typed probe state." },
+        { "technique": "acquisition", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/foraging/ForagingResultCard.tsx:136 foraged candidates show a first-4...last-4 partial value (src-tauri/src/commands/credentials/foraging.rs:176); candidates are to be presented by identity and location, never by value. Consent-before-scan (ForagingConsent.tsx:81) and surfaced read errors (ForagingResults.tsx:99) are realized." }
+      ]
+    },
+    {
+      "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 paints every non-success last_status red, so a 'skipped' rotation (which the backend declares not a failure, src-tauri/core/src/lifecycle.rs:489, and the timeline at :166 paints amber) reads as a failed rotation. The recorded AnomalyScorePanel snake_case miss is FIXED (AnomalyScorePanel.tsx:11 is now Record<Remediation,...>).",
+      "techniques": [
+        { "technique": "rotation-and-remediation", "verdict": "deviation", "evidence": "src/features/vault/sub_credentials/components/features/CredentialRotationSection.tsx:124 two renderings of RotationEntryStatus in one file disagree on 'skipped'; one vocabulary, one mapping." },
+        { "technique": "health-probing", "verdict": "conformant", "evidence": "src/features/vault/sub_credentials/components/gateway/GatewayMembersModal.tsx:55 verified/failed/else-unknown keeps the third state; AnomalyScorePanel.tsx:11 is compile-checked against the Remediation union." }
+      ]
+    },
+    {
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:162 the health sort rebuilds a probe result from success/message only, dropping healthcheck_last_state (src/lib/types/types.ts:84), so an unverifiable credential (success:true) sorts as fully healthy (100) while the composite dot scores it neutral 50. The recorded HealthcheckResultDisplay collapse is FIXED (HealthcheckResultDisplay.tsx:35).",
+      "techniques": [
+        { "technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/sub_credentials/components/list/credentialListTypes.ts:162 an intermediate accessor narrower than the store deletes the third state before scoring; the display path (ConnectionTestSection.tsx:78 passes state, HealthcheckResultDisplay.tsx:35 renders it neutral) is realized." }
+      ]
+    },
+    {
+      "context": "3d2f5f87-37f7-4a94-96d3-932ebc2bf2c7", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 'Test all' mirrors each outcome into the per-card cache as {success, message} and drops the typed state the wire carries, so an unverifiable credential (success:true) paints as verified and :95 lists every unreachable one under needs-attention. The recorded single-probe collapse is FIXED (useCredentialHealth.ts:165 throw -> unreachable, :190 persists only real verdicts).",
+      "techniques": [
+        { "technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:84 the bulk hop narrows the verdict; the single-probe hop (useCredentialHealth.ts:165, :190) is realized." },
+        { "technique": "rotation-and-remediation", "verdict": "conformant", "evidence": "src/features/vault/shared/hooks/health/useRemediationEvaluator.ts:99 corrupt anomaly metadata is classified apart from absent and falls through to the authoritative status fetch." }
+      ]
+    },
+    {
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5", "subject": "credential-vault", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 scores a missing anomaly score as 100 'assume healthy'; the backend nulls anomaly_score exactly when the ledger is corrupted (src-tauri/src/engine/rotation.rs:950), so a corrupted credential gets a perfect anomaly sub-score and the 'Healthcheck data corrupted' reason (:112) can never be the worst signal. The recorded OverviewTab boolean branch is FIXED (OverviewTab.tsx:156 renders the three-state HealthProbeBanner).",
+      "techniques": [
+        { "technique": "rotation-and-remediation", "verdict": "deviation", "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:52 unreadable evidence is credited as health, the silent direction of the could-not-verify collapse." },
+        { "technique": "health-probing", "verdict": "deviation", "evidence": "src/features/vault/shared/playground/useApiTestRunner.ts:210 a transport error is recorded as verdict 'failed', the same verdict a 401/403 gets at :56, so an offline run is indistinguishable from a rejected key." },
+        { "technique": "brokered-egress", "verdict": "conformant", "evidence": "src/features/vault/shared/playground/useApiTestRunner.ts:178 the explorer calls through the backend proxy by credentialId and a relative path; the UI never holds the secret." }
+      ]
+    },
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:103 an hourly trigger still displays as Daily in a picker that cannot represent hourly; the unchanged-Apply rewrite is FIXED by the round-trip guard at :58, but editing only the hour now falls through to :83 and silently converts the declared hourly trigger to daily.",
+      "techniques": [
+        { "technique": "template-anatomy", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:103 a declared value the picker's option universe cannot represent; the category routing (questionDimMap.ts:23) does go through one authority." },
+        { "technique": "adoption-lifecycle", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:58 an untouched picker returns the prior selection, so preview and adopted trigger agree on the default path." }
+      ]
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:67 remains the single option-normalization door that keeps value identity (:73) distinct from display label (:78) and drops malformed options, and questionnaireGlyphRow.ts:54 makes the category vocabulary a compile-checked table.",
+      "techniques": [
+        { "technique": "template-anatomy", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:78 answers bind to the option value while the label is display-only; questionnaireGlyphRow.ts:54 satisfies Record<QuestionnaireCategory,...>." },
+        { "technique": "readiness-prerequisites", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireBlockedCredentialCta.tsx:27 a blocked question names the missing credential category and :33 links the add-credential remedy." },
+        { "technique": "adoption-lifecycle", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/questionnaire/questionnaireHelpers.ts:136 only questions that author allow_custom get a free-text escape; the stacked surface is otherwise closed to declared options." }
+      ]
+    },
+    {
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 allowCustom now defaults to false, so a closed option list no longer grows an 'Other...' pill when QuestionnaireFormGridParts.tsx:447 passes an undefined allow_custom (recorded deviation FIXED).",
+      "techniques": [
+        { "technique": "adoption-lifecycle", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:33 the interview produces only declared answers unless the template opts in." },
+        { "technique": "template-anatomy", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/SelectPills.tsx:54 selection is matched on option value, not label or position." },
+        { "technique": "readiness-prerequisites", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/useDynamicQuestionOptions.ts:27 no_credential (blocked, add-credential remedy) is spelled apart from fetch_failed (could not run, retry)." }
+      ]
+    },
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 still sorts and labels 'Ready to Deploy' from computeAdoptionReadiness, a category-level local score (src/features/templates/sub_generated/shared/adoptionReadiness.ts:59) the adoption gate never computes, so the browse badge and the gate disagree on exactly the entries that matter.",
+      "techniques": [
+        { "technique": "readiness-prerequisites", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 a second readiness evaluator feeds the gallery; it also returns 100 when no connector data parses (adoptionReadiness.ts:66), so 'could not evaluate' ranks as ready." }
+      ]
+    },
+    {
+      "context": "b38217f2-397e-49a7-ac32-4cce440c7e74", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/templates/templateVerification.ts:208 returns integrityValid=true when no expected digest was registered, so an un-fingerprinted built-in wears TrustBadge 'Verified' (TrustBadge.tsx:21 has no unverifiable level); the hash is now compared when a fingerprint exists (:209, the recorded never-compared defect is FIXED), but absence still folds into verified.",
+      "techniques": [
+        { "technique": "integrity-and-provenance", "verdict": "deviation", "evidence": "src/lib/templates/templateVerification.ts:208 verdict 3 (unverifiable) folds into verdict 1 (verified); generated origin is also verified unconditionally at :160." },
+        { "technique": "readiness-prerequisites", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts:173 the adoption matcher sees only service types, so a credential the vault marked broken still satisfies a required role." }
+      ]
+    },
+    {
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 seeds every authored default into the answer set verbatim with no membership check against its option list (none exists at any door in src), so an off-list default is adopted while the closed picker shows no option selected. The recorded mockTestDelivery call is still at ucPicker/useUcPickerState.ts:247, but UseCasePickerStep (ucPicker/index.ts:5) is no longer mounted outside a test.",
+      "techniques": [
+        { "technique": "template-anatomy", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:884 the defaults-within-options invariant is checked nowhere before the default becomes an answer." },
+        { "technique": "readiness-prerequisites", "verdict": "conformant", "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:875 zero matching credentials blocks the question before adoption rather than letting it through." }
+      ]
+    },
+    {
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 still resumes an in-flight adoption by matching the template's display name, while handleResumeDraft at :153 keys on the review id; no writer of the 'template-adopt-context-v1' key remains in src, so the path now fires only from a legacy stored value.",
+      "techniques": [
+        { "technique": "adoption-lifecycle", "verdict": "deviation", "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:145 the template is keyed by display name, not stable id." }
+      ]
+    },
+    {
+      "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04", "subject": "templates-scaffolding", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:39 the provenance stamp still omits the answer set and adoption time (its own note: the AdoptionMetadata envelope is not persisted). The recorded dark staleness apparatus is FIXED: :249 now pins source_recipe_version, which recipeStaleness.ts:41 compares.",
+      "techniques": [
+        { "technique": "adoption-lifecycle", "verdict": "deviation", "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:39 the stamp carries id and version but not the answers, so the adopted instance cannot say which binding values produced it; re-adoption idempotence by id (:63) is realized." },
+        { "technique": "template-anatomy", "verdict": "conformant", "evidence": "src/features/templates/sub_recipes/libs/recipeStaleness.ts:41 the pinned version is compared against the catalog version, which the backend bumps on content change (src-tauri/core/src/models/recipe.rs:198)." },
+        { "technique": "readiness-prerequisites", "verdict": "conformant", "evidence": "src/features/templates/sub_recipes/eligibility.ts:45 an unwireable requirement produces a named 'incompatible' verdict from the one resolver every surface calls." }
+      ]
+    }
+  ],
+  "declined": []
+}

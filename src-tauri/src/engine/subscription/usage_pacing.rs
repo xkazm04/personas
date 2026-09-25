@@ -258,10 +258,25 @@ pub fn read_memory(state: &crate::AppState) -> MemoryReading {
 /// Read every gauge and decide. The cached usage snapshot is at most one HTTP
 /// call per 45 s across the process, shared with the governor.
 pub async fn verdict(pool: &DbPool, state: &crate::AppState) -> AutopilotPacing {
+    verdict_for_pass(pool, state, false).await
+}
+
+/// A codex-only pass keeps the same memory ceiling while ignoring Claude pace.
+pub async fn verdict_for_pass(
+    pool: &DbPool,
+    state: &crate::AppState,
+    codex_only: bool,
+) -> AutopilotPacing {
     let cfg = read_config(pool);
     let mem = read_memory(state);
     let snap = cached_snapshot().await;
-    pacing_from(&snap, mem, &cfg, chrono::Utc::now().timestamp_millis())
+    pacing_from_for_pass(
+        &snap,
+        mem,
+        &cfg,
+        chrono::Utc::now().timestamp_millis(),
+        codex_only,
+    )
 }
 
 fn window<'a>(
@@ -272,11 +287,22 @@ fn window<'a>(
 }
 
 /// The pure decision. See the module docs for the three conversions.
+#[cfg(test)]
 pub fn pacing_from(
     snap: &ClaudeUsageSnapshot,
     mem: MemoryReading,
     cfg: &PacingConfig,
     now_ms: i64,
+) -> AutopilotPacing {
+    pacing_from_for_pass(snap, mem, cfg, now_ms, false)
+}
+
+fn pacing_from_for_pass(
+    snap: &ClaudeUsageSnapshot,
+    mem: MemoryReading,
+    cfg: &PacingConfig,
+    now_ms: i64,
+    codex_only: bool,
 ) -> AutopilotPacing {
     let parallel_cap = cfg.parallel_cap.max(1);
     let five_hour_line_pct = cfg.stop_pct - cfg.fleet_margin_pct;
@@ -336,25 +362,29 @@ pub fn pacing_from(
         None
     };
 
-    let (usage_slots, usage_hold) = match five_hour_pct {
-        // Unreadable gauge: fail open on the usage half, as the governor does.
-        None => (parallel_cap, None),
-        Some(pct) => {
-            let headroom = five_hour_line_pct - pct;
-            if headroom <= 0.0 {
-                (0, Some(AutopilotHold::FiveHourFull))
-            } else {
-                let fraction = (headroom / FULL_SPEED_HEADROOM_PCT).min(1.0);
-                (
-                    ((parallel_cap as f64) * fraction).ceil().max(1.0) as usize,
-                    None,
-                )
+    let (usage_slots, usage_hold) = if codex_only {
+        (parallel_cap, None)
+    } else {
+        match five_hour_pct {
+            // Unreadable gauge: fail open on the usage half, as the governor does.
+            None => (parallel_cap, None),
+            Some(pct) => {
+                let headroom = five_hour_line_pct - pct;
+                if headroom <= 0.0 {
+                    (0, Some(AutopilotHold::FiveHourFull))
+                } else {
+                    let fraction = (headroom / FULL_SPEED_HEADROOM_PCT).min(1.0);
+                    (
+                        ((parallel_cap as f64) * fraction).ceil().max(1.0) as usize,
+                        None,
+                    )
+                }
             }
         }
     };
 
     // ── Compose ────────────────────────────────────────────────────────
-    let ahead = cfg.pacing_enabled && behind_pct.is_some_and(|b| b <= 0.0);
+    let ahead = !codex_only && cfg.pacing_enabled && behind_pct.is_some_and(|b| b <= 0.0);
     let mut slots = parallel_cap.min(usage_slots).min(memory_slots);
     let mut hold = None;
     if ahead {
@@ -601,6 +631,18 @@ mod tests {
         };
         let v = pacing_from(&snap(0.5, 20.0, 10.0), mem(10.0), &cfg, NOW);
         assert_eq!(v.slots, 10);
+    }
+
+    #[test]
+    fn codex_only_pass_ignores_claude_windows_but_keeps_memory_stop() {
+        let cfg = PacingConfig::default();
+        let full = snap(0.5, 99.0, 99.0);
+        let allowed = pacing_from_for_pass(&full, mem(40.0), &cfg, NOW, true);
+        assert!(allowed.slots > 0);
+        assert_eq!(allowed.usage_slots, cfg.parallel_cap);
+        let held = pacing_from_for_pass(&full, mem(99.0), &cfg, NOW, true);
+        assert_eq!(held.slots, 0);
+        assert_eq!(held.hold, Some(AutopilotHold::MemoryFull));
     }
 
     #[test]

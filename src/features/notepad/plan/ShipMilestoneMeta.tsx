@@ -74,7 +74,7 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
         // Hard cap, not a warning. A soft limit here would still let a paste
         // land a paragraph in the heading and only complain afterwards.
         maxLength={OBJECTIVE_MAX}
-        className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1 typo-title-lg text-foreground/95 placeholder:text-foreground/30 focus-ring"
+        className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1 typo-title-lg placeholder:text-foreground/30 focus-ring"
         data-testid="ship-milestone-goal"
       />
     );
@@ -88,7 +88,7 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
       aria-label={tx(t.ship.goal_edit_aria, { name })}
       data-testid="ship-milestone-goal"
     >
-      <span className={`typo-title-lg truncate ${goal ? '' : 'text-foreground/45'}`}>
+      <span className={`typo-title-lg truncate`}>
         {goal && goal.trim() !== '' ? goal : t.ship.goal_empty}
       </span>
       {editable && (

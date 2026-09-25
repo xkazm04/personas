@@ -1182,6 +1182,123 @@ mod tests {
         assert_eq!(created, 0);
     }
 
+    // -- One write door: the human door stays strict -------------------------
+
+    /// [guard] Minting a webhook secret is a concern of the callers that
+    /// materialize MODEL output (promote, import, instant adopt). The human
+    /// door must keep refusing a secretless webhook rather than inventing one
+    /// the user never saw.
+    #[test]
+    fn test_door_create_still_refuses_a_secretless_webhook() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let res = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "webhook".into(),
+                config: Some(r#"{"event_type":"order.created"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        );
+        assert!(matches!(res, Err(AppError::Validation(_))), "{res:?}");
+        assert!(get_by_persona_id(&pool, &persona.id).unwrap().is_empty());
+    }
+
+    /// [guard] Rows written by the old hand-rolled INSERTs carry plaintext
+    /// secrets. Moving the writers to the door must not make those rows
+    /// unreadable: the decrypt path passes a legacy plaintext config through.
+    #[test]
+    fn test_legacy_plaintext_trigger_config_stays_readable() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, created_at, updated_at)
+                 VALUES ('legacy-wh', ?1, 'webhook', '{\"webhook_secret\":\"legacy-plain\"}', 1, 'active', '2026-01-01', '2026-01-01')",
+                params![persona.id],
+            )
+            .unwrap();
+        }
+        let row = get_by_id(&pool, "legacy-wh").unwrap();
+        let decrypted = crypto::decrypt_trigger_config(row.config.as_deref().unwrap()).unwrap();
+        let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
+        assert_eq!(cfg["webhook_secret"].as_str(), Some("legacy-plain"));
+        Ok(())
+    }
+
+    /// `create_in` is the door a materializer calls inside its own transaction:
+    /// it writes the charter link, encrypts, arms, and pairs the auto-listener,
+    /// and nothing lands until the caller commits.
+    #[test]
+    fn test_create_in_writes_the_whole_row_inside_the_callers_tx() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let input = CreateTriggerInput {
+            persona_id: persona.id.clone(),
+            trigger_type: "hook".into(), // alias: the door normalizes
+            config: Some(r#"{"webhook_secret":"s3cret-value"}"#.into()),
+            enabled: Some(true),
+            use_case_id: None,
+        };
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            create_in(&tx, &input, Some("resp-1")).unwrap();
+            // Dropped without commit: the door owns no transaction of its own.
+        }
+        assert!(get_by_persona_id(&pool, &persona.id).unwrap().is_empty());
+        let id = {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            let id = create_in(&tx, &input, Some("resp-1")).unwrap();
+            tx.commit().unwrap();
+            id
+        };
+        let row = get_by_id(&pool, &id).unwrap();
+        assert_eq!(row.trigger_type, "webhook");
+        assert_eq!(row.responsibility_id.as_deref(), Some("resp-1"));
+        let raw = row.config.as_deref().unwrap();
+        assert!(
+            raw.contains("webhook_secret_enc") && !raw.contains("s3cret-value"),
+            "{raw}"
+        );
+        let rows = get_by_persona_id(&pool, &persona.id).unwrap();
+        assert_eq!(rows.len(), 2, "webhook + paired auto-listener");
+        Ok(())
+    }
+
+    /// The door refuses the SSRF target before writing anything.
+    #[test]
+    fn test_create_in_refuses_a_link_local_polling_url() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().unwrap();
+        let res = create_in(
+            &tx,
+            &CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "polling".into(),
+                config: Some(
+                    r#"{"url":"http://169.254.169.254/latest/meta-data","interval_seconds":300}"#
+                        .into(),
+                ),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+            None,
+        );
+        match res {
+            Err(AppError::Validation(m)) => assert!(m.contains("Polling URL blocked"), "{m}"),
+            other => panic!("expected a Validation refusal, got {other:?}"),
+        }
+        Ok(())
+    }
+
     // ========================================================================
     // rename_event_type
     // ========================================================================

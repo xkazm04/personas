@@ -27,7 +27,7 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Type className="w-3.5 h-3.5 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{t.onboarding.text_size_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.text_size_label}</span>
         </div>
         <TextScalePicker
           textScale={textScale}
@@ -41,7 +41,7 @@ export default function TourAppearanceContent() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Sun className="w-3.5 h-3.5 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{t.onboarding.brightness_label}</span>
+          <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
         </div>
         <BrightnessPicker
           levels={brightnessLevels}

@@ -103,7 +103,7 @@ export function CredentialPickerCards({
               <span className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-card border border-dashed border-border/60 group-hover:border-primary/40 transition-colors">
                 <Plus className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
               </span>
-              <span className="block w-full truncate typo-body font-medium text-foreground/85">
+              <span className="block w-full truncate typo-body text-foreground/85">
                 {item.label}
               </span>
               {item.sublabel && (
@@ -171,7 +171,7 @@ export function CredentialPickerCards({
               )}
             </span>
             <span
-              className={`block w-full truncate typo-body font-medium ${
+              className={`block w-full truncate typo-body ${
                 isSelected ? 'text-foreground' : 'text-foreground/90'
               }`}
               title={item.label}
@@ -193,7 +193,7 @@ export function CredentialPickerCards({
             )}
             {item.badge && (
               <span
-                className="absolute top-1.5 left-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 border border-primary/30 typo-caption font-medium text-primary"
+                className="absolute top-1.5 left-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 border border-primary/30 typo-caption text-primary"
                 title={item.badge}
               >
                 {item.badge}

@@ -32,14 +32,14 @@ export function SetupVoiceControls({ voice }: { voice: SetupVoiceApi }) {
   return (
     <div className="flex items-center gap-2" data-testid="setup-voice-controls">
       <Button
-        variant={voice.listening ? 'accent' : 'ghost'} accentColor="violet" size="icon-sm"
+        variant={voice.listening ? 'accent' : 'ghost'} tone="agent" size="icon-sm"
         aria-pressed={voice.listening} aria-label={voice.listening ? v.stop : v.dictate}
         onClick={voice.listening ? voice.stop : voice.start}
         className={voice.listening ? 'ring-2 ring-status-error/40' : ''}
         icon={<Mic className={`w-4 h-4 ${voice.listening ? 'text-status-error' : ''}`} />}
       />
       <Button
-        variant={voice.speakEnabled ? 'accent' : 'ghost'} accentColor="violet" size="icon-sm"
+        variant={voice.speakEnabled ? 'accent' : 'ghost'} tone="agent" size="icon-sm"
         aria-pressed={voice.speakEnabled} aria-label={voice.speakEnabled ? v.speak : v.speakOff}
         onClick={voice.toggleSpeak}
         icon={voice.speakEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}

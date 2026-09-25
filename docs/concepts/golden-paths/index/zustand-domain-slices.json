@@ -36,6 +36,8 @@
     "personas-web/src/lib/clearUserCaches.ts": {"count":1,"sections":[],"lines":["27-40"],"contexts":["`personas-web/src/lib/clearUserCaches.ts:27-40` is a hand-maintained list of 6 stores to reset,"],"resolved":false},
     "personas-web/src/stores/executionStore.ts": {"count":1,"sections":[],"lines":["43-52"],"contexts":["- `personas-web/src/stores/executionStore.ts:43-52` — `activeCount` pre-aggregated in the"],"resolved":false},
     "personas-web/src/stores/personaStore.ts": {"count":1,"sections":[],"lines":["9-12"],"contexts":["- `personas-web/src/stores/personaStore.ts:9-12` — normalized `personasById` +"],"resolved":false},
+    "plugins/companion/companionStore.ts": {"count":1,"sections":[7],"contexts":["**The one real deviation is `plugins/companion/companionStore.ts` — 1,402 lines, 150"],"resolved":false},
+    "plugins/companion/fleet/FleetStatsSidePanel.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["| `plugins/companion/fleet/FleetStatsSidePanel.tsx:54` | `fleetSessions` | ditto |"],"resolved":false},
     "routes.test.ts": {"count":1,"sections":[],"lines":["142-148"],"contexts":["actual readers, and `routes.test.ts:142-148` does no such thing — it asserts a property the"],"resolved":false},
     "routes.ts": {"count":1,"sections":[],"lines":["226-227"],"contexts":["drift guard (`routes.ts:226-227`) *claims* the test compares its registry against the modules'"],"resolved":false},
     "scripts/census/": {"count":1,"sections":[9],"contexts":["the ratcheting-baseline mechanism this needs is exactly what `scripts/census/` already"],"resolved":false,"isDir":true},
@@ -64,21 +66,6 @@
       "contexts": ["searching the slice. Worst concentrations: `onboarding/components/GuidedTour.tsx` (4),"],
       "resolvedFrom": "suffix",
       "verbatim": "onboarding/components/GuidedTour.tsx"
-    },
-    "src/features/plugins/companion/companionStore.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": ["**The one real deviation is `plugins/companion/companionStore.ts` — 1,402 lines, 150"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/companionStore.ts"
-    },
-    "src/features/plugins/companion/fleet/FleetStatsSidePanel.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["54"],
-      "contexts": ["| `plugins/companion/fleet/FleetStatsSidePanel.tsx:54` | `fleetSessions` | ditto |"],
-      "resolvedFrom": "suffix",
-      "verbatim": "plugins/companion/fleet/FleetStatsSidePanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx": {
       "count": 1,

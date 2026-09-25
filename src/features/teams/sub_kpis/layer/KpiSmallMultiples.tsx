@@ -38,7 +38,7 @@ export function KpiSmallMultiples({
   return (
     <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 space-y-3" data-testid="kpi-layer-multiples">
       <div>
-        <h3 className="typo-overline text-foreground">{o.layer_multiples_title}</h3>
+        <h3 className="typo-eyebrow text-foreground">{o.layer_multiples_title}</h3>
         <p className="typo-caption">{o.layer_multiples_caption}</p>
       </div>
 

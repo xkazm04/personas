@@ -259,7 +259,7 @@ export function ComposerMessagingPickerModal({
           <button
             type="button"
             onClick={applyNow}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body font-medium transition-colors"
+            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
             {externalCount === 0
@@ -283,7 +283,7 @@ export function ComposerMessagingPickerModal({
                 <Inbox className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="typo-body text-foreground font-medium">
+                <div className="typo-body text-foreground">
                   {t.agents.messaging_picker.builtin_label}
                 </div>
                 <div className="typo-caption text-foreground">
@@ -379,7 +379,7 @@ export function ComposerMessagingPickerModal({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="typo-body text-foreground font-medium truncate">
+                        <div className="typo-body text-foreground truncate">
                           {meta.label}
                         </div>
                         <div className="typo-caption text-foreground truncate">
@@ -570,7 +570,7 @@ export function ComposerMessagingPickerModal({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body text-foreground font-medium truncate">
+                      <div className="typo-body text-foreground truncate">
                         {meta.label}
                       </div>
                       <div className="typo-caption text-foreground truncate">

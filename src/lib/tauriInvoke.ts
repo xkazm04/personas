@@ -473,6 +473,23 @@ export function _clearAutoDedupForTests(): void {
   inflightAutoDedup.clear();
 }
 
+/**
+ * Test-only tap for the style page harness's IPC tape recorder
+ * (src/test/automation/ipcTape.ts). Null unless a tape is rolling; the only
+ * caller of {@link _setIpcTap} is the test-automation bridge, which App.tsx
+ * loads behind `import.meta.env.DEV || window.__PERSONAS_TEST_MODE__`.
+ * `__TAURI_INTERNALS__.invoke` cannot be wrapped instead: in the running app
+ * it is non-configurable ("Cannot redefine property: invoke", measured 2026-09-24).
+ *
+ * @internal
+ */
+let ipcTap: ((cmd: string, args: InvokeArgs | undefined, result: Promise<unknown>) => void) | null = null;
+
+/** @internal Test-automation only: install or clear the IPC tape tap. */
+export function _setIpcTap(tap: typeof ipcTap): void {
+  ipcTap = tap;
+}
+
 // Track concurrent in-flight IPC calls to detect stampedes early.
 let _inflight = 0;
 let _stampedWarned = false;
@@ -518,7 +535,9 @@ function _invokeCore<T>(
     Sentry.addBreadcrumb({ category: 'ipc.invoke', message: cmd, level: 'info' });
   }
 
-  const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
+  const wireArgs = args ? coerceArgs(args) : undefined;
+  const invocation = invoke<T>(cmd, wireArgs, options);
+  if (ipcTap) ipcTap(cmd, wireArgs, invocation);
 
   // We use a mutable holder so the timeout callback can release its reference
   // to the invocation promise, allowing GC to collect args/closures even if

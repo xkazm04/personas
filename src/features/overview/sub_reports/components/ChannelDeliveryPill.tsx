@@ -40,11 +40,11 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
         <Icon className="w-3.5 h-3.5" style={{ color: tint }} />
       </span>
 
-      <span className="typo-caption font-medium text-foreground/90">
+      <span className="typo-caption text-foreground/90">
         {channelLabel}
       </span>
 
-      <span className={`typo-caption font-semibold ${statusCfg.color}`}>
+      <span className={`typo-caption ${statusCfg.color}`}>
         {statusLabel}
       </span>
 

@@ -1846,7 +1846,14 @@
     "header_subtitle_new": "Compose a new agent from scratch",
     "header_subtitle_editing": "Editing {name}",
     "new_agent": "New Agent",
-    "build_failed": "Build failed to start. Check CLI configuration."
+    "build_failed": "Build failed to start. Check CLI configuration.",
+    "promote_receipt_needs_setup_title": "Promoted, but it needs setup before it can run",
+    "promote_receipt_connectors": "Still to connect: {names}",
+    "promote_receipt_unverified": "Its first check run could not deliver value. Review its connectors before relying on it.",
+    "promote_receipt_connect": "Open connectors",
+    "promote_receipt_later": "Later",
+    "promote_receipt_failed_title": "Promote did not go through",
+    "promote_receipt_retry": "Retry promote"
   },
   "build_simulate": {
     "title": "Dry-run preview",
@@ -1974,7 +1981,7 @@
     "sensitive_preview": "Sensitive Preview",
     "sensitive_preview_desc": "Mask hover preview details until revealed.",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Athena → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
     "failed_health_watch": "Failed to update health watch setting",
     "health_watch": "Health Watch",
     "health_watch_active": "Health monitoring active (every 6h)",
@@ -3275,5 +3282,16 @@
     "activity_kind_decide": "Decide",
     "activity_kind_act": "Act",
     "activity_kind_deliver": "Deliver"
+  },
+  "promote_preview": {
+    "heading": "What promote will do",
+    "runs_next": "{type} trigger, next run {time}",
+    "runs_on_event": "{type} trigger, runs when it fires",
+    "runs_manual": "Runs when you start it",
+    "needs_setup": "Needs setup first: {connectors}",
+    "repaired": "Adjusted by the build",
+    "refused": "Promote will refuse this draft",
+    "refused_hint": "Refine the draft to fix it, then promote.",
+    "blocked_tooltip": "Promote would refuse: {reason}"
   }
 }

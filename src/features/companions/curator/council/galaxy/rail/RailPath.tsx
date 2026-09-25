@@ -1,0 +1,95 @@
+// The path rows above the list: Field / Domain / Category / Subject, or
+// Field / Council when a council is focused. The same steps the breadcrumb
+// shows, because both read the one focus in the store.
+import { AnimatePresence, motion } from 'framer-motion';
+
+import { MOTION_PRESETS } from '@/lib/utils/animation/animationPresets';
+
+import { useCouncilStore } from '../../councilStore';
+import type { GalaxyFocus, GalaxyLayout } from '../engine/types';
+
+export interface PathStep {
+  tag: string;
+  name: string;
+  focus: GalaxyFocus;
+}
+
+/** The steps for a focus. Pure, so the breadcrumb and the rail share it. */
+export function pathSteps(
+  layout: GalaxyLayout | null,
+  focus: GalaxyFocus,
+  labels: { field: string; allDomains: string; council: string; domain: string; category: string; subject: string },
+): PathStep[] {
+  const steps: PathStep[] = [
+    { tag: labels.field, name: labels.allDomains, focus: { kind: 'none' } },
+  ];
+  if (focus.kind === 'council') {
+    steps.push({ tag: labels.council, name: focus.title, focus });
+    return steps;
+  }
+  if (focus.kind === 'none' || !layout) return steps;
+  const domain = layout.domains.find((d) => d.slug === focus.domainSlug);
+  if (!domain) return steps;
+  steps.push({
+    tag: labels.domain,
+    name: domain.title,
+    focus: { kind: 'node', domainSlug: domain.slug, categoryId: null, subjectSlug: null },
+  });
+  const category = domain.categories.find((c) => c.id === focus.categoryId);
+  if (!category) return steps;
+  steps.push({
+    tag: labels.category,
+    name: category.title,
+    focus: { kind: 'node', domainSlug: domain.slug, categoryId: category.id, subjectSlug: null },
+  });
+  const subject = category.subjects.find((s) => s.slug === focus.subjectSlug);
+  if (!subject) return steps;
+  steps.push({
+    tag: labels.subject,
+    name: subject.title,
+    focus: { kind: 'node', domainSlug: domain.slug, categoryId: category.id, subjectSlug: subject.slug },
+  });
+  return steps;
+}
+
+interface Props {
+  steps: PathStep[];
+}
+
+export function RailPath({ steps }: Props) {
+  const setFocus = useCouncilStore((s) => s.setFocus);
+  return (
+    <div className="flex flex-col gap-0.5" data-testid="council-rail-path">
+      {/* The rail's own path rows are the breadcrumb's twin and enter on the
+          same rung, so the two never disagree about when a step arrived. */}
+      <AnimatePresence initial={false}>
+      {steps.map((step, i) => {
+        const current = i === steps.length - 1;
+        return (
+          <motion.button
+            key={`${step.tag}-${step.name}`}
+            layout
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={MOTION_PRESETS.snappy.framer}
+            type="button"
+            onClick={() => setFocus(step.focus)}
+            aria-current={current ? 'true' : undefined}
+            className={`flex w-full items-center gap-2.5 rounded-interactive px-1.5 py-1 text-left ${
+              current ? 'typo-heading bg-secondary/70 text-foreground' : 'typo-body text-muted hover:bg-secondary/50 hover:text-foreground'
+            }`}
+          >
+            {/* The tag is a label, not a shout: sentence case on the app's
+                own `typo-label`, which is what the chrome names things with. */}
+            <span className={`w-[84px] flex-none typo-label ${current ? 'text-accent' : 'text-muted-dark'}`}>
+              {step.tag}
+            </span>
+            <span className="flex-1 truncate">{step.name}</span>
+          </motion.button>
+        );
+      })}
+      </AnimatePresence>
+    </div>
+  );
+}

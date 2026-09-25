@@ -165,7 +165,7 @@ export function PeerDetailDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 id="peer-drawer-title" className="typo-body-lg font-semibold text-foreground truncate">
+              <h2 id="peer-drawer-title" className="typo-body-lg text-foreground truncate">
                 {peer.display_name}
               </h2>
               {isTrusted ? (
@@ -174,7 +174,7 @@ export function PeerDetailDrawer({
                 <TrustUnknownIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
               )}
             </div>
-            <div className="typo-code font-mono text-foreground mt-0.5">
+            <div className="typo-code text-foreground mt-0.5">
               {truncatedId}
             </div>
           </div>
@@ -191,7 +191,7 @@ export function PeerDetailDrawer({
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Connection state */}
           <div className="flex items-center gap-3">
-            <span className={`typo-caption px-2 py-1 rounded-full font-medium ${
+            <span className={`typo-caption px-2 py-1 rounded-full ${
               isConnected ? 'bg-emerald-500/10 text-emerald-400' :
               state === 'Connecting' ? 'bg-amber-500/10 text-amber-400' :
               state === 'Failed' ? 'bg-red-500/10 text-red-400' :
@@ -222,7 +222,7 @@ export function PeerDetailDrawer({
 
           {/* Peer info */}
           <div className="space-y-2">
-            <h4 className="typo-label font-semibold text-foreground">{st.peer_info}</h4>
+            <h4 className="typo-label text-foreground">{st.peer_info}</h4>
             <div className="rounded-card border border-border bg-secondary/10 p-3 space-y-2 typo-body">
               <div className="flex justify-between">
                 <span className="text-foreground">{st.trust_label}</span>
@@ -245,7 +245,7 @@ export function PeerDetailDrawer({
               {addresses.length > 0 && (
                 <div className="flex justify-between">
                   <span className="text-foreground">{st.address}</span>
-                  <span className="text-foreground font-mono typo-code">
+                  <span className="text-foreground typo-code">
                     {addresses[0]}
                   </span>
                 </div>
@@ -266,7 +266,7 @@ export function PeerDetailDrawer({
               )}
 
               <div className="flex items-center justify-between">
-                <h4 className="typo-label font-semibold text-foreground flex items-center gap-1.5">
+                <h4 className="typo-label text-foreground flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   {st.shared_resources}
                   {(syncProgress || manifest.length > 0) && (

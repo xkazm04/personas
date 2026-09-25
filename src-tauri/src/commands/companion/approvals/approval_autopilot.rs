@@ -69,11 +69,12 @@ pub async fn auto_resolve_if_allowed(
     app: &tauri::AppHandle,
     approval: &crate::companion::dispatcher::CreatedApproval,
 ) -> Result<bool, AppError> {
-    // `remote_instruct` (WP3) carries a rule the generic path cannot express:
-    // it may only reach the HOME device, and refuses otherwise. Its own arm runs
-    // that rule and returns before the generic path is reached. (The executor
-    // re-checks it too, so the manual click path is bound by the same rule.)
-    if approval.action == "remote_instruct" {
+    // The device ops (`remote_instruct`, `remote_fleet_dispatch`) carry a rule
+    // the generic path cannot express: with the mode off they reach only the
+    // HOME device, and refuse otherwise. Their own arm runs that rule and
+    // returns before the generic path is reached. (Each executor re-checks it
+    // too, so the manual click path is bound by the same rule.)
+    if is_device_gated(&approval.action) {
         return auto_resolve_remote_instruct(app, approval).await;
     }
     // Browser page writes (spark browser-control, design decision Q4,

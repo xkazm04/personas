@@ -56,7 +56,7 @@ export function PipelineNotificationPrefs() {
   return (
     <div className={`p-4 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10`}>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="flex items-center gap-2 typo-body font-medium text-foreground/90">
+        <h3 className="flex items-center gap-2 typo-body text-foreground/90">
           {prefs.enabled ? (
             <Bell className="w-4 h-4 text-orange-400" />
           ) : (

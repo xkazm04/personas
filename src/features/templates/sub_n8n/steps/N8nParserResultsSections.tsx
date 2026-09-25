@@ -22,7 +22,7 @@ export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggl
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5 flex items-center gap-1">
+      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
         <Wrench className="w-3 h-3" />
         {tx(t.templates.n8n.tools_header, { count: tools.length })}
       </h4>
@@ -45,7 +45,7 @@ export function ToolsSection({ tools, selectedToolIndices, hasSelection, onToggl
                   onChange={() => onToggleTool?.(i)}
                 />
               )}
-              <span className="typo-code font-mono">{tool}</span>
+              <span className="typo-code">{tool}</span>
             </div>
           );
         })}
@@ -67,7 +67,7 @@ export function TriggersSection({ triggers, selectedTriggerIndices, hasSelection
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5 flex items-center gap-1">
+      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
         <Zap className="w-3 h-3" />
         {tx(t.templates.n8n.triggers_header, { count: triggers.length })}
       </h4>
@@ -90,7 +90,7 @@ export function TriggersSection({ triggers, selectedTriggerIndices, hasSelection
                   onChange={() => onToggleTrigger?.(i)}
                 />
               )}
-              <span className={`px-1.5 py-0.5 typo-code font-mono rounded border ${
+              <span className={`px-1.5 py-0.5 typo-code rounded border ${
                 isSelected
                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                   : 'bg-secondary/30 text-foreground border-primary/10'
@@ -133,7 +133,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
 
   return (
     <div className="p-4">
-      <h4 className="typo-heading font-semibold text-foreground uppercase tracking-wider mb-2.5 flex items-center gap-1">
+      <h4 className="typo-heading text-foreground uppercase mb-2.5 flex items-center gap-1">
         <Link className="w-3 h-3" />
         {tx(t.templates.n8n.connectors_header, { count: connectors.length })}
         {gaps.missingCount > 0 && (
@@ -167,7 +167,7 @@ export function ConnectorsSection({ connectors, selectedConnectorNames, hasSelec
                   onChange={() => onToggleConnector?.(conn.name)}
                 />
               )}
-              <span className="typo-body font-medium">{conn.name}</span>
+              <span className="typo-body">{conn.name}</span>
               {gapByName.has(conn.name) && <ConnectorGapChip entry={gapByName.get(conn.name)!} />}
             </div>
           );

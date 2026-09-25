@@ -78,7 +78,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <div className="min-w-0">
-            <h2 className="typo-body font-medium text-foreground truncate">{s.audit_title}</h2>
+            <h2 className="typo-body text-foreground truncate">{s.audit_title}</h2>
             <p className="typo-caption text-foreground truncate">{keyName}</p>
           </div>
           <button
@@ -118,7 +118,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
                   markEntered={enter.markEntered}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-secondary/20 border border-border/20"
                 >
-                  <span className={`typo-code font-medium ${statusColor(Number(row.status))}`}>
+                  <span className={`typo-code ${statusColor(Number(row.status))}`}>
                     {String(row.status)}
                   </span>
                   <span className="typo-code text-foreground w-10 shrink-0">{row.method}</span>

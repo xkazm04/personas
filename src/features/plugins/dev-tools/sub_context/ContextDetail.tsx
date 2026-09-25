@@ -4,7 +4,7 @@ import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff, La
 import { Button } from '@/features/shared/components/buttons';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from '@/stores/systemStore';
-import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
@@ -170,7 +170,7 @@ export default function ContextDetail({
                 key={uc.id}
                 className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
               >
-                <span className="typo-caption text-foreground font-medium truncate flex-1">{uc.name}</span>
+                <span className="typo-caption text-foreground truncate flex-1">{uc.name}</span>
                 <span className="typo-caption text-foreground tabular-nums shrink-0">
                   {tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
                 </span>
@@ -199,7 +199,7 @@ export default function ContextDetail({
                   className="w-full text-left rounded-modal border border-primary/10 bg-card/30 px-2.5 py-2 hover:border-primary/25 hover:bg-primary/5 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="typo-caption text-foreground font-medium truncate flex-1">{goal.title}</span>
+                    <span className="typo-caption text-foreground truncate flex-1">{goal.title}</span>
                     <span className="typo-caption text-foreground tabular-nums shrink-0">{goal.progress}%</span>
                   </div>
                   {tasksTotal > 0 && (
@@ -295,7 +295,7 @@ export default function ContextDetail({
                 placeholder={t.kpis.create_kpi_unit_ph}
                 className="w-16 px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
               />
-              <Button type="submit" variant="accent" accentColor="amber" size="sm" disabled={!kpiName.trim()}>
+              <Button type="submit" variant="accent" tone="warning" size="sm" disabled={!kpiName.trim()}>
                 {t.kpis.create_kpi_submit}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
@@ -318,7 +318,7 @@ export default function ContextDetail({
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ background: TRACK_COLOR[kpiTrack(k)] }}
                 />
-                <span className="typo-caption text-foreground font-medium truncate flex-1">{k.name}</span>
+                <span className="typo-caption text-foreground truncate flex-1">{k.name}</span>
                 <span className="typo-caption text-foreground tabular-nums shrink-0">
                   {k.current_value ?? '—'} / {k.target_value ?? '—'} {k.unit}
                 </span>

@@ -33,7 +33,7 @@ export function OutputPreviews({
 
   return (
     <div className="space-y-2">
-      <h5 className="typo-label font-medium text-foreground">{t.agents.model_config.output_previews}</h5>
+      <h5 className="typo-label text-foreground">{t.agents.model_config.output_previews}</h5>
       {scenarios.length > 1 && (
         <div className="flex flex-wrap gap-1">
           {scenarios.map((s) => (
@@ -100,13 +100,13 @@ function OutputBox({
   return (
     <div className={`rounded-modal border ${failure ? 'border-red-500/20' : borderCls} overflow-hidden`}>
       <div
-        className={`px-2.5 py-1.5 typo-caption font-medium bg-secondary/30 border-b ${
+        className={`px-2.5 py-1.5 typo-caption bg-secondary/30 border-b ${
           failure ? 'text-red-300/90 border-red-500/20' : `${headerCls} ${borderCls}`
         }`}
       >
         {label}
       </div>
-      <div className="px-2.5 py-2 typo-code text-foreground max-h-32 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+      <div className="px-2.5 py-2 typo-code text-foreground max-h-32 overflow-y-auto whitespace-pre-wrap">
         {failure ? (
           <>
             {/* `typo-label` carries the weight; adding a `font-*` utility next to

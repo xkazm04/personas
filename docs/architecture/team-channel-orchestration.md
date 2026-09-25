@@ -5,9 +5,9 @@ living chat: channel read-model + acknowledged directives) is SHIPPED; this
 doc defines the Design C scope — a relay chat where **all orchestration
 actors write and listen** — against what the codebase actually has.
 
-Companion docs this builds on: [`athena-team-orchestration.md`](../features/companion/athena-team-orchestration.md)
-(post-run reconciliation seam), [`athena-decision-layer-plan.md`](../features/companion/athena-decision-layer-plan.md)
-(approval executor), [`conversation-orchestration.md`](../features/companion/conversation-orchestration.md)
+Companion docs this builds on: [`athena-team-orchestration.md`](../features/companions/athena/athena-team-orchestration.md)
+(post-run reconciliation seam), [`athena-decision-layer-plan.md`](../features/companions/athena/athena-decision-layer-plan.md)
+(approval executor), [`conversation-orchestration.md`](../features/companions/athena/conversation-orchestration.md)
 (mid-turn capability inventory). Channel v1: [`docs/features/pipeline/README.md`](../features/pipeline/README.md)
 → *sub_collab*.
 

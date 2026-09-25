@@ -24,6 +24,12 @@ pub(super) fn shard(
         commands::infrastructure::dev_tools::dev_tools_council_decide,
         commands::infrastructure::dev_tools::dev_tools_council_overlay,
         commands::infrastructure::dev_tools::dev_tools_council_read_media,
+        // Dev Tools -- the Features page: one board read, and the scenario
+        // layer nested under a feature.
+        commands::infrastructure::dev_tools::dev_tools_feature_board,
+        commands::infrastructure::dev_tools::dev_tools_list_scenarios,
+        commands::infrastructure::dev_tools::dev_tools_upsert_scenario,
+        commands::infrastructure::dev_tools::dev_tools_delete_scenario,
         commands::infrastructure::dev_tools::dev_tools_triage_verdicts_ingest,
         // Dev Tools -- L1 passport wall (one batched read for N covers)
         commands::infrastructure::dev_tools::dev_tools_project_wall_summary,

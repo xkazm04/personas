@@ -55,7 +55,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
     <div ref={containerRef} className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
-        <span className={`typo-body font-medium ${color}`}>
+        <span className={`typo-body ${color}`}>
           {tx(t.triggers.conditions_met, { met: conditionsMet, total: conditionsTotal })}
         </span>
         <span className="typo-caption text-foreground ml-auto">

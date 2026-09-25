@@ -58,7 +58,7 @@ export function AutonomousLane({
     <div className="mx-4 mb-2 rounded-card border border-primary/10 bg-secondary/20">
       <div className="flex flex-wrap items-center gap-2 px-3.5 pt-2.5 pb-1.5">
         <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
-        <h3 className="typo-overline text-foreground">{t.overview.incidents.noc_handled_title}</h3>
+        <h3 className="typo-eyebrow text-foreground">{t.overview.incidents.noc_handled_title}</h3>
         {incidents.length > 0 && (
           <AthenaComposedBadge variant="handled" label={t.overview.incidents.noc_handled_by} />
         )}

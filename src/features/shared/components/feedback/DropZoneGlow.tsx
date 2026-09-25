@@ -81,7 +81,7 @@ export function DropZoneGlow({ active, label, radius = 12, labelClassName }: Dro
               <span
                 className={
                   labelClassName ??
-                  'px-3 py-1.5 rounded-card bg-primary/15 text-primary border border-primary/30 typo-body font-medium shadow-elevation-1'
+                  'px-3 py-1.5 rounded-card bg-primary/15 text-primary border border-primary/30 typo-body shadow-elevation-1'
                 }
               >
                 {label}

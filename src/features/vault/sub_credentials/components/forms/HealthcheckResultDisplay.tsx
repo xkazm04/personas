@@ -93,7 +93,7 @@ export function HealthcheckResultDisplay({
             {t.vault.forms.technical_details}
           </button>
           {showDetails && (
-            <p className="px-3 pb-2 typo-code text-status-error/30 font-mono break-all">
+            <p className="px-3 pb-2 typo-code text-status-error/30 break-all">
               {translated.raw}
             </p>
           )}

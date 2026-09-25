@@ -34,7 +34,7 @@ inventory deliberately stays a naming layer.
 | `canvas-graph` | Canvas & node-graph editing | `src/features/teams/sub_mastermind/lib/CanvasShell.tsx` |
 | `wizard-flows` | Wizards & guided steppers | `src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx` |
 | `guided-tours` | Guided tours & spotlight onboarding | `src/features/onboarding/components/TourSpotlight.tsx` |
-| `chat-transcript` | Chat transcript rendering | `src/features/plugins/companion/NarrationThread.tsx` |
+| `chat-transcript` | Chat transcript rendering | `src/features/companions/athena/NarrationThread.tsx` |
 | `drag-drop` | Drag & drop | `src/features/shared/components/kanban/KanbanBoard.tsx` |
 | `schema-driven-ui` | Schema-driven UI rendering | `src/features/shared/components/surface/SurfaceRenderer.tsx` + cockpit `widgetRegistry.ts` |
 | `draft-editing` | Draft & dirty-state editing | `src/features/agents/sub_editor/libs/PersonaDraft.ts` |

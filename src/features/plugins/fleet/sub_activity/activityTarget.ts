@@ -33,3 +33,10 @@ export function resolveActivityTarget(
   if (live) return { kind: 'session', sessionId: live.id };
   return { kind: 'insights', claudeSessionId: row.claudeSessionId };
 }
+
+/** Last path segment of a cwd (the project label), tolerant of \ and /. */
+export function projectLabel(cwd: string | null): string {
+  if (!cwd) return 'unknown';
+  const parts = cwd.split(/[\\/]/).filter(Boolean);
+  return parts[parts.length - 1] ?? cwd;
+}

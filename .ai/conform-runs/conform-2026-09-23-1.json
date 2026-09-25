@@ -1,0 +1,592 @@
+{
+  "schema": "rkb-run-result/1",
+  "run_id": "conform-2026-09-23-1",
+  "skill": "conform",
+  "skill_version": "1.8.2",
+  "mode": "stale",
+  "domain": null,
+  "started_at": "2026-09-23T12:05:00Z",
+  "ended_at": "2026-09-23T12:34:55Z",
+  "exit": 0,
+  "counts": {
+    "dispatched": 0,
+    "landed": 160,
+    "declined": 4,
+    "idled": 0,
+    "contended": 0
+  },
+  "subjects": [
+    {
+      "id": "llm-observability/breach-alerting-and-attribution",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "llm-observability/llm-call-telemetry-model",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "llm-observability/operator-surfaces-for-llm-spend",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "llm-observability/trace-rollup-and-attribution",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/accessibility",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/adoption-measurement",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/agent-chaining",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/agent-memory",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/analytics-time-windows",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/app-shell",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/async-ui-states",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/canvas-graph",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/client-state",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/codebase-scanning",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/codegen",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/companion-identity",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/connector-catalog",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/conversation-orchestration",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/credential-vault",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/data-access",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/data-viz",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/deployment-contract",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/design-tokens",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/diff-comparison",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/docs-sync",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/draft-editing",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/embedded-preview",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/entity-lifecycle",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/eval-harness",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/fleet-orchestration",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/form",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/guided-tours",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/health-checks",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/hitl-approval",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/i18n",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/import-normalization",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/long-form-reading-surface",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/markdown-vault",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/mcp-tools",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/media-playback",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/model-routing",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/motion",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/multi-project",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/p2p-networking",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/pipeline-dag",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/proactive-nudges",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/prompt-assembly",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/quality-gates",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/realtime-events",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/scheduling",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/search",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/self-healing",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/session-resume",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/settings",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/sql-console",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/sync-replication",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/table",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/templates-scaffolding",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/terminal-multiplexing",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/test-harness",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/time-travel-replay",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/triage-queues",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/usage-analytics",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/versioning-snapshots",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/voice-io",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/web-scraping",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    },
+    {
+      "id": "software-engineering/webhook-ingestion",
+      "at": "2026-09-23",
+      "engine": "conform",
+      "outcome": "landed",
+      "points_before": null,
+      "points_after": null
+    }
+  ],
+  "verdicts": [],
+  "files": [
+    ".ai/registry-map.json",
+    ".ai/conform-detail.json",
+    ".ai/conform-runs/merged/c0923-1.json",
+    ".ai/conform-runs/merged/c0923-2.json",
+    ".ai/conform-runs/merged/c0923-3.json",
+    ".ai/conform-runs/merged/c0923-4.json",
+    ".ai/conform-runs/merged/c0923-5.json",
+    ".ai/conform-runs/merged/c0923-6.json",
+    ".ai/conform-runs/merged/c0923-7.json",
+    ".ai/conform-runs/merged/c0923-8.json",
+    ".ai/conform-runs/merged/c0923-9.json"
+  ],
+  "commits": [],
+  "pr": null,
+  "declined": [
+    {
+      "subject": "fleet-orchestration @ 0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "reason": "The recorded premise dissolved: heterogeneous-model-panels (rev 24) now says role-prompted seats from one provider are division of labour, not a sampling run in costume. The old anchor DeliberationRail.tsx:52 drifted to a comment. The remaining candidate, channels/types.ts:21 restating PresenceStatus from useTeamChannel.ts:37, is compile-guarded, and whether the deliberation engine (src-tauri/src/"
+    },
+    {
+      "subject": "fleet-orchestration @ ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "The old not-applicable rested on build_session.rs:263 alone, but the context also holds team_assignment.rs:4, the step and status models of a DAG orchestrator that kicks off persona executions, which is fleet-shaped (roster plus step terminal set). Judging it needs engine::team_assignment_orchestrator, which was not read."
+    },
+    {
+      "subject": "conversation-orchestration @ b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "Playwright-spec context. Only 2 of 8 techniques have a spec: walkthrough tracking and clean stop (tests/playwright/athena-guided-walkthrough.spec.ts:92, :102) and the honest 'Thinking...' fallback (tests/playwright/companion-stream-phase.spec.ts:58). That is below the evidence floor for conformant. No spec asserts behaviour that contradicts the standard, so there is no deviation to anchor either."
+    },
+    {
+      "subject": "eval-harness @ 908be532-ef83-412b-8da3-caff9ff4d8ad",
+      "reason": "The context's code no longer exists: commit 8a2ce465f (2026-09-22) deleted all of src/features/overview/sub_certification. No file in the context resolves, so no anchor is possible. The recorded deviation (judge read-model without model/version) dissolved with the surface; the binding src/lib/bindings/Judge.ts:10 remains dead-but-registered. The context-map row is stale and should be retired on th"
+    }
+  ],
+  "failure_signature": null,
+  "notes": "164 stale verdicts: 160 re-judged by 9 parallel workers, merged once by the fixed merge-conform-runs; 4 declined and left stale. 7 deviations fixed in code, 12 conformant became deviation under the grown standard."
+}

@@ -250,7 +250,7 @@ export function WorkspaceProjectSelector({
                     >
                       <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                       <span className="flex-1 min-w-0">
-                        <span className="block typo-caption font-medium truncate">{p.name}</span>
+                        <span className="block typo-caption truncate">{p.name}</span>
                         {p.root_path && <span className="block text-[10px] text-foreground/45 truncate">{p.root_path}</span>}
                       </span>
                       {isActive && <Check className="w-3 h-3 flex-shrink-0" />}

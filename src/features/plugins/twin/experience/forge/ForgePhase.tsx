@@ -157,7 +157,7 @@ export function ForgePhase({ onClose, onCreated }: ForgePhaseProps) {
               onClick={submit}
               disabled={!name.trim()}
               variant="accent"
-              accentColor="violet"
+              tone="agent"
               size="sm"
               loadingText={tx.forge.creating}
               data-testid="twin-experience-create"

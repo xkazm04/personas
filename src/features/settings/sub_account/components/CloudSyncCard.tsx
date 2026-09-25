@@ -126,7 +126,7 @@ export default function CloudSyncCard() {
       aria-hidden
     />
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption text-foreground">
       <LiveStatusDot tone={state} />
       {stateLabel}
     </span>
@@ -140,7 +140,7 @@ export default function CloudSyncCard() {
       action={statusBadge}
     >
       <div className="space-y-4">
-      <p className="typo-body text-foreground leading-relaxed">{s.cloud_sync_description}</p>
+      <p className="typo-body text-foreground">{s.cloud_sync_description}</p>
 
       {/* Toggle */}
       {loading ? (
@@ -227,7 +227,7 @@ export default function CloudSyncCard() {
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
-                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption font-medium text-foreground hover:bg-secondary/20 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption text-foreground hover:bg-secondary/20 transition-colors"
               >
                 <span>{s.cloud_sync_tables_title}</span>
                 <span className="inline-flex items-center gap-1.5 text-foreground">
@@ -245,7 +245,7 @@ export default function CloudSyncCard() {
                           key={tbl.table}
                           className="flex items-center justify-between gap-3 px-4 py-2"
                         >
-                          <span className="typo-caption font-medium text-foreground truncate">
+                          <span className="typo-caption text-foreground truncate">
                             {tableLabels[tbl.table] ?? tbl.table}
                           </span>
                           {tbl.error ? (

@@ -96,13 +96,13 @@ export function SwipeCard({
         <>
           <motion.div
             style={{ opacity: rejectOpacity }}
-            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 font-bold typo-heading-lg uppercase -rotate-12"
+            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 typo-heading-lg uppercase -rotate-12"
           >
             {r.backlog_swipe_reject}
           </motion.div>
           <motion.div
             style={{ opacity: acceptOpacity }}
-            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 font-bold typo-heading-lg uppercase rotate-12"
+            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 typo-heading-lg uppercase rotate-12"
           >
             {r.backlog_swipe_accept}
           </motion.div>
@@ -119,7 +119,7 @@ export function SwipeCard({
               <VerdictChip verifyState={idea.verifyState} />
             </>
           )}
-          <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
+          <span className={`rounded-full px-2.5 py-0.5 typo-caption ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {categoryLabel(idea.category)}
           </span>
           <ValueBadge idea={idea} />
@@ -128,20 +128,20 @@ export function SwipeCard({
           ))}
         </div>
 
-        <h3 className="typo-heading-lg font-semibold text-primary mb-2">{idea.title}</h3>
+        <h3 className="typo-heading-lg text-primary mb-2">{idea.title}</h3>
         {idea.projectName && (
           <p className="typo-caption text-muted-foreground mb-2">{idea.projectName}</p>
         )}
-        <p className="typo-body text-foreground mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
+        <p className="typo-body text-foreground mb-4 flex-1 min-h-0 overflow-y-auto">
           {idea.description || r.backlog_no_description}
         </p>
 
         {idea.reasoning && (
           <div className="bg-primary/5 rounded-modal p-3">
-            <p className="typo-caption uppercase tracking-wider text-primary font-medium mb-1">
+            <p className="typo-caption uppercase tracking-wider text-primary mb-1">
               {r.backlog_detail_reasoning}
             </p>
-            <p className="typo-body text-foreground leading-relaxed">{idea.reasoning}</p>
+            <p className="typo-body text-foreground">{idea.reasoning}</p>
           </div>
         )}
       </div>

@@ -46,7 +46,7 @@ export function TestFireListeners({
       className="rounded-modal border border-primary/15 bg-secondary/20 p-4 space-y-2"
       data-testid="test-fire-listeners"
     >
-      <h4 className="typo-title text-foreground flex items-center gap-1.5">
+      <h4 className="typo-title flex items-center gap-1.5">
         <Ear className="w-3.5 h-3.5 shrink-0" aria-hidden />
         {tx(tr.test_listeners_header, { count: listeners.length })}
       </h4>

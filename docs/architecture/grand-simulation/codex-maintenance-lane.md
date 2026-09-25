@@ -87,3 +87,36 @@ doors reachable; does the worker's completion line reach `settle_one_shot_turn` 
 normalizer; does the App Master merge the branch from the main checkout under its rung. Each is
 a query on `fleet_sessions` (args carry `--engine codex`), the attention ledger and the project's
 `git log`.
+
+## `attention.codex_mode`: a whole persona on codex (G52, 2026-09-24)
+
+The lane above moves one charter's *workers* to codex. It does not help the day the Claude account
+runs out, because the decision that dispatches them is a Claude call and every usage gate reads the
+Claude gauge. The operator's weekly Claude window reached 99% on 2026-09-24 with codex capacity
+spare, so the switch that answers that day is one app setting:
+
+```json
+{"personas": ["<persona id>", "..."], "model": "gpt-6-sol", "effort": "high"}
+```
+
+`model` and `effort` are optional; they default to `CODEX_MAINTENANCE` and `CODEX_DEFAULT_EFFORT`
+in `core/src/model_ids.rs`. `effort` must be one of `minimal | low | medium | high | xhigh`, and the
+settings door refuses anything else. When the setting is absent or lists nobody, routing is the
+same as before. For a persona it does list:
+
+- **The decide leg runs on `codex exec --sandbox read-only`** from the home directory, through
+  `oneshot::call_codex_outcome`. It uses the same liveness supervisor and backstop as the Claude
+  leg and the same prompt and parser, and it is metered under the codex model id. A decision that
+  does not parse fails the wake instead of falling back, because the fallback lane is a Claude
+  execution.
+- **Every code charter dispatches a codex worker** with `-c model_reasoning_effort=<effort>`,
+  whatever the charter's own `workerEngine` says.
+- **Execution charters are held.** Those are the ones without a code connector, and they run
+  through the Claude runner and the personas MCP tools, which codex does not have. The decision
+  prompt shows the hold, and the ledger records each refusal with the reason.
+- **The Claude gates do not apply.** When the Claude governor or the five-hour pacing would stop
+  the tick, the pass continues, restricted to the listed personas. The G42 gate is skipped for a
+  codex dispatch, and the fleet queue admits codex entries without the Claude-window inputs. The
+  memory stop still applies to everyone.
+
+Turning it off means clearing the setting. No charter or persona row is changed by it.

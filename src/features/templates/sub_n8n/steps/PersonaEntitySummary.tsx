@@ -62,7 +62,7 @@ function EntityCard({ icon: Icon, count, label, color }: {
   return (
     <div className={`px-2 py-3 rounded-modal border text-center ${ENTITY_CARD_COLORS[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="typo-body-lg font-semibold text-foreground tabular-nums">{count}</p>
+      <p className="typo-body-lg text-foreground tabular-nums">{count}</p>
       <p className="typo-body text-foreground uppercase tracking-wider">{label}</p>
     </div>
   );

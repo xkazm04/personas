@@ -25,7 +25,7 @@ export function FooterActions({
       {!loading && !ipcError && hasNodeIssue && hasClaudeIssue && (
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="md"
           onClick={() => install('all')}
           disabled={anyInstalling}
@@ -38,7 +38,7 @@ export function FooterActions({
       {onNext && (
         <Button
           variant="accent"
-          accentColor="violet"
+          tone="agent"
           size="md"
           onClick={onNext}
           disabled={loading}

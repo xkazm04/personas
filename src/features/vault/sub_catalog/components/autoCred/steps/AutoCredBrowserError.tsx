@@ -35,8 +35,8 @@ export function AutoCredBrowserError({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-heading font-semibold text-foreground">{t.vault.auto_cred.browser_error_title}</p>
-            <span className={`typo-body font-medium px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
+            <p className="typo-heading text-foreground">{t.vault.auto_cred.browser_error_title}</p>
+            <span className={`typo-body px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
               {config!.label}
             </span>
           </div>
@@ -47,7 +47,7 @@ export function AutoCredBrowserError({
       {/* Persistent terminal log */}
       <div
         ref={scrollRef}
-        className="max-h-[26rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/30 p-3 font-mono typo-code space-y-1"
+        className="max-h-[26rem] overflow-y-auto rounded-modal border border-primary/10 bg-black/30 p-3 typo-code space-y-1"
       >
         {logs.map((entry, i) => (
           <div key={i} className={`flex items-start gap-2 ${
@@ -82,7 +82,7 @@ export function AutoCredBrowserError({
             <button
               type="button"
               onClick={onRetry}
-              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body font-medium transition-colors"
+              className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body transition-colors"
             >
               {t.vault.auto_cred.retry}
             </button>

@@ -57,7 +57,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
       size="md"
     >
       <div className="px-6 py-5 space-y-4">
-        <p className="typo-caption text-foreground leading-relaxed">
+        <p className="typo-caption text-foreground">
           {ep.intro}
         </p>
 
@@ -65,7 +65,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
           <Inbox className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium text-foreground">{ep.incident_label}</div>
+            <div className="typo-body text-foreground">{ep.incident_label}</div>
             <div className="typo-caption text-foreground">{ep.incident_desc}</div>
           </div>
           <AccessibleToggle
@@ -79,7 +79,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         <div className="flex items-start gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
           <FlaskConical className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium text-foreground">{ep.lab_label}</div>
+            <div className="typo-body text-foreground">{ep.lab_label}</div>
             <div className="typo-caption text-foreground">{ep.lab_desc}</div>
           </div>
           <AccessibleToggle
@@ -92,7 +92,7 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
         {/* Escalate-after threshold */}
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-card-border/50">
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium text-foreground">{ep.escalate_after_label}</div>
+            <div className="typo-body text-foreground">{ep.escalate_after_label}</div>
             <div className="typo-caption text-foreground">{ep.escalate_after_desc}</div>
           </div>
           <NumberStepper

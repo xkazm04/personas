@@ -42,7 +42,7 @@ const TD = 'px-3 py-2 align-middle typo-caption text-foreground';
 function Counter({ value, label, tone }: { value: number; label: string; tone: string }) {
   return (
     <div className="flex flex-col rounded-card border border-border bg-secondary/10 px-4 py-3">
-      <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
+      <span className={`typo-data-lg ${tone}`}>{value}</span>
       <span className="typo-label text-foreground">{label}</span>
     </div>
   );

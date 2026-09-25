@@ -55,7 +55,7 @@ function CellValue({ field, mask }: { field: ConfigField; mask?: boolean }) {
   if (field.value == null) return <span className="text-foreground italic typo-caption">--</span>;
   const display = mask ? '••••••' : String(field.value);
   return (
-    <span className="font-mono typo-code text-foreground truncate max-w-[120px]" title={mask ? undefined : display}>
+    <span className="typo-code text-foreground truncate max-w-[120px]" title={mask ? undefined : display}>
       {display}
     </span>
   );
@@ -135,7 +135,7 @@ function CapabilityModelsCell({ models }: { models: string[] }) {
   const extra = models.length - shown.length;
   return (
     <div className="flex items-center gap-1.5 min-w-0" title={`${s.per_capability}\n${models.join('\n')}`}>
-      <span className="font-mono typo-code text-violet-400 truncate max-w-[120px]">
+      <span className="typo-code text-violet-400 truncate max-w-[120px]">
         {shown.join(' · ')}
         {extra > 0 ? ` +${extra}` : ''}
       </span>
@@ -193,7 +193,7 @@ function CapabilitySubRow({ cap }: { cap: CapabilityConfig }) {
       <td className="px-3 py-1.5">{muted}</td>
       <td className="px-3 py-1.5">
         {cap.model ? (
-          <span className="font-mono typo-code text-violet-400 truncate max-w-[120px]" title={cap.model}>
+          <span className="typo-code text-violet-400 truncate max-w-[120px]" title={cap.model}>
             {shortModel(cap.model)}
           </span>
         ) : muted}

@@ -16,14 +16,14 @@ export function HighlightedJson({ raw }: { raw: string }) {
 
   if (!tokens) {
     return (
-      <pre className="typo-code font-mono text-foreground whitespace-pre-wrap break-all leading-relaxed">
+      <pre className="typo-code text-foreground whitespace-pre-wrap break-all">
         {raw}
       </pre>
     );
   }
 
   return (
-    <pre className="typo-code font-mono leading-relaxed whitespace-pre-wrap break-all">
+    <pre className="typo-code whitespace-pre-wrap break-all">
       {tokens.map((token, i) => (
         <span key={i} className={token.className}>
           {token.text}

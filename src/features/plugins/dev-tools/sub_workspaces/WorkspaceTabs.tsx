@@ -53,7 +53,7 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect, action
           aria-current={activeId === null ? 'true' : undefined}
           className={`inline-flex items-center gap-1.5 px-3 py-2 typo-body whitespace-nowrap border-b-2 -mb-px transition-colors ${
             activeId === null
-              ? 'border-primary text-foreground font-medium'
+              ? 'border-primary text-foreground'
               : 'border-transparent text-foreground/60 hover:text-foreground hover:bg-secondary/30'
           }`}
           data-testid="workspace-tab-all"
@@ -72,7 +72,7 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect, action
               onClick={() => (active ? setEditing(editing === w.id ? null : w.id) : onSelect(w.id))}
               aria-current={active ? 'true' : undefined}
               className={`inline-flex items-center gap-1.5 px-3 py-2 typo-body whitespace-nowrap border-b-2 -mb-px transition-colors ${
-                active ? 'text-foreground font-medium' : 'border-transparent text-foreground/60 hover:text-foreground hover:bg-secondary/30'
+                active ? 'text-foreground' : 'border-transparent text-foreground/60 hover:text-foreground hover:bg-secondary/30'
               }`}
               style={active ? { borderBottomColor: w.color } : undefined}
               data-testid={`workspace-tab-${w.id}`}

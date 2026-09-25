@@ -59,13 +59,13 @@ export function DeploymentCard({
       {/* Header row: name + status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground/90">
+          <span className="typo-body text-foreground/90">
             {d.label || personaName}
           </span>
           {(() => {
             const StatusIcon = statusIcon(d.status);
             return (
-              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
+              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border ${statusColor(d.status)}`}>
                 <StatusIcon className="w-3 h-3" aria-hidden="true" />
                 {d.status}
               </span>

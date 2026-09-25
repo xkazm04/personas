@@ -35,7 +35,7 @@ const TONE_CLASS: Record<ReturnType<typeof autopilotTone>, string> = {
 
 const MAX_NAMES = 6;
 
-function Details({ status }: { status: AutopilotStatus }) {
+export function AutopilotDetails({ status }: { status: AutopilotStatus }) {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const p = status.pacing;
@@ -93,7 +93,7 @@ function Details({ status }: { status: AutopilotStatus }) {
   );
 }
 
-function phrase(
+export function autopilotPhrase(
   r: AutopilotReadout,
   m: ReturnType<typeof useTranslation>['t']['monitor'],
   tx: ReturnType<typeof useTranslation>['tx'],
@@ -127,7 +127,7 @@ export function AutopilotSwitch() {
 
   const readout = status ? autopilotReadout(status) : null;
   const tone = readout ? autopilotTone(readout) : 'off';
-  const text = readout ? phrase(readout, m, tx) : failed ? m.autopilot_unavailable : null;
+  const text = readout ? autopilotPhrase(readout, m, tx) : failed ? m.autopilot_unavailable : null;
   const on = status?.enabled ?? false;
 
   const tip = (
@@ -137,7 +137,7 @@ export function AutopilotSwitch() {
       </span>
       <span className="opacity-80">{m.autopilot_aria}</span>
       {text && <span className="tabular-nums">{text}</span>}
-      {status && <Details status={status} />}
+      {status && <AutopilotDetails status={status} />}
     </div>
   );
 

@@ -131,7 +131,7 @@ export function OverviewTab({
               disabled={isHealthchecking}
               loading={isHealthchecking}
               variant="accent"
-              accentColor="emerald"
+              tone="success"
               size="md"
               icon={!isHealthchecking ? <Key className="w-3.5 h-3.5" /> : undefined}
               className="min-h-[36px]"

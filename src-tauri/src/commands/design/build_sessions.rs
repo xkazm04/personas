@@ -922,6 +922,27 @@ pub async fn promote_build_draft(
     Ok(result)
 }
 
+/// Read-only promote preview: which triggers promote would arm and when they
+/// first fire, which connectors still block, what the design-pass hygiene
+/// repaired, and — when promote would refuse the draft — the refusal itself.
+/// Runs the same preparation promote runs; writes nothing.
+#[tauri::command]
+pub async fn preview_promote_build_draft(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+    persona_id: String,
+    excluded_use_case_ids: Option<Vec<String>>,
+) -> Result<PromotePreview, AppError> {
+    require_auth(&state).await?;
+    Ok(preview_promote(
+        &state.db,
+        &session_id,
+        &persona_id,
+        excluded_use_case_ids.unwrap_or_default(),
+    )
+    .await)
+}
+
 /// Phase 3b — after promote materializes the persona, run its first
 /// manually-invokable capability once (simulated) and downgrade
 /// `setup_status` to `needs_credentials` if the run cannot deliver value.
@@ -1136,16 +1157,69 @@ struct UseCaseData {
     structured: Vec<serde_json::Value>,
 }
 
-/// All data assembled before the transaction begins.
-#[allow(dead_code)]
-struct PromotePreparation {
+/// Everything promote decides before it writes — produced by
+/// [`prepare_promote`], consumed by [`commit_promote`] and read by
+/// [`preview_promote`]. One producer is what keeps the preview and the real
+/// promote from drifting apart.
+struct PreparedPromote {
+    session: crate::db::models::BuildSession,
+    ir: crate::db::models::AgentIr,
+    promoted_core: Option<String>,
+    adoption_answers: Option<crate::engine::adoption_answers::AdoptionAnswers>,
+    /// What the kp requested-surface constraint took off the build (empty for
+    /// every build without a `kp_link`).
+    kp_surface_notes: Vec<String>,
+    recipe_capability_params: Vec<crate::engine::recipe_parameters::CapabilityParams>,
+    design_hygiene: crate::validation::design_pass_hygiene::DesignHygieneReport,
     use_cases: UseCaseData,
     tool_actions: Vec<ToolAction>,
-    tool_names: Vec<String>,
+    notification_channels: Option<String>,
     design_context_str: String,
     design_result_str: String,
-    notification_channels: Option<String>,
+    kp_link: Option<(crate::db::models::KpLink, String)>,
     connectors_needing_setup: Vec<String>,
+}
+
+/// What the write half hands back: the caller-facing JSON plus the one fact
+/// the `AppState`-holding wrapper still has to act on.
+struct CommittedPromote {
+    result: serde_json::Value,
+    smee_relays_created: u32,
+}
+
+/// The `PersonaSetup` promote writes to `personas.setup_detail` — and the one
+/// the promote preview shows before the click. Shared so the two cannot say
+/// different things about the same draft.
+fn promote_setup(
+    runtime_missing: &[super::connector_readiness::Readiness],
+    ir: &crate::db::models::AgentIr,
+    design_hygiene: &crate::validation::design_pass_hygiene::DesignHygieneReport,
+    kp_surface_notes: &[String],
+) -> super::connector_readiness::PersonaSetup {
+    let blockers: Vec<super::connector_readiness::SetupBlocker> = runtime_missing
+        .iter()
+        .filter_map(super::connector_readiness::SetupBlocker::from_readiness)
+        .collect();
+    let trigger_types: Vec<String> = ir
+        .triggers
+        .iter()
+        .map(|t| {
+            t.trigger_type
+                .clone()
+                .unwrap_or_else(|| "manual".to_string())
+        })
+        .collect();
+    // …plus what the design-pass hygiene pass had to change. A build that
+    // silently demoted a schedule to manual and then reported a persona
+    // that "runs on its own" is the exact drift this list closes.
+    //
+    // …plus, for a kp hire, every connector the requested-surface
+    // constraint took off the build. Same reasoning one level up: a
+    // connector the design pass drew and the hire never asked for is a
+    // fact about this persona's reach, and the operator reads reach here.
+    let mut notes = design_hygiene.notes();
+    notes.extend(kp_surface_notes.iter().cloned());
+    super::connector_readiness::build_persona_setup(blockers, trigger_types, notes)
 }
 
 /// Mutable counters tracked during the transaction.
@@ -1228,11 +1302,23 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
                 if event_type.is_empty() {
                     return None;
                 }
-                Some(serde_json::json!({
+                let mut sub = serde_json::json!({
                     "event_type": event_type,
                     "source_filter": e.source_filter.as_deref(),
                     "enabled": true,
-                }))
+                });
+                // Carry the declared direction: `create_event_subscriptions_in_tx`
+                // and `collect_persona_emit_event_types` both key off it, and an
+                // emit that loses it becomes a listen on the persona's own output.
+                if let Some(d) = e
+                    .direction
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|d| !d.is_empty())
+                {
+                    sub["direction"] = serde_json::Value::String(d.to_string());
+                }
+                Some(sub)
             })
             .collect();
 
@@ -1493,32 +1579,48 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
         if t.trigger_type.as_deref() != Some("webhook") {
             continue;
         }
-
-        let needs_secret = match &t.config {
-            None => true,
-            Some(cfg) => {
-                let secret = cfg
-                    .get("webhook_secret")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                secret.trim().is_empty()
-            }
-        };
-
-        if needs_secret {
-            let generated = uuid::Uuid::new_v4().to_string();
-            let config = t.config.get_or_insert_with(|| serde_json::json!({}));
-            if let Some(obj) = config.as_object_mut() {
-                obj.insert(
-                    "webhook_secret".to_string(),
-                    serde_json::Value::String(generated.clone()),
-                );
-            }
+        if mint_webhook_secret_if_missing(&mut t.config) {
             tracing::info!(
                 "Auto-generated webhook_secret for webhook trigger (description: {:?})",
                 t.description
             );
         }
+    }
+}
+
+/// Mint a random `webhook_secret` into a webhook trigger's config when it has
+/// none (absent, null or blank). Returns whether one was minted.
+///
+/// Shared by every materializer of MODEL-authored triggers — promote and the
+/// n8n / instant-adopt import — because a template or LLM draft has no UI to
+/// supply a secret, and `engine/webhook.rs` rejects every secretless call.
+/// The human door (`trigger_repo::create`) deliberately does not mint.
+pub(crate) fn mint_webhook_secret_if_missing(config: &mut Option<serde_json::Value>) -> bool {
+    let needs_secret = match config.as_ref() {
+        None | Some(serde_json::Value::Null) => true,
+        Some(cfg) => cfg
+            .get("webhook_secret")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .is_empty(),
+    };
+    if !needs_secret {
+        return false;
+    }
+    if matches!(config, None | Some(serde_json::Value::Null)) {
+        *config = Some(serde_json::json!({}));
+    }
+    match config.as_mut().and_then(|c| c.as_object_mut()) {
+        Some(obj) => {
+            obj.insert(
+                "webhook_secret".to_string(),
+                serde_json::Value::String(uuid::Uuid::new_v4().to_string()),
+            );
+            true
+        }
+        // A non-object config is left for the door to refuse by name.
+        None => false,
     }
 }
 
@@ -2134,7 +2236,6 @@ fn create_triggers_in_tx(
     ir: &crate::db::models::AgentIr,
     responsibility_ids: &[String],
     persona_emits: &std::collections::HashSet<String>,
-    now: &str,
 ) -> Result<(u32, Vec<String>), AppError> {
     let mut triggers_created = 0u32;
     let mut created_trigger_ids = Vec::new();
@@ -2193,54 +2294,23 @@ fn create_triggers_in_tx(
             .get(idx)
             .or_else(|| responsibility_ids.last())
             .cloned();
-        let encrypted_config = config
-            .as_deref()
-            .map(trigger_repo::encrypt_config)
-            .transpose()?;
 
-        let trigger_id = uuid::Uuid::new_v4().to_string();
-        let status = "active";
-
-        // Arm the trigger in the same statement that creates it.
-        //
-        // This INSERT does not go through `trigger_repo::create` (it is inside
-        // the build transaction, alongside the use-case rows), and until
-        // 2026-08-17 it never named `next_trigger_at` — so EVERY schedule and
-        // polling trigger a build session produced was written NULL, which
-        // `get_due` skips forever. The row rendered `armed` and never ran. This
-        // is the single largest producer of the "born dead" population.
-        //
-        // `validate_triggers` (step 3) has already refused a schedule with
-        // neither cron nor interval and a polling URL that fails the SSRF
-        // guard, so a `None` here is an unresolvable timezone/cron or a polling
-        // trigger with no interval. Either way the build refuses rather than
-        // persisting a row that can never become due.
-        let parsed_cfg =
-            crate::db::models::TriggerConfig::from_raw(&trigger_type, config.as_deref());
-        let next_trigger_at = personas_core::scheduler::compute_next_from_config(
-            &parsed_cfg,
-            chrono::Utc::now(),
-            personas_core::cron::seed_hash(&trigger_id),
-        );
-        if next_trigger_at.is_none()
-            && personas_core::models::TriggerKind::from_wire(&trigger_type)
-                .is_some_and(|k| k.is_time_based())
-        {
-            return Err(AppError::Validation(
-                crate::validation::trigger::unschedulable_error(&trigger_type, config.as_deref())
-                    .message,
-            ));
-        }
-
-        tx.execute(
-            "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, status, responsibility_id, next_trigger_at, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?8)",
-            rusqlite::params![
-                trigger_id, persona_id, trigger_type, encrypted_config,
-                status, responsibility_id, next_trigger_at, now,
-            ],
-        ).map_err(AppError::Database)?;
+        // Through the one write door, not a hand-rolled INSERT: `create_in`
+        // validates (incl. the SSRF guard), encrypts, arms a time-based trigger
+        // or refuses it by name, and pairs the Fix-4a auto-listener in this
+        // same transaction. This INSERT used to re-implement the arming inline
+        // and skipped the listener, so a promoted schedule/polling/webhook
+        // trigger published into a bus nothing listened on until the hourly
+        // backfill sweep. Stage B WP4: `use_case_id` is no longer written —
+        // new triggers carry `responsibility_id` only.
+        let input = crate::db::models::CreateTriggerInput {
+            persona_id: persona_id.to_string(),
+            trigger_type,
+            config,
+            enabled: Some(true),
+            use_case_id: None,
+        };
+        let trigger_id = trigger_repo::create_in(tx, &input, responsibility_id.as_deref())?;
 
         created_trigger_ids.push(trigger_id);
         triggers_created += 1;
@@ -2643,7 +2713,28 @@ pub async fn promote_build_draft_inner(
     persona_id: String,
     excluded_use_case_ids: Vec<String>,
 ) -> Result<serde_json::Value, AppError> {
-    let mut session = build_session_repo::get_by_id(&state.db, &session_id)?
+    let prepared =
+        prepare_promote(&state.db, &session_id, &persona_id, excluded_use_case_ids).await?;
+    let committed = commit_promote(&state.db, &session_id, &persona_id, prepared)?;
+    if committed.smee_relays_created > 0 {
+        // Notify the relay manager to pick up the new rows immediately.
+        state.smee_relay_notifier.notify();
+    }
+    Ok(committed.result)
+}
+
+/// The read-only half of promote: load the session (with the agent_ir retry),
+/// hydrate, normalize, apply adoption answers, trim to a kp surface, run the
+/// design-pass hygiene, apply exclusions, and validate. Writes nothing and
+/// emits nothing, which is what lets [`preview_promote`] run it before the
+/// click and refuse exactly what promote would refuse.
+async fn prepare_promote(
+    db: &crate::db::DbPool,
+    session_id: &str,
+    persona_id: &str,
+    excluded_use_case_ids: Vec<String>,
+) -> Result<PreparedPromote, AppError> {
+    let mut session = build_session_repo::get_by_id(db, session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
     session
@@ -2659,7 +2750,7 @@ pub async fn promote_build_draft_inner(
     if session.agent_ir.is_none() {
         for attempt in 1..=20u32 {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-            match build_session_repo::get_by_id(&state.db, &session_id)? {
+            match build_session_repo::get_by_id(db, session_id)? {
                 Some(refreshed) if refreshed.agent_ir.is_some() => {
                     tracing::info!(
                         session_id = %session_id,
@@ -2706,7 +2797,7 @@ pub async fn promote_build_draft_inner(
             // 2026-05-09 — Stage B Phase 2: hydrate recipe_refs before the
             // existing flatten step. No-op for sessions whose stored agent_ir
             // is already inline (build-from-scratch, or pre-Phase-2 templates).
-            let pool_for_lookup = state.db.clone();
+            let pool_for_lookup = db.clone();
             let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, AppError> {
                 crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
             };
@@ -2783,12 +2874,12 @@ pub async fn promote_build_draft_inner(
     // it is reported into `setup_detail.notes` below, next to the design-pass
     // hygiene notes, so a hire that came back narrower than the design pass
     // drew it says so instead of just looking small.
-    let kp_surface_trim = crate::engine::build_session::apply_kp_tool_surface(
-        &state.db,
-        &persona_id,
-        &mut ir,
-        "promote",
-    );
+    let kp_surface_trim =
+        crate::engine::build_session::apply_kp_tool_surface(db, persona_id, &mut ir, "promote");
+    let kp_surface_notes: Vec<String> = kp_surface_trim
+        .as_ref()
+        .map(|trim| trim.notes())
+        .unwrap_or_default();
 
     // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
     // each capability's `input_schema` and synthesize a `## Capability
@@ -2926,8 +3017,8 @@ pub async fn promote_build_draft_inner(
     }
 
     let use_cases = build_structured_use_cases(&ir);
-    let all_connectors = connector_repo::get_all(&state.db).unwrap_or_default();
-    let (tool_actions, tool_names) = prepare_tool_actions(&ir, &state.db, &all_connectors);
+    let all_connectors = connector_repo::get_all(db).unwrap_or_default();
+    let (tool_actions, tool_names) = prepare_tool_actions(&ir, db, &all_connectors);
     validate_triggers(&ir)?;
     let notification_channels = prepare_notification_channels(&ir)?;
     // Phase 1 (build-readiness redesign) — bind every Credential-class
@@ -2943,7 +3034,7 @@ pub async fn promote_build_draft_inner(
             .iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
-        match state.db.get() {
+        match db.get() {
             Ok(conn) => {
                 super::connector_readiness::resolve_credential_links(&conn, connector_names.iter())
             }
@@ -2958,24 +3049,22 @@ pub async fn promote_build_draft_inner(
     // outbound KP report. Read it off the pre-promote row, re-inject it into
     // the fresh envelope, and keep it for the post-commit `activated` push.
     let kp_link: Option<(crate::db::models::KpLink, String)> =
-        persona_repo::get_by_id(&state.db, &persona_id)
-            .ok()
-            .and_then(|p| {
-                let promoted_name = ir.name.clone().unwrap_or_else(|| p.name.clone());
-                p.parsed_design_context()
-                    .kp_link
-                    .map(|link| (link, promoted_name))
-            });
+        persona_repo::get_by_id(db, persona_id).ok().and_then(|p| {
+            let promoted_name = ir.name.clone().unwrap_or_else(|| p.name.clone());
+            p.parsed_design_context()
+                .kp_link
+                .map(|link| (link, promoted_name))
+        });
     // Same hazard, same fix, for the App master hire (P4): the binding to the
     // project, the charter row pointer (`mandate_key` carries the
     // persona_responsibilities row id), the seeded KPI ids and the UNSUPPORTED
     // cadence kinds all live on `design_context.appMaster`, and a rebuild would
     // drop them — leaving a persona that owns an app with no record that it does.
     let app_master_link: Option<crate::db::models::AppMasterLink> =
-        persona_repo::get_by_id(&state.db, &persona_id)
+        persona_repo::get_by_id(db, persona_id)
             .ok()
             .and_then(|p| p.parsed_design_context().app_master);
-    let dev_project_id: Option<String> = persona_repo::get_by_id(&state.db, &persona_id)
+    let dev_project_id: Option<String> = persona_repo::get_by_id(db, persona_id)
         .ok()
         .and_then(|p| p.parsed_design_context().dev_project_id);
     let design_context_str = {
@@ -3001,6 +3090,49 @@ pub async fn promote_build_draft_inner(
         }
     };
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
+    Ok(PreparedPromote {
+        session,
+        ir,
+        promoted_core,
+        adoption_answers,
+        kp_surface_notes,
+        recipe_capability_params,
+        design_hygiene,
+        use_cases,
+        tool_actions,
+        notification_channels,
+        design_context_str,
+        design_result_str,
+        kp_link,
+        connectors_needing_setup,
+    })
+}
+
+/// The write half of promote: mint charters, run the promote transaction, and
+/// the best-effort post-commit stamps. Takes only what [`prepare_promote`]
+/// decided, so every refusal promote can make happens before this runs.
+fn commit_promote(
+    db: &crate::db::DbPool,
+    session_id: &str,
+    persona_id: &str,
+    prepared: PreparedPromote,
+) -> Result<CommittedPromote, AppError> {
+    let PreparedPromote {
+        session,
+        ir,
+        promoted_core,
+        adoption_answers,
+        kp_surface_notes,
+        recipe_capability_params,
+        design_hygiene,
+        use_cases,
+        tool_actions,
+        notification_channels,
+        design_context_str,
+        design_result_str,
+        kp_link,
+        connectors_needing_setup,
+    } = prepared;
 
     // ================================================================
     // Stage B WP4 — mint the promoted capabilities as charters
@@ -3015,8 +3147,8 @@ pub async fn promote_build_draft_inner(
     // failed promote leaves no charter behind. Superseded charters from an
     // earlier promote of the same persona are retired only AFTER commit.
     let minted_charters = super::template_adopt::mint_charters_from_use_cases(
-        &state.db,
-        &persona_id,
+        db,
+        persona_id,
         &use_cases.structured,
         adoption_answers.as_ref(),
     )?;
@@ -3031,29 +3163,29 @@ pub async fn promote_build_draft_inner(
     // against it), commits on Ok and rolls back on Err. This command only
     // supplies the writes, and holds no pooled connection of its own — which
     // matters because the post-commit section below asks the pool for more.
-    let tx_outcome = build_session_repo::with_promote_tx(&state.db, |tx| {
+    let tx_outcome = build_session_repo::with_promote_tx(db, |tx| {
         let now = chrono::Utc::now().to_rfc3339();
 
-        let tools_created = create_tools_in_tx(tx, &persona_id, &tool_actions, &now)?;
+        let tools_created = create_tools_in_tx(tx, persona_id, &tool_actions, &now)?;
         // Compute the persona's own emit-event set once; both trigger config
         // patching and subscription insertion need it to decide whether an inbound
         // listen is intra-persona (self-loop) or cross-persona (chain) so the
         // promote path can default `source_filter = "*"` for chain inbounds.
         let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
         let (triggers_created, created_trigger_ids) =
-            create_triggers_in_tx(tx, &persona_id, &ir, &charter_ids, &persona_emits, &now)?;
+            create_triggers_in_tx(tx, persona_id, &ir, &charter_ids, &persona_emits)?;
         let subscriptions_created = create_event_subscriptions_in_tx(
             tx,
-            &persona_id,
+            persona_id,
             &ir,
             &use_cases,
             &persona_emits,
             &now,
         )?;
-        let assertions_created = create_output_assertions_in_tx(tx, &persona_id, &ir, &now)?;
+        let assertions_created = create_output_assertions_in_tx(tx, persona_id, &ir, &now)?;
         update_persona_in_tx(
             tx,
-            &persona_id,
+            persona_id,
             &ir,
             &notification_channels,
             &design_context_str,
@@ -3062,7 +3194,7 @@ pub async fn promote_build_draft_inner(
         )?;
         create_version_snapshot_in_tx(
             tx,
-            &persona_id,
+            persona_id,
             &ir,
             &design_context_str,
             &design_result_str,
@@ -3095,7 +3227,7 @@ pub async fn promote_build_draft_inner(
         Ok(v) => v,
         Err(e) => {
             // The tx rolled back; take the pre-tx charter mint with it.
-            super::template_adopt::delete_charter_rows(&state.db, &charter_ids);
+            super::template_adopt::delete_charter_rows(db, &charter_ids);
             return Err(e);
         }
     };
@@ -3105,8 +3237,8 @@ pub async fn promote_build_draft_inner(
     // superseded by this mint — retire them (hand-authored charters carry no
     // `spec.migrated_from_use_case_id` marker and are never touched).
     super::template_adopt::retire_use_case_born_charters(
-        &state.db,
-        &persona_id,
+        db,
+        persona_id,
         &charter_ids.iter().cloned().collect(),
     );
 
@@ -3114,7 +3246,7 @@ pub async fn promote_build_draft_inner(
     // if this persona was hired through a KP request, tell the KP app.
     // Best-effort fire-and-forget, mirroring the post-commit stamps below.
     if let Some((link, name)) = &kp_link {
-        crate::engine::kp_reporter::push_lifecycle_event(link, "activated", &persona_id, name);
+        crate::engine::kp_reporter::push_lifecycle_event(link, "activated", persona_id, name);
     }
 
     // Design D — stamp the authored core dials into `core_profile` (the
@@ -3124,7 +3256,7 @@ pub async fn promote_build_draft_inner(
     // re-promote must NEVER overwrite it — the guard makes the stamp a no-op
     // on any row that already carries one.
     if let Some(core) = &promoted_core {
-        if let Ok(conn) = state.db.get() {
+        if let Ok(conn) = db.get() {
             match conn.execute(
                 "UPDATE personas SET core_profile = ?1, updated_at = ?2 \
                  WHERE id = ?3 AND (core_profile IS NULL OR core_profile = '')",
@@ -3154,9 +3286,9 @@ pub async fn promote_build_draft_inner(
     // setup`); the connector-readiness resolver then verifies each flagged
     // connector against current state — a vault credential, a Dev Tools
     // project, or an Obsidian vault, depending on the connector's class.
-    let runtime_missing = connectors_missing_setup(&state.db, &connectors_needing_setup);
+    let runtime_missing = connectors_missing_setup(db, &connectors_needing_setup);
     if !runtime_missing.is_empty() {
-        if let Ok(conn) = state.db.get() {
+        if let Ok(conn) = db.get() {
             let _ = conn.execute(
                 "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
                 rusqlite::params![
@@ -3179,35 +3311,10 @@ pub async fn promote_build_draft_inner(
     // human-readable readiness preview. `setup_status` above stays the
     // coarse execute-gate; this is the detail the UI routes on.
     {
-        let blockers: Vec<super::connector_readiness::SetupBlocker> = runtime_missing
-            .iter()
-            .filter_map(super::connector_readiness::SetupBlocker::from_readiness)
-            .collect();
-        let trigger_types: Vec<String> = ir
-            .triggers
-            .iter()
-            .map(|t| {
-                t.trigger_type
-                    .clone()
-                    .unwrap_or_else(|| "manual".to_string())
-            })
-            .collect();
-        // …plus what the design-pass hygiene pass had to change. A build that
-        // silently demoted a schedule to manual and then reported a persona
-        // that "runs on its own" is the exact drift this list closes.
-        //
-        // …plus, for a kp hire, every connector the requested-surface
-        // constraint took off the build. Same reasoning one level up: a
-        // connector the design pass drew and the hire never asked for is a
-        // fact about this persona's reach, and the operator reads reach here.
-        let mut notes = design_hygiene.notes();
-        if let Some(trim) = kp_surface_trim.as_ref() {
-            notes.extend(trim.notes());
-        }
-        let setup = super::connector_readiness::build_persona_setup(blockers, trigger_types, notes);
+        let setup = promote_setup(&runtime_missing, &ir, &design_hygiene, &kp_surface_notes);
         match serde_json::to_string(&setup) {
             Ok(json) => {
-                if let Ok(conn) = state.db.get() {
+                if let Ok(conn) = db.get() {
                     let _ = conn.execute(
                         "UPDATE personas SET setup_detail = ?1, updated_at = ?2 WHERE id = ?3",
                         rusqlite::params![json, chrono::Utc::now().to_rfc3339(), persona_id],
@@ -3221,7 +3328,7 @@ pub async fn promote_build_draft_inner(
     }
 
     // Post-transaction: best-effort scheduler updates
-    update_trigger_schedules(&state.db, &created_trigger_ids);
+    update_trigger_schedules(db, &created_trigger_ids);
 
     // Translate any `adoption_questions[].maps_to == persona.parameters[KEY]`
     // declarations on the original design payload into a `PersonaParameter[]`
@@ -3242,8 +3349,8 @@ pub async fn promote_build_draft_inner(
         let recipe_param_values =
             crate::engine::recipe_parameters::to_parameter_values(&recipe_capability_params);
         if let Err(e) = super::template_adopt::populate_persona_parameters_from_design(
-            &state.db,
-            &persona_id,
+            db,
+            persona_id,
             &design_json,
             answers_map.as_ref(),
             &recipe_param_values,
@@ -3261,10 +3368,8 @@ pub async fn promote_build_draft_inner(
     // Best-effort: a failure here doesn't unwind the promote (the webhook
     // trigger still works on `POST /webhook/<id>` directly; the user can
     // attach a smee binding manually via SmeeRelayTab if this fails).
-    let smee_relays_created = auto_create_smee_relays(&state.db, &persona_id, &ir);
+    let smee_relays_created = auto_create_smee_relays(db, persona_id, &ir);
     if smee_relays_created > 0 {
-        // Notify the relay manager to pick up the new rows immediately.
-        state.smee_relay_notifier.notify();
         tracing::info!(
             persona_id = %persona_id,
             count = smee_relays_created,
@@ -3272,7 +3377,7 @@ pub async fn promote_build_draft_inner(
         );
     }
 
-    Ok(serde_json::json!({
+    let result = serde_json::json!({
         "persona": { "id": persona_id },
         "triggers_created": triggers_created,
         "tools_created": tools_created,
@@ -3286,7 +3391,126 @@ pub async fn promote_build_draft_inner(
         // `setup_detail.notes`.
         "design_hygiene_normalized": design_hygiene.normalized_count(),
         "design_hygiene_dropped": design_hygiene.dropped_count(),
-    }))
+    });
+    Ok(CommittedPromote {
+        result,
+        smee_relays_created,
+    })
+}
+
+// ============================================================================
+// Promote preview — what promote will arm, repair and refuse, before the click
+// ============================================================================
+
+/// One trigger promote would write, and when a time-based one first fires.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TriggerFirePreview {
+    /// Normalized trigger type (`schedule`, `polling`, `webhook`, `manual`, …).
+    pub trigger_type: String,
+    pub description: Option<String>,
+    /// RFC 3339 first fire time for a time-based trigger; `None` for a trigger
+    /// woken by an event, a webhook or a person. Jenkins-style `H` tokens are
+    /// expanded with a zero seed here (the real seed is the trigger row id,
+    /// which does not exist yet), so an `H` cron can land a few minutes apart.
+    pub next_fire_at: Option<String>,
+}
+
+/// The read-only answer to "what happens if I promote this draft now".
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PromotePreview {
+    /// False when promote would refuse the whole draft.
+    pub promotable: bool,
+    /// The refusal promote would raise, verbatim. `None` when promotable.
+    pub refusal: Option<String>,
+    /// The `PersonaSetup` promote would write to `setup_detail`: connector
+    /// blockers, the readiness line, and the design-pass repair notes.
+    pub setup: Option<super::connector_readiness::PersonaSetup>,
+    /// Every trigger promote would write, in `ir.triggers` order.
+    pub next_fires: Vec<TriggerFirePreview>,
+}
+
+impl PromotePreview {
+    fn refused(err: &AppError) -> Self {
+        let refusal = match err {
+            AppError::Validation(msg) => msg.clone(),
+            other => other.to_string(),
+        };
+        Self {
+            promotable: false,
+            refusal: Some(refusal),
+            setup: None,
+            next_fires: Vec::new(),
+        }
+    }
+}
+
+/// Run promote's read-only half and report what the write half would do.
+/// Writes no row and emits no event: every step it calls is either
+/// [`prepare_promote`] or a pure computation over its output.
+pub(crate) async fn preview_promote(
+    pool: &crate::db::DbPool,
+    session_id: &str,
+    persona_id: &str,
+    excluded_use_case_ids: Vec<String>,
+) -> PromotePreview {
+    let prepared = match prepare_promote(pool, session_id, persona_id, excluded_use_case_ids).await
+    {
+        Ok(p) => p,
+        Err(e) => return PromotePreview::refused(&e),
+    };
+
+    let now = chrono::Utc::now();
+    let mut next_fires = Vec::with_capacity(prepared.ir.triggers.len());
+    for t in &prepared.ir.triggers {
+        let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
+        let trigger_type = trigger_repo::normalize_trigger_type(raw_type).to_string();
+        let config_str = t
+            .config
+            .as_ref()
+            .map(|v| serde_json::to_string(v).unwrap_or_default());
+        let parsed =
+            crate::db::models::TriggerConfig::from_raw(&trigger_type, config_str.as_deref());
+        let next_fire_at = crate::engine::scheduler::compute_next_from_config(&parsed, now, 0);
+        // The write door (`trigger_repo::create_in`) refuses a time-based
+        // trigger it cannot arm, inside the promote transaction. Raise the
+        // same refusal here, from the same validator, so the preview does not
+        // call promotable a draft whose promote would roll back.
+        let time_based = personas_core::models::TriggerKind::from_wire(&trigger_type)
+            .is_some_and(|k| k.is_time_based());
+        if time_based && next_fire_at.is_none() {
+            if let Err(e) = crate::validation::contract::check(vec![
+                crate::validation::trigger::unschedulable_error(
+                    &trigger_type,
+                    config_str.as_deref(),
+                ),
+            ]) {
+                return PromotePreview::refused(&e);
+            }
+        }
+        next_fires.push(TriggerFirePreview {
+            trigger_type,
+            description: t.description.clone(),
+            next_fire_at,
+        });
+    }
+
+    let runtime_missing = connectors_missing_setup(pool, &prepared.connectors_needing_setup);
+    let setup = promote_setup(
+        &runtime_missing,
+        &prepared.ir,
+        &prepared.design_hygiene,
+        &prepared.kp_surface_notes,
+    );
+    PromotePreview {
+        promotable: true,
+        refusal: None,
+        setup: Some(setup),
+        next_fires,
+    }
 }
 
 // ============================================================================
@@ -3666,6 +3890,314 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir), 0);
+    }
+
+    // ----------------------------------------------------------------------
+    // One trigger write door: promote goes through `trigger_repo::create_in`
+    // ----------------------------------------------------------------------
+
+    #[test]
+    fn create_triggers_in_tx_pairs_a_schedule_with_its_auto_listener() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_sched");
+        let ir = AgentIr {
+            triggers: vec![schedule_trigger()],
+            ..Default::default()
+        };
+        let now = chrono::Utc::now().to_rfc3339();
+        let (created, ids) = {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            let out =
+                create_triggers_in_tx(&tx, "p_sched", &ir, &[], &std::collections::HashSet::new())
+                    .unwrap();
+            tx.commit().unwrap();
+            out
+        };
+        assert_eq!(created, 1, "the auto-listener is not a requested trigger");
+        let schedule_id = &ids[0];
+        let conn = pool.get()?;
+        let listener_cfgs: Vec<String> = conn
+            .prepare(
+                "SELECT config FROM persona_triggers
+                 WHERE persona_id = 'p_sched' AND trigger_type = 'event_listener'",
+            )
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(
+            listener_cfgs.len(),
+            1,
+            "a promoted schedule must not wait for the hourly backfill to be heard"
+        );
+        let cfg: serde_json::Value = serde_json::from_str(&listener_cfgs[0]).unwrap();
+        assert_eq!(
+            cfg["_auto_for_trigger"].as_str(),
+            Some(schedule_id.as_str())
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn event_subscriptions_honour_per_uc_direction() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_dir");
+        // Parsed from JSON, as the build LLM's output is: the production
+        // builder must carry `direction`, not a hand-built `use_cases` value.
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "use_cases": [{
+                "id": "uc_dir",
+                "title": "Directional",
+                "event_subscriptions": [
+                    {"event_type": "x.y.done", "direction": "emit"},
+                    {"event_type": "a.b.c", "direction": "listen"}
+                ]
+            }]
+        }))
+        .unwrap();
+        let use_cases = build_structured_use_cases(&ir);
+        let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert!(
+            persona_emits.contains("x.y.done"),
+            "per-UC emit is seen: {persona_emits:?}"
+        );
+        let now = chrono::Utc::now().to_rfc3339();
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().unwrap();
+            create_event_subscriptions_in_tx(&tx, "p_dir", &ir, &use_cases, &persona_emits, &now)
+                .unwrap();
+            tx.commit().unwrap();
+        }
+        let conn = pool.get()?;
+        let rows: Vec<(String, Option<String>)> = conn
+            .prepare(
+                "SELECT event_type, source_filter FROM persona_event_subscriptions
+                 WHERE persona_id = 'p_dir'",
+            )
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(
+            rows,
+            vec![("a.b.c".to_string(), Some("*".to_string()))],
+            "an emit must not become a listen on the persona's own output"
+        );
+        Ok(())
+    }
+
+    // ----------------------------------------------------------------------
+    // Promote preview: read-only, and refuses exactly what promote refuses
+    // ----------------------------------------------------------------------
+
+    fn seed_test_complete_session(
+        pool: &crate::db::DbPool,
+        session_id: &str,
+        persona_id: &str,
+        agent_ir: &serde_json::Value,
+    ) -> Result<(), AppError> {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO build_sessions (id, persona_id, phase, resolved_cells, intent, agent_ir, created_at, updated_at)
+             VALUES (?1, ?2, 'test_complete', '{}', 'preview test', ?3, ?4, ?4)",
+            rusqlite::params![session_id, persona_id, agent_ir.to_string(), now],
+        )?;
+        Ok(())
+    }
+
+    /// One-column read for the preview assertions.
+    fn read_one<T: rusqlite::types::FromSql>(
+        pool: &crate::db::DbPool,
+        sql: &str,
+        params: impl rusqlite::Params,
+    ) -> Result<T, AppError> {
+        let conn = pool.get()?;
+        Ok(conn.query_row(sql, params, |r| r.get(0))?)
+    }
+
+    fn count_for_persona(
+        pool: &crate::db::DbPool,
+        table: &str,
+        persona_id: &str,
+    ) -> Result<i64, AppError> {
+        read_one(
+            pool,
+            &format!("SELECT COUNT(*) FROM {table} WHERE persona_id = ?1"),
+            rusqlite::params![persona_id],
+        )
+    }
+
+    fn session_phase(pool: &crate::db::DbPool, session_id: &str) -> Result<String, AppError> {
+        read_one(
+            pool,
+            "SELECT phase FROM build_sessions WHERE id = ?1",
+            rusqlite::params![session_id],
+        )
+    }
+
+    /// A tested draft: capabilities with one trigger each, and a `gmail`
+    /// connector the build flagged as having no credential.
+    fn draft_ir(triggers: serde_json::Value, use_case_ids: &[&str]) -> serde_json::Value {
+        let use_cases: Vec<serde_json::Value> = use_case_ids
+            .iter()
+            .map(|id| serde_json::json!({ "id": id, "title": format!("Capability {id}") }))
+            .collect();
+        serde_json::json!({
+            "name": "Mail digest",
+            "system_prompt": "You summarise the inbox.",
+            "use_cases": use_cases,
+            "triggers": triggers,
+            "required_connectors": [{ "name": "gmail", "has_credential": false }]
+        })
+    }
+
+    fn daily_schedule(description: &str) -> serde_json::Value {
+        serde_json::json!({
+            "trigger_type": "schedule",
+            "config": { "cron": "0 9 * * *" },
+            "description": description
+        })
+    }
+
+    #[tokio::test]
+    async fn preview_promote_reports_arm_time_and_blockers_and_writes_nothing(
+    ) -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_prev");
+        let ir = draft_ir(serde_json::json!([daily_schedule("daily")]), &["uc_a"]);
+        seed_test_complete_session(&pool, "s_prev", "p_prev", &ir)?;
+
+        let preview = preview_promote(&pool, "s_prev", "p_prev", vec![]).await;
+
+        assert!(preview.promotable, "refusal: {:?}", preview.refusal);
+        assert_eq!(preview.next_fires.len(), 1);
+        assert_eq!(preview.next_fires[0].trigger_type, "schedule");
+        assert!(preview.next_fires[0].next_fire_at.is_some());
+        let setup = preview
+            .setup
+            .expect("a promotable preview carries the setup");
+        assert_eq!(setup.blockers.len(), 1);
+        assert_eq!(setup.blockers[0].connector, "gmail");
+
+        // Read-only: nothing promote writes exists after a preview.
+        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_prev")?, 0);
+        assert_eq!(
+            count_for_persona(&pool, "persona_responsibilities", "p_prev")?,
+            0
+        );
+        assert_eq!(session_phase(&pool, "s_prev")?, "test_complete");
+        let setup_detail: Option<String> = read_one(
+            &pool,
+            "SELECT setup_detail FROM personas WHERE id = 'p_prev'",
+            [],
+        )?;
+        assert_eq!(setup_detail, None);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preview_promote_refuses_what_promote_refuses() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_ssrf");
+        let ir = draft_ir(
+            serde_json::json!([{
+                "trigger_type": "polling",
+                "config": { "url": "http://169.254.169.254/latest", "interval_seconds": 300 },
+                "description": "metadata poll"
+            }]),
+            &["uc_a"],
+        );
+        seed_test_complete_session(&pool, "s_ssrf", "p_ssrf", &ir)?;
+
+        let preview = preview_promote(&pool, "s_ssrf", "p_ssrf", vec![]).await;
+        assert!(!preview.promotable);
+        let refusal = preview.refusal.clone().unwrap_or_default();
+        assert!(
+            refusal.contains("Polling URL blocked"),
+            "refusal: {refusal}"
+        );
+        assert!(preview.setup.is_none());
+
+        // The same input through the real promote seam fails with the same text.
+        let promote_err = match prepare_promote(&pool, "s_ssrf", "p_ssrf", vec![]).await {
+            Ok(prepared) => commit_promote(&pool, "s_ssrf", "p_ssrf", prepared)
+                .err()
+                .expect("promote must refuse an SSRF polling URL"),
+            Err(e) => e,
+        };
+        assert_eq!(
+            PromotePreview::refused(&promote_err).refusal,
+            preview.refusal
+        );
+        assert_eq!(count_for_persona(&pool, "persona_triggers", "p_ssrf")?, 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn preview_promote_honours_capability_exclusions() -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_excl");
+        let ir = draft_ir(
+            serde_json::json!([daily_schedule("a daily"), daily_schedule("b daily")]),
+            &["uc_a", "uc_b"],
+        );
+        seed_test_complete_session(&pool, "s_excl", "p_excl", &ir)?;
+
+        let all = preview_promote(&pool, "s_excl", "p_excl", vec![]).await;
+        assert_eq!(all.next_fires.len(), 2);
+        let kept = preview_promote(&pool, "s_excl", "p_excl", vec!["uc_b".to_string()]).await;
+        assert!(kept.promotable, "refusal: {:?}", kept.refusal);
+        assert_eq!(kept.next_fires.len(), 1);
+        assert_eq!(kept.next_fires[0].description.as_deref(), Some("a daily"));
+        Ok(())
+    }
+
+    /// Guard: the promote write half, fed by the same `prepare_promote`, still
+    /// arms the trigger and writes the same `setup_detail` the preview showed.
+    #[tokio::test]
+    async fn preview_promote_guard_promote_arms_and_writes_the_previewed_setup(
+    ) -> Result<(), AppError> {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_guard");
+        let ir = draft_ir(serde_json::json!([daily_schedule("daily")]), &["uc_a"]);
+        seed_test_complete_session(&pool, "s_guard", "p_guard", &ir)?;
+
+        let preview = preview_promote(&pool, "s_guard", "p_guard", vec![]).await;
+        let prepared = prepare_promote(&pool, "s_guard", "p_guard", vec![])
+            .await
+            .expect("prepare");
+        let committed = commit_promote(&pool, "s_guard", "p_guard", prepared).expect("commit");
+        assert_eq!(committed.result["triggers_created"], 1);
+
+        let next_at: Option<String> = read_one(
+            &pool,
+            "SELECT next_trigger_at FROM persona_triggers
+             WHERE persona_id = 'p_guard' AND trigger_type = 'schedule'",
+            [],
+        )?;
+        assert!(next_at.is_some(), "the promoted schedule is armed");
+        let setup_status: String = read_one(
+            &pool,
+            "SELECT setup_status FROM personas WHERE id = 'p_guard'",
+            [],
+        )?;
+        let setup_detail: Option<String> = read_one(
+            &pool,
+            "SELECT setup_detail FROM personas WHERE id = 'p_guard'",
+            [],
+        )?;
+        assert_eq!(setup_status, "needs_credentials");
+        let written: serde_json::Value =
+            serde_json::from_str(&setup_detail.expect("setup_detail written")).unwrap();
+        let previewed = serde_json::to_value(preview.setup.expect("preview setup")).unwrap();
+        assert_eq!(written, previewed, "promote wrote what the preview showed");
+        assert_eq!(session_phase(&pool, "s_guard")?, "promoted");
+        Ok(())
     }
 }
 // touch 1777378957

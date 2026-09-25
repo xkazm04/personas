@@ -287,5 +287,8 @@
   "verifying_bundle": "बंडल सत्यापित हो रहा है…",
   "verifying_enclave": "एन्क्लेव सत्यापित हो रहा है…",
   "view_details": "विवरण देखें",
-  "your_identity": "आपकी पहचान"
+  "your_identity": "आपकी पहचान",
+  "job_kind_fleet_session": "फ्लीट सेशन",
+  "job_kind_instruction": "निर्देश",
+  "job_receipt_title": "लौटाया गया काम"
 }

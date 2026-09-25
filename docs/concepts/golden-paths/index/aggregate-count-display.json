@@ -192,6 +192,7 @@
       ],
       "resolved": false
     },
+    "companion/attention/useAttentionCounts.ts": {"count":1,"sections":[],"contexts":["`companion/attention/useAttentionCounts.ts` and the four `count_*` repo functions read in full."],"resolved":false},
     "digest.rs": {"count":1,"sections":[7],"lines":["314"],"contexts":["[`metric-definition`](./metric-definition.md) found with `digest.rs:314` sitting 160 lines below"],"resolved":false},
     "docs/concepts/shared-facts.json": {"count":2,"sections":[7],"contexts":["**Shared facts cited:** [`shared-facts.json`](../shared-facts.json) — 963 Rust files, 4,829"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "executions.rs": {"count":1,"sections":[7],"lines":["337-388"],"contexts":["`count_all_global` (`executions.rs:337-388`) increments `total` for **every** status row and buckets"],"resolved":false},
@@ -260,6 +261,15 @@
       ],
       "resolved": false
     },
+    "plugins/companion/attention/useAttentionCounts.ts": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["12-18"],
+      "contexts": [
+        "| `plugins/companion/attention/useAttentionCounts.ts:12-18` | **P5 in one sentence** — *\"Reads the same stores the level-2 surfaces read, so a chip's count and the cards it reveals can never disagree…"
+      ],
+      "resolved": false
+    },
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["never against the shared `rules.json`; **the full registry was not run** (doctrine §4)."],"resolvedFrom":"basename","verbatim":"rules.json"},
     "src-tauri/**": {
       "count": 1,
@@ -312,6 +322,14 @@
       "contexts": ["`useHealthCheck.ts:336` (a dedupe counter whose `+ 1` is on the next statement, so the accumulator"],
       "resolvedFrom": "basename",
       "verbatim": "useHealthCheck.ts"
+    },
+    "src/features/companions/athena/attention/useAttentionCounts.ts": {
+      "count": 2,
+      "sections": [7],
+      "lines": ["12-18"],
+      "contexts": ["`src/features/plugins/companion/attention/attentionKinds.ts` + `useAttentionCounts.ts` (5 kinds:"],
+      "resolvedFrom": "basename",
+      "verbatim": "useAttentionCounts.ts"
     },
     "src/features/home/sub_welcome/lib/useNavCardStatus.ts": {
       "count": 1,
@@ -389,14 +407,14 @@
       "resolvedFrom": "basename",
       "verbatim": "ObservabilityDashboard.tsx"
     },
-    "src/features/plugins/companion/attention/attentionKinds.ts": {"count":1,"sections":[7],"contexts":["`src/features/plugins/companion/attention/attentionKinds.ts` + `useAttentionCounts.ts` (5 kinds:"]},
+    "src/features/plugins/companion/attention/attentionKinds.ts": {"count":1,"sections":[7],"contexts":["`src/features/plugins/companion/attention/attentionKinds.ts` + `useAttentionCounts.ts` (5 kinds:"],"resolved":false},
     "src/features/plugins/companion/attention/useAttentionCounts.ts": {
-      "count": 5,
-      "sections": [3,6,7],
-      "lines": ["12-18"],
-      "contexts": ["`companion/attention/useAttentionCounts.ts` and the four `count_*` repo functions read in full."],
-      "resolvedFrom": "suffix",
-      "verbatim": "companion/attention/useAttentionCounts.ts"
+      "count": 1,
+      "sections": [3],
+      "contexts": [
+        "| **`src/features/plugins/companion/attention/useAttentionCounts.ts`** | **The agreement rule, stated**: *\"Reads the same stores the level-2 surfaces read, so a chip's count and the cards it reveals…"
+      ],
+      "resolved": false
     },
     "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts": {
       "count": 1,

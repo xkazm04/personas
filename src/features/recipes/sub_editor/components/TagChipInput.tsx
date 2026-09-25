@@ -40,7 +40,7 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
       {tags.map((tag, i) => (
           <span
             key={tag}
-            className="animate-fade-slide-in inline-flex items-center gap-1 rounded-card bg-primary/10 text-primary px-2 py-0.5 typo-caption font-medium"
+            className="animate-fade-slide-in inline-flex items-center gap-1 rounded-card bg-primary/10 text-primary px-2 py-0.5 typo-caption"
           >
             {tag}
             <button

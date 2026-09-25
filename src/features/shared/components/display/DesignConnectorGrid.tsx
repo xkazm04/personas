@@ -46,7 +46,7 @@ function channelIcon(type: string) {
   }
 }
 
-const SECTION_LABEL = 'typo-heading uppercase tracking-wider text-foreground flex items-center gap-2';
+const SECTION_LABEL = 'typo-heading uppercase text-foreground flex items-center gap-2';
 
 // ============================================================================
 // Section 1: Connectors & Tools
@@ -154,7 +154,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
                 <div className="flex-shrink-0 mt-0.5">{triggerIcon(trigger.trigger_type)}</div>
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground/90 capitalize block">{trigger.trigger_type}</span>
-                  <span className="typo-body text-foreground leading-snug block">{trigger.description}</span>
+                  <span className="typo-body text-foreground block">{trigger.description}</span>
                 </div>
               </div>
             ))}
@@ -172,7 +172,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
                 <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <span className="typo-body text-foreground/90 block">{sub.event_type}</span>
-                  <span className="typo-body text-foreground leading-snug block">{sub.description}</span>
+                  <span className="typo-body text-foreground block">{sub.description}</span>
                 </div>
               </div>
             ))}
@@ -210,7 +210,7 @@ function MessagesNotificationsSection({ designResult }: { designResult: AgentIR 
               </div>
               <div className="flex-1 min-w-0">
                 <span className="typo-heading text-foreground capitalize block">{channel.type}</span>
-                <span className="typo-body text-foreground leading-snug block mt-0.5">{channel.description}</span>
+                <span className="typo-body text-foreground block mt-0.5">{channel.description}</span>
                 {channel.required_connector && (
                   <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 typo-body rounded-full bg-primary/8 text-foreground border border-primary/10">
                     <Plug className="w-2.5 h-2.5" />

@@ -49,7 +49,7 @@ export function SetupStepCard({
 
       {/* Step content */}
       <div className={`flex-1 min-w-0 ${isCompleted ? 'opacity-50' : ''}`}>
-        <span className="typo-heading font-bold text-foreground uppercase tracking-wider">
+        <span className="typo-heading text-foreground uppercase">
           Step {stepIndex + 1}
         </span>
         <div className="prose-none">

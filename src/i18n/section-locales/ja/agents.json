@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} を編集中",
     "header_subtitle_new": "新しいエージェントを一から作成",
     "header_title": "ビルド",
-    "new_agent": "新しいエージェント"
+    "new_agent": "新しいエージェント",
+    "promote_receipt_connect": "コネクターを開く",
+    "promote_receipt_connectors": "未接続: {names}",
+    "promote_receipt_failed_title": "昇格できませんでした",
+    "promote_receipt_later": "後で",
+    "promote_receipt_needs_setup_title": "昇格しましたが、実行する前にセットアップが必要です",
+    "promote_receipt_retry": "昇格を再試行",
+    "promote_receipt_unverified": "最初の確認実行で成果を出せませんでした。頼る前にコネクターを確認してください。"
   },
   "matrix_tab": {
     "loading": "マトリクスを読み込み中",
@@ -2708,7 +2715,7 @@
     "all_saved": "すべての変更を保存済み",
     "changed": "{sections} が変更されました",
     "cli_awareness": "Claude CLI セッション認識",
-    "cli_awareness_desc": "このペルソナが、アクティブなインタラクティブ Claude CLI セッションの直近のやり取りを追加コンテキストとして読み取れるようにします。Companion → セットアップ → センサリー信号 のグローバルトグルもオンにする必要があります。読み取り専用 — あなたの CLI セッションが変更されることはありません。",
+    "cli_awareness_desc": "このペルソナが、アクティブなインタラクティブ Claude CLI セッションの直近のやり取りを追加コンテキストとして読み取れるようにします。Athena → 設定 → センサリー信号 のグローバルトグルもオンにする必要があります。読み取り専用 — あなたの CLI セッションが変更されることはありません。",
     "execution": "実行",
     "execution_retention": "実行保持",
     "failed_health_watch": "ヘルス監視設定の更新に失敗",
@@ -3275,5 +3282,16 @@
     "parse": "解析",
     "paste_json": "またはJSONを直接貼り付け",
     "paste_placeholder": "ワークフローJSONをここに貼り付け…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "昇格は拒否されます: {reason}",
+    "heading": "昇格で行われること",
+    "needs_setup": "先にセットアップが必要: {connectors}",
+    "refused": "昇格はこのドラフトを拒否します",
+    "refused_hint": "ドラフトを調整して修正してから昇格してください。",
+    "repaired": "ビルドにより調整済み",
+    "runs_manual": "開始したときに実行",
+    "runs_next": "{type} トリガー、次回実行 {time}",
+    "runs_on_event": "{type} トリガー、発火時に実行"
   }
 }

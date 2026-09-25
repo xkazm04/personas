@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { Inbox } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import { useUnifiedInboxSnapshot } from '@/features/plugins/companion/inbox/hooks/useUnifiedInbox';
-import { formatRelativeTime } from '@/features/plugins/companion/inbox/utils/formatRelativeTime';
-import { toneForInboxItem } from '@/features/plugins/companion/inbox/_shared/inboxTone';
-import { inboxKindIcon } from '@/features/plugins/companion/inbox/_shared/inboxKindIcon';
-import type { UnifiedInboxItem } from '@/features/plugins/companion/inbox/types';
+import { useUnifiedInboxSnapshot } from '@/features/companions/athena/inbox/hooks/useUnifiedInbox';
+import { formatRelativeTime } from '@/features/companions/athena/inbox/utils/formatRelativeTime';
+import { toneForInboxItem } from '@/features/companions/athena/inbox/_shared/inboxTone';
+import { inboxKindIcon } from '@/features/companions/athena/inbox/_shared/inboxKindIcon';
+import type { UnifiedInboxItem } from '@/features/companions/athena/inbox/types';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { DecisionDrawer } from './DecisionDrawer';

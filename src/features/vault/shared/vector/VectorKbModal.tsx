@@ -122,7 +122,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   onKeyDown={handleKeyDown}
                   onBlur={saveName}
                   autoFocus
-                  className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                  className="flex-1 min-w-0 typo-heading text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
                   type="button"
@@ -136,7 +136,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               </div>
             ) : (
               <>
-                <h2 id="vector-kb-title" className="typo-heading font-semibold text-foreground/90 truncate">
+                <h2 id="vector-kb-title" className="typo-heading text-foreground/90 truncate">
                   {kb?.name || credential.name}
                 </h2>
                 <button
@@ -194,7 +194,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               aria-controls={`vector-kb-panel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
               onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
-              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium transition-colors ${
+              className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body transition-colors ${
                 isActive
                   ? 'text-foreground/90'
                   : 'text-foreground hover:text-muted-foreground/70'

@@ -8,8 +8,8 @@ laws:
   - derivation-names-recomputation
 shared_with: []
 evidence:
-  - src/features/plugins/companion/RecallStrip.tsx             # collapsed recall count line above the turn, expandable grouped chips, click-through to source
-  - src/features/plugins/companion/TurnSummaryChip.tsx         # side-effect rollup below the turn; zero-total turns render nothing
+  - src/features/companions/athena/RecallStrip.tsx             # collapsed recall count line above the turn, expandable grouped chips, click-through to source
+  - src/features/companions/athena/TurnSummaryChip.tsx         # side-effect rollup below the turn; zero-total turns render nothing
 ---
 
 # Turn metadata

@@ -46,7 +46,7 @@ function StatCard({
       <div className="text-[10px] uppercase tracking-wider text-foreground mb-1">
         {label}
       </div>
-      <div className="typo-heading-lg font-semibold text-foreground">{children}</div>
+      <div className="typo-heading-lg text-foreground">{children}</div>
     </div>
   );
 }
@@ -258,7 +258,7 @@ export function NetworkDashboard() {
 
   return (
     <section>
-      <h3 className="typo-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+      <h3 className="typo-heading text-foreground mb-3 flex items-center gap-2">
         <Radio className="w-4 h-4" />
         {st.network_status}
       </h3>
@@ -286,7 +286,7 @@ export function NetworkDashboard() {
             <div className="rounded-card border border-status-error/40 bg-status-error/10 p-3 flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <div className="typo-body font-medium text-status-error">{st.identity_degraded_title}</div>
+                <div className="typo-body text-status-error">{st.identity_degraded_title}</div>
                 <div className="typo-caption text-foreground mt-0.5">{st.identity_degraded_hint}</div>
               </div>
             </div>

@@ -70,8 +70,8 @@ export default function DeviceLinkPage() {
             className="rounded-modal border border-dashed border-border p-8 text-center max-w-md mx-auto"
           >
             <WifiOff className="w-8 h-8 text-foreground mx-auto mb-3" />
-            <h3 className="typo-body font-medium text-foreground mb-1">{st.devices_unavailable_title}</h3>
-            <p className="typo-caption text-foreground leading-relaxed">{st.devices_unavailable_body}</p>
+            <h3 className="typo-body text-foreground mb-1">{st.devices_unavailable_title}</h3>
+            <p className="typo-caption text-foreground">{st.devices_unavailable_body}</p>
           </div>
         </ContentBody>
       </ContentBox>

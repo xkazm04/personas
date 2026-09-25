@@ -271,6 +271,7 @@
       "resolvedFrom": "basename",
       "verbatim": "GlyphCapabilityPreview.tsx"
     },
+    "src/features/companions/athena/sub_memory/ConsolidationReview.tsx": {"count":1,"sections":[6],"lines":["413-421"],"contexts":["**And its client half, `ConsolidationReview.tsx:413-421`:**"],"resolvedFrom":"basename","verbatim":"ConsolidationReview.tsx"},
     "src/features/fleet/monitor/channels/useConversation.ts": {
       "count": 2,
       "sections": [6,7],
@@ -327,7 +328,6 @@
       "resolvedFrom": "basename",
       "verbatim": "IncidentDiagnosisCard.tsx"
     },
-    "src/features/plugins/companion/sub_memory/ConsolidationReview.tsx": {"count":1,"sections":[6],"lines":["413-421"],"contexts":["**And its client half, `ConsolidationReview.tsx:413-421`:**"],"resolvedFrom":"basename","verbatim":"ConsolidationReview.tsx"},
     "src/features/plugins/dev-tools/sub_context/ContextMapHealth.tsx": {"count":1,"sections":[8],"lines":["102,113"],"contexts":["returns the effect set. `ContextMapHealth.tsx:102,113` comes closest —"],"resolvedFrom":"basename","verbatim":"ContextMapHealth.tsx"},
     "src/features/plugins/dev-tools/sub_lifecycle/useDevCloneAdoption.ts": {
       "count": 1,

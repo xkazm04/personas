@@ -66,7 +66,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
       data-testid="portability-conflict-panel"
       className="rounded-card border border-amber-500/20 bg-amber-500/5 p-4 space-y-3"
     >
-      <div className="flex items-center gap-2 typo-body font-medium text-amber-400">
+      <div className="flex items-center gap-2 typo-body text-amber-400">
         <AlertTriangle className="w-4 h-4" />
         {tx(conflicts.length > 1 ? s.items_exist_plural : s.items_exist, { count: conflicts.length })}
       </div>
@@ -83,7 +83,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
               className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10"
             >
               <div className="flex-1 min-w-0">
-                <span className="typo-body font-medium text-foreground truncate block">{c.name}</span>
+                <span className="typo-body text-foreground truncate block">{c.name}</span>
                 {c.detail && (
                   <span className="typo-caption text-foreground block" title={c.detail}>
                     {truncateMiddle(c.detail)}
@@ -149,7 +149,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
           data-testid="portability-conflict-confirm"
           onClick={handleConfirm}
           disabled={busy}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body
             bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
             transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >

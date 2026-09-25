@@ -44,7 +44,7 @@ export function HubSourcesStrip({ feed }: { feed: HubFeed }) {
               </AsyncButton>
             ) : (
               <>
-                <AsyncButton size="xs" variant="accent" accentColor="violet" isLoading={kbBusy}
+                <AsyncButton size="xs" variant="accent" tone="agent" isLoading={kbBusy}
                   icon={<Plus className="w-3 h-3" />} onClick={() => feed.createBoundKnowledgeBase()}>
                   {t.kbCreate}
                 </AsyncButton>
@@ -83,7 +83,7 @@ export function HubSourcesStrip({ feed }: { feed: HubFeed }) {
             <span className="typo-caption text-foreground">{t.wikiNever}</span>
           )}
           <div className="ml-auto flex items-center gap-1">
-            <AsyncButton size="xs" variant="accent" accentColor="violet"
+            <AsyncButton size="xs" variant="accent" tone="agent"
               isLoading={feed.busyId === HUB_BUSY.wiki}
               icon={<ScrollText className="w-3 h-3" />} onClick={() => feed.compileWiki()}>
               {t.wikiCompile}

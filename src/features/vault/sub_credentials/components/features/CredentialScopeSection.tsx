@@ -46,7 +46,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-foreground" />
-          <span className="typo-body font-medium text-foreground">{sh.scope_section_title}</span>
+          <span className="typo-body text-foreground">{sh.scope_section_title}</span>
         </div>
         <Button
           onClick={handleEdit}
@@ -66,7 +66,7 @@ export function CredentialScopeSection({ credential, connector }: CredentialScop
           return (
             <div key={spec.id} className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="typo-caption font-medium text-foreground">
+                <span className="typo-caption text-foreground">
                   {spec.label}
                 </span>
                 {spec.required && isBroad && (

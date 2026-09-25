@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { isSentMessage } from '@/api/twin/placement';
 
 /**
  * Derives "last bridged X ago" per-channel for the active twin from the
@@ -29,7 +30,8 @@ export interface ChannelActivity {
   lastByChannel: Map<string, string>;
   /** Outbound (sent) communications per channel_type within the recent
    *  window — "how much does the twin actually reply here", not just
-   *  when the channel was last touched. */
+   *  when the channel was last touched. A placement (a draft typed into a
+   *  page box whose send the app never sees) is activity, not a send. */
   sentByChannel: Map<string, number>;
   /**
    * True for any active channel_type whose latest activity is older than
@@ -68,7 +70,7 @@ export function useChannelActivity(twinId: string | null): ChannelActivity {
     const map = new Map<string, number>();
     if (!twinId) return map;
     for (const c of twinCommunications) {
-      if (c.twin_id !== twinId || c.direction !== 'out') continue;
+      if (c.twin_id !== twinId || !isSentMessage(c)) continue;
       map.set(c.channel, (map.get(c.channel) ?? 0) + 1);
     }
     return map;

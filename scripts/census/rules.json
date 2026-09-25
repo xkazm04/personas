@@ -66,8 +66,8 @@
         }
       ],
       "baseline": {
-        "files": 69,
-        "matches": 170
+        "files": 70,
+        "matches": 171
       },
       "floor": 4000
     },
@@ -103,8 +103,8 @@
         }
       ],
       "baseline": {
-        "files": 136,
-        "matches": 187
+        "files": 130,
+        "matches": 181
       },
       "floor": 2500
     },
@@ -132,8 +132,8 @@
         }
       ],
       "baseline": {
-        "files": 35,
-        "matches": 51
+        "files": 33,
+        "matches": 48
       },
       "floor": 4000
     },
@@ -155,8 +155,8 @@
         "description": "a chunk boundary declared with raw React.lazy(); lazyRetry() is the drop-in that survives a failed chunk fetch instead of caching the rejection forever (2026-06-07 incident). Proxy for: a dynamic-import boundary with no recovery path."
       },
       "baseline": {
-        "files": 20,
-        "matches": 62
+        "files": 19,
+        "matches": 61
       },
       "floor": 4000
     },
@@ -287,8 +287,8 @@
         "description": "ONE object literal that holds BOTH an English `label:` string AND a colour utility class. PROXY FOR the stack-free condition \"the human-readable name of a closed-vocabulary member is authored at the same site as its presentation, so it can never be translated and the vocabulary has no single home\". PRECONDITION (measured, must be re-derived per repo): this repo writes badge/status config as flat single-level object entries on one line, with the key spelled `label` and colours as Tailwind utilities. Where a repo formats those entries across lines with nested objects, or names the key `title`/`text`, or uses CSS-in-JS, this pattern scores ZERO while the condition is present at full scale — the same failure the portability test measured for `tables.md` and `form-field-and-validation.md`. Sibling evidence that the CONDITION is universal but the SHAPE is not: personas-web's shared badge is `label: \"Queued\"` beside `bgColor` at StatusBadge.tsx:11 (would match), brainiac's is a separate `STATUS_LABEL` table with the colour resolved through band() at kb-data.ts:42 (would NOT match, same defect). Legal destinations: `tokenLabel(t, category, token)` for the label + `STATUS_PALETTE` / `StatusBadge variant` for the colour."
       },
       "baseline": {
-        "files": 35,
-        "matches": 215
+        "files": 34,
+        "matches": 211
       },
       "floor": 4000
     },
@@ -549,7 +549,7 @@
     {
       "id": "typo-token-overpainted",
       "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
-      "title": "Font-weight utility layered over a typo-* token, where the token silently wins",
+      "title": "Font-weight utility over a typo-* token: a local variant of a type recipe",
       "roots": [
         "src"
       ],
@@ -560,11 +560,12 @@
         "pattern": "\\btypo-[a-z-]+[^\"'`{}<>]{0,120}?font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)\\b|\\bfont-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)[^\"'`{}<>]{0,120}?\\btypo-[a-z-]+",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. PROXY FOR the stack-free condition: a call site tries to patch one property of a composite token with a utility that the cascade discards, so the authored intent is silently dropped and the code reads as if it were honoured. Verified from source, not inferred: typography.css is imported at globals.css:3 with no layer(), every real .typo-* tier declares font-weight (17 rules checked; only the .typo-rtl / .typo-hero-shine modifiers do not), and unlayered declarations beat every @layer utilities declaration regardless of order or specificity. The token file states the failure twice in its own comments - 'typo-caption font-semibold is silently a no-op' (typography.css:161-162) and 'typo-label font-bold is silently a no-op' (:190-191) - as does Design.md section 2. PRECONDITION: this repo ships semantic type tokens as UNLAYERED CSS classes alongside layered Tailwind utilities. A repo whose type tokens are React components, or are themselves inside @layer utilities, has the same condition wearing different markup and must re-derive the proxy. The legal fix is to move up a token (typo-caption -> typo-title -> typo-heading), never to add a font-* utility."
+        "description": "a Tailwind font-weight utility written next to a typo-* token inside one class string. Until 266c05551 (2026-09-24) typography.css was unlayered and the token silently won, so every such pair was dead code (1,754 at adoption). The style foundation deleted the dead ones (937854f7d) and moved the tokens into @layer components (266c05551), so a font-* beside a typo-* now APPLIES. Each surviving pair is a local variant of a type recipe: a recipe owns its properties (design-tokens/token-taxonomy) and an override is the one countable escape hatch (ui-controls/variant-discipline). The count only goes down; a recurring pair names a missing token. Prefer the token that carries the weight (typo-caption -> typo-title -> typo-heading).",
+        "note": "RE-BASELINED 2026-09-24 by the style-unification Director on a git-archive HEAD export after c57032963: 731/1754 -> 12/15, every removed match traced to 937854f7d (dead-override codemod, 977 files). The remaining 15 are live overrides, most in src/features/fleet/monitor/grid/prototype/ (committed by another session in 96bbd8b20 while the codemod skipped it as dirty)."
       },
       "baseline": {
-        "files": 719,
-        "matches": 1740
+        "files": 9,
+        "matches": 12
       },
       "floor": 2000
     },
@@ -592,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 284,
-        "matches": 626
+        "files": 277,
+        "matches": 607
       },
       "floor": 4000
     },
@@ -726,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 56,
-        "matches": 760
+        "files": 57,
+        "matches": 761
       },
       "floor": 1500
     },
@@ -913,8 +914,8 @@
         }
       ],
       "baseline": {
-        "files": 38,
-        "matches": 93
+        "files": 37,
+        "matches": 92
       },
       "floor": 900
     },
@@ -1037,8 +1038,8 @@
         "description": "a column named `id` declared TEXT PRIMARY KEY with no NOT NULL in the same column clause. PROXY FOR the stack-free condition \"a row's identity column can be absent\". This is a SQLite-specific manifestation of a universal condition, and the reason it exists is a documented SQLite bug preserved for backwards compatibility: unless the column is INTEGER PRIMARY KEY, or the table is WITHOUT ROWID, or NOT NULL is written explicitly, SQLite ALLOWS NULLs in a PRIMARY KEY column - and allows MANY of them, because the PK index treats each NULL as distinct. VERIFIED BEHAVIOURALLY, not inferred: against a copy of the operator's real 347MB personas.db, `INSERT INTO t (id) VALUES (NULL)` into a fresh `id TEXT PRIMARY KEY` table was accepted three times and left three rows with a NULL id; the same insert into `id TEXT PRIMARY KEY NOT NULL` was rejected with `NOT NULL constraint failed`. The consequence three layers up is the one docs/concepts/golden-paths/persisted-model-struct.md measures: every Rust read model types `pub id: String` (1,039 of them, non-Option), so a NULL id makes the row read fail with InvalidColumnType and, per docs/concepts/golden-paths/row-to-struct-mapping.md, take the whole list with it or make the row silently vanish. This tree has NO `WITHOUT ROWID` and NO `STRICT` table, so nothing else closes the hole. WHAT THIS DOES NOT SAY: no NULL or empty id exists in the live database - 77,763 rows across 198 tables with an `id` column were scanned and the count is zero. The class is reachable by construction and has never been reached. This is a preventive ratchet on a clean surface, not a fix backlog. PRECISION: 299 matches across 29 files, and an independent balanced-paren DDL parser over all 398 CREATE TABLE statements in the tree reaches the same 299 by a different route (parse the statement, split its top-level clauses, take the one that carries PRIMARY KEY, test its text for NOT NULL) - 299/299 true positives, 0 declared NOT NULL anywhere. The lookahead is scoped to the next comma or close-paren rather than to end-of-line, which is load-bearing: several fixtures write a whole CREATE TABLE on one line, and a line-scoped lookahead lets a LATER column's NOT NULL suppress the match (measured: 271 instead of 299, hiding 28 real declarations in 9 files). PRECONDITION (must be re-derived per repo): this repo writes DDL as SQL string literals inside Rust and names the identity column `id`. A Postgres sibling cannot have this condition at all - the SQL standard makes PRIMARY KEY imply NOT NULL, and brainiac's 30 `uuid PRIMARY KEY` columns are non-nullable for free. LEGAL FIX: write `id TEXT PRIMARY KEY NOT NULL`. It is two words, it makes `pub id: String` a true statement about the column instead of a hopeful one, and it is the type-level fix this golden path prefers over the gate."
       },
       "baseline": {
-        "files": 44,
-        "matches": 292
+        "files": 43,
+        "matches": 291
       },
       "floor": 900
     },
@@ -1135,7 +1136,7 @@
       },
       "baseline": {
         "files": 82,
-        "matches": 264
+        "matches": 263
       },
       "floor": 700
     },
@@ -1179,8 +1180,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 36,
-        "matches": 45
+        "files": 35,
+        "matches": 44
       },
       "floor": 4000
     },
@@ -1425,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 455,
-        "matches": 845
+        "files": 441,
+        "matches": 813
       },
       "floor": 2000
     },
@@ -1707,7 +1708,7 @@
       ],
       "baseline": {
         "files": 48,
-        "matches": 106
+        "matches": 105
       },
       "floor": 4000
     },
@@ -1755,8 +1756,8 @@
         "description": "an identifier naming a monetary quantity (cost/Cost/spend/Spend) collapsed to the literal 0 by a zero-default operator (`unwrap_or(0`, `unwrap_or_default()`, `?? 0`, `|| 0`). PROXY FOR the stack-free condition: *unknown* and *free* are rendered as the same value, so a total that omits a call is indistinguishable from one that includes a free call, and any ceiling computed from that total silently rises. Precision measured 25/25 on a full read of every match. The two highest-severity are engine/background.rs:2510 and engine/mod.rs:2778, both `get_monthly_spend(...).unwrap_or(0.0)` — a database error there reads as '$0 spent this month' and OPENS the monthly budget cap, so the failure mode of the measurement becomes a bypass of the control. Seven more are DB row-mappers (`row.get::<_, Option<f64>>(\"cost_usd\")?.unwrap_or(0.0)`) that destroy a NULL the nullable column was holding correctly; the remainder are TS reducers and adapters where a span, day-bucket or dashboard field of unknown cost contributes 0 to a displayed or gated total (ChainSpanRow/useChainTrace feed the chain-cost accumulator that CHAIN_MAX_COST_USD gates). CASE-SENSITIVITY IS LOAD-BEARING: an `i` flag matches `haSPENDing`, admitting six `hasPending = (x?.length ?? 0)` false positives in src/features/agents/sub_glyph — do not add it. PRECONDITION (measured, must be re-derived per repo): this repo names money with the tokens cost/spend, expresses absence as Rust `Option` or TS `null|undefined`, and spells the collapse with `unwrap_or`/`??`/`||`. A repo naming money `amount`/`price`/`charge`, or using a Money newtype with a total function, scores zero while the condition is present — and the sibling `personas-cloud` has the identical defect spelled `costUsd: msg.totalCostUsd ?? 0` (dispatcher.ts:461) feeding its own budget gate, while `brainiac` refuses it in a comment (providers/openai.rs:196) and has no dollar field to falsify. LEGAL FIX: keep the money `Option<f64>` / `number | null` from the parse site to the column (both ends already are — it is the carrier struct in between that destroys it), and make the consumer handle absence explicitly. For a spend read that gates a budget, fail CLOSED: propagate the error rather than substituting 0."
       },
       "baseline": {
-        "files": 17,
-        "matches": 20
+        "files": 16,
+        "matches": 18
       },
       "floor": 4000
     },
@@ -1833,15 +1834,15 @@
       },
       "exclude": [
         {
-          "path": "src/features/plugins/companion/fleet/AthenaFleetPlanCard.tsx",
+          "path": "src/features/companions/athena/fleet/AthenaFleetPlanCard.tsx",
           "reason": "the COMPLIANT shape and this path's reference implementation - :116 stores the raw string in state and :169 renders resolveErrorTranslated(t, error).message, which is resolution at the edge rather than no resolution at all"
         },
         {
-          "path": "src/features/plugins/companion/ship/AthenaShipMilestoneCard.tsx",
+          "path": "src/features/companions/athena/ship/AthenaShipMilestoneCard.tsx",
           "reason": "same compliant shape - :101 stores the raw string, :177 renders resolveErrorTranslated(t, error).message at the edge"
         },
         {
-          "path": "src/features/plugins/companion/ship/AthenaShipGoalsCard.tsx",
+          "path": "src/features/companions/athena/ship/AthenaShipGoalsCard.tsx",
           "reason": "same compliant shape as its two siblings above - :100 stores the raw string in state, :157 renders resolveErrorTranslated(t, error).message at the edge"
         },
         {
@@ -2012,7 +2013,7 @@
       },
       "baseline": {
         "files": 16,
-        "matches": 47
+        "matches": 46
       },
       "floor": 4000
     },
@@ -2116,8 +2117,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 48,
-        "matches": 51
+        "files": 47,
+        "matches": 50
       },
       "floor": 2000
     },
@@ -2139,8 +2140,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 149,
-        "matches": 319
+        "files": 146,
+        "matches": 312
       },
       "floor": 4000
     },
@@ -2188,7 +2189,7 @@
       },
       "exclude": [
         {
-          "path": "src/features/overview/sub_director/directorScore.ts",
+          "path": "src/features/companions/overseer/directorScore.ts",
           "reason": "the primitive this rule routes callers to — sparklinePoints() divides by the fixed SCORE_MAX constant and is the exemplar cited in this path's Evidence section"
         }
       ],
@@ -2242,8 +2243,8 @@
         "$falsePositiveNote": "Two independent implementations. (1) A standalone whole-file text matcher with its own walker and (2) the census engine's scanRule both return 9 files / 20 matches over 4829 walked files. `[^()]{0,160}?` is load-bearing: it cannot run past the setter's own argument list into a neighbouring call. `typeof` is DELIBERATELY EXCLUDED from the alternation even though it was in the first draft: it added bridge.ts:256,270,283 (`as typeof VALID_PLUGIN_TABS[number]`), which are each preceded by a real `includes()` membership check. Those are the weakest members of the population and a gate that fires on a checked value is worse than no gate, so the line is drawn at 'the assertion names no checkable set at all'. Their real defect - the hand-written list has drifted from the vocabulary (VALID_PLUGIN_TABS omits `scraper`, VALID_TEMPLATE_TABS omits `explore`) - is catalog drift and belongs to navigation-destination.md, not here. Of the 20 that DO match, 2 currently carry a value outside its union; the other 18 currently carry valid values and are counted because the cast is what removes the compiler's ability to say so, which is the whole condition. PRECONDITION, and an adopting repo must re-derive its own: this works because Personas' navigation setters take closed string unions, so the compliant form carries no assertion token at all. A repo whose destinations are filesystem routes (personas-web: 37 page.tsx, ZERO such casts) scores zero here while the arrival condition is present at full scale in another form."
       },
       "baseline": {
-        "files": 9,
-        "matches": 20
+        "files": 8,
+        "matches": 19
       },
       "floor": 4000
     },
@@ -3310,8 +3311,8 @@
         }
       ],
       "baseline": {
-        "files": 20,
-        "matches": 48
+        "files": 21,
+        "matches": 49
       },
       "floor": 900
     },
@@ -3479,7 +3480,7 @@
       },
       "baseline": {
         "files": 91,
-        "matches": 171
+        "matches": 169
       },
       "floor": 900,
       "exclude": [
@@ -3504,7 +3505,7 @@
         "pattern": "useEffect\\(\\s*\\(\\s*\\)\\s*=>\\s*\\{(?:(?!shouldAutoScroll|atBottomRef|isAtBottom|AtBottomRef|userScrolledUp|stuckToBottom|stickToBottom|nearBottom|followTail)[\\s\\S]){0,400}?[\\w$.?]+\\.scrollTop\\s*=\\s*[\\w$.?]+\\.scrollHeight",
         "flags": "g",
         "ignoreCommentLines": true,
-        "description": "A React effect body that reaches an `x.scrollTop = y.scrollHeight` assignment without any stickiness identifier appearing between the effect's opening brace and the assignment. PROXY FOR the stack-free condition: 'a view moves the reader's viewport to the newest content on every arrival, without first measuring whether the reader was at the newest content.' MEASURED 2026-08-16 at 17d059b1f: 13 files / 13 matches, ALL THIRTEEN HAND-READ (precision 13/13) — the guards present at these sites are `miniPlayerExpanded` (ExecutionMiniPlayer.tsx:181), `isExpanded` (TerminalStrip.tsx:58) and a bare `if (ref.current)` at the other eleven, none of which is a position measurement. Sites: src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:180; src/features/onboarding/components/ExecutionStep.tsx:37; src/features/overview/sub_observability/components/AiHealingStreamOverlay.tsx:104; src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx:269; src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:22; src/features/plugins/dev-tools/sub_runner/TaskOutputPanel.tsx:15; src/features/plugins/gitlab/components/JobRow.tsx:18; src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeProgress.tsx:18; src/features/shared/components/terminal/TerminalStrip.tsx:57 (a SHARED component); src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx:35; src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts:19 (useAutoScrollRef — a REUSABLE HOOK whose whole body is the defect); src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx:49; src/features/vault/sub_databases/tabs/ChatTab.tsx:49. WHY IT IS A DEFECT AND NOT A PREFERENCE: measured over the operator's real corpus of 2,998 runs, the median gap between consecutive stream lines is 0.36 s and p90 is 4.91 s, so a reader who scrolls up to re-read is returned to the bottom before finishing a sentence; the running log is unreadable by construction. CONVERGENCE: this is physics, not house taste — personas-web (ExecutionOutput.tsx:53-56,125-141, 24 px threshold) and vibeman (CompactTerminal.tsx:244-249,1074-1086, 50 px) independently arrived at the identical three-part shape this repo already has in src/features/shared/components/terminal/TerminalBody.tsx:86-93,260-274 (10 px + a sticky ref + a jump-to-latest affordance). LEGAL FIX: promote src/features/plugins/companion/useChatScroll.ts into shared/ as a `useStickyBottom()` that returns containerProps carrying BOTH the ref and the onScroll handler, so the bare element is never handed out and the unguarded pin becomes unwriteable. DO NOT silence a match by moving the assignment into a helper function outside the effect, by renaming the stickiness ref, or by adding an unrelated `if` — all three preserve the defect exactly; the honest fix always adds a distance-from-bottom measurement read at the assignment. END OF LIFE: this rule is designed to reach zero. When it does, the runner fails structurally on zero matches BY DESIGN — DELETE the rule then, do not baseline it at 0.",
+        "description": "A React effect body that reaches an `x.scrollTop = y.scrollHeight` assignment without any stickiness identifier appearing between the effect's opening brace and the assignment. PROXY FOR the stack-free condition: 'a view moves the reader's viewport to the newest content on every arrival, without first measuring whether the reader was at the newest content.' MEASURED 2026-08-16 at 17d059b1f: 13 files / 13 matches, ALL THIRTEEN HAND-READ (precision 13/13) — the guards present at these sites are `miniPlayerExpanded` (ExecutionMiniPlayer.tsx:181), `isExpanded` (TerminalStrip.tsx:58) and a bare `if (ref.current)` at the other eleven, none of which is a position measurement. Sites: src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:180; src/features/onboarding/components/ExecutionStep.tsx:37; src/features/overview/sub_observability/components/AiHealingStreamOverlay.tsx:104; src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx:269; src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx:22; src/features/plugins/dev-tools/sub_runner/TaskOutputPanel.tsx:15; src/features/plugins/gitlab/components/JobRow.tsx:18; src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeProgress.tsx:18; src/features/shared/components/terminal/TerminalStrip.tsx:57 (a SHARED component); src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx:35; src/features/vault/sub_catalog/components/autoCred/helpers/autoCredErrorConfig.ts:19 (useAutoScrollRef — a REUSABLE HOOK whose whole body is the defect); src/features/vault/sub_catalog/components/autoCred/steps/AutoCredBrowser.tsx:49; src/features/vault/sub_databases/tabs/ChatTab.tsx:49. WHY IT IS A DEFECT AND NOT A PREFERENCE: measured over the operator's real corpus of 2,998 runs, the median gap between consecutive stream lines is 0.36 s and p90 is 4.91 s, so a reader who scrolls up to re-read is returned to the bottom before finishing a sentence; the running log is unreadable by construction. CONVERGENCE: this is physics, not house taste — personas-web (ExecutionOutput.tsx:53-56,125-141, 24 px threshold) and vibeman (CompactTerminal.tsx:244-249,1074-1086, 50 px) independently arrived at the identical three-part shape this repo already has in src/features/shared/components/terminal/TerminalBody.tsx:86-93,260-274 (10 px + a sticky ref + a jump-to-latest affordance). LEGAL FIX: promote src/features/companions/athena/useChatScroll.ts into shared/ as a `useStickyBottom()` that returns containerProps carrying BOTH the ref and the onScroll handler, so the bare element is never handed out and the unguarded pin becomes unwriteable. DO NOT silence a match by moving the assignment into a helper function outside the effect, by renaming the stickiness ref, or by adding an unrelated `if` — all three preserve the defect exactly; the honest fix always adds a distance-from-bottom measurement read at the assignment. END OF LIFE: this rule is designed to reach zero. When it does, the runner fails structurally on zero matches BY DESIGN — DELETE the rule then, do not baseline it at 0.",
         "$measured": "2026-08-16 @ 17d059b1f — 4,829 files walked; validated standalone in a scratch registry unique to this composer (rules-live-log-stream-view-probe.json), then re-extracted from this finished document and re-run through the real runner: 13/13 both times; 0.718 s for rule and control together."
       },
       "baseline": {
@@ -3617,8 +3618,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 25,
-        "matches": 34
+        "files": 24,
+        "matches": 32
       },
       "floor": 3000
     },
@@ -3696,8 +3697,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 12,
-        "matches": 20
+        "files": 11,
+        "matches": 19
       },
       "floor": 1800
     },
@@ -3939,6 +3940,14 @@
         {
           "path": "src/features/teams/sub_goals/GoalTaskTable.tsx",
           "reason": "the comment describes what the BACKEND does ('goal_advance.rs mirrors a decomposed goal's steps into dev_goal_items by exact title') rather than declaring a client-side copy of a server rule; the client here consumes the backend's output, it does not re-derive it"
+        },
+        {
+          "path": "src/features/settings/sub_notifications/libs/webhookMatch.ts",
+          "reason": "the mirror is TETHERED, not comment-kept: patternMatches is gated by libs/__tests__/webhookPatternParity.test.ts, which parses every assert!(!?pattern_matches(..)) line out of src-tauri/src/engine/webhook_notifier.rs at run time and fails when TS disagrees or the parse finds fewer than 8 (the chainStopReasons.parity precedent). The condition this leaf counts - two implementations with no mechanism asserting they agree - is absent"
+        },
+        {
+          "path": "src/features/settings/sub_notifications/libs/__tests__/webhookPatternParity.test.ts",
+          "reason": "this file IS the agreement mechanism for webhookMatch.ts (see that exclude); its comment names the Rust matcher because it reads it"
         }
       ],
       "baseline": {
@@ -4190,8 +4199,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 32,
-        "matches": 36
+        "files": 31,
+        "matches": 35
       },
       "floor": 3000
     },
@@ -4371,8 +4380,8 @@
         }
       ],
       "baseline": {
-        "files": 11,
-        "matches": 11
+        "files": 10,
+        "matches": 10
       },
       "floor": 1500
     },
@@ -4396,7 +4405,7 @@
       },
       "baseline": {
         "files": 2,
-        "matches": 18
+        "matches": 16
       },
       "floor": 4000
     },
@@ -4705,8 +4714,8 @@
         }
       ],
       "baseline": {
-        "files": 15,
-        "matches": 21
+        "files": 11,
+        "matches": 17
       },
       "floor": 4000
     },
@@ -4728,8 +4737,8 @@
         "note": "Disclosed imprecision: 6 of 130 sites are DDL inside test fixtures, which the runner cannot exclude. Site-level overlap against all 87 registered src-tauri/.rs rules: unresumable-migration-step 3 lines (2.3%), default-contradicted-by-backfill 2 lines (1.5%); no merge warranted."
       },
       "baseline": {
-        "files": 24,
-        "matches": 115
+        "files": 23,
+        "matches": 114
       },
       "floor": 900,
       "exclude": [
@@ -4780,8 +4789,8 @@
         "note": "THIS RULE CAN REACH ZERO - every site should be calling init_test_db()/init_test_user_db(), which go through SqlitePragmaCustomizer. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero). Site-level overlap against all 87 registered src-tauri/.rs rules: untimed-repo-query 6 lines (0.1% of theirs); optional-store-handle, the nearest conceptual neighbour, shares 0 sites."
       },
       "baseline": {
-        "files": 46,
-        "matches": 49
+        "files": 45,
+        "matches": 48
       },
       "floor": 900
     },
@@ -4976,12 +4985,6 @@
     },
     {
       "id": "hand-painted-modal-backdrop",
-      "exclude": [
-        {
-          "path": "src/features/plugins/companion/chat/next/frame/variants/c/SpreadStage.tsx",
-          "reason": "a decorative, pointer-events-none dim layer behind the Halo · Spread card-game prototype stage, not a modal: no focus trap, no dismiss semantics, the app stays clickable around it. Prototype-only; it is deleted (and this entry goes stale and fails loud) when the Athena chat switcher is consolidated"
-        }
-      ],
       "goldenPath": "docs/concepts/golden-paths/modal-stacking.md",
       "roots": [
         "src"
@@ -5092,8 +5095,8 @@
         "description": "A control's busy state rendered as <LoadingSpinner/> in the consequent of a ternary whose alternate is another element — almost always an icon. feedback/LoadingSpinner renders null (it emits only an sr-only role=status when passed a label), so the icon vanishes and nothing takes its place while the action is in flight. Use buttons/AsyncButton (returns-a-promise onClick) or buttons/Button loading={flag}, whose spinners are real (Button.tsx:230,237; AsyncButton.tsx:85). Doctrine: inline-busy-state.md."
       },
       "baseline": {
-        "files": 37,
-        "matches": 49
+        "files": 36,
+        "matches": 48
       },
       "floor": 4000
     },
@@ -5210,7 +5213,7 @@
           "reason": "documented tension with unmanaged-tauri-subscription: the bar's three hand-rolled listen() calls leaked on the listen-vs-unmount race and were routed through useTypedTauriEvent (e9505acbd/42beb2f0e), which is the one sanctioned hook and is unbuffered. The bar mounts in the same tick the job is spawned, no kb job-progress snapshot command exists to replay from, and the gap window is the job's own startup. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
         },
         {
-          "path": "src/features/plugins/companion/sub_create/engine/useCreateAthenaInstall.ts",
+          "path": "src/features/companions/athena/sub_create/engine/useCreateAthenaInstall.ts",
           "reason": "same tension as IngestProgressBar: the Create Athena install step attaches to companion://kokoro-install / pocket-install through useTauriEvent (the one sanctioned hook, unbuffered) in the same tick startInstall() spawns the download; no TTS install-progress snapshot command exists to replay from, and the gap window is the download's own startup. The raw listen()-before-download form it replaced was gated by unmanaged-tauri-subscription. Remove this exclude when a buffered event hook or a progress snapshot getter lands"
         }
       ],
@@ -5523,6 +5526,242 @@
         "matches": 104
       },
       "floor": 900
+    },
+    {
+      "id": "raw-arbitrary-text-size",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Arbitrary text size (text-[Npx]) instead of a typo-* token",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])text-\\[\\d*\\.?\\d+(?:px|rem|em)\\]",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "an arbitrary Tailwind font-size (text-[11px], text-[0.8rem], text-[1.1em]) in src/**/*.{ts,tsx}. PROXY FOR the stack-free condition: a call site picks a type size outside the type scale, so the size neither follows the scale nor the density/text-scale settings that restyle the typo-* tokens, and every such site is a private type ramp. Scope is src, one root wider than the WP2 brief (src/features): the only file outside src/features with a hit is src/lib/keyboard/ShortcutCheatSheet.tsx, and a narrower root would leave it outside the ratchet. Recall limit, stated: a size assembled at runtime (text-[${px}px]) is invisible to a static pattern.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export, not the shared working tree). PRECISION 12/12 on an even sample of the hit list: every hit is a class string choosing a pixel size, 10 of 12 at 9-13px, i.e. the typo-caption/typo-label band.",
+        "fix": "typo-caption (secondary, 14px) or typo-label (uppercase label); typo-body for prose; typo-code for mono. Never a private px size."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 194,
+        "matches": 528
+      },
+      "floor": 5000
+    },
+    {
+      "id": "raw-palette-text-colour",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Raw Tailwind palette text colour instead of a semantic colour token",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w-])text-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]00|950)(?![\\w-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a text colour taken from the raw Tailwind palette (text-emerald-400, text-red-500/70, hover:text-amber-300) anywhere in src/**/*.{ts,tsx}. PROXY FOR the stack-free condition: a surface authors colour by hue rather than by meaning, so the same state renders in different hues on different surfaces, a theme cannot restyle it, and the brightness-compensated status-* variables are bypassed. The three central token owners are excluded because they are the destination, not the defect; design-token-usage.md 7.G/C5 records that STATUS_PALETTE still emits palette spellings, so those owners converting to text-status-* is the upstream fix this ratchet waits on.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 12/12 on an even sample of className hits, plus 20/20 on hits OUTSIDE a className attribute (return values of colour helpers such as ideaColors.ts, pipelineHelpers.tsx, WebhookRequestInspector.tsx): all are class strings. Not every hit is equally wrong: identity colours (n8n colorTokens.ts) are a legitimate category that has no semantic token yet.",
+        "fix": "text-status-{success,warning,error,info,neutral} or a StatusToken from STATUS_PALETTE; text-primary for accent; text-foreground for body."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "src/lib/design/statusTokens.ts",
+          "reason": "STATUS_PALETTE is the sanctioned owner of status colour; call sites are routed TO it"
+        },
+        {
+          "path": "src/lib/utils/designTokens.ts",
+          "reason": "SEVERITY_ACCENTS / STATUS_COLORS: the second sanctioned colour-token owner named in Design.md section 3"
+        },
+        {
+          "path": "src/lib/design/eventTokens.ts",
+          "reason": "declares itself the single source of truth for event colours; the owner, not a call site"
+        }
+      ],
+      "baseline": {
+        "files": 948,
+        "matches": 4424
+      },
+      "floor": 5000
+    },
+    {
+      "id": "bare-rounded",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Bare rounded class with no semantic radius suffix",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<=[\"'`](?:[^\"'`\\n]*[\\s:])?)rounded(?=[\"'`]|\\s[^\"'`\\n]*[\"'`])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "the Tailwind class rounded with no suffix, as a whitespace-delimited token inside a quoted string on one line. PROXY FOR the stack-free condition: a surface takes the framework default radius (0.25rem) that is not on the semantic radius scale, so it matches none of rounded-interactive/input/card/modal and a radius-scale change cannot reach it. custom/no-raw-radius-classes does not see it: that rule keys on rounded-sm/md/lg/xl. The string-context lookarounds are what keep the JS identifier rounded (const rounded = Math.round(x)) out. Recall limit, stated: a class list broken across lines inside one template literal, with rounded starting a line, is missed.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 16/16: 12 even-sample hits plus the 4 hits whose line has no className (GHOST_BAR consts, a size= prop, a const bar): all are class strings. A targeted hunt for prose or enum strings equal to rounded (\"rounded\" as a variant value) found none in src.",
+        "fix": "rounded-interactive (buttons, chips), rounded-input (fields), rounded-card (cards, ghost bars), rounded-modal; rounded-full / rounded-none stay legal."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 300,
+        "matches": 629
+      },
+      "floor": 5000
+    },
+    {
+      "id": "opacity-dimmed-text",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Text dimmed with an opacity utility on text-foreground",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "(?<![\\w:-])text-foreground(?![\\w-])[^\"'`{}<>\\n]{0,160}?(?<![\\w:/-])opacity-[1-8]\\d(?![\\w-])|(?<![\\w:/-])opacity-[1-8]\\d(?![\\w-])[^\"'`{}<>\\n]{0,160}?(?<![\\w:-])text-foreground(?![\\w-])",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "text-foreground and an UNPREFIXED opacity-10..opacity-89 in one class string. PROXY FOR the stack-free condition: hierarchy is expressed by fading the whole element instead of by the type scale, which lowers contrast below what the theme AA gate (check:themes) verified, and fades icons, borders and children with it. custom/no-low-contrast-text-classes catches text-foreground/60 but not this spelling, so it is where that rule's violations went. Variant-prefixed opacity (disabled:opacity-50, hover:opacity-80, group-hover:) is deliberately NOT matched: that is the inert/hover state, a different condition.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 12/12 against the signature on an even sample. 3 of the 12 are a sub-class worth naming: icon buttons dimmed at rest and restored by hover:opacity-100 (AFFORDANCE_BTN in NodeSymbolParts.tsx, SinceYouLeftBriefing.tsx); same contrast outcome at rest, and the fix is the same.",
+        "fix": "bare text-foreground with a smaller typo-* tier (typo-caption for secondary); never opacity for hierarchy."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.ts",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        }
+      ],
+      "baseline": {
+        "files": 83,
+        "matches": 225
+      },
+      "floor": 5000
+    },
+    {
+      "id": "raw-button-element",
+      "goldenPath": "docs/concepts/golden-paths/button.md",
+      "title": "Styled raw <button> outside the shared primitive catalog",
+      "roots": [
+        "src"
+      ],
+      "extensions": [
+        ".tsx"
+      ],
+      "signal": {
+        "pattern": "<button(?![A-Za-z0-9_-])(?:(?!<)[\\s\\S]){0,1200}?\\sclassName=",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "a lowercase <button> JSX element carrying className= in its opening tag, outside src/features/shared/components/**. PROXY FOR the stack-free condition (the temptation signature for Button/AsyncButton): a control re-derives the canonical control's look, focus ring, busy state and touch target by hand, so each copy drifts on its own. This is a RATCHET, not a ban: button.md section 9 declined \"raw <button> is banned\" at warn level because ~16% of sites are legitimate and a warning nobody fails on is ignored; a baselined count answers that objection differently, because it never asks for the backlog, only that new code adopts, and a genuinely legitimate new raw button lands as a visible baseline change in its own diff. Tag window and (?!<) guard are copied from native-title-tooltip.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). SIGNATURE PRECISION 2595/2595 against a TypeScript-AST ground truth (every regex hit is a real <button> with className in its opening tag); RECALL 2595/2600, the 5 misses are opening tags containing a < (a comparison or generic) before className. JUDGMENT SAMPLE of 20 hits: 10 are plain action or icon buttons Button covers (close, back, refresh, primary action); 4 are selection controls a shared primitive covers (SegmentedTabs/PanelTabBar, aria-pressed option chips); 6 are arguably legitimate or have no primitive yet: 4 selectable cards or disclosure rows (VoicePanel, TableProgress, ImportConflictPanel, DeploymentFilters trigger) and 2 footer chrome icon buttons (NotepadFooterIcon, NetworkFooterIcon). No path beyond the catalog is excluded: shared/chrome is app-shell code, not a primitive layer.",
+        "fix": "buttons/Button (variant + size, icon sizes for icon-only) or buttons/AsyncButton for a promise onClick; layout/SegmentedTabs or PanelTabBar for a tab strip."
+      },
+      "exclude": [
+        {
+          "path": "**/__tests__/**",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "**/*.test.tsx",
+          "reason": "test fixtures spell class strings to assert rendered output; they do not author UI"
+        },
+        {
+          "path": "src/features/shared/components/**",
+          "reason": "the shared primitive catalog is where Button/AsyncButton and the other control primitives are built from raw <button>"
+        }
+      ],
+      "baseline": {
+        "files": 1079,
+        "matches": 2465
+      },
+      "floor": 2200
+    },
+    {
+      "id": "feature-css-type-literal",
+      "goldenPath": "docs/concepts/golden-paths/design-token-usage.md",
+      "title": "Literal font size, font family or colour in a feature stylesheet",
+      "roots": [
+        "src/features"
+      ],
+      "extensions": [
+        ".css"
+      ],
+      "signal": {
+        "pattern": "\\bfont-size\\s*:\\s*-?\\d*\\.?\\d+(?:px|rem)\\b|\\bfont-family\\s*:(?!\\s*(?:var\\(|inherit\\b))[^;}\\n]*|:[^;{}\\n]*?(?:#[0-9a-fA-F]{3,8}(?![\\w-])|\\brgba?\\(\\s*\\d)",
+        "flags": "g",
+        "ignoreCommentLines": true,
+        "description": "in src/features/**/*.css: a font-size in px/rem, a font-family that is not var(...) or inherit, or a declaration whose value holds a hex or rgb()/rgba() colour literal (one match per declaration). PROXY FOR the stack-free condition: a bespoke stylesheet re-authors type and colour instead of consuming the tokens, so a theme, the text-scale setting and the density setting cannot reach it. Layout stays free in feature CSS; type and colour are tokenised (the bespoke-CSS rule in .claude/rules/ui.md). A literal assigned to a local custom property (--surface: #111a26) counts: a private palette is still a private palette. Recall limit, stated: hsl()/oklch() literals and the font shorthand are not matched.",
+        "note": "MEASURED 2026-09-24 at 39f519143 (HEAD export). PRECISION 16/16 on an even sample after the font-family arm was fixed to refuse var(--font-mono) (a first draft counted it, because \\s* backtracked past the lookahead). heartlight-copy.css stays counted: it holds the words drawn over the art, which is type, the thing this rule governs.",
+        "fix": "size: put a typo-* class on the element and keep the stylesheet to layout; font-family: var(--font-sans|--font-mono); colour: var(--foreground|--primary|--status-*) or color-mix() over them."
+      },
+      "exclude": [
+        {
+          "path": "src/features/companions/landing/heartlight.css",
+          "reason": "the Heartlight art layer: decorative SVG-and-gradient art on pure black that stays dark in every theme, with the companions' identity colours fixed on purpose (see the file header); not a themed surface"
+        }
+      ],
+      "baseline": {
+        "files": 10,
+        "matches": 316
+      },
+      "floor": 8
     }
   ]
 }

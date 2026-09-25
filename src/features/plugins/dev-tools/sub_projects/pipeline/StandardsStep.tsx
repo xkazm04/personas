@@ -63,7 +63,7 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
         <div className="space-y-3">
           {/* PR base */}
           <div>
-            <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+            <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
               <GitPullRequest className="w-3 h-3 text-amber-400/70" />
               {dp.standards_pr_base}
             </label>
@@ -78,8 +78,8 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
             <div className="flex items-center gap-3">
               <AccessibleToggle checked={config.branching.automerge.enabled} onChange={toggleAutomerge} label={dp.standards_automerge} size="sm" data-testid="standards-automerge-toggle" />
               <span className="min-w-0 flex-1">
-                <span className="typo-caption font-medium text-foreground">{dp.standards_automerge}</span>
-                <span className="block typo-caption text-foreground leading-snug">{dp.standards_automerge_hint}</span>
+                <span className="typo-caption text-foreground">{dp.standards_automerge}</span>
+                <span className="block typo-caption text-foreground">{dp.standards_automerge_hint}</span>
               </span>
             </div>
             {config.branching.automerge.enabled && (
@@ -111,8 +111,8 @@ function PrecommitRow({
     <div className="flex items-center gap-3 px-3 py-2.5">
       <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
       <span className="min-w-0 flex-1">
-        <span className="typo-caption font-medium text-foreground">{label}</span>
-        <span className="block typo-caption text-foreground leading-snug">{hint}</span>
+        <span className="typo-caption text-foreground">{label}</span>
+        <span className="block typo-caption text-foreground">{hint}</span>
       </span>
       <AccessibleToggle checked={checked} onChange={onToggle} label={label} size="sm" />
     </div>

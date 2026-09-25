@@ -81,7 +81,7 @@ export function PersonaSelector({
         {selected ? (
           <>
             <PersonaIcon icon={selected.icon} color={selected.color} frameSize={"lg"} />
-            <span className="typo-body font-medium text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
+            <span className="typo-body text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
           </>
         ) : (
           <>
@@ -128,7 +128,7 @@ export function PersonaSelector({
                   }`}
               >
                 <Bot className="w-4 h-4 text-foreground flex-shrink-0" />
-                <span className="typo-body font-medium flex-1">{t.common.all_personas}</span>
+                <span className="typo-body flex-1">{t.common.all_personas}</span>
                 {!value && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
               </button>
             )}
@@ -146,7 +146,7 @@ export function PersonaSelector({
                 >
                   <PersonaIcon icon={p.icon} color={p.color} />
                   <div className="flex-1 min-w-0">
-                    <span className="typo-body font-medium truncate block">{p.name}</span>
+                    <span className="typo-body truncate block">{p.name}</span>
                     {showDescription && p.description && (
                       <span className="text-[11px] text-foreground truncate block">{p.description.slice(0, 60)}</span>
                     )}

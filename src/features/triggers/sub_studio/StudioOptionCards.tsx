@@ -37,7 +37,7 @@ export function TriggerOptionCard({
         <div className={`rounded-input flex items-center justify-center shrink-0 bg-secondary/60 ${dense ? 'w-7 h-7' : 'w-9 h-9'} ${template.color}`}>
           <Icon className={dense ? 'w-4 h-4' : 'w-5 h-5'} />
         </div>
-        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} font-medium text-foreground truncate min-w-0 flex-1`}>{template.label}</div>
+        <div className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate min-w-0 flex-1`}>{template.label}</div>
       </button>
     </Tooltip>
   );
@@ -70,7 +70,7 @@ export function PersonaOptionCard({
       >
         <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize={dense ? 'sm' : 'md'} />
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className={`${dense ? 'typo-body' : 'typo-body-lg'} font-medium text-foreground truncate`}>{persona.name}</span>
+          <span className={`${dense ? 'typo-body' : 'typo-body-lg'} text-foreground truncate`}>{persona.name}</span>
           {persona.headless && <EyeOff className="w-3 h-3 text-foreground shrink-0" />}
         </div>
       </button>
