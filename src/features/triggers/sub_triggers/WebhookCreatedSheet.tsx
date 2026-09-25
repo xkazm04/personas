@@ -79,7 +79,7 @@ export function WebhookCreatedSheet({ triggerId, secret, onClose, onOpenRelay }:
             </div>
             <pre
               data-testid="webhook-created-curl"
-              className="px-3 py-2 rounded-card border border-card-border bg-secondary/40 typo-code font-mono text-foreground overflow-x-auto whitespace-pre"
+              className="px-3 py-2 rounded-card border border-card-border bg-secondary/40 typo-code text-foreground overflow-x-auto whitespace-pre"
             >
               {curl}
             </pre>
@@ -130,7 +130,7 @@ function CopyableLine({ label, text, testId }: { label: string; text: string; te
       </div>
       <div
         data-testid={testId}
-        className="px-3 py-2 rounded-input border border-card-border bg-secondary/40 typo-code font-mono text-foreground break-all select-all"
+        className="px-3 py-2 rounded-input border border-card-border bg-secondary/40 typo-code text-foreground break-all select-all"
       >
         {text}
       </div>

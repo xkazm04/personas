@@ -120,7 +120,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           <div className="min-w-0">
             <h2
               id="preset-preview-title"
-              className="typo-heading font-semibold text-foreground/90 truncate"
+              className="typo-heading text-foreground/90 truncate"
             >
               {preset.name}
             </h2>
@@ -244,7 +244,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                     )
                   )}
                   <span
-                    className="typo-body font-medium min-w-[90px] uppercase tracking-wider text-[11px]"
+                    className="typo-body min-w-[90px] uppercase tracking-wider text-[11px]"
                     style={{ color: selected || !interactive ? teamColor : undefined }}
                   >
                     {row.role}

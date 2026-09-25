@@ -21,9 +21,13 @@ vi.mock('@/stores/systemStore', () => ({
 }));
 
 vi.mock('@/api/devTools/devTools', () => ({
+  // `kind` is load-bearing here: the Atlas draws territory and therefore shows
+  // only `kind: 'code'` projects (a registry checkout is wired through the
+  // Registry section, not by project assignment). A fixture that omits the
+  // field draws an empty Atlas.
   listProjects: vi.fn(async () => [
-    { id: 'p1', name: 'Alpha', workspace_id: 'w1' },
-    { id: 'p2', name: 'Beta', workspace_id: 'w2' },
+    { id: 'p1', name: 'Alpha', workspace_id: 'w1', kind: 'code' },
+    { id: 'p2', name: 'Beta', workspace_id: 'w2', kind: 'code' },
   ]),
   installSystemSkill: vi.fn(async () => undefined),
 }));

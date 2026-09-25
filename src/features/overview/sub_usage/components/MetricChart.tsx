@@ -41,7 +41,7 @@ export function MetricChart({
   return (
     <div className={`bg-secondary/20 border border-primary/10 rounded-modal p-4 ${className ?? ''}`}>
       <div className="mb-3">
-        <h3 className="typo-heading uppercase tracking-widest text-foreground flex items-center gap-2">
+        <h3 className="typo-heading uppercase text-foreground flex items-center gap-2">
           {Icon && (
             <div className={`p-1.5 rounded-card ${ICON_COLOR_CLASSES[iconColor]}`}>
               <Icon className="w-3.5 h-3.5" />

@@ -29,13 +29,15 @@ import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { planWeeklyHealthIngest } from '@/api/systemOps';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { usePassportForProject } from './usePassportForProject';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
 import { collectProjectKpiAttention, planForProject } from './sweepInputs';
+
+const SWEEP_TILE = 'border-primary/10 bg-primary/5 hover:bg-primary/10';
 
 export function SweepButton({
   projectId,
@@ -124,33 +126,38 @@ export function SweepButton({
     }
   };
 
+  // Both are pressed actions, so each shows a real spinner while it runs
+  // (Button `loading`); the faint primary tile is the theme's own, kept as is.
   return (
     <span className="inline-flex items-center gap-1">
-    <Tooltip content={dt.sweep_run_tooltip}>
-      <button
-        type="button"
-        onClick={() => void run()}
-        disabled={busy || !project}
-        aria-label={dt.sweep_run_aria}
-        data-testid="findings-sweep"
-        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:is-disabled"
-      >
-        {busy ? <LoadingSpinner size="xs" /> : <Radar className="w-3.5 h-3.5 text-foreground" />}
-      </button>
-    </Tooltip>
-    <Tooltip content={dt.sweep_plan_tooltip}>
-      <button
-        type="button"
-        onClick={() => void plan()}
-        disabled={planning || !project}
-        aria-busy={planning}
-        aria-label={dt.sweep_plan_aria}
-        data-testid="findings-sweep-plan"
-        className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors disabled:is-disabled"
-      >
-        <CalendarClock className="w-3.5 h-3.5 text-foreground" />
-      </button>
-    </Tooltip>
+      <Tooltip content={dt.sweep_run_tooltip}>
+        <Button
+          variant="accent"
+          size="icon-sm"
+          onClick={run}
+          loading={busy}
+          disabled={!project}
+          aria-label={dt.sweep_run_aria}
+          data-testid="findings-sweep"
+          className={SWEEP_TILE}
+        >
+          <Radar className="w-3.5 h-3.5 text-foreground" />
+        </Button>
+      </Tooltip>
+      <Tooltip content={dt.sweep_plan_tooltip}>
+        <Button
+          variant="accent"
+          size="icon-sm"
+          onClick={plan}
+          loading={planning}
+          disabled={!project}
+          aria-label={dt.sweep_plan_aria}
+          data-testid="findings-sweep-plan"
+          className={SWEEP_TILE}
+        >
+          <CalendarClock className="w-3.5 h-3.5 text-foreground" />
+        </Button>
+      </Tooltip>
     </span>
   );
 }

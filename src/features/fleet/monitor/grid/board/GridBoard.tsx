@@ -9,7 +9,7 @@
 // `FLEET_STATE_META` the rest of the app reads, and CLICKABLE: it opens the
 // session's live terminal. That asymmetry is the point. A persona is a
 // permanent member you inspect; a fleet session is a process you talk to, and
-// it dies when its task lands.
+// it dies when its task lands. A remote session is a third tile (`remote/`).
 //
 // The renderers live here rather than in `TeamColumn` because the tray renders
 // the same two tiles from a different layout, and two copies of a tile's props
@@ -40,10 +40,11 @@ import { PersonaTile } from '../PersonaTile';
 import { SessionTile } from '../SessionTile';
 import { UngroupedTray } from '../UngroupedTray';
 import { BoardGhost } from '../BoardGhost';
-import { boardLayout, COLUMNS_PER_ROW, SESSION_TILE_H, TILE_H, TILE_W, type ColumnRow } from '../gridGeometry';
+import { boardLayout, COLUMNS_PER_ROW, REMOTE_TILE_H, SESSION_TILE_H, TILE_H, TILE_W, type ColumnRow } from '../gridGeometry';
 import type { BoardModel } from '../useBoardModel';
 import type { RailScope } from '../useRailScope';
-import { TeamColumn } from './TeamColumn';
+import { BoardColumnSlot } from '../remote/RemoteDeviceColumn';
+import { RemoteSessionTile } from '../remote/RemoteSessionTile';
 import { SessionDivider } from './SessionDivider';
 import { useBoardRows } from './useBoardRows';
 
@@ -63,11 +64,12 @@ export interface GridBoardProps {
   onRecapSession: (session: FleetSession) => void;
   scopedTeamId: string | null;
   onToggleScope: RailScope['toggleScope'];
+  onOpenRemote?: (jobId: string) => void; // a `remote:<jobId>` tile opens its drawer
 }
 
 export function GridBoard({
   model, isLoading, staged, reducedMotion, focusKey, selectedPersonaId, onSelect,
-  bubbles, unseen, onOpenSession, onRecapSession, scopedTeamId, onToggleScope,
+  bubbles, unseen, onOpenSession, onRecapSession, scopedTeamId, onToggleScope, onOpenRemote,
 }: GridBoardProps) {
   const { t } = useTranslation();
 
@@ -115,9 +117,10 @@ export function GridBoard({
     (row: ColumnRow): ReactNode => {
       if (row.kind === 'persona') return renderTile(row.card, row.teamName);
       if (row.kind === 'session') return renderSessionTile(row.session);
+      if (row.kind === 'remote') return <RemoteSessionTile view={row.view} width={columnWidth} height={REMOTE_TILE_H} onOpen={onOpenRemote} />;
       return <SessionDivider label={t.monitor.grid_sessions} />;
     },
-    [renderTile, renderSessionTile, t.monitor.grid_sessions],
+    [renderTile, renderSessionTile, t.monitor.grid_sessions, columnWidth, onOpenRemote],
   );
 
   // No scroller to measure here, so the ghost paints at what the hook holds:
@@ -156,7 +159,7 @@ export function GridBoard({
               {i > 0 && <span aria-hidden className="h-px w-full flex-shrink-0 bg-border/60" />}
               <div className="flex flex-shrink-0 items-start gap-3" data-testid="fleet-grid-row">
                 {row.map((column) => (
-                  <TeamColumn
+                  <BoardColumnSlot
                     key={column.teamId}
                     column={column}
                     scoped={scopedTeamId === column.teamId}
@@ -194,5 +197,3 @@ export function GridBoard({
     </>
   );
 }
-
-export default GridBoard;

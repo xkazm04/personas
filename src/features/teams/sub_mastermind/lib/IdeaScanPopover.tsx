@@ -166,7 +166,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-foreground/10">
         <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">{t.mastermind.scan_title} — {name}</span>
+        <span className="typo-caption text-foreground truncate">{t.mastermind.scan_title} — {name}</span>
         <button
           type="button"
           onClick={onClose}
@@ -320,7 +320,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
             contextIds: [...contextIds],
             targetCount,
           })}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-interactive bg-primary/15 text-foreground border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:hover:bg-primary/15 transition-colors focus-ring"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 typo-caption rounded-interactive bg-primary/15 text-foreground border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:hover:bg-primary/15 transition-colors focus-ring"
           data-testid="mm-scan-run"
         >
           <Play className="w-3.5 h-3.5" aria-hidden />

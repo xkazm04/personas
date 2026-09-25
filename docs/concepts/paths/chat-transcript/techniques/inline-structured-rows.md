@@ -8,8 +8,8 @@ laws:
   - identity-survives-reuse
 shared_with: []
 evidence:
-  - src/features/plugins/companion/ApprovalCard.tsx            # in-chat approval card; approve failure surfaced on the card (approved_failed), not as silent success
-  - src/features/plugins/companion/InlineChatCard.tsx          # kind-dispatched card renderer with an explicit kind set (clamp policy per kind)
+  - src/features/companions/athena/ApprovalCard.tsx            # in-chat approval card; approve failure surfaced on the card (approved_failed), not as silent success
+  - src/features/companions/athena/InlineChatCard.tsx          # kind-dispatched card renderer with an explicit kind set (clamp policy per kind)
 ---
 
 # Inline structured rows

@@ -55,6 +55,7 @@
   "suggestions_title": "ملاحظات أثينا",
   "tabs_label": "الملاحظات",
   "timeline_title": "دورة الحياة",
+  "title": "نظرة عامة على الأهداف",
   "to_goals": "تحويل إلى أهداف",
   "variant_split": "لوحة مقسّمة",
   "variant_workbench": "منضدة عمل",
@@ -220,6 +221,5 @@
   "desk_key_open_project": "افتح المشروع",
   "desk_lane_brainstorm": "مسار العصف الذهني",
   "desk_lane_plan": "مسار الخطة",
-  "desk_room_back": "المكتب",
-  "title": "نظرة عامة على الأهداف"
+  "desk_room_back": "المكتب"
 }

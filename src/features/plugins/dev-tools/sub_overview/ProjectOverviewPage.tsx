@@ -16,7 +16,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { openGoalsBoard, openProjectManager } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard, openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { splitSentrySlug } from './adapters';
 import {
   ConnectorChain, MonitoringChain, SentryProjectPicker,
@@ -629,7 +629,7 @@ function VitalTile({
               initial={shouldAnimate ? { opacity: 0, y: 4 } : { opacity: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className={`typo-data-lg leading-none ${TONE_TEXT[tone]}`}
+              className={`typo-data-lg ${TONE_TEXT[tone]}`}
             >
               {value}
             </motion.p>
@@ -683,7 +683,7 @@ function ConnectionRow({
       <Icon className={`w-5 h-5 shrink-0 ${brandColor}`} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <span className="typo-body font-medium text-foreground">{title}</span>
+          <span className="typo-body text-foreground">{title}</span>
           <StatusIcon className={`w-3.5 h-3.5 ${statusTone}`} />
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">

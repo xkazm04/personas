@@ -11,16 +11,14 @@
 // already lives in the left rail (the group tree IS the category filter) and
 // the value score stays reachable via the sort pills and the ledger, so both
 // columns are gone and the Idea column gets the room the content needs.
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bot, Check, CheckSquare, ScanSearch, Square, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bot, Check, ScanSearch, X } from 'lucide-react';
 
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
-import type { DataGridBulkAction, DataGridColumn } from '@/features/shared/components/display/DataGrid';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-// Cross-feature import, precedented: the sensor palette is defined once next to
-// the badge that renders it, and the Backlog must label origins identically to
-// the findings surfaces or the same sensor reads as two different things.
-import { FindingBadge, useOriginLabel } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
+import type { DataGridBulkAction } from '@/features/shared/components/display/DataGrid';
+// Cross-feature import, precedented: origins are labelled once, next to the
+// badge that renders them (see backlogColumns.tsx for the badge itself).
+import { useOriginLabel } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import {
@@ -33,6 +31,7 @@ import {
   type SortDir,
 } from './backlogModel';
 import { useCategoryLabel } from './backlogLabels';
+import { useBacklogColumns } from './backlogColumns';
 
 export function BacklogTable({
   rows,
@@ -86,9 +85,15 @@ export function BacklogTable({
     setSortDir(hintDir);
   }, [hintKey, hintDir]);
 
+  // One project in the loaded rows: its column would repeat one name on every
+  // row and its filter would have one choice, so both go. They return together
+  // as soon as a second project appears; the filter is ignored while hidden, so
+  // a stale choice can never empty the table with no control left to undo it.
+  const showProject = projectOptions.length > 1;
+  const effectiveProjectFilter = showProject ? projectFilter : 'all';
   const filterRow = useCallback(
-    (i: BacklogIdea) => projectFilter === 'all' || (i.projectId ?? '') === projectFilter,
-    [projectFilter],
+    (i: BacklogIdea) => effectiveProjectFilter === 'all' || (i.projectId ?? '') === effectiveProjectFilter,
+    [effectiveProjectFilter],
   );
 
   const compare = useCallback(
@@ -107,82 +112,10 @@ export function BacklogTable({
 
   const allSelected = rows.length > 0 && rows.every((i) => selectedIds.has(i.id));
 
-  const columns: DataGridColumn<BacklogIdea>[] = useMemo(() => [
-    {
-      key: 'select',
-      label: '',
-      width: '40px',
-      render: (row) => (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onToggleSelect(row.id); }}
-          aria-label={r.backlog_select_row}
-          aria-pressed={selectedIds.has(row.id)}
-          title={r.backlog_select_row}
-          className="text-foreground/60 hover:text-primary transition-colors"
-        >
-          {selectedIds.has(row.id)
-            ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
-            : <Square className="w-3.5 h-3.5" />}
-        </button>
-      ),
-    },
-    {
-      key: 'title',
-      label: r.backlog_col_title,
-      width: 'minmax(0, 1fr)',
-      sortable: true,
-      render: (row) => (
-        <span className="flex items-center gap-2 min-w-0">
-          <span className="typo-body text-foreground truncate min-w-0" title={row.title}>
-            {row.title}
-          </span>
-          {row.origin && (
-            <span onClick={(e) => e.stopPropagation()} className="shrink-0">
-              <FindingBadge origin={row.origin} evidence={row.evidence} />
-            </span>
-          )}
-          {/* basis-0 + grow: the snippet only ever fills space the title and
-              badge left over — the headline is the row's identity and wins. */}
-          {row.description && (
-            <span
-              className="typo-caption text-muted-foreground truncate min-w-0 flex-1 basis-0"
-              title={row.description}
-            >
-              {row.description}
-            </span>
-          )}
-        </span>
-      ),
-    },
-    {
-      key: 'project',
-      label: r.backlog_col_project,
-      width: '150px',
-      sortable: true,
-      filterOptions: [
-        { value: 'all', label: r.backlog_all_projects },
-        ...projectOptions,
-      ],
-      filterValue: projectFilter,
-      onFilterChange: setProjectFilter,
-      render: (row) => (
-        <span className="typo-body text-muted-foreground truncate">
-          {row.projectName || r.backlog_project_none}
-        </span>
-      ),
-    },
-    {
-      key: 'created',
-      label: r.backlog_col_created,
-      width: '96px',
-      sortable: true,
-      align: 'right',
-      render: (row) => (
-        <RelativeTime timestamp={row.createdAt} className="typo-caption text-muted-foreground" />
-      ),
-    },
-  ], [r, projectFilter, projectOptions, selectedIds, onToggleSelect]);
+  const columns = useBacklogColumns({
+    r, selectedIds, onToggleSelect, showProject,
+    projectFilter, projectOptions, onProjectFilter: setProjectFilter,
+  });
 
   const bulkActions: DataGridBulkAction[] = [
     { id: 'accept', label: r.backlog_bulk_accept, icon: Check, onClick: onBulkAccept },
@@ -206,6 +139,7 @@ export function BacklogTable({
       toolbar={toolbar}
       emptyIcon={ScanSearch}
       pageSize={25}
+      fit="page"
       density="compact"
       formatSegment={(segment, path) =>
         isOriginSegment(path) ? originLabel(segment) : categoryLabel(segment)

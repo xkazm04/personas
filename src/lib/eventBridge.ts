@@ -22,6 +22,7 @@ import { useImproveActivityStore } from "@/stores/improveActivityStore";
 import { useDevToolsLiveStore } from "@/stores/devToolsLiveStore";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
+import { publishRemoteSessionOutput } from "@/lib/network/remoteSessionOutput";
 import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 
@@ -734,7 +735,13 @@ const registry: EventRegistration[] = [
       let pending: Record<string, unknown> | undefined;
       let throttleTimer: ReturnType<typeof setTimeout> | null = null;
       const flush = () => {
-        if (pending) { useSystemStore.setState(pending); pending = undefined; }
+        if (pending) {
+          useSystemStore.setState(pending);
+          pending = undefined;
+          // A peer came or went: the "Run on" pickers' reachability dots follow.
+          // Coalesced in the slice, and a no-op until something loaded it.
+          void useSystemStore.getState().refreshDispatchDevices({ coalesce: true });
+        }
         throttleTimer = null;
       };
       const unlisten = await typedListen(
@@ -812,6 +819,44 @@ const registry: EventRegistration[] = [
         (payload) => {
           if (!payload || typeof payload.id !== 'string') return;
           useSystemStore.getState().applyRemoteJobUpdate(payload);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Remote session view changed (push from the p2p transport) ----------
+  //
+  // One whole `RemoteSessionView` per push: a fleet session this device sent to
+  // a paired device moved. Merged in `remoteSessionsSlice`, whose stale-push
+  // guard (a late `running` after `completed`) lives in the pure model.
+  {
+    event: EventName.REMOTE_SESSION_UPDATED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.REMOTE_SESSION_UPDATED,
+        (payload) => {
+          if (!payload || typeof payload.jobId !== 'string') return;
+          useSystemStore.getState().applyRemoteSessionUpdate(payload);
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Remote session terminal tail (lossy, only while a drawer subscribed) --
+  //
+  // Deliberately NOT store state: a chunk is a write into one open xterm, and
+  // routing it through Zustand would notify every subscriber per chunk. The
+  // drawer's mirror listens on the bus; with no drawer open this is a no-op.
+  {
+    event: EventName.REMOTE_SESSION_OUTPUT,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.REMOTE_SESSION_OUTPUT,
+        (payload) => {
+          if (!payload || typeof payload.jobId !== 'string' || typeof payload.chunkB64 !== 'string') return;
+          publishRemoteSessionOutput(payload);
         },
       );
       return [unlisten];

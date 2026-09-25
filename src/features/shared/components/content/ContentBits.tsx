@@ -17,7 +17,7 @@ export function ContentPill({ tone = 'amber', children }: { tone?: ContentTone; 
  */
 export function ContentEyebrow({ children }: { children: ReactNode }) {
   return (
-    <span className="typo-heading text-foreground uppercase tracking-wider">{children}</span>
+    <span className="typo-heading text-foreground uppercase">{children}</span>
   );
 }
 

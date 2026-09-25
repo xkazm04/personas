@@ -82,7 +82,7 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
                     )
                   )}
                   <span
-                    className="typo-body font-semibold uppercase tracking-wider truncate"
+                    className="typo-body uppercase tracking-wider truncate"
                     style={{ color: selected || !preview ? teamColor : undefined }}
                   >
                     {row.role}
@@ -95,9 +95,9 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
                     </span>
                   )}
                 </div>
-                <div className="typo-body text-foreground/90 mt-1 leading-snug">{meta?.name ?? row.templateId}</div>
+                <div className="typo-body text-foreground/90 mt-1">{meta?.name ?? row.templateId}</div>
                 {meta?.description && (
-                  <div className="typo-caption text-foreground mt-0.5 line-clamp-2 leading-snug">{meta.description}</div>
+                  <div className="typo-caption text-foreground mt-0.5 line-clamp-2">{meta.description}</div>
                 )}
               </CardTag>
             );

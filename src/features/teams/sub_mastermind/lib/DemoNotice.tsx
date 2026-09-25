@@ -24,7 +24,7 @@ export function DemoNotice({ scanning, onScan, onNewProject, onDismiss }: {
         aria-label={t.mastermind.demo_title}
         data-testid="mm-demo-notice"
       >
-        <h2 className="typo-body font-semibold text-foreground mb-1.5">{t.mastermind.demo_title}</h2>
+        <h2 className="typo-body text-foreground mb-1.5">{t.mastermind.demo_title}</h2>
         <p className="typo-caption text-foreground/65 mb-3.5">{t.mastermind.demo_body}</p>
         <div className="flex items-center justify-center gap-2">
           <Button

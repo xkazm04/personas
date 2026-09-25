@@ -27,8 +27,8 @@ vi.mock('@/lib/silentCatch', () => ({
   toastCatch: () => vi.fn(),
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => vi.fn()) }));
-vi.mock('@/features/plugins/companion/companionStore', () => ({
-  useCompanionStore: { getState: () => ({ pulseForwardAck: vi.fn(), pulseMessageReaction: vi.fn(), setOrbGuideTarget: vi.fn(), setOrbBusy: vi.fn() }) },
+vi.mock('@/features/companions/athena/athenaStore', () => ({
+  useAthenaStore: { getState: () => ({ pulseForwardAck: vi.fn(), pulseMessageReaction: vi.fn(), setOrbGuideTarget: vi.fn(), setOrbBusy: vi.fn() }) },
 }));
 
 const { useStudioStore } = await import('../studioStore');

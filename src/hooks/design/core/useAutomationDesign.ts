@@ -30,6 +30,9 @@ export function useAutomationDesign() {
     completedPhase: 'preview',
     startFn: startAutomationDesign,
     cancelFn: cancelAutomationDesign,
+    // The backend job's id_field and timeout_secs, from tools/automation_design.rs AUTOMATION_DESIGN_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'design_id',
+    backendTimeoutSecs: 300,
     errorMessage: 'Automation design failed',
     traceOperation: 'automation_design',
   });

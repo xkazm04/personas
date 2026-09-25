@@ -90,7 +90,7 @@ function decrementCountEntry(entries: Array<[string, number]>, key: string): Arr
 
 export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice> = (set, get) => {
   // Only the latest fetch writes to state. Same shape as
-  // `cronAgentsSlice.fetchCronAgents` / `certificationSlice.loadEvalRunDetail`.
+  // `cronAgentsSlice.fetchCronAgents`.
   const latestWins = createLatestWins();
 
   return {

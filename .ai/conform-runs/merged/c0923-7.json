@@ -1,0 +1,167 @@
+{
+  "worker": "c0923-7",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    { "context": "14c7d145-2166-454b-aee5-d69d9d527d79", "subject": "design-tokens", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/styles/globals.css:832 still applies the brightness axis as a whole-surface `filter: brightness()` on <html>, the pixel-filter trap density-and-scale-axes names. So the contrast numbers CustomThemeCreator.tsx:33 computes describe declarations that never reach the screen, and the compensation machinery around it keeps growing (themeStore.ts:230 plus the exempt-token pre-adjust list).",
+      "techniques": [
+        { "technique": "density-and-scale-axes", "verdict": "deviation", "evidence": "src/styles/globals.css:832 implements brightness as `filter: brightness(var(--app-brightness))` over the rendered output instead of rebinding the surface ramp. It escapes the token layer, so every gate that reads token values measures colors the user never sees (gate-sees-target)." },
+        { "technique": "token-enforcement", "verdict": "deviation", "evidence": "src/features/settings/sub_appearance/components/CustomThemeCreator.tsx:33 computes the body contrast ratio from the declared fg/bg. The html filter at globals.css:832 then scales those colors, so the floor is checked against values that are not the rendered ones." },
+        { "technique": "theme-architecture", "verdict": "conformant", "evidence": "src/lib/theme/deriveCustomTheme.ts:119 deriveCustomThemeVars is a named, re-invokable derivation from the stored custom-theme config, and CustomThemeCreator.tsx:106 re-derives from it instead of storing a frozen var map." },
+        { "technique": "token-taxonomy", "verdict": "unread", "evidence": "src/stores/themeStore.ts:210 applyDensity stamps data-density at the root. Role coverage of the appearance surfaces was not audited this pass." }
+      ] },
+    { "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65", "subject": "design-tokens", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:127 still hardcodes `bg-orange-500/10 border-orange-500/20 text-orange-400`, and :144 hardcodes `bg-emerald-500/10 border-emerald-500/20 text-emerald-400`. Both are raw ramp steps instead of roles, and the emerald border has already drifted from the /30 that STATUS_PALETTE.success defines (statusTokens.ts:27). The gate that would catch this is warn-level and muted at commit.",
+      "techniques": [
+        { "technique": "token-taxonomy", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:144 consumes primitive ramp steps (emerald-500/20, emerald-400) directly. The skipped-layer anti-pattern means no theme can rebind these badges, and they already disagree with src/lib/design/statusTokens.ts:27 success (border /30)." },
+        { "technique": "token-enforcement", "verdict": "deviation", "evidence": "eslint.config.js:117 sets custom/prefer-status-badge to \"warn\", and the pre-commit run at lefthook.yml:32 passes --quiet --max-warnings 99999. The raw-status-color rule is advisory by construction (the advisory-level trap), so ConnectorCard's badges pass every gate." }
+      ] },
+    { "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "subject": "model-routing", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies an edited BYOM policy in place, with no version, diff, blast radius or approver. The audit record (src/lib/bindings/ProviderAuditEntry.ts:6) cites no policy version or asserted class, so an audit cannot tell 'rule violated' from 'rule did not exist yet'. The rule-name half of the old finding is FIXED: ByomAuditLog.tsx:77/:84 now show routing and compliance rule names (62ff6f942e).",
+      "techniques": [
+        { "technique": "policy-governance", "verdict": "deviation", "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 `await setByomPolicy(snapshot)` overwrites the active policy with no version, before/after diff or recorded approver. src/lib/bindings/ProviderAuditEntry.ts:6 carries routing_rule_name and compliance_rule_name but no policy_version, so no decision can cite the policy version it was made under." },
+        { "technique": "routing-policy", "verdict": "conformant", "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:149 validates the policy as data at the edit door (validateByomPolicy) and refuses to save on blocking errors." },
+        { "technique": "turn-classification", "verdict": "deviation", "evidence": "src/lib/bindings/ProviderAuditEntry.ts:6 records model_used, was_failover and the rule names but no asserted call class. The record audits which rule fired, not the class the call claimed." }
+      ],
+      "registryProposal": "The golden path's 'two tables' section could state whether an operator-permission table (BYOM allow/block lists) owes the full approval half of policy-governance or only versioning plus diff, since a single-user desktop install has no separate approver." },
+    { "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "subject": "model-routing", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 commits a Studio link as `trigger_type: 'chain'`. 'Routing' in this context wires one persona's completion to another's start. No tier, effort, provider, model or class appears in the context's files, so model-routing does not govern it.",
+      "techniques": [
+        { "technique": "turn-classification", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 builds a chain trigger. The context selects no model, so there is no call class to assign." },
+        { "technique": "routing-policy", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:105 routes events between personas, not calls to models. There is no provider policy to evaluate." }
+      ] },
+    { "context": "bcb603ad-ce58-4b76-9623-aa99ace984af", "subject": "proactive-nudges", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 still runs each evaluator as `.unwrap_or_default()` (:75-78, :82). An erroring evaluator contributes an empty list, identical to having nothing to say, so a proactive system that has gone dark reads as a quiet week (failure-not-empty-success).",
+      "techniques": [
+        { "technique": "trigger-evaluators", "verdict": "deviation", "evidence": "src-tauri/src/companion/proactive/triggers.rs:75 `goal_target_approaching(pool).unwrap_or_default()` isolates evaluators but discards the failure with no log, counter or distinct outcome, and so do the siblings at :76-78 and :82." },
+        { "technique": "attention-budgets", "verdict": "conformant", "evidence": "src-tauri/src/companion/proactive/mod.rs:444 `budget.try_consume(pool, &msg.trigger_kind)` is an atomic claim against both the global ceiling and the per-kind cap, with the concurrent-pass case handled by claim_delivered." },
+        { "technique": "notice-delivery-decoupling", "verdict": "conformant", "evidence": "src-tauri/src/companion/proactive/mod.rs:395 says quiet hours suppress delivery, not noticing: rows stay queued. The sweep at :237 expires stale queued rows with status 'expired' instead of deleting them." },
+        { "technique": "quiet-windows", "verdict": "deviation", "evidence": "src-tauri/src/companion/proactive/mod.rs:397 `quiet::is_quiet_now(pool).unwrap_or(false)` fails open. An error reading the window delivers during declared quiet time instead of holding." }
+      ] },
+    { "context": "0dabb588-48ce-4c35-b425-c344fd723ce7", "subject": "proactive-nudges", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 shows this context authoring user-defined polling/schedule/webhook rules that execute a persona. That is rule-authority automation on the alerting side of the boundary the golden path draws, not machine-initiated contact with a human. The old anchor (TriggerStatusSummary.tsx:54-76) had drifted past the file's content.",
+      "techniques": [
+        { "technique": "trigger-evaluators", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 configures a user-authored polling trigger whose output is a persona run. No agent judgment about the user's attention is evaluated here." },
+        { "technique": "attention-budgets", "verdict": "not-applicable", "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 authors an execution rule. The rate controls in this context bound persona runs, not contact with a human." }
+      ] },
+    { "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "subject": "table", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:529 still sorts by `String(row[key]).localeCompare` with no identity tiebreaker, and :532 inverts desc with reverse(). Ties reshuffle between refreshes, numbers and dates collate as strings unless a caller passes sortFn, and a caller's 'absent-last' comparator flips to absent-first on desc.",
+      "techniques": [
+        { "technique": "sorting", "verdict": "deviation", "evidence": "src/features/shared/components/display/UnifiedTable.tsx:532 `sortDir === 'desc' ? sorted.reverse() : sorted` reverses the whole comparator, including a caller's declared absent-values home. :529 compares String() values with no id tiebreaker. :521 `if (!col) return data;` gives a persisted sort whose column vanished no sort at all rather than the default. ColumnHeader (:321) still emits no aria-sort." },
+        { "technique": "loading-and-empty-states", "verdict": "conformant", "evidence": "src/features/shared/components/display/UnifiedTable.tsx:616 renders the ghost only when loading AND empty, and :646 keeps rows on a failed refresh with an inline ErrorBanner (error is not empty, and a fetch never hides rows)." },
+        { "technique": "client-server-split", "verdict": "conformant", "evidence": "src/features/shared/components/display/UnifiedTable.tsx:520 sorts the whole `data` array the caller hands it. The primitive is all-client, and the split is the caller's decision (see overview-activity-metrics)." }
+      ] },
+    { "context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24", "subject": "table", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:177 filters (model and time window) and sorts only the pages loaded so far, while :343 grows the window from the server via onEndReached. 'Sort by cost' and the 24h/model controls therefore answer about whatever happened to be fetched, while the count at :302 sets that filtered length beside a server total taken under no predicate.",
+      "techniques": [
+        { "technique": "client-server-split", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:177 filters `globalExecutions` client-side while :343 pages it from the server. One axis is split across tiers (the deadly variant), so a sort or filter claims the set but covers the loaded window." },
+        { "technique": "pagination", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:302 renders the filtered count against globalExecutionCounts.total, an unfiltered server total. The count does not carry its predicate." },
+        { "technique": "sorting", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:282 sorts cost with byNullableNumber, whose docblock (:55) promises unknown-cost rows 'sort last in both directions'. UnifiedTable.tsx:532 reverse()s on desc, and a new column opens desc, so the first cost click puts every unpriced call at the top, masquerading as the maximum." },
+        { "technique": "loading-and-empty-states", "verdict": "conformant", "evidence": "src/features/overview/sub_activity/components/LlmCallsTable.tsx:334 hands isFetching to UnifiedTable, which owns ghost-under-chrome, settle-before-empty and refresh-keeps-rows." }
+      ] },
+    { "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "subject": "prompt-assembly", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with 'You are a senior AI agent architect. The user wants:', and :229 interpolates \"{intent}\"{lang_preamble}{context_section} ahead of hundreds of lines of standing framework text. No two builds share a byte-stable prefix, and the primacy position is spent on an expertise claim.",
+      "techniques": [
+        { "technique": "layered-composition", "verdict": "deviation", "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:229 puts the per-call intent, language preamble and user context at byte ~60. Every standing layer after it becomes uncacheable, the reverse of volatility order." },
+        { "technique": "task-envelope", "verdict": "deviation", "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 opens with an expertise claim ('You are a senior AI agent architect'), which the decision rule says to replace with a locate pointer." }
+      ] },
+    { "context": "969f50a2-b70d-41e3-b573-284a75a67425", "subject": "prompt-assembly", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/prompt/assemble.rs:88 assemble_prompt still returns a bare String, and src-tauri/src/commands/execution/executions.rs:696 appends the memory layer after assembly (prepared_run_cache.rs:156 `format!(\"{prompt_text}{mem_section}\")`). Memory rides outside the budget, the untrusted-section wrapping and the fingerprint: the unsealed door.",
+      "techniques": [
+        { "technique": "layered-composition", "verdict": "deviation", "evidence": "src-tauri/src/commands/execution/executions.rs:696 appends memories to the assembled string post-return. The late layer is a suffix, not an assembler input, and the output type at assemble.rs:88 cannot refuse it." },
+        { "technique": "context-budgeting", "verdict": "deviation", "evidence": "src-tauri/engine/src/prompt/budget.rs:4 says 'Observability ONLY ... NEVER truncates'. It is a warn tripwire with no allocation or enforcement, and the appended memory block is not even measured by it." },
+        { "technique": "fingerprinting-and-cache-keys", "verdict": "deviation", "evidence": "src-tauri/engine/src/prepared_run_cache.rs:156 concatenates the memory section onto prompt text that was built and cached upstream, so the cached/fingerprinted artifact is not the prompt the model reads." }
+      ] },
+    { "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "subject": "accessibility", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:154 hand-rolls the approve/reject buttons with no focus-ring utility. :156 swaps in a spinner while resolving with no aria-busy, so the busy state is visual-only. Across the widget directory no file imports the shared Button, which carries aria-busy at Button.tsx:233. The old consequence overstated one point: the 44px coarse-pointer floor is global (globals.css:95), not Button-only.",
+      "techniques": [
+        { "technique": "primitive-level-a11y", "verdict": "deviation", "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:154 is a near-primitive: a hand-rolled button outside the shared Button door (Button.tsx:233 aria-busy). It drops the visible-focus spec (no focus-ring class, although PersonaCreationOfferWidget.tsx:55's copy has one), so each widget restates the contract differently." },
+        { "technique": "live-region-architecture", "verdict": "deviation", "evidence": "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx:156 signals the in-flight resolve only by swapping an icon for a spinner. There is no aria-busy and no status message, so a screen-reader user gets no word that the approve is pending." }
+      ] },
+    { "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "accessibility", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useMotion.ts:56 useReducedMotion derives one signal from both the OS media query and the app's data-motion toggle, and the variants gate keeps opacity while stripping movement (replace, never remove). useRovingTabIndex.ts:23 gives composites Arrow/Home/End roving focus. useSettingsSaveToast.ts:18 routes save confirmation through the toast store's polite live region (ToastContainer.tsx:282).",
+      "techniques": [
+        { "technique": "preference-respect", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useMotion.ts:56 useReducedMotion reads both reduced-motion signals. toReducedVariants keeps opacity and final values and strips translate/scale/rotate, so feedback is replaced rather than removed. Pinned by __tests__/useMotion.test.ts." },
+        { "technique": "keyboard-navigation-models", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:23 onKeyDown moves focus and selection together on ArrowLeft/ArrowRight/Home/End with wraparound: the roving model for composite widgets." },
+        { "technique": "live-region-architecture", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useSettingsSaveToast.ts:18 sends the 'saved' confirmation through the shared toast store, whose container is the persistent polite live region (src/features/shared/chrome/ToastContainer.tsx:282 role=\"status\"). No ad-hoc region is minted per call site." },
+        { "technique": "name-and-description-wiring", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:49 returns only { setRef, onKeyDown }. These hooks render no control, so accessible names are wired by the consuming components." },
+        { "technique": "hidden-but-mounted-inertness", "verdict": "unread", "evidence": "src/hooks/utility/interaction/useSaveFeedback.ts:24 returns a visibility flag its docblock pairs with a CSS opacity fade. Whether consumers close the accessibility channel for the faded checkmark was not traced." }
+      ] },
+    { "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec", "subject": "guided-tours", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_learning/HomeLearning.tsx:243 computes each tour card's in-progress count from `tourStepCompleted`, the LAST ACTIVE tour's session map (hydrated at restart from getting-started only, tourSlice.ts:1463). A paused teams-orchestration tour therefore renders as never started after a restart, or after any other tour runs, while its real position sits on disk. Composed-tour retirement is still sound (:147).",
+      "techniques": [
+        { "technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/features/home/sub_learning/HomeLearning.tsx:243 reads per-tour progress from session memory (the active tour's map) rather than the per-tour persisted record, so the Learning ledger loses every paused tour but one. Separately, :147 correctly renders a stale composed tour visible but non-startable (retirement as explicit state)." },
+        { "technique": "anchor-contracts", "verdict": "conformant", "evidence": "src/features/home/sub_learning/useComposedTours.ts:81 makes only server-reproved 'ready' records (re-checked against the current anchor manifest) playable, and they pass the same ingestComposedTour gate; drifted records get def=null." },
+        { "technique": "overlay-precedence", "verdict": "not-applicable", "evidence": "src/features/home/sub_learning/HomeLearning.tsx:341 hands the tour to startTour(id). This context renders no overlay, spotlight or focus policy; GuidedTour in onboarding-components does." }
+      ] },
+    { "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "guided-tours", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/system/tourSlice.ts:1459 still hydrates `tourActiveTourId: defaultTourId` ('getting-started', :1398), and PersistedTourState (:1223) has no active-tour field. After a restart, GuidedTour (GuidedTour.tsx:37) and the footer Resume (TourResumeFooterIcon.tsx:29) resume getting-started, not the tour the user was in. Anchor drifted from :1401.",
+      "techniques": [
+        { "technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/stores/slices/system/tourSlice.ts:1459 restores the active tour as the hardcoded default. The resume pair loses its 'which tour' half: the half-measure the technique names, with the user's real position intact on disk and unreachable from Resume." },
+        { "technique": "action-driven-advancement", "verdict": "unread", "evidence": "src/features/onboarding/components/GuidedTour.tsx:37 subscribes to the active tour id. Step-completion signals were not audited this pass." }
+      ] },
+    { "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17", "subject": "i18n", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/errors/errorRegistry.ts:65 ERROR_RULES still stores user-facing English sentences instead of catalog keys, and resolveError is called directly by 11 components (e.g. src/features/companions/athena/BrainHealthPanel.tsx:145). Those surfaces render English in all 14 locales. The new parity gate (errorRuleParity.test.ts:38) closes only the useTranslatedError path, so the finding narrowed but stands.",
+      "techniques": [
+        { "technique": "catalog-architecture", "verdict": "deviation", "evidence": "src/lib/errors/errorRegistry.ts:65 is a second English authority beside en.json's error_registry section. src/features/companions/athena/BrainHealthPanel.tsx:145 renders resolveError(...).message directly, bypassing the catalog, as do 10 other importers." },
+        { "technique": "token-label-separation", "verdict": "deviation", "evidence": "src/i18n/tokenMaps.ts:40 reports an unmapped token only under import.meta.env.DEV, then renders the raw token (:50). The technique requires the miss reported in production, where version skew happens." },
+        { "technique": "completeness-gates", "verdict": "conformant", "evidence": "lefthook.yml:75 (key parity, --strict) and lefthook.yml:87 (value parity: untranslated byte-identical values) gate every locale edit at commit. src/i18n/__tests__/errorRuleParity.test.ts:38 gates ERROR_RULES against ERROR_KEY_MAP." }
+      ] },
+    { "context": "1ffb5765-de47-4f01-87ec-06732a63522c", "subject": "i18n", "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 now reads src-tauri/db/src/chain.rs itself and asserts set equality against status_tokens.chain_stop (:34), with a non-empty floor. The hand-copied replica the old deviation named is gone (d18d6ce800), so a chain.rs vocabulary edit fails CI instead of shipping a raw token.",
+      "techniques": [
+        { "technique": "completeness-gates", "verdict": "conformant", "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:34 asserts sorted set equality between the catalog's chain_stop keys and the Rust stop_reason consts. This is the domain-coverage check, run by vitest in CI and attached to the vocabulary edit." },
+        { "technique": "token-label-separation", "verdict": "conformant", "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 binds the label map to the vocabulary's authoritative definition (chain.rs) rather than a copy: the proactive build-time half. The runtime half lives in the i18n context." },
+        { "technique": "catalog-architecture", "verdict": "conformant", "evidence": "src/i18n/generated/types.ts:2 is generated from en.json ('DO NOT EDIT BY HAND') and registered as a codegen output at scripts/codegen/inputs.mjs:38, so the typed key tree names its recomputation." },
+        { "technique": "string-extraction-enforcement", "verdict": "not-applicable", "evidence": "src/i18n/generated/types.ts:7 `export type Translations = {` shows this context holds generated types and tests, with no authored display markup to extract strings from." },
+        { "technique": "script-aware-presentation", "verdict": "not-applicable", "evidence": "src/i18n/generated/types.ts:7 is a type declaration that renders nothing, so there is no typography to key per script." }
+      ] },
+    { "context": "e62d5595-2bbd-480a-a757-2d3a126545a0", "subject": "agent-memory", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:142 still resolves a duplicate by mergeMemoriesAction, which hard-deletes both originals (src-tauri/db/src/repos/core/memories.rs:1662). A two-item family is replaced by a machine-concatenated item with no supersedence link and no surviving members to audit. The core and cross-persona guards narrow it; the keep_a/keep_b path archives correctly (:117).",
+      "techniques": [
+        { "technique": "rollup-compaction", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 `DELETE FROM persona_memories WHERE id = ?1` runs for each merged original. The technique requires members to remain linked, auditable and out of default reads." },
+        { "technique": "consolidation", "verdict": "conformant", "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:143 tests contradiction before duplicate, so polarity-flipped pairs are never offered a merge. src/features/overview/sub_memories/components/MemoryConflictReview.tsx:117 retires the losing side by archive, not delete." },
+        { "technique": "decay-and-forgetting", "verdict": "conformant", "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:117 `setMemoryTier(retire.id, 'archive')` demotes to a never-injected but searchable tier, instead of the former hard delete." }
+      ] },
+    { "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473", "subject": "agent-memory", "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:146 retires a team belief by deleteTeamMemory, a hard DELETE at src-tauri/db/src/repos/resources/team_memories.rs:289, and :171 corrects one by in-place overwrite (updateTeamMemory). The shared ledger keeps neither a demotion tier nor a supersedence link. Anchors drifted from :117-128/:142-153.",
+      "techniques": [
+        { "technique": "consolidation", "verdict": "deviation", "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 `updateTeamMemory(id, title, content, ...)` overwrites the belief in place. Supersede-don't-replace is violated, and the prior claim leaves no lineage." },
+        { "technique": "decay-and-forgetting", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:289 `DELETE FROM team_memories WHERE id = ?1` is the only retire path from useTeamMemories.ts:146. There is no archive or demotion tier, although persona memories have one (MemoryConflictReview.tsx:117)." },
+        { "technique": "memory-governance", "verdict": "deviation", "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:171 applies a human correction as a silent edit, not as a recorded operator-issued superseding event, so its reach cannot be checked later." }
+      ] },
+    { "context": "09cf4f1d-dc6f-4c3d-b15f-6686c6ce1eb7", "subject": "media-playback", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "context-map.json:7614 shows this context's file_paths is empty. The Artist plugin, including CompositionPreview.tsx and hooks/useTimelinePlayback.ts, was removed in 0697f13438 (2026-09-15), so no playback clock or transport exists here to judge. The old deviation dissolved by deletion, not by a fix; the row's entry_points still name the deleted files.",
+      "techniques": [
+        { "technique": "playback-clock", "verdict": "not-applicable", "evidence": "context-map.json:7614 `\"file_paths\": []`. src/features/plugins/artist/sub_media_studio/ no longer exists in the tree." },
+        { "technique": "transport-contract", "verdict": "not-applicable", "evidence": "context-map.json:7614 `\"file_paths\": []`. There is no transport surface in this context." }
+      ] },
+    { "context": "b2d7acbc-0191-46e4-8a4d-87c229410c7e", "subject": "media-playback", "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "context-map.json:7655 shows this context's file_paths is empty. useMediaExport.ts and the other Media Studio hooks were removed with the Artist plugin in 0697f13438 (2026-09-15), so there is no export or playback pipeline to judge. The old deviation dissolved by deletion, not by a fix.",
+      "techniques": [
+        { "technique": "media-resource-lifecycle", "verdict": "not-applicable", "evidence": "context-map.json:7655 `\"file_paths\": []`. src/features/plugins/artist/sub_media_studio/hooks/ no longer exists." },
+        { "technique": "playback-clock", "verdict": "not-applicable", "evidence": "context-map.json:7655 `\"file_paths\": []`. There is no clock in this context." }
+      ] }
+  ],
+  "declined": []
+}

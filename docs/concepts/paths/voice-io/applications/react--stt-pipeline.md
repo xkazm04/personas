@@ -8,7 +8,7 @@ stack: react
 # The local dictation pipeline — where the repo meets the technique, and where it doesn't
 
 The on-device capture→transcription pipeline is
-`src/features/plugins/companion/useLocalDictation.ts`: mic capture via
+`src/features/companions/athena/useLocalDictation.ts`: mic capture via
 `getUserMedia`, raw PCM recording through an `AudioContext` pinned (where the
 platform honors it) to 16 kHz mono, client-side WAV encoding, and one
 `companion_stt_transcribe` IPC round-trip to the whisper sidecar

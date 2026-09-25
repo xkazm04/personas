@@ -94,7 +94,7 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose: () => void }) 
     <li className="rounded-card border border-primary/10 bg-secondary/10 px-3 py-2.5" data-testid={`note-run-${run.id}`}>
       <div className="flex items-center gap-2 flex-wrap">
         <Icon className="w-3.5 h-3.5 text-foreground/60 shrink-0" aria-hidden />
-        <span className="typo-title text-foreground/85">{label}</span>
+        <span className="typo-title">{label}</span>
         <Badge
           variant={running ? 'cyan' : run.status === 'completed' ? 'emerald' : 'red'}
           size="sm"

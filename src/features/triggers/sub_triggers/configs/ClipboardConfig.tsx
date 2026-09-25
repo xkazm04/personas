@@ -26,7 +26,7 @@ export function ClipboardConfig({
               key={ct}
               type="button"
               onClick={() => setClipboardContentType(ct)}
-              className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all border capitalize ${
+              className={`px-3 py-1.5 rounded-modal typo-body transition-all border capitalize ${
                 clipboardContentType === ct
                   ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
                   : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
@@ -46,7 +46,7 @@ export function ClipboardConfig({
           value={clipboardPattern}
           onChange={(e) => setClipboardPattern(e.target.value)}
           placeholder={t.triggers.clipboard_pattern_placeholder}
-          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code placeholder-muted-foreground/30 focus-ring transition-all"
+          className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-code placeholder-muted-foreground/30 focus-ring transition-all"
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>

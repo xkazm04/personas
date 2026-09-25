@@ -167,7 +167,7 @@ export function EditorBody() {
           </span>
           <AsyncButton
             variant="accent"
-            accentColor="rose"
+            tone="error"
             size="xs"
             onClick={runSaveAll}
             isLoading={isSaving}

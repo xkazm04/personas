@@ -8,7 +8,7 @@ interface SectionLabelProps {
 
 export function SectionLabel({ children, className = '', as: Tag = 'h4' }: SectionLabelProps) {
   return (
-    <Tag className={`typo-label font-semibold text-foreground mb-2 ${className}`}>
+    <Tag className={`typo-label text-foreground mb-2 ${className}`}>
       {children}
     </Tag>
   );

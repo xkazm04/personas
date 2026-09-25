@@ -84,7 +84,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
             aria-label={stateLabel ?? undefined}
           />
         )}
-        <span className="typo-body font-medium text-foreground/95 min-w-0">{name}</span>
+        <span className="typo-body text-foreground/95 min-w-0">{name}</span>
         {(meta || actions) && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-1.5">
             {meta}
@@ -116,14 +116,15 @@ export function LedgerList({ children, testid }: { children: ReactNode; testid?:
  *  the user looked at the ledger. It now hangs off the title as a tooltip: the
  *  help cursor plus the dotted underline is the affordance, the sentence is
  *  there on demand and out of the way once learned. */
-export function LedgerHeader({ title, count, aside, muted }: {
-  title: string; count: ReactNode; aside?: string; muted?: boolean;
+export function LedgerHeader({ title, count, aside }: {
+  title: string; count: ReactNode; aside?: string;
+  /** Inert: typo-title owns the colour, so the text-foreground/75 this used
+   *  to add never rendered (removed with the dead overrides, 2026-09-24). */
+  muted?: boolean;
 }) {
   const heading = (
-    // muted-ok: a section band that RECEDES by design — `muted` is the caller
-    // saying "this header is chrome for the list below it".
     <h3
-      className={`typo-title ${muted ? 'text-foreground/75' : 'text-foreground'} ${aside ? 'cursor-help decoration-dotted underline underline-offset-4 decoration-foreground/25' : ''}`}
+      className={`typo-title ${aside ? 'cursor-help decoration-dotted underline underline-offset-4 decoration-foreground/25' : ''}`}
     >
       {title}
     </h3>

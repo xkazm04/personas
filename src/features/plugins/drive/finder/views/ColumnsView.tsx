@@ -41,7 +41,7 @@ function ColumnPreview({ entry }: { entry: DriveEntry }) {
           <Icon className={`w-14 h-14 ${tint}`} aria-hidden />
         )}
       </div>
-      <div className="w-full text-center typo-title text-foreground break-words">{entry.name}</div>
+      <div className="w-full text-center typo-title break-words">{entry.name}</div>
       <div className="w-full grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 typo-caption">
         <span className="text-foreground">{t.plugins.drive.finder.insp_kind}</span>
         <span className="text-foreground truncate">{kindLabelFor(t, entry)}</span>

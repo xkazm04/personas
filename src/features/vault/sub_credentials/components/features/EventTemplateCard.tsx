@@ -46,7 +46,7 @@ export function EventTemplateCard({
             ) : (
               <Icon className="w-3.5 h-3.5 text-amber-400/60" />
             )}
-            <span className="typo-body font-medium text-foreground">{template.name}</span>
+            <span className="typo-body text-foreground">{template.name}</span>
           </div>
           <p className="typo-body text-foreground mt-0.5">{template.description}</p>
         </div>

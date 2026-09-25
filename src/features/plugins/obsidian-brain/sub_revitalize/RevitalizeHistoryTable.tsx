@@ -63,11 +63,11 @@ export default function RevitalizeHistoryTable() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-primary/10">
-                <th className="typo-label text-foreground/90 font-medium py-2 pr-3">{ob.revitalize_history_col_when}</th>
-                <th className="typo-label text-foreground/90 font-medium py-2 pr-3">{ob.revitalize_history_col_vault}</th>
-                <th className="typo-label text-foreground/90 font-medium py-2 pr-3">{ob.revitalize_history_col_result}</th>
-                <th className="typo-label text-foreground/90 font-medium py-2 pr-3">{ob.revitalize_history_col_cleaned}</th>
-                <th className="typo-label text-foreground/90 font-medium py-2 text-right">{ob.revitalize_history_col_tokens}</th>
+                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_when}</th>
+                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_vault}</th>
+                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_result}</th>
+                <th className="typo-label text-foreground/90 py-2 pr-3">{ob.revitalize_history_col_cleaned}</th>
+                <th className="typo-label text-foreground/90 py-2 text-right">{ob.revitalize_history_col_tokens}</th>
               </tr>
             </thead>
             <tbody>
@@ -76,7 +76,7 @@ export default function RevitalizeHistoryTable() {
                 const tokensSaved = Math.max(0, run.estTokensBefore - run.estTokensAfter);
                 const statusPill = (
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption font-medium border ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full typo-caption border ${
                       failed
                         ? 'bg-red-500/10 text-red-400 border-red-500/25'
                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'

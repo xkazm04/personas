@@ -177,7 +177,9 @@ pub(crate) async fn execute_approval_action(
         // KP bridge (WP3) — an external hiring app's persona hire request,
         // inserted by `POST /api/kp/persona-requests` (management_api), not by
         // Athena's grammar. Modeled on build_oneshot; NOT autopilot-eligible.
-        "kp_hire_request" => execute_kp_hire_request(&state, &app, params).await,
+        // The approval id is passed so the executor reads the submitting key
+        // off THIS row (not off a params field) when it grants execute rights.
+        "kp_hire_request" => execute_kp_hire_request(&state, &app, approval_id, params).await,
         "run_arena" => execute_run_arena(&state, &app, params).await,
         "companion_breed_personas" => execute_companion_breed_personas(&state, &app, params).await,
         "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, params).await,
@@ -199,6 +201,10 @@ pub(crate) async fn execute_approval_action(
         // filed while autonomous mode was on and clicked after it was turned
         // off is refused at fire time, naming the reason.
         "remote_instruct" => execute_remote_instruct(&state, params).await,
+        // Two machines, one operator: a whole fleet session sent to a paired
+        // device, through the same device rule and the same dispatch path as
+        // the "Run on" picker.
+        "remote_fleet_dispatch" => execute_remote_fleet_dispatch(&state, params).await,
         // Ship layer — act on a milestone that already exists. The CREATE path
         // is the editable `show_ship_milestone` chat card, not an approval.
         "set_ship_scope" => execute_set_ship_scope(&state, params),

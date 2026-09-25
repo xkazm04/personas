@@ -21,7 +21,7 @@ export function EventListenerConfig({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {t.triggers.event_type_to_listen}
         </label>
         <input
@@ -53,7 +53,7 @@ export function EventListenerConfig({
         </p>
       </div>
       <div>
-        <label className="block typo-body font-medium text-foreground mb-1.5">
+        <label className="block typo-body text-foreground mb-1.5">
           {t.triggers.event_listener.source_filter_label} <span className="text-foreground">{t.triggers.source_filter_optional_label}</span>
         </label>
         <input

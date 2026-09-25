@@ -124,7 +124,7 @@ Adopting scanning on a repository with years of history surfaces old
 findings that cannot all be rotated today. The wrong responses are
 familiar: block on zero (instant bypass culture) or ignore the backlog
 (alarm fatigue). The correct structure is the standard ratchet
-([ratchet-design](../../quality-gates/techniques/ratchet-design.md)):
+([ratchet-design](../../metric-gates/techniques/ratchet-design.md)):
 triage once, fingerprint the accepted legacy findings into a committed
 baseline, gate on *new* findings from day one, and burn the baseline down
 as rotations complete. The baseline file's diff history is the audit log

@@ -339,6 +339,11 @@ pub async fn set_use_case_enabled(
 
     state.session_pool.invalidate(&persona_id).await;
 
+    // design_context is a projected cloud field: push it to the persona's
+    // deployment, if any. Detached and recorded; a failed push never fails
+    // the toggle, which has already committed.
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &persona_id, None);
+
     tracing::info!(
         persona_id = %persona_id,
         use_case_id = %use_case_id,
@@ -394,6 +399,10 @@ pub async fn set_use_case_generation_settings(
     // Invalidate session pool so the next run reassembles the prompt with the
     // new "Generation policy" lines (see prompt::render_generation_policy_lines).
     state.session_pool.invalidate(&persona_id).await;
+
+    // Same door as the toggle above: design_context moved, so the deployment
+    // (if any) gets the new projection, recorded, without failing this write.
+    crate::cloud::persona_projection::spawn_sync_if_deployed(&state, &persona_id, None);
 
     tracing::info!(
         persona_id = %persona_id,

@@ -154,7 +154,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     <FileText className="w-4 h-4 text-violet-400/70" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="typo-body font-medium text-foreground/90 truncate">{doc.title}</p>
+                    <p className="typo-body text-foreground/90 truncate">{doc.title}</p>
                     <p className="typo-caption text-foreground mt-0.5">
                       {doc.sourceType}
                       {doc.sourcePath && <span className="ml-1.5">-- {truncatePath(doc.sourcePath)}</span>}

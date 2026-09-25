@@ -69,7 +69,7 @@ export default function WorkspacesAtlas() {
               />
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ws.color }} />
-                <span className="typo-title text-foreground truncate">{ws.name}</span>
+                <span className="typo-title truncate">{ws.name}</span>
                 {ws.adoptDefaultSkills && (
                   <span
                     className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-primary/25 bg-primary/10 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
@@ -135,7 +135,7 @@ export default function WorkspacesAtlas() {
                   key={open.id}
                   defaultValue={open.name}
                   onBlur={(e) => renameWorkspace(open.id, e.target.value)}
-                  className="typo-title-lg text-foreground bg-transparent border-b border-transparent focus:border-primary/30 focus:outline-none w-full"
+                  className="typo-title-lg bg-transparent border-b border-transparent focus:border-primary/30 focus:outline-none w-full"
                   aria-label={tw.workspace_name_label}
                 />
                 <div className="mt-2 flex items-center gap-1.5">

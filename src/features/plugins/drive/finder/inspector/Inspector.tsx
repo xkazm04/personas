@@ -61,7 +61,7 @@ export function Inspector({
           <div className={`w-10 h-10 rounded-card border border-card-border flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${visual.gradient}`}>
             <Icon className={`w-5 h-5 ${visual.text}`} />
           </div>
-          <div className="typo-title-lg text-foreground break-all min-w-0">{primary.name}</div>
+          <div className="typo-title-lg break-all min-w-0">{primary.name}</div>
         </div>
         <PreviewSection entry={primary} onQuickLook={onQuickLook} />
         <GeneralSection entry={primary} />

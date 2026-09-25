@@ -34,7 +34,7 @@ export function DatabaseCard({ credential, connector, tableCount, queryCount, on
 
         {/* Name + service type */}
         <div className="flex-1 min-w-0">
-          <h3 className="typo-body font-medium text-foreground/90 truncate group-hover:text-foreground transition-colors">
+          <h3 className="typo-body text-foreground/90 truncate group-hover:text-foreground transition-colors">
             {credential.name}
           </h3>
           <p className="typo-body text-foreground mt-0.5">

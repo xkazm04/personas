@@ -121,7 +121,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
             <button
               type="button"
               onClick={() => { toast.action!.onClick(); onDismiss(toast.id); }}
-              className="mt-1 typo-caption font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
+              className="mt-1 typo-caption underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
             >
               {toast.action.label}
             </button>
@@ -130,7 +130,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
             <button
               type="button"
               onClick={() => { applyErrorAction(navAction); onDismiss(toast.id); }}
-              className="mt-1 inline-flex items-center gap-1 typo-caption font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
+              className="mt-1 inline-flex items-center gap-1 typo-caption underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
             >
               <navAction.icon className="w-3 h-3" />
               {navAction.label}
@@ -217,7 +217,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
         {/* Suggested fix */}
         {toast.suggestedFix && (
-          <p className="typo-body text-foreground leading-relaxed line-clamp-2 pl-6.5">
+          <p className="typo-body text-foreground line-clamp-2 pl-6.5">
             {toast.suggestedFix}
           </p>
         )}

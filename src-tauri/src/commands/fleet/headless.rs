@@ -920,6 +920,7 @@ fn push_display_line(app: &AppHandle, session_id: &str, ring: &Arc<Mutex<OutputR
         r.push(framed.as_bytes());
         r.is_subscribed()
     };
+    super::remote_exec::forward_output(session_id, framed.as_bytes());
     if subscribed {
         let _ = app.emit(
             event_name::FLEET_SESSION_OUTPUT,
@@ -1058,7 +1059,12 @@ const STDOUT_DRAIN_GRACE: Duration = Duration::from_secs(3);
 /// process, and a `result` event on them means only "your turn, operator".
 pub(super) fn settle_one_shot_turn(app: &AppHandle, session_id: &str, final_text: Option<&str>) {
     use super::classify::WorkerTurnEnd;
-    if !registry().is_one_shot_worker(session_id) {
+    // A headless session a paired device dispatched here is one prompt, one
+    // turn, exactly like a one-shot worker: its turn ending IS its job ending.
+    // It is settled through the same arms. The reap below is a no-op for it
+    // (`claim_reap` keys on the one-shot run labels); the remote executor ends
+    // the process itself once the receipt is sent.
+    if !registry().is_one_shot_worker(session_id) && !super::remote_exec::is_remote(session_id) {
         return;
     }
     let verdict = super::classify::worker_turn_end(final_text);
@@ -1529,15 +1535,24 @@ mod tests {
 
     #[test]
     fn codex_argv_reads_the_prompt_from_stdin_and_names_the_model() {
-        let argv = codex_exec_argv(
+        let argv = codex_worker_argv(
             Path::new("C:/wt/x"),
             personas_core::model_ids::CODEX_MAINTENANCE,
+            Some(personas_core::model_ids::CODEX_DEFAULT_EFFORT),
+            false,
         );
         assert_eq!(argv[0], "exec");
         assert!(argv.contains(&"--json".to_string()));
         assert!(argv.contains(&"--skip-git-repo-check".to_string()));
         let m = argv.iter().position(|a| a == "-m").unwrap();
         assert_eq!(argv[m + 1], personas_core::model_ids::CODEX_MAINTENANCE);
+        let c = argv.iter().position(|a| a == "-c").unwrap();
+        assert_eq!(argv[c + 1], "model_reasoning_effort=\"high\"");
+        assert!(
+            !codex_worker_argv(Path::new("C:/wt/x"), "gpt-6-sol", None, false)
+                .iter()
+                .any(|arg| arg == "-c")
+        );
         // No positional prompt: the task travels on stdin and closes it.
         assert!(argv.iter().all(|a| !a.contains("Deliver")));
     }

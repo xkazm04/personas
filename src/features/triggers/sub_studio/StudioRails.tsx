@@ -30,7 +30,7 @@ function MarketplaceSourceCard({ feed, hint, active, onPick }: {
     >
       <FeedIcon entry={feed} className="w-7 h-7" iconSize="w-4 h-4" />
       <span className="min-w-0 flex-1">
-        <span className="typo-body font-medium text-foreground truncate block">{feed.name}</span>
+        <span className="typo-body text-foreground truncate block">{feed.name}</span>
         <span className="typo-caption text-foreground/60 truncate block">{hint}</span>
       </span>
     </button>

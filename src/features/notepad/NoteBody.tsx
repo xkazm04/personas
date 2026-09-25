@@ -62,7 +62,7 @@ export default function NoteBodyWorkbench(props: NoteBodyProps) {
           placeholder={t.notepad.editor_placeholder}
           testId="notepad-body-workbench"
           containerClassName="flex-1 min-h-0 flex flex-col gap-3"
-          className="flex-1 min-h-[40vh] w-full resize-none rounded-card border border-primary/12 bg-secondary/15 px-4 py-3 typo-body leading-relaxed text-foreground/90 placeholder:text-foreground/60 outline-none focus:border-primary/25"
+          className="flex-1 min-h-[40vh] w-full resize-none rounded-card border border-primary/12 bg-secondary/15 px-4 py-3 typo-body text-foreground/90 placeholder:text-foreground/60 outline-none focus:border-primary/25"
           previewClassName="flex-1 min-h-0 overflow-y-auto rounded-card border border-primary/10 bg-secondary/10 px-4 py-3"
         />
       </div>

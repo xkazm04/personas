@@ -28,22 +28,22 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
     <div className="rounded-modal border border-primary/10 bg-secondary/15 hover:bg-secondary/25 transition-colors">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="typo-code font-mono text-foreground w-5 text-right shrink-0">
+        <span className="typo-code text-foreground w-5 text-right shrink-0">
           {rank}
         </span>
         <div className="w-7 h-7 rounded-card bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
           <FileText className="w-3.5 h-3.5 text-violet-400/70" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="typo-body font-medium text-foreground/90 truncate">{result.documentTitle}</p>
+          <p className="typo-body text-foreground/90 truncate">{result.documentTitle}</p>
           {result.sourcePath && (
-            <p className="typo-code text-foreground truncate mt-0.5 font-mono">{result.sourcePath}</p>
+            <p className="typo-code text-foreground truncate mt-0.5">{result.sourcePath}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {isPartial && (
             <Tooltip content={sh.partial_text_tooltip}>
-              <span className="inline-flex items-center gap-1 typo-code px-2 py-0.5 rounded-card border font-mono bg-amber-500/10 text-amber-400/80 border-amber-500/15">
+              <span className="inline-flex items-center gap-1 typo-code px-2 py-0.5 rounded-card border bg-amber-500/10 text-amber-400/80 border-amber-500/15">
                 <ScanLine className="w-3 h-3" aria-hidden />
                 {sh.partial_text_badge}
               </span>
@@ -56,7 +56,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
       {/* Content */}
       <div className="px-4 pb-3 pl-[52px]">
-        <p className="typo-code text-foreground whitespace-pre-wrap leading-relaxed font-mono">
+        <p className="typo-code text-foreground whitespace-pre-wrap">
           {preview}
         </p>
 
@@ -90,7 +90,7 @@ function ScoreBadge({ score }: { score: number }) {
   else if (score >= 60) colorClass = 'bg-amber-500/10 text-amber-400/80 border-amber-500/15';
 
   return (
-    <span className={`typo-code px-2 py-0.5 rounded-card border font-mono ${colorClass}`}>
+    <span className={`typo-code px-2 py-0.5 rounded-card border ${colorClass}`}>
       {score}%
     </span>
   );

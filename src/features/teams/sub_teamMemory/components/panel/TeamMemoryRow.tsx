@@ -89,7 +89,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="typo-body font-medium text-foreground/90 truncate">{memory.title}</p>
+          <p className="typo-body text-foreground/90 truncate">{memory.title}</p>
           <p className="typo-body text-foreground line-clamp-2 mt-0.5">{memory.content}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <CategoryChip
@@ -139,7 +139,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
           {showHistory && revisions.length > 0 && (
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
               <div className="flex items-center justify-between">
-                <span className="typo-body font-medium text-foreground">{pt.version_history}</span>
+                <span className="typo-body text-foreground">{pt.version_history}</span>
                 <button type="button" onClick={() => setShowHistory(false)} aria-label={t.common.close} className="p-0.5 text-foreground hover:text-foreground/70">
                   <ChevronUp className="w-3 h-3" />
                 </button>
@@ -147,7 +147,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
               {[...revisions].reverse().map((rev, i) => (
                 <div key={i} className="pl-2 border-l-2 border-primary/10 space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="typo-body font-medium text-foreground truncate">{rev.title}</span>
+                    <span className="typo-body text-foreground truncate">{rev.title}</span>
                     <span className="typo-body text-foreground">{tokenLabel(t, 'memory_category', rev.category)}</span>
                   </div>
                   <p className="typo-body text-foreground line-clamp-1">{rev.content}</p>

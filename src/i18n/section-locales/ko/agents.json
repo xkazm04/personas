@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "{name} 편집 중",
     "header_subtitle_new": "처음부터 새 에이전트 구성",
     "header_title": "빌드",
-    "new_agent": "새 에이전트"
+    "new_agent": "새 에이전트",
+    "promote_receipt_connect": "커넥터 열기",
+    "promote_receipt_connectors": "아직 연결 필요: {names}",
+    "promote_receipt_failed_title": "승격이 완료되지 않았습니다",
+    "promote_receipt_later": "나중에",
+    "promote_receipt_needs_setup_title": "승격되었지만 실행하려면 설정이 필요합니다",
+    "promote_receipt_retry": "승격 다시 시도",
+    "promote_receipt_unverified": "첫 확인 실행에서 가치를 내지 못했습니다. 믿고 쓰기 전에 커넥터를 확인하세요."
   },
   "matrix_tab": {
     "loading": "매트릭스 로딩",
@@ -2708,7 +2715,7 @@
     "all_saved": "모든 변경 사항 저장됨",
     "changed": "{sections} 변경됨",
     "cli_awareness": "Claude CLI 세션 인식",
-    "cli_awareness_desc": "이 페르소나가 활성 대화형 Claude CLI 세션의 최근 턴을 추가 컨텍스트로 읽도록 허용합니다. Companion → 설정 → 감각 신호의 전역 토글도 ON이어야 합니다. 읽기 전용 — CLI 세션은 절대 수정되지 않습니다.",
+    "cli_awareness_desc": "이 페르소나가 활성 대화형 Claude CLI 세션의 최근 턴을 추가 컨텍스트로 읽도록 허용합니다. Athena → 설정 → 감각 신호의 전역 토글도 ON이어야 합니다. 읽기 전용 — CLI 세션은 절대 수정되지 않습니다.",
     "execution": "실행",
     "execution_retention": "실행 보존",
     "failed_health_watch": "상태 감시 설정 업데이트 실패",
@@ -3275,5 +3282,16 @@
     "parse": "파싱",
     "paste_json": "또는 JSON 직접 붙여넣기",
     "paste_placeholder": "워크플로 JSON을 여기에 붙여넣기…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "승격이 거부됩니다: {reason}",
+    "heading": "승격 시 수행되는 작업",
+    "needs_setup": "먼저 설정 필요: {connectors}",
+    "refused": "승격이 이 초안을 거부합니다",
+    "refused_hint": "초안을 다듬어 수정한 뒤 승격하세요.",
+    "repaired": "빌드에서 조정됨",
+    "runs_manual": "직접 시작할 때 실행",
+    "runs_next": "{type} 트리거, 다음 실행 {time}",
+    "runs_on_event": "{type} 트리거, 발동 시 실행"
   }
 }

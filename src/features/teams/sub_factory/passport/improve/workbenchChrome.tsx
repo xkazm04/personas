@@ -20,7 +20,7 @@ export function WorkbenchCounts({ counts }: { counts: { reused: number; own: num
 function Tally({ value, label, hue }: { value: number; label: string; hue?: string }) {
   return (
     <span className="inline-flex items-baseline gap-1">
-      <span className="typo-caption font-semibold tabular-nums" style={hue ? { color: hue } : undefined}>{value}</span>
+      <span className="typo-caption tabular-nums" style={hue ? { color: hue } : undefined}>{value}</span>
       <span className="typo-label" style={hue ? { color: `${hue}B3` } : undefined}>{label}</span>
     </span>
   );

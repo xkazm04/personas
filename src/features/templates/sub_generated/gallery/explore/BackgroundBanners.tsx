@@ -82,7 +82,7 @@ export function BackgroundBanners({
                 <FileEdit className="w-4 h-4 text-amber-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="typo-body font-medium text-amber-300 block truncate">
+                <span className="typo-body text-amber-300 block truncate">
                   {t.templates.banners.draft_prefix}{adoptionDraft.templateName}
                 </span>
                 <span className="typo-body text-foreground">
@@ -114,7 +114,7 @@ export function BackgroundBanners({
               <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="typo-body font-medium text-violet-300 block">{t.templates.banners.adoption_in_progress}</span>
+              <span className="typo-body text-violet-300 block">{t.templates.banners.adoption_in_progress}</span>
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
             </div>
             <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
@@ -134,7 +134,7 @@ export function BackgroundBanners({
               <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="typo-body font-medium text-blue-300 block">
+              <span className="typo-body text-blue-300 block">
                 {t.templates.banners.rebuilding.replace('{name}', rebuildReviewName ?? 'template')}
               </span>
               <span className="typo-body text-foreground">{t.templates.banners.click_to_view_progress}</span>
@@ -235,7 +235,7 @@ export function BackgroundBanners({
                   <Icon className={`w-4 h-4 ${iconColor} ${!isDone ? 'animate-pulse' : ''}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className={`typo-body font-medium ${textClass} block truncate`}>
+                  <span className={`typo-body ${textClass} block truncate`}>
                     {statusText}: {previewReviewName ?? 'template'}
                   </span>
                   <span className="typo-body text-foreground">{subtitleText}</span>

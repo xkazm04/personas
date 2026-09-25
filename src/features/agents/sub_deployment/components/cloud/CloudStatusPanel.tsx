@@ -78,7 +78,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
           type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           {t.common.refresh}
@@ -160,7 +160,7 @@ function WorkerBadge({ label, count, color }: { label: string; count: number; co
 
   return (
     <div className={`flex items-center gap-2 px-3 py-2 rounded-modal border ${colorMap[color]}`}>
-      <span className="typo-heading-lg font-semibold">{count}</span>
+      <span className="typo-heading-lg">{count}</span>
       <span className="typo-body opacity-70">{label}</span>
     </div>
   );
@@ -235,7 +235,7 @@ function ActivityGauge({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
-          <div className={`typo-heading-lg font-semibold ${toneClasses.text}`}>{displayValue}</div>
+          <div className={`typo-heading-lg ${toneClasses.text}`}>{displayValue}</div>
           <div className="typo-body text-foreground">of {safeMax}</div>
         </div>
       </div>

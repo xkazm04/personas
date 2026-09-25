@@ -41,6 +41,8 @@
     "MediaStudioToolbar.tsx": {"count":1,"sections":[7],"contexts":["`MediaStudioToolbar.tsx`)."],"resolved":false},
     "MetricsCharts.tsx": {"count":3,"sections":[7],"lines":["17","18"],"contexts":["(`AthenaUsageSection.tsx:16`, `LlmSpendSection.tsx:17`, `MetricsCharts.tsx:17` and `:18`,"],"resolved":false},
     "ObservabilitySpendPieChart.tsx": {"count":1,"sections":[],"lines":["20"],"contexts":["`ObservabilitySpendPieChart.tsx:20` 2dp, `AthenaUsageCard.tsx:113` *no precision at all — the raw"],"resolved":false},
+    "RunDetailView.tsx": {"count":1,"sections":[7],"lines":["84"],"contexts":["`LabEconomicsPanel.tsx:78` (3), `RunDetailView.tsx:84` (2), `AthenaSpendSection.tsx:115,136` (2),"],"resolved":false},
+    "TrajectoryChart.tsx": {"count":1,"sections":[7],"lines":["10"],"contexts":["`TrajectoryChart.tsx:10`, `ValueRollupSection.tsx:65`, `ExecutionMetricsDashboard.tsx:94`,"],"resolved":false},
     "artist/utils/format.ts": {"count":1,"sections":[7],"lines":["3"],"contexts":["`LogDiskUsageSection.tsx:11`, `artist/utils/format.ts:3`, `FleetProcessRow.tsx:8`,"],"resolved":false},
     "db.ts": {"count":2,"sections":[7],"lines":["246,362,412"],"contexts":["renders and 0 duration formatting. Money is `REAL` float in SQLite (`db.ts:246,362,412`), returned"],"resolved":false},
     "docs/concepts/shared-facts.json": {
@@ -51,7 +53,6 @@
       "verbatim": "shared-facts.json"
     },
     "eslint-rules/prefer-numeric.cjs": {"count":4,"sections":[3,7,9],"lines":["78-80","80"],"contexts":["`RelativeTime`, `AbsoluteTime`, `useFormattedDate`, `eslint-rules/prefer-numeric.cjs` and both"]},
-    "format.ts": {"count":3,"sections":[7],"lines":["12","1"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolved":false},
     "incremental.rs": {"count":1,"sections":[7],"lines":["763,1453,5108,6380"],"contexts":["(`incremental.rs:763,1453,5108,6380`), `number` in all **23** `cost_usd`-bearing ts-rs bindings,"],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":2,"sections":[],"lines":["20","13"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolved":false},
     "lefthook.yml": {"count":1,"sections":[7],"lines":["20"],"contexts":["(`lefthook.yml:20`), where `--quiet` discards warnings before they can be counted. **A warn-level"]},
@@ -121,6 +122,7 @@
       "resolvedFrom": "basename",
       "verbatim": "LabEconomicsPanel.tsx"
     },
+    "src/features/companions/curator/blueprint/format.ts": {"count":3,"sections":[7],"lines":["12","1"],"contexts":["**five** precisions (`format.ts:12` 4dp, `knowledgeDenseFormat.ts:20` 3dp,"],"resolvedFrom":"basename","verbatim":"format.ts"},
     "src/features/home/sub_cockpit/widgets/personaStats.ts": {
       "count": 1,
       "sections": [7],
@@ -225,22 +227,6 @@
       "contexts": ["`executionMetricsHelpers.ts:2` (`v < 0.01 ? '<$0.01' : …`), `QuickStatsBar.tsx:75`,"],
       "resolvedFrom": "basename",
       "verbatim": "executionMetricsHelpers.ts"
-    },
-    "src/features/overview/sub_certification/components/RunDetailView.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["84"],
-      "contexts": ["`LabEconomicsPanel.tsx:78` (3), `RunDetailView.tsx:84` (2), `AthenaSpendSection.tsx:115,136` (2),"],
-      "resolvedFrom": "basename",
-      "verbatim": "RunDetailView.tsx"
-    },
-    "src/features/overview/sub_certification/components/TrajectoryChart.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["10"],
-      "contexts": ["`TrajectoryChart.tsx:10`, `ValueRollupSection.tsx:65`, `ExecutionMetricsDashboard.tsx:94`,"],
-      "resolvedFrom": "basename",
-      "verbatim": "TrajectoryChart.tsx"
     },
     "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx": {
       "count": 1,

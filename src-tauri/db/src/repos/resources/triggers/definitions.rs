@@ -150,6 +150,88 @@ pub fn get_by_persona_ids(
     )
 }
 
+/// The ONE write door for a `persona_triggers` definition row, inside a
+/// transaction the caller owns.
+///
+/// Every rule a definition row must satisfy lives here together: normalize the
+/// type, `validate_all` (incl. the polling SSRF guard and the schedule
+/// preflight), encrypt the sensitive config keys, arm a time-based trigger or
+/// refuse it by name, INSERT, and pair a Fix-4a auto-listener for the source
+/// types in [`AUTO_LISTENER_SOURCE_TYPES`] in the same transaction.
+///
+/// It exists because the rules kept being re-broken at hand-rolled INSERT
+/// sites: promote and the n8n/instant-adopt import each carried a different
+/// subset (no auto-listener; no validation, no encryption), and each fix
+/// landed at one INSERT and not the others. A materializer that needs to write
+/// a trigger alongside other rows calls this instead of writing SQL.
+///
+/// Deliberately NOT here: chain-cycle detection and the invalid-timezone issue
+/// record, which need the pool (they stay in [`create`]), and webhook-secret
+/// minting, which is a concern of callers that materialize MODEL output — the
+/// human door must keep refusing a secretless webhook.
+///
+/// `responsibility_id` is an argument rather than a `CreateTriggerInput` field
+/// because that struct has ~30 literal construction sites.
+pub fn create_in(
+    tx: &rusqlite::Transaction<'_>,
+    input: &CreateTriggerInput,
+    responsibility_id: Option<&str>,
+) -> Result<String, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::create_in", {
+        let trigger_type = normalize_trigger_type(&input.trigger_type).to_string();
+        validate_trigger_type(&trigger_type)?;
+        validate_all(&trigger_type, input.config.as_deref())?;
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let enabled = input.enabled.unwrap_or(true);
+        let status = if enabled { "active" } else { "disabled" };
+        let enabled_i = enabled as i32;
+
+        // Compute next_trigger_at from the plaintext config so it is written in
+        // the same statement as the row — and REFUSE if a time-based trigger comes
+        // out with none, rather than writing a row that can never become due.
+        let parsed_cfg = TriggerConfig::from_raw(&trigger_type, input.config.as_deref());
+        let next_trigger_at = arm_or_refuse(
+            &trigger_type,
+            &parsed_cfg,
+            input.config.as_deref(),
+            personas_core::cron::seed_hash(&id),
+        )?;
+
+        // Secrets must never be stored in plaintext.
+        let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
+
+        tx.execute(
+            "INSERT INTO persona_triggers
+             (id, persona_id, trigger_type, config, enabled, status, use_case_id, responsibility_id, next_trigger_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+            params![
+                id,
+                input.persona_id,
+                trigger_type,
+                encrypted_config,
+                enabled_i,
+                status,
+                input.use_case_id,
+                responsibility_id,
+                next_trigger_at,
+                now
+            ],
+        )
+        .map_err(AppError::Database)?;
+
+        // Fix 4a: schedule / polling / webhook publish into the bus; pair the
+        // listener in the same transaction so the persona actually runs when the
+        // trigger fires, instead of waiting for the hourly backfill sweep.
+        if AUTO_LISTENER_SOURCE_TYPES.contains(&trigger_type.as_str()) {
+            insert_auto_listener_in_tx(tx, &input.persona_id, &id, parsed_cfg.event_type())?;
+        }
+
+        Ok(id)
+    })
+}
+
 pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
     timed_query!("persona_triggers", "persona_triggers::create", {
         input.trigger_type = normalize_trigger_type(&input.trigger_type).to_string();
@@ -172,58 +254,16 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
             }
         }
 
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let enabled = input.enabled.unwrap_or(true);
-        let status = if enabled { "active" } else { "disabled" };
-        let enabled_i = enabled as i32;
-
-        // Encrypt sensitive config fields before writing to DB
-        let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
-
-        // Compute next_trigger_at from plaintext config so it can be written
-        // atomically in the same transaction as the INSERT — and REFUSE if a
-        // time-based trigger comes out with none, rather than writing a row
-        // that can never become due. Nothing downstream reports that state, so
-        // the door is the only place a user can be told.
         let parsed_cfg = TriggerConfig::from_raw(&input.trigger_type, input.config.as_deref());
-        let next_trigger_at = arm_or_refuse(
-            &input.trigger_type,
-            &parsed_cfg,
-            input.config.as_deref(),
-            personas_core::cron::seed_hash(&id),
-        )?;
         let invalid_timezone = scheduler::invalid_schedule_timezone(&parsed_cfg);
 
-        // Fix 4a: for schedule / polling / webhook source triggers, auto-create a
-        // paired event_listener inside the same transaction so the target persona
-        // actually runs when the trigger fires. Without this, the scheduler would
-        // publish an event into the bus that nothing listens to. See the
-        // auto-listener helpers below + docs/design/event-routing-proposal.md.
-        let needs_auto_listener = AUTO_LISTENER_SOURCE_TYPES.contains(&input.trigger_type.as_str());
-
-        let auto_listener_event_type: Option<String> = if needs_auto_listener {
-            Some(parsed_cfg.event_type().to_string())
-        } else {
-            None
-        };
-
-        {
+        let id = {
             let mut conn = pool.get()?;
             let tx = conn.transaction().map_err(AppError::Database)?;
-            tx.execute(
-                "INSERT INTO persona_triggers
-                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, next_trigger_at, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
-                params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, next_trigger_at, now],
-            )?;
-
-            if let Some(event_type) = &auto_listener_event_type {
-                insert_auto_listener_in_tx(&tx, &input.persona_id, &id, event_type)?;
-            }
-
+            let id = create_in(&tx, &input, None)?;
             tx.commit().map_err(AppError::Database)?;
-        }
+            id
+        };
 
         if let Some((cron_expr, timezone, error)) = invalid_timezone {
             record_invalid_timezone_issue(
@@ -661,7 +701,7 @@ fn build_auto_listener_config(source_trigger_id: &str, event_type: &str) -> Stri
 }
 
 /// INSERT an auto-listener row inside an existing transaction. Used by the
-/// trigger `create` path to stay atomic with the primary trigger write.
+/// trigger write door ([`create_in`]) to stay atomic with the primary write.
 fn insert_auto_listener_in_tx(
     tx: &rusqlite::Transaction<'_>,
     persona_id: &str,

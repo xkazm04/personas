@@ -197,7 +197,7 @@ export function CloudWebhooksTab() {
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.cloud_webhook_triggers}
           </h3>
-          <Button variant="accent" accentColor="blue" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
+          <Button variant="accent" tone="info" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
             {t.triggers.add_webhook}
           </Button>
         </div>
@@ -206,7 +206,7 @@ export function CloudWebhooksTab() {
         {showCreate && (
           <div className="rounded-modal border border-blue-500/20 bg-blue-500/5 p-4 space-y-3">
             <div>
-              <label className="block typo-caption font-medium text-foreground mb-1.5">
+              <label className="block typo-caption text-foreground mb-1.5">
                 {t.triggers.deployed_persona_label}
               </label>
               <ThemedSelect
@@ -224,7 +224,7 @@ export function CloudWebhooksTab() {
             <div className="flex items-center gap-2">
               <Button
                 variant="accent"
-                accentColor="blue"
+                tone="info"
                 onClick={handleCreate}
                 disabled={!createPersonaId}
                 loading={isCreating}
@@ -280,7 +280,7 @@ export function CloudWebhooksTab() {
                       {row.personaIcon || <Cloud className="w-4 h-4 text-foreground" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="typo-body font-medium text-foreground/90 truncate">{row.personaName}</p>
+                      <p className="typo-body text-foreground/90 truncate">{row.personaName}</p>
                       <p className="text-xs text-foreground font-mono truncate">{row.webhookUrl}</p>
                     </div>
                   </div>

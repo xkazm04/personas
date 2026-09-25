@@ -168,7 +168,7 @@ function CodeBlockShell({
           <button
             type="button"
             onClick={() => setCollapsed(false)}
-            className="absolute inset-x-0 bottom-0 flex items-end justify-center pt-10 pb-2 typo-caption font-medium text-primary hover:text-primary/80 bg-gradient-to-t from-background via-background/85 to-transparent focus-ring"
+            className="absolute inset-x-0 bottom-0 flex items-end justify-center pt-10 pb-2 typo-caption text-primary hover:text-primary/80 bg-gradient-to-t from-background via-background/85 to-transparent focus-ring"
             data-testid="companion-code-expand"
           >
             {tx(t.shared.code_show_lines, { count: lineCount })}
@@ -215,7 +215,7 @@ function InlineBarChart({ raw }: { raw: string }) {
               />
             </div>
             <span
-              className={`typo-code w-14 text-right ${isMax ? 'text-primary font-semibold' : 'text-foreground'}`}
+              className={`typo-code w-14 text-right ${isMax ? 'text-primary' : 'text-foreground'}`}
             >
               {e.value}
             </span>

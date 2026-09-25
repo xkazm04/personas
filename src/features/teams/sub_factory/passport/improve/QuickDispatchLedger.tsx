@@ -65,7 +65,7 @@ function Row({ skill, index, busy, onDispatch }: {
           style={{ color: hue, borderColor: withAlpha(hue, 0.25), backgroundColor: withAlpha(hue, 0.08) }}>
           <Icon className="w-3 h-3" strokeWidth={1.75} aria-hidden />
         </span>
-        <span className="typo-caption font-medium text-foreground truncate">{skill.name}</span>
+        <span className="typo-caption text-foreground truncate">{skill.name}</span>
         {skill.running && <span className="typo-label text-status-info flex-shrink-0">{d.skills_workbench_quick_running}</span>}
       </span>
 
@@ -87,7 +87,7 @@ function Row({ skill, index, busy, onDispatch }: {
       </span>
 
       {/* total */}
-      <span className="typo-caption font-semibold tabular-nums text-right" style={{ color: hue }}>{skill.pct}%</span>
+      <span className="typo-caption tabular-nums text-right" style={{ color: hue }}>{skill.pct}%</span>
 
       {/* activity / action */}
       <span className="flex items-center justify-end">

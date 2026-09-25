@@ -11,7 +11,7 @@ import type { DispatchTarget } from './UseSkillDialog';
 export function SkillDescription({ description }: { description: string | null }) {
   const { t } = useTranslation();
   if (!description) return <p className="typo-caption text-foreground/35 italic">{t.plugins.dev_tools.skills_confirm_no_desc}</p>;
-  return <p className="typo-caption text-foreground/70 leading-relaxed" style={{ fontWeight: 400 }}>{description}</p>;
+  return <p className="typo-caption text-foreground/70" style={{ fontWeight: 400 }}>{description}</p>;
 }
 
 export function ArgsField({ value, onChange, onSubmit }: {
@@ -67,7 +67,7 @@ export function DialogFooter({ target, busy, onConfirm, onClose }: {
         type="button"
         onClick={onConfirm}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         data-testid="use-skill-confirm"
       >
         <Icon className="w-3 h-3" aria-hidden />

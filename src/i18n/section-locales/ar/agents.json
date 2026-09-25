@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "تعديل {name}",
     "header_subtitle_new": "إنشاء وكيل جديد من الصفر",
     "header_title": "البناء",
-    "new_agent": "وكيل جديد"
+    "new_agent": "وكيل جديد",
+    "promote_receipt_connect": "فتح الموصلات",
+    "promote_receipt_connectors": "ما زال يلزم ربط: {names}",
+    "promote_receipt_failed_title": "لم تكتمل الترقية",
+    "promote_receipt_later": "لاحقًا",
+    "promote_receipt_needs_setup_title": "تمت الترقية، لكنه يحتاج إلى إعداد قبل أن يعمل",
+    "promote_receipt_retry": "إعادة محاولة الترقية",
+    "promote_receipt_unverified": "لم يحقق تشغيل الفحص الأول أي قيمة. راجع موصلاته قبل الاعتماد عليه."
   },
   "matrix_tab": {
     "loading": "جارٍ تحميل المصفوفة",
@@ -2708,7 +2715,7 @@
     "all_saved": "تم حفظ جميع التغييرات",
     "changed": "تغيّر {sections}",
     "cli_awareness": "الوعي بجلسة Claude CLI",
-    "cli_awareness_desc": "دع هذه الشخصية تقرأ الرسائل الأخيرة من جلسة Claude CLI التفاعلية النشطة لديك كسياق إضافي. يتطلب هذا أيضًا تفعيل المفتاح العام ضمن الرفيق ← الإعداد ← إشارات الاستشعار. للقراءة فقط — لا يتم تعديل جلسة CLI الخاصة بك أبدًا.",
+    "cli_awareness_desc": "دع هذه الشخصية تقرأ الرسائل الأخيرة من جلسة Claude CLI التفاعلية النشطة لديك كسياق إضافي. يتطلب هذا أيضًا تفعيل المفتاح العام ضمن أثينا ← الإعداد ← إشارات الاستشعار. للقراءة فقط — لا يتم تعديل جلسة CLI الخاصة بك أبدًا.",
     "execution": "التنفيذ",
     "execution_retention": "الاحتفاظ بالتنفيذات",
     "failed_health_watch": "فشل تحديث إعداد مراقبة الصحة",
@@ -3275,5 +3282,16 @@
     "parse": "تحليل",
     "paste_json": "أو الصق JSON مباشرة",
     "paste_placeholder": "الصق JSON الخاص بالسير هنا…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "سيرفض الترقية: {reason}",
+    "heading": "ما الذي ستفعله الترقية",
+    "needs_setup": "يحتاج إلى إعداد أولًا: {connectors}",
+    "refused": "سترفض الترقية هذه المسودة",
+    "refused_hint": "حسّن المسودة لإصلاحها، ثم قم بالترقية.",
+    "repaired": "عدّله البناء",
+    "runs_manual": "يعمل عندما تبدؤه",
+    "runs_next": "مشغّل {type}، التشغيل التالي {time}",
+    "runs_on_event": "مشغّل {type}، يعمل عند إطلاقه"
   }
 }

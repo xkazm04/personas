@@ -94,7 +94,7 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
     >
       {/* Crest — the channel's identity colour, per plan §5.2 */}
       <span
-        className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center typo-caption font-semibold"
+        className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center typo-caption"
         style={{ backgroundColor: `${tm.teamColor}22`, color: tm.teamColor, border: `1px solid ${tm.teamColor}55` }}
       >
         {cleanName(tm.teamName).slice(0, 2).toUpperCase()}
@@ -102,7 +102,7 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
 
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className={`typo-body truncate ${active ? 'text-foreground font-medium' : 'text-foreground'}`}>
+          <span className={`typo-body truncate ${active ? 'text-foreground' : 'text-foreground'}`}>
             {cleanName(tm.teamName)}
           </span>
           {hasDeliberation && (
@@ -119,7 +119,7 @@ const SidebarTeamRow = memo(function SidebarTeamRow({
             {previewOf(newest?.body)}
           </span>
           {unread > 0 && (
-            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption font-medium tabular-nums flex items-center justify-center">
+            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption tabular-nums flex items-center justify-center">
               {unread > 99 ? '99+' : unread}
             </span>
           )}
@@ -209,7 +209,7 @@ const SidebarPersonaRow = memo(function SidebarPersonaRow({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className={`typo-body truncate ${active ? 'text-foreground font-medium' : 'text-foreground'}`}>
+          <span className={`typo-body truncate ${active ? 'text-foreground' : 'text-foreground'}`}>
             {name}
           </span>
           {newest && (
@@ -223,7 +223,7 @@ const SidebarPersonaRow = memo(function SidebarPersonaRow({
             {previewOf(newest?.body ?? newest?.title)}
           </span>
           {unread > 0 && (
-            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption font-medium tabular-nums flex items-center justify-center">
+            <span className="ml-auto flex-shrink-0 min-w-[1.25rem] px-1 h-5 rounded-full bg-primary/25 text-foreground typo-caption tabular-nums flex items-center justify-center">
               {unread > 99 ? '99+' : unread}
             </span>
           )}

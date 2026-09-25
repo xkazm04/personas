@@ -77,7 +77,7 @@ export function CompositeConfig({
               key={op.value}
               type="button"
               onClick={() => setCompositeOperator(op.value)}
-              className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
                 compositeOperator === op.value
                   ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                   : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'

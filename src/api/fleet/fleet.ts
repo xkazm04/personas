@@ -187,7 +187,7 @@ export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
 /**
  * Tune the staleness cutoffs (seconds; clamped server-side): flat-log time
  * before `Stale`, and total PTY silence before a `Running` session is flagged
- * frozen. Same push-on-change + push-on-refresh plumbing as auto-hibernate.
+ * frozen. Same plumbing as auto-hibernate: pushed on change + once at startup.
  */
 export const setStateCutoffs = (staleSecs: number, stalledSecs: number) =>
   invoke<null>('fleet_set_state_cutoffs', { staleSecs, stalledSecs });

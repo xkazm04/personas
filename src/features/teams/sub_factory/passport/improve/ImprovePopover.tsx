@@ -95,7 +95,7 @@ export function ImprovePopover({
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">Improve {raw.project.name}</span>
+        <span className="typo-caption text-foreground truncate">Improve {raw.project.name}</span>
         <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
@@ -141,8 +141,8 @@ export function ImprovePopover({
               style={{ accentColor: 'var(--primary)' }}
             />
             <span className="min-w-0">
-              <span className="typo-caption font-medium text-foreground block">{a.label}</span>
-              <span className="typo-caption text-foreground/55 block leading-snug" style={{ fontWeight: 400 }}>{a.hint}</span>
+              <span className="typo-caption text-foreground block">{a.label}</span>
+              <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{a.hint}</span>
             </span>
           </label>
         ))}
@@ -154,7 +154,7 @@ export function ImprovePopover({
           type="button"
           onClick={onApply}
           disabled={picked.length === 0 || saving}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3 h-3" />
           {saving ? 'Applying…' : 'Apply upgrade'}
@@ -177,7 +177,7 @@ function PreviewRow({ label, children }: { label: string; children: ReactNode })
 function Delta({ before, after }: { before: number; after: number }) {
   const d = after - before;
   if (d <= 0) return null;
-  return <span className="typo-caption font-semibold text-emerald-300 tabular-nums">+{d}</span>;
+  return <span className="typo-caption text-emerald-300 tabular-nums">+{d}</span>;
 }
 
 function LevelDelta({ label, before, after }: { label: string; before: string; after: string }) {
@@ -189,7 +189,7 @@ function LevelDelta({ label, before, after }: { label: string; before: string; a
       {changed && (
         <>
           <ArrowRight className="w-3 h-3 text-foreground/40" aria-hidden />
-          <span className="typo-caption font-medium text-emerald-300">{after}</span>
+          <span className="typo-caption text-emerald-300">{after}</span>
         </>
       )}
     </div>

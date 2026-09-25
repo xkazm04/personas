@@ -25,7 +25,7 @@ export function GuidingProgressBar({ plan, completedCount, totalSteps, skippedSt
           </span>
         </div>
         <div className="h-3 w-px bg-primary/10" />
-        <span className="typo-body text-foreground font-medium">
+        <span className="typo-body text-foreground">
           {tx(neg.steps_progress, { completed: completedCount, total: totalSteps })}
         </span>
         {skippedSteps.length > 0 && (
@@ -90,7 +90,7 @@ export function GuidingPrerequisites({ prerequisites }: GuidingPrerequisitesProp
     <div className="px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-modal">
       <div className="flex items-center gap-2 mb-1.5">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-        <span className="typo-body font-medium text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
+        <span className="typo-body text-amber-300/80">{t.vault.negotiator.prerequisites}</span>
       </div>
       <ul className="space-y-0.5">
         {prerequisites.map((prereq, i) => (
@@ -193,7 +193,7 @@ export function GuidingCompletionBanner({ allDone, verificationHint }: GuidingCo
     >
       <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
       <div>
-        <p className="typo-body text-emerald-300 font-medium">{t.vault.negotiator.all_steps_completed}</p>
+        <p className="typo-body text-emerald-300">{t.vault.negotiator.all_steps_completed}</p>
         <p className="typo-body text-emerald-200/60 mt-0.5">{verificationHint}</p>
       </div>
     </div>

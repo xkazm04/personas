@@ -18,7 +18,8 @@ vi.mock('@/api/fleet/fleet', () => ({
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
-import { FleetSessionInsights, __resetInsightsCacheForTests } from '../FleetSessionInsights';
+import { FleetSessionInsights } from '../FleetSessionInsights';
+import { __resetInsightsCacheForTests } from '../insightsCache';
 
 const SUMMARY = {
   claudeSessionId: 'sess1',

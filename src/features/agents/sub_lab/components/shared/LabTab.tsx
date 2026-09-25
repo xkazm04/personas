@@ -20,7 +20,7 @@ export function LabTab() {
   // this persona" — there are no per-mode tabs left to target. Consume + clear.
   useEffect(() => {
     const sys = useSystemStore.getState();
-    if (sys.companionLabJump) sys.setCompanionLabJump(null);
+    if (sys.athenaLabJump) sys.setAthenaLabJump(null);
   }, [personaId]);
 
   // Restore any in-flight measurement progress after a page refresh.

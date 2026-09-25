@@ -100,7 +100,7 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, onCycleNext }: F
           <span className="relative h-2 w-2 rounded-full bg-violet-400" />
         </span>
         <Hourglass className="w-3.5 h-3.5 text-violet-300 shrink-0" aria-hidden="true" />
-        <span className="typo-caption font-semibold text-violet-200 mr-1">{label}</span>
+        <span className="typo-caption text-violet-200 mr-1">{label}</span>
         {waiting.length > 1 && (
           <button
             type="button"

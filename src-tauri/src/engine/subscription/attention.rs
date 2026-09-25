@@ -42,7 +42,7 @@
 //! when disabled and free when no charter has `cadence.attentionEnabled`.
 
 use super::*;
-use std::cmp::Ordering as CmpOrdering;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -62,6 +62,92 @@ use crate::db::DbPool;
 use crate::error::AppError;
 
 const KIND_ATTENTION: &str = "attention";
+/// How an open Claude hold reads to a codex_mode persona: over for it, while
+/// the gap behind it stays unobserved. Rendered after "from <start> to ".
+pub(crate) const CODEX_HOLD_LIFTED: &str =
+    "now FOR YOU: you run in codex_mode, which this Claude usage \
+     hold does not stop, so your code charters dispatch from this wake on and only your execution \
+     charters stay held";
+/// The `ended_at` a persona is shown for a loop hold: an open hold is over
+/// for a codex_mode persona (see [`CODEX_HOLD_LIFTED`]), and unchanged for
+/// everyone else.
+fn hold_end_for(ended_at: Option<String>, in_codex_mode: bool) -> Option<String> {
+    match ended_at {
+        None if in_codex_mode => Some(CODEX_HOLD_LIFTED.to_string()),
+        ended => ended,
+    }
+}
+const CODEX_EXECUTION_HOLD: &str = "codex_mode: execution charters need the claude runner; held until the persona leaves codex_mode";
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CodexMode {
+    personas: Vec<String>,
+    model: String,
+    effort: String,
+}
+
+/// The reasoning efforts `codex exec` accepts for `model_reasoning_effort`.
+const CODEX_EFFORTS: &[&str] = &["minimal", "low", "medium", "high", "xhigh"];
+
+fn parse_codex_mode(raw: Option<&str>) -> Result<Option<CodexMode>, String> {
+    let Some(raw) = raw.filter(|v| !v.trim().is_empty()) else {
+        return Ok(None);
+    };
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Setting {
+        personas: Vec<String>,
+        model: Option<String>,
+        effort: Option<String>,
+    }
+    let value: Setting = serde_json::from_str(raw).map_err(|e| e.to_string())?;
+    if value.personas.iter().any(|id| id.trim().is_empty()) {
+        return Err("persona ids must be non-empty".into());
+    }
+    if value.personas.is_empty() {
+        return Ok(None);
+    }
+    let model = value
+        .model
+        .unwrap_or_else(|| personas_core::model_ids::CODEX_MAINTENANCE.into());
+    let effort = value
+        .effort
+        .unwrap_or_else(|| personas_core::model_ids::CODEX_DEFAULT_EFFORT.into());
+    if model.trim().is_empty() || effort.trim().is_empty() {
+        return Err("model and effort must be non-empty".into());
+    }
+    // The effort lands on the codex argv as `-c model_reasoning_effort=<e>`;
+    // an unknown word would be passed through and fail every decide call.
+    if !CODEX_EFFORTS.contains(&effort.as_str()) {
+        return Err(format!("effort '{effort}' is not one of {CODEX_EFFORTS:?}"));
+    }
+    Ok(Some(CodexMode {
+        personas: value.personas,
+        model,
+        effort,
+    }))
+}
+
+fn read_codex_mode(pool: &DbPool) -> Option<CodexMode> {
+    match settings::get(pool, settings_keys::ATTENTION_CODEX_MODE) {
+        Ok(raw) => match parse_codex_mode(raw.as_deref()) {
+            Ok(mode) => mode,
+            Err(error) => {
+                tracing::warn!(%error, "persona_attention: malformed codex_mode; treating as absent");
+                None
+            }
+        },
+        Err(error) => {
+            tracing::warn!(%error, "persona_attention: codex_mode read failed");
+            None
+        }
+    }
+}
+
+fn mode_for<'a>(mode: Option<&'a CodexMode>, persona_id: &str) -> Option<&'a CodexMode> {
+    mode.filter(|m| m.personas.iter().any(|id| id == persona_id))
+}
 pub(crate) const LANE_ARRIVALS: &str = "arrivals";
 pub(crate) const LANE_MAINTENANCE: &str = "maintenance";
 pub(crate) const LANE_ADVANCE: &str = "advance";
@@ -374,6 +460,7 @@ impl ReactiveSubscription for AttentionSubscription {
     }
 
     async fn tick(&self) {
+        let codex_mode = read_codex_mode(&self.pool);
         // The quota governor runs BEFORE the plan, not after it. A tick that
         // planned first would mark personas served and write refusal rows for
         // a pass it then could not dispatch — the wake would be spent on the
@@ -408,9 +495,13 @@ impl ReactiveSubscription for AttentionSubscription {
                      window resets, or sooner if the operator switches accounts"
                 );
             }
-            return;
+            if codex_mode.is_none() {
+                return;
+            }
         }
-        if USAGE_STOP_ANNOUNCED.swap(false, std::sync::atomic::Ordering::Relaxed) {
+        if !verdict.blocked
+            && USAGE_STOP_ANNOUNCED.swap(false, std::sync::atomic::Ordering::Relaxed)
+        {
             tracing::info!(
                 window = verdict.worst_key.as_deref().unwrap_or("unknown"),
                 utilization_pct = verdict.worst_pct,
@@ -420,14 +511,31 @@ impl ReactiveSubscription for AttentionSubscription {
         // Closed from the ROW, not from the flag: a restart inside a hold
         // clears the flag, and a window that never closes would tell every
         // later wake it is still being held.
-        close_loop_hold(&self.pool, HOLD_KIND_QUOTA);
+        if !verdict.blocked {
+            close_loop_hold(&self.pool, HOLD_KIND_QUOTA);
+        }
 
         // The Autopilot pacing runs AFTER the stop and BEFORE the plan, for
         // the same reason: a tick that is ahead of its weekly pace, or whose
         // machine has no memory for another worker, must not spend anyone's
         // wake on a pass it will not dispatch. `slots` can only reduce the
         // budget the running-work headroom already allows.
-        let pacing = super::usage_pacing::verdict(&self.pool, &self.state).await;
+        let mut restricted = verdict.blocked;
+        let mut pacing =
+            super::usage_pacing::verdict_for_pass(&self.pool, &self.state, restricted).await;
+        if pacing.slots == 0
+            && codex_mode.is_some()
+            && matches!(
+                pacing.hold,
+                Some(
+                    super::usage_pacing::AutopilotHold::AheadOfPace
+                        | super::usage_pacing::AutopilotHold::FiveHourFull
+                )
+            )
+        {
+            restricted = true;
+            pacing = super::usage_pacing::verdict_for_pass(&self.pool, &self.state, true).await;
+        }
         if pacing.slots == 0 {
             open_loop_hold(&self.pool, HOLD_KIND_PACING, &pacing.summary(), None);
             if !PACING_HOLD_ANNOUNCED.swap(true, std::sync::atomic::Ordering::Relaxed) {
@@ -454,16 +562,19 @@ impl ReactiveSubscription for AttentionSubscription {
         // the plan re-propagates so run_single's catch_unwind still records
         // the crash and applies backoff.
         let pool = self.pool.clone();
-        let planned =
-            match tokio::task::spawn_blocking(move || plan_tick_gated_capped(&pool, slots)).await {
-                Ok(p) => p,
-                Err(join_err) => {
-                    if join_err.is_panic() {
-                        std::panic::resume_unwind(join_err.into_panic());
-                    }
-                    return;
+        let planned = match tokio::task::spawn_blocking(move || {
+            plan_tick_capped_with_mode(&pool, slots, codex_mode, restricted)
+        })
+        .await
+        {
+            Ok(p) => p,
+            Err(join_err) => {
+                if join_err.is_panic() {
+                    std::panic::resume_unwind(join_err.into_panic());
                 }
-            };
+                return;
+            }
+        };
         let Some((counts, dispatches)) = planned else {
             return; // gated off / cooling down / plan failed (already logged)
         };
@@ -591,6 +702,7 @@ pub(crate) enum DispatchWork {
         /// the least-recently-advanced charter, exactly what the `advance`
         /// lane would have picked.
         fallback: Option<(String, String)>,
+        codex_mode: Option<CodexMode>,
     },
 }
 
@@ -613,9 +725,16 @@ pub(crate) struct PlannedDispatch {
 /// the worker-dispatch budget: the production tick passes
 /// [`super::usage_pacing::AutopilotPacing::slots`] (never zero — a zero
 /// returns before the plan); `usize::MAX` is "no pacing".
-pub(crate) fn plan_tick_gated_capped(
+///
+/// `codex_mode` and `restricted` (G52): a restricted pass is one the Claude
+/// gauge would have stopped, planned for the `attention.codex_mode` personas
+/// only, and it skips the Claude spend cooldown because nothing it dispatches
+/// draws on the Claude account.
+fn plan_tick_capped_with_mode(
     pool: &DbPool,
     pacing_slots: usize,
+    codex_mode: Option<CodexMode>,
+    restricted: bool,
 ) -> Option<(TickCounts, Vec<PlannedDispatch>)> {
     use crate::engine::autonomy::{self, Action};
     // 1. Default-OFF opt-in — the ONE autonomy front door.
@@ -623,11 +742,11 @@ pub(crate) fn plan_tick_gated_capped(
         return None;
     }
     // 2. Global spend-safety cooldown.
-    if quota_cooldown_active(pool) {
+    if !restricted && quota_cooldown_active(pool) {
         return None;
     }
     let budget = tick_dispatch_budget(pool).min(pacing_slots.max(1));
-    match plan_tick_with_budget(pool, budget) {
+    match plan_tick_with_mode(pool, budget, codex_mode.as_ref(), restricted) {
         Ok(v) => Some(v),
         Err(e) => {
             tracing::warn!(error = %e, "persona_attention: plan failed");
@@ -962,13 +1081,23 @@ fn ordered_roster<'a>(
 /// The decision half: roster → admission ladder per persona → lane choice for
 /// the first admitted persona → ledger `started` row + built payload, with an
 /// explicit worker-dispatch budget (the running-work headroom, further capped
-/// by the Autopilot pacing in [`plan_tick_gated_capped`]): the ordered roster
+/// by the Autopilot pacing in [`plan_tick_capped_with_mode`]): the ordered roster
 /// is walked and every admitted persona with work is served until `budget`
 /// worker dispatches are planned. Maintenance (DB-only) is done in place and
 /// does not spend the budget, so a sleep cycle never costs anyone a decision.
+#[cfg(test)]
 pub(crate) fn plan_tick_with_budget(
     pool: &DbPool,
     budget: usize,
+) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
+    plan_tick_with_mode(pool, budget, None, false)
+}
+
+fn plan_tick_with_mode(
+    pool: &DbPool,
+    budget: usize,
+    codex_mode: Option<&CodexMode>,
+    restricted: bool,
 ) -> Result<(TickCounts, Vec<PlannedDispatch>), AppError> {
     let mut counts = TickCounts {
         budget: budget.max(1),
@@ -1004,6 +1133,9 @@ pub(crate) fn plan_tick_with_budget(
 
     for row in order {
         let pid = row.persona_id;
+        if restricted && mode_for(codex_mode, pid).is_none() {
+            continue;
+        }
         let persona_charters = &grouped[pid];
         let admission = match admit_persona(pool, pid, persona_charters, &mut counts, false) {
             Ok(a) => a,
@@ -1033,15 +1165,16 @@ pub(crate) fn plan_tick_with_budget(
         // spending the first two wakes of every new App Master on the daily
         // self-review and a memory pass, with the decision an hour away. So a
         // woken App Master decides first; the other lanes take later ticks.
-        let work = if woke && is_app_master(persona_charters) {
-            LaneWork::Decide
-        } else {
-            let Some(work) = find_work(pool, pid, persona_charters)? else {
-                counts.idle += 1; // plain nothing-to-do: no rows
-                continue;
+        let work =
+            if mode_for(codex_mode, pid).is_some() || (woke && is_app_master(persona_charters)) {
+                LaneWork::Decide
+            } else {
+                let Some(work) = find_work(pool, pid, persona_charters)? else {
+                    counts.idle += 1; // plain nothing-to-do: no rows
+                    continue;
+                };
+                work
             };
-            work
-        };
 
         // 6. Ledger discipline: the DECISION row opens BEFORE any spawn.
         match work {
@@ -1134,8 +1267,13 @@ pub(crate) fn plan_tick_with_budget(
                 // The decision's OWN row: `responsibility_id` is None because
                 // the decision is about the whole roster. Each charter it
                 // dispatches opens its own row naming that charter.
-                let context =
-                    build_decision_context(pool, &persona, persona_charters).map(Box::new);
+                let context = build_decision_context_with_mode(
+                    pool,
+                    &persona,
+                    persona_charters,
+                    mode_for(codex_mode, pid),
+                )
+                .map(Box::new);
                 let context = match context {
                     Ok(c) => c,
                     Err(e) => {
@@ -1161,7 +1299,11 @@ pub(crate) fn plan_tick_with_budget(
                     persona_id: pid.to_string(),
                     persona_name: persona.name.clone(),
                     ledger_id,
-                    work: DispatchWork::Decide { context, fallback },
+                    work: DispatchWork::Decide {
+                        context,
+                        fallback,
+                        codex_mode: mode_for(codex_mode, pid).cloned(),
+                    },
                 });
             }
             LaneWork::Improve => {
@@ -1312,11 +1454,7 @@ fn admit_persona(
 
     // (d) quiet hours: any charter's local window refuses; an unparseable
     // spec quiets nothing (lenient) and warns once per process.
-    let now_minute = {
-        use chrono::Timelike;
-        let now = chrono::Local::now();
-        now.hour() * 60 + now.minute()
-    };
+    let now_minute = personas_core::quiet_hours::local_minute_of_day();
     for c in charters {
         let Some(spec) = c.cadence.quiet_hours.as_deref() else {
             continue;
@@ -1794,10 +1932,20 @@ const CODE_CONNECTOR_TYPES: &[&str] = &["repository", "codebase", "git", "versio
 /// prompt says "not measured" rather than printing a zero. A decision made on
 /// partial state is still a decision; a decision made on a fabricated zero is
 /// not.
+#[cfg(test)]
 fn build_decision_context(
     pool: &DbPool,
     persona: &Persona,
     charters: &[&PersonaResponsibility],
+) -> Result<attention_decide::DecisionContext, AppError> {
+    build_decision_context_with_mode(pool, persona, charters, None)
+}
+
+fn build_decision_context_with_mode(
+    pool: &DbPool,
+    persona: &Persona,
+    charters: &[&PersonaResponsibility],
+    codex_mode: Option<&CodexMode>,
 ) -> Result<attention_decide::DecisionContext, AppError> {
     use attention_decide::{DecisionCharter, ProjectSnapshot, MAX_NAMED_IDEAS};
 
@@ -1866,7 +2014,18 @@ fn build_decision_context(
                 title: c.title.clone(),
                 priority: c.spec.priority,
                 recipe_slug: c.spec.recipe_ref.as_ref().map(|r| r.slug.clone()),
-                need: c.spec.description.as_ref().map(|d| d.need.clone()),
+                need: if codex_mode.is_some() && !charter_writes_code(c) {
+                    Some(format!(
+                        "{}: {CODEX_EXECUTION_HOLD}",
+                        c.spec
+                            .description
+                            .as_ref()
+                            .map(|d| d.need.as_str())
+                            .unwrap_or(&c.title)
+                    ))
+                } else {
+                    c.spec.description.as_ref().map(|d| d.need.clone())
+                },
                 core_action: c.spec.description.as_ref().map(|d| d.core_action.clone()),
                 interval_minutes: c.cadence.interval_minutes,
                 max_runs_per_day: c.cadence.max_runs_per_day,
@@ -1886,8 +2045,15 @@ fn build_decision_context(
                     charters.iter().copied(),
                 ),
                 project_id: c.project_id.clone(),
-                dispatch_model: dispatch_model_for(persona, c, cascade.as_ref()).0,
-                worker_engine: worker_engine_of(c),
+                dispatch_model: codex_mode.map_or_else(
+                    || dispatch_model_for(persona, c, cascade.as_ref()).0,
+                    |m| m.model.clone(),
+                ),
+                worker_engine: if codex_mode.is_some() && charter_writes_code(c) {
+                    "codex".into()
+                } else {
+                    worker_engine_of(c)
+                },
                 can_hire: c.spec.can_hire.unwrap_or(false),
                 authority: c.spec.authority.unwrap_or(false),
                 profile: personas_engine::responsibility::effective_profile(&c.spec),
@@ -1968,7 +2134,13 @@ fn build_decision_context(
         .map(|h| attention_decide::LoopHoldNote {
             kind: h.kind,
             started_at: h.started_at,
-            ended_at: h.ended_at,
+            // G52b: a Claude usage or pacing hold that is still open does not
+            // stop a codex_mode persona. Its code charters dispatch through
+            // this very wake. Printed as "STILL HELD", it read as a stop, and
+            // three of six App Masters deferred every charter on it
+            // (2026-09-24 18:07Z). The hold stays in the note, because the
+            // gap behind the persona is still unobserved.
+            ended_at: hold_end_for(h.ended_at, codex_mode.is_some()),
             detail: h.detail,
         });
 
@@ -2027,7 +2199,11 @@ fn build_decision_context(
         // The clock is read HERE, not inside the renderer, so the prompt stays
         // a pure function of the context it was handed.
         now_utc: chrono::Utc::now().to_rfc3339(),
-        model: decision_model(persona, charters, cascade.as_ref()),
+        model: codex_mode.map_or_else(
+            || decision_model(persona, charters, cascade.as_ref()),
+            |m| m.model.clone(),
+        ),
+        codex_mode: codex_mode.is_some(),
         charters: decision_charters,
         projects,
         open_asks,
@@ -2044,7 +2220,7 @@ fn build_decision_context(
         may_direct,
         workspace,
         home_project,
-        resource_state: Some(resource_state_now(pool)),
+        resource_state: Some(resource_state_now(pool, codex_mode.is_some())),
     })
 }
 
@@ -2053,8 +2229,12 @@ fn build_decision_context(
 /// takes and the same wire figures the Monitor shows - so this is a field
 /// copy, not a second computation. Measures nothing (no RAM probe, no usage
 /// call): it runs inside `plan_tick` for every App Master.
-fn resource_state_now(pool: &DbPool) -> attention_decide::ResourceState {
-    let b = crate::commands::fleet::queue::current_budgets(pool);
+fn resource_state_now(pool: &DbPool, codex_mode: bool) -> attention_decide::ResourceState {
+    let b = if codex_mode {
+        crate::commands::fleet::queue::current_budgets_for(pool, true)
+    } else {
+        crate::commands::fleet::queue::current_budgets(pool)
+    };
     attention_decide::ResourceState {
         enabled: b.enabled,
         behind_pct: b.behind_pct,
@@ -2478,6 +2658,11 @@ pub(crate) fn newest_coverage_note_for(charters: &[PersonaResponsibility]) -> Op
 /// [`DISPATCH_UNKNOWN`] — never `running` — because "I could not find the
 /// record" and "it is still working" are different facts and only one of them
 /// justifies deferring a charter.
+/// What a persona reads for a dispatch whose worker died with an earlier app
+/// process (G54): ended, not running, and nothing was written back.
+const DEAD_WORKER_SUMMARY: &str = "worker gone: its process ended with an earlier app run \
+     before it wrote anything back; check the branch, then re-dispatch or re-scope";
+
 fn resolve_last_dispatch(
     pool: &DbPool,
     row: &personas_db::models::AttentionLedgerEntry,
@@ -2521,7 +2706,18 @@ fn resolve_last_dispatch(
         Handle::Fleet(session_id) => match crate::db::repos::fleet_sessions::get(pool, &session_id)
         {
             Ok(Some(s)) => {
+                // G54: a `stale` row whose session is in no live registry
+                // belongs to a worker that died with an earlier app process.
+                // Nothing will ever move it. Read as running, it held
+                // bank-core and bank-invest deferring for 2.5 h on
+                // 2026-09-24. A quiet worker that is still alive (a long cargo
+                // run inside codex) is in the registry and stays running.
+                let gone = s.state == "stale"
+                    && crate::commands::fleet::registry::registry()
+                        .session_state(&session_id)
+                        .is_none();
                 let state = match s.state.as_str() {
+                    _ if gone => DISPATCH_FAILED,
                     // …unless the reason says the run was ENDED rather than
                     // completed. The registry's `finished` means "stopped and
                     // parked", and a session killed by a usage limit or a
@@ -2550,11 +2746,15 @@ fn resolve_last_dispatch(
                     // has reported no outcome, so it is not finished.
                     _ => DISPATCH_RUNNING,
                 };
-                let summary = crate::commands::fleet::run::summary_from_reason(
-                    &s.state,
-                    s.state_reason.as_deref(),
-                )
-                .or_else(|| s.state_reason.clone());
+                let summary = if gone {
+                    Some(DEAD_WORKER_SUMMARY.to_string())
+                } else {
+                    crate::commands::fleet::run::summary_from_reason(
+                        &s.state,
+                        s.state_reason.as_deref(),
+                    )
+                    .or_else(|| s.state_reason.clone())
+                };
                 ("fleet", state, summary)
             }
             Ok(None) => ("fleet", DISPATCH_UNKNOWN, None),
@@ -2688,6 +2888,7 @@ fn decision_model(
         persona,
         charters
             .iter()
+            .filter(|c| worker_engine_of(c) != "codex")
             .find_map(|c| c.spec.model_override.as_deref()),
         cascade,
         None,
@@ -2713,8 +2914,7 @@ fn worker_engine_of(c: &crate::db::models::PersonaResponsibility) -> String {
 /// whose model is its own and is read straight from the override the door
 /// stamped, with the lane's default behind it.
 ///
-/// Returns `(model, effort)`. The codex lane has no effort: `codex exec` takes
-/// no `--effort`, and its argv (`queue::codex_args`) carries a model only.
+/// Returns `(model, effort)`. Codex carries effort through `-c`.
 fn dispatch_model_for(
     persona: &Persona,
     c: &crate::db::models::PersonaResponsibility,
@@ -2724,15 +2924,13 @@ fn dispatch_model_for(
         CODEX_LANE_DEFAULT_MODEL, WORKER_ENGINE_CODEX,
     };
     if worker_engine_of(c) == WORKER_ENGINE_CODEX {
-        let model = c
+        let override_value = c
             .spec
             .model_override
             .as_deref()
             .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .unwrap_or(CODEX_LANE_DEFAULT_MODEL)
-            .to_string();
-        return (model, None);
+            .filter(|s| !s.is_empty());
+        return codex_model_effort(override_value, CODEX_LANE_DEFAULT_MODEL);
     }
     resolve_charter_model(
         persona,
@@ -2740,6 +2938,34 @@ fn dispatch_model_for(
         cascade,
         declared_difficulty(c),
     )
+}
+
+fn codex_model_effort(
+    override_value: Option<&str>,
+    default_model: &str,
+) -> (String, Option<String>) {
+    let default_effort = personas_core::model_ids::CODEX_DEFAULT_EFFORT;
+    if let Some(raw) = override_value {
+        if raw.starts_with('{') {
+            if let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) {
+                let model = value
+                    .get("model")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.trim().is_empty());
+                let effort = value
+                    .get("effort")
+                    .and_then(|v| v.as_str())
+                    .filter(|v| !v.trim().is_empty());
+                return (
+                    model.unwrap_or(default_model).to_string(),
+                    Some(effort.unwrap_or(default_effort).to_string()),
+                );
+            }
+            return (default_model.to_string(), Some(default_effort.to_string()));
+        }
+        return (raw.to_string(), Some(default_effort.to_string()));
+    }
+    (default_model.to_string(), Some(default_effort.to_string()))
 }
 
 /// The difficulty a charter DECLARED, or `None` for an untagged one. Routing
@@ -2814,6 +3040,7 @@ fn dispatch_resources(
     pool: &DbPool,
     persona_id: &str,
     charter: &attention_decide::DecisionCharter,
+    codex_mode: Option<&CodexMode>,
 ) -> (String, Option<String>, crate::db::models::ResourceProfile) {
     let row = responsibilities::get_by_id(pool, &charter.id)
         .ok()
@@ -2823,12 +3050,16 @@ fn dispatch_resources(
         .as_ref()
         .map(|r| personas_engine::responsibility::effective_profile(&r.spec))
         .unwrap_or_default();
-    let (model, effort) = match (persona.as_ref(), row.as_ref()) {
-        (Some(p), Some(r)) => {
-            let cascade = crate::db::model_routing::resolve_for_persona(pool, p);
-            dispatch_model_for(p, r, cascade.as_ref())
+    let (model, effort) = if let Some(mode) = codex_mode {
+        (mode.model.clone(), Some(mode.effort.clone()))
+    } else {
+        match (persona.as_ref(), row.as_ref()) {
+            (Some(p), Some(r)) => {
+                let cascade = crate::db::model_routing::resolve_for_persona(pool, p);
+                dispatch_model_for(p, r, cascade.as_ref())
+            }
+            _ => (charter.dispatch_model.clone(), None),
         }
-        _ => (charter.dispatch_model.clone(), None),
     };
     (model, effort, profile)
 }
@@ -3178,29 +3409,15 @@ fn interval_floor_refusal(
     }
 }
 
-/// Lenient `"HH:MM-HH:MM"` → (start, end) minutes-of-day. `None` = no window.
-fn parse_quiet_hours(spec: &str) -> Option<(u32, u32)> {
-    let (start, end) = spec.split_once('-')?;
-    Some((parse_hhmm(start.trim())?, parse_hhmm(end.trim())?))
-}
-
-fn parse_hhmm(s: &str) -> Option<u32> {
-    let (h, m) = s.split_once(':')?;
-    let h: u32 = h.trim().parse().ok()?;
-    let m: u32 = m.trim().parse().ok()?;
-    (h <= 23 && m <= 59).then_some(h * 60 + m)
-}
-
-/// Wrap-aware window membership: `22:00-07:00` covers the night across
-/// midnight. Equal endpoints are an EMPTY window (a charter saying
-/// "09:00-09:00" quiets nothing rather than everything — lenient).
-fn in_quiet_window(now_minute: u32, start: u32, end: u32) -> bool {
-    match start.cmp(&end) {
-        CmpOrdering::Less => now_minute >= start && now_minute < end,
-        CmpOrdering::Greater => now_minute >= start || now_minute < end,
-        CmpOrdering::Equal => false,
-    }
-}
+// `parse_quiet_hours` / `in_quiet_window` MOVED to
+// `personas_core::quiet_hours` on 2026-09-24 and are re-exported here under
+// their old names so every call site in this file reads unchanged. Two more
+// readers of the same `"HH:MM-HH:MM"` spelling arrived that day - Curator's
+// tick and `settings_keys::validate_value` - and `db` cannot reach this crate,
+// so the parser came DOWN rather than being written a second and third time.
+// The grammar is unchanged; the fixtures that proved it moved with it.
+use personas_core::quiet_hours::contains as in_quiet_window;
+use personas_core::quiet_hours::parse as parse_quiet_hours;
 
 // ── Task briefs ────────────────────────────────────────────────────────────
 
@@ -3567,8 +3784,20 @@ pub(crate) fn execute_dispatch(state: Arc<crate::AppState>, app: AppHandle, plan
                         Err(e) => Err(e),
                     }
                 }
-                DispatchWork::Decide { context, fallback } => {
-                    run_decision_lane(&state, app.clone(), &ledger_id, *context, fallback).await
+                DispatchWork::Decide {
+                    context,
+                    fallback,
+                    codex_mode,
+                } => {
+                    run_decision_lane(
+                        &state,
+                        app.clone(),
+                        &ledger_id,
+                        *context,
+                        fallback,
+                        codex_mode,
+                    )
+                    .await
                 }
                 DispatchWork::Improve { task } => {
                     match spawn_attention_execution(
@@ -3740,6 +3969,7 @@ async fn run_decision_lane(
     ledger_id: &str,
     mut context: attention_decide::DecisionContext,
     fallback: Option<(String, String)>,
+    codex_mode: Option<CodexMode>,
 ) -> Result<serde_json::Value, AppError> {
     let pool = state.db.clone();
     let persona_id = context.persona_id.clone();
@@ -3777,14 +4007,26 @@ async fn run_decision_lane(
     }
 
     let prompt = attention_decide::render_decision_prompt(&context);
-    let reply = crate::companion::brain::oneshot::call_claude_outcome(
-        &state.user_db,
-        &prompt,
-        &context.model,
-        crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
-        DECISION_BACKSTOP,
-    )
-    .await;
+    let reply = if let Some(mode) = codex_mode.as_ref() {
+        crate::companion::brain::oneshot::call_codex_outcome(
+            &state.user_db,
+            &prompt,
+            &mode.model,
+            &mode.effort,
+            crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
+            DECISION_BACKSTOP,
+        )
+        .await
+    } else {
+        crate::companion::brain::oneshot::call_claude_outcome(
+            &state.user_db,
+            &prompt,
+            &context.model,
+            crate::companion::brain::oneshot::leg::APP_MASTER_DECISION,
+            DECISION_BACKSTOP,
+        )
+        .await
+    };
 
     // A usage cap is not a dead end and must not be degraded like one: the
     // fallback lane would spend an execution the account cannot pay for, and
@@ -3815,6 +4057,11 @@ async fn run_decision_lane(
             tracing::warn!(persona_id, model = %context.model, reason = %why,
                 "persona_attention: decision unusable — falling back to the \
                  least-recently-advanced charter");
+            if codex_mode.is_some() {
+                return Err(AppError::External(format!(
+                    "codex decision unusable: {why}"
+                )));
+            }
             return decide_fallback(state, app, &persona_id, ledger_id, fallback, &why).await;
         }
     };
@@ -3858,6 +4105,19 @@ async fn run_decision_lane(
         }
         // One ledger row PER dispatched charter, opened before its spawn —
         // the same discipline the single-dispatch lanes keep.
+        if codex_mode.is_some() && !charter.writes_code {
+            attention_ledger::insert_refusal(
+                &pool,
+                &persona_id,
+                Some(&charter.id),
+                KIND_ATTENTION,
+                Some(LANE_DECIDE),
+                CODEX_EXECUTION_HOLD,
+            )?;
+            skipped
+                .push(serde_json::json!({"charterId": charter.id, "reason": CODEX_EXECUTION_HOLD}));
+            continue;
+        }
         let row = match attention_ledger::insert_started(
             &pool,
             &persona_id,
@@ -3872,8 +4132,16 @@ async fn run_decision_lane(
                 continue;
             }
         };
-        let outcome =
-            dispatch_decided_charter(state, app.clone(), &context, charter, item, &row).await;
+        let outcome = dispatch_decided_charter(
+            state,
+            app.clone(),
+            &context,
+            charter,
+            item,
+            &row,
+            codex_mode.as_ref(),
+        )
+        .await;
         match outcome {
             Ok(stats) => {
                 record_dispatch_outcome(&pool, &row, Ok(stats.clone()));
@@ -4967,6 +5235,7 @@ async fn dispatch_decided_charter(
     charter: &attention_decide::DecisionCharter,
     item: &attention_decide::DecisionItem,
     ledger_id: &str,
+    codex_mode: Option<&CodexMode>,
 ) -> Result<serde_json::Value, AppError> {
     // Which accepted ideas (if any) this dispatch is FOR. Resolved before the
     // spawn so the worker's brief can name them, and re-used after the spawn to
@@ -4975,7 +5244,7 @@ async fn dispatch_decided_charter(
     let task = decided_task_text(charter, item, &ideas);
 
     let outcome = if charter.writes_code {
-        dispatch_into_worktree(state, app, context, charter, &task).await
+        dispatch_into_worktree(state, app, context, charter, &task, codex_mode).await
     } else {
         spawn_attention_execution(
             state,
@@ -5896,6 +6165,7 @@ async fn dispatch_into_worktree(
     context: &attention_decide::DecisionContext,
     charter: &attention_decide::DecisionCharter,
     task: &str,
+    codex_mode: Option<&CodexMode>,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = charter.project_id.clone().ok_or_else(|| {
         AppError::Validation(format!(
@@ -5910,18 +6180,28 @@ async fn dispatch_into_worktree(
     // later (bank-core, 2026-09-10 08:34 and 09:25). The refusal names the
     // window, the line and the reset; the charter is untouched, so the next
     // wake retries it once the window has moved.
-    let (gauge, line) = super::usage_governor::fleet_worker_verdict(&state.db).await;
-    if gauge.blocked {
-        return Err(AppError::Validation(format!(
-            "usage gauge: {} — a fleet worker is not started within {:.0} points of the stop \
+    let engine = if codex_mode.is_some() {
+        "codex"
+    } else {
+        charter.worker_engine.as_str()
+    };
+    if engine == "codex" {
+        tracing::info!(persona_id = %context.persona_id, charter = %charter.id,
+            "persona_attention: codex worker bypassed Claude usage gauge");
+    } else {
+        let (gauge, line) = super::usage_governor::fleet_worker_verdict(&state.db).await;
+        if gauge.blocked {
+            return Err(AppError::Validation(format!(
+                "usage gauge: {} — a fleet worker is not started within {:.0} points of the stop \
              (attention.fleet_start_margin_pct); resets in {}",
-            gauge.summary(line),
-            super::usage_governor::fleet_start_margin_pct(&state.db),
-            gauge
-                .resets_in_minutes
-                .map(|m| format!("{m}m"))
-                .unwrap_or_else(|| "an unstated time".to_string()),
-        )));
+                gauge.summary(line),
+                super::usage_governor::fleet_start_margin_pct(&state.db),
+                gauge
+                    .resets_in_minutes
+                    .map(|m| format!("{m}m"))
+                    .unwrap_or_else(|| "an unstated time".to_string()),
+            )));
+        }
     }
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
     // The shared vocabulary, not a hand-written sentence: this keeps the
@@ -6007,7 +6287,8 @@ async fn dispatch_into_worktree(
     //
     // Model, effort and the resource profile are read together, fresh: the
     // profile rides on the dispatch so the admission door can charge it.
-    let (model, effort, profile) = dispatch_resources(&state.db, &context.persona_id, charter);
+    let (model, effort, profile) =
+        dispatch_resources(&state.db, &context.persona_id, charter, codex_mode);
     // The label goes in with the spawn, not through the process-global run the
     // wake opened: the worktree and `gh` awaits above are exactly the window in
     // which another lane can replace or close that run, and a worker spawned
@@ -6016,7 +6297,7 @@ async fn dispatch_into_worktree(
     // G48: the maintenance lane rides the codex CLI; every other charter the
     // claude one. Same worktree, same guardrails, same run label, same
     // write-back doors — only the program under the prompt differs.
-    let engine = charter.worker_engine.clone();
+    let engine = engine.to_string();
     // No `not_before_ms` on the tick's own dispatch: the admission ladder has
     // just proved the interval floor elapsed since the last completed pass, so
     // a gate of one more interval here would double the cadence. The gate is
@@ -6033,7 +6314,7 @@ async fn dispatch_into_worktree(
             app,
             worktree_path.clone(),
             text,
-            model.clone(),
+            (model.clone(), effort.clone()),
             Some(&run_label),
             provenance,
             Some(profile.clone()),
@@ -9606,7 +9887,10 @@ mod attention_tests {
         let (counts, dispatch) = plan_tick_gated_one(&pool).expect("enabled");
         assert_eq!(counts.dispatched, Some(LANE_DECIDE));
         let plan = dispatch.expect("decide dispatch planned");
-        let DispatchWork::Decide { context, fallback } = &plan.work else {
+        let DispatchWork::Decide {
+            context, fallback, ..
+        } = &plan.work
+        else {
             panic!("expected the decide lane");
         };
         assert_eq!(context.persona_id, "p1");
@@ -9659,6 +9943,69 @@ mod attention_tests {
         let resolved = decision_model(&persona, &[&plain, &opus], None);
         assert!(resolved.starts_with("claude-opus-"), "{resolved}");
         assert_ne!(resolved, "opus", "the slug is resolved, not passed through");
+        Ok(())
+    }
+
+    #[test]
+    fn an_open_claude_hold_reads_as_lifted_only_to_a_codex_mode_persona() {
+        assert_eq!(hold_end_for(None, false), None);
+        assert_eq!(hold_end_for(Some("t1".into()), true).as_deref(), Some("t1"));
+        assert_eq!(hold_end_for(None, true).as_deref(), Some(CODEX_HOLD_LIFTED));
+    }
+
+    #[test]
+    fn codex_mode_parse_is_absent_by_default_and_rejects_bad_values() {
+        assert!(parse_codex_mode(None).unwrap().is_none());
+        assert!(parse_codex_mode(Some("")).unwrap().is_none());
+        assert!(parse_codex_mode(Some(r#"{"personas":[]}"#))
+            .unwrap()
+            .is_none());
+        let mode = parse_codex_mode(Some(r#"{"personas":["p1"]}"#))
+            .unwrap()
+            .unwrap();
+        assert_eq!(mode.personas, vec!["p1".to_string()]);
+        assert_eq!(mode.model, personas_core::model_ids::CODEX_MAINTENANCE);
+        assert_eq!(mode.effort, personas_core::model_ids::CODEX_DEFAULT_EFFORT);
+        let mode = parse_codex_mode(Some(
+            r#"{"personas":["p2"],"model":"gpt-6-sol","effort":"xhigh"}"#,
+        ))
+        .unwrap()
+        .unwrap();
+        assert!(mode_for(Some(&mode), "p2").is_some());
+        assert!(mode_for(Some(&mode), "p1").is_none());
+        assert_eq!(mode.effort, "xhigh");
+        assert!(parse_codex_mode(Some(r#"{"personas":[""]}"#)).is_err());
+        assert!(parse_codex_mode(Some(r#"{"personas":"p1"}"#)).is_err());
+        assert!(parse_codex_mode(Some("not json")).is_err());
+        assert!(parse_codex_mode(Some(r#"{"personas":["p1"],"effort":"hgih"}"#)).is_err());
+    }
+
+    #[test]
+    fn codex_charter_json_override_carries_effort() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let persona = persona_repo::get_by_id(&pool, "p1")?;
+        let mut charter = charter_fixture("codex");
+        charter.spec.worker_engine = Some("codex".into());
+        charter.spec.model_override = Some(r#"{"model":"gpt-6-sol","effort":"xhigh"}"#.into());
+        let (resolved_model, resolved_effort) = dispatch_model_for(&persona, &charter, None);
+        assert_eq!(
+            (resolved_model.as_str(), resolved_effort.as_deref()),
+            ("gpt-6-sol", Some("xhigh"))
+        );
+        let (model, effort) = codex_model_effort(
+            Some(r#"{"model":"gpt-6-sol","effort":"xhigh"}"#),
+            "fallback",
+        );
+        assert_eq!(
+            (model.as_str(), effort.as_deref()),
+            ("gpt-6-sol", Some("xhigh"))
+        );
+        let (model, effort) = codex_model_effort(Some("gpt-6-sol"), "fallback");
+        assert_eq!(
+            (model.as_str(), effort.as_deref()),
+            ("gpt-6-sol", Some("high"))
+        );
         Ok(())
     }
 
@@ -10698,6 +11045,34 @@ mod attention_tests {
         )?;
         let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
         assert_eq!(d.state, attention_decide::DISPATCH_RUNNING);
+        Ok(())
+    }
+
+    #[test]
+    fn a_stale_row_with_no_live_session_reads_as_a_dead_worker() -> Result<(), AppError> {
+        use crate::db::repos::fleet_sessions;
+        let pool = init_test_db()?;
+        seed_persona(&pool, "p1")?;
+        let charter = seed_charter(&pool, "p1", "Charter", &one_outcome());
+        let row = decide_row(
+            &pool,
+            "p1",
+            &charter,
+            serde_json::json!({ "charterId": charter, "sessionId": "dead-sess", "worker": "fleet" }),
+        );
+        fleet_sessions::upsert(
+            &pool,
+            &fleet_row("dead-sess", "stale", Some("No log growth for 6 min")),
+        )?;
+        // The test process has no live fleet registry entry for the id, which
+        // is exactly the shape a worker killed with an earlier app run leaves.
+        let d = resolve_last_dispatch(&pool, &ledger_entry(&pool, &row)).expect("resolved");
+        assert_eq!(d.state, attention_decide::DISPATCH_FAILED);
+        assert!(d
+            .summary
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("worker gone:"));
         Ok(())
     }
 

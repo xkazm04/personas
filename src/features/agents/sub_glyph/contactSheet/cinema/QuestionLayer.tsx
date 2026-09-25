@@ -73,7 +73,7 @@ export function QuestionLayer({ question, dim, index, total, draft, onDraft, onP
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.18, duration: 0.3 }}
-        className="typo-heading-lg font-semibold text-foreground leading-snug"
+        className="typo-heading-lg text-foreground leading-snug"
       >
         {question.question}
       </motion.h2>

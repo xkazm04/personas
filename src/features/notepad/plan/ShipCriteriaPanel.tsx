@@ -61,7 +61,7 @@ function CriterionRow({ c, vm, project, onDispatch, onOpenTerminal }: {
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
           <span className="typo-title">{c.label}</span>
-          <span className={`typo-data tabular-nums shrink-0 ${PLAN_INK[role]}`}>{c.done}/{c.total}</span>
+          <span className={`typo-data shrink-0 ${PLAN_INK[role]}`}>{c.done}/{c.total}</span>
         </span>
         {/* The evidence line is DERIVED prose, never hand-typed (shipCriteria.ts).
             It is the answer to "why is this criterion where it is", so it reads

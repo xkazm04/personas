@@ -56,7 +56,7 @@ export function KpiSourceSection({
       )}
       {active ? (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="typo-body text-foreground font-medium">{active.service_type}</span>
+          <span className="typo-body text-foreground">{active.service_type}</span>
           <ComposedByBadge composedBy={active.composed_by} />
           {active.verified_at && (
             <span className="typo-caption text-foreground opacity-80">

@@ -25,20 +25,21 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
   const { pid, cwd, cmd, memoryBytes, tracked } = proc;
   return (
     <li
-      className="flex items-center gap-2 text-[13px] border border-primary/5 rounded-interactive px-2 py-1.5 bg-background/40"
+      className="flex items-center gap-2 h-9 typo-body border border-primary/5 rounded-interactive px-2 bg-background/40"
       data-testid={`fleet-process-${pid}`}
     >
       {tracked ? (
-        <ShieldCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+        <ShieldCheck className="w-3.5 h-3.5 text-status-success flex-shrink-0" aria-hidden="true" />
       ) : (
-        <AlertTriangle className="w-3 h-3 text-orange-400 flex-shrink-0" />
+        <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" aria-hidden="true" />
       )}
-      <span className="font-mono text-foreground w-14 flex-shrink-0">{pid}</span>
-      <span className="text-foreground w-14 flex-shrink-0">{fmtMem(memoryBytes)}</span>
+      <span className="typo-caption tabular-nums w-14 flex-shrink-0">{pid}</span>
+      <span className="typo-caption tabular-nums w-16 flex-shrink-0 text-right">{fmtMem(memoryBytes)}</span>
       <span className="flex-1 min-w-0">
-        <TruncateWithTooltip text={cwd ?? cmd} className="text-foreground font-mono" />
+        {/* The row's one emphasis: which folder the process runs in. Pid and memory are quiet figures. */}
+        <TruncateWithTooltip text={cwd ?? cmd} className="typo-title" />
       </span>
-      <span className={`text-[12px] flex-shrink-0 ${tracked ? 'text-emerald-400' : 'text-orange-300'}`}>
+      <span className={`typo-caption flex-shrink-0 ${tracked ? 'text-status-success' : 'text-status-warning'}`}>
         {tracked ? 'Fleet' : 'orphan'}
       </span>
       {!tracked && cwd && (

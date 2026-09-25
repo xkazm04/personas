@@ -53,7 +53,7 @@ export function KbErrorNotice({ raw, onDismiss, className = '', compact = false,
             <summary className="typo-caption text-red-400/40 cursor-pointer hover:text-red-400/60 transition-colors">
               {t.vault.forms.technical_details}
             </summary>
-            <p className="mt-1 typo-code text-red-400/40 font-mono break-all">{raw}</p>
+            <p className="mt-1 typo-code text-red-400/40 break-all">{raw}</p>
           </details>
         )}
       </div>

@@ -26,7 +26,7 @@ export function PendingApprovalsBadge({ personaId, onClick }: PendingApprovalsBa
   );
 
   const className =
-    'inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-300 typo-caption font-medium';
+    'inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-amber-500/25 bg-amber-500/10 text-amber-300 typo-caption';
 
   if (!onClick) {
     return (

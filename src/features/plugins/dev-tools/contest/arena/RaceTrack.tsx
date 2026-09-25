@@ -104,7 +104,7 @@ export function RaceTrack({ detail, draft, onOpenVariant }: RaceTrackProps) {
             <Button
               size="sm"
               variant="accent"
-              accentColor="rose"
+              tone="error"
               icon={<Square className="w-3 h-3" />}
               onClick={() => setConfirmStop(true)}
               data-testid="arena-cancel"

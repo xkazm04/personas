@@ -111,11 +111,11 @@ export function QuestionnaireHeroQuestion({
 
         {/* Title + badges */}
         <div className="flex items-start gap-3 mb-2">
-          <h3 className="flex-1 typo-body-lg font-medium text-foreground leading-snug">
+          <h3 className="flex-1 typo-body-lg text-foreground">
             {question.question}
           </h3>
           {isAutoDetected && !isBlocked && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption font-semibold rounded-card bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex-shrink-0 mt-1">
               <KeyRound className="w-3.5 h-3.5" />
               {t.templates.adopt_modal.auto_detected}
             </span>
@@ -138,7 +138,7 @@ export function QuestionnaireHeroQuestion({
 
         <Collapse open={hasTip && tipOpen} unmountWhenClosed duration={200}>
           <div className="mt-3 px-4 py-3 rounded-card bg-foreground/[0.03] border border-border">
-            <p className="typo-body text-foreground leading-relaxed">
+            <p className="typo-body text-foreground">
               {question.context}
             </p>
           </div>

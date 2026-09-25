@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "Đang chỉnh sửa {name}",
     "header_subtitle_new": "Soạn một tác nhân mới từ đầu",
     "header_title": "Xây dựng",
-    "new_agent": "Tác nhân mới"
+    "new_agent": "Tác nhân mới",
+    "promote_receipt_connect": "Mở trình kết nối",
+    "promote_receipt_connectors": "Còn cần kết nối: {names}",
+    "promote_receipt_failed_title": "Chưa thăng cấp được",
+    "promote_receipt_later": "Để sau",
+    "promote_receipt_needs_setup_title": "Đã thăng cấp, nhưng cần thiết lập trước khi có thể chạy",
+    "promote_receipt_retry": "Thử thăng cấp lại",
+    "promote_receipt_unverified": "Lần chạy kiểm tra đầu tiên chưa mang lại giá trị. Hãy xem lại các trình kết nối trước khi dựa vào nó."
   },
   "matrix_tab": {
     "loading": "Đang tải ma trận",
@@ -2708,7 +2715,7 @@
     "all_saved": "Tất cả thay đổi đã được lưu",
     "changed": "{sections} đã thay đổi",
     "cli_awareness": "Nhận biết phiên Claude CLI",
-    "cli_awareness_desc": "Cho phép persona này đọc các lượt trao đổi gần đây trong phiên Claude CLI tương tác đang hoạt động của bạn để dùng làm ngữ cảnh bổ sung. Cũng cần bật công tắc toàn cục tại Companion → Cài đặt → Tín hiệu cảm nhận. Chỉ đọc — phiên CLI của bạn không bao giờ bị thay đổi.",
+    "cli_awareness_desc": "Cho phép persona này đọc các lượt trao đổi gần đây trong phiên Claude CLI tương tác đang hoạt động của bạn để dùng làm ngữ cảnh bổ sung. Cũng cần bật công tắc toàn cục tại Athena → Thiết lập → Tín hiệu cảm nhận. Chỉ đọc — phiên CLI của bạn không bao giờ bị thay đổi.",
     "execution": "Thực thi",
     "execution_retention": "Lưu giữ thực thi",
     "failed_health_watch": "Không cập nhật được cài đặt theo dõi sức khỏe",
@@ -3275,5 +3282,16 @@
     "parse": "Phân tích",
     "paste_json": "Hoặc dán JSON trực tiếp",
     "paste_placeholder": "Dán JSON quy trình của bạn vào đây…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "Thăng cấp sẽ bị từ chối: {reason}",
+    "heading": "Thăng cấp sẽ làm gì",
+    "needs_setup": "Cần thiết lập trước: {connectors}",
+    "refused": "Thăng cấp sẽ từ chối bản nháp này",
+    "refused_hint": "Tinh chỉnh bản nháp để sửa, rồi thăng cấp.",
+    "repaired": "Đã được bản dựng điều chỉnh",
+    "runs_manual": "Chạy khi bạn bắt đầu",
+    "runs_next": "Trình kích hoạt {type}, lần chạy tiếp theo {time}",
+    "runs_on_event": "Trình kích hoạt {type}, chạy khi được kích hoạt"
   }
 }

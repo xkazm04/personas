@@ -89,9 +89,39 @@ pub enum DispatchOrigin {
     /// A /contest seat (participant or judge) the in-app Contest home queued
     /// through `contest_seat::spawn_contest_seat`.
     Contest,
+    /// A paired device dispatched this session to this one as a
+    /// `fleet_session` remote job. The row also carries `remote_job_id` and
+    /// `origin_peer_id`.
+    Remote,
+    /// Curator dispatched this session - either draining the operator's own
+    /// request lane or acting on her plan. A worker she starts is HERS on the
+    /// board, and the fallback below is why that matters: an unrecognised
+    /// token reads as `Manual`, so a missing variant does not show up as an
+    /// unknown origin, it shows up as the operator's own dispatch on the one
+    /// board that exists to tell producers apart.
+    Curator,
 }
 
 impl DispatchOrigin {
+    /// Every variant, in declaration order.
+    ///
+    /// Exists so the round-trip test cannot be a hand-kept subset of the enum
+    /// — which is what it was until 2026-09-24, when `Remote` had never been
+    /// in it.
+    pub const ALL: [DispatchOrigin; 11] = [
+        DispatchOrigin::Manual,
+        DispatchOrigin::DevRunner,
+        DispatchOrigin::DispatchIdeas,
+        DispatchOrigin::Athena,
+        DispatchOrigin::Autopilot,
+        DispatchOrigin::NightShift,
+        DispatchOrigin::FeedImpact,
+        DispatchOrigin::OrphanResume,
+        DispatchOrigin::Remote,
+        DispatchOrigin::Curator,
+        DispatchOrigin::Contest,
+    ];
+
     /// The wire / row token — the same string `serde` writes.
     pub fn token(self) -> &'static str {
         match self {
@@ -104,23 +134,23 @@ impl DispatchOrigin {
             DispatchOrigin::FeedImpact => "feed_impact",
             DispatchOrigin::OrphanResume => "orphan_resume",
             DispatchOrigin::Contest => "contest",
+            DispatchOrigin::Remote => "remote",
+            DispatchOrigin::Curator => "curator",
         }
     }
 
     /// Inverse of [`Self::token`]; an unknown or absent token reads as
     /// `Manual`, which is what every pre-queue row was.
+    ///
+    /// Derived from [`Self::ALL`] and [`Self::token`] rather than written out
+    /// as a second match, because a second match is a second place to forget a
+    /// variant - and forgetting one here does not produce an unknown, it
+    /// produces the OPERATOR'S label on somebody else's session. Ten string
+    /// comparisons per row read; the rows are a board, not a hot loop.
     pub fn parse(token: Option<&str>) -> Self {
-        match token {
-            Some("dev_runner") => DispatchOrigin::DevRunner,
-            Some("dispatch_ideas") => DispatchOrigin::DispatchIdeas,
-            Some("athena") => DispatchOrigin::Athena,
-            Some("autopilot") => DispatchOrigin::Autopilot,
-            Some("night_shift") => DispatchOrigin::NightShift,
-            Some("feed_impact") => DispatchOrigin::FeedImpact,
-            Some("orphan_resume") => DispatchOrigin::OrphanResume,
-            Some("contest") => DispatchOrigin::Contest,
-            _ => DispatchOrigin::Manual,
-        }
+        token
+            .and_then(|raw| Self::ALL.into_iter().find(|o| o.token() == raw))
+            .unwrap_or(DispatchOrigin::Manual)
     }
 }
 
@@ -197,6 +227,10 @@ const EFFORT_ARG: &str = "--effort";
 /// `headless::grok_exec_argv`). A marker rather than a run-label rule so a
 /// queued row carries it durably in its `args_json`.
 const ISOLATED_ARG: &str = "--isolated";
+/// The effort flag a codex-only build wrote (2026-09-24, before the engine
+/// marker generalised it to [`EFFORT_ARG`]). Still read, so a row queued by
+/// that build keeps its effort; never written.
+const LEGACY_CODEX_EFFORT_ARG: &str = "--codex-effort";
 
 /// Build the `args` for a headless dispatch: the task, then the CLI extras.
 pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
@@ -208,16 +242,8 @@ pub fn headless_args(task: &str, extra: Vec<String>) -> Vec<String> {
 }
 
 /// Build the `args` for a codex maintenance worker dispatch.
-pub fn codex_args(task: &str, model: &str) -> Vec<String> {
-    headless_args(
-        task,
-        vec![
-            ENGINE_ARG.to_string(),
-            super::headless::CODEX_ENGINE.to_string(),
-            MODEL_ARG.to_string(),
-            model.to_string(),
-        ],
-    )
+pub fn codex_args(task: &str, model: &str, effort: Option<&str>) -> Vec<String> {
+    engine_args(task, super::headless::CODEX_ENGINE, model, effort, false)
 }
 
 /// `(task, extra_args)` from a headless dispatch's `args`. A dispatch that
@@ -294,7 +320,9 @@ pub(super) fn engine_marker(args: &[String]) -> Option<EngineMarker> {
     Some(EngineMarker {
         engine,
         model: value_of(MODEL_ARG)?.clone(),
-        effort: value_of(EFFORT_ARG).cloned(),
+        effort: value_of(EFFORT_ARG)
+            .or_else(|| value_of(LEGACY_CODEX_EFFORT_ARG))
+            .cloned(),
         isolated: args.iter().any(|a| a == ISOLATED_ARG),
     })
 }
@@ -310,6 +338,20 @@ pub(super) fn request_charge(req: &DispatchRequest) -> Charge {
     } else {
         charge
     }
+}
+
+/// A headless dispatch on a non-claude engine (codex or grok). Such a
+/// session spends no Claude plan, so Claude's pace and window holds do not
+/// gate it (see [`without_claude_gauge`]); machine and memory still do.
+fn is_non_claude_dispatch(req: &DispatchRequest) -> bool {
+    matches!(req.mode, FleetSessionMode::Headless) && engine_marker(&req.args).is_some()
+}
+
+fn without_claude_gauge(mut inputs: BudgetInputs) -> BudgetInputs {
+    inputs.behind_pct = None;
+    inputs.five_hour_full = false;
+    inputs.governor_stop = false;
+    inputs
 }
 
 /// Admit refusal reason: the entry's machine or plan units exceed the STATIC
@@ -739,13 +781,19 @@ fn scan_queue(reg: &FleetRegistry, now: i64, inputs: &BudgetInputs, used: Used) 
             ..QueueScan::default()
         };
     }
-    let budgets = budgets::budgets_from(inputs, used);
     let mut scan = QueueScan::default();
     for (id, not_before, facts) in reg.queued_admissions_in_order() {
         if not_before.is_some_and(|t| t > now) {
             // A time gate is skipped, not waited on, and is not "unfit".
             continue;
         }
+        let entry_inputs =
+            if dispatch_of_session_in(reg, &id).is_some_and(|req| is_non_claude_dispatch(&req)) {
+                without_claude_gauge(*inputs)
+            } else {
+                *inputs
+            };
+        let budgets = budgets::budgets_from(&entry_inputs, used);
         if budgets::fits(facts.charge(), used, &budgets).is_ok() {
             scan.pick = Some(id);
             return scan;
@@ -770,12 +818,17 @@ fn door_verdict(
     inputs: &BudgetInputs,
     used: Used,
 ) -> Door {
+    let effective = if is_non_claude_dispatch(req) {
+        without_claude_gauge(*inputs)
+    } else {
+        *inputs
+    };
     door_verdict_for(
         reg,
         request_charge(req),
         req.not_before_ms,
         now,
-        inputs,
+        &effective,
         used,
     )
 }
@@ -1541,6 +1594,29 @@ pub fn has_pending_autopilot_dispatch(persona_id: &str) -> bool {
     })
 }
 
+/// How many LIVE sessions one producer is holding right now.
+///
+/// Live, not live-plus-queued: a queued row holds no terminal, and the number
+/// this answers is "how many of her worker slots are occupied". The registry
+/// is the source - a row's `origin` is the token `DispatchOrigin::token` wrote,
+/// and a row from before the queue existed carries none, which reads as
+/// `Manual` exactly as [`DispatchOrigin::parse`] says.
+pub fn live_count_for_origin(origin: DispatchOrigin) -> u32 {
+    count_live_for_origin(registry(), origin)
+}
+
+/// [`live_count_for_origin`] against a given registry, so a test can hold one.
+fn count_live_for_origin(reg: &FleetRegistry, origin: DispatchOrigin) -> u32 {
+    let map = reg.sessions.lock().unwrap_or_else(|e| e.into_inner());
+    map.values()
+        .filter(|s| {
+            super::registry::is_live_state(s.state)
+                && DispatchOrigin::parse(s.origin.as_deref()) == origin
+        })
+        .count()
+        .min(u32::MAX as usize) as u32
+}
+
 /// Write the queue's ranks to the durable rows.
 fn persist_ranks(app: &AppHandle, ranks: &[(String, u32)]) {
     let Some(pool) = pool_of(app) else { return };
@@ -1633,7 +1709,15 @@ fn budget_view(
     if inputs.enabled {
         let mut head_seen = false;
         for (id, not_before, facts) in reg.queued_admissions_in_order() {
-            let entry_hold = budgets::fits(facts.charge(), used, &derived)
+            let entry_inputs = if dispatch_of_session_in(reg, &id)
+                .is_some_and(|req| is_non_claude_dispatch(&req))
+            {
+                without_claude_gauge(*inputs)
+            } else {
+                *inputs
+            };
+            let entry_derived = budgets::budgets_from(&entry_inputs, used);
+            let entry_hold = budgets::fits(facts.charge(), used, &entry_derived)
                 .err()
                 .and_then(budgets::Unfit::hold);
             if let Some(h) = entry_hold {
@@ -1773,9 +1857,20 @@ async fn snapshot(app: &AppHandle, pool: DbPool) -> Result<FleetQueueSnapshot, A
 /// admission takes - and assembles the wire shape through [`budget_view`], so
 /// the persona is told exactly what the Monitor's budgets block shows.
 pub fn current_budgets(pool: &DbPool) -> FleetBudgets {
+    current_budgets_for(pool, false)
+}
+
+/// The same admission reading for a codex-only decision. Claude pace and
+/// window holds are removed just as they are for a codex queue entry.
+pub fn current_budgets_for(pool: &DbPool, codex_only: bool) -> FleetBudgets {
     let now = now_ms();
     let (inputs, used, gpu_holder) =
         budget_reading(registry(), cap(pool), dynamic_budgets(pool), now);
+    let inputs = if codex_only {
+        without_claude_gauge(inputs)
+    } else {
+        inputs
+    };
     budget_view(registry(), &inputs, used, gpu_holder, now).budgets
 }
 
@@ -1911,6 +2006,48 @@ mod tests {
         let mut s = live(id, S::Spawning);
         s.state_reason = Some("PTY spawned".into());
         s
+    }
+
+    /// **Curator's dispatch is stored as HERS, end to end.** The enum, the row
+    /// token and the parse have to agree, because the fallback is `Manual`: a
+    /// variant that reaches only some of the three mirrors does not surface as
+    /// an unknown origin, it surfaces as the OPERATOR'S dispatch on the one
+    /// board that exists to tell producers apart. The two frontend mirrors are
+    /// covered by `board/queue/__tests__/originCurator.test.tsx`.
+    #[test]
+    fn a_curator_dispatch_is_stored_and_read_back_as_hers() {
+        let reg = FleetRegistry::default();
+        let request = DispatchRequest {
+            origin: DispatchOrigin::Curator,
+            ..req("C:/checkouts/ai-registry")
+        };
+        let (id, rank) = enqueue_into(&reg, &request, 1_000, 0, 2);
+        assert_eq!(rank, 1);
+
+        let dto = reg.list_dto().into_iter().find(|s| s.id == id).unwrap();
+        assert_eq!(dto.origin.as_deref(), Some("curator"));
+        assert_eq!(
+            DispatchOrigin::parse(dto.origin.as_deref()),
+            DispatchOrigin::Curator
+        );
+        assert_ne!(
+            DispatchOrigin::parse(dto.origin.as_deref()),
+            DispatchOrigin::Manual,
+            "the whole trap: a missing mirror reads as the operator's own dispatch"
+        );
+
+        // A queued row holds no terminal, so none of her worker slots is
+        // occupied yet; a live one occupies exactly one.
+        assert_eq!(count_live_for_origin(&reg, DispatchOrigin::Curator), 0);
+        let mut running = live("cur-1", S::Running);
+        running.origin = Some(DispatchOrigin::Curator.token().to_string());
+        reg.insert(running);
+        assert_eq!(count_live_for_origin(&reg, DispatchOrigin::Curator), 1);
+        assert_eq!(
+            count_live_for_origin(&reg, DispatchOrigin::Manual),
+            0,
+            "her terminal is not counted against anybody else"
+        );
     }
 
     #[test]
@@ -2214,7 +2351,7 @@ mod tests {
         assert_eq!(task, "ship it");
         assert_eq!(extra, vec!["--model".to_string(), "opus".to_string()]);
         assert_eq!(engine_marker(&extra), None);
-        let codex = codex_args("refactor", "gpt-5-codex");
+        let codex = codex_args("refactor", "gpt-5-codex", None);
         let (_, extra) = split_headless_args(&codex).unwrap();
         let marker = engine_marker(&extra).unwrap();
         assert_eq!(marker.engine, "codex");
@@ -2305,22 +2442,41 @@ mod tests {
     }
 
     #[test]
+    fn codex_budget_keeps_memory_and_drops_claude_limits() {
+        let mut inputs = BudgetInputs::unmeasured(4, true);
+        inputs.behind_pct = Some(-25.0);
+        inputs.five_hour_full = true;
+        inputs.governor_stop = true;
+        inputs.memory_slots = Some(0);
+        let codex = without_claude_gauge(inputs);
+        assert_eq!(codex.behind_pct, None);
+        assert!(!codex.five_hour_full);
+        assert!(!codex.governor_stop);
+        assert_eq!(codex.memory_slots, Some(0));
+    }
+
+    #[test]
     fn origin_tokens_match_serde_and_parse_back() {
-        for o in [
-            DispatchOrigin::Manual,
-            DispatchOrigin::DevRunner,
-            DispatchOrigin::DispatchIdeas,
-            DispatchOrigin::Athena,
-            DispatchOrigin::Autopilot,
-            DispatchOrigin::NightShift,
-            DispatchOrigin::FeedImpact,
-            DispatchOrigin::OrphanResume,
-            DispatchOrigin::Contest,
-        ] {
+        // Every variant, not a hand-kept subset: `Remote` was missing from
+        // this list for its whole life, and an origin whose token nobody
+        // round-trips is an origin the board renders as `manual`.
+        for o in DispatchOrigin::ALL {
             let wire = serde_json::to_value(o).unwrap();
             assert_eq!(wire, serde_json::Value::String(o.token().to_string()));
             assert_eq!(DispatchOrigin::parse(Some(o.token())), o);
         }
+        assert_eq!(DispatchOrigin::ALL.len(), 11);
+        // The trap this enum sets: an unrecognised token is NOT an unknown
+        // state, it is the operator's own dispatch. A variant that reaches
+        // only one of the three mirrors is invisible except as a wrong answer.
+        assert_eq!(
+            DispatchOrigin::parse(Some("curator")),
+            DispatchOrigin::Curator
+        );
+        assert_eq!(
+            DispatchOrigin::parse(Some("kurator")),
+            DispatchOrigin::Manual
+        );
         assert_eq!(DispatchOrigin::parse(None), DispatchOrigin::Manual);
         assert_eq!(over_admitted(3, 5), 0);
         assert_eq!(over_admitted(7, 5), 2);

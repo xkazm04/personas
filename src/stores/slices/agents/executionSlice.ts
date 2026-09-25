@@ -125,7 +125,12 @@ export interface BackgroundExecution {
   personaColor: string;
   status: 'running' | 'queued' | 'completed' | 'failed' | 'cancelled';
   startedAt: string;
+  /** ISO time the run first reached a terminal status; drives the lane's fade window. */
+  terminalAt?: string;
 }
+
+const isTerminalBackgroundStatus = (status: BackgroundExecution['status']) =>
+  status === 'completed' || status === 'failed' || status === 'cancelled';
 
 export interface ExecutionSlice {
   // State
@@ -188,6 +193,12 @@ export interface ExecutionSlice {
   executePersona: (personaId: string, inputData?: object, useCaseId?: string, continuation?: Continuation) => Promise<string | null>;
   cancelExecution: (executionId: string) => Promise<void>;
   /**
+   * Stop a BACKGROUND run. Cancels with the run's own persona (the backend's
+   * owner check rejects the focused persona for another persona's run) and
+   * never touches foreground state.
+   */
+  cancelBackgroundExecution: (executionId: string) => Promise<void>;
+  /**
    * Commit a terminal execution state.
    *
    * `status` is the closed `ExecutionState` union, not a bare string: the
@@ -204,7 +215,7 @@ export interface ExecutionSlice {
   setQueueStatus: (position: number | null, depth: number | null) => void;
   setExecutionProgress: (progress: ExecutionRunProgress | null) => void;
   dismissDriftEvent: (eventId: string) => void;
-  /** Update a background execution's status (called from event listeners). */
+  /** Update a background execution's status (called from event listeners); stamps terminalAt on the first terminal status. */
   updateBackgroundExecution: (executionId: string, status: BackgroundExecution['status']) => void;
   /** Remove a background execution from tracking. */
   removeBackgroundExecution: (executionId: string) => void;
@@ -609,6 +620,19 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     }
   },
 
+  cancelBackgroundExecution: async (executionId) => {
+    const bg = get().backgroundExecutions.find((b) => b.executionId === executionId);
+    if (!bg) return;
+    try {
+      await cancelExecution(executionId, bg.personaId);
+      // Mark it now rather than waiting for the status event, so the lane
+      // stops offering Stop the moment the cancel is accepted.
+      get().updateBackgroundExecution(executionId, 'cancelled');
+    } catch (err) {
+      reportError(err, "Failed to cancel background execution", set, { action: "cancelBackgroundExecution" });
+    }
+  },
+
   finishExecution: (_status, statusData) => {
     // Force-flush any pending batch so the final output is visible before
     // we reset execution state.
@@ -858,7 +882,20 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   updateBackgroundExecution: (executionId, status) => {
     set((state) => ({
       backgroundExecutions: state.backgroundExecutions.map((bg) =>
-        bg.executionId === executionId ? { ...bg, status } : bg,
+        bg.executionId !== executionId
+          // A terminal lane never goes live again: a late 'running' event
+          // arriving after a local cancel must not resurrect Stop.
+          || (bg.terminalAt !== undefined && !isTerminalBackgroundStatus(status))
+          ? bg
+          : {
+              ...bg,
+              status,
+              // First terminal status wins: a later duplicate event must not
+              // restart the fade window.
+              terminalAt: isTerminalBackgroundStatus(status)
+                ? (bg.terminalAt ?? new Date().toISOString())
+                : undefined,
+            },
       ),
     }));
   },

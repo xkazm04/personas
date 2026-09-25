@@ -72,7 +72,7 @@ function ActionButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-4 py-2 typo-body font-medium transition-colors disabled:is-disabled ${TONE_CHIP[tone]} ${TONE_HOVER[tone]}`}
+      className={`focus-ring inline-flex items-center gap-2 rounded-interactive border px-4 py-2 typo-body transition-colors disabled:is-disabled ${TONE_CHIP[tone]} ${TONE_HOVER[tone]}`}
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden />
       {label}

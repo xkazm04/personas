@@ -38,7 +38,7 @@ export function DormantSkillsStrip({ findings, installedNames, onUse }: Props) {
     >
       <header className="px-3 py-2 border-b border-primary/10 flex items-center gap-2">
         <Moon className="w-3.5 h-3.5 text-amber-300" aria-hidden />
-        <span className="typo-card-label text-foreground">{dt.skills_dormant_heading}</span>
+        <span className="typo-card-label">{dt.skills_dormant_heading}</span>
         <span className="typo-caption ml-auto" data-testid="dormant-skills-count">
           {live.length}
         </span>
@@ -51,7 +51,7 @@ export function DormantSkillsStrip({ findings, installedNames, onUse }: Props) {
             className="px-3 py-2 flex items-center gap-3"
           >
             <span className="min-w-0 flex-1">
-              <span className="block typo-card-label text-foreground truncate">{f.skillName}</span>
+              <span className="block typo-card-label truncate">{f.skillName}</span>
               <span className="block typo-caption">
                 {f.lastInvokedAt ? (
                   <>

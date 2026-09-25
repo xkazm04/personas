@@ -132,12 +132,12 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           </span>
           <span className="typo-submodule-header truncate">{sectionLabel}</span>
           {activeCount > 0 && (
-            <span className="typo-body font-normal text-brand-emerald/70 shrink-0">
+            <span className="typo-body text-brand-emerald/70 shrink-0">
               {tx(t.agents.connectors.auto_active, { count: activeCount })}
             </span>
           )}
           {!expanded && preview && (
-            <span className="typo-body font-normal text-foreground truncate max-w-48">
+            <span className="typo-body text-foreground truncate max-w-48">
               {preview}
             </span>
           )}
@@ -145,7 +145,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         <button
           type="button"
           onClick={onAdd}
-          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
+          className={`shrink-0 flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors focus-ring`}
         >
           <Plus className="w-3 h-3" />
           {t.common.add}
@@ -206,7 +206,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <h3 id="delete-automation-dialog" className="typo-heading font-semibold text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
+                <h3 id="delete-automation-dialog" className="typo-heading text-foreground/90">{t.agents.connectors.auto_delete_title}</h3>
                 <p className="typo-body text-foreground mt-1">
                   {tx(t.agents.connectors.auto_delete_msg, { name: deleteTarget.name })}
                 </p>
@@ -226,7 +226,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               <button
                 type="button"
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 typo-body font-medium rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                className="px-4 py-2 typo-body rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
                 {t.common.delete}
               </button>

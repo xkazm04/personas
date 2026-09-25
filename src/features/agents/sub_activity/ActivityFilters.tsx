@@ -49,7 +49,7 @@ export function ActivityFilters({
               type="button"
               key={tab.id}
               onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
-              className={`relative px-3 py-1.5 typo-body font-medium rounded-t-card transition-colors duration-150 ease-out ${
+              className={`relative px-3 py-1.5 typo-body rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:text-foreground hover:bg-primary/5'

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
-import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
+import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { SCAN_AGENTS } from '../constants/scanAgents';
@@ -32,7 +32,7 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption font-medium border ${cfg.className}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption border ${cfg.className}`}>
       <Icon className={`w-3 h-3 ${cfg.pulse ? 'animate-spin' : ''}`} />
       {tokenLabel(t, 'execution', status)}
     </span>

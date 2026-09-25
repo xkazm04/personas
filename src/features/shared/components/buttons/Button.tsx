@@ -18,7 +18,7 @@ export type ButtonVariant =
   | 'secondary'  // Bordered, subtle fill on hover
   | 'ghost'      // No border/bg, text-only + hover fill
   | 'danger'     // Red destructive action
-  | 'accent'     // Colored tint (uses accentColor prop)
+  | 'accent'     // Tinted by `tone`: a status or a role, never a hue
   | 'link';      // Inline text link style, no padding
 
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'icon-lg';
@@ -37,17 +37,27 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'text-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
   danger:
     'brightness-lock bg-red-600/90 text-btn-danger-fg hover:bg-red-600 border border-red-500/30 shadow-elevation-1',
+  // Colour comes from `tone` (TONE_CLASSES) or, without one, the neutral ink below;
+  // the variant itself holds no text colour, so a tone never fights a second one.
   accent:
-    'border text-foreground/90',
+    'border',
   link:
     'text-primary hover:text-primary/80 underline-offset-2 hover:underline p-0 h-auto rounded-none',
 };
 
+// The label size. `text-md` stood here and is not a Tailwind class, so a button
+// has always inherited its parent's font-size. CONTROL_TEXT keeps exactly that
+// (1em = the parent's size) unless a type-density tier sets --type-control
+// (typography.css: data-type-density="compact" sets the compact row step), so
+// a compact surface's buttons match its rows and every other button renders
+// what it rendered before.
+const CONTROL_TEXT = 'text-[length:var(--type-control,1em)]';
+
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  xs:       'px-2 py-0.5 text-md rounded-md gap-1',
-  sm:       'px-2.5 py-1 text-md rounded-lg gap-1.5',
-  md:       'px-3.5 py-1.5 text-md rounded-xl gap-2',
-  lg:       'px-5 py-2.5 text-md rounded-xl gap-2.5',
+  xs:       `px-2 py-0.5 ${CONTROL_TEXT} rounded-md gap-1`,
+  sm:       `px-2.5 py-1 ${CONTROL_TEXT} rounded-lg gap-1.5`,
+  md:       `px-3.5 py-1.5 ${CONTROL_TEXT} rounded-xl gap-2`,
+  lg:       `px-5 py-2.5 ${CONTROL_TEXT} rounded-xl gap-2.5`,
   // Coarse-pointer (touch) bump to 44x44 — WCAG 2.5.5 / HIG 44pt / Material 48dp.
   // icon-lg is already 44px; the global `pointer: coarse` rule in globals.css
   // supplies min-height, these add the matching width so icon buttons stay square.
@@ -58,31 +68,36 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 
 // -- Props -----------------------------------------------------
 
-export type AccentColor =
-  | 'cyan' | 'purple' | 'violet' | 'emerald' | 'amber' | 'blue'
-  | 'rose' | 'sky' | 'teal' | 'indigo' | 'orange' | 'pink' | 'lime';
+/**
+ * What an accent button's action MEANS. A closed set named for meaning, never for
+ * a hue (docs/design/style-mastery/doctrine.md section 4): the four statuses say how
+ * something goes (approve is success, reject is error), the four roles say who or
+ * what acts (agent, human, external) or plain emphasis (highlight). Adding a tone
+ * is a design decision, not a call-site convenience.
+ */
+export type ButtonTone =
+  | 'agent' | 'human' | 'external' | 'highlight'
+  | 'success' | 'warning' | 'error' | 'info';
 
-const ACCENT_CLASSES: Record<AccentColor, string> = {
-  cyan:    'border-cyan-500/25 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20',
-  purple:  'border-purple-500/25 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20',
-  violet:  'border-violet-500/25 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20',
-  emerald: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20',
-  amber:   'border-amber-500/25 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20',
-  blue:    'border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
-  rose:    'border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20',
-  sky:     'border-sky-500/25 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20',
-  teal:    'border-teal-500/25 bg-teal-500/10 text-teal-400 hover:bg-teal-500/20',
-  indigo:  'border-indigo-500/25 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20',
-  orange:  'border-orange-500/25 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20',
-  pink:    'border-pink-500/25 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20',
-  lime:    'border-lime-500/25 bg-lime-500/10 text-lime-400 hover:bg-lime-500/20',
+// The ONE tone -> token mapping (the chip recipe: 10% fill, 30% rule, full ink).
+// Every class is written out so Tailwind sees it; every token is bound per theme,
+// so no light-theme repair selector is needed.
+const TONE_CLASSES: Record<ButtonTone, string> = {
+  agent:     'border-role-agent/30 bg-role-agent/10 text-role-agent hover:bg-role-agent/20',
+  human:     'border-role-human/30 bg-role-human/10 text-role-human hover:bg-role-human/20',
+  external:  'border-role-external/30 bg-role-external/10 text-role-external hover:bg-role-external/20',
+  highlight: 'border-role-highlight/30 bg-role-highlight/10 text-role-highlight hover:bg-role-highlight/20',
+  success:   'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20',
+  warning:   'border-status-warning/30 bg-status-warning/10 text-status-warning hover:bg-status-warning/20',
+  error:     'border-status-error/30 bg-status-error/10 text-status-error hover:bg-status-error/20',
+  info:      'border-status-info/30 bg-status-info/10 text-status-info hover:bg-status-info/20',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** For 'accent' variant -- provide a Tailwind color stem, e.g. "violet", "emerald" */
-  accentColor?: AccentColor;
+  /** For the 'accent' variant: what the action means. Without it the button is a neutral bordered one. */
+  tone?: ButtonTone;
   /** Optional left icon */
   icon?: ReactNode;
   /** Optional right icon */
@@ -108,7 +123,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     {
       variant = 'secondary',
       size = 'md',
-      accentColor,
+      tone,
       icon,
       iconRight,
       block,
@@ -188,11 +203,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       [onClick],
     );
 
-    // Look up accent classes from static map (ensures Tailwind can detect them during purging)
-    // Note: text-*-400 colors are corrected to 600/700 on light themes via CSS overrides in globals.css
-    const accentClasses = variant === 'accent' && accentColor
-      ? `${ACCENT_CLASSES[accentColor] ?? ''} font-semibold`
-      : '';
+    const accentClasses = variant !== 'accent'
+      ? ''
+      : tone
+        ? `${TONE_CLASSES[tone]} font-semibold`
+        : 'text-foreground/90';
 
     const classes = [
       // transition-all carries hover color/shadow; duration-100 + active:scale gives every button
@@ -201,7 +216,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center font-medium transition-all duration-100 active:scale-[0.98]',
       'focus-ring',
       VARIANT_CLASSES[variant],
-      variant === 'accent' ? accentClasses : '',
+      accentClasses,
       SIZE_CLASSES[size],
       block ? 'w-full justify-center' : '',
       // `is-disabled` is a project utility (see globals.css) pairing --disabled-opacity with

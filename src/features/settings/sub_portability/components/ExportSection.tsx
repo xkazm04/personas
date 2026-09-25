@@ -61,7 +61,7 @@ export function ExportSection({
           type="button"
           onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
             bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
             transition-colors disabled:opacity-50"
         >
@@ -84,7 +84,7 @@ export function ExportSection({
             type="button"
             onClick={() => setShowImportInput(true)}
             disabled={importStatus === 'loading'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body
               bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
               transition-colors disabled:opacity-50"
           >
@@ -105,7 +105,7 @@ export function ExportSection({
               type="button"
               onClick={handleImport}
               disabled={importStatus === 'loading'}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body
                 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
                 transition-colors disabled:opacity-50"
             >
@@ -136,7 +136,7 @@ export function ExportSection({
       {/* Import result */}
       {importResult && (
         <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
-          <div className="flex items-center gap-2 typo-body font-medium text-emerald-400">
+          <div className="flex items-center gap-2 typo-body text-emerald-400">
             <PackageCheck className="w-4 h-4" />
             {s.import_complete}
           </div>
@@ -190,7 +190,7 @@ export function ExportSection({
           </div>
           {importResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
-              <p className="typo-body font-medium text-amber-400">{s.warnings}</p>
+              <p className="typo-body text-amber-400">{s.warnings}</p>
               {importResult.warnings.map((w, i) => (
                 <p key={i} className="typo-body text-foreground pl-2">
                   - {w}

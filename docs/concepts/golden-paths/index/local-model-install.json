@@ -121,7 +121,7 @@
     "src-tauri/src/engine/http_engine/openai.rs": {"count":1,"sections":[],"lines":["125"],"contexts":["| `engine/http_engine/openai.rs:125` | no (SSE) | no |"],"resolvedFrom":"suffix","verbatim":"engine/http_engine/openai.rs"},
     "src-tauri/src/engine/smee_relay.rs": {"count":1,"sections":[],"lines":["322"],"contexts":["| `engine/smee_relay.rs:322` | no (SSE) | no |"],"resolvedFrom":"suffix","verbatim":"engine/smee_relay.rs"},
     "src/app/api/download/route.ts": {"count":1,"sections":[12],"lines":["68-78"],"contexts":["`src/app/api/download/route.ts:68-78` issues an HTTP redirect to an allowlisted host and"],"resolved":false},
-    "src/features/plugins/companion/sub_voice/PocketVoicePanel.tsx": {
+    "src/features/companions/athena/sub_voice/PocketVoicePanel.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["223"],
@@ -129,7 +129,7 @@
       "resolvedFrom": "basename",
       "verbatim": "PocketVoicePanel.tsx"
     },
-    "src/features/plugins/companion/sub_voice/SttPanel.tsx": {
+    "src/features/companions/athena/sub_voice/SttPanel.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["192"],
@@ -137,7 +137,7 @@
       "resolvedFrom": "basename",
       "verbatim": "SttPanel.tsx"
     },
-    "src/features/plugins/companion/sub_voice/voiceEngineShared.tsx": {
+    "src/features/companions/athena/sub_voice/voiceEngineShared.tsx": {
       "count": 1,
       "sections": [7],
       "lines": ["162"],

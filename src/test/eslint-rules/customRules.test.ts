@@ -212,15 +212,39 @@ ruleTester.run("custom/no-raw-text-classes", noRawTextClasses, {
       // Mono-context text sizes (font-mono nearby) get a pass
       code: `function C() { return <code className="font-mono text-sm">x</code>; }`,
     },
+    {
+      // A REAL token (read from typography.css at rule load) still exempts
+      // the class string, raw size included.
+      code: `function C() { return <p className="typo-caption text-sm">x</p>; }`,
+    },
   ],
   invalid: [
     {
       code: `function C() { return <p className="text-xs">x</p>; }`,
-      errors: 1,
+      errors: [{ messageId: "rawTextClass", data: { raw: "text-xs", token: "typo-caption" } }],
     },
     {
       code: `function C() { return <p className="text-2xl">x</p>; }`,
       errors: 1,
+    },
+    {
+      // Phantom: typo-body-sm is defined nowhere, so it no longer exempts the
+      // raw size beside it, and is reported itself.
+      code: `function C() { return <p className="typo-body-sm text-sm">x</p>; }`,
+      errors: [
+        { messageId: "phantomTypo", data: { raw: "typo-body-sm", token: "typo-body" } },
+        { messageId: "rawTextClass", data: { raw: "text-sm", token: "typo-body" } },
+      ],
+    },
+    {
+      // A lone phantom is reported even with no raw size next to it.
+      code: `function C() { return <h3 className="typo-overline text-foreground">x</h3>; }`,
+      errors: [{ messageId: "phantomTypo", data: { raw: "typo-overline", token: "typo-eyebrow" } }],
+    },
+    {
+      // Arbitrary px size, with the equivalent token named.
+      code: `function C() { return <span className="text-[11px] text-foreground">x</span>; }`,
+      errors: [{ messageId: "rawTextClass", data: { raw: "text-[11px]", token: "typo-caption" } }],
     },
   ],
 });
@@ -308,6 +332,10 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
     {
       code: `function C() { return <p className="bg-secondary">x</p>; }`,
     },
+    {
+      // dark-only white is the dark theme's contract, not a leak
+      code: `function C() { return <p className="dark:text-white dark:hover:bg-white/10">x</p>; }`,
+    },
   ],
   invalid: [
     {
@@ -316,6 +344,20 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
     },
     {
       code: `function C() { return <div className="bg-white/80">x</div>; }`,
+      errors: 1,
+    },
+    {
+      // state variants do not flip under a light theme either
+      code: `function C() { return <button className="px-2 hover:bg-white/5">x</button>; }`,
+      errors: 1,
+    },
+    {
+      code: `function C() { return <a className="group-hover:text-white">x</a>; }`,
+      errors: 1,
+    },
+    {
+      // a dark: chain earlier in the string does not hide a later leak
+      code: `function C() { return <p className="dark:text-white focus:bg-white/10">x</p>; }`,
       errors: 1,
     },
   ],

@@ -215,7 +215,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
         <pre
           ref={preRef}
           aria-hidden
-          className="absolute inset-0 px-4 py-3 typo-code leading-[1.625] whitespace-pre-wrap break-all overflow-hidden pointer-events-none m-0"
+          className="absolute inset-0 px-4 py-3 typo-code whitespace-pre-wrap break-all overflow-hidden pointer-events-none m-0"
         >
           {highlighted || (
             <span className="text-foreground">{placeholder}</span>
@@ -231,7 +231,7 @@ export function JsonEditor({ value, onChange, placeholder }: JsonEditorProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder=""
-          className="relative w-full px-4 py-3 typo-code leading-[1.625] bg-transparent text-transparent caret-foreground resize-none focus-visible:outline-none"
+          className="relative w-full px-4 py-3 typo-code bg-transparent text-transparent caret-foreground resize-none focus-visible:outline-none"
           style={{ minHeight: 128 }}
           spellCheck={false}
           autoComplete="off"

@@ -47,7 +47,7 @@ export function RowActionMenu({
           className="flex flex-col"
         >
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-            <h2 id="row-actions-title" className="typo-heading font-semibold text-foreground/90">
+            <h2 id="row-actions-title" className="typo-heading text-foreground/90">
               {t.templates.row_actions.row_actions_label}
             </h2>
             <button

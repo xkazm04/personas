@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAgentStore } from '@/stores/agentStore';
+import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
 import { useSystemStore } from '@/stores/systemStore';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -67,8 +68,12 @@ export function ReportDetailModal({
 
   const markReportAsRead = useOverviewStore((s) => s.markReportAsRead);
 
-  // Plugin gating — Companion plugin must be enabled for "Play in chat".
-  const companionEnabled = useSystemStore((s) => s.enabledPlugins.has('companion'));
+  // "Play in chat" needs Athena, so it reads HER switch. It used to read
+  // `enabledPlugins.has('companion')` — a plugin flag that was never persisted
+  // and whose vocabulary left `PluginTab` when she became a built-in
+  // companion. Her chat panel is unmounted while she is off, so the affordance
+  // has to go with it or it would open nothing.
+  const { enabled: companionEnabled } = useAthenaEnabled();
 
   const { deliveries, deliveriesLoading } = useReportDeliveries(msgId);
   const { rating, ratingSaving, rate } = useReportRating(message, t, tx);

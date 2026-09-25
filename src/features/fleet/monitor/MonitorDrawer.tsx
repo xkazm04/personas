@@ -189,8 +189,8 @@ export function MonitorDrawer({
         <div className="flex items-center gap-2.5 min-w-0">
           <PersonaIcon icon={card.personaIcon} color={card.personaColor} display="pop" frameSize="md" />
           <div className="min-w-0">
-            <h3 className="typo-heading font-semibold text-foreground leading-tight truncate">{card.personaName}</h3>
-            <p className="typo-caption text-foreground leading-tight">
+            <h3 className="typo-heading text-foreground truncate">{card.personaName}</h3>
+            <p className="typo-caption text-foreground">
               {tx(t.monitor.drawer_summary, { reviews: reviewTabCount, processes: card.processes.length })}
             </p>
           </div>
@@ -212,7 +212,7 @@ export function MonitorDrawer({
             type="button"
             key={tab.id}
             onClick={() => setSection(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading transition-colors ${
               section === tab.id
                 ? 'bg-primary/15 text-primary border border-primary/25'
                 : 'text-foreground hover:bg-secondary/40 border border-transparent'
@@ -339,14 +339,14 @@ function DrawerMessageCard({ message, onMarkRead }: { message: PersonaReport; on
             <span className="typo-caption text-foreground">{formatRelativeTime(message.created_at)}</span>
           </div>
           {message.title && (
-            <h5 className="typo-body font-semibold text-foreground leading-snug">{message.title}</h5>
+            <h5 className="typo-body text-foreground">{message.title}</h5>
           )}
-          <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">{message.content}</p>
+          <p className="typo-body text-foreground/85 whitespace-pre-wrap mt-1">{message.content}</p>
         </div>
         <button
           type="button"
           onClick={() => onMarkRead(message.id)}
-          className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/45 transition-colors"
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading text-foreground hover:bg-secondary/45 transition-colors"
         >
           <Check className="w-3.5 h-3.5" />
           {t.monitor.mark_read}

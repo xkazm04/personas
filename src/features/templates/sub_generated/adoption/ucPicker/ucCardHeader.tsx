@@ -56,7 +56,7 @@ export function UcCardHeader({
         {on && <Check className="w-4 h-4 text-background" strokeWidth={3} />}
       </button>
       <h4
-        className={`flex-1 min-w-0 typo-heading-lg font-semibold leading-tight tracking-tight truncate ${
+        className={`flex-1 min-w-0 typo-heading-lg truncate ${
           on ? 'text-foreground' : 'text-foreground'
         }`}
       >

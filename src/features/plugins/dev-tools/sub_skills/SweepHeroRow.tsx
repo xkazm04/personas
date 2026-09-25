@@ -39,7 +39,7 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
           className="min-w-0 text-left hover:text-primary transition-colors"
           data-testid="skills-manager-ws-scan-sweep"
         >
-          <span className="typo-caption font-semibold text-foreground">{row.entry.name}</span>
+          <span className="typo-caption text-foreground">{row.entry.name}</span>
         </button>
         <span className="flex-1" />
         <UsageCount usage={row.usage} />

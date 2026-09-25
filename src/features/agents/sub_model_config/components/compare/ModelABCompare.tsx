@@ -175,7 +175,7 @@ export function ModelABCompare() {
         }`}
       >
         <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400/70 flex-shrink-0" />
-        <span className="typo-body font-medium text-foreground/85 flex-1">
+        <span className="typo-body text-foreground/85 flex-1">
           {mc.compare_models}
           <span className="text-foreground font-normal ml-1.5">{mc.side_by_side}</span>
         </span>
@@ -223,7 +223,7 @@ export function ModelABCompare() {
                 <button
                   type="button"
                   onClick={() => void handleCancel()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal typo-body
                              bg-red-500/80 hover:bg-red-500 text-foreground transition-all cursor-pointer"
                 >
                   <Square className="w-3.5 h-3.5" />
@@ -234,7 +234,7 @@ export function ModelABCompare() {
                   type="button"
                   onClick={() => void handleStart()}
                   disabled={!canRun}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal typo-body
                              bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-500/90 hover:to-violet-500/90
                              text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >

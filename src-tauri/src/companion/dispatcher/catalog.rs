@@ -62,6 +62,10 @@ pub(super) const ALLOWED_ACTIONS: &[&str] = &[
     // `approval_exec_devices::gate_remote_instruct`, NOT in
     // `AUTOAPPROVE_ALLOWLIST` (which has no conditional form).
     "remote_instruct",
+    // Two machines, one operator — send a whole fleet session to a paired
+    // device (its own branch, pushed, verified on return). Same device rule as
+    // `remote_instruct` (`DEVICE_GATED_ACTIONS`), same surface in a lite build.
+    "remote_fleet_dispatch",
     // Layered voice. A REFLECTION-originated register change: the sleep cycle
     // files it as an approval row directly and the executor applies it with
     // source `reflection`. The chat op of the same name never reaches the
@@ -426,6 +430,10 @@ pub(super) const ALLOWED_ROUTES: &[&str] = &[
     "plugins",
     "schedules",
     "settings",
+    // The Companions category: Athena, Overseer and Curator. A first-level
+    // section of its own since 2026-09-22 — she lived under Plugins >
+    // Companion before, which is a place she can no longer take anyone.
+    "companions",
     "monitor",
     // `mastermind` is a pseudo-route like `monitor` — it resolves to Teams →
     // Mastermind. It earns a route of its own because Athena can already
@@ -602,7 +610,7 @@ const OP_SECTIONS: &[OpSection] = &[
         ops: &[
             op!("use_connector", Auto, "a pinned connector or always-on builtin; reads run as a background job, writes become an approval card", r#"{"connector_name":"<slug>","capability":"<slug>","args":{...}}"#),
             op!("research", Auto, "background web research; react now in the same reply, the findings return as a follow-up turn", r#"{"question":"<one sentence>","context?":"<what prompted it>"}"#),
-            op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|monitor|mastermind"}"#),
+            op!("open_route", Auto, "navigate", r#"{"route":"home|overview|personas|events|credentials|design-reviews|plugins|schedules|settings|companions|monitor|mastermind"}"#),
             op!("open_lab", Auto, "a persona's Lab", r#"{"persona_id":"<uuid>","mode":"arena|ab|matrix|breed|evolve|versions|regression"}"#),
             op!("open_test_env", Approval, "a project's test-environment URL", r#"{"project_name":"<name>"}"#),
         ],
@@ -692,7 +700,7 @@ const OP_SECTIONS: &[OpSection] = &[
     OpSection {
         title: "Fleet (live CLI sessions) and other devices",
         gate: Some(OpGate::Approval),
-        note: "Approval unless marked. `session_id` = the FULL fleet session id (never the cc: id); `confidence` high|medium|low; `decision_class` drive_forward|choice; `cwd` a REGISTERED project path. Start real work with `show_fleet_plan` (editable plan card, nothing spawns until he confirms), not bare spawns.",
+        note: "Approval unless marked. `session_id` = the FULL fleet session id (never the cc: id); `confidence` high|medium|low; `decision_class` drive_forward|choice; `cwd` a REGISTERED project path. Start real work with `show_fleet_plan` (nothing spawns until he confirms), not bare spawns.",
         compact: true,
         ops: &[
             op!("show_fleet_plan", Card, "", r#"{operation_intent,rows:[{cwd,objective,skill?}]}"#),
@@ -705,7 +713,8 @@ const OP_SECTIONS: &[OpSection] = &[
             op!("fleet_redirect_op", Approval, "", r#"{op_id (FULL),new_intent}"#),
             op!("fleet_wake", Approval, "", r#"{session_id,confidence,decision_class}"#),
             op!("fleet_resume", Approval, "", r#"{pid,cwd,confidence,decision_class}"#),
-            op!("remote_instruct", Approval, "", r#"{device?,instruction} (HIS other paired device; a complete self-contained request; omit device for home)"#),
+            op!("remote_instruct", Approval, "", r#"{device?,instruction} (no device = home)"#),
+            op!("remote_fleet_dispatch", Approval, "", r#"{device?,project,prompt,mode?:headless|interactive}"#),
             op!("continue_autonomously", Auto, "", r#"{rationale} (autonomous mode only)"#),
         ],
     },

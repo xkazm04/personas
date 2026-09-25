@@ -807,6 +807,8 @@ pub(crate) struct DecisionContext {
     /// decision and the work it orders never run on different models by
     /// accident. Not rendered into the prompt — it IS the call.
     pub model: String,
+    /// This decision and its code workers use the codex queue admission path.
+    pub codex_mode: bool,
     /// Slots this persona may fill RIGHT NOW — already the minimum of its own
     /// remaining concurrency and the engine's global capacity. Filled by the
     /// executor immediately before the call, never at plan time: a figure
@@ -3167,18 +3169,25 @@ fn render_resource_section(ctx: &DecisionContext) -> String {
     let live = ctx.resource_state.as_ref().filter(|r| r.enabled);
     if let Some(r) = live {
         s.push_str("RESOURCE STATE (the fleet's admission budgets, read this wake)\n");
-        s.push_str(&format!(
-            "- plan: {} of {} unit(s) in use (budget at full pace {}; pace factor {:.2}){}\n",
-            r.plan_used,
-            r.plan_budget,
-            r.plan_budget_max,
-            r.pace_factor,
-            match r.behind_pct {
-                Some(b) if b < 0.0 => format!(" — {:.0}% AHEAD of plan pace", -b),
-                Some(b) => format!(" — {b:.0}% behind plan pace"),
-                None => " — pace not measured".to_string(),
-            }
-        ));
+        if ctx.codex_mode {
+            s.push_str(&format!(
+                "- plan: {} of {} unit(s) in use\n",
+                r.plan_used, r.plan_budget
+            ));
+        } else {
+            s.push_str(&format!(
+                "- plan: {} of {} unit(s) in use (budget at full pace {}; pace factor {:.2}){}\n",
+                r.plan_used,
+                r.plan_budget,
+                r.plan_budget_max,
+                r.pace_factor,
+                match r.behind_pct {
+                    Some(b) if b < 0.0 => format!(" — {:.0}% AHEAD of plan pace", -b),
+                    Some(b) => format!(" — {b:.0}% behind plan pace"),
+                    None => " — pace not measured".to_string(),
+                }
+            ));
+        }
         s.push_str(&format!(
             "- machine: {} of {} unit(s) in use; RAM {} — gate {}\n",
             r.machine_used,
@@ -3196,7 +3205,9 @@ fn render_resource_section(ctx: &DecisionContext) -> String {
                 None => "free".to_string(),
             }
         ));
-        if let Some(hold) = &r.hold {
+        if let Some(hold) = &r.hold.filter(|hold| {
+            !ctx.codex_mode || !matches!(*hold, BudgetHold::AheadOfPace | BudgetHold::FiveHourFull)
+        }) {
             s.push_str(&format!(
                 "- the queue is HELD right now: {}\n",
                 tag_word(hold)
@@ -3211,7 +3222,15 @@ fn render_resource_section(ctx: &DecisionContext) -> String {
         .map(|c| c.id.as_str())
         .collect();
     let mut p = String::new();
-    if live.is_some() {
+    if live.is_some() && ctx.codex_mode {
+        p.push_str(
+            "A dispatch is charged plan units for its effort (s 1, m 2, l 4, xl 8) and machine \
+             units for its machine load (light 1, moderate 2, heavy 4, exclusive 8); one that \
+             does not fit waits in the queue. When the machine budget is tight or the RAM gate \
+             is closed, prefer a light machine load; pick a `gpu=exclusive` charter only while \
+             the GPU token is free. ",
+        );
+    } else if live.is_some() {
         p.push_str(
             "A dispatch is charged plan units for its effort (s 1, m 2, l 4, xl 8) and machine \
              units for its machine load (light 1, moderate 2, heavy 4, exclusive 8); one that \
@@ -4002,6 +4021,7 @@ mod tests {
             // Through the one door for model ids — a dated literal here would
             // rot the fixture the day the id retires.
             model: personas_core::model_ids::DEFAULT_STRONG.into(),
+            codex_mode: false,
             // The App Master fixture: project-bound, so no workspace section.
             workspace: None,
             charters: vec![
@@ -4343,6 +4363,14 @@ mod tests {
             "{p}"
         );
         assert!(p.contains("UNOBSERVED, not as evidence"), "{p}");
+
+        // G52b: the same open hold, shown to a codex_mode persona, is over for
+        // it. Printed as STILL HELD it stopped three of six App Masters.
+        ctx.loop_hold.as_mut().unwrap().ended_at =
+            Some(super::super::attention::CODEX_HOLD_LIFTED.to_string());
+        let p = render_decision_prompt(&ctx);
+        assert!(p.contains("to now FOR YOU: you run in codex_mode"), "{p}");
+        assert!(!p.contains("STILL HELD"), "{p}");
 
         // Never-dispatched outranks any age: once r2 has been served, the
         // charter that never has is the starved one.
@@ -5881,6 +5909,25 @@ mod tests {
         // The output contract names the optional key and its vocabularies.
         assert!(p.contains("`\"resourceProfiles\":[{\"charterId\""));
         assert!(p.contains("\"effort\":\"s|m|l|xl\""));
+    }
+
+    #[test]
+    fn codex_mode_prompt_shows_memory_limits_without_claude_holds() {
+        let mut ctx = resource_ctx();
+        ctx.codex_mode = true;
+        ctx.resource_state.as_mut().unwrap().hold = Some(BudgetHold::FiveHourFull);
+        let p = render_decision_prompt(&ctx);
+        let block = resource_block(&p);
+        assert!(block.contains("- plan: 6 of 12 unit(s) in use"), "{block}");
+        assert!(
+            block.contains("- machine: 3 of 8 unit(s) in use; RAM 72% — gate open"),
+            "{block}"
+        );
+        assert!(!block.contains("five_hour_full"), "{block}");
+        assert!(!block.contains("plan pace"), "{block}");
+        assert!(!block.contains("pace factor"), "{block}");
+        ctx.resource_state.as_mut().unwrap().hold = Some(BudgetHold::RamHighWater);
+        assert!(render_decision_prompt(&ctx).contains("HELD right now: ram_high_water"));
     }
 
     #[test]

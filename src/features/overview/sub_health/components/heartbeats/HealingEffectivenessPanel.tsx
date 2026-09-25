@@ -63,7 +63,7 @@ export function HealingEffectivenessPanel() {
     <section className="rounded-card border border-primary/10 bg-secondary/20 p-4">
       <header className="flex items-center gap-2 mb-3">
         <HeartPulse className="w-4 h-4 text-rose-400" />
-        <h3 className="typo-body font-medium text-foreground/90">{te.title}</h3>
+        <h3 className="typo-body text-foreground/90">{te.title}</h3>
         {report && (
           <span className="typo-caption text-foreground ml-auto">
             {te.window_label} {report.window_days}d
@@ -80,7 +80,7 @@ export function HealingEffectivenessPanel() {
           {/* Overall */}
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
-              <span className={`typo-h3 font-semibold ${rateColor(report.success_rate)}`}>
+              <span className={`typo-heading-lg font-semibold ${rateColor(report.success_rate)}`}>
                 {pct(report.success_rate)}
               </span>
               <span className="typo-caption text-foreground">{te.success_rate}</span>

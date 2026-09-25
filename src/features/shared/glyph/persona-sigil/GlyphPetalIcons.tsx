@@ -201,7 +201,7 @@ export function GlyphPetalIcons({
                 : `0 0 6px ${meta.color}55`,
             }}
           >
-            <span className="typo-caption font-semibold uppercase tracking-[0.14em] whitespace-nowrap">
+            <span className="typo-caption uppercase tracking-[0.14em] whitespace-nowrap">
               {dimText.label[dim]}
             </span>
           </div>

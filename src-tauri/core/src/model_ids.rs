@@ -50,12 +50,12 @@ pub const DEFAULT_FAST: &str = HAIKU_CURRENT;
 pub const DEFAULT_BALANCED: &str = SONNET_CURRENT;
 pub const DEFAULT_STRONG: &str = OPUS_CURRENT;
 
-/// The coding model the codex maintenance lane runs on (G48, operator
-/// decision 2026-09-15): the operator's spare capacity is on this model, and
-/// the App Master that scopes the work stays on its own Claude model. Not a
-/// Claude id, so it never enters the tier ladder above; the lane reads it
-/// straight from the charter's override.
-pub const CODEX_MAINTENANCE: &str = "gpt-5.6";
+/// The codex maintenance and attention model (operator decision 2026-09-24).
+/// `gpt-6-sol` was verified with a CLI probe. It does not enter the Claude
+/// tier ladder above.
+pub const CODEX_MAINTENANCE: &str = "gpt-6-sol";
+/// The operator's verified reasoning effort for this codex model.
+pub const CODEX_DEFAULT_EFFORT: &str = "high";
 
 /// xAI Grok Build CLI models for Athena's grok engine lane (hybrid-LLM-engine
 /// spark, 2026-09-17). Not Claude ids, so they never enter the tier ladder

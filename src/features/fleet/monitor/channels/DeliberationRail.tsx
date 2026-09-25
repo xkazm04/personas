@@ -87,7 +87,7 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
   return (
     <div className="space-y-3">
       <div>
-        <p className="typo-body font-medium text-foreground">{detail.topic}</p>
+        <p className="typo-body text-foreground">{detail.topic}</p>
         <p className="typo-caption text-foreground opacity-50 mt-0.5">
           {statusLabel} · {tx(t.monitor.delib_round, { round: Number(detail.round) })} ·{' '}
           <Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} />
@@ -128,7 +128,7 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
       {/* Gated capability — a persona asked to DO something; the human decides. */}
       {pending && (
         <div className="rounded-card border border-amber-400/30 bg-amber-400/[0.07] p-2">
-          <p className="typo-caption text-amber-300 font-medium mb-1">{t.monitor.delib_capability}</p>
+          <p className="typo-caption text-amber-300 mb-1">{t.monitor.delib_capability}</p>
           <p className="typo-caption text-foreground opacity-80">
             {personaIndex.get(pending.persona_id ?? '')?.name.replace(/^T:\s*/, '') ?? pending.persona_id}
             {pending.rationale ? ` — ${pending.rationale}` : ''}
@@ -147,7 +147,7 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
       {/* Escalation — the team is stuck and wants a decision. */}
       {detail.status === 'escalated' && (
         <div className="rounded-card border border-status-warning/30 bg-status-warning/[0.07] p-2">
-          <p className="typo-caption text-status-warning font-medium mb-1">{t.monitor.delib_escalated}</p>
+          <p className="typo-caption text-status-warning mb-1">{t.monitor.delib_escalated}</p>
           <textarea
             rows={2}
             value={note}
@@ -172,8 +172,8 @@ export function DeliberationRail({ teamId, deliberationId }: { teamId: string; d
       {/* The payoff — a deliberation that converged becomes real work. */}
       {proposal?.title && (
         <div className="rounded-card border border-status-success/30 bg-status-success/[0.07] p-2">
-          <p className="typo-caption text-status-success font-medium mb-1">{t.monitor.delib_proposal}</p>
-          <p className="typo-caption text-foreground font-medium">{proposal.title}</p>
+          <p className="typo-caption text-status-success mb-1">{t.monitor.delib_proposal}</p>
+          <p className="typo-caption text-foreground">{proposal.title}</p>
           {proposal.summary && <p className="typo-caption text-foreground opacity-75 mt-0.5">{proposal.summary}</p>}
           {!detail.spawnedAssignmentId && (
             <div className="flex items-center gap-1.5 mt-1.5">

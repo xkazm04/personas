@@ -136,14 +136,14 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                   >
                     <div className="flex items-center gap-2 mb-0.5">
                       <Icon className={`w-3 h-3 flex-shrink-0 ${colors.text}`} />
-                      <span className={`typo-code font-mono uppercase ${colors.text}`}>
+                      <span className={`typo-code uppercase ${colors.text}`}>
                         {event.eventType.replace('_', ' ')}
                       </span>
                       <span className="text-[10px] text-foreground ml-auto">
                         {formatRelativeTime(event.timestamp)}
                       </span>
                     </div>
-                    <p className="typo-body text-foreground leading-relaxed">{event.title}</p>
+                    <p className="typo-body text-foreground">{event.title}</p>
                     {event.description !== event.title && (
                       <p className="typo-caption text-foreground mt-0.5 line-clamp-2">{event.description}</p>
                     )}

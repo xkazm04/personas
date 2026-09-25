@@ -73,7 +73,7 @@ export function RecipeDetailHeader({
         )}
         <div className="relative flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="typo-title text-foreground">{recipe.name}</span>
+            <span className="typo-title">{recipe.name}</span>
             {/* Eligibility is a per-persona verdict — meaningless before one
                 is selected, so the chip waits for a persona. */}
             {hasPersona && <EligibilityChip eligibility={eligibility} />}
@@ -125,7 +125,7 @@ export function RecipeDetailHeader({
             onClick={onRemove}
             disabled={removePending}
             data-testid="recipe-remove-cta"
-            className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
+            className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
             title={t.recipes_catalog.remove_tooltip}
           >
             <Trash2 className="w-4 h-4" />
@@ -137,7 +137,7 @@ export function RecipeDetailHeader({
             onClick={onAdopt}
             disabled={!canAdopt}
             data-testid="recipe-adopt-cta"
-            className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+            className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
               canAdopt
                 ? 'border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 shadow-elevation-1'
                 : 'border-card-border bg-secondary/40 text-foreground'

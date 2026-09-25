@@ -18,6 +18,9 @@ export function useRecipeVersioning() {
     completedPhase: 'reviewing',
     startFn: startRecipeVersioning,
     cancelFn: cancelRecipeVersioning,
+    // The backend job's id_field and timeout_secs, from recipes/recipe_versioning.rs RECIPE_VERSIONING_MESSAGES; artifactDeadlineParity.test.ts fails if they differ.
+    idField: 'versioning_id',
+    backendTimeoutSecs: 300,
     errorMessage: 'Failed to generate recipe version',
     traceOperation: 'recipe_versioning',
   });

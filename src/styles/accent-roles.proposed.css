@@ -1,0 +1,233 @@
+/* ==============================================================================
+   PROPOSED colour roles + the one muting level. DRAFT for Gate 0 (spark
+   `style-unification`, WP1). NOT IMPORTED BY THE APP: only the Gate 0 specimen
+   (docs/design/style-mastery/specimen) loads this file, and every selector is
+   scoped under [data-style-proposal], so nothing here can reach a shipped
+   surface even if it were imported by mistake.
+
+   WHAT A ROLE IS. A colour named for what it MEANS, bound per theme. The four
+   status colours already work this way (--status-success/-warning/-error/-info)
+   and stay as they are. The four roles below cover the meanings that today are
+   spelled as raw palette steps (`text-violet-400`) or as value names
+   (`accentColor="violet"`, ContentTone "blue"):
+
+     role-agent      an agent made, proposed or is doing this
+     role-human      you made this, or it is waiting on you
+     role-external   something outside the app: a connector, service, webhook
+     role-highlight  look here, with no further meaning (the theme's own hue)
+
+   ONE RECIPE per role, the same shape status already uses:
+     text    text-role-x
+     chip    bg-role-x/10 text-role-x border border-role-x/30
+     rule    border-role-x/30
+
+   CONTRAST. Every role clears 4.5:1 (AA body text) on the canvas, on a 10%
+   chip of itself and on the card surface, in every theme. That is above the
+   3.0:1 bar check-themes applies to status colours. contrast.mjs in the
+   specimen folder recomputes it from this file with check-themes' own maths.
+
+   BRIGHTNESS. Dark themes brighten the whole page with an html filter and
+   pre-darken status colours to match (globals.css [data-brightness=...]).
+   Roles follow the same -raw pattern, and every theme sets the -raw value,
+   so the compensation always applies. It does NOT for status colours in the
+   themes that override --status-x directly instead of --status-x-raw (bronze,
+   purple, pink, red, matrix, cyan's info, and all three light themes): the
+   theme block comes later in globals.css and beats the [data-brightness] mix.
+   Verified in the browser: dark-bronze --status-success computes #66b06e under
+   brightness(1.25); the default theme computes the 80%-black mix.
+   ============================================================================== */
+
+/* theme: dark-midnight */
+[data-style-proposal] {
+  --role-agent-raw: #a78bfa;
+  --role-human-raw: #f472b6;
+  --role-external-raw: #38bdf8;
+  --role-highlight-raw: #06b6d4;
+}
+
+/* The indirection every theme shares; brightness tiers override the outer name. */
+[data-style-proposal] {
+  --role-agent: var(--role-agent-raw);
+  --role-human: var(--role-human-raw);
+  --role-external: var(--role-external-raw);
+  --role-highlight: var(--role-highlight-raw);
+  /* THE ONE MUTING LEVEL: foreground at 70%, the value typo-caption ships
+     today. Alpha, not an opaque mix, so it reads the same on canvas, card
+     and chip. */
+  --ink-muted: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+/* theme: dark-cyan */
+[data-theme="dark-cyan"] [data-style-proposal],
+[data-theme="dark-cyan"][data-style-proposal] {
+  --role-agent-raw: #a78bfa;
+  --role-human-raw: #f472b6;
+  --role-external-raw: #7dd3fc;
+  --role-highlight-raw: #06b6d4;
+}
+
+/* theme: dark-bronze */
+/* restrained family: the hues are warmed and softened,
+   as the theme already does for its status colours. */
+[data-theme="dark-bronze"] [data-style-proposal],
+[data-theme="dark-bronze"][data-style-proposal] {
+  --role-agent-raw: #b9a3e6;
+  --role-human-raw: #e59bb8;
+  --role-external-raw: #9cc9d0;
+  --role-highlight-raw: #e0820a;
+}
+
+/* theme: dark-frost */
+/* desaturated slate; status keeps root semantics, roles
+   follow at lower chroma. */
+[data-theme="dark-frost"] [data-style-proposal],
+[data-theme="dark-frost"][data-style-proposal] {
+  --role-agent-raw: #b8aee6;
+  --role-human-raw: #e3aecb;
+  --role-external-raw: #a7c9de;
+  --role-highlight-raw: #e2e8f0;
+}
+
+/* theme: dark-purple */
+/* agent would equal the theme hue, so it moves lighter. */
+[data-theme="dark-purple"] [data-style-proposal],
+[data-theme="dark-purple"][data-style-proposal] {
+  --role-agent-raw: #cdbdfd;
+  --role-human-raw: #eaa2c9;
+  --role-external-raw: #9ec0ef;
+  --role-highlight-raw: #b667f7;
+}
+
+/* theme: dark-pink */
+/* human would equal the theme hue, so it moves lighter. */
+[data-theme="dark-pink"] [data-style-proposal],
+[data-theme="dark-pink"][data-style-proposal] {
+  --role-agent-raw: #c1a7f0;
+  --role-human-raw: #fbc0dd;
+  --role-external-raw: #9ec3e8;
+  --role-highlight-raw: #f0529e;
+}
+
+/* theme: dark-red */
+/* monochrome with one red. The theme already greys its
+   status colours; roles are greys of distinct lightness, and highlight is a
+   lighter red because the theme primary (#cc0000) is 3.4:1 on the canvas. */
+[data-theme="dark-red"] [data-style-proposal],
+[data-theme="dark-red"][data-style-proposal] {
+  --role-agent-raw: #c8c8c8;
+  --role-human-raw: #f0f0f0;
+  --role-external-raw: #a8a8a8;
+  --role-highlight-raw: #ff4d4d;
+}
+
+/* theme: dark-matrix */
+/* phosphor greens, as the theme does for status. */
+[data-theme="dark-matrix"] [data-style-proposal],
+[data-theme="dark-matrix"][data-style-proposal] {
+  --role-agent-raw: #b3ff99;
+  --role-human-raw: #e6ff80;
+  --role-external-raw: #66ffcc;
+  --role-highlight-raw: #00ff41;
+}
+
+/* theme: light */
+/* the 700/800 steps, as the theme does for status (the 700 pink and sky
+   steps fall under 4.5:1 on their own 10% chip here). */
+[data-theme="light"] [data-style-proposal],
+[data-theme="light"][data-style-proposal] {
+  --role-agent-raw: #6d28d9;
+  --role-human-raw: #9d174d;
+  --role-external-raw: #075985;
+  --role-highlight-raw: #1d4ed8;
+}
+
+/* theme: light-ice */
+[data-theme="light-ice"] [data-style-proposal],
+[data-theme="light-ice"][data-style-proposal] {
+  --role-agent-raw: #6d28d9;
+  --role-human-raw: #9d174d;
+  --role-external-raw: #075985;
+  --role-highlight-raw: #1d4ed8;
+}
+
+/* theme: light-news */
+/* newsprint greys, as the theme does for status. */
+[data-theme="light-news"] [data-style-proposal],
+[data-theme="light-news"][data-style-proposal] {
+  --role-agent-raw: #3d3d3d;
+  --role-human-raw: #262626;
+  --role-external-raw: #4d4d4d;
+  --role-highlight-raw: #1a1a1a;
+}
+
+/* Brightness compensation, the same factors globals.css uses for status.
+   Dark themes brighten the page (1.25 / 1.38 / 1.50) and pre-darken colours. */
+[data-brightness="dark-low"] [data-style-proposal],
+[data-brightness="dark-low"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 80%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 80%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 80%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 80%, black);
+}
+[data-brightness="dark-mid"] [data-style-proposal],
+[data-brightness="dark-mid"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 72%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 72%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 72%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 72%, black);
+}
+[data-brightness="dark-high"] [data-style-proposal],
+[data-brightness="dark-high"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 67%, black);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 67%, black);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 67%, black);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 67%, black);
+}
+/* Light themes dim the page (0.82 / 0.91) and lift colours with white to match;
+   light-high is 1.0 and needs nothing. */
+[data-brightness="light-low"] [data-style-proposal],
+[data-brightness="light-low"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 82%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 82%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 82%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 82%, white);
+}
+[data-brightness="light-mid"] [data-style-proposal],
+[data-brightness="light-mid"][data-style-proposal] {
+  --role-agent: color-mix(in srgb, var(--role-agent-raw) 91%, white);
+  --role-human: color-mix(in srgb, var(--role-human-raw) 91%, white);
+  --role-external: color-mix(in srgb, var(--role-external-raw) 91%, white);
+  --role-highlight: color-mix(in srgb, var(--role-highlight-raw) 91%, white);
+}
+
+/* ------------------------------------------------------------------------------
+   TAILWIND BRIDGE (proposal for WP4, to live in globals.css @theme):
+
+     @theme {
+       --color-role-agent: var(--role-agent);
+       --color-role-human: var(--role-human);
+       --color-role-external: var(--role-external);
+       --color-role-highlight: var(--role-highlight);
+       --color-ink-muted: var(--ink-muted);
+     }
+
+   which yields text-role-agent, bg-role-agent/10, border-role-agent/30, ...
+   and text-ink-muted. The block below EMULATES exactly those utilities for the
+   specimen page, in the utilities layer where Tailwind would put them. WP4
+   deletes it when the bridge lands.
+   ------------------------------------------------------------------------------ */
+@layer utilities {
+  [data-style-proposal] .text-ink-muted { color: var(--ink-muted); }
+  [data-style-proposal] .text-role-agent { color: var(--role-agent); }
+  [data-style-proposal] .text-role-human { color: var(--role-human); }
+  [data-style-proposal] .text-role-external { color: var(--role-external); }
+  [data-style-proposal] .text-role-highlight { color: var(--role-highlight); }
+  [data-style-proposal] .bg-role-agent\/10 { background-color: color-mix(in srgb, var(--role-agent) 10%, transparent); }
+  [data-style-proposal] .bg-role-human\/10 { background-color: color-mix(in srgb, var(--role-human) 10%, transparent); }
+  [data-style-proposal] .bg-role-external\/10 { background-color: color-mix(in srgb, var(--role-external) 10%, transparent); }
+  [data-style-proposal] .bg-role-highlight\/10 { background-color: color-mix(in srgb, var(--role-highlight) 10%, transparent); }
+  [data-style-proposal] .border-role-agent\/30 { border-color: color-mix(in srgb, var(--role-agent) 30%, transparent); }
+  [data-style-proposal] .border-role-human\/30 { border-color: color-mix(in srgb, var(--role-human) 30%, transparent); }
+  [data-style-proposal] .border-role-external\/30 { border-color: color-mix(in srgb, var(--role-external) 30%, transparent); }
+  [data-style-proposal] .border-role-highlight\/30 { border-color: color-mix(in srgb, var(--role-highlight) 30%, transparent); }
+}

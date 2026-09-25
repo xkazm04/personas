@@ -23,6 +23,7 @@ import { filterByTier } from '@/features/shared/chrome/sidebar/sidebarData';
 import { AgentsSidebarNav } from '@/features/shared/chrome/sidebar/sections/AgentsSidebarNav';
 import TeamsSidebarNav from '@/features/shared/chrome/sidebar/sections/TeamsSidebarNav';
 import { PluginsSidebarNav } from '@/features/shared/chrome/sidebar/sections/PluginsSidebarNav';
+import { CompanionsSidebarNav } from '@/features/shared/chrome/sidebar/sections/CompanionsSidebarNav';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
@@ -102,7 +103,6 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   if (pendingReviewCount > 0) overviewBadges['manual-review'] = { count: pendingReviewCount, className: 'bg-amber-500/20 text-amber-400 border border-amber-500/30' };
   if (unreadReportCount > 0) overviewBadges['messages'] = { count: unreadReportCount, className: 'bg-blue-500/20 text-blue-400 border border-blue-500/30' };
   if (pendingEventCount > 0) overviewBadges['events'] = { count: pendingEventCount, className: 'bg-purple-500/20 text-purple-400 border border-purple-500/30' };
-  if (directorAttentionCount > 0) overviewBadges['director'] = { count: directorAttentionCount, className: 'bg-violet-500/20 text-violet-400 border border-violet-500/30' };
 
   const credentialBadges: Record<string, SubNavBadge> = {
     credentials: { count: credentials.length, className: 'bg-secondary/50 border border-primary/10 text-foreground font-normal' },
@@ -290,7 +290,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
               <p className="typo-body text-foreground/90">{t.shared.sidebar_extra.no_credentials}</p>
               <Button
                 variant="accent"
-                accentColor="violet"
+                tone="agent"
                 size="md"
                 icon={<Sparkles className="w-3 h-3" />}
                 onClick={() => navigate('add-new')}
@@ -308,6 +308,9 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 
     case 'plugins':
       return <PluginsSidebarNav />;
+
+    case 'companions':
+      return <CompanionsSidebarNav directorAttentionCount={directorAttentionCount} />;
 
     case 'settings':
       return (
@@ -404,8 +407,8 @@ function SchedulesSidebarNav() {
           aria-current={selectedGroupId === null ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             selectedGroupId === null
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
@@ -427,8 +430,8 @@ function SchedulesSidebarNav() {
             aria-current={selectedGroupId === g.id ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               selectedGroupId === g.id
-                ? 'bg-primary/10 text-foreground font-semibold'
-                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+                ? 'bg-primary/10 text-foreground'
+                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
             }`}
           >
             <span

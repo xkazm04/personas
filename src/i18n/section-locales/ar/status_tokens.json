@@ -179,6 +179,7 @@
     "cancelled": "أُلغيت",
     "completed": "اكتملت",
     "failed": "فشلت",
+    "queued": "في الانتظار",
     "pending": "قيد الانتظار",
     "refused": "مرفوضة",
     "running": "قيد التشغيل"

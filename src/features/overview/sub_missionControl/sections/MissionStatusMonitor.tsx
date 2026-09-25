@@ -81,15 +81,15 @@ export function MissionStatusMonitor() {
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-primary/5">
         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border ${gth.chip}`}>
           <GlobalIcon className="w-3.5 h-3.5" />
-          <span className="typo-caption font-medium">{gradeLabel[globalGrade]}</span>
+          <span className="typo-caption">{gradeLabel[globalGrade]}</span>
         </span>
         <div className="flex items-baseline gap-3">
           <span className="typo-caption text-foreground">
-            {he.score_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore ?? '—'}</span>/100
+            {he.score_prefix} <span className="typo-data text-foreground/90">{globalScore ?? '—'}</span>/100
           </span>
           <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
           <span className="typo-caption text-foreground">
-            {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90 font-semibold" />
+            {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90" />
           </span>
         </div>
       </div>
@@ -142,7 +142,7 @@ function MonitorRow({ entry, onClick }: { entry: CompositeHealthEntry; onClick: 
       </span>
       <Numeric value={entry.uptimePercent} unit="ratio" precision={1} align="right" className="typo-caption tabular-nums text-foreground w-12 shrink-0" />
       <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input border shrink-0 ${th.chip}`}>
-        <span className="typo-caption tabular-nums font-semibold">{entry.score}</span>
+        <span className="typo-caption tabular-nums">{entry.score}</span>
       </span>
     </button>
   );

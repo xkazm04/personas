@@ -112,7 +112,7 @@ export function QuickAnswerReviewStepper({
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-card-border bg-secondary/15">
         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${sev.chip}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${sev.dot}`} aria-hidden />
-          <span className="typo-caption font-medium">{severityLabel(t, bucket)}</span>
+          <span className="typo-caption">{severityLabel(t, bucket)}</span>
         </span>
         <span className="typo-body text-foreground tabular-nums">
           {tx(t.monitor.quick_decision_position, { current: safeIdx + 1, total: reviews.length })}
@@ -143,7 +143,7 @@ export function QuickAnswerReviewStepper({
       <div className="flex items-center gap-2.5 px-4 py-2 border-b border-card-border bg-secondary/15">
         <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="typo-body font-semibold text-foreground truncate">{personaName ?? t.monitor.quick_source_unknown}</div>
+          <div className="typo-body text-foreground truncate">{personaName ?? t.monitor.quick_source_unknown}</div>
           {teamName && (
             <div className="inline-flex items-center gap-1 typo-caption text-foreground/55 truncate">
               <Users className="w-3 h-3 flex-shrink-0" /> {teamName}
@@ -154,10 +154,10 @@ export function QuickAnswerReviewStepper({
 
       {/* The decision — title + full description */}
       <div className="px-4 py-3.5 flex flex-col gap-3 max-h-[44vh] overflow-y-auto">
-        <h3 className="typo-body-lg font-semibold text-foreground leading-snug">{review.title}</h3>
+        <h3 className="typo-body-lg text-foreground">{review.title}</h3>
 
         {review.content && (
-          <MarkdownRenderer content={review.content} className="typo-body text-foreground/90 leading-relaxed" />
+          <MarkdownRenderer content={review.content} className="typo-body text-foreground/90" />
         )}
       </div>
 
@@ -184,7 +184,7 @@ export function QuickAnswerReviewStepper({
                   ) : (
                     <CornerDownRight className="w-4 h-4 flex-shrink-0 text-foreground group-hover:text-emerald-400 transition-colors" />
                   )}
-                  <span className="typo-body text-foreground leading-snug">{a}</span>
+                  <span className="typo-body text-foreground">{a}</span>
                 </button>
               ))}
             </div>
@@ -220,7 +220,7 @@ export function QuickAnswerReviewStepper({
               disabled={busy}
               onClick={() => void act('rejected')}
               data-testid={`quick-answer-reject-${review.id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/35 bg-status-error/10 whitespace-nowrap typo-body font-medium text-status-error hover:bg-status-error/20 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/35 bg-status-error/10 whitespace-nowrap typo-body text-status-error hover:bg-status-error/20 disabled:opacity-50 transition-colors"
             >
               <X className="w-4 h-4 flex-shrink-0" />
               {actions.length > 0 ? t.monitor.quick_dismiss : t.monitor.quick_reject}
@@ -231,7 +231,7 @@ export function QuickAnswerReviewStepper({
                 disabled={busy}
                 onClick={() => void act('approved')}
                 data-testid={`quick-answer-approve-${review.id}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-success/35 bg-status-success/15 whitespace-nowrap typo-body font-medium text-status-success hover:bg-status-success/25 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-success/35 bg-status-success/15 whitespace-nowrap typo-body text-status-success hover:bg-status-success/25 disabled:opacity-50 transition-colors"
               >
                 <Check className="w-4 h-4 flex-shrink-0" />
                 {t.monitor.quick_approve}

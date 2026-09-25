@@ -46,8 +46,8 @@ four doctrine-referenced ones were also removed from `companion/brain/doctrine.r
 ## Moved out
 
 - **athena-desktop-aware (Phase 1 audit)** — moved 2026-05-11 to [`../architecture/athena-phase1-audit.md`](../architecture/athena-phase1-audit.md). Decision-gate record; preserved verbatim as the foundation reference for Phases 2-6.
-- **athena-desktop-aware (daemon bridge, Phase 3 c v3)** — moved 2026-05-11 to [`../features/companion/athena-daemon-bridge.md`](../features/companion/athena-daemon-bridge.md). Doc 2 limitation #1 (file_watcher producer) closed in the same wave (`8b7cdd7d`).
-- **athena-desktop-aware (CLI session awareness, Phase 5 v1)** — moved 2026-05-11 to [`../features/companion/athena-cli-session-awareness.md`](../features/companion/athena-cli-session-awareness.md). Persona-editor UI gap (limitation #1) closed in the same wave (`4c08b020`).
+- **athena-desktop-aware (daemon bridge, Phase 3 c v3)** — moved 2026-05-11 to [`../features/companions/athena/athena-daemon-bridge.md`](../features/companions/athena/athena-daemon-bridge.md). Doc 2 limitation #1 (file_watcher producer) closed in the same wave (`8b7cdd7d`).
+- **athena-desktop-aware (CLI session awareness, Phase 5 v1)** — moved 2026-05-11 to [`../features/companions/athena/athena-cli-session-awareness.md`](../features/companions/athena/athena-cli-session-awareness.md). Persona-editor UI gap (limitation #1) closed in the same wave (`4c08b020`).
 - **agent-operations-hub** — moved 2026-05-10 to [`../features/agents/operations-hub.md`](../features/agents/operations-hub.md) (Phase 1 chat ops dispatch shipped; Phases 2-3 tracked under Future work in the new doc).
 - **cli-coordination-active-runs** — moved 2026-05-10 to [`../architecture/cli-coordination.md`](../architecture/cli-coordination.md) (v1 + v2 cross-skill adoption + v3 parallel-safety primitives shipped).
 - **real-api-testing** — archived 2026-05-28 to [`../_archive/concepts/real-api-testing.md`](../_archive/concepts/real-api-testing.md). The proposal shipped (`test_build_draft` exists in `build_sessions.rs`); kept for history.

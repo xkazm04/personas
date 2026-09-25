@@ -13,6 +13,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { RemoteJob } from '@/lib/bindings/RemoteJob';
 import type { RemoteJobNote } from '@/lib/bindings/RemoteJobNote';
 import { isTerminalRemoteJobStatus } from '@/lib/network/remoteJobHistory';
+import { RemoteReceiptLine } from '@/features/shared/dispatch/RemoteReceiptLine';
 
 interface RemoteJobDetailProps {
   job: RemoteJob;
@@ -31,12 +32,12 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
       data-testid={`remote-job-detail-${job.id}`}
       className="mt-3 rounded-card border border-primary/15 bg-secondary/20 p-3.5 space-y-3.5"
     >
-      <p className="typo-body text-foreground/90 leading-relaxed" data-testid="remote-job-detail-instruction">
+      <p className="typo-body text-foreground/90" data-testid="remote-job-detail-instruction">
         {job.instruction}
       </p>
 
       <section aria-label={st.job_notes_title}>
-        <h4 className="typo-label font-medium text-primary flex items-center gap-1.5">
+        <h4 className="typo-label text-primary flex items-center gap-1.5">
           <ScrollText className="w-3.5 h-3.5" aria-hidden />
           {st.job_notes_title}
         </h4>
@@ -65,11 +66,11 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
                 data-testid={`remote-job-note-${note.seq}`}
                 className="flex items-start gap-2.5"
               >
-                <span className="mt-0.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-interactive bg-primary/10 text-primary typo-label font-medium tabular-nums">
+                <span className="mt-0.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-interactive bg-primary/10 text-primary typo-label tabular-nums">
                   {note.seq}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="typo-caption text-foreground/90 leading-relaxed block break-words">
+                  <span className="typo-caption text-foreground/90 block break-words">
                     {note.text}
                   </span>
                   <RelativeTime timestamp={note.createdAt} className="typo-label text-foreground" />
@@ -80,14 +81,21 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
         )}
       </section>
 
+      {job.receipt && (
+        <section aria-label={st.job_receipt_title} data-testid="remote-job-receipt">
+          <h4 className="typo-label text-primary">{st.job_receipt_title}</h4>
+          <RemoteReceiptLine receipt={job.receipt} className="mt-1.5 typo-caption" />
+        </section>
+      )}
+
       <section aria-label={job.refusalReason ? st.job_refusal_title : st.job_summary_title}>
-        <h4 className="typo-label font-medium text-primary">
+        <h4 className="typo-label text-primary">
           {job.refusalReason ? st.job_refusal_title : st.job_summary_title}
         </h4>
         {job.refusalReason ? (
           <p
             data-testid="remote-job-refusal"
-            className="mt-1.5 flex items-start gap-2 typo-caption text-status-warning leading-relaxed"
+            className="mt-1.5 flex items-start gap-2 typo-caption text-status-warning"
           >
             <CircleAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden />
             <span className="break-words">{job.refusalReason}</span>
@@ -95,7 +103,7 @@ export function RemoteJobDetail({ job, notes, notesLoading, notesError }: Remote
         ) : job.summary ? (
           <p
             data-testid="remote-job-summary"
-            className="mt-1.5 typo-caption text-foreground/90 leading-relaxed break-words whitespace-pre-wrap"
+            className="mt-1.5 typo-caption text-foreground/90 break-words whitespace-pre-wrap"
           >
             {job.summary}
           </p>

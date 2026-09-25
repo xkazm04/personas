@@ -45,7 +45,7 @@ export function useDbGridColumns(
               <Database className="w-3.5 h-3.5 text-blue-400/60" />
             )}
           </div>
-          <span className="typo-body font-medium text-foreground truncate">{row.credential.name}</span>
+          <span className="typo-body text-foreground truncate">{row.credential.name}</span>
         </div>
       ),
     },

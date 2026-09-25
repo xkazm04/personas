@@ -45,7 +45,7 @@ export default function TourResumeFooterIcon() {
       aria-label={label}
     >
       <Map className="w-4 h-4" />
-      <span className="typo-caption font-medium">{done}/{total}</span>
+      <span className="typo-caption">{done}/{total}</span>
     </button>
   );
 }

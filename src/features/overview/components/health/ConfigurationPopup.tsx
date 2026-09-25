@@ -110,7 +110,7 @@ export function ConfigurationPopup({
     >
       <div className="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden">
         <div className="px-4 py-4 border-b border-primary/10">
-          <h3 id="configuration-popup-title" className="typo-heading font-semibold text-foreground/90 flex items-center gap-2">
+          <h3 id="configuration-popup-title" className="typo-heading text-foreground/90 flex items-center gap-2">
             <Key className={`w-4 h-4 ${styles.icon}`} />
             {title}
           </h3>
@@ -125,7 +125,7 @@ export function ConfigurationPopup({
           )}
           {fields.map((field) => (
             <div key={field.key}>
-              <label className="block typo-body font-medium text-foreground mb-1.5">
+              <label className="block typo-body text-foreground mb-1.5">
                 {field.label}
               </label>
               <input
@@ -142,7 +142,7 @@ export function ConfigurationPopup({
             </div>
           ))}
           {footerText && (
-            <p className="typo-body text-foreground leading-relaxed">
+            <p className="typo-body text-foreground">
               {footerText}
             </p>
           )}
@@ -153,7 +153,7 @@ export function ConfigurationPopup({
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 typo-body font-medium rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
+              className="px-3 py-1.5 typo-body rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -161,7 +161,7 @@ export function ConfigurationPopup({
               type="button"
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
-              className={`px-3 py-1.5 typo-body font-medium rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
+              className={`px-3 py-1.5 typo-body rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {saving ? t.common.saving : saveLabel}
             </button>

@@ -27,6 +27,7 @@ use crate::db::models::{
     DevUseCase,
 };
 use crate::db::repos::dev::council as council_repo;
+use crate::db::repos::dev::scenarios as scenario_repo;
 use crate::db::repos::dev::use_cases as use_case_repo;
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -412,7 +413,16 @@ fn append_registry_line(root: &Path, detail: &CouncilRunDetail, decision: &Counc
 /// Rewritten wholesale rather than patched, so the file is always a statement
 /// about the project's CURRENT verdicts - a patched file would accumulate rows
 /// for subjects that no longer exist and quietly become a second, older truth.
-fn export_state_json(pool: &personas_db::DbPool, root: &Path, project_id: &str) {
+///
+/// Two lists, and they answer different questions. `subjects` is what a human
+/// CONCLUDED. `scenarios` is what the product DECLARES its branches are, which
+/// is the half the `/council` skill reads: the scopes and floors a run is
+/// folded against live here and never in the result the member writes, because
+/// a judge that may also decide which branches count can always pass by
+/// narrowing the question. Every scenario is exported, `proposed` ones
+/// included, so the skill can see a branch it named last round and report on
+/// it again before anybody has adopted it.
+pub(crate) fn export_state_json(pool: &personas_db::DbPool, root: &Path, project_id: &str) {
     let states = match council_repo::list_subject_states(pool, Some(project_id)) {
         Ok(s) => s,
         Err(e) => {
@@ -442,6 +452,51 @@ fn export_state_json(pool: &personas_db::DbPool, root: &Path, project_id: &str) 
         })
         .collect();
 
+    // The subject slug a scenario belongs to, so the skill can filter the one
+    // list down to the subject it is judging. A scenario whose feature has no
+    // council subject yet is still exported: the first round is exactly when
+    // the declared branches matter most, and it has no subject until it lands.
+    let subject_of_use_case: std::collections::BTreeMap<&str, &str> = states
+        .iter()
+        .filter_map(|s| s.use_case_id.as_deref().map(|uc| (uc, s.slug.as_str())))
+        .collect();
+    let slug_of_use_case = |use_case_id: &str| -> Option<String> {
+        subject_of_use_case
+            .get(use_case_id)
+            .map(|s| (*s).to_string())
+            .or_else(|| {
+                use_case_repo::get_use_case(pool, use_case_id)
+                    .ok()
+                    .map(|u| u.slug)
+            })
+    };
+    let scenarios: Vec<serde_json::Value> = match scenario_repo::list_scenarios_for_project(
+        pool, project_id,
+    ) {
+        Ok(rows) => rows
+            .iter()
+            .filter_map(|s| {
+                slug_of_use_case(&s.use_case_id).map(|subject_slug| {
+                    json!({
+                        "subject_slug": subject_slug,
+                        "slug": s.slug,
+                        "title": s.title,
+                        "axes": s.axes,
+                        "scope": s.scope,
+                        // As DECLARED. `null` is what tells the skill's own
+                        // S5 to apply its default, and writing 0.5 here
+                        // would freeze today's default into every repo.
+                        "floor": s.floor,
+                    })
+                })
+            })
+            .collect(),
+        Err(e) => {
+            tracing::warn!(project = %project_id, error = %e, "council: could not read the scenarios to export");
+            Vec::new()
+        }
+    };
+
     let path = STATE_JSON
         .iter()
         .fold(root.to_path_buf(), |p, seg| p.join(seg));
@@ -451,7 +506,7 @@ fn export_state_json(pool: &personas_db::DbPool, root: &Path, project_id: &str) 
             return;
         }
     }
-    let body = json!({ "schema_version": 1, "subjects": subjects });
+    let body = json!({ "schema_version": 1, "subjects": subjects, "scenarios": scenarios });
     if let Err(e) = std::fs::write(&path, serde_json::to_vec_pretty(&body).unwrap_or_default()) {
         tracing::warn!(path = %path.display(), error = %e, "council: could not rewrite state.json");
     }
@@ -870,6 +925,66 @@ mod tests {
         assert_eq!(subjects[0]["decision"], "rejected");
         assert_eq!(subjects[0]["reason"], "the value case is not made");
         assert_eq!(subjects[0]["kind"], "use_case");
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// The half the `/council` skill actually reads: the DECLARED branches,
+    /// with their scopes and their floors as declared. A `proposed` one is
+    /// exported too - the first round is exactly when a branch nobody has
+    /// adopted still needs reporting on.
+    #[test]
+    fn state_json_exports_every_declared_scenario_with_its_subject() {
+        let (pool, project_id, subject_id, _run_id) = gate_ready();
+        let use_case_id = council_repo::get_subject(&pool, &subject_id)
+            .unwrap()
+            .unwrap()
+            .use_case_id
+            .unwrap();
+        scenario_repo::upsert_scenario(
+            &pool,
+            &crate::db::models::UpsertScenarioInput {
+                id: None,
+                use_case_id: use_case_id.clone(),
+                slug: None,
+                title: "Marketing candidates".into(),
+                axes: [("candidate_family".to_string(), "marketing".to_string())]
+                    .into_iter()
+                    .collect(),
+                scope: "must_hold".into(),
+                floor: None,
+            },
+            "marketing",
+        )
+        .unwrap();
+        scenario_repo::create_discovered_scenario(
+            &pool,
+            &use_case_id,
+            "hr",
+            "HR candidates",
+            &Default::default(),
+        )
+        .unwrap();
+
+        let tmp = tmp_root("state-scenarios");
+        export_state_json(&pool, &tmp, &project_id);
+        let path = STATE_JSON.iter().fold(tmp.clone(), |p, s| p.join(s));
+        let body: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+
+        let scenarios = body["scenarios"].as_array().unwrap();
+        assert_eq!(scenarios.len(), 2, "the proposal is exported too");
+        let marketing = scenarios.iter().find(|s| s["slug"] == "marketing").unwrap();
+        assert_eq!(marketing["subject_slug"], "checkout");
+        assert_eq!(marketing["scope"], "must_hold");
+        assert_eq!(
+            marketing["floor"],
+            serde_json::Value::Null,
+            "as DECLARED - writing 0.5 would freeze today's default into the repo"
+        );
+        assert_eq!(marketing["axes"]["candidate_family"], "marketing");
+        let hr = scenarios.iter().find(|s| s["slug"] == "hr").unwrap();
+        assert_eq!(hr["scope"], "proposed");
 
         let _ = std::fs::remove_dir_all(&tmp);
     }

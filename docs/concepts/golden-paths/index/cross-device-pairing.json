@@ -332,7 +332,7 @@
     "src/app/api/remote/**": {"count":1,"sections":[],"contexts":["`src/lib/remote/**` and `src/app/api/remote/**` contain zero `personas|ported|mirrors` hits. Its device"],"resolved":false,"isDir":true},
     "src/app/db/migrations/234_context_file_hashes.ts": {"count":1,"sections":[],"lines":["10"],"contexts":["`src/app/db/migrations/234_context_file_hashes.ts:10` share the sentence *\"Ports the Personas"],"resolved":false},
     "src/features/cloud/RemoteApprovalPrompt.tsx": {"count":1,"sections":[],"contexts":["`src/features/cloud/RemoteApprovalPrompt.tsx`, and the mobile PWA at"]},
-    "src/features/plugins/companion/sub_setup/BrowserBridgePanel.tsx": {
+    "src/features/companions/athena/sub_setup/BrowserBridgePanel.tsx": {
       "count": 1,
       "sections": [5],
       "lines": ["76-78"],

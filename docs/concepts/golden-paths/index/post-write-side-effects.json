@@ -81,6 +81,8 @@
     "docs/concepts/shared-facts.json": {"count":1,"sections":[],"contexts":["[`shared-facts.json`](../shared-facts.json), not re-derived); **two independent"],"resolvedFrom":"basename","verbatim":"shared-facts.json"},
     "documents.rs": {"count":1,"sections":[10],"lines":["389,555-558"],"contexts":["(`documents.rs:389,555-558`) — an outbox in effect, with no outbox table."],"resolved":false},
     "eventProcessor.ts": {"count":4,"sections":[5,10,11],"lines":["711","164-167,343-347","610-616"],"contexts":["`eventProcessor.ts:711` calls `dispatchMatch` from inside"],"resolved":false},
+    "features/overview/sub_director/useDirector.ts": {"count":1,"sections":[7],"lines":["146-158"],"contexts":["`features/overview/sub_director/useDirector.ts:146-158`: `setPersonaStarred`"],"resolved":false},
+    "features/plugins/companion/decision/useDecisionQueue.ts": {"count":1,"sections":[7],"lines":["314"],"contexts":["- `features/plugins/companion/decision/useDecisionQueue.ts:314` —"],"resolved":false},
     "governance.rs": {"count":1,"sections":[2],"lines":["216-222"],"contexts":["`governance.rs:216-222`, placed in the mutator \"so there is no way to change a"],"resolved":false},
     "http.rs": {
       "count": 1,
@@ -178,22 +180,6 @@
       "verbatim": "features/agents/components/matrix/useLifecycle.ts"
     },
     "src/features/agents/sub_model_config/components/ProviderCredentialField.tsx": {"count":1,"sections":[7],"lines":["37,39"],"contexts":["`ProviderCredentialField.tsx:37,39`, `LimitsSettings.tsx:42,43`,"],"resolvedFrom":"basename","verbatim":"ProviderCredentialField.tsx"},
-    "src/features/overview/sub_director/useDirector.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["146-158"],
-      "contexts": ["`features/overview/sub_director/useDirector.ts:146-158`: `setPersonaStarred`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/overview/sub_director/useDirector.ts"
-    },
-    "src/features/plugins/companion/decision/useDecisionQueue.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["314"],
-      "contexts": ["- `features/plugins/companion/decision/useDecisionQueue.ts:314` —"],
-      "resolvedFrom": "suffix",
-      "verbatim": "features/plugins/companion/decision/useDecisionQueue.ts"
-    },
     "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx": {
       "count": 1,
       "sections": [7],

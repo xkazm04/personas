@@ -623,6 +623,65 @@ The frontend-fed live-slot scheduler that used to sit in Fleet → Settings
 (`fleetLiveSlotsEnabled` / `fleet_set_live_slots`) is retired: the cap is the
 setting above and nothing else.
 
+### Remote sessions
+
+A fleet session this device sent to one of the operator's **paired devices**
+(the **Run on** picker, see [Sharing → Devices](sharing/README.md#devices-run-a-session-on-another-device))
+appears on the Activity board as a **remote tile**, keyed `remote:<jobId>`.
+
+**Where it sits.** The session runs over there, so it has no local `cwd` to
+map. What it carries instead is the project's git remote: when a local project
+shares it (protocol, credentials, `.git` and case do not count), the tile joins
+**that project's column**, under the same divider as the local sessions.
+Otherwise it lands in an **On <device>** column, one per device, after the
+others. With no remote sessions the board is exactly what it was: no extra
+column, no empty section. A filtered board carries none, like local sessions.
+
+**What the tile says.** The same node shell and state glyph as a local session,
+plus a **device chip** (the shared `Badge`) and one status line:
+
+- **Queued until <device> wakes**: the device was offline, and the job waits in
+  this device's outbox until the link comes back.
+- **Unknown**, dimmed, with **Last seen <ago>**: this device has not heard a
+  mirror frame for more than 45 s (three 15 s health ticks), or the link is
+  down. A quiet remote session never reads as running; the rule is re-applied
+  on this device's own clock every 15 s (`effectiveRemoteState`), not only when
+  an event arrives.
+- **Returned work** once the job is done: the branch, the short SHA, and
+  **Verified** (this device fetched the branch and found the commit), **Not
+  found after fetch**, or **Could not verify here** (no local checkout to look
+  in, which is not an error).
+
+**The drawer.** Clicking a remote tile opens it through the same drawer shell
+as a persona (`MonitorDrawerShell`): the state header, the returned work, a
+**read-only terminal mirror**, the steer row, and the job's progress notes.
+
+- The mirror subscribes to the session's output tail when the drawer opens and
+  unsubscribes when it closes. **Closing never cancels the session.** It is the
+  fleet terminal's own xterm look (`fleetTerminalOptions`), with input
+  disabled. The tail is lossy by design (a slow link never holds back the
+  remote terminal); a gap in the chunk sequence writes a dim **output skipped**
+  marker where it happened. Until the first chunk arrives, a calm ghost sits
+  under the terminal chrome.
+- The steer row has three verbs, each a button with its own spinner while the
+  other device acknowledges: **Send input** (one line), **Wake**, and **Kill**
+  (asks first). A refusal or an unreachable device is a toast in plain words
+  from the error registry. The row is off once the session has ended, and
+  while it is still queued.
+
+**On the device that runs it**, the session is an ordinary local tile; its
+origin symbol and tooltip read **From <device>**.
+
+Freshness: views arrive by push (`network:remote-session-updated`); the board
+reconciles on mount, on window focus and, only while a remote session is still
+live, on the shared 30 s dashboard cadence. A build without p2p polls nothing.
+
+For screenshots and hand checks while the backend commands are stubs, dev and
+test-automation builds expose a fixture once the Monitor has been opened:
+`window.__remoteSessionsFixture.seed()` seeds one paired device and three
+sessions (running, unknown, completed with a verified receipt), and `.clear()`
+hands the board back.
+
 ### Timeline
 
 The read-only cross-team log (formerly Channels → Timeline): virtualized
@@ -671,6 +730,9 @@ stays mounted). It has three switchable sections:
 - **Messages** — unread messages for the persona, each with mark-as-read.
 - **Activity** — the persona's live processes; execution rows expand into a
   reasoning trace, and rows with a navigation target jump to that screen.
+
+A remote tile opens a different drawer in the same shell; see
+[Remote sessions](#remote-sessions).
 
 ## Relationship to Overview → Approvals
 

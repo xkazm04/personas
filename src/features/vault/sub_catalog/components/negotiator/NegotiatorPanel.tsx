@@ -116,7 +116,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
               <Bot className="w-4 h-4 text-violet-400" />
             </div>
             <div>
-              <h3 className="typo-heading font-bold tracking-tight text-foreground">{negx.panel_title}</h3>
+              <h3 className="typo-heading text-foreground">{negx.panel_title}</h3>
               <p className="typo-body text-foreground">{phaseSubtitle}</p>
             </div>
           </div>

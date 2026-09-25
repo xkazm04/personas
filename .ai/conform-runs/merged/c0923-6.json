@@ -1,0 +1,192 @@
+{
+  "worker": "c0923-6",
+  "evaluatedAt": "2026-09-23",
+  "pairs": [
+    {"context":"d5c5e7fe-6353-41eb-800b-dc11adee0775","subject":"multi-project","bundle":"software-engineering","state":"deviation",
+     "evidence":"src-tauri/src/engine/project_tracking/scheduler.rs:198 a blind tick now holds last_pulse_at, but the only record is a warn log; the subscription (subscription.rs:31) has no unwatched-since or reason field, so a blind project still renders exactly like a quiet one on every surface",
+     "techniques":[
+      {"technique":"passive-signal-ingestion","verdict":"deviation","evidence":"src-tauri/src/engine/project_tracking/scheduler.rs:198 the cursor gate is fixed (scheduler.rs:193 stamps only when every watcher read), but could-not-observe is never stored as project state; obsidian.rs:68 also turns a failed directory scan into Ok and 'skipping', so an unreadable vault still reads as quiet and still advances the stamp"},
+      {"technique":"project-identity-and-joins","verdict":"unread","evidence":"src-tauri/src/engine/project_tracking/subscription.rs:45 subscriptions join on the minted id; whether companion_known_project and dev_projects are two registries was not judged"},
+      {"technique":"portfolio-drill-hierarchy","verdict":"unread","evidence":"src-tauri/src/engine/project_tracking/scheduler.rs:193 engine-side context; no wall surface here"}
+     ]},
+    {"context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049","subject":"multi-project","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:115 the wall now has attention and pulse columns, but gets them by fetching a 200-row idea page per project and folding at view time (foldPulse :77) - no stored summary row, no named recompute, and a second 'pulse' that ignores the engine's pulse digest",
+     "techniques":[
+      {"technique":"portfolio-drill-hierarchy","verdict":"deviation","evidence":"src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:115 the wall reads detail-grade rows (N x 200 ideas) and derives its rollup per render instead of a summary row maintained by ingestion, so wall cost grows with N x depth"},
+      {"technique":"passive-signal-ingestion","verdict":"deviation","evidence":"src/features/plugins/dev-tools/sub_projects/useProjectPulse.ts:13 PULSE is defined as time since anything was raised in the ideas backlog, bypassing the project-tracking pulse digest; the two surfaces can disagree and a blind watcher cannot show as broken on the wall"},
+      {"technique":"project-identity-and-joins","verdict":"conformant","evidence":"src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx:365 the attention sort and cells join pulses by project.id, not by name"},
+      {"technique":"cross-project-comparison","verdict":"unread","evidence":"src/features/plugins/dev-tools/sub_projects/ProjectPulseCells.tsx:26 unmeasured renders as a dash, never 0; anchor policy and dimensions not judged"}
+     ]},
+    {"context":"7741725e-8124-4899-b17e-8e39e7fcf1ed","subject":"multi-project","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/studio/studioBuildModel.ts:86 a tab awaiting a question pulses indefinitely (animate-pulse), breaking the per-project-tabs rule that a steady state never animates in the always-visible strip; the rest of the technique is realized",
+     "techniques":[
+      {"technique":"per-project-tabs-and-state","verdict":"deviation","evidence":"src/features/studio/studioBuildModel.ts:86 steady-state animation on the peripheral strip; studioStore.ts:583 also drops a persisted tab whose project was deleted silently. Realized: identity-keyed persisted set (studioHistory.ts:44), narrow strip subscription (StudioTabBar.tsx:33), workbench close as named reaper (studioStore.ts:610), re-attach on restore (studioStore.ts:585), bounded view state (studioHistory.ts:85)"},
+      {"technique":"project-identity-and-joins","verdict":"conformant","evidence":"src/features/studio/studioHistory.ts:34 per-project history is keyed by project id, not name or path"}
+     ]},
+    {"context":"cc76d419-f457-4fe4-833c-6869efbc9287","subject":"motion","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/hooks/utility/interaction/useMotion.ts:153 the reduced clone collapses every transition to exact duration 0 (and :133 strips delay), so timing-load-bearing invisibility windows vanish and zero-duration completion events may never fire for code awaiting an exit",
+     "techniques":[
+      {"technique":"reduced-motion-mechanics","verdict":"deviation","evidence":"src/hooks/utility/interaction/useMotion.ts:153 out.duration = 0 breaks epsilon-never-zero, and :133 drops delay from every reduced transition; the composite signal itself is resolved correctly at :49 (OS query OR in-app data-motion toggle)"},
+      {"technique":"content-bearing-degradation","verdict":"conformant","evidence":"src/hooks/utility/interaction/useProgressiveReveal.ts:89 under reduced motion revealAll hands every row to the renderer at once, so the resolved end state arrives immediately"},
+      {"technique":"preset-vocabulary","verdict":"unread","evidence":""},
+      {"technique":"performance-discipline","verdict":"unread","evidence":""}
+     ]},
+    {"context":"ef4a1671-8bf4-44b2-9ae9-cb2533b780a6","subject":"motion","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/lib/utils/rafAnimationEngine.ts:71 the shared spring engine reads reduced motion from the OS media query alone, ignoring the in-app Reduce Motion toggle that useMotion.ts:49 merges in, so a user who enables it in app settings still gets full spring travel on every scripted counter",
+     "techniques":[
+      {"technique":"reduced-motion-mechanics","verdict":"deviation","evidence":"src/lib/utils/rafAnimationEngine.ts:71 a second, OS-only resolver breaks the one-resolver-reads-the-composite-signal rule; per-tick liveness is realized at :92"},
+      {"technique":"performance-discipline","verdict":"conformant","evidence":"src/lib/utils/rafAnimationEngine.ts:135 one shared rAF loop writes each frame value straight to the element via entry.write, bypassing React state"},
+      {"technique":"content-bearing-degradation","verdict":"conformant","evidence":"src/lib/utils/rafAnimationEngine.ts:193 under reduced motion a new target is snapped, so the counter shows its resolved figure immediately"},
+      {"technique":"preset-vocabulary","verdict":"unread","evidence":""}
+     ]},
+    {"context":"36783fec-01fa-40d5-8620-cf65ae691d27","subject":"motion","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 inlines an off-ladder 1.1s duration (ladder is 50/150/250/400ms) and :40 an unnamed 320/22 call-site spring; the motifs are per-component keyframes with no preset, no declared bespoke exception and no reduced fallback",
+     "techniques":[
+      {"technique":"preset-vocabulary","verdict":"deviation","evidence":"src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:40 stiffness 320 / damping 22 is a nudged copy of MOTION.spring.snappy (300/25), repeated in sibling motifs as 320/18, 240/16, 300/18; the duration at :32 is inlined rather than a ladder class"},
+      {"technique":"reduced-motion-mechanics","verdict":"deviation","evidence":"src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:30 animates pathLength, outside the property set App.tsx:375 MotionConfig reducedMotion=user reduces; with no per-gesture fallback the waveform draw plays at full length for reduced-motion users"},
+      {"technique":"taste-budgets","verdict":"unread","evidence":""}
+     ]},
+    {"context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573","subject":"client-state","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:216 every scans (re)load sets 'loading' before the await, so failStatus at :236 sees 'loading' and returns 'failed', never 'stale': a failed background reload over held data flips the family to failed (every Ideas cell renders 'data unavailable'), and the error goes only to silentCatch (:234)",
+     "techniques":[
+      {"technique":"status-fsms","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:216 unconditional 'loading' makes the loaded->stale branch unreachable from every loader (same shape :202/:210); the error is dropped at :234, so stale/failed carry no evidence"},
+      {"technique":"async-race-guards","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:284 a single-project goals refresh mints the FAMILY token, making an in-flight fleet-wide goals fan-out inert mid-way (:293), and :288 narrows lastGoalProjectIds to that slug for later retries; per-family tokens (:164), in-flight registry (:178) and keyed scan slots (:184) are otherwise sound"},
+      {"technique":"invalidation-strategy","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:261 a failed scoped invalidation is logged and nothing marks that project's entry suspect, so an entry an event just declared changed keeps rendering as current"},
+      {"technique":"persistence-and-migration","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/layoutStore.ts:196 an unparseable DB doc returns null silently and falls into the first-run/legacy branch, so a corrupt layout resets with no diagnostic and the next flush overwrites it; FIXED since last reading: a newer-build doc is preserved (:204) and never written back (:243)"},
+      {"technique":"singleton-lifecycle","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/layoutStore.ts:104 module-scope flush timer with no generation guard, so a superseded copy's pending timer (:261) still writes the shared settings row; sceneStore's module state has no reset hatch (dev-only impact)"},
+      {"technique":"store-slicing","verdict":"conformant","evidence":"src/features/teams/sub_mastermind/MastermindPage.tsx:145 per-field selectors; every write goes through the store's named operations"},
+      {"technique":"optimistic-write-path","verdict":"not-applicable","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:19 the store imports only read endpoints; it performs no mutations"},
+      {"technique":"rehydration-narrowing","verdict":"unread","evidence":""},
+      {"technique":"identity-scoped-eviction","verdict":"unread","evidence":""},
+      {"technique":"observed-read-subscription","verdict":"unread","evidence":""},
+      {"technique":"effect-identity-and-latched-callbacks","verdict":"unread","evidence":""},
+      {"technique":"store-dependency-topology","verdict":"unread","evidence":""}
+     ]},
+    {"context":"ade5a251-866a-4352-9a03-012d78fe9b74","subject":"client-state","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:64 pins failStatus('loading') -> 'failed' in isolation and no case drives a store reload that fails with data held, so the transition every real refresh takes is asserted as design and never witnessed at the store level",
+     "techniques":[
+      {"technique":"status-fsms","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:64 asserts the loading->failed mapping that makes loaded->stale unreachable through the loaders; no test covers a failed reload with held data or evidence carried on stale/failed"},
+      {"technique":"async-race-guards","verdict":"conformant","evidence":"src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:102 superseded load is inert; :127 N mounts share one IPC; :144 settled flight clears; :155 scoped refresh inert after full reload; :174/:192 same-project supersede, distinct projects never cancel; :211 failure does not wedge the slot"},
+      {"technique":"persistence-and-migration","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/__tests__/layoutStore.test.ts:93 asserts a corrupted doc reads as an empty layout and checks no diagnostic, cementing reset-indistinguishable-from-first-run; future-version preserve witnessed at :155, legacy migration at :100"},
+      {"technique":"singleton-lifecycle","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:1 no beforeEach and no store reset, so every case inherits the previous case's scans map, throttle clocks and token counters (layoutStore tests do reset at layoutStore.test.ts:60)"},
+      {"technique":"invalidation-strategy","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:211 witnesses that a failed scoped refresh keeps the cached row, and nothing asserts the entry is marked suspect"},
+      {"technique":"store-slicing","verdict":"unread","evidence":""},
+      {"technique":"optimistic-write-path","verdict":"unread","evidence":""},
+      {"technique":"rehydration-narrowing","verdict":"unread","evidence":""},
+      {"technique":"identity-scoped-eviction","verdict":"unread","evidence":""},
+      {"technique":"observed-read-subscription","verdict":"unread","evidence":""},
+      {"technique":"effect-identity-and-latched-callbacks","verdict":"unread","evidence":""},
+      {"technique":"store-dependency-topology","verdict":"unread","evidence":""}
+     ]},
+    {"context":"0aded02d-f5c5-4e24-8366-90783fb343b1","subject":"client-state","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/stores/storeTypes.ts:193 one scalar isLoading (plus one error) is shared by every family in the composed agent store and written by both fetchPersonas (personaSlice.ts:208) and fetchDetail (:302), so whichever settles first clears the busy state while the other is still in flight",
+     "techniques":[
+      {"technique":"status-fsms","verdict":"deviation","evidence":"src/stores/storeTypes.ts:193 a single isLoading/error pair for the whole agent store instead of an enumerated status per operation family; personaSlice.ts:208 and :302 both toggle it"},
+      {"technique":"async-race-guards","verdict":"deviation","evidence":"src/stores/slices/agents/personaSlice.ts:210 fetchPersonas writes listPersonas' answer with no latest-wins token, so overlapping loads land in arrival order; the slice hand-rolls counters (:107) beside the shared authority (latestWins.ts:31, inFlight.ts:36, whose settle-both-paths cleanup is correct)"},
+      {"technique":"persistence-and-migration","verdict":"deviation","evidence":"src/stores/agentStore.ts:49 identity migrate: zustand routes a FUTURE version through migrate then setItem, so a rollback re-saves a newer build's payload as version 1 with only the partialized keys; allowlist (:41), version-in-payload (:46) and fail-soft deduped write (dedupedStorage.ts:56) are realized"},
+      {"technique":"rehydration-narrowing","verdict":"deviation","evidence":"src/stores/agentStore.ts:59 chatMode is validated against a hand-written literal list while ChatMode is a type-only union (chatSlice.ts:36), so a mode added to the vocabulary resets to default on every rehydration"},
+      {"technique":"store-slicing","verdict":"conformant","evidence":"src/stores/agentStore.ts:26 one store composed of domain slices; derivation in selectors with hoisted fallbacks (personaSelectors.ts:21)"},
+      {"technique":"singleton-lifecycle","verdict":"conformant","evidence":"src/stores/util/dedupedStorage.ts:20 the module-scope dedupe cache ships a reset hatch"},
+      {"technique":"optimistic-write-path","verdict":"unread","evidence":""},
+      {"technique":"invalidation-strategy","verdict":"unread","evidence":""},
+      {"technique":"identity-scoped-eviction","verdict":"unread","evidence":""},
+      {"technique":"observed-read-subscription","verdict":"unread","evidence":""},
+      {"technique":"effect-identity-and-latched-callbacks","verdict":"unread","evidence":""},
+      {"technique":"store-dependency-topology","verdict":"unread","evidence":""}
+     ]},
+    {"context":"ef73ca1c-fc54-4b9c-83ec-390c54929192","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:107 getSevCfg still falls an unrecognized severity through to the Info config with no marker (and has no 'error' key), and it drives the pending-filter focus view where reviews are actually decided, so an unreadable or 'error' severity is still spelled as the mildest bucket in a queue Night Shift resolves unattended",
+     "techniques":[
+      {"technique":"fail-loud-classification-default","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:107 falls through to SEVERITY_CONFIG.info with no marker; same quiet default at reviewFocusHelpers.tsx:143 (sevDot) and ReviewFocusFlow.tsx:46 (badge colour). PARTLY FIXED: list row and detail panel now use resolveReviewSeverity (reviewHelpers.ts:39 -> 'Unclassified' + defaulted marker, rendered at ReviewListItem.tsx:11)"},
+      {"technique":"review-queues","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/BulkActionBar.tsx:74 'Approve all' is offered over a select-all of every pending review (ManualReviewList.tsx:190 selects all selectablePendingIds regardless of kind or severity) - the heterogeneous sweep the technique says must be absent. Single-item write is realized: ManualReviewList.tsx:223 awaits resolveReviewRow and the catch at :228 toasts and re-reads"}
+     ]},
+    {"context":"3f38546e-e970-4837-97f7-f0504aa32daf","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/companions/athena/decision/useDecisionQueue.ts:179 the incident 'dismiss' option swallows a failed companionDismissProactive without rethrowing, so runDecisionOption records decision_resolved and clears the bubble while the row stays pending and resurfaces on the next pump with no error shown - a failed decision write spelled as a decision",
+     "techniques":[
+      {"technique":"review-queues","verdict":"deviation","evidence":"src/features/companions/athena/decision/useDecisionQueue.ts:179 incident dismiss swallows its write failure (same shape on the message dismiss and credential 'later' arms), defeating resolveDecision.ts:49 which keeps a decision pending only when run() throws; approve/reject arms do rethrow (useDecisionQueue.ts:101)"},
+      {"technique":"fail-loud-classification-default","verdict":"conformant","evidence":"src/features/companions/athena/decision/actionRisk.ts:157 an action absent from the tables resolves to 'elevated', never low; isClassified keeps weighed distinguishable from fell-through and a drift test gates it"}
+     ]},
+    {"context":"c4a2fa9d-1b41-4141-894b-c90663aa0433","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+     "evidence":"src-tauri/src/commands/credentials/auto_cred_browser.rs:564 the guided (human-performed) credential flow is run live by a Claude CLI session that asks the user to copy each secret field value to it and returns them as JSON, so the runbook is model-run at execution time and the credential passes through inference",
+     "techniques":[
+      {"technique":"human-performed-steps","verdict":"deviation","evidence":"src-tauri/src/commands/credentials/auto_cred_browser.rs:564 model-run guided runbook collects secret values through inference; still not resumable mid-step: AutoCredPanel.tsx:80 kills the session on unmount and useAutoCredSession.ts:59 keeps nothing from an interrupted browser/guided phase, so navigating away restarts from consent. PARTLY FIXED: settled post-browser phases (review/error) now survive an unmount via a TTL'd resume cache (commit d3f96ce849)"},
+      {"technique":"decision-records","verdict":"deviation","evidence":"src/features/vault/sub_catalog/components/autoCred/helpers/useAutoCredSession.ts:181 the resume record's consentedAt is stamped Date.now() on every cache write, so the only record of consent carries the last-write time, not when consent was given"}
+     ]},
+    {"context":"e0a448bc-24d4-4663-ba31-27d4ce378a14","subject":"deployment-contract","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the 'deployment smoke test' still runs executePersona (the local execute_persona invoke), not the deployed endpoint the card advertises (DeploymentCard.tsx:44), so the pass/fail a user sees describes the local system, not the deployment",
+     "techniques":[
+      {"technique":"environment-promotion","verdict":"deviation","evidence":"src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the proof obligation never probes the environment's address (DeploymentCard.tsx:44 /api/deployed/<slug>), so a green result is a verdict about a different system"}
+     ]},
+    {"context":"cd8712a3-9546-4c21-895b-9e64a4b161b1","subject":"deployment-contract","bundle":"software-engineering","state":"not-applicable",
+     "evidence":"src-tauri/src/engine/platforms/deploy.rs:22 the only deploy in this context ships a persona's design_result JSON plus a credential to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject's precondition fails (the old model-tier finding is also fixed: fanout.rs:133 reads session_prompt::MODEL_TIER_RULE)",
+     "techniques":[
+      {"technique":"platform-build-parity","verdict":"not-applicable","evidence":"src-tauri/src/engine/platforms/deploy.rs:25 the deploy input is a design_result Value, not a build of this repository, so no hosted builder exists to hold parity with"}
+     ],
+     "registryProposal":"deployment-contract's 'when not to use' should name persona-automation export and LLM build sessions, which the matcher pairs on deploy/build vocabulary but are not repository deploys."},
+    {"context":"1ff7809a-171b-4baa-9c9b-12d888b017f0","subject":"draft-editing","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:210 clearAll() empties the stored dirty map without reverting the draft to baseline, so after a guard Discard (EditorBody.tsx:94) the aggregate reads clean while the buffer still holds the edits and the next patch's debounce autosaves them",
+     "techniques":[
+      {"technique":"dirty-tracking","verdict":"deviation","evidence":"src/features/agents/sub_editor/libs/EditorDocument.tsx:210 the aggregate is a stored per-tab map clearable independently of the derivation at useEditorSave.ts:108; the two answers disagree right after a discard"},
+      {"technique":"draft-model","verdict":"deviation","evidence":"src/features/agents/sub_editor/components/EditorBody.tsx:94 Discard only clears dirty flags; nothing reconstructs the draft from baseline. The patch door is realized at useEditorDraft.ts:30"},
+      {"technique":"debounced-save-groups","verdict":"conformant","evidence":"src/features/agents/sub_editor/libs/useDebouncedSaveGroup.ts:44 per-group saves serialize in-flight overlap and re-save when the live draft moved during the await"},
+      {"technique":"field-defaults-and-bounds","verdict":"conformant","evidence":"src/features/agents/sub_editor/libs/PersonaDraft.ts:51 timeout clamped to named MIN/MAX bounds inside clampDraftPatch at the patch door"},
+      {"technique":"navigation-guards","verdict":"deviation","evidence":"src/features/agents/sub_editor/components/EditorBody.tsx:87 the guard reads the stored aggregate isDirty, so after clearAll it does not see work still derived-dirty in the draft"},
+      {"technique":"completeness-derivation","verdict":"unread","evidence":""}
+     ]},
+    {"context":"2a54cdc2-87af-4298-b490-9eb87f230df7","subject":"draft-editing","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/templates/sub_generated/generation/mergeDraftIntoDesignResult.ts:60 draft.description || base.summary collapses 'cleared' into 'never set', so a description the user clears in Review (DraftEditStep.tsx:146 writes null) is silently replaced by the generator's summary in the saved template (the system prompt at :59 behaves the same)",
+     "techniques":[
+      {"technique":"draft-model","verdict":"deviation","evidence":"src/features/templates/sub_generated/generation/mergeDraftIntoDesignResult.ts:60 the apply step cannot express 'clear this field'. FIXED: the old whole-payload choice is gone - useCreateTemplateActions.ts:94 now merges the draft (commit 9e0beeaf1)"},
+      {"technique":"completeness-derivation","verdict":"conformant","evidence":"src/features/templates/draft-editor/DraftEditStep.tsx:78 readiness is derived on demand from the draft as a named-requirement list and reported up to gate Save"},
+      {"technique":"dirty-tracking","verdict":"unread","evidence":""},
+      {"technique":"navigation-guards","verdict":"unread","evidence":""},
+      {"technique":"debounced-save-groups","verdict":"unread","evidence":""},
+      {"technique":"field-defaults-and-bounds","verdict":"unread","evidence":""}
+     ]},
+    {"context":"03960450-6979-4412-9de3-35c897fe56d2","subject":"diff-comparison","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 a failed off-thread JSON diff sets the result to [] and the header then reads 'identical' (:191) and the body 'no differences' (:200); the output diff's catch (:75-78) likewise ends in 'no log data'",
+     "techniques":[
+      {"technique":"diff-honesty","verdict":"deviation","evidence":"src/features/agents/sub_executions/components/list/ComparisonDiff.tsx:169 failure collapses into an empty diff rendered as identical; :41 also compares only the first LOG_PAGE_SIZE=500 lines per side with no truncation marker"},
+      {"technique":"semantic-level-selection","verdict":"deviation","evidence":"src/features/agents/sub_executions/libs/comparisonDiffCore.ts:84 jsonDiff stringifies each top-level value whole and defaults absent keys to null; diffLines (:54) is Set membership, so a line removed from a duplicated pair reads as unchanged"},
+      {"technique":"computation-offload","verdict":"conformant","evidence":"src/features/agents/sub_executions/libs/comparisonDiffWorkerClient.ts:224 cancel-by-request-id on cleanup, bounded LRU (:43), synchronous fallback (:197), distinct error message shape"},
+      {"technique":"pair-and-baseline-selection","verdict":"deviation","evidence":"src/features/agents/sub_executions/components/list/ExecutionComparison.tsx:64 sides are labelled positionally (Left/Right), not by role, so the direction of every +/- depends on click order"},
+      {"technique":"presentation-modes","verdict":"unread","evidence":""},
+      {"technique":"drift-against-declared","verdict":"unread","evidence":""},
+      {"technique":"invisible-differences","verdict":"unread","evidence":""},
+      {"technique":"baseline-species-degradation","verdict":"unread","evidence":""}
+     ]},
+    {"context":"fd092e44-fcec-4418-8337-ed2b7b2c8473","subject":"diff-comparison","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 the per-run marker renders only when added or removed > 0, so 'compared, no change', 'baseline off the window edge' and 'fetch failed' (useRunDiffSummaries.ts:91, swallowed) all render as the same silence; the old id-alignment defect is FIXED (memoryDiff.ts:53 aligns on content)",
+     "techniques":[
+      {"technique":"diff-honesty","verdict":"deviation","evidence":"src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts:91 a failed summary fetch is swallowed and markers stay absent, indistinguishable from no change; the run-diff panel itself spells failure with a retry (RunDiffView.tsx:112)"},
+      {"technique":"presentation-modes","verdict":"deviation","evidence":"src/features/teams/sub_teamMemory/components/timeline/TimelineControls.tsx:60 zero is not rendered as a claim: 0/0, not-computed and failed all show nothing"},
+      {"technique":"computation-offload","verdict":"deviation","evidence":"src/features/teams/sub_teamMemory/components/diff/RunDiffView.tsx:61 the answer is not stored with the pair it answers; the clear runs after the new pair is painted, so the previous pair's diff shows under the new header for at least a frame"},
+      {"technique":"pair-and-baseline-selection","verdict":"conformant","evidence":"src/features/teams/sub_teamMemory/components/diff/DiffHeader.tsx:87 sides named by role (Base run / Compare run), self-comparison guard at RunDiffView.tsx:47"},
+      {"technique":"semantic-level-selection","verdict":"conformant","evidence":"src/features/teams/sub_teamMemory/libs/memoryDiff.ts:53 aligns on a derived content key as a multiset (:58), the honest level for run-scoped rows whose ids never survive the pair"},
+      {"technique":"drift-against-declared","verdict":"not-applicable","evidence":"src/features/teams/sub_teamMemory/components/diff/DiffHeader.tsx:87 both sides are past runs picked by the reader; there is no declared expectation"},
+      {"technique":"invisible-differences","verdict":"unread","evidence":""},
+      {"technique":"baseline-species-degradation","verdict":"unread","evidence":""}
+     ]},
+    {"context":"8cfb82ac-ebd6-4826-921d-d1399dba7a60","subject":"triage-queues","bundle":"software-engineering","state":"conformant",
+     "evidence":"src/features/agents/quick-answer/triage/triageTypes.ts:377 the comparator now ends in an identity tiebreak, so the order is total and a 30s poll can no longer reorder equal-weight, equal-timestamp cards under the reviewer; the rest of the subject is realized",
+     "techniques":[
+      {"technique":"queue-ordering-and-identity","verdict":"conformant","evidence":"src/features/agents/quick-answer/triage/triageTypes.ts:377 identity tiebreak makes compareOrder total; triageQueue.ts:171 the cursor is an item id resolved by findIndex, falling back to the front when it no longer projects"},
+      {"technique":"source-normalization","verdict":"conformant","evidence":"src/features/agents/quick-answer/triage/useUnifiedTriage.ts:398 per-source failure state alongside capped sources; TriageDeckVariant.tsx:266 an empty deck with a failed source renders DeckFailed, never the cleared ending"},
+      {"technique":"verdict-writeback","verdict":"conformant","evidence":"src/features/agents/quick-answer/triage/useUnifiedTriage.ts:1127 a failed write restores the item and puts the cursor back on it; triageDispatch.ts:140 routeDecision enforces defer-or-write-or-throw, lost compare-and-swaps reported as conflicts"},
+      {"technique":"focus-mode","verdict":"conformant","evidence":"src/features/agents/quick-answer/triage/triageQueue.ts:42 skip is bounded (MAX_SKIP_PASSES) and stands down into a visible deferred count; triageQueue.ts:177 progress denominator is decided + still-pending; deck/useDeckControls.tsx:300 the in-flight lock carries a watchdog"},
+      {"technique":"bulk-triage","verdict":"not-applicable","evidence":"src/features/agents/quick-answer/triage/triageDispatch.ts:140 routeDecision takes one decision; the deck offers no multi-select verdict (its accepted-ideas selection dispatches work after the verdict)"},
+      {"technique":"queue-lifecycle","verdict":"unread","evidence":""}
+     ]},
+    {"context":"ef73ca1c-fc54-4b9c-83ec-390c54929192","subject":"triage-queues","bundle":"software-engineering","state":"deviation",
+     "evidence":"src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:96 the pending focus view tracks the reviewer's place as an integer index into an array that polling replaces (cloud reviews poll, ManualReviewList.tsx:128), ordered newest-first with no severity tier or identity tiebreak (ManualReviewList.tsx:137), so an arrival or removal above the cursor silently swaps the review under the reviewer",
+     "techniques":[
+      {"technique":"queue-ordering-and-identity","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:96 current = pending[reviewIdx], an index cursor (state at :74); ManualReviewList.tsx:137 sorts newest-first by created_at only, a stack with no total order"},
+      {"technique":"source-normalization","verdict":"deviation","evidence":"src/stores/slices/overview/overviewSlice.ts:515 a failed cloud-review fetch is logged and set to an empty list, so the merged queue shows zero cloud reviews rather than a failed source. FIXED since the last verdict: a failed local fetch now renders an error banner, not the empty hero (ManualReviewList.tsx:171 resolveReviewQueueView, commit e6ab3149bf)"},
+      {"technique":"verdict-writeback","verdict":"conformant","evidence":"src/features/overview/sub_manual-review/components/ManualReviewList.tsx:223 awaits the owner write through the one door before advancing; the catch at :228 toasts and re-reads"},
+      {"technique":"bulk-triage","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/BulkActionBar.tsx:74 bulk-approve sits beside bulk-reject with identical one-step friction, and the confirm at :35 states a bare count with no predicate; partial failure is reported as a count only"},
+      {"technique":"focus-mode","verdict":"unread","evidence":""},
+      {"technique":"queue-lifecycle","verdict":"unread","evidence":""}
+     ]}
+  ],
+  "declined": []
+}

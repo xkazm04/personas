@@ -2151,7 +2151,14 @@
     "header_subtitle_editing": "正在编辑 {name}",
     "header_subtitle_new": "从零开始创建新的智能体",
     "header_title": "构建",
-    "new_agent": "新智能体"
+    "new_agent": "新智能体",
+    "promote_receipt_connect": "打开连接器",
+    "promote_receipt_connectors": "仍需连接：{names}",
+    "promote_receipt_failed_title": "升级未成功",
+    "promote_receipt_later": "稍后",
+    "promote_receipt_needs_setup_title": "已升级，但运行前还需要完成设置",
+    "promote_receipt_retry": "重试升级",
+    "promote_receipt_unverified": "首次检查运行未能产生价值。在依赖它之前，请检查其连接器。"
   },
   "matrix_tab": {
     "loading": "正在加载矩阵",
@@ -2708,7 +2715,7 @@
     "all_saved": "所有更改已保存",
     "changed": "{sections} 已更改",
     "cli_awareness": "Claude CLI 会话感知",
-    "cli_awareness_desc": "允许此人格读取您当前活跃的交互式 Claude CLI 会话中的最近对话，作为附加上下文。还需要伴侣 → 设置 → 感官信号中的全局开关同时开启。只读——系统不会修改您的 CLI 会话。",
+    "cli_awareness_desc": "允许此人格读取您当前活跃的交互式 Claude CLI 会话中的最近对话，作为附加上下文。还需要 Athena → 设置 → 感官信号中的全局开关同时开启。只读——系统不会修改您的 CLI 会话。",
     "execution": "执行",
     "execution_retention": "执行记录保留",
     "failed_health_watch": "更新健康监控设置失败",
@@ -3275,5 +3282,16 @@
     "parse": "解析",
     "paste_json": "或直接粘贴 JSON",
     "paste_placeholder": "在此粘贴工作流 JSON…"
+  },
+  "promote_preview": {
+    "blocked_tooltip": "提升将被拒绝：{reason}",
+    "heading": "提升将执行的操作",
+    "needs_setup": "需要先设置：{connectors}",
+    "refused": "提升将拒绝此草稿",
+    "refused_hint": "请优化草稿以修复此问题，然后再提升。",
+    "repaired": "已由构建调整",
+    "runs_manual": "在你启动时运行",
+    "runs_next": "{type} 触发器，下次运行 {time}",
+    "runs_on_event": "{type} 触发器，触发时运行"
   }
 }

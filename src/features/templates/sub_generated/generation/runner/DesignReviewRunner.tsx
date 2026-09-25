@@ -58,7 +58,7 @@ export default function DesignReviewRunner({
                 <Play className="w-4 h-4 text-violet-400" />
               </div>
               <div>
-                <h3 id="design-runner-title" className="typo-heading font-semibold text-foreground/90">{t.templates.generation.runner_title}</h3>
+                <h3 id="design-runner-title" className="typo-heading text-foreground/90">{t.templates.generation.runner_title}</h3>
                 <p className="typo-body text-foreground">
                   {isRunning ? t.templates.generation.runner_running : result ? t.templates.generation.runner_complete : t.templates.generation.runner_configure}
                 </p>
@@ -82,7 +82,7 @@ export default function DesignReviewRunner({
                     <span className="typo-body">AI</span>
                   </div>
                   <div className="min-w-0">
-                    <p className="typo-body font-medium text-foreground/90 truncate">{personaName}</p>
+                    <p className="typo-body text-foreground/90 truncate">{personaName}</p>
                     {personaDescription && <p className="typo-body text-foreground truncate">{personaDescription}</p>}
                   </div>
                 </>
@@ -130,7 +130,7 @@ export default function DesignReviewRunner({
           {isRunning && state.progressInfo && (
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="typo-body font-medium text-foreground">
+                <span className="typo-body text-foreground">
                   {t.templates.generation.template_progress.replace('{current}', String(state.progressInfo.current)).replace('{total}', String(state.progressInfo.total))}
                   <span className="text-foreground ml-1.5">-- {state.progressInfo.pct}%</span>
                 </span>

@@ -58,7 +58,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
     <div className="rounded-card border border-primary/15 bg-secondary/20 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Stethoscope className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-        <h3 className="typo-overline text-foreground">{t.overview.incidents.noc_diagnosis_title}</h3>
+        <h3 className="typo-eyebrow text-foreground">{t.overview.incidents.noc_diagnosis_title}</h3>
         {diagnosis && (
           <AthenaComposedBadge
             variant="diagnosed"
@@ -85,7 +85,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
 
           {diagnosis.evidence.length > 0 && (
             <div>
-              <h4 className="typo-overline text-foreground mb-1">
+              <h4 className="typo-eyebrow text-foreground mb-1">
                 {t.overview.incidents.noc_evidence_label}
               </h4>
               <ul className="flex flex-col gap-1">
@@ -102,7 +102,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
             <div className="flex items-start gap-2 rounded-card border border-primary/10 bg-primary/5 px-3 py-2">
               <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
               <div className="min-w-0 flex flex-col gap-1">
-                <span className="typo-overline text-foreground">
+                <span className="typo-eyebrow text-foreground">
                   {t.overview.incidents.noc_proposed_label}
                 </span>
                 {diagnosis.proposedRationale && (

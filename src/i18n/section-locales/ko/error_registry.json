@@ -164,5 +164,13 @@
   "zapier_message": "Zapier webhook에 연결할 수 없습니다.",
   "zapier_suggestion": "Zapier 통합 설정에서 webhook URL을 확인하세요.",
   "oauth_account_mismatch_message": "이 자격 증명에 연결된 계정이 아닌 다른 계정으로 로그인했습니다.",
-  "oauth_account_mismatch_suggestion": "자격 증명에 표시된 계정으로 로그인하거나, 다른 계정용 자격 증명을 새로 추가하세요."
+  "oauth_account_mismatch_suggestion": "자격 증명에 표시된 계정으로 로그인하거나, 다른 계정용 자격 증명을 새로 추가하세요.",
+  "project_not_found_message": "해당 프로젝트가 다른 기기에 없습니다.",
+  "project_not_found_suggestion": "같은 git 원격 저장소로 그 기기에 프로젝트를 클론하거나 등록한 다음 다시 보내세요.",
+  "remote_command_refused_message": "다른 기기가 해당 명령을 거부했습니다.",
+  "remote_command_refused_suggestion": "세션이 그쪽에서 이미 종료되었을 수 있습니다. Monitor를 새로고침한 후 다시 시도하세요.",
+  "remote_dispatch_failed_message": "세션을 다른 기기로 보낼 수 없었습니다.",
+  "remote_dispatch_failed_suggestion": "기기가 아직 페어링되어 있는지 확인한 후 다시 시도하거나, 이 기기에서 실행하세요.",
+  "remote_peer_offline_message": "다른 기기에 지금은 연결할 수 없습니다.",
+  "remote_peer_offline_suggestion": "그 기기에서 Personas을 열고 두 기기가 같은 네트워크에 있는지 확인하세요. 디스패치는 기기가 깨어날 때까지 발신함에서 대기합니다."
 }

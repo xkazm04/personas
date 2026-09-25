@@ -68,7 +68,7 @@ export function FinderDerivedList({
         ) : (
           <SearchX className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
         )}
-        <span className="typo-title text-foreground truncate">{title}</span>
+        <span className="typo-title truncate">{title}</span>
         <span className="typo-caption tabular-nums text-foreground">{count}</span>
         <span className="flex-1" />
         <Button variant="ghost" size="xs" icon={<ArrowLeft className="w-3.5 h-3.5" />} onClick={onBack}>

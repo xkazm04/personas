@@ -28,7 +28,13 @@ on light is not done.
 - Backgrounds: integrate at 8-15% opacity with a gradient fade to `var(--background)`.
 
 ## Defaults
-- Icon / logo: 1024x1024, quality `high`, `--background transparent` on gpt-image-2 (Leonardo
+- Model: `gpt-image-2.5-sunburst` (the skill's default since 1.5.0) for anything a person looks
+  at closely - characters, brand marks, hero illustration. `--model gpt-image-2.5-flare` for bulk
+  or draft passes. Reach 2.5 through `openai-image.mjs` on an `OPENAI_API_KEY`, or through
+  Leonardo's web Studio: Leonardo's API still only accepts `gpt-image-2` (see the skill).
+- The two Leonardo token pools run out separately. A 402 `Insufficient tokens` from the API while
+  the web Studio still generates means the API pool is empty, not the subscription.
+- Icon / logo: 1024x1024, quality `high`, `--background transparent` (Leonardo
   fallback: 512x512, `--style dynamic --contrast 3.5` + the remove-bg pipeline).
 - State illustration: transparent background; Leonardo fallback needs `--style vibrant --contrast 3`
   with `--no-cleanup`, then `remove-bg`.

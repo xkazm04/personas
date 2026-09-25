@@ -110,7 +110,7 @@ export function SetupStatusBadge({
   // misconfigured (future expansion)
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption font-medium bg-red-500/10 text-red-400 border border-red-500/30 ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption bg-red-500/10 text-red-400 border border-red-500/30 ${className}`}
       title={debtText("auto_this_persona_has_a_configuration_problem_s_f9c78e89")}
     >
       <Settings className="w-3 h-3" />

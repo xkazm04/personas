@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Scale, ShieldCheck, Globe } from 'lucide-react';
+import { Target, LayoutDashboard, CalendarClock, ChartNoAxesGantt, Radio, Gauge, Inbox, Factory, FolderKanban, GitBranch, Trophy, Network, Layers, ShieldCheck, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
@@ -49,9 +49,9 @@ const KPI_VIEWS: Array<{ id: KpisTab; icon: typeof LayoutDashboard; labelKey: 'v
 // 'projects' (Manage) was promoted OUT of this group to the section's top
 // position — it is the landing page now, not a sub-surface.
 const DEV_ITEMS: Array<{
-  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council'>;
+  id: Extract<TeamsTab, 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features'>;
   icon: typeof LayoutDashboard;
-  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'council';
+  labelKey: 'lifecycle' | 'factory' | 'contest' | 'mastermind' | 'features';
   testId: string;
   /**
    * Experimental: rendered only in a development build, and marked with a
@@ -69,7 +69,7 @@ const DEV_ITEMS: Array<{
   { id: 'factory', icon: Factory, labelKey: 'factory', testId: 'teams-factory-nav' },
   { id: 'contest', icon: Trophy, labelKey: 'contest', testId: 'teams-contest-nav' },
   { id: 'mastermind', icon: Network, labelKey: 'mastermind', testId: 'teams-mastermind-nav' },
-  { id: 'council', icon: Scale, labelKey: 'council', testId: 'teams-council-nav' },
+  { id: 'features', icon: Layers, labelKey: 'features', testId: 'teams-features-nav' },
 ];
 
 // "Browser" group — agent web-app control (spark browser-control, 2026-09-15).
@@ -171,8 +171,8 @@ export function TeamsSidebarNav() {
         aria-current={teamsTab === 'projects' ? 'page' : undefined}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
           teamsTab === 'projects'
-            ? 'bg-primary/10 text-foreground font-semibold'
-            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+            ? 'bg-primary/10 text-foreground'
+            : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
         }`}
       >
         <FolderKanban className="w-4 h-4 flex-shrink-0" />
@@ -191,8 +191,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'goals'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Target className="w-4 h-4 flex-shrink-0" />
@@ -216,7 +216,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -238,8 +238,8 @@ export function TeamsSidebarNav() {
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             teamsTab === 'kpis'
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+              ? 'bg-primary/10 text-foreground'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
           }`}
         >
           <Gauge className="w-4 h-4 flex-shrink-0" />
@@ -261,7 +261,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -307,7 +307,7 @@ export function TeamsSidebarNav() {
                     : 'rounded-md'
                 } ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >
@@ -351,7 +351,7 @@ export function TeamsSidebarNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-input transition-colors ${
                   active
-                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    ? 'bg-primary/10 text-foreground/90'
                     : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
                 }`}
               >

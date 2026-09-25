@@ -11,9 +11,12 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { CouncilSubjectState } from '@/lib/bindings/CouncilSubjectState';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { interpolate } from '@/i18n/useTranslation';
+import { VerdictCaption } from '@/features/companions/curator/council/bench/chips';
+import { usePercent } from '@/features/companions/curator/council/table/usePercent';
 import { toastCatch } from '@/lib/silentCatch';
 
 import type { TDevTools } from './contextLedgerShared';
+import { PromoteConfirm } from './PromoteConfirm';
 import {
   CouncilGlyph,
   councilCta,
@@ -59,7 +62,19 @@ export function FeaturePopoverRow({
   const roundNo = row.subject?.roundNo ?? null;
   const storedTier = row.subject?.tier ?? row.uc.tier;
   const [tier, setTier] = useState<string | null>(storedTier);
+  const [confirmingPromote, setConfirmingPromote] = useState(false);
   const isMajor = tier === 'major';
+  const percent = usePercent();
+  // The five words live in THIS section, not in `council`: the plugins route
+  // never loads the council section, so reading them from there would print
+  // the key name here and nothing anywhere else would notice.
+  const trustWords = {
+    uncalibrated: t.council_trust_uncalibrated,
+    untrusted: t.council_trust_untrusted,
+    trusted: t.council_trust_trusted,
+    unknown: t.council_trust_unknown,
+    measured: t.council_trust_measured,
+  };
 
   const applyTier = async (next: UseCaseTier) => {
     const previous = tier;
@@ -85,6 +100,20 @@ export function FeaturePopoverRow({
             contexts: row.uc.context_ids.length,
             groups: row.groupCount,
           })}
+          {/* What the state word does not say, in the same glance: a
+              `machine_pass` over an uncalibrated 0.63 is a pass nothing has
+              earned, and this row is where the operator first meets it. */}
+          {row.subject && (
+            <span className="ml-1.5">
+              <VerdictCaption
+                trustState={row.subject.trustState}
+                coverage={row.subject.coverage}
+                words={trustWords}
+                percent={percent}
+                tx={interpolate}
+              />
+            </span>
+          )}
           {roundNo != null && roundNo > 1 && (
             <span className="ml-1.5 px-1 rounded-interactive bg-secondary/40 text-foreground">
               {interpolate(t.council_round, { round: roundNo })}
@@ -118,7 +147,7 @@ export function FeaturePopoverRow({
         >
           <Button
             variant="accent"
-            accentColor="amber"
+            tone="warning"
             size="sm"
             className="shrink-0"
             data-testid="council-open-gate"
@@ -140,15 +169,36 @@ export function FeaturePopoverRow({
         </AsyncButton>
       )}
 
+      {/* Promoting is a one-word edit with six consequences, one of which is
+          putting an unearned pass in front of a person. It asks first. */}
       {cta === 'promote' && (
         <AsyncButton
           variant="secondary"
           size="sm"
           className="shrink-0"
-          onClick={() => applyTier('major')}
+          data-testid="council-promote"
+          onClick={async () => setConfirmingPromote(true)}
         >
           {councilCtaLabel(cta, t)}
         </AsyncButton>
+      )}
+      {confirmingPromote && (
+        <PromoteConfirm
+          facts={{
+            name: row.uc.name,
+            overall: row.subject?.overall ?? null,
+            coverage: row.subject?.coverage ?? null,
+            trustState: row.subject?.trustState ?? null,
+          }}
+          t={t}
+          percent={percent}
+          tx={interpolate}
+          onConfirm={async () => {
+            setConfirmingPromote(false);
+            await applyTier('major');
+          }}
+          onCancel={() => setConfirmingPromote(false)}
+        />
       )}
     </li>
   );

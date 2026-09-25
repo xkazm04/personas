@@ -6,6 +6,7 @@ import { FleetShipIcon } from './FleetShipIcon';
 import { FleetFooterPopover } from './FleetFooterPopover';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
 import { requestGridView } from './fleetGridView';
+import { arriveAtDevTools } from '@/features/plugins/pluginArrival';
 
 /**
  * Fleet status cluster in the desktop footer (DEV-only surface).
@@ -25,9 +26,6 @@ export default function FleetFooterIcon() {
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const gridOpen = useSystemStore((s) => s.fleetGridOpen);
   const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
@@ -54,11 +52,11 @@ export default function FleetFooterIcon() {
     [counts],
   );
 
+  // Through the shared gated door: if the operator has switched Dev Tools off,
+  // nothing is written and the footer stays where it is.
   const openPage = useCallback(() => {
-    setSidebarSection('plugins');
-    setPluginTab('dev-tools');
-    setDevToolsTab('fleet');
-  }, [setSidebarSection, setPluginTab, setDevToolsTab]);
+    arriveAtDevTools('fleet');
+  }, []);
 
   // Grid open → close it. Anything tracked → raise the overlay ON THE MONITOR
   // LEDGER (a one-shot view request — the counts you just read in the footer

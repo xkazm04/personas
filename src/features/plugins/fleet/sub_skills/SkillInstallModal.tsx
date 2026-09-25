@@ -118,7 +118,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
           <p className="typo-caption text-foreground py-4">{fleet.skill_install_no_targets}</p>
         ) : (
           <>
-            <span className="typo-caption font-medium text-foreground mb-1.5 block">
+            <span className="typo-caption text-foreground mb-1.5 block">
               {fleet.skill_install_target_label}
             </span>
             <div className="max-h-[220px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5 mb-3">
@@ -145,7 +145,7 @@ export function SkillInstallModal({ open, onClose, skillName, onInstall, onPrevi
                 data-testid="skill-install-diff"
                 className="mb-3 rounded-modal border border-status-warning/25 bg-status-warning/10 p-2.5"
               >
-                <p className="typo-caption font-medium text-status-warning mb-1">
+                <p className="typo-caption text-status-warning mb-1">
                   {tx(fleet.skill_install_diff_summary, {
                     changed: preview.changedCount,
                     added: preview.addedCount,

@@ -51,7 +51,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
         {/* Test Result */}
         {detail.testResult && (
           <div
-            className={`animate-fade-slide-in px-2.5 py-1.5 rounded-modal typo-code font-mono ${
+            className={`animate-fade-slide-in px-2.5 py-1.5 rounded-modal typo-code ${
               detail.testResult.success
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
                 : 'bg-red-500/10 text-red-400 border border-red-500/15'

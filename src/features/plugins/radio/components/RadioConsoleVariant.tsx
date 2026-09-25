@@ -48,7 +48,7 @@ export default function RadioConsoleVariant(props: RadioVariantProps) {
           onClick={() => onPreview(station.id)}
         />
         <div className="min-w-0 flex-1">
-          <p className="typo-body font-medium text-foreground truncate" style={TITLE_STYLE}>{station.name}</p>
+          <p className="typo-body text-foreground truncate" style={TITLE_STYLE}>{station.name}</p>
           <p className="typo-caption text-foreground truncate" style={DESC_STYLE}>
             {station.description}
             {count !== null && <span> · {tx(t.radio.tracklist_label, { count })}</span>}

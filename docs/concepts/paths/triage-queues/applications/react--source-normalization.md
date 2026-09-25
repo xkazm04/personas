@@ -46,7 +46,7 @@ evolution promotions, and goals awaiting acceptance — into one
 
 ## The companion inbox (four sources)
 
-`src/features/plugins/companion/inbox/hooks/useUnifiedInbox.ts` merges
+`src/features/companions/athena/inbox/hooks/useUnifiedInbox.ts` merges
 pending approvals, unread messages (partitioned into message vs output by
 `isMessageOutput`), and open healing issues through four adapters in
 `hooks/adapters/` (`adaptApproval`, `adaptMessage`, `adaptOutput`,

@@ -63,7 +63,7 @@ function StatBadge({ chip, slot }: { chip: NavStatChip; slot: 0 | 1 }) {
             {Trend && <Trend className={`h-5 w-5 ${TREND_COLOR[chip.trend!]}`} aria-hidden />}
           </div>
           {/* Dominant, semi-transparent number. */}
-          <span className={`typo-hero font-black leading-none tabular-nums ${TONE_NUM[chip.tone]}`}>
+          <span className={`typo-hero tabular-nums ${TONE_NUM[chip.tone]}`}>
             {chip.value}
           </span>
         </div>

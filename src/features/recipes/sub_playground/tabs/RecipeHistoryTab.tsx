@@ -35,7 +35,7 @@ export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTab
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
+        <h3 className="typo-heading text-foreground uppercase">
           {t.recipes.recent_runs} ({history.length})
         </h3>
         <button
@@ -63,7 +63,7 @@ export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTab
             {Object.keys(run.input_data).length > 0 && (
               <div className="px-3 py-2 border-b border-border/20">
                 <p className="typo-body text-foreground mb-1">Input</p>
-                <pre className="typo-code font-mono text-foreground whitespace-pre-wrap">
+                <pre className="typo-code text-foreground whitespace-pre-wrap">
                   {JSON.stringify(run.input_data, null, 2)}
                 </pre>
               </div>

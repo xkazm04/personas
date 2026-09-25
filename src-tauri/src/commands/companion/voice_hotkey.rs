@@ -8,7 +8,7 @@
 //!
 //! # Shape
 //!
-//! The frontend owns the binding (persisted in `companionPluginSlice` next to
+//! The frontend owns the binding (persisted in `athenaSlice` next to
 //! the rest of the voice settings) and pushes it down here on mount and on
 //! every change. Rust deliberately holds **no default**: duplicating the
 //! accelerator string on both sides is how the two drift, and the window has

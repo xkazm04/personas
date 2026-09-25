@@ -46,7 +46,7 @@ export function WorkspaceRegistrySection({
   return (
     <section className="flex flex-col gap-3 border-t border-primary/10 pt-4">
       <header className="flex flex-wrap items-center gap-3">
-        <span className="inline-flex items-center gap-2 typo-title text-foreground">
+        <span className="inline-flex items-center gap-2 typo-title">
           <Library className="w-4 h-4 text-foreground" aria-hidden />
           {t.plugins.dev_tools.registry.section_title}
         </span>
