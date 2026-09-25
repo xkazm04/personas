@@ -951,6 +951,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
   };
 });
 
+// One Athena: a build turn running in any Studio project (autonomous chains
+// included) shows on the app-wide orb as her work, on whatever screen the user
+// is on. Studio's own orb steps aside while that orb is visible.
+/** The orb source Studio's build turns report under. */
+export const STUDIO_ORB_SOURCE = 'studio';
+useStudioStore.subscribe((s) => {
+  const busy = Object.values(s.runtimes).some((r) => r.busy || r.autonomous);
+  useCompanionStore.getState().setOrbBusy(STUDIO_ORB_SOURCE, busy);
+});
+
 // Dev-only: expose the store so the test-automation bridge can drive Studio
 // (create projects, answer questions, run autonomous) from `/eval`. Guarded by
 // DEV so production never gets it.

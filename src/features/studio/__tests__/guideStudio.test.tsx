@@ -285,4 +285,29 @@ describe('Guide layout', () => {
       useStudioHistory.setState({ sheetStyle: 'plan' });
     }
   });
+
+  it('with the app-wide orb on screen, Studio shows a tools button, not a second Athena', async () => {
+    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    const { useSystemStore } = await import('@/stores/systemStore');
+    useSystemStore.setState({ companionOrbEnabled: true } as never);
+    useCompanionStore.setState({ state: 'minimized' } as never);
+    try {
+      seed({});
+      mount();
+      expect(screen.queryByTestId('guide-orb')).toBeNull();
+      fireEvent.click(screen.getByTestId('guide-tools-button'));
+      expect(screen.getByRole('menu')).toBeTruthy();
+    } finally {
+      useCompanionStore.setState({ state: 'dormant' } as never);
+    }
+  });
+
+  it('a build turn running in Studio shows on the app-wide orb, and clears when it ends', async () => {
+    const { useCompanionStore } = await import('@/features/plugins/companion/companionStore');
+    seed({ busy: true });
+    expect(useCompanionStore.getState().orbBusySources.studio).toBe(true);
+    seed({ busy: false });
+    expect(useCompanionStore.getState().orbBusySources.studio).toBeUndefined();
+  });
 });
+
