@@ -34,11 +34,16 @@ export interface PhotoFinishProps {
 
 /** A key typed here belongs to the control, not the lightbox (caret movement,
  *  a listbox or radio group's own arrows). */
+/** Roles whose widgets consume the arrow keys themselves. A selector for an ANCESTOR
+ *  check, not a declaration of any of these roles. */
+const ARROW_OWNER_ROLES = ['listbox', 'menu', 'radiogroup', 'slider', 'tablist'] as const;
+const ARROW_OWNER_SELECTOR = ARROW_OWNER_ROLES.map((r) => `[role="${r}"]`).join(', ');
+
 function ownsArrows(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   if (target.closest('input, textarea, select')) return true;
-  return target.closest('[role="listbox"], [role="menu"], [role="radiogroup"], [role="slider"], [role="tablist"]') !== null;
+  return target.closest(ARROW_OWNER_SELECTOR) !== null;
 }
 
 export function PhotoFinish({ detail, draft, currentKey, onSelect, onClose }: PhotoFinishProps) {
