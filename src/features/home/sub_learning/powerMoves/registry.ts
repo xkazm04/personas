@@ -1,7 +1,3 @@
-import {
-  Activity, CalendarClock, Crown, FlaskConical, History, Inbox, Link, RotateCcw,
-  Shield, Sparkles, Star, Zap,
-} from 'lucide-react';
 import type { CompanionsPage } from '@/features/companions/types';
 import type { OverviewTab, PluginTab, EventBusTab } from '@/lib/types/types';
 import type { RoutableSection } from '@/features/personas/sectionRouter';
@@ -36,8 +32,6 @@ export type PowerMoveGroupKey = 'save_time' | 'prevent_failures' | 'level_up' | 
 
 export interface PowerMove {
   id: string;
-  icon: typeof Sparkles;
-  color: string;
   group: PowerMoveGroupKey;
   titleKey: LearningKey;
   nav: PowerMoveNav;
@@ -56,16 +50,12 @@ export const POWER_MOVES: PowerMove[] = [
   // -- Save time ---------------------------------------------------------
   {
     id: 'monitor-triage',
-    icon: Activity,
-    color: 'text-rose-400',
     group: 'save_time',
     titleKey: 'pm_monitor_triage_title',
     nav: { overlay: 'monitor' },
   },
   {
     id: 'schedule-delay',
-    icon: CalendarClock,
-    color: 'text-amber-400',
     group: 'save_time',
     titleKey: 'pm_schedule_delay_title',
     // Schedules is a title-bar overlay, not a rail section — see PowerMoveNav.
@@ -74,8 +64,6 @@ export const POWER_MOVES: PowerMove[] = [
   },
   {
     id: 'bulk-rerun',
-    icon: RotateCcw,
-    color: 'text-cyan-400',
     group: 'save_time',
     titleKey: 'pm_bulk_rerun_title',
     nav: { section: 'overview', overviewTab: 'executions' },
@@ -84,8 +72,6 @@ export const POWER_MOVES: PowerMove[] = [
   // -- Prevent failures ----------------------------------------------------
   {
     id: 'dead-letter',
-    icon: Inbox,
-    color: 'text-orange-400',
     group: 'prevent_failures',
     titleKey: 'pm_dead_letter_title',
     nav: { section: 'events', eventBusTab: 'dead-letter' },
@@ -93,8 +79,6 @@ export const POWER_MOVES: PowerMove[] = [
   },
   {
     id: 'annotate-golden',
-    icon: Star,
-    color: 'text-yellow-400',
     group: 'prevent_failures',
     titleKey: 'pm_annotate_golden_title',
     nav: { section: 'overview', overviewTab: 'executions' },
@@ -102,8 +86,6 @@ export const POWER_MOVES: PowerMove[] = [
   },
   {
     id: 'credential-health',
-    icon: Shield,
-    color: 'text-emerald-400',
     group: 'prevent_failures',
     titleKey: 'pm_credential_health_title',
     nav: { section: 'credentials' },
@@ -112,24 +94,18 @@ export const POWER_MOVES: PowerMove[] = [
   // -- Level up agents -----------------------------------------------------
   {
     id: 'lab-measure',
-    icon: FlaskConical,
-    color: 'text-violet-400',
     group: 'level_up',
     titleKey: 'pm_lab_measure_title',
     nav: { section: 'personas' },
   },
   {
     id: 'prompt-rollback',
-    icon: History,
-    color: 'text-blue-400',
     group: 'level_up',
     titleKey: 'pm_prompt_rollback_title',
     nav: { section: 'personas' },
   },
   {
     id: 'director-coaching',
-    icon: Crown,
-    color: 'text-amber-400',
     group: 'level_up',
     titleKey: 'pm_director_coaching_title',
     // Overseer's reviews page left Overview on 2026-09-22. The spotlight now
@@ -141,8 +117,6 @@ export const POWER_MOVES: PowerMove[] = [
   // -- Orchestrate ---------------------------------------------------------
   {
     id: 'event-chain',
-    icon: Link,
-    color: 'text-purple-400',
     group: 'orchestrate',
     titleKey: 'pm_event_chain_title',
     nav: { section: 'events', eventBusTab: 'studio' },
@@ -154,8 +128,6 @@ export const POWER_MOVES: PowerMove[] = [
   },
   {
     id: 'live-stream',
-    icon: Zap,
-    color: 'text-yellow-400',
     group: 'orchestrate',
     titleKey: 'pm_live_stream_title',
     nav: { section: 'events', eventBusTab: 'live-stream' },
@@ -163,8 +135,6 @@ export const POWER_MOVES: PowerMove[] = [
   },
   {
     id: 'athena-fleet',
-    icon: Sparkles,
-    color: 'text-indigo-400',
     group: 'orchestrate',
     titleKey: 'pm_athena_fleet_title',
     nav: { section: 'companions', companionsPage: 'athena:setup' },
@@ -172,9 +142,9 @@ export const POWER_MOVES: PowerMove[] = [
   },
 ];
 
-export const POWER_MOVE_GROUPS: { key: PowerMoveGroupKey; labelKey: LearningKey; icon: typeof Sparkles; color: string }[] = [
-  { key: 'save_time', labelKey: 'group_save_time', icon: Zap, color: 'text-amber-400' },
-  { key: 'prevent_failures', labelKey: 'group_prevent_failures', icon: Shield, color: 'text-emerald-400' },
-  { key: 'level_up', labelKey: 'group_level_up', icon: FlaskConical, color: 'text-violet-400' },
-  { key: 'orchestrate', labelKey: 'group_orchestrate', icon: Link, color: 'text-blue-400' },
+export const POWER_MOVE_GROUPS: { key: PowerMoveGroupKey; labelKey: LearningKey }[] = [
+  { key: 'save_time', labelKey: 'group_save_time' },
+  { key: 'prevent_failures', labelKey: 'group_prevent_failures' },
+  { key: 'level_up', labelKey: 'group_level_up' },
+  { key: 'orchestrate', labelKey: 'group_orchestrate' },
 ];
