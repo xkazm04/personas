@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Filter, Landmark, Laptop, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useProjectForTeam } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { cleanName, squareState } from '../../fleetGridModel';
@@ -74,13 +75,13 @@ export const Bay = memo(function Bay({
         </div>
       ) : (
         <Tooltip content={hint}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => onScope(column)}
             aria-pressed={scoped}
             data-testid="fleet-grid-column-header"
             data-project-off={projectOff || undefined}
-            className="ae-focus relative flex w-full min-w-0 items-start gap-2 overflow-hidden rounded-input py-1 pl-3 pr-1.5 text-left transition-colors hover:bg-secondary/30"
+            className="ae-focus relative w-full min-w-0 overflow-hidden rounded-input py-1 pl-3 pr-1.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:items-start [&>span]:gap-2"
           >
             <span aria-hidden className="absolute inset-y-1 left-0 w-1 rounded-full" style={{ backgroundColor: colorWithAlpha(column.teamColor || '#888888', 0.85), boxShadow: `0 0 10px ${colorWithAlpha(column.teamColor || '#888888', 0.6)}` }} />
             {group && <Landmark className="mt-1 h-3.5 w-3.5 flex-shrink-0 text-primary" aria-label={m.grid_column_workspace_badge} />}
@@ -89,7 +90,7 @@ export const Bay = memo(function Bay({
             {scoped && <Filter className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />}
             <span className="typo-data tabular-nums text-foreground">{column.cards.length}</span>
             <Lamp lamp={lamp} className="mt-[7px]" />
-          </button>
+          </Button>
         </Tooltip>
       )}
 

@@ -7,6 +7,8 @@ import { memo } from 'react';
 import { MessageSquare, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
+import { formatPercent } from '@/lib/utils/formatters';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../../../monitorModel';
 import type { ChatBubble } from '../../channelBubbleModel';
 import { usePersonaFacts, shortElapsed } from '../shared';
@@ -28,21 +30,21 @@ export const InstrumentPersonaCell = memo(function InstrumentPersonaCell({
   const data = [
     facts.stateLabel,
     facts.state === 'running' && facts.runningSince ? shortElapsed(facts.runningSince, now) : null,
-    facts.successRate !== null ? `${Math.round(facts.successRate * 100)}%` : null,
+    facts.successRate !== null ? formatPercent(facts.successRate, { fromRatio: true, precision: 0 }) : null,
   ].filter(Boolean).join(' · ');
   const aria = [card.personaName, facts.stateLabel, ...facts.pending.map((p) => p.label)].join(', ');
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={() => onSelect(card.personaId, primaryDrawerSection(card))}
       aria-label={aria}
       aria-pressed={selected}
       data-testid="fleet-grid-square"
       data-state={facts.state}
       data-persona-id={card.personaId}
-      className={`focus-ring group relative flex w-full flex-col gap-1 rounded-interactive py-1.5 pl-3 pr-2 text-left transition-colors ${
-        selected ? 'bg-primary/10 ring-1 ring-primary/50' : 'hover:bg-foreground/[0.04]'
+      className={`group relative w-full py-1.5 pl-3 pr-2 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-1 ${
+        selected ? 'bg-primary/10 ring-1 ring-primary/50' : ''
       } ${flash ? 'ring-2 ring-primary' : ''} ${facts.off ? 'opacity-50' : ''}`}
     >
       <Spine state={facts.state} />
@@ -77,6 +79,6 @@ export const InstrumentPersonaCell = memo(function InstrumentPersonaCell({
           {bubble.text}
         </span>
       )}
-    </button>
+    </Button>
   );
 });

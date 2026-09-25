@@ -57,20 +57,20 @@ export function InboxDesk({
             const on = tab === spec.id;
             const Icon = spec.icon;
             return (
-              <button
+              <Button
                 key={spec.id}
-                type="button"
+                variant="ghost"
                 onClick={() => rail.setTab(spec.id)}
                 aria-pressed={on}
                 data-testid={`activity-rail-tab-${spec.id}`}
-                className={`ae-win ae-focus flex min-w-0 flex-col items-start gap-0.5 rounded-input px-2.5 py-1.5 text-left ${on ? 'is-lit ae-t-run' : ''}`}
+                className={`ae-win ae-focus min-w-0 rounded-input px-2.5 py-1.5 text-left [&>span]:flex [&>span]:min-w-0 [&>span]:flex-col [&>span]:items-start [&>span]:gap-0.5 ${on ? 'is-lit ae-t-run' : ''}`}
               >
                 <span className="flex min-w-0 items-center gap-1.5 typo-caption text-foreground">
                   <Icon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
                   <span className="truncate">{spec.label}</span>
                 </span>
                 <span className="typo-data-lg tabular-nums text-foreground"><Numeric value={spec.count} /></span>
-              </button>
+              </Button>
             );
           })}
         </div>

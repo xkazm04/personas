@@ -57,10 +57,10 @@ function PlanRow({ provider, plan, usage }: { provider: ProviderModel; plan: Pla
     <div className="ed-row ed-spill group flex items-center" data-lamp={plan.isActive ? 'live' : undefined} data-testid="entry-d-plan">
       {switchable ? (
         <Tooltip content={tx(t.monitor.usage_accounts_switch_aria, { email: name })} delay={300}>
-          <button type="button" onClick={() => usage.ask('switch', plan)} aria-label={tx(t.monitor.usage_accounts_switch_aria, { email: name })}
-            className="focus-ring flex h-9 min-w-0 flex-1 items-center gap-2 px-3 text-left">
+          <Button variant="ghost" onClick={() => usage.ask('switch', plan)} aria-label={tx(t.monitor.usage_accounts_switch_aria, { email: name })}
+            className="h-9 min-w-0 flex-1 rounded-none px-3 py-0 text-left hover:bg-transparent [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:items-center [&>span]:gap-2">
             {body}
-          </button>
+          </Button>
         </Tooltip>
       ) : (
         <div className="flex h-9 min-w-0 flex-1 items-center gap-2 px-3">{body}</div>

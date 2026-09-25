@@ -67,20 +67,20 @@ export function SidePanel({ rail, usage, scope, onClearScope }: {
             const on = tab === v.id;
             const Icon = v.icon;
             return (
-              <button
+              <Button
                 key={v.id}
-                type="button"
+                variant="ghost"
                 onClick={() => rail.setTab(v.id)}
                 aria-pressed={on}
                 data-testid={`activity-rail-tab-${v.id}`}
-                className={`focus-ring relative flex min-w-0 flex-1 flex-col items-start justify-center px-3 transition-colors ${
-                  on ? 'bg-primary/10' : 'hover:bg-foreground/[0.04]'
+                className={`relative h-full min-w-0 flex-1 rounded-none px-3 py-0 text-left [&>span]:flex [&>span]:min-w-0 [&>span]:flex-col [&>span]:items-start ${
+                  on ? 'bg-primary/10' : ''
                 }`}
               >
                 <span className={`typo-data-lg tabular-nums ${on ? 'text-primary' : 'text-foreground'}`}>{v.count}</span>
                 <span className="flex items-center gap-1 typo-caption"><Icon className="h-3 w-3" aria-hidden />{v.label}</span>
                 {on && <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
-              </button>
+              </Button>
             );
           })}
         </div>

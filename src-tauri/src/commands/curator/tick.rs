@@ -156,7 +156,7 @@ async fn tick_once(app: &AppHandle, pool: &DbPool) {
     let root = match super::registry_root_of(pool) {
         Ok(root) => root,
         Err(err) => {
-            warn_occasionally(&format!("curator loop: {err}"));
+            warn_occasionally("curator loop: no registry root", &err);
             return;
         }
     };
@@ -184,7 +184,7 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
         }
     };
     if let Some(why) = super::halted_reason(&brakes, &policy) {
-        warn_occasionally(&format!("curator loop: halted - {why}"));
+        warn_occasionally("curator loop: halted", &why);
         return;
     }
 
@@ -211,10 +211,11 @@ async fn maybe_dispatch(app: &AppHandle, pool: &DbPool, root: &Path) {
     let lane = match standing::read(root) {
         Ok(lane) => Some(lane),
         Err(err) => {
-            warn_occasionally(&format!(
+            warn_occasionally(
                 "curator loop: her standing lane could not be measured, so neither of its rungs \
-                 is dispatched - {err}"
-            ));
+                 is dispatched",
+                &err,
+            );
             None
         }
     };
@@ -473,7 +474,7 @@ async fn start(
                 // Unreachable while `claimable_engines` and `plan_invocation`
                 // agree (their test asserts exactly that), but the item is
                 // already claimed, so the arm settles rather than returning.
-                repo::settle_plan_item(
+                let settled = repo::settle_plan_item(
                     pool,
                     &item.id,
                     CuratorPlanItemState::Blocked,
@@ -481,6 +482,7 @@ async fn start(
                      finding, so nothing was dispatched",
                     &now,
                 )?;
+                note_plan_settle(settled, &item.id, "no invocation derivable");
                 return Err(AppError::Validation(format!(
                     "curator: no invocation derivable for {} ({:?})",
                     item.subject_id, item.engine
@@ -592,8 +594,16 @@ async fn start(
         },
     )?;
     match &work {
-        Work::Queue(request) => repo::bind_request_session(pool, &request.id, &session_id)?,
-        Work::Plan(item) => repo::bind_plan_item_session(pool, &item.id, &session_id)?,
+        Work::Queue(request) => {
+            if !repo::bind_request_session(pool, &request.id, &session_id)? {
+                note_unbound(lane, &request.id, &session_id);
+            }
+        }
+        Work::Plan(item) => {
+            if !repo::bind_plan_item_session(pool, &item.id, &session_id)? {
+                note_unbound(lane, &item.id, &session_id);
+            }
+        }
         // Nothing in this database asked for it, so there is nothing to bind.
         // What is written instead is the rung's MARK: the queue fingerprint it
         // was dispatched against, so a pass that leaves the file untouched
@@ -643,13 +653,14 @@ fn settle_unstarted(pool: &DbPool, work: &Work, why: &str, now: &str) -> Result<
             )?;
         }
         Work::Plan(item) => {
-            repo::settle_plan_item(
+            let settled = repo::settle_plan_item(
                 pool,
                 &item.id,
                 CuratorPlanItemState::Blocked,
                 &format!("no worker started: {why}"),
                 now,
             )?;
+            note_plan_settle(settled, &item.id, "no worker started");
         }
         // Nothing was claimed, so there is nothing to write back - and no mark
         // either: `start` writes that only after the fleet admits the worker.
@@ -773,7 +784,7 @@ fn settle_source(
     }
     if let Some(item_id) = dispatched.plan_item_id.as_deref() {
         if let Ended::Failed(why) = ended {
-            repo::settle_plan_item(
+            let settled = repo::settle_plan_item(
                 pool,
                 item_id,
                 CuratorPlanItemState::Blocked,
@@ -783,9 +794,38 @@ fn settle_source(
                 ),
                 now,
             )?;
+            note_plan_settle(settled, item_id, "session ended without landing");
         }
     }
     Ok(())
+}
+
+/// A plan-item settle whose guard fired: the item was already terminal, so its
+/// earlier outcome and evidence stand and this call wrote nothing. Said out loud
+/// because the settle feeds her saturation streak - a `blocked` that silently
+/// did not land is a streak computed from a different history than the log
+/// describes.
+fn note_plan_settle(settled: bool, item_id: &str, cause: &'static str) {
+    if !settled {
+        tracing::info!(
+            plan_item_id = item_id,
+            cause,
+            "curator: plan item was already settled - this settle wrote nothing"
+        );
+    }
+}
+
+/// A session binding whose guard fired: the claimed row left `dispatched`
+/// between the claim and the bind, so no row points at the running worker. Its
+/// `curator_dispatch` ledger row still names the session, which is what the
+/// settle walks - the lane row itself just will not show it.
+fn note_unbound(lane: &str, row_id: &str, session_id: &str) {
+    tracing::warn!(
+        lane,
+        row_id,
+        session_id,
+        "curator: claimed row was no longer dispatched when its session was bound"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -923,7 +963,11 @@ fn parse_git_log(raw: &str) -> Vec<(String, Vec<String>)> {
 /// else in the file. The gate is on the CLOCK rather than on the message, so a
 /// halt reason that changes still waits its turn; the runtime door reports the
 /// current reason at any moment, which is where a surface reads it from.
-fn warn_occasionally(message: &str) {
+///
+/// `event` is a constant naming WHICH notice this is and `detail` is the
+/// per-occurrence value, kept apart as fields so the log can be grouped by event
+/// and filtered by detail instead of holding one opaque string per occurrence.
+fn warn_occasionally(event: &'static str, detail: &dyn std::fmt::Display) {
     static LAST_MS: AtomicU64 = AtomicU64::new(0);
     const EVERY_MS: u64 = 60_000;
     let now = crate::commands::fleet::registry::now_ms().max(0) as u64;
@@ -932,7 +976,7 @@ fn warn_occasionally(message: &str) {
         return;
     }
     LAST_MS.store(now, Ordering::Relaxed);
-    tracing::info!("{message}");
+    tracing::info!(event, detail = %detail, "curator loop: throttled notice");
 }
 
 #[cfg(test)]

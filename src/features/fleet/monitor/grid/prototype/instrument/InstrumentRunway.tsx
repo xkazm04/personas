@@ -25,7 +25,7 @@ function Bay({ n, over = false, emptyLabel, children }: { n: string; over?: bool
     >
       <span className={`absolute left-2 top-1 typo-code tabular-nums ${over ? 'text-status-warning' : 'text-primary opacity-70'}`}>{n}</span>
       {children ?? (
-        <span className="flex h-full items-center justify-center pb-3 typo-code text-foreground opacity-40">{emptyLabel}</span>
+        <span className="flex h-full items-center justify-center pb-3 typo-caption">{emptyLabel}</span>
       )}
     </div>
   );
@@ -52,7 +52,7 @@ export function InstrumentRunway({
     <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4" data-testid="fleet-queue-runway">
       <header className="mb-3 flex items-baseline gap-3">
         <Bracketed className="typo-label uppercase tracking-wider text-foreground">{s.queue_band_running}</Bracketed>
-        <span className="typo-code tabular-nums text-foreground opacity-70">
+        <span className="typo-code tabular-nums text-foreground">
           <Numeric value={model.running.length} /> / <Numeric value={cap} />
         </span>
       </header>
@@ -74,7 +74,7 @@ export function InstrumentRunway({
 
       <header className="mb-1 mt-7 flex items-baseline gap-3 border-t border-primary/10 pt-4">
         <Bracketed className="typo-label uppercase tracking-wider text-foreground">{s.queue_band_queued}</Bracketed>
-        <span className="typo-code tabular-nums text-foreground opacity-70"><Numeric value={queued.length} /></span>
+        <span className="typo-code tabular-nums text-foreground"><Numeric value={queued.length} /></span>
       </header>
       {queued.length > 0 ? (
         <div role="list" aria-label={s.queue_reorder_aria} data-testid="fleet-queue-strip">
@@ -93,7 +93,7 @@ export function InstrumentRunway({
           ))}
         </div>
       ) : (
-        <p className="typo-body text-foreground opacity-60">{s.queue_strip_empty}</p>
+        <p className="typo-caption">{s.queue_strip_empty}</p>
       )}
     </div>
   );

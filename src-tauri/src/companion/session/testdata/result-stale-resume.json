@@ -1,0 +1,1 @@
+{"type":"result","subtype":"error_during_execution","duration_ms":0,"is_error":true,"num_turns":0,"session_id":"de7e9d45-345a-4fab-9415-880ff712543d","total_cost_usd":0,"usage":{"input_tokens":0,"output_tokens":0},"errors":["No conversation found with session ID: de7e9d45-345a-4fab-9415-880ff712543d"]}

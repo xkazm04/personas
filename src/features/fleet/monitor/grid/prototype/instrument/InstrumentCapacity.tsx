@@ -10,7 +10,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import type { UsageFeed } from '../useUsageFeed';
-import { InstrumentGauge, InstrumentGaugeEmpty, InstrumentGaugeGhost } from './InstrumentGauge';
+import { InstrumentGauge, InstrumentGaugeGhost, InstrumentGaugeUnmetered } from './InstrumentGauge';
 
 function AutoRotate({ usage }: { usage: UsageFeed }) {
   const { t } = useTranslation();
@@ -22,7 +22,7 @@ function AutoRotate({ usage }: { usage: UsageFeed }) {
     <Tooltip content={t.monitor.usage_auto_rotate_hint}>
       <span className="flex items-center gap-2" data-testid="fleet-usage-controls">
         <AccessibleToggle size="sm" checked={ar.enabled} onChange={() => usage.saveAutoRotate(!ar.enabled, shown)} label={t.monitor.usage_auto_rotate} />
-        <span className="typo-label uppercase tracking-wider text-foreground opacity-70">{t.monitor.usage_auto_rotate}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{t.monitor.usage_auto_rotate}</span>
         <input
           type="number"
           min={1}
@@ -39,7 +39,7 @@ function AutoRotate({ usage }: { usage: UsageFeed }) {
           className="w-12 rounded-input border border-primary/15 bg-background/60 px-1 text-right typo-code tabular-nums text-foreground"
           data-testid="fleet-usage-rotate-threshold"
         />
-        <span className="typo-code text-foreground opacity-60">%</span>
+        <span className="typo-code text-foreground">%</span>
       </span>
     </Tooltip>
   );
@@ -52,7 +52,7 @@ export function InstrumentCapacity({ usage }: { usage: UsageFeed }) {
       <div className="flex min-w-0 flex-1 items-stretch gap-2 overflow-x-auto pb-0.5">
         {usage.model.providers.map((provider) => {
           if (provider.pending) return <InstrumentGaugeGhost key={provider.id} />;
-          if (provider.plans.length === 0) return <InstrumentGaugeEmpty key={provider.id} provider={provider} />;
+          if (provider.plans.length === 0) return <InstrumentGaugeUnmetered key={provider.id} provider={provider} />;
           return provider.plans.map((plan) => (
             <InstrumentGauge key={`${provider.id}:${plan.id}`} provider={provider} plan={plan} ask={usage.ask} />
           ));
@@ -60,7 +60,7 @@ export function InstrumentCapacity({ usage }: { usage: UsageFeed }) {
       </div>
       <div className="flex flex-shrink-0 flex-col items-end gap-1">
         <AutoRotate usage={usage} />
-        <span className="flex items-center gap-1.5 typo-code text-foreground opacity-70">
+        <span className="flex items-center gap-1.5 typo-caption">
           {usage.fetchedAt !== null && (
             <span className="whitespace-nowrap">{t.monitor.usage_as_of} <RelativeTime timestamp={usage.fetchedAt} /></span>
           )}

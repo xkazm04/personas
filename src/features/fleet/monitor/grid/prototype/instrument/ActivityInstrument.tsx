@@ -7,18 +7,16 @@
 // vocabularies become two bands with one; glyph rows become worded mono data;
 // boxes become spines, so the board reads as light on glass, not tiles.
 
-import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListOrdered } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { SessionModals } from '../../board/SessionModals';
 import { OrchestrationPanel } from '../../orchestration';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useQueueConfirm } from '../shared';
-import { InstrumentCommandBand } from './InstrumentCommandBand';
+import { InstrumentBoardPanel, InstrumentCommandBand } from './InstrumentCommandBand';
 import { InstrumentCapacity } from './InstrumentCapacity';
 import { InstrumentClassic } from './InstrumentClassic';
 import { InstrumentRunway } from './InstrumentRunway';
@@ -63,9 +61,9 @@ export function ActivityInstrument(props: ActivitySurfaceProps) {
       <InstrumentCommandBand surface={surface} />
       <InstrumentCapacity usage={usage} />
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)}>
+        <InstrumentBoardPanel layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
           {body}
-        </div>
+        </InstrumentBoardPanel>
         <InstrumentRail rail={rail} scope={surface.scope} onClearScope={surface.clearScope} />
       </div>
 

@@ -8,6 +8,7 @@ import { memo, useCallback } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../../../monitorModel';
 import type { ChatBubble } from '../../channelBubbleModel';
@@ -51,8 +52,8 @@ export const PersonaWindow = memo(function PersonaWindow({
 
   return (
     <Tooltip content={<span className="whitespace-pre-line">{[facts.name, ...lines].join('\n')}</span>} placement="right">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         onClick={open}
         aria-label={aria}
         aria-pressed={selected}
@@ -60,7 +61,7 @@ export const PersonaWindow = memo(function PersonaWindow({
         data-persona-id={card.personaId}
         data-state={facts.state}
         data-action={lead?.key ?? 'none'}
-        className={`ae-win ae-focus flex w-full min-w-0 flex-col gap-0.5 rounded-input px-2.5 py-1.5 text-left ${toneClass(lamp.tone)} ${
+        className={`ae-win ae-focus w-full min-w-0 rounded-input px-2.5 py-1.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-0.5 ${toneClass(lamp.tone)} ${
           lamp.lit && !off ? 'is-lit' : ''} ${selected ? 'is-selected' : ''} ${off ? 'is-off' : ''} ${flash ? 'is-flash' : ''}`}
       >
         <span className="flex min-w-0 items-start gap-2">
@@ -92,7 +93,7 @@ export const PersonaWindow = memo(function PersonaWindow({
             <span className="min-w-0 truncate">{bubble.text}</span>
           </span>
         )}
-      </button>
+      </Button>
     </Tooltip>
   );
 });

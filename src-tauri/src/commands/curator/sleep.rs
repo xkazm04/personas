@@ -262,11 +262,15 @@ async fn reconcile_if_due(
             {
                 let (state, evidence) =
                     verdict(item, still_scored.contains(item.subject_id.as_str()), head);
-                match state {
-                    CuratorPlanItemState::Landed => report.landed += 1,
-                    _ => report.idled += 1,
+                // Counted only when THIS pass settled it: an item something
+                // else already made terminal keeps its outcome and is not ours
+                // to report.
+                if repo::settle_plan_item(&db, &item.id, state, &evidence, &now)? {
+                    match state {
+                        CuratorPlanItemState::Landed => report.landed += 1,
+                        _ => report.idled += 1,
+                    }
                 }
-                repo::settle_plan_item(&db, &item.id, state, &evidence, &now)?;
             }
         }
 

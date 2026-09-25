@@ -219,7 +219,9 @@ fn a_stale_resume_result_reads_as_stale_not_empty() {
     use super::cli::{empty_reply_error, is_stale_session_error, IngestCtx, StreamAccumulator};
 
     let pool = test_pool("stale_resume_result");
-    let line = r#"{"type":"result","subtype":"error_during_execution","duration_ms":0,"is_error":true,"num_turns":0,"session_id":"de7e9d45-345a-4fab-9415-880ff712543d","total_cost_usd":0,"usage":{"input_tokens":0,"output_tokens":0},"errors":["No conversation found with session ID: de7e9d45-345a-4fab-9415-880ff712543d"]}"#;
+    // Loaded from a committed artifact rather than invented inline, so the
+    // test pins the bytes the CLI sent - model-output-streaming.md section 9.2.
+    let line = include_str!("testdata/result-stale-resume.json").trim();
     let mut acc = StreamAccumulator::new(std::time::Instant::now());
     let ended = acc.ingest(
         line,
@@ -244,8 +246,14 @@ fn a_stale_resume_result_reads_as_stale_not_empty() {
     );
     // A successful result carries no error even if it has a `result` string.
     let mut ok = StreamAccumulator::new(std::time::Instant::now());
+    // A real success `result` line, from the captured twin stream (its
+    // `result` is the model's JSON answer).
+    let success = include_str!("../../../tests/fixtures/twin_stream_json_answer.jsonl")
+        .lines()
+        .find(|l| l.contains(r#""type":"result""#))
+        .expect("the captured stream ends in a result line");
     ok.ingest(
-        r#"{"type":"result","subtype":"success","is_error":false,"result":"hi"}"#,
+        success,
         &IngestCtx {
             pool: &pool,
             session_id: "default",

@@ -9,6 +9,7 @@ import { memo, type KeyboardEvent } from 'react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { useSessionFacts } from '../shared';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { ageFrac, ageLabel, seat, sessionLamp, useRoom } from './rackModel';
@@ -28,18 +29,19 @@ export function SeatPlate({ session, stateLabel }: { session: FleetSession; stat
   const tip = `${where} · ${t.monitor.grid_session_recap_open}`;
   return (
     <Tooltip content={tip} delay={250}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="xs"
         onClick={(e) => { e.stopPropagation(); recapSession(session); }}
         aria-label={tip}
-        className="ed-plate focus-ring rounded-input typo-data transition-colors hover:brightness-125"
+        className="ed-plate rounded-input hover:brightness-125"
         data-lamp={sessionLamp(session.state)}
         data-over={over || undefined}
         data-kind={rank !== undefined ? 'queue' : 'slot'}
         data-testid="fleet-grid-session-recap"
       >
-        {text}
-      </button>
+        <span className="typo-data">{text}</span>
+      </Button>
     </Tooltip>
   );
 }

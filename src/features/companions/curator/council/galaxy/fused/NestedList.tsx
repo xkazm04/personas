@@ -5,6 +5,7 @@
 // shows its own children, one level deeper, before any click commits.
 import { useLayoutEffect, useRef } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
 import { interpolate as tx } from '@/i18n/useTranslation';
 
 import type { EnginePath, GalaxyEngine } from '../engine/GalaxyEngine';
@@ -71,20 +72,24 @@ export function NestedList({ engine, layout, path, waitingStars }: Props) {
     return null;
   };
   const row = (c: GalaxyNode, cls: string) => (
-    <button
+    // fused.css `.it` is a three-column grid (rank, title, count); Button's
+    // icon / label / iconRight slots are its three cells.
+    <Button
+      variant="ghost"
       className={`it${cls}`}
-      type="button"
       data-role="hud-tree-row"
+      icon={<span className="rk block">{c.rank}</span>}
+      iconRight={
+        <span className="ct">
+          {mark(c)}
+          {s.n(countOf(c))}
+        </span>
+      }
       onClick={() => engine?.goTo(c)}
       onMouseEnter={() => engine?.setHover(c)}
     >
-      <span className="rk">{c.rank}</span>
       <span className="t">{nodeTitle(c)}</span>
-      <span className="ct">
-        {mark(c)}
-        {s.n(countOf(c))}
-      </span>
-    </button>
+    </Button>
   );
 
   return (

@@ -8,6 +8,7 @@ import { memo, useCallback } from 'react';
 import { MessageCircle, MessageSquareText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { useOffProjectForPersona } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { primaryDrawerSection, type DrawerSection, type PersonaCardModel } from '../../../monitorModel';
 import type { ChatBubble } from '../../channelBubbleModel';
@@ -53,8 +54,8 @@ export const ModuleRow = memo(function ModuleRow({
   const LeadIcon = lead?.icon;
   return (
     <Tooltip content={<span className="whitespace-pre-line">{lines.join('\n')}</span>} placement="right" delay={450}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         onClick={activate}
         aria-label={lines.join(', ')}
         aria-pressed={selected}
@@ -64,7 +65,7 @@ export const ModuleRow = memo(function ModuleRow({
         data-lamp={facts.state}
         data-selected={selected || undefined}
         data-off={off || undefined}
-        className={`ed-row ed-spill focus-ring flex w-full items-center gap-2.5 px-3 text-left ${
+        className={`ed-row ed-spill w-full rounded-none px-3 py-0 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:items-center [&>span]:gap-2.5 ${
           focusKey === `p:${card.personaId}` ? 'ed-flash' : ''
         }`}
         style={{ height: MODULE_H }}
@@ -95,7 +96,7 @@ export const ModuleRow = memo(function ModuleRow({
             {facts.pending.length > 1 && <span className="text-foreground">+{facts.pending.length - 1}</span>}
           </span>
         ) : null}
-      </button>
+      </Button>
     </Tooltip>
   );
 });

@@ -9,16 +9,14 @@
 // (Supply over Intake). Every session carries its seat number everywhere.
 
 import { memo, useMemo, useState } from 'react';
-import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
-import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { SessionModals } from '../../board/SessionModals';
 import { OrchestrationPanel } from '../../orchestration';
 import { RoomContext, rackIndex, type RoomContextValue } from './rackModel';
-import { ConsoleBar } from './ConsoleBar';
+import { ConsoleBar, ConsoleFloor } from './ConsoleBar';
 import { ClassicBoard } from './ClassicBoard';
 import { RunwayRoom } from './RunwayRoom';
 import { LanesRoom } from './LanesRoom';
@@ -65,7 +63,7 @@ export const ActivityEntryD = memo(function ActivityEntryD(props: ActivitySurfac
       >
         <ConsoleBar surface={surface} cap={cap} />
         <div className="relative z-10 flex min-h-0 flex-1">
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)}>
+          <ConsoleFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
             {layout === 'classic' ? (
               <ClassicBoard surface={surface} selectedPersonaId={props.selectedPersonaId} now={now} onOpenRemote={props.onOpenRemote} />
             ) : layout === 'runway' ? (
@@ -73,7 +71,7 @@ export const ActivityEntryD = memo(function ActivityEntryD(props: ActivitySurfac
             ) : (
               <LanesRoom surface={surface} confirm={confirm} now={now} />
             )}
-          </main>
+          </ConsoleFloor>
           <SidePanel rail={rail} usage={usage} scope={surface.scope} onClearScope={surface.clearScope} />
         </div>
 

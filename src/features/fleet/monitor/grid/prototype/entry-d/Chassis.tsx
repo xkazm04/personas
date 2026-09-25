@@ -11,6 +11,7 @@ import { Landmark, Laptop, Power, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { ContextMenu } from '@/features/shared/components/overlays/ContextMenu';
 import { useProjectForTeam, useToggleProject } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { cleanName, squareState, SQUARE_STATE_ORDER } from '../../fleetGridModel';
@@ -67,6 +68,29 @@ export function Chassis({
     '--i': index,
   } as CSSProperties;
 
+  const plate = (
+    <>
+      {workspaceId !== null && <Landmark className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />}
+      {remote && <Laptop className="h-3.5 w-3.5 flex-shrink-0 text-status-info" aria-hidden />}
+      <span className={`min-w-0 flex-1 truncate typo-label ${scoped ? 'text-primary' : 'text-foreground'}`}>
+        {remote ? tx(t.monitor.remote_on_device, { device: remote.displayName }) : name}
+      </span>
+      {off && (
+        <span className="inline-flex flex-shrink-0 items-center gap-1 typo-caption text-status-warning">
+          <PowerOff className="h-3 w-3" aria-hidden />
+          {t.plugins.dev_projects.project_state_off}
+        </span>
+      )}
+      {live > 0 && (
+        <span className="inline-flex flex-shrink-0 items-center gap-1 typo-caption tabular-nums text-primary">
+          <span aria-hidden className="ed-lamp" data-lamp="live" />
+          {live}
+        </span>
+      )}
+      <span className="flex-shrink-0 typo-caption tabular-nums">{column.cards.length}</span>
+    </>
+  );
+
   return (
     <section
       className={`ed-chassis rounded-card ${motion ? 'ed-rise' : ''}`}
@@ -77,35 +101,24 @@ export function Chassis({
       data-testid={remote ? 'fleet-grid-device-column' : 'fleet-grid-column'}
     >
       <Tooltip content={hint} delay={500}>
-        <button
-          type="button"
-          disabled={remote !== null}
-          onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
-          onContextMenu={onContextMenu}
-          aria-pressed={scoped}
-          data-project-off={off || undefined}
-          data-testid="fleet-grid-column-header"
-          className="focus-ring flex w-full items-center gap-2 rounded-t-card px-3 pb-2 pt-2.5 text-left transition-colors hover:bg-foreground/[0.04]"
-        >
-          {workspaceId !== null && <Landmark className="h-3.5 w-3.5 flex-shrink-0 text-primary" aria-hidden />}
-          {remote && <Laptop className="h-3.5 w-3.5 flex-shrink-0 text-status-info" aria-hidden />}
-          <span className={`min-w-0 flex-1 truncate typo-label ${scoped ? 'text-primary' : 'text-foreground'}`}>
-            {remote ? tx(t.monitor.remote_on_device, { device: remote.displayName }) : name}
-          </span>
-          {off && (
-            <span className="inline-flex flex-shrink-0 items-center gap-1 typo-caption text-status-warning">
-              <PowerOff className="h-3 w-3" aria-hidden />
-              {t.plugins.dev_projects.project_state_off}
-            </span>
-          )}
-          {live > 0 && (
-            <span className="inline-flex flex-shrink-0 items-center gap-1 typo-caption tabular-nums text-primary">
-              <span aria-hidden className="ed-lamp" data-lamp="live" />
-              {live}
-            </span>
-          )}
-          <span className="flex-shrink-0 typo-caption tabular-nums">{column.cards.length}</span>
-        </button>
+        {remote ? (
+          // A paired device's chassis scopes nothing: its plate is a label, not a control.
+          <div className="flex w-full items-center gap-2 rounded-t-card px-3 pb-2 pt-2.5" data-testid="fleet-grid-column-header">
+            {plate}
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
+            onContextMenu={onContextMenu}
+            aria-pressed={scoped}
+            data-project-off={off || undefined}
+            data-testid="fleet-grid-column-header"
+            className="w-full rounded-b-none rounded-t-card px-3 pb-2 pt-2.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:items-center [&>span]:gap-2"
+          >
+            {plate}
+          </Button>
+        )}
       </Tooltip>
       <ShareBar cards={column.cards} />
 

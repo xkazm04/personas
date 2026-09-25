@@ -7,6 +7,8 @@
 import { useCallback, useMemo, type ReactNode } from 'react';
 import { Laptop, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 import { effectiveRemoteState } from '@/lib/network/remoteSessionModel';
 import type { ColumnRow } from '../../gridGeometry';
@@ -15,7 +17,7 @@ import type { ActivitySurface } from '../useActivitySurface';
 import { PersonaWindow } from './PersonaWindow';
 import { SessionWindow } from './SessionWindow';
 import { Bay } from './Bay';
-import { BayGhosts, PanelEmpty } from './Ghosts';
+import { BayGhosts } from './Ghosts';
 import { sessionLamp, toneClass } from './tone';
 import { Engraved, Lamp } from './parts';
 
@@ -63,14 +65,8 @@ export function ClassicPanel({
       const lamp = state === 'unknown' ? { tone: 'off' as const, lit: false } : sessionLamp(state);
       const title = row.view.title?.trim() || row.view.projectLabel || row.view.jobId.slice(0, 8);
       const device = row.view.peerDisplayName || row.view.peerId.slice(0, 8);
-      return (
-        <button
-          type="button"
-          onClick={() => onOpenRemote?.(row.view.jobId)}
-          disabled={!onOpenRemote}
-          data-testid="fleet-grid-remote"
-          className={`ae-win ae-focus flex w-full min-w-0 flex-col gap-0.5 rounded-input px-2.5 py-1.5 text-left ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`}
-        >
+      const tile = (
+        <>
           <span className="flex min-w-0 items-start gap-2">
             <Lamp lamp={lamp} className="mt-[7px]" />
             <span className="ae-clamp2 min-w-0 flex-1 typo-body text-foreground">{title}</span>
@@ -79,7 +75,20 @@ export function ClassicPanel({
             <Laptop className="h-3 w-3 flex-shrink-0" aria-hidden />
             <span className="truncate">{device}</span>
           </span>
-        </button>
+        </>
+      );
+      const look = `ae-win flex w-full min-w-0 flex-col gap-0.5 rounded-input px-2.5 py-1.5 text-left ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`;
+      // Without a handler the tile opens nothing, so it is a readout, not a control.
+      if (!onOpenRemote) return <div className={look} data-testid="fleet-grid-remote">{tile}</div>;
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => onOpenRemote(row.view.jobId)}
+          data-testid="fleet-grid-remote"
+          className={`ae-win ae-focus w-full min-w-0 rounded-input px-2.5 py-1.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-0.5 ${toneClass(lamp.tone)} ${lamp.lit ? 'is-lit' : ''}`}
+        >
+          {tile}
+        </Button>
       );
     }
     return null;
@@ -97,7 +106,11 @@ export function ClassicPanel({
 
   if (surface.cold) return <BayGhosts />;
   if (model.empty) {
-    return <PanelEmpty icon={Users} heading={model.filtered ? m.grid_filter_empty : m.channels_combined_quiet} />;
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6" data-testid="entry-e-empty">
+        <ScenarioEmptyState icon={Users} title={model.filtered ? m.grid_filter_empty : m.channels_combined_quiet} />
+      </div>
+    );
   }
 
   return (

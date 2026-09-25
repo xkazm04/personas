@@ -7,6 +7,7 @@
 import { useMemo } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
 
+import { Button } from '@/features/shared/components/buttons';
 import type { DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { TruncateWithTooltip } from '@/features/shared/components/display/TruncateWithTooltip';
@@ -54,17 +55,17 @@ export function useBacklogColumns({
         label: '',
         width: '40px',
         render: (row) => (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={(e) => { e.stopPropagation(); onToggleSelect(row.id); }}
             aria-label={r.backlog_select_row}
             aria-pressed={selectedIds.has(row.id)}
-            className="text-foreground/60 hover:text-primary transition-colors"
           >
             {selectedIds.has(row.id)
-              ? <CheckSquare className="w-3.5 h-3.5 text-primary" />
-              : <Square className="w-3.5 h-3.5" />}
-          </button>
+              ? <CheckSquare className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+              : <Square className="w-3.5 h-3.5" aria-hidden="true" />}
+          </Button>
         ),
       },
       {

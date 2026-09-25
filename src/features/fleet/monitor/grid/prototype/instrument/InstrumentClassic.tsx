@@ -58,7 +58,7 @@ export function InstrumentClassic({
     if (row.kind === 'session') return session(row.session);
     if (row.kind === 'remote') return <RemoteSessionTile view={row.view} width={232} height={REMOTE_TILE_H} onOpen={onOpenRemote} />;
     return (
-      <span className="mt-2 mb-0.5 flex items-center gap-2 pl-3 typo-code text-foreground opacity-50" role="separator">
+      <span className="mt-2 mb-0.5 flex items-center gap-2 pl-3 typo-code text-foreground" role="separator">
         {t.monitor.grid_sessions}
         <span aria-hidden className="h-px flex-1 bg-primary/10" />
       </span>
@@ -100,7 +100,7 @@ export function InstrumentClassic({
       </div>
       {trayCount > 0 && (
         <section className="mt-8">
-          <span className="mb-2 flex items-center gap-2 typo-label uppercase tracking-wider text-foreground opacity-70">
+          <span className="mb-2 flex items-center gap-2 typo-label uppercase tracking-wider text-foreground">
             <Users className="h-3.5 w-3.5" aria-hidden />
             {t.monitor.grid_ungrouped}
             <span className="typo-code tabular-nums opacity-70">{String(trayCount).padStart(2, '0')}</span>

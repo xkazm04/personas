@@ -12,17 +12,15 @@
 // (everything waiting on a human). One band of chrome above them all.
 
 import { memo, useCallback } from 'react';
-import { segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { OrchestrationPanel } from '../../orchestration';
 import { SessionModals } from '../../board/SessionModals';
-import { BOARD_TABS_PREFIX } from '../../board/GridHeader';
 import { FINAL_STAGE } from '../../useStagedMount';
 import { useRailWidth } from '../../rail/useRailWidth';
 import { useActivitySurface, type ActivitySurfaceProps } from '../useActivitySurface';
 import { useUsageFeed } from '../useUsageFeed';
 import { useRailSurface } from '../useRailSurface';
 import { useCapSetting, useQueueConfirm } from '../shared';
-import { CommandBar } from './CommandBar';
+import { CommandBar, CommandFloor } from './CommandBar';
 import { SupplyDeck } from './SupplyDeck';
 import { ClassicPanel } from './ClassicPanel';
 import { RunwayPanel } from './RunwayPanel';
@@ -71,7 +69,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           onOpenOrchestration={surface.openOrchestration}
         />
 
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col" {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)}>
+        <CommandFloor layout={layout} className="flex min-h-0 min-w-0 flex-1 flex-col">
           {layout === 'classic' ? (
             <ClassicPanel surface={surface} selectedPersonaId={props.selectedPersonaId} onOpenRemote={props.onOpenRemote} />
           ) : layout === 'runway' ? (
@@ -79,7 +77,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
           ) : (
             <LanesPanel surface={surface} cap={cap} onStart={confirm.askStart} onCancel={confirm.askCancel} />
           )}
-        </main>
+        </CommandFloor>
 
         <InboxDesk
           rail={rail}

@@ -133,6 +133,13 @@ if (isMain) {
     console.error(`typo-allowlist: cannot run (${err?.message ?? err})`);
     process.exit(2);
   }
+  // Fail loud on an empty enumeration at the exit itself, whatever floors
+  // findPhantoms() was handed: no defined names or no walked sources means the
+  // readers looked at nothing, and "looked at nothing" must never exit 0.
+  if (result.defined.size === 0 || result.walked === 0) {
+    console.error(`typo-allowlist: enumerated ${result.cssFiles} stylesheet(s) / ${result.defined.size} defined name(s) and ${result.walked} source file(s): nothing was looked at`);
+    process.exit(2);
+  }
   if (result.broken) {
     for (const p of result.problems) console.error(`typo-allowlist: ${p}`);
     process.exit(2);

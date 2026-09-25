@@ -43,8 +43,9 @@ export function RackGauge({ surface, cap }: {
     cells.push(
       <Tooltip key={item?.sessionId ?? `free-${i}`} content={isOver ? `${tip}\n${s.queue_over_admitted}` : tip} delay={150}>
         {item ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             aria-label={tip}
             onClick={() => openSession(item.session)}
             onMouseEnter={() => setHot(item.sessionId)}
@@ -53,7 +54,7 @@ export function RackGauge({ surface, cap }: {
             data-over={isOver || undefined}
             data-hot={hot === item.sessionId || undefined}
             data-testid="entry-d-bay"
-            className="ed-bay focus-ring rounded-input"
+            className="ed-bay rounded-input"
           />
         ) : (
           <span role="img" aria-label={tip} data-lamp="free" data-testid="fleet-queue-free-slot" className="ed-bay rounded-input" />

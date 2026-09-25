@@ -4,6 +4,8 @@
 
 import { useState, type ComponentType } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
+import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ActivitySurfaceProps } from './useActivitySurface';
 import { ActivityInstrument } from './instrument/ActivityInstrument';
 import { ActivityEntryD } from './entry-d/ActivityEntryD';
@@ -43,19 +45,18 @@ export function ActivityPrototypeSwitcher({
     <div className="flex h-full min-h-0 flex-col gap-1.5">
       <div className="flex flex-shrink-0 items-center gap-1 self-start rounded-interactive border border-dashed border-primary/30 bg-background/80 p-0.5" role="group" aria-label="Prototype variants">
         {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => choose(tab.id)}
-            aria-pressed={pick === tab.id}
-            title={tab.hint}
-            data-testid={`activity-proto-${tab.id}`}
-            className={`rounded-interactive px-2.5 py-0.5 typo-label transition-colors ${
-              pick === tab.id ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-secondary/40'
-            }`}
-          >
-            {tab.label}
-          </button>
+          <Tooltip key={tab.id} content={tab.hint}>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => choose(tab.id)}
+              aria-pressed={pick === tab.id}
+              data-testid={`activity-proto-${tab.id}`}
+              className={`rounded-interactive px-2.5 py-0.5 ${pick === tab.id ? 'bg-primary/20 text-primary' : ''}`}
+            >
+              <span className="typo-label">{tab.label}</span>
+            </Button>
+          </Tooltip>
         ))}
       </div>
       <div className="min-h-0 flex-1">

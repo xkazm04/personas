@@ -34,7 +34,7 @@ export function CuratorLoopSection({ policy, runtime, write }: {
   return (
     <section className="space-y-2" data-testid="curator-loop">
       <h3 className="typo-title">{s.curator_loop_title}</h3>
-      <p className="typo-caption text-foreground opacity-70">{s.curator_loop_desc}</p>
+      <p className="typo-caption">{s.curator_loop_desc}</p>
 
       <PolicyRow
         label={s.curator_worker_cap_label}

@@ -7,6 +7,7 @@ import { memo, type ReactNode } from 'react';
 import { ScanEye } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts, shortElapsed } from '../shared';
@@ -65,30 +66,30 @@ export const InstrumentSessionCell = memo(function InstrumentSessionCell({
     >
       <Spine state="idle" dotted className={f.stateDot} />
       {onOpen ? (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => onOpen(session)}
           aria-label={`${f.label} · ${f.stateLabel} · ${f.originLabel}`}
           data-testid="fleet-grid-session"
-          className="focus-ring flex min-w-0 flex-1 flex-col gap-0.5 rounded-interactive py-1.5 pl-3 text-left"
+          className="min-w-0 flex-1 py-1.5 pl-3 pr-0 text-left hover:bg-transparent [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-0.5"
         >
           {body}
-        </button>
+        </Button>
       ) : (
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 py-1.5 pl-3" data-testid="fleet-grid-session">{body}</div>
       )}
       <span className="flex flex-shrink-0 items-center gap-0.5 self-center pr-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         {onRecap && (
           <Tooltip content={t.monitor.grid_session_recap_open}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onRecap(session)}
               aria-label={t.monitor.grid_session_recap_open}
               data-testid="fleet-grid-session-recap"
-              className="focus-ring inline-flex h-6 w-6 items-center justify-center rounded-interactive text-foreground hover:bg-secondary/40 hover:text-primary"
-            >
-              <ScanEye className="h-3.5 w-3.5" aria-hidden />
-            </button>
+              className="hover:text-primary"
+              icon={<ScanEye className="h-3.5 w-3.5" aria-hidden />}
+            />
           </Tooltip>
         )}
         {trailing}

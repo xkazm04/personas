@@ -9,6 +9,7 @@ import { memo } from 'react';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { RailAvatar, RailCheckbox, RailTime } from '../../rail/RailBits';
 import { TONE_FILL, TONE_TEXT, type RailRow } from '../../rail/railModel';
@@ -24,8 +25,6 @@ export function railRowHeightFor(width: number) {
   const cpl = Math.max(12, Math.floor((width - 64) / CHAR_PX));
   return (row: RailRow) => PAD + META + (row.title.length > cpl ? 2 : 1) * LINE + (row.groupHeader ? GROUP : 0);
 }
-
-const KEY = 'focus-ring inline-flex h-6 items-center gap-1 rounded-interactive border px-1.5 typo-code transition-colors';
 
 export const InstrumentRailRow = memo(function InstrumentRailRow({
   row, height, selected, onToggle, onOpen, onAccept, onReject,
@@ -47,7 +46,7 @@ export const InstrumentRailRow = memo(function InstrumentRailRow({
   const content = (
     <>
       {row.groupHeader && (
-        <span className="mb-1 block truncate typo-label uppercase tracking-wider text-foreground opacity-60" style={{ height: GROUP - 4 }}>
+        <span className="mb-1 block truncate typo-label uppercase tracking-wider text-foreground" style={{ height: GROUP - 4 }}>
           {row.groupHeader}
         </span>
       )}
@@ -75,14 +74,12 @@ export const InstrumentRailRow = memo(function InstrumentRailRow({
         {canDecide ? (
           <span className="ml-auto flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             <Tooltip content={tx(t.monitor.grid_rail_accept_aria, { title: row.title })}>
-              <button type="button" onClick={(e) => { stop(e); onAccept(row.id); }} aria-label={tx(t.monitor.grid_rail_accept_aria, { title: row.title })} data-testid="rail-row-accept" className={`${KEY} border-status-success/30 text-status-success hover:bg-status-success/15`}>
-                <Check className="h-3.5 w-3.5" aria-hidden />
-              </button>
+              <Button variant="accent" tone="success" size="icon-sm" onClick={(e) => { stop(e); onAccept(row.id); }} aria-label={tx(t.monitor.grid_rail_accept_aria, { title: row.title })} data-testid="rail-row-accept"
+                icon={<Check className="h-3.5 w-3.5" aria-hidden />} />
             </Tooltip>
             <Tooltip content={tx(t.monitor.grid_rail_reject_aria, { title: row.title })}>
-              <button type="button" onClick={(e) => { stop(e); onReject(row.id); }} aria-label={tx(t.monitor.grid_rail_reject_aria, { title: row.title })} data-testid="rail-row-reject" className={`${KEY} border-status-error/30 text-status-error hover:bg-status-error/15`}>
-                <X className="h-3.5 w-3.5" aria-hidden />
-              </button>
+              <Button variant="accent" tone="error" size="icon-sm" onClick={(e) => { stop(e); onReject(row.id); }} aria-label={tx(t.monitor.grid_rail_reject_aria, { title: row.title })} data-testid="rail-row-reject"
+                icon={<X className="h-3.5 w-3.5" aria-hidden />} />
             </Tooltip>
           </span>
         ) : (

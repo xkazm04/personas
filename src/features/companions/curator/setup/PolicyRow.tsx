@@ -23,7 +23,7 @@ export function PolicyRow({ label, description, control, foot, htmlFor }: {
         <label className="typo-body text-foreground block" htmlFor={htmlFor}>
           {label}
         </label>
-        <p className="typo-caption text-foreground opacity-70 mt-0.5">{description}</p>
+        <p className="typo-caption mt-0.5">{description}</p>
       </div>
       <div className="flex-shrink-0 flex flex-col items-end gap-1">
         {control}

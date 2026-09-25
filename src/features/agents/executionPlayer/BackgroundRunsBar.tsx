@@ -43,20 +43,20 @@ export function BackgroundRunsBar() {
           const isSelected = bg.executionId === selectedId;
           return (
             <Tooltip key={bg.executionId} content={`${bg.personaName}: ${tokenLabel(t, 'execution', bg.status)}`}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 aria-pressed={isSelected}
                 aria-label={`${bg.personaName}: ${tokenLabel(t, 'execution', bg.status)}`}
                 data-testid={`background-run-${bg.executionId}`}
                 onClick={() => setSelectedId(isSelected ? null : bg.executionId)}
-                className={`relative w-5 h-5 rounded-input flex items-center justify-center flex-shrink-0 transition-shadow ${
-                  isSelected ? 'ring-1 ring-primary/60' : ''
-                }`}
+                className={`relative flex-shrink-0 ${isSelected ? 'ring-1 ring-primary/60' : ''}`}
+                // The persona's own colour is data, not a theme hue: it tints the chip.
                 style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}
               >
-                <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} />
+                <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} aria-hidden="true" />
                 <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${STATUS_DOT[bg.status]}`} />
-              </button>
+              </Button>
             </Tooltip>
           );
         })}

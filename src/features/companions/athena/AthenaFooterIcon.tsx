@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Play, Mic } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore } from './athenaStore';
 import { useAthenaEnabled } from '../status/useAthenaEnabled';
@@ -174,13 +175,14 @@ export default function AthenaFooterIcon() {
     : hasUnreadPlayback
       ? 'speaking'
       : 'idle';
+  // The ghost Button supplies the neutral hover; these are the states on top.
   const buttonStateClass = talking
-    ? 'bg-primary/20 ring-2 ring-primary/50'
+    ? 'bg-primary/20 ring-2 ring-primary/50 animate-pulse'
     : isOpen
       ? 'bg-primary/15'
       : streaming
         ? 'hover:bg-primary/10'
-        : 'hover:bg-secondary/50';
+        : '';
 
   const onPlay = async () => {
     if (!pendingPlayback || !synthesisVoiceId) return;
@@ -208,8 +210,9 @@ export default function AthenaFooterIcon() {
 
   return (
     <div className="relative inline-flex items-center gap-0.5">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={() => {
           // A hold ends in a synthetic click — swallow it so releasing a
           // dictation hold doesn't also toggle anything.
@@ -231,7 +234,7 @@ export default function AthenaFooterIcon() {
         onPointerLeave={endHold}
         onPointerCancel={endHold}
         data-testid="footer-companion"
-        className={`relative w-7 h-7 rounded-card flex items-center justify-center transition-colors focus-ring ${buttonStateClass} ${talking ? 'animate-pulse' : ''}`}
+        className={`relative ${buttonStateClass}`}
         title={
           talking
             ? t.athena.footer_listening
@@ -265,18 +268,15 @@ export default function AthenaFooterIcon() {
             {attentionCount}
           </span>
         )}
-      </button>
+      </Button>
       {voiceConfigured && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onPlay}
           disabled={!hasUnreadPlayback}
           data-testid="footer-companion-play"
-          className={`relative w-7 h-7 rounded-card flex items-center justify-center transition-colors focus-ring disabled:opacity-30 disabled:cursor-not-allowed ${
-            hasUnreadPlayback
-              ? 'text-primary hover:bg-primary/10 animate-pulse'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/50'
-          }`}
+          className={`relative ${hasUnreadPlayback ? 'text-primary hover:bg-primary/10 animate-pulse' : ''}`}
           title={
             hasUnreadPlayback
               ? t.athena.play_latest
@@ -288,8 +288,8 @@ export default function AthenaFooterIcon() {
               : t.athena.play_nothing
           }
         >
-          <Play className="w-4 h-4" />
-        </button>
+          <Play className="w-4 h-4" aria-hidden="true" />
+        </Button>
       )}
     </div>
   );

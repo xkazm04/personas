@@ -804,14 +804,18 @@ pub fn commits_today(pool: &DbPool) -> Result<u32, AppError> {
 /// the binding is bookkeeping that follows. A request that is `dispatched`
 /// with no `session_id` for a few milliseconds is honest - a request handed to
 /// two workers would not be.
-pub fn bind_request_session(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
+///
+/// Returns whether the binding was written. `false` is the guard firing: the
+/// request is no longer `dispatched` (something settled it between the claim
+/// and this call), so there was no row to bind.
+pub fn bind_request_session(pool: &DbPool, id: &str, session_id: &str) -> Result<bool, AppError> {
     timed_query!("curator_request", "curator::bind_request_session", {
         let conn = pool.get()?;
-        conn.execute(
+        let bound = conn.execute(
             "UPDATE curator_request SET session_id = ?2 WHERE id = ?1 AND state = 'dispatched'",
             params![id, session_id],
         )?;
-        Ok(())
+        Ok(bound == 1)
     })
 }
 
@@ -908,15 +912,18 @@ pub fn claim_next_plan_item(
 }
 
 /// Bind the fleet session a claimed plan item was dispatched as.
-pub fn bind_plan_item_session(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
+///
+/// Returns whether the binding was written; `false` means the item is no
+/// longer `dispatched`, for [`bind_request_session`]'s reason.
+pub fn bind_plan_item_session(pool: &DbPool, id: &str, session_id: &str) -> Result<bool, AppError> {
     timed_query!("curator_plan_item", "curator::bind_plan_item_session", {
         let conn = pool.get()?;
-        conn.execute(
+        let bound = conn.execute(
             "UPDATE curator_plan_item SET dispatched_run_id = ?2
               WHERE id = ?1 AND state = 'dispatched'",
             params![id, session_id],
         )?;
-        Ok(())
+        Ok(bound == 1)
     })
 }
 
@@ -927,13 +934,17 @@ pub fn bind_plan_item_session(pool: &DbPool, id: &str, session_id: &str) -> Resu
 /// looks at that subject again; a `landed` or an `idled` with no evidence is a
 /// brake nobody can audit. The state must be terminal - a settle that wrote
 /// `planned` back would erase a dispatch.
+///
+/// Returns whether THIS call settled the item. `false` is the guard firing:
+/// the item was already terminal, so its earlier outcome and evidence stand
+/// and nothing was written.
 pub fn settle_plan_item(
     pool: &DbPool,
     id: &str,
     state: CuratorPlanItemState,
     evidence: &str,
     now: &str,
-) -> Result<(), AppError> {
+) -> Result<bool, AppError> {
     timed_query!("curator_plan_item", "curator::settle_plan_item", {
         if !state.is_terminal() {
             return Err(AppError::Validation(format!(
@@ -943,13 +954,13 @@ pub fn settle_plan_item(
             )));
         }
         let conn = pool.get()?;
-        conn.execute(
+        let settled = conn.execute(
             "UPDATE curator_plan_item
                 SET state = ?2, evidence_ref = ?3, updated_at = ?4
               WHERE id = ?1 AND state IN ('planned','dispatched')",
             params![id, state.as_str(), evidence, now],
         )?;
-        Ok(())
+        Ok(settled == 1)
     })
 }
 
@@ -1110,8 +1121,10 @@ pub struct CuratorCommitInput<'a> {
 
 /// Record a commit she caused, **once**.
 ///
-/// `INSERT OR IGNORE` against the `(project_slug, sha)` unique index `e52`
-/// adds: two of her terminals can be open on one checkout, so two settles can
+/// `ON CONFLICT(project_slug, sha) DO NOTHING` against the unique index `e52`
+/// adds - named rather than a statement-wide `OR IGNORE`, so a NOT NULL or
+/// CHECK violation still raises instead of vanishing as a "duplicate": two of
+/// her terminals can be open on one checkout, so two settles can
 /// see overlapping `<head>..HEAD` ranges. A double-counted commit moves the
 /// daily commit cap, which is the operator's hardest brake.
 ///
@@ -1125,10 +1138,11 @@ pub fn record_commit(
     timed_query!("curator_commit", "curator::record_commit", {
         let conn = pool.get()?;
         let written = conn.execute(
-            "INSERT OR IGNORE INTO curator_commit
+            "INSERT INTO curator_commit
                 (id, project_slug, repo_path, branch, sha, files_json, decision_id,
                  level_that_authorised, run_id, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, ?9)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7, ?8, ?9)
+             ON CONFLICT(project_slug, sha) DO NOTHING",
             params![
                 id,
                 input.project_slug,
@@ -2182,7 +2196,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let item_id = seed_plan_item(&pool, CuratorEngine::Reconcile, false);
         claim_next_plan_item(&pool, &[CuratorEngine::Reconcile], "2026-09-24T13:00:00Z").unwrap();
-        bind_plan_item_session(&pool, &item_id, "session-1").unwrap();
+        assert!(bind_plan_item_session(&pool, &item_id, "session-1").unwrap());
 
         // A state that is not terminal is refused: it would erase a dispatch.
         let refused = settle_plan_item(
@@ -2195,14 +2209,27 @@ mod tests {
         .unwrap_err();
         assert!(matches!(refused, AppError::Validation(_)), "{refused:?}");
 
-        settle_plan_item(
+        assert!(settle_plan_item(
             &pool,
             &item_id,
             CuratorPlanItemState::Idled,
             "at def5678 the scan still scores localization/czech - a dry pass",
             "2026-09-24T14:00:00Z",
         )
-        .unwrap();
+        .unwrap());
+        // A second settle finds the item already terminal: the guard fires,
+        // the verdict says so, and the first outcome stands.
+        assert!(
+            !settle_plan_item(
+                &pool,
+                &item_id,
+                CuratorPlanItemState::Landed,
+                "a late second settle",
+                "2026-09-24T15:00:00Z",
+            )
+            .unwrap(),
+            "a terminal item is not settled twice"
+        );
 
         let settled = current_plan(&pool).unwrap().unwrap();
         assert_eq!(settled.items[0].state, CuratorPlanItemState::Idled);
@@ -2243,7 +2270,7 @@ mod tests {
              stops two terminals taking one request"
         );
 
-        bind_request_session(&pool, "r1", "session-1").unwrap();
+        assert!(bind_request_session(&pool, "r1", "session-1").unwrap());
         let open = dispatched_requests(&pool).unwrap();
         assert_eq!(open.len(), 1);
         assert_eq!(open[0].session_id.as_deref(), Some("session-1"));

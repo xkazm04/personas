@@ -77,14 +77,14 @@ export const SessionWindow = memo(function SessionWindow({
     >
       <Tooltip content={<span className="whitespace-pre-line">{summary}</span>} placement="right">
         {onOpen ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => onOpen(session)}
             aria-label={summary.replace(/\n/g, ', ')}
-            className="ae-focus flex min-w-0 flex-1 flex-col gap-0.5 rounded-input px-2.5 py-1.5 text-left"
+            className="ae-focus min-w-0 flex-1 rounded-input px-2.5 py-1.5 text-left hover:bg-transparent [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-0.5"
           >
             {body}
-          </button>
+          </Button>
         ) : (
           <span role="img" aria-label={summary.replace(/\n/g, ', ')} className="flex min-w-0 flex-1 flex-col gap-0.5 px-2.5 py-1.5">
             {body}

@@ -8,11 +8,10 @@ import { ChevronDown, ChevronUp, Clock, X, Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
 import { bay } from './parts';
-
-const KEY = 'focus-ring inline-flex h-6 w-6 items-center justify-center rounded-interactive border border-primary/10 text-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 disabled:opacity-25 disabled:hover:bg-transparent';
 
 export const InstrumentQueueRow = memo(function InstrumentQueueRow({
   item, index, first, last, compact = false, flash = false, onNudge, onStart, onCancel,
@@ -58,24 +57,20 @@ export const InstrumentQueueRow = memo(function InstrumentQueueRow({
   const keys = (
     <span className="flex flex-shrink-0 items-center gap-1 opacity-40 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
       <Tooltip content={s.queue_move_up}>
-        <button type="button" className={KEY} disabled={first} onClick={() => onNudge(item.sessionId, -1)} aria-label={s.queue_move_up} data-testid="fleet-queue-up">
-          <ChevronUp className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <Button variant="secondary" size="icon-sm" disabled={first} onClick={() => onNudge(item.sessionId, -1)} aria-label={s.queue_move_up} data-testid="fleet-queue-up"
+          icon={<ChevronUp className="h-3.5 w-3.5" aria-hidden />} />
       </Tooltip>
       <Tooltip content={s.queue_move_down}>
-        <button type="button" className={KEY} disabled={last} onClick={() => onNudge(item.sessionId, 1)} aria-label={s.queue_move_down} data-testid="fleet-queue-down">
-          <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <Button variant="secondary" size="icon-sm" disabled={last} onClick={() => onNudge(item.sessionId, 1)} aria-label={s.queue_move_down} data-testid="fleet-queue-down"
+          icon={<ChevronDown className="h-3.5 w-3.5" aria-hidden />} />
       </Tooltip>
       <Tooltip content={s.queue_start_now}>
-        <button type="button" className={`${KEY} hover:text-primary`} onClick={() => onStart(item)} aria-label={s.queue_start_now} data-testid="fleet-queue-start-now">
-          <Zap className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <Button variant="secondary" size="icon-sm" className="hover:text-primary" onClick={() => onStart(item)} aria-label={s.queue_start_now} data-testid="fleet-queue-start-now"
+          icon={<Zap className="h-3.5 w-3.5" aria-hidden />} />
       </Tooltip>
       <Tooltip content={s.queue_cancel}>
-        <button type="button" className={`${KEY} hover:text-status-error`} onClick={() => onCancel(item)} aria-label={s.queue_cancel} data-testid="fleet-queue-cancel">
-          <X className="h-3.5 w-3.5" aria-hidden />
-        </button>
+        <Button variant="secondary" size="icon-sm" className="hover:text-status-error" onClick={() => onCancel(item)} aria-label={s.queue_cancel} data-testid="fleet-queue-cancel"
+          icon={<X className="h-3.5 w-3.5" aria-hidden />} />
       </Tooltip>
     </span>
   );
@@ -93,7 +88,7 @@ export const InstrumentQueueRow = memo(function InstrumentQueueRow({
         <span className="w-8 flex-shrink-0 typo-code tabular-nums text-primary" aria-label={tx(s.queue_rank_aria, { rank })}>#{bay(rank)}</span>
         <span className="min-w-0 flex-1">
           <span className="line-clamp-2 typo-body text-foreground">{f.label}</span>
-          {f.project && <span className="block truncate typo-code text-foreground opacity-50">{f.project}</span>}
+          {f.project && <span className="block truncate typo-code text-foreground">{f.project}</span>}
         </span>
       </span>
       <span className={`flex items-center gap-3 ${compact ? 'justify-between pl-11' : ''}`}>

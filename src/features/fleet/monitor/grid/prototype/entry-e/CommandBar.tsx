@@ -4,10 +4,15 @@
 // keyboard walk printed as keycaps, so the shortcut that exists is one the
 // operator can see. Sessions are counted in the supply column, never here:
 // this band counts AGENTS, and says so.
+//
+// The layout switch's panel is the floor below. It is declared HERE
+// (`CommandFloor`), beside the strip, so the ids the tabs point at and the
+// region carrying them are built in one file; the entry only places it.
 
+import type { ReactNode } from 'react';
 import { Activity, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { SimulationToggle } from '../../simulation';
 import { SQUARE_STATE_ORDER, type SquareState } from '../../fleetGridModel';
@@ -58,20 +63,21 @@ export function CommandBar({
             const on = active === s;
             const lamp = PERSONA_LAMP[s];
             return (
-              <button
+              <Button
                 key={s}
-                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onPick(s)}
                 aria-pressed={on}
                 aria-label={tx(m.grid_filter_state_aria, { state: labels[s] })}
                 data-testid={`fleet-grid-tally-${s}`}
-                className={`ae-win ae-focus flex items-center gap-2 rounded-input px-2.5 py-1 ${
+                className={`ae-win ae-focus rounded-input px-2.5 py-1 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 ${
                   on ? 'is-selected' : ''} ${lamp.lit && totals[s] > 0 ? `is-lit ae-t-${lamp.tone}` : ''}`}
               >
                 <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && totals[s] > 0 }} />
                 <span className="typo-caption text-foreground">{labels[s]}</span>
                 <span className="typo-data tabular-nums text-foreground">{totals[s]}</span>
-              </button>
+              </Button>
             );
           })}
           {active && (
@@ -102,5 +108,23 @@ export function CommandBar({
         <SimulationToggle />
       </div>
     </div>
+  );
+}
+
+/**
+ * The floor: the panel the layout switch above controls. The id and
+ * `aria-labelledby` come from `segmentedTabPanelProps` on the prefix the
+ * strip was given; `role="tabpanel"` is written out as well, where a reader
+ * can see it, although the spread already carries it.
+ */
+export function CommandFloor({ layout, className, children }: {
+  layout: BoardVariant;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <main {...segmentedTabPanelProps(BOARD_TABS_PREFIX, layout)} role="tabpanel" className={className}>
+      {children}
+    </main>
   );
 }

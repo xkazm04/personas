@@ -6,6 +6,8 @@
 //    at that depth. A null figure reads "not measured", never a zero.
 import type { ReactNode } from 'react';
 
+import { Button } from '@/features/shared/components/buttons';
+
 import { useFusedStrings } from './fusedStrings';
 
 export interface RungFigure {
@@ -37,9 +39,11 @@ export function TimelineRung({ index, state, tag, name, onClimb, climbLabel, fig
     return (
       <li className="rung reached" data-rung={index} data-role="hud-rung">
         <span className="tag">{tag}</span>
-        <button className="nm" type="button" onClick={onClimb} aria-label={climbLabel}>
+        {/* The rung's own skin comes from fused.css `.rung .nm`; Button brings
+            the focus ring, press response and default type. */}
+        <Button variant="ghost" className="nm" onClick={onClimb} aria-label={climbLabel}>
           {name}
-        </button>
+        </Button>
         <span />
       </li>
     );

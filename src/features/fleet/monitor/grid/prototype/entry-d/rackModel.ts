@@ -42,12 +42,28 @@ export interface RackIndex {
 }
 
 /**
- * Mirrors the door's `is_live_state` (`src-tauri/src/commands/fleet/registry.rs`):
- * only these states hold a seat and count toward the cap. A stale, finished or
+ * Which states hold a seat and count toward the cap. A stale, finished or
  * hibernated session is still on the board, but it is not in the rack.
+ *
+ * Keyed by the generated `FleetSessionState` union and checked with
+ * `satisfies Record<…>`: a state the server adds does not compile here until
+ * someone decides whether it holds a seat, instead of silently falling to
+ * "no". The server's own answer is `is_live_state` in the fleet registry.
  */
+const HOLDS_SEAT = {
+  queued: false,
+  spawning: true,
+  running: true,
+  awaiting_input: true,
+  idle: true,
+  stale: false,
+  finished: false,
+  hibernated: false,
+  exited: false,
+} satisfies Record<FleetSessionState, boolean>;
+
 export function holdsSeat(state: FleetSessionState): boolean {
-  return state === 'spawning' || state === 'running' || state === 'awaiting_input' || state === 'idle';
+  return HOLDS_SEAT[state];
 }
 
 export function rackIndex(running: readonly QueueItem[], queued: readonly QueueItem[]): RackIndex {

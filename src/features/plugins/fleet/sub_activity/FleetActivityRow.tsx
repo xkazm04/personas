@@ -4,6 +4,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
+import { matchesQuery } from '@/lib/text/search';
 import { projectLabel } from './activityTarget';
 
 /** Last path segment: the part of a touched file that tells two files apart. */
@@ -38,8 +39,9 @@ export function FleetActivityRow({ row, query, onOpen }: {
   const tokens = Number(row.tokens.input) + Number(row.tokens.output);
 
   // When searching by file, surface the matching files; otherwise the first few.
+  // Matching (case folding, diacritics, multi-term) is the app's shared policy.
   const matchedFiles = query
-    ? row.filesTouched.filter((file) => file.toLowerCase().includes(query))
+    ? row.filesTouched.filter((file) => matchesQuery(file, query))
     : row.filesTouched;
   const shownFiles = matchedFiles.slice(0, 3);
   const extraFiles = matchedFiles.length - shownFiles.length;

@@ -19,7 +19,7 @@ export function TodayMeter({ used, cap }: { used: string | null; cap: string | n
 
   if (used === null) {
     return (
-      <span className="typo-caption text-foreground opacity-50" data-role="curator-today" data-state="unread">
+      <span className="typo-caption" data-role="curator-today" data-state="unread">
         {s.curator_today_unread}
       </span>
     );
@@ -27,7 +27,7 @@ export function TodayMeter({ used, cap }: { used: string | null; cap: string | n
 
   return (
     <span
-      className="typo-caption text-foreground opacity-70"
+      className="typo-caption"
       data-role="curator-today"
       data-state={cap === null ? 'uncapped' : 'capped'}
     >

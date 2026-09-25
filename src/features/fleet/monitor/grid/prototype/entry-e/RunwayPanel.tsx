@@ -12,7 +12,8 @@ import type { ActivitySurface } from '../useActivitySurface';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { SessionWindow } from './SessionWindow';
 import { QueueLadder } from './QueueLadder';
-import { PanelEmpty, SocketGhosts } from './Ghosts';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { SocketGhosts } from './Ghosts';
 import { Engraved } from './parts';
 
 const HOLDS: ReadonlySet<string> = new Set(['running', 'spawning', 'awaiting_input', 'idle']);
@@ -41,7 +42,13 @@ export function RunwayPanel({
   if (surface.queueCold) {
     return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3"><SocketGhosts count={Math.max(4, cap)} /></div>;
   }
-  if (model.empty && cap === 0) return <PanelEmpty icon={Layers} heading={m.queue_empty_title} sub={m.queue_empty_hint} />;
+  if (model.empty && cap === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6" data-testid="entry-e-empty">
+        <ScenarioEmptyState icon={Layers} title={m.queue_empty_title} description={m.queue_empty_hint} />
+      </div>
+    );
+  }
 
   const socket = (item: QueueItem, isOver: boolean) => (
     <div key={item.sessionId} className={`rounded-card p-1 ${isOver ? 'ae-hatch' : 'ae-well'}`} data-testid={isOver ? 'entry-e-over-socket' : 'entry-e-socket'}>

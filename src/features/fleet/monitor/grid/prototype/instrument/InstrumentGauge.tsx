@@ -6,6 +6,8 @@
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
+import { formatPercent } from '@/lib/utils/formatters';
 import {
   FILL, PACE_ICON, PACE_TONE, TONE_TEXT, cliReasonHint, cliReasonLabel, providerName, reasonLabel, windowSentence, windowTitle,
 } from '../../usageBits';
@@ -20,7 +22,7 @@ function Meter({ w, fallback }: { w: WindowModel | null; fallback: string }) {
   const { t, tx } = useTranslation();
   if (!w) {
     return (
-      <span className="flex items-center gap-2 typo-code text-foreground opacity-40" data-testid="fleet-usage-window" data-empty>
+      <span className="flex items-center gap-2 typo-code text-foreground" data-testid="fleet-usage-window" data-empty>
         <span className="w-6">{fallback}</span>
         <span className="h-px flex-1 bg-foreground/10" />
         <span className="w-9 text-right">—</span>
@@ -31,7 +33,7 @@ function Meter({ w, fallback }: { w: WindowModel | null; fallback: string }) {
   return (
     <Tooltip content={windowSentence(t, tx, w)}>
       <span className="flex items-center gap-2 typo-code" data-testid="fleet-usage-window" data-tone={w.tone}>
-        <span className="w-6 text-foreground opacity-60">{windowTitle(t, w)}</span>
+        <span className="w-6 text-foreground">{windowTitle(t, w)}</span>
         <span className="relative h-1 flex-1 overflow-hidden rounded-pill bg-foreground/10">
           {[25, 50, 75].map((tick) => (
             <span key={tick} aria-hidden className="absolute inset-y-0 w-px bg-background" style={{ left: `${tick}%` }} />
@@ -39,7 +41,7 @@ function Meter({ w, fallback }: { w: WindowModel | null; fallback: string }) {
           <span className={`block h-full ${FILL[w.tone]} ${w.projected ? 'opacity-50' : ''}`} style={{ width: `${w.usedPct}%` }} />
         </span>
         <span className={`w-9 text-right tabular-nums ${TONE_TEXT[w.tone]}`} data-testid="fleet-usage-percent">
-          {w.projected ? '≈' : ''}{Math.round(w.usedPct)}%
+          {w.projected ? '≈' : ''}{formatPercent(w.usedPct, { precision: 0 })}
         </span>
         <span className={`inline-flex w-3.5 ${w.pace ? PACE_TONE[w.pace] : ''}`}>
           {Pace && <Pace className="h-3.5 w-3.5" aria-hidden />}
@@ -60,6 +62,10 @@ export function InstrumentGauge({ provider, plan, ask }: { provider: ProviderMod
 
   return (
     <div
+      role="group"
+      aria-label={[providerName(t, provider.id), name, trouble ? troubleLabel : null].filter(Boolean).join(' · ')}
+      // Pointer convenience only: the whole card is the target. The keyboard's
+      // door is the account-name Button inside it, which carries the act's name.
       className={`${CARD} ${plan.isActive ? 'border-primary/40 bg-primary/[0.06]' : 'border-primary/10 bg-foreground/[0.02]'} ${
         canSwitch ? 'cursor-pointer hover:border-primary/30' : ''
       }`}
@@ -76,15 +82,16 @@ export function InstrumentGauge({ provider, plan, ask }: { provider: ProviderMod
         </Tooltip>
         {canSwitch ? (
           <Tooltip content={t.monitor.usage_accounts_switch}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={(e) => { e.stopPropagation(); ask('switch', plan); }}
               aria-label={tx(t.monitor.usage_accounts_switch_aria, { email: name })}
-              className="focus-ring min-w-0 truncate rounded-interactive text-left typo-body text-foreground"
+              className="min-w-0 text-left [&>span]:min-w-0"
               data-testid="fleet-usage-switch"
             >
-              {name}
-            </button>
+              <span className="block truncate typo-body text-foreground">{name}</span>
+            </Button>
           </Tooltip>
         ) : (
           <span className="min-w-0 truncate typo-body text-foreground" data-testid="fleet-usage-name">{name}</span>
@@ -96,15 +103,15 @@ export function InstrumentGauge({ provider, plan, ask }: { provider: ProviderMod
         )}
         {canRemove && (
           <Tooltip content={t.monitor.usage_accounts_remove_hint}>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={(e) => { e.stopPropagation(); ask('remove', plan); }}
               aria-label={tx(t.monitor.usage_accounts_remove_aria, { email: name })}
-              className="focus-ring ml-auto inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-interactive text-foreground opacity-0 transition-opacity hover:text-status-error focus-visible:opacity-100 group-hover/plan:opacity-70"
+              className="ml-auto flex-shrink-0 opacity-0 hover:text-status-error focus-visible:opacity-100 group-hover/plan:opacity-70"
               data-testid="fleet-usage-remove"
-            >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden />
-            </button>
+              icon={<Trash2 className="h-3.5 w-3.5" aria-hidden />}
+            />
           </Tooltip>
         )}
       </span>
@@ -118,8 +125,12 @@ export function InstrumentGauge({ provider, plan, ask }: { provider: ProviderMod
   );
 }
 
-/** A provider with nothing to meter — still a card, with the reason worded. */
-export function InstrumentGaugeEmpty({ provider }: { provider: ProviderModel }) {
+/**
+ * A provider with nothing to meter: still a gauge card in the capacity row,
+ * carrying its mark and the reason in words (the baseline's EmptyProviderRow).
+ * Not a settled-empty region, so it is not a ScenarioEmptyState.
+ */
+export function InstrumentGaugeUnmetered({ provider }: { provider: ProviderModel }) {
   const { t } = useTranslation();
   const reason = provider.emptyReason ?? 'unreadable';
   return (
@@ -127,9 +138,9 @@ export function InstrumentGaugeEmpty({ provider }: { provider: ProviderModel }) 
       <div className={`${CARD} border-dashed border-primary/10`} data-testid="fleet-usage-empty" data-provider={provider.id}>
         <span className="flex items-center gap-1.5">
           <ProviderIcon provider={provider.id} />
-          <span className="truncate typo-body text-foreground opacity-70">{providerName(t, provider.id)}</span>
+          <span className="truncate typo-body text-foreground">{providerName(t, provider.id)}</span>
         </span>
-        <span className="typo-code text-foreground opacity-50">{cliReasonLabel(t, reason)}</span>
+        <span className="typo-caption">{cliReasonLabel(t, reason)}</span>
       </div>
     </Tooltip>
   );

@@ -6,6 +6,7 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import type { ActivitySurface } from '../useActivitySurface';
 import { useSessionFacts, type useQueueConfirm } from '../shared';
@@ -35,15 +36,16 @@ function Bay({ item, n, over, now, index }: { item: QueueItem; n: number; over: 
       style={{ '--i': index } as CSSProperties}
     >
       <Tooltip content={`${seat(n)} / ${cap} · ${t.monitor.grid_session_recap_open}`}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="xs"
           onClick={(e) => { e.stopPropagation(); recapSession(item.session); }}
           aria-label={t.monitor.grid_session_recap_open}
           data-testid="fleet-queue-recap"
-          className={`focus-ring rounded-input px-0.5 typo-data-lg tabular-nums transition-colors hover:text-primary ${over ? 'text-status-warning' : 'text-foreground'}`}
+          className={`rounded-input px-0.5 hover:text-primary ${over ? 'text-status-warning' : 'text-foreground'}`}
         >
-          {seat(n)}
-        </button>
+          <span className="typo-data-lg tabular-nums">{seat(n)}</span>
+        </Button>
       </Tooltip>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
         <span className="flex-shrink-0 truncate typo-body text-foreground">{facts.label}</span>

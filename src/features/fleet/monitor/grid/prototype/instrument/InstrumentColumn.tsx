@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { Laptop, PowerOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Button } from '@/features/shared/components/buttons';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useProjectForTeam } from '@/features/plugins/dev-tools/sub_projects/projectSwitch/useProjectSwitch';
 import { cleanName } from '../../fleetGridModel';
@@ -50,7 +51,7 @@ export function InstrumentColumn({
           {t.plugins.dev_projects.project_state_off}
         </MonoTag>
       )}
-      <span className="flex-shrink-0 typo-code tabular-nums text-foreground opacity-60">
+      <span className="flex-shrink-0 typo-code tabular-nums text-foreground">
         {String(remote ? column.rows.length : column.cards.length).padStart(2, '0')}
       </span>
     </span>
@@ -66,17 +67,16 @@ export function InstrumentColumn({
         {remote ? (
           <div className="px-1 py-1" data-testid="fleet-grid-column-header">{header}</div>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => onToggleScope(column.teamId, column.teamName, column.cards)}
             aria-pressed={scoped}
             data-testid="fleet-grid-column-header"
-            className={`focus-ring w-full rounded-interactive px-1 py-1 text-left transition-colors ${
-              scoped ? 'bg-primary/15' : 'hover:bg-foreground/[0.04]'
-            }`}
+            className={`w-full px-1 py-1 text-left [&>span]:w-full [&>span]:min-w-0 ${scoped ? 'bg-primary/15' : ''}`}
           >
             {header}
-          </button>
+          </Button>
         )}
       </Tooltip>
       <span
