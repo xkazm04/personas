@@ -45,9 +45,10 @@ export interface MetricsChartsProps {
   onAnomalyClick?: (anomaly: MetricAnomaly) => void;
 }
 
-function Plot({ render }: { render: (R: RechartsModule) => ReactElement }) {
+function Plot({ render, resetKey }: { render: (R: RechartsModule) => ReactElement; resetKey: string }) {
   return (
-    <ChartErrorBoundary>
+    // New data remounts the boundary, so a chart that failed on one window renders the next.
+    <ChartErrorBoundary key={resetKey}>
       <LazyChart
         fallback={<div style={{ height: HEIGHT }} />}
         render={(R) => <R.ResponsiveContainer width="100%" height={HEIGHT}>{render(R)}</R.ResponsiveContainer>}
@@ -86,6 +87,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
 
   const tick = useMemo(() => ({ fontSize: sf(10), fill: getAxisTickFill() }), [sf]);
   const grid = getGridStroke();
+  const resetKey = `${chartData.length}:${chartData[0]?.date ?? ''}:${chartData[chartData.length - 1]?.date ?? ''}`;
   const state = loading ? 'loading' : chartData.length === 0 ? 'empty' : undefined;
   const empty = { title: t.overview.analytics_dashboard.no_execution_data };
   const anomalyMeta = costAnomalies.length > 0 ? (
@@ -99,7 +101,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
     <>
       <Section id="s-obs-cost" eyebrow={eyebrow} title={c.cost_over_time} meta={anomalyMeta}>
         <ChartFrame height={HEIGHT} label={c.cost_over_time} state={state} empty={empty}>
-          <Plot render={(R) => (
+          <Plot resetKey={resetKey} render={(R) => (
             <R.AreaChart data={chartData} margin={PLOT_MARGIN}>
               <R.CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
               <R.XAxis dataKey="date" tick={tick} tickFormatter={dateTick} />
@@ -124,7 +126,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
         }
       >
         <ChartFrame height={HEIGHT} label={c.execution_health} state={state} empty={empty}>
-          <Plot render={(R) => (
+          <Plot resetKey={resetKey} render={(R) => (
             <R.BarChart data={chartData} margin={PLOT_MARGIN}>
               <R.CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
               <R.XAxis dataKey="date" tick={tick} tickFormatter={dateTick} />

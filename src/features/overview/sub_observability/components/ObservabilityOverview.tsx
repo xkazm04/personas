@@ -53,8 +53,7 @@ export function ObservabilityOverview(p: OverviewProps) {
   const runs = s?.totalExecutions ?? 0;
   const ok = s?.successfulExecutions ?? 0;
   const failed = s?.failedExecutions ?? 0;
-  const cost = s?.totalCostUsd ?? 0;
-  const costQ = quantumFor(cost, 60, 0.1);
+  const costQ = quantumFor(s ? s.totalCostUsd : 0, 60, 0.1);
   const runQ = quantumFor(runs, 60, 1);
   const chips = sourceChips(p);
   return (
@@ -68,6 +67,17 @@ export function ObservabilityOverview(p: OverviewProps) {
           <span><UnitStrip size="s" label={x.executions_label} segments={[{ n: 1, tone: 'success' }]} /> = {runQ} {x.executions_label.toLowerCase()}</span>
         </span>
       }
+      actions={
+        <>
+          <KitButton pressed={d.autoRefresh} onClick={() => d.setAutoRefresh(!d.autoRefresh)} testId="obs-auto-refresh">
+            <span className="inline-flex items-center gap-2">
+              <Dot tone="neutral" glyph={d.autoRefresh ? 'live' : 'hollow'} />
+              {d.autoRefresh ? x.auto_refresh_on : x.auto_refresh_off}
+            </span>
+          </KitButton>
+          <KitButton onClick={() => { void d.refreshAll(); }} testId="obs-refresh">{w.t.common.refresh}</KitButton>
+        </>
+      }
     >
       <Toolbar label={o.observability.title}>
         <PersonaSelect value={d.selectedPersonaId} onChange={d.setSelectedPersonaId} personas={d.personas} />
@@ -79,13 +89,6 @@ export function ObservabilityOverview(p: OverviewProps) {
             {p.activeAlertCount > 0 && <span className="typo-data k-regular k-quiet">{p.activeAlertCount}</span>}
           </span>
         </KitButton>
-        <KitButton pressed={d.autoRefresh} onClick={() => d.setAutoRefresh(!d.autoRefresh)} testId="obs-auto-refresh">
-          <span className="inline-flex items-center gap-2">
-            <Dot tone="neutral" glyph={d.autoRefresh ? 'live' : 'hollow'} />
-            {d.autoRefresh ? x.auto_refresh_on : x.auto_refresh_off}
-          </span>
-        </KitButton>
-        <KitButton onClick={() => { void d.refreshAll(); }} testId="obs-refresh">{w.t.common.refresh}</KitButton>
       </Toolbar>
       {chips.length > 0 && <ChipRow label={o.observability.title} emptyLabel="" chips={chips} />}
       {d.observabilityError && (
@@ -98,8 +101,8 @@ export function ObservabilityOverview(p: OverviewProps) {
         tiles={[
           {
             label: x.total_cost,
-            value: s ? <Numeric value={cost} unit="usd" precision={2} /> : null,
-            draw: <UnitStrip size="s" rows={2} label={x.total_cost} segments={[{ n: cost / costQ, tone: 'primary', glyph: 'soft' }]} />,
+            value: s ? <Numeric value={s.totalCostUsd} unit="usd" precision={2} /> : null,
+            draw: <UnitStrip size="s" rows={2} label={x.total_cost} segments={[{ n: s ? s.totalCostUsd / costQ : 0, tone: 'primary', glyph: 'soft' }]} />,
           },
           {
             label: x.executions_label,

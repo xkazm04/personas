@@ -30,11 +30,13 @@ export const ToolPerformanceSection = memo(function ToolPerformanceSection({ sin
   const wd = t.overview.widgets;
   const [rows, setRows] = useState<ToolPerformanceSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [type, setType] = useState('all');
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     void (async () => {
       try {
         const r = await getToolPerformanceSummary(since, personaId, LIMIT);
@@ -42,7 +44,7 @@ export const ToolPerformanceSection = memo(function ToolPerformanceSection({ sin
       } catch (err) {
         if (cancelled) return;
         silentCatch('ToolPerformanceSection:getToolPerformanceSummary')(err);
-        setRows([]);
+        setFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -103,8 +105,8 @@ export const ToolPerformanceSection = memo(function ToolPerformanceSection({ sin
           { key: 'max', label: wd.tool_performance_col_max, num: true },
           { key: 'err', label: wd.tool_performance_col_errors, num: true },
         ]}
-        rows={table}
-        empty={{ title: wd.tool_performance_empty }}
+        rows={failed ? [] : table}
+        empty={failed ? { title: t.overview.chart_error.chart_unavailable, tone: 'warning' } : { title: wd.tool_performance_empty }}
       />
     </Section>
   );
