@@ -45,6 +45,7 @@ import type { CuratorPlan } from '@/lib/bindings/CuratorPlan';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 import { Blueprint } from './Blueprint';
+import { isV2Key, V2Switcher } from './v2/V2Switcher';
 import { CuratorConsole } from './console/CuratorConsole';
 import { useCuratorLoop } from './console/useCuratorLoop';
 import type { BlueprintPhase } from './ledger/LedgerEmpty';
@@ -62,6 +63,11 @@ import './blueprint.css';
 let warm: { plan: CuratorPlan | null; sources: BlueprintSources } | null = null;
 
 export default function BlueprintPage() {
+  // Prototype round: `?v2=a|b|c` renders a natively-built variant instead of the
+  // shipped page. Throwaway - the switcher and this branch go when one is fused.
+  const v2 = new URLSearchParams(window.location.search).get('v2');
+  if (isV2Key(v2)) return <V2Switcher which={v2} />;
+
   const { t, tx } = useTranslation();
   const [plan, setPlan] = useState<CuratorPlan | null>(warm?.plan ?? null);
   const [sources, setSources] = useState<BlueprintSources>(warm?.sources ?? {});
